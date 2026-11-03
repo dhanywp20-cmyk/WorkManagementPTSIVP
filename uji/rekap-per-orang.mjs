@@ -1,23 +1,6 @@
-/*
-  UJI: rekapitulasi per orang di rekap Summary.
-
-  Menjaga tiga hal yang salah pada bentuk sebelumnya:
-
-    1. Satu orang bisa muncul DUA KALI - sebagai Supervisor di satu proyek dan
-       PIC di proyek lain - dengan dua angka terpisah. Finance butuh satu
-       angka: berapa yang ditransfer ke orang itu.
-    2. GRAND TOTAL kosong.
-    3. Tidak ada pecahan tahun sama sekali, padahal uangnya memang keluar
-       bertahap - jadi rekapnya masih harus dihitung ulang di luar sistem.
-
-  Installer diperiksa terpisah: porsinya TIDAK dipecah, lunas di tahun pertama.
-
-    node uji/rekap-per-orang.mjs
-*/
 const sk = { installerBayarDiMuka: true,
   tranche: [{nomor:1,persen:50,tahunKe:1},{nomor:2,persen:35,tahunKe:2},{nomor:3,persen:15,tahunKe:3}] };
 
-// Yoga muncul 2x: Supervisor di satu proyek, PIC di proyek lain (kasus gambar 1)
 const akumulasi = [
   { nama:'Yoga KS', peran:'supervisor', jumlah:1_350_000, bastYear:2026 },
   { nama:'Yoga KS', peran:'pic',        jumlah:  550_000, bastYear:2026 },

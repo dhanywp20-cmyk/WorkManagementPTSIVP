@@ -1,6 +1,5 @@
 'use client';
 
-/** KontenHalamanRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { MiniPieChart, StatCard, Paginasi } from '@/components/shared';
 import { FilterRequest } from '../FilterRequest';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -65,7 +64,6 @@ export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelo
     <>
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 
-        {/* Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 animate-slide-up anim-d80">
           {[
             { label: 'Total', value: stats.total, sub: 'Semua request', accent: '#4f46e5', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
@@ -76,7 +74,6 @@ export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelo
           ].map((card, i) => <StatCard key={i} {...card} />)}
         </div>
 
-        {/* Charts - guest sees handler + product, PTS sees all 3 */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           {isPTS ? (
             <>
@@ -112,12 +109,8 @@ export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelo
           )}
         </div>
 
-        
-
-        {/* TICKET LIST — matching reference style */}
         <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
 
-          {/* Header with title + actions — same as reference */}
           <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
@@ -138,13 +131,10 @@ export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelo
             </div>
           </div>
 
-          {/* Search + filter grid — labeled like reference */}
           <FilterRequest
             availableYears={availableYears} filterHandler={filterHandler} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} ptsMembersList={ptsMembersList} searchQuery={searchQuery} searchSales={searchSales} setFilterHandler={setFilterHandler} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales}
           />
 
-          {/* Active filter chips — inside table */}
-          {/* Bulk delete bar — admin only, selectMode only */}
           {selectMode && bisaKelolaRequest && selectedIds.size > 0 && (
             <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(13,148,136,0.07)' }}>
               <span className="text-sm font-bold text-teal-700">{selectedIds.size} request dipilih</span>

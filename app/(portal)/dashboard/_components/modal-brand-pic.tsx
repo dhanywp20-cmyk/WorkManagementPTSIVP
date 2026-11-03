@@ -7,10 +7,7 @@ import { useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { InlineToast, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-// BrandPicSettingModal
-
 export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
-  //  Daftar merek: Admin Panel › Daftar Pilihan.
   const merekDisplay = useDaftarPilihan('merek-display');
   const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
@@ -114,9 +111,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// BrandPicSettingContent (reusable inline, no overlay)
 export function BrandPicSettingContent() {
-  //  Daftar merek: Admin Panel › Daftar Pilihan.
   const merekDisplay = useDaftarPilihan('merek-display');
   const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
@@ -181,7 +176,6 @@ export function BrandPicSettingContent() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <InlineToast notif={notif} />
-      {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -189,7 +183,6 @@ export function BrandPicSettingContent() {
           <div className="flex justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div>
         ) : (
           <>
-            {/* HP & layar sempit: satu kolom (Display lalu Middleware); dua kolom baru di lg. */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
@@ -220,6 +213,5 @@ export function BrandPicSettingContent() {
 }
 
 export function BrandPicSettingInline() {
-  // Re-export BrandPicSettingModal content without the fixed-overlay wrapper
   return <BrandPicSettingContent />;
 }

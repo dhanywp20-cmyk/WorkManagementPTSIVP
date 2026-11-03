@@ -1,5 +1,4 @@
 'use client';
-/** Tekstur gambar sendiri untuk lantai / dinding: unggah, pratinjau, ukuran ubin (m), hapus (simpan/teksturRuang.ts). */
 import { useRef, useState } from 'react';
 import { kunciTeksturBaru, type Ruang, teksturSah, UBIN_AWAL_DINDING, UBIN_AWAL_LANTAI, UBIN_MAKS, UBIN_MIN } from '../inti';
 import { berkasKeTekstur, daftarkanTekstur } from '../simpan/teksturRuang';

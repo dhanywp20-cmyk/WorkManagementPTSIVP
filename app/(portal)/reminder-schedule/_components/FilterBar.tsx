@@ -5,16 +5,6 @@ import { STATUS_CONFIG, formatDate } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 
-/**
- * Header "Schedule List" (Select/Refresh/Export) + baris search/filter +
- * bar bulk-delete + chip filter aktif - dipindah dari
- * app/reminder-schedule/page.tsx apa adanya (JSX identik). State & handler
- * tetap di page.tsx, komponen ini murni presentasional.
- *
- * Dipanggil sebagai children dari wrapper "TICKET LIST" di page.tsx - ref
- * dan pembungkusnya tetap di sana karena elemen yang sama juga membungkus
- * tabel yang belum diekstrak.
- */
 export function FilterBar({
   filteredReminders, isAdmin, isManager,
   selectMode, setSelectMode, setSelectedIds,
@@ -65,7 +55,6 @@ export function FilterBar({
 }) {
   return (
     <>
-      {/* ── TICKET LIST header + refresh/export ── */}
       <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-5 sm:py-3.5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Schedule List</span>
@@ -91,7 +80,6 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* ── Search / Filter bar — tepat di bawah TICKET LIST ── */}
       <div className="px-3 py-2 sm:px-5 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2" aktif={[searchSales, searchProduct, searchTeamHandler, filterStatus, filterCategory, searchDivisionSales]}>
           <div>
@@ -157,7 +145,6 @@ export function FilterBar({
         </FilterLipat>
       </div>
 
-      {/* Bulk delete bar — admin only, selectMode only */}
       {selectMode && (isAdmin || isManager) && selectedIds.size > 0 && (
         <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
           <span className="text-sm font-bold text-red-700">{selectedIds.size} jadwal dipilih</span>
@@ -171,7 +158,6 @@ export function FilterBar({
         </div>
       )}
 
-      {/* ── Filter Aktif chips — di bawah filter bar ── */}
       {(filterCategory !== 'all' || filterStatus !== 'all' || searchSales || searchDivisionSales || searchTeamHandler || searchProject || selectedCalDay || productFilter || searchProduct) && (
         <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>

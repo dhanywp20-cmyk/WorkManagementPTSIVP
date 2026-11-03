@@ -1,18 +1,9 @@
-/**
- * lib/wa-batas.ts - batas kirim WA per akun (tabel wa_kirim_log, migrasi 018). HANYA server.
- *
- * Dipakai /api/notifikasi/whatsapp/kirim (peramban) DAN lib/efek-server.ts (DIWAYPI),
- * supaya token integrasi tidak menjadi jalan pintas di luar batas yang sama.
- * Satu aksi kerja bisa memicu beberapa WA sekaligus, jadi batas per menit longgar;
- * yang dicegah adalah pemakaian sebagai alat blast / spam ke satu nomor.
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const BATAS_PER_MENIT = 60;
 export const BATAS_PER_HARI = 600;
 export const BATAS_TARGET_PER_MENIT = 6;
 
-/** null = boleh kirim (dan sudah dicatat di wa_kirim_log); string = alasan ditolak. */
 export async function ambilJatahWA(db: SupabaseClient, userId: string, targetMentah: string): Promise<string | null> {
   const target = String(targetMentah ?? '').replace(/\D/g, '');
   const sejak = (ms: number) => new Date(Date.now() - ms).toISOString();

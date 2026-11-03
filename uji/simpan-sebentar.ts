@@ -1,8 +1,3 @@
-/**
- * uji/simpan-sebentar.ts - simpanan singkat di memori server (dipakai Kuis Live untuk 100+ HP).
- *
- *   npx tsx uji/simpan-sebentar.ts
- */
 import { readFileSync } from 'fs';
 import { hapusSimpanan, kosongkanSimpanan, simpanSebentar } from '../lib/simpan-sebentar';
 

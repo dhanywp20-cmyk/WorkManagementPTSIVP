@@ -1,22 +1,7 @@
-/**
- * av-hitung-display.ts - daftar material (BOM) videowall LCD & interactive flat panel (IFP).
- *
- * LCD / videowall / IFP adalah jenis produk terbanyak di Request Schedule, tetapi sebelum ini hanya
- * LED Videotron yang punya alur hitung -> daftar material -> penawaran. Pola dan bentuk barisnya sama
- * dengan bomLED (av-hitung-bom.ts) supaya tabel harga, totalPenawaran dan lembar cetaknya dipakai
- * bersama. Semua jumlah kabel, bracket & daya adalah perkiraan lapangan - verifikasi dengan datasheet.
- */
 import { type BarisBOM, cadangan } from './av-hitung-bom';
 import { hitungDaya, type JenisPandang, layarDariJarak } from './av-hitung-ruang';
 
-// ── Videowall LCD ─────────────────────────────────────────────────────────────
-
-/** Cara pasang panel: bracket pop-out (servis dari depan), bracket tetap, atau floor stand. */
 export type PasangVideowall = 'pop-out' | 'tetap' | 'standfloor';
-/**
- * Jalur sinyal: video wall controller (tiap panel 1 output), loop-through (sinyal diteruskan antar
- * panel, gambar dibagi oleh scaler di panel), atau matrix switcher berfitur videowall.
- */
 export type SinyalVideowall = 'controller' | 'loop' | 'matrix';
 
 export const PASANG_VIDEOWALL: { v: PasangVideowall; l: string }[] = [
@@ -30,31 +15,25 @@ export const SINYAL_VIDEOWALL: { v: SinyalVideowall; l: string }[] = [
   { v: 'matrix', l: 'Matrix switcher (fitur videowall)' },
 ];
 
-/** Daya umum panel videowall 55" bila Pustaka tidak mencantumkannya (W). */
 export const WATT_PANEL_BAWAAN = 180;
-/** Daya umum perangkat pendukung (W) - hanya untuk perkiraan sirkuit. */
 const WATT_CONTROLLER = 150, WATT_MATRIX = 100, WATT_PLAYER = 60, WATT_OPS = 60;
-/** Satu sirkuit = MCB 16 A dibebani maksimal 80%. */
 const MCB_SIRKUIT = 16, BEBAN_SIRKUIT = 0.8;
-/** Panjang kabel USB 2.0 pasif yang masih andal untuk sinyal sentuh (m). */
 export const USB_PASIF_MAKS_M = 5;
 
 export interface MasukanVideowall {
   namaPanel: string; kolom: number; baris: number;
-  /** Jumlah videowall identik. */ screen: number;
-  /** Cadangan panel (%). */ cadanganPanel: number;
+   screen: number;
+   cadanganPanel: number;
   pasang: PasangVideowall; sinyal: SinyalVideowall;
-  /** Jumlah sumber yang masuk ke controller / matrix. */ input: number;
-  /** Panjang kabel dari controller / sumber ke layar (m). */ panjangSinyal: number;
-  /** Daya maksimum per panel (W). */ wattPanel: number;
-  /** Media player / PC sumber per videowall. */ mediaPlayer: number;
+   input: number;
+   panjangSinyal: number;
+   wattPanel: number;
+   mediaPlayer: number;
   tegangan?: number;
 }
 
-/** Ukuran matrix standar terkecil yang cukup untuk n port. */
 const portMatrix = (n: number) => [4, 8, 16, 24, 32, 36, 48, 64, 72, 80, 128, 160].find(x => x >= n) ?? n;
 
-/** Daya & sirkuit SATU videowall (panel + perangkat sinyal + media player). */
 export function dayaVideowall(m: MasukanVideowall) {
   const panel = m.kolom * m.baris;
   const d = hitungDaya([
@@ -99,19 +78,12 @@ export function bomVideowall(m: MasukanVideowall): BarisBOM[] {
   return b.filter(x => x.qty > 0);
 }
 
-// ── Interactive flat panel (IFP) ──────────────────────────────────────────────
-
 export interface UkuranIFP { diagonal: number; watt: number }
-/** Ukuran IFP umum & daya maksimumnya bila Pustaka kosong. */
 export const IFP_BAWAAN: UkuranIFP[] = [
   { diagonal: 55, watt: 150 }, { diagonal: 65, watt: 200 }, { diagonal: 75, watt: 250 },
   { diagonal: 86, watt: 350 }, { diagonal: 98, watt: 450 }, { diagonal: 110, watt: 600 },
 ];
 
-/**
- * Ukuran IFP dari jarak penonton terjauh (aturan 4-6-8): diagonal minimum, lalu ukuran tersedia
- * terkecil yang memenuhi. null = tidak ada yang cukup besar (pertimbangkan LED / videowall).
- */
 export function saranIFP(jarakTerjauhM: number, jenis: JenisPandang, tersedia: number[]) {
   const diagonalMin = layarDariJarak(jarakTerjauhM, jenis).diagonalInci;
   const saran = [...tersedia].sort((a, b) => a - b).find(d => d >= diagonalMin) ?? null;
@@ -120,16 +92,15 @@ export function saranIFP(jarakTerjauhM: number, jenis: JenisPandang, tersedia: n
 
 export interface MasukanIFP {
   namaUnit: string; diagonal: number;
-  /** Jumlah ruang / unit IFP. */ ruang: number;
+   ruang: number;
   pasang: 'dinding' | 'troli';
   ops: boolean; kamera: boolean; mic: boolean;
-  /** Wireless presentation dongle per ruang. */ dongle: number;
-  /** Jarak meja / laptop ke IFP (m) - kabel HDMI & USB sentuh. */ panjangMeja: number;
+   dongle: number;
+   panjangMeja: number;
   wattUnit: number;
   tegangan?: number;
 }
 
-/** Daya SATU ruang (IFP + OPS). */
 export function dayaIFP(m: MasukanIFP) {
   return hitungDaya([{ nama: 'ifp', watt: m.wattUnit, jumlah: 1 }, { nama: 'ops', watt: WATT_OPS, jumlah: m.ops ? 1 : 0 }], m.tegangan ?? 220);
 }

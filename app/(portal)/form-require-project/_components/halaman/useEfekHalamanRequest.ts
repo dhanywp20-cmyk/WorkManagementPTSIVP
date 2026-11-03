@@ -1,6 +1,5 @@
 'use client';
 
-/** useEfekHalamanRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, ProjectRequest, ProjectMessage } from '../shared';
@@ -29,7 +28,6 @@ export function useEfekHalamanRequest(k: EfekHalamanRequestKonteks) {
   const { activeRequestIdRef, appReady, currentUser, fetchAttachments, fetchRequests, isIVPGuest, isPTS, messages, messagesEndRef, requests, selectedRequest, setMessages, setShowTicketPopup, setTicketPopupShown, setUnreadCount, setUnreadMsgMap, ticketPopupShown } = k;
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
-  // Popup tiket pending/in_progress - muncul sekali saat masuk platform
   useEffect(() => {
     if (!appReady || ticketPopupShown) return;
     const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
@@ -58,9 +56,6 @@ export function useEfekHalamanRequest(k: EfekHalamanRequestKonteks) {
 
   useEffect(() => {
     if (!isPTS) return;
-    // For IVP guest: count approved requests linked to them (new assignments)
-    // For PTS/admin: count pending requests needing action
-    // For non-IVP guest: count own pending requests
     const pendingCount = isIVPGuest
       ? requests.filter(r => r.ivp_assignee === currentUser.full_name && (r.status === 'approved' || r.status === 'in_progress')).length
       : requests.filter(r => r.status === 'pending').length;
@@ -72,8 +67,6 @@ export function useEfekHalamanRequest(k: EfekHalamanRequestKonteks) {
     const reqId = selectedRequest.id;
     activeRequestIdRef.current = reqId;
     const channelName = `detail_chat:${reqId}_${Date.now()}`;
-    // fetchAttachments di-debounce: tanpa itu, mengunggah enam berkas sekaligus
-    // memicu enam kali penarikan ulang daftar lampiran.
     let attachDebounce: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase.channel(channelName)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `request_id=eq.${reqId}` },
@@ -96,11 +89,6 @@ export function useEfekHalamanRequest(k: EfekHalamanRequestKonteks) {
         })
       .subscribe();
 
-    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK  60 detik. Realtime
-    // di atas sudah append pesan baru langsung ke state (tanpa refetch), jadi
-    // polling 3 detik ini sepenuhnya redundant - full refetch pesan tiap 3
-    // detik selama modal detail terbuka adalah kontributor egress yang berat.
-    // Sekarang murni jaring pengaman kalau koneksi Realtime putus.
     const pollInterval = setInterval(async () => {
       if (activeRequestIdRef.current !== reqId) return;
       const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });

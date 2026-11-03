@@ -4,12 +4,6 @@ import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import type { Reminder, TeamUser, SupervisorCandidate } from './shared';
 import { formatDate } from './shared';
 
-/**
- * Modal Setujui & Tugaskan (Admin/Manager) dan Tugaskan (Supervisor). State & handler tetap di page.tsx,
- * komponen di sini murni presentasional. Kerangka & tombol: pola persetujuan bersama
- * (components/shared/Persetujuan.tsx) - sama dengan Ticketing & Request Design Project.
- */
-
 function RingkasanRequest({ r, labelJadwal }: { r: Reminder; labelJadwal: string }) {
   return (
     <KotakInfo judul="Request dari Sales">
@@ -19,8 +13,6 @@ function RingkasanRequest({ r, labelJadwal }: { r: Reminder; labelJadwal: string
     </KotakInfo>
   );
 }
-
-// ── SETUJUI & TUGASKAN (Admin/Manager) ──
 
 export function ApproveAssignModal({
   approveTarget, approveBatchSiblings, approveAssignTo, setApproveAssignTo,
@@ -70,7 +62,6 @@ export function ApproveAssignModal({
           </KotakInfo>
         )}
 
-        {/* Lewat Supervisor - jalur UTAMA, sesuai tipe produk */}
         {adaSupervisor && (
           <KotakInfo nada="awas" judul="Rekomendasi: lewat Supervisor">
             <p className="mb-2">
@@ -84,12 +75,10 @@ export function ApproveAssignModal({
           </KotakInfo>
         )}
 
-        {/* Tugaskan langsung - manual/fallback (tipe produk belum ter-mapping, atau tanpa lewat Supervisor) */}
         <PilihPenugasan nilai={approveAssignTo} onUbah={setApproveAssignTo} wajib={!adaSupervisor}
           label={adaSupervisor ? 'Atau tugaskan langsung ke' : 'Tugaskan ke'} kosong="- Pilih anggota Team PTS -"
           pilihan={[
             { v: 'SELF_MANAGER', l: 'Saya (Manager) kerjakan sendiri - Supervisor & tim penuh' },
-            //  Sudah disaring bolehDitugaskanOleh di page.tsx - Manager hanya untuk Admin.
             ...teamUsers.map(u => ({ v: u.username, l: u.full_name })),
           ]} />
 
@@ -104,8 +93,6 @@ export function ApproveAssignModal({
           </div>
         </div>
 
-        {/* Timeline Project Progress - hanya kategori pemicu. Terisi dari usulan Sales; admin boleh
-            membetulkan sebelum draft lokasi dibuat. */}
         {triggersProjectProgress(approveTarget.category) && (
           <KotakInfo judul="Timeline Project Progress">
             <p className="mb-2">
@@ -134,8 +121,6 @@ export function ApproveAssignModal({
   );
 }
 
-// ── TUGASKAN TIM (Supervisor) ──
-
 export function SupervisorAssignModal({
   supervisorAssignTarget, supervisorAssignBatchSiblings,
   supervisorAssignTo, setSupervisorAssignTo,
@@ -163,7 +148,6 @@ export function SupervisorAssignModal({
         )}
         <PilihPenugasan nilai={supervisorAssignTo} onUbah={setSupervisorAssignTo} pilihan={[
           { v: 'SELF', l: 'Saya kerjakan sendiri (tim penuh/sibuk)', grup: 'Saya' },
-          //  Manager dikecualikan - bukan anggota tim biasa yang ditugaskan oleh Supervisor.
           ...teamUsers.filter(u => u.team_type === currentUser?.team_type && u.username !== currentUser?.username && u.jabatan !== 'Manager')
             .map(u => ({ v: u.username, l: u.full_name, grup: 'Anggota Tim' })),
         ]} />

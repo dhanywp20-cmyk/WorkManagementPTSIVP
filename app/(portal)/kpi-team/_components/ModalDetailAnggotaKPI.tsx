@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalDetailAnggotaKPI - dipecah dari app/(portal)/kpi-team/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { hitungSkorKPI, KPIMember, KPISettings } from './shared';
 import { createPortal } from 'react-dom';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -32,7 +31,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
             onClick={e => { if (e.target === e.currentTarget) setSelectedKPIMember(null); }}>
             <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '100%', scrollbarWidth: 'thin' }}>
 
-              {/* Modal header */}
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
                   style={{ background: `linear-gradient(135deg,${c},${c}99)` }}>
@@ -53,7 +51,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
               </div>
 
               <div className="p-4 space-y-3">
-                {/* Score breakdown cards */}
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { label: 'Ticketing',      raw: Math.round(tickScore * 100), pct: Math.round(tickScore * _s.ticketOverdueWeight * 100), w: Math.round(_s.ticketOverdueWeight * 100), color: '#ef4444', icon: '🎫', bg: '#fef2f2', border: '#ef444440' },
@@ -70,7 +67,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                   ))}
                 </div>
 
-                {/* Potongan prorata Learning Center setahun - lib/kpi-lc-tahunan.ts */}
                 {rekapLC && rekapLC.wajib > 0 && (
                   <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap"
                     style={potonganLC > 0 ? { background: '#fef2f2', borderColor: '#fecaca' } : { background: '#f0fdf4', borderColor: '#bbf7d0' }}>
@@ -93,12 +89,10 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                   </div>
                 )}
 
-                {/* Auto platform data */}
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2"><IkonTeks nama="✅" />Data Platform (Otomatis)</div>
                   <div className="grid grid-cols-3 gap-2">
 
-                    {/* Ticketing */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#ef444440', background: '#fef2f2' }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-[11px] font-bold text-red-600 uppercase tracking-wider"><IkonTeks nama="🎫" />Ticketing</div>
@@ -117,7 +111,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                       </div>
                     </div>
 
-                    {/* BAST & Demo */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#f59e0b40', background: '#fffbeb' }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider"><IkonTeks nama="⭐" />BAST &amp; Demo</div>
@@ -137,7 +130,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                       </div>
                     </div>
 
-                    {/* Learning Center */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#6366f140', background: '#f5f3ff' }}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="text-[11px] font-bold text-violet-600 uppercase tracking-wider"><IkonTeks nama="🎓" />Learning Center</div>
@@ -160,7 +152,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                     </div>
                   </div>
 
-                  {/* Reminder & Piket */}
                   <div className="mt-2 bg-slate-50 rounded-xl border border-slate-100 p-3 text-[11px] text-slate-600 flex flex-wrap gap-x-5 gap-y-1">
                     <span><IkonTeks nama="📅" />Reminder: <b className="text-slate-800">{member.remindersDone}</b>/{member.remindersAssigned} done</span>
                     <span><IkonTeks nama="🏪" />Piket: <b className="text-slate-800">{member.piketFilled}</b> hari bertugas</span>
@@ -168,7 +159,6 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                   </div>
                 </div>
 
-                {/* R&D Tech Note */}
                 <div className="rounded-xl border p-3" style={{ borderColor: '#ec489940', background: '#fdf4ff' }}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-[11px] font-bold text-pink-600 uppercase tracking-wider"><IkonTeks nama="📝" />R&amp;D Tech Note (Otomatis dari Platform)</div>

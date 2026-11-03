@@ -1,14 +1,3 @@
-/**
- * uji/notif-manager-lewati-review.ts
- *
- *  1. Request Design Project BARU dari sales membuat notifikasi in-app untuk admin + pemegang Full Access
- *     (Manager PTS IVP) - dulu hanya WA, sehingga lonceng Manager kosong. Penerimanya ditentukan
- *     access_level = 'full', BUKAN jabatan Manager (Manager PTS UMP orang luar tidak boleh ikut).
- *  2. Admin / Full Access bisa menyetujui langsung request yang masih menunggu review Sales Internal
- *     (Request Schedule & Design Project), dan tahap review ditutup saat itu.
- *
- * Jalankan: npx tsx uji/notif-manager-lewati-review.ts
- */
 import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;

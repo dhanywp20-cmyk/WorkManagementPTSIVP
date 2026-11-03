@@ -1,15 +1,3 @@
-/**
- * uji/proyektor-tdc-panasonic.ts - Desain 3D = Panasonic Throw Distance Calculator (TDC 2.79) PERSIS.
- *
- * Acuan (hasil kalkulator Panasonic resmi): PT-VMZ51, Supplied lens, 16:9, 123,83"
- *   Projection size     : H 1,542 m, W 2,741 m
- *   Projection distance : L 3,000 – 4,850 m
- *   Lens shift          : VS1 0,44 x H, HS1 0,20 x W
- *   Brightness          : Projector output 4.680 lm, Screen illuminance 1.107 lx
- * Plus: keterangan kanvas & panel memakai fungsi yang sama (hasilPanasonic), katalog = data Panasonic.
- *
- * Jalankan: npx tsx uji/proyektor-tdc-panasonic.ts
- */
 import katalog from '../lib/data/panasonic-tdc.json';
 import { readFileSync } from 'node:fs';
 import {
@@ -81,7 +69,6 @@ const bs = batasShift(p1610);
 cek(`16:10: atas ${bs.atas}, bawah ${bs.bawah}, h ${bs.h} (0,44 / 0 / 0,2)`, bs.atas === 0.44 && bs.bawah === 0 && bs.h === 0.2);
 
 console.log('\n5. PT-VMZ61 16:9 L 4,000 m (screenshot kalkulator Panasonic) - Desain 3D & Kalkulator AV - Proyektor');
-//  Acuan: Diagonal 4,183 m / 164,70", H 2,051, W 3,646, L 4,000 – 6,462, Projector output 5.580 lm, 746 lx.
 const vmz61 = K.model.find(m => m.n === 'PT-VMZ61')!;
 const p61: Benda = { ...dasar, ...isiDariKatalog({ ...dasar, throwRatio: 0 }, vmz61, vmz61.l[0], '16:9', K.versi) };
 const h61 = hasilPadaJarak(p61, 4.0);
@@ -89,7 +76,6 @@ cek(`Desain 3D: W ${r3(h61.lebar)} × H ${r3(h61.tinggi)} m, ${h61.diagonalInci.
   r3(h61.lebar) === 3.646 && r3(h61.tinggi) === 2.051 && h61.diagonalInci.toFixed(2) === '164.70');
 cek(`Desain 3D: L ${r3(h61.rentangL[0])} – ${r3(h61.rentangL[1])} m, ${Math.round(h61.lumenGambar)} lm, ${Math.round(h61.lux!)} lx (4,000 – 6,462, 5.580, 746)`,
   r3(h61.rentangL[0]) === 4 && r3(h61.rentangL[1]) === 6.462 && Math.round(h61.lumenGambar) === 5580 && Math.round(h61.lux!) === 746);
-//  Jalur Kalkulator AV: diagonal (inci) + rasio -> ukuran, rentangJarakLempar dengan TR & b lensaPadaRasio, lumen x bagian panel.
 const lv = lensaPadaRasio(vmz61, vmz61.l[0], '16:9');
 const uk = ukuranDariDiagonal(164.70, RASIO_PROYEKTOR['16:9'].lebar, RASIO_PROYEKTOR['16:9'].tinggi);
 const lempar = rentangJarakLempar(uk.lebarM, lv.trW, lv.trT, lv.bW, lv.bT);
@@ -105,11 +91,9 @@ cek('Kalkulator AV memakai lensaPadaRasio, lumen x bagian panel & tabel rasio De
   /lensaPadaRasio\(/.test(srcAV) && /model\.lumen \* bagianLuas/.test(srcAV) && /RASIO_PROYEKTOR as RASIO_GAMBAR/.test(srcAV) && !/from '\.\/KalkulatorLayar'/.test(srcAV));
 
 console.log('\n6. Proyektor CUSTOM (di luar katalog / Pustaka): TR brosur vs rumus dari kalkulator pabrikan');
-//  Contoh "laser 6.000 lm" diubah ke TR brosur VMZ61 1,09 tanpa b: L 4,000 -> W 3,670, Panasonic 3,646 (selisih 2,4 cm).
 const custom: Benda = { ...dasar, rasioProyektor: '16:9', trMin: 1.09, trMax: 1.77, throwRatio: 1.09, koreksiJarak: undefined, koreksiJarakTele: undefined, lumen: 6200, resolusiProyektor: 'WUXGA' };
 cek(`TR brosur 1,09 tanpa b: W ${r3(hasilPadaJarak(custom, 4).lebar)} m - meleset ${(hasilPadaJarak(custom, 4).lebar - 3.646).toFixed(3)} m dari Panasonic (sebab selisih "beberapa cm")`,
   r3(hasilPadaJarak(custom, 4).lebar) === 3.67);
-//  Dua hasil kalkulator Panasonic VMZ61 16:9 zoom Minimum: 100" & 200" (Width & L Minimum di layar hasil).
 const W100 = 100 * 0.0254 * 16 / Math.hypot(16, 9), W200 = 2 * W100;
 const L100 = 1.105112 * W100 - 0.0294, L200 = 1.105112 * W200 - 0.0294;
 const rumus = rumusLensaDariDuaTitik(r3(W100), r3(L100), r3(W200), r3(L200))!;
@@ -122,12 +106,10 @@ cek('Desain 3D Atur proyektor & Kalkulator AV memakai alat rumus yang sama (Rumu
   /<RumusLensaPabrikan/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/panel/benda/AturProyektor.tsx', 'utf8')) && /<RumusLensaPabrikan/.test(srcAV));
 
 console.log('\n7. SELURUH katalog (290 model, 1.536 lensa, semua rasio): rumus Panasonic utuh tanpa dijepit');
-//  Dibanding data mentah TDC 2.79 (19.315 kasus): sama < 0,5 mm kecuali PT-DW830 + ET-DLE030 16:9 (data Panasonic
-//  rusak: TR 0,0101). Di sini tanpa data mentah: tiap lensa & rasio, L = TR x W - b di KEDUA ujung zoom harus utuh.
 let kasusK = 0, salahK: string[] = [], tukar = 0;
 for (const m of K.model) for (const l of m.l) for (const [r, [tw, tt, bw, bt]] of Object.entries(l.ar) as [string, [number, number, number, number]][]) {
   if (tw > tt) tukar++;
-  if (tw < 0.1) continue; // PT-DW830 + ET-DLE030 16:9 - data Panasonic rusak (ditandai cekDataLensa)
+  if (tw < 0.1) continue;
   const pk = { ...dasar, ...isiDariKatalog({ ...dasar, throwRatio: 0 }, m, l, r as '16:9', K.versi) } as Benda;
   for (const W of [1.5, 4]) {
     const h = hasilPadaJarak(pk, tw * W - bw); kasusK++;

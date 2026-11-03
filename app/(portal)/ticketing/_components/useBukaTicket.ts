@@ -1,6 +1,5 @@
 'use client';
 
-/** useBukaTicket - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { ActivityLog, Ticket, OverdueSetting } from './shared';
 import { supabase, supabaseServices } from '@/lib/supabase';
 
@@ -60,7 +59,6 @@ export function useBukaTicket(k: BukaTicketKonteks) {
     return peta;
   };
 
-  /** Kembalikan satu tiket dengan log penuh; kalau gagal, tiket apa adanya. */
   const denganLogPenuh = async (ticket: Ticket): Promise<Ticket> => {
     try {
       const peta = await muatLogPenuh([ticket.id]);
@@ -70,10 +68,6 @@ export function useBukaTicket(k: BukaTicketKonteks) {
   };
 
   const bukaDetailTicket = (ticket: Ticket) => {
-    //  Popup dibuka LANGSUNG dengan data ringkas yang sudah ada, lalu
-    //  diperkaya begitu log penuhnya tiba. Menunggu dulu berarti satu klik
-    //  yang tidak terasa apa-apa selama beberapa ratus milidetik, dan itu
-    //  jauh lebih terasa daripada catatan log yang menyusul sesaat kemudian.
     setSelectedTicket(ticket); setShowTicketDetailPopup(true);
     void denganLogPenuh(ticket).then(lengkap => {
       setSelectedTicket(prev => (prev && prev.id === lengkap.id ? lengkap : prev));

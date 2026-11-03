@@ -1,19 +1,3 @@
-/**
- * lib/integrasi-aksi.ts - daftar aksi TETAP yang boleh dijalankan DIWAYPI lewat
- * /api/integrasi/diwaypi. Tidak ada kueri bebas: setiap aksi di bawah ditulis tangan.
- *
- * Identitas: semua baca/tulis memakai `db` = klienSebagaiUser(pemilik token), jadi RLS
- * berlaku persis seperti di layar orang itu. Checklist memakai `admin` + hakAtas(), sama
- * persis dengan /api/project-progress/checklist/[id] (route itu juga service role + cek hak).
- *
- * Tahap 1: baca semua; tiket = tambah catatan & ubah status Team PTS (bukan serah ke Services);
- * daily report = tambah aktivitas manual; checklist = centang/kendala.
- * Tahap 2: tiket Solved, buat jadwal, ubah status jadwal (termasuk Completed). Efek berantainya
- * (WA/Telegram, notifikasi in-app, form review, detail pelaksanaan, Project Progress, tutup
- * jadwal tiket) TIDAK ditulis ulang di sini: modul bersama yang sama dengan aplikasi web
- * (lib/tiket-selesai.ts, lib/jadwal-status.ts, lib/jadwal-buat.ts), dengan efek server
- * (lib/efek-server.ts) sebagai ganti fungsi peramban.
- */
 import crypto from 'crypto';
 import { updateSah, wajibCatatan } from '@/app/(portal)/ticketing/_components/alur-status';
 import { hakAtas, muatChecklist, simpanPerubahan, type Akun } from '@/lib/checklist-server';
@@ -36,8 +20,6 @@ import { AKSI_MENU_BACA } from '@/lib/integrasi-menu';
 import { AKSI_MENU_TULIS } from '@/lib/integrasi-tulis';
 import { analisa } from '@/lib/integrasi-analisa';
 
-//  Penolong & tipe kini tinggal di lib/integrasi-bantu.ts; diekspor ulang dari sini supaya
-//  pemanggil lama (route, uji) tetap mengimpor dari tempat yang sama.
 export { adalahAtasan, bersih, hariIniWIB, teks, tglSah, type HasilAksi, type KonteksAksi };
 
 const STATUS_TIKET = ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action', 'Overdue', 'Solved', 'Rejected'];
@@ -45,26 +27,17 @@ const STATUS_PTS = ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progres
 const KATEGORI_DR = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Troubleshooting',
   'Training', 'Maintenance', 'Standby Event', 'Internal', 'Design Single Line Diagram', 'Research and Development'];
 
-/**
- * Aksi tahap 1-2 ditulis di berkas ini; aksi menu lain (Request Design, Tech Note, Unit
- * Movement, Form Review, Piket, KPI, Insentif, Learning Center, Summary Project, buat &
- * approve tiket) di lib/integrasi-menu.ts (baca) dan lib/integrasi-tulis.ts (ubah data),
- * analisa lintas menu di lib/integrasi-analisa.ts.
- */
 export const AKSI_BACA: readonly string[] = ['profil', 'ringkasan', 'tiket_cari', 'tiket_detail', 'jadwal_cari', 'progres_project',
   'checklist_detail', 'daily_report', 'daily_report_tim', 'desain_cari', 'analisa', ...Object.keys(AKSI_MENU_BACA)];
-/** Status Request Design Project (project_requests.status) - sama dengan form-require-project. */
 const STATUS_DESAIN = ['pending', 'approved', 'in_progress', 'completed', 'rejected'];
 export const AKSI_TULIS: readonly string[] = ['tiket_aktivitas', 'tiket_selesai', 'jadwal_buat', 'jadwal_status', 'jadwal_selesai',
   'daily_report_tambah', 'checklist_simpan', ...Object.keys(AKSI_MENU_TULIS)];
 
-/** Status tiket dari isian bebas ("in progress", "solved") -> ejaan resmi, atau null. */
 export function statusResmi(v: unknown): string | null {
   const s = String(v ?? '').trim().toLowerCase();
   return STATUS_TIKET.find(x => x.toLowerCase() === s) ?? null;
 }
 
-// ---------------------------------------------------------------- pintu utama
 export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const tulis = AKSI_TULIS.includes(nama);
   if (!tulis && !AKSI_BACA.includes(nama)) return gagal(`Aksi tidak dikenal: ${nama}`);
@@ -97,7 +70,6 @@ export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: 
   return gagal(`Aksi tidak dikenal: ${nama}`);
 }
 
-// ---------------------------------------------------------------- baca
 function profil({ u, cakupan }: KonteksAksi): HasilAksi {
   return { ok: true, nama: u.full_name ?? u.username, username: u.username, peran: u.role, jabatan: u.jabatan,
     tim: u.team_type, atasan: adalahAtasan(u), cakupan };
@@ -245,12 +217,6 @@ async function dailyReportTim(a: Record<string, unknown>, { db, u }: KonteksAksi
     belum: daftar.filter(t => !sudah.has(t.id)).map(t => `${t.full_name}${t.jabatan ? ` (${t.jabatan})` : ''}`) };
 }
 
-/**
- * Request Design Project (halaman form-require-project, tabel project_requests). RLS
- * (boleh_lihat_baris) membatasi baris persis seperti di layar; aturan tampilan halaman
- * untuk Team PTS biasa ikut diterapkan: hanya request yang sudah di-assign (atau
- * di-route ke dia sebagai Supervisor). aktif = belum completed/rejected.
- */
 async function desainCari(a: Record<string, unknown>, { db, u }: KonteksAksi): Promise<HasilAksi> {
   let q = db.from('project_requests')
     .select('id, project_name, room_name, project_location, sales_name, sales_division, requester_name, status, '
@@ -272,20 +238,12 @@ async function desainCari(a: Record<string, unknown>, { db, u }: KonteksAksi): P
   return { ok: true, jumlah: baris.length, request: baris };
 }
 
-// ---------------------------------------------------------------- tulis
 interface BarisTiket extends TiketUntukKabar {
   id: string; status: string; project_name: string; issue_case: string; product: string | null; sn_unit: string | null;
   sales_name: string | null; sales_division: string | null; address: string | null; customer_phone: string | null;
   current_team: string | null; is_deleted: boolean | null;
 }
 
-/**
- * Tambah aktivitas tiket - jalur Team PTS di useTambahAktivitas.ts, langkah demi langkah:
- * aturan alur-status, catatan otomatis Call/Onsite, activity_logs, update tickets (cek baris:
- * update yang ditolak RLS mengembalikan 0 baris tanpa galat), perpanjangan Pending Action,
- * dan jadwal Onsite otomatis (dengan penjaga duplikat). Solved: sesudah tiketnya benar-benar
- * tersimpan, kabar penyelesaian + tutup jadwal tiket - lib/tiket-selesai.ts, sama dengan aplikasi.
- */
 async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const { db, u } = k;
   const id = idSah(a.id);
@@ -299,9 +257,6 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
   if (error) return gagal(error.message);
   const t = data as BarisTiket | null;
   if (!t || t.is_deleted) return gagal('Tiket tidak ditemukan atau Anda tidak punya akses.');
-  //  Syarat yang sama dengan tombol Update Status di aplikasi (bolehUpdateTicket): RLS tk_update
-  //  lebih longgar (pembuat tiket & Supervisor juga lolos), jadi tanpa ini Sales pembuat tiket
-  //  bisa menutup tiketnya sendiri lewat DIWAYPI - hal yang dilarang di layarnya.
   if (!hasFullAccess(u) && t.assign_name !== u.full_name) {
     return gagal('Hanya handler tiket ini atau pemegang akses penuh yang boleh memperbaruinya.');
   }
@@ -349,8 +304,6 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
     return gagal('Catatan tersimpan, tapi status tiket TIDAK berubah (ditolak sistem). Cek di aplikasi.');
   }
 
-  //  Kabar penyelesaian baru dikirim SESUDAH ticketnya benar-benar tersimpan sebagai Solved,
-  //  lalu jadwal Onsite yang lahir dari ticket ini ikut ditutup (useTambahAktivitas, jalur PTS).
   let dikabari = 0;
   let jadwalDitutup: number | null = null;
   if (baru === 'Solved') {
@@ -369,7 +322,7 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
         ? await db.from('overdue_settings').update({ due_date: due, due_hours: null, set_by: u.username }).eq('id', (ada as { id: string }).id)
         : await db.from('overdue_settings').insert([{ ticket_id: t.id, due_date: due, due_hours: null, set_by: u.username }]);
       tenggatDiperpanjang = !r.error;
-    } catch { /* perpanjangan gagal tidak membatalkan update status (sama dengan aplikasi) */ }
+    } catch {  }
   }
 
   let jadwalOnsite: 'dibuat' | 'sudah_ada' | null = null;
@@ -395,7 +348,7 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
         }]);
         if (!rErr) jadwalOnsite = 'dibuat';
       }
-    } catch { /* sama dengan aplikasi: jadwal otomatis gagal tidak membatalkan update */ }
+    } catch {  }
   }
 
   await k.efek.audit({ user_id: u.id, user_name: u.full_name ?? u.username, action: catatanSaja ? 'update' : 'status_change',
@@ -406,7 +359,6 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
       ...(jadwalDitutup === null ? { peringatan: 'Ticket tersimpan, tapi jadwal di Reminder Schedule gagal ditutup. Mohon tutup manual.' } : {}) } : {}) };
 }
 
-/** Tambah satu aktivitas manual ke Daily Report (tanggal bawaan: hari ini WIB). */
 async function dailyReportTambah(a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const { db, u } = k;
   const tgl = tglSah(a.tanggal) ?? hariIniWIB();
@@ -442,7 +394,6 @@ async function dailyReportTambah(a: Record<string, unknown>, k: KonteksAksi): Pr
   return { ok: true, tanggal: tgl, kategori: kat, ditambahkan: deskripsi };
 }
 
-/** Centang / kendala item checklist - sama dengan aksi 'simpan' route checklist. */
 async function checklistSimpan(a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const id = idSah(a.daftar_id);
   if (!id) return gagal('daftar_id tidak sah (ambil dari progres_project).');
@@ -471,8 +422,6 @@ async function checklistSimpan(a: Record<string, unknown>, k: KonteksAksi): Prom
   return { ok: true, diubah: perubahan.length };
 }
 
-// ---------------------------------------------------------------- jadwal (tahap 2)
-/** Peran untuk aturan jadwal - sama dengan useTurunanJadwal (isAdmin, isManager, pimpinan). */
 async function peranJadwal(k: KonteksAksi): Promise<{ isAdmin: boolean; isManager: boolean; pimpinan: boolean }> {
   const isAdmin = ['admin', 'superadmin'].includes((k.u.role ?? '').toLowerCase());
   const [akun, { data: mgr }] = await Promise.all([
@@ -498,7 +447,6 @@ function pilih<T extends string>(v: unknown, boleh: readonly T[]): T | null {
   return (boleh as readonly string[]).includes(s) ? s as T : null;
 }
 
-/** Isian panel Mode Penyelesaian dari argumen DIWAYPI (bawaan = bawaan panel di aplikasi). */
 function isianPelaksanaan(a: Record<string, unknown>): IsianPelaksanaan {
   return {
     mode: pilih(a.mode, ['onsite', 'remote'] as const),
@@ -513,13 +461,6 @@ function isianPelaksanaan(a: Record<string, unknown>): IsianPelaksanaan {
   };
 }
 
-/**
- * Ubah status jadwal (pending / done / cancelled) - tombol Update Status di detail jadwal:
- * hanya pelaku jadwalnya (bolehUbahJadwal) dan jadwal yang punya pelaksana; Completed tidak
- * bisa diubah kembali. Completed untuk kategori insentif wajib detail pelaksanaan dulu
- * (handleModeConfirm), lalu status + WA handler + form review otomatis (handleStatusChange).
- * Foto penyelesaian (opsional di aplikasi) tidak didukung lewat DIWAYPI.
- */
 async function jadwalStatus(a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const { db, u } = k;
   const id = idSah(a.id);
@@ -543,7 +484,6 @@ async function jadwalStatus(a: Record<string, unknown>, k: KonteksAksi): Promise
     if (!simpan.ok) return gagal(`${simpan.galat} ${PETUNJUK_PELAKSANAAN}`);
     detail = simpan.isi;
   }
-  //  Jumlah tanggal sebatch yang tampak di daftar (baris terhapus tidak ikut dihitung).
   let jumlahSebatch: number | undefined;
   if (r.batch_id) {
     const { data: sb } = await db.from('reminders').select('id').eq('batch_id', r.batch_id).not('is_deleted', 'is', true);
@@ -566,17 +506,11 @@ interface OrangPengguna extends OrangTim {
   jabatan?: string | null; bisa_ditugaskan?: boolean | null;
 }
 
-/**
- * Buat jadwal baru untuk SATU pelaksana (bawaan: diri sendiri), satu atau beberapa tanggal -
- * tombol + di Reminder Schedule (admin & akun Team). Assign massal dan alih ke Supervisor
- * tetap lewat aplikasi. Bila proyek kategori insentif bernama sama sudah ada, aplikasi
- * BERTANYA "kelanjutan atau terpisah?" - di sini jawabannya wajib lewat `lanjutan`.
- */
 async function jadwalBuat(a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
   const { db, u } = k;
   const isAdmin = ['admin', 'superadmin'].includes((u.role ?? '').toLowerCase());
   if (!isAdmin && u.role !== 'team') return gagal('Hanya admin dan akun Team yang bisa membuat jadwal (sama dengan aplikasi).');
-  try { await k.muatAturan?.(); } catch { /* pakai bawaan, sama dengan peramban yang gagal memuat */ }
+  try { await k.muatAturan?.(); } catch {  }
 
   const mentah = Array.isArray(a.tanggal) ? a.tanggal : [a.tanggal];
   const tanggal = Array.from(new Set(mentah.map(tglSah).filter((d): d is string => !!d))).sort().slice(0, 31);
@@ -587,7 +521,6 @@ async function jadwalBuat(a: Record<string, unknown>, k: KonteksAksi): Promise<H
   if (!jam) return gagal('jam harus HH:MM (24 jam).');
   const prioritas = pilih(a.prioritas, ['low', 'medium', 'high', 'urgent'] as const) ?? 'medium';
 
-  //  Daftar orang sama dengan useMuatPengguna: tim yang bisa ditugaskan (tanpa admin) + guest.
   const [{ data: semua, error: e1 }, { data: tamu, error: e2 }] = await Promise.all([
     db.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, jabatan, bisa_ditugaskan').order('full_name'),
     db.from('users').select('id, username, full_name, role, phone_number, sales_division').eq('role', 'guest').order('full_name'),
@@ -623,13 +556,8 @@ async function jadwalBuat(a: Record<string, unknown>, k: KonteksAksi): Promise<H
   const salah = galatIsianJadwal(isian, true);
   if (salah) return gagal(`${salah} (argumen: project, tanggal, alamat, sales, kategori)`);
 
-  //  "Kelanjutan proyek yang sudah ada?" - aplikasi bertanya; DIWAYPI wajib menjawab.
   let grupInsentif: string | null | undefined;
   let peringatan: string | undefined;
-  //  BUKAN bersih(): itu membuang , ( ) ' " sehingga "Kejaksaan Negeri (Bogor)" tidak lagi menemukan
-  //  dirinya sendiri dan jadwal baru diam-diam jadi proyek insentif terpisah. Untuk .ilike cukup
-  //  wildcard yang dinetralkan (% dan * -> _ yang cocok dengan karakter itu sendiri); kecocokan
-  //  persisnya tetap diputuskan proyekSerupa.
   const kata = isian.project_name.replace(/[\\%*]/g, '_');
   const { data: mirip } = kata
     ? await db.from('reminders').select('id, project_name, category, status, due_date, assign_name, incentive_group_id')
@@ -661,7 +589,6 @@ async function jadwalBuat(a: Record<string, unknown>, k: KonteksAksi): Promise<H
     pelaksana, alihKeSupervisor: null, supervisor: null,
     salesUserId: idDariNama(orangSales, isian.sales_name),
     pelaku: { id: u.id, username: u.username, full_name: u.full_name },
-    //  Sama dengan syncRemindersToProjectProgress -> /api/project-progress/sinkron, tanpa sesi cookie.
     sinkronProgress: async rows => {
       const ids = rows.filter(r => r.id && triggersProjectProgress(r.category)).map(r => r.id);
       if (!ids.length) return;

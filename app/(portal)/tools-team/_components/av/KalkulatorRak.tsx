@@ -1,8 +1,4 @@
 'use client';
-/**
- * Kalkulator rak: total U perangkat + ventilasi + cadangan → ukuran rak standar, berat, daya & panas.
- * Rumus: lib/av-audio-jaringan.ts (hitungRak).
- */
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { hitungRak, type ItemRak } from '@/lib/av-audio-jaringan';

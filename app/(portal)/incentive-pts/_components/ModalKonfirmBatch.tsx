@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalKonfirmBatch - konfirmasi Process Batch satu tahun. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { KotakInfo, Modal, TombolModal } from '@/components/shared';
 import { IncentiveProjectRow, IncentiveTranche } from './calc';
 
@@ -27,7 +26,6 @@ export function ModalKonfirmBatch({ batchConfirm, batchProcessing, batchYear, ha
         {cnt > 0
           ? <p className="text-sm font-bold text-slate-800">{cnt} tranche siap diproses</p>
           : <KotakInfo nada="awas">Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</KotakInfo>}
-        {/*  Bisa dibatalkan: tombol "Batalkan Batch" muncul sesudahnya. Yang tidak bisa ditarik hanya tahap Paid. */}
         <KotakInfo judul="Bisa dibatalkan">
           Setelah diproses, tombol <strong>Batalkan Batch {batchYear}</strong> muncul untuk mengembalikan tahapan ini ke Pending.
           Yang sudah bertanda <strong>Paid</strong> tidak ikut bisa dibatalkan - status itu berarti uangnya sudah keluar.

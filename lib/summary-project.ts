@@ -1,25 +1,3 @@
-/**
- * summary-project.ts - data untuk menu "Summary Project" (Project 360, fase 2).
- *
- * Tulang punggungnya PEMETAAN YANG TERSIMPAN, bukan pencocokan nama:
- *   - public.projects             master project (kode PRJ-0001, dst)
- *   - public.project_source_links record reminders/tickets/project_requests/
- *                                 form_reviews -> project_id (atau 'ignored')
- *   - public.v_project_summary    jumlah aktivitas per project (security_invoker)
- * Lihat supabase/migrations/014_project_360.sql.
- *
- * Nama project hanya dipakai sebagai SARAN di Mapping Center (RPC
- * saran_project, trigram) - pengecekan data nyata menunjukkan dari 221 nama
- * unik hanya segelintir yang sama persis antar modul, jadi menggabungkan
- * otomatis by nama akan salah lebih sering daripada benar.
- *
- * Form Review sengaja tidak pernah dipetakan sendiri: ia selalu terikat ke
- * satu reminder lewat reminder_id, jadi ikut project reminder-nya.
- *
- * Scoping akses memakai ulang lib/project-scope.ts - aturan yang sama dengan
- * GlobalSearch, diterapkan ke daftar project (kolom sales_name/sales_division
- * milik projects) dan ke setiap tabel sumber saat detail dibuka.
- */
 
 import { supabase } from './supabase';
 import { hitungLingkupProject, filterLingkup, type LingkupProject } from './project-scope';
@@ -28,7 +6,6 @@ export { hitungLingkupProject };
 export type { LingkupProject };
 
 export type SourceModule = 'reminders' | 'tickets' | 'project_requests' | 'form_reviews';
-/** Modul yang dipetakan langsung di Mapping Center (form_reviews ikut reminder-nya). */
 export type ModulTerpeta = Exclude<SourceModule, 'form_reviews'>;
 
 export interface ReminderRingkas {
@@ -55,17 +32,10 @@ export interface DetailProject {
   tickets: TicketRingkas[];
   requests: RequestRingkas[];
   reviews: ReviewRingkas[];
-  /** `${module}:${record_id}` -> id baris project_source_links (untuk lepas link). */
   linkId: Record<string, string>;
-  /**
-   * Record yang terhubung ke project tapi TIDAK ikut tampil: di luar lingkup akses akun ini (Sales / divisi lain)
-   * atau sudah dihapus di menu asalnya. Ditampilkan sebagai keterangan supaya angka di daftar dan isi linimasa
-   * yang berbeda tidak tampak seperti data hilang.
-   */
   tidakTampil: number;
 }
 
-/** Satu baris v_project_summary. */
 export interface RingkasanProject {
   project_id: string; code: string; name: string;
   customer: string | null; location: string | null;
@@ -76,11 +46,9 @@ export interface RingkasanProject {
 }
 
 export function normalisasiNamaProject(s: string): string {
-  // Harus sama persis dengan public.norm_nama_project() di basis data.
   return (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/** `.or()` PostgREST untuk lingkup, atau tidak dipasang sama sekali bila `lingkup.semua`. */
 function pasangLingkup<T extends { or: (s: string) => T }>(
   q: T, lingkup: LingkupProject, kolomNama: string, kolomDivisi = 'sales_division',
 ): T {
@@ -89,17 +57,8 @@ function pasangLingkup<T extends { or: (s: string) => T }>(
   return filter ? q.or(filter) : q;
 }
 
-/** Karakter yang punya arti di sintaks .or()/ilike PostgREST dibuang dari kata kunci. */
 const bersihkanKataKunci = (q: string) => q.replace(/[%,()*\\"]/g, ' ').trim();
 
-// ── Daftar & detail ────────────────────────────────────────────────────────
-
-/**
- * Seluruh project yang boleh dilihat user (v_project_summary), aktivitas
- * terbaru dulu. Penyaringan & paginasi dilakukan di halaman - jumlahnya
- * ratusan, bukan ribuan, jadi satu kali ambil lebih cepat dirasakan
- * daripada query ulang tiap ketikan.
- */
 export async function daftarProject(lingkup: LingkupProject): Promise<RingkasanProject[]> {
   let query = supabase.from('v_project_summary').select('*')
     .order('last_activity', { ascending: false, nullsFirst: false })
@@ -110,7 +69,6 @@ export async function daftarProject(lingkup: LingkupProject): Promise<RingkasanP
   return (data ?? []) as RingkasanProject[];
 }
 
-/** Cari project untuk dipilih (pindah record / gabung project / Mapping Center). */
 export async function cariProjectUntukPilih(kata: string, kecuali?: string): Promise<SaranProject[]> {
   const k = bersihkanKataKunci(kata);
   if (!k) return [];
@@ -129,10 +87,7 @@ const KOLOM_DETAIL: Record<SourceModule, string> = {
   form_reviews: 'id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast, created_at',
 };
 
-/** Seluruh riwayat satu project, dari record yang dipetakan ke project itu. */
 export async function ambilDetailProject(projectId: string, lingkup: LingkupProject): Promise<DetailProject> {
-  //  Kueri yang GAGAL dilempar, bukan dianggap kosong: dulu galat jaringan / izin tampil sebagai
-  //  "Belum ada aktivitas tercatat" - menyesatkan untuk project yang sebenarnya punya riwayat.
   const { data: links, error: galatLink } = await supabase.from('project_source_links')
     .select('id, source_module, source_record_id').eq('project_id', projectId);
   if (galatLink) throw new Error(galatLink.message);
@@ -160,7 +115,6 @@ export async function ambilDetailProject(projectId: string, lingkup: LingkupProj
     ambil<ReviewRingkas>('form_reviews', ids.form_reviews),
   ]);
 
-  // Form Review ikut project reminder-nya.
   const reviews = [...reviewsLangsung];
   if (reminders.length) {
     let q = supabase.from('form_reviews').select(KOLOM_DETAIL.form_reviews)
@@ -177,14 +131,11 @@ export async function ambilDetailProject(projectId: string, lingkup: LingkupProj
   return { reminders, tickets, requests, reviews, linkId, tidakTampil: Math.max(0, terhubung - terlihat) };
 }
 
-// ── Mapping Center (admin) ─────────────────────────────────────────────────
-
 export interface RecordBelumTerpeta {
   source_module: ModulTerpeta; source_record_id: string;
   project_name: string; info: string; tanggal: string | null;
 }
 
-/** Record yang belum terpeta, dikelompokkan per nama yang dinormalisasi. */
 export interface GrupAntrean {
   kunci: string; nama: string; records: RecordBelumTerpeta[];
 }
@@ -216,7 +167,6 @@ export async function ambilAntrean(limit = 500): Promise<GrupAntrean[]> {
     g.records.push(r);
     grup.set(kunci, g);
   }
-  // Grup terbesar dulu: satu keputusan di sana membereskan paling banyak record.
   return [...grup.values()].sort((a, b) => b.records.length - a.records.length || a.nama.localeCompare(b.nama, 'id'));
 }
 
@@ -253,7 +203,6 @@ export function abaikanRecord(records: RecordKunci[], oleh: string) {
   return simpanLinks(records, null, 'ignored', oleh, 'ditandai tanpa project');
 }
 
-/** Pindahkan satu record ke project lain (koreksi pemetaan otomatis). */
 export async function pindahkanLink(linkId: string, projectId: string, oleh: string): Promise<void> {
   const { error } = await supabase.from('project_source_links').update({
     project_id: projectId, mapping_type: 'manual', confidence: null,
@@ -262,14 +211,7 @@ export async function pindahkanLink(linkId: string, projectId: string, oleh: str
   if (error) throw new Error(error.message);
 }
 
-/**
- * Gabungkan project duplikat (mis. beda ketik yang dibuat terpisah oleh
- * pemetaan otomatis): semua record `asal` pindah ke `tujuan`, lalu `asal`
- * dihapus. Record yang dipindah bertanda 'manual' supaya tidak dihitung
- * ulang oleh trigger saat namanya diubah nanti.
- */
 export async function gabungkanProject(asal: string, tujuan: string, oleh: string): Promise<void> {
-  // Lewat RPC supaya pindah-link + hapus-project terjadi dalam SATU transaksi.
   const { error } = await supabase.rpc('gabungkan_project', { p_asal: asal, p_tujuan: tujuan, p_oleh: oleh });
   if (error) throw new Error(error.message);
 }
@@ -279,7 +221,6 @@ export interface KandidatDuplikat {
   b_id: string; b_code: string; b_name: string; b_total: number; skor: number;
 }
 
-/** Pasangan project bernama mirip - kemungkinan beda ketik dari pemetaan otomatis. */
 export async function ambilKandidatDuplikat(ambang = 0.5): Promise<KandidatDuplikat[]> {
   const { data, error } = await supabase.rpc('kandidat_duplikat_project', { p_ambang: ambang, p_limit: 200 });
   if (error) throw new Error(error.message);
@@ -291,12 +232,6 @@ export async function lepasLink(linkId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/**
- * Buat project baru dari satu grup antrean lalu petakan seluruh record-nya.
- * Sales & lokasi diambil dari record pertama yang punya isian - admin bisa
- * mengubahnya nanti, tapi daftar project tanpa pemilik tidak akan terlihat
- * oleh akun Sales (lihat filterLingkup).
- */
 export async function buatProjectDariGrup(
   nama: string, records: RecordKunci[], oleh: string,
 ): Promise<string> {
@@ -328,11 +263,6 @@ async function tebakPemilik(records: RecordKunci[]) {
   }
   return {};
 }
-
-// Pemetaan nama-persis kini dikerjakan trigger basis data (migrasi 015) saat
-// record dibuat/diubah namanya. Tombol "Auto nama persis" di Mapping Center
-// dihapus: antrean yang tersisa justru record yang SENGAJA dilepas admin atau
-// yang ambigu, dan tombol itu memetakan ulang record yang baru ditolak admin.
 
 export async function ubahProject(
   id: string, isian: Partial<Pick<RingkasanProject, 'name' | 'customer' | 'location' | 'sales_name' | 'sales_division' | 'status'>>,

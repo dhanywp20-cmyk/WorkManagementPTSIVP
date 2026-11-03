@@ -1,8 +1,3 @@
-/**
- * lib/rilis-android.ts - sisi peramban untuk rilis APK Android.
- * Sumber tunggalnya tabel rilis_android + bucket privat aplikasi-android,
- * diisi admin lewat Admin Panel -> Aplikasi Android (lihat /api/android).
- */
 export type RilisAndroid = {
   id: string; versi: string; kode_versi: number; ukuran: number;
   catatan: string | null; wajib: boolean; diunggah_pada: string; tersedia: boolean;
@@ -12,7 +7,6 @@ export const URL_UNDUH_APK = '/api/android/unduh';
 
 let janji: Promise<RilisAndroid | null> | null = null;
 
-/** Rilis terbaru; satu permintaan per muat halaman (dipakai Profil & cek pembaruan). */
 export function ambilRilisTerbaru(segarkan = false): Promise<RilisAndroid | null> {
   if (!janji || segarkan) {
     janji = fetch('/api/android', { credentials: 'include' })
@@ -23,11 +17,6 @@ export function ambilRilisTerbaru(segarkan = false): Promise<RilisAndroid | null
   return janji;
 }
 
-/**
- * Kode versi APK yang sedang menjalankan halaman ini, dari User-Agent
- * ("WorkManagementAndroid/1.0.1 (2)"). null = bukan di aplikasi Android.
- * APK v1.0.0 belum menulis kodenya -> dianggap 1.
- */
 export function kodeVersiAplikasi(): number | null {
   if (typeof navigator === 'undefined') return null;
   const m = navigator.userAgent.match(/WorkManagementAndroid\/[^\s]+(?: \((\d+)\))?/);

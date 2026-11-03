@@ -44,27 +44,12 @@ export function EmptyState({ icon = '📭', title, description, action }: EmptyS
   );
 }
 
-/**
- * Layar kosong yang MEMBEDAKAN dua keadaan yang tampak sama tapi berbeda
- * artinya bagi pengguna:
- *
- *   belum ada data sama sekali   ajakan membuat yang pertama
- *   filter menyaring habis       tawaran mengembalikan filter
- *
- * Sebelum komponen ini, keduanya ditulis dengan kalimat yang sama di tiap
- * modul, dan tidak satu pun menawarkan jalan keluar. Pengguna yang menyaring
- * terlalu sempit hanya melihat "tidak ditemukan" lalu harus menebak sendiri
- * filter mana yang harus dikembalikan.
- */
 export function ListEmptyState({
   adaFilterAktif, onReset, icon, judulKosong, deskripsiKosong, aksiKosong,
 }: {
-  /** True bila pencarian/filter sedang menyempitkan daftar. */
   adaFilterAktif: boolean;
-  /** Mengembalikan seluruh filter ke keadaan awal. */
   onReset: () => void;
   icon?: string;
-  /** Dipakai saat memang belum ada data - bukan karena filter. */
   judulKosong: string;
   deskripsiKosong?: string;
   aksiKosong?: { label: string; onClick: () => void };
@@ -96,8 +81,6 @@ interface ErrorStateProps {
 
 export function ErrorState({ message = 'Gagal memuat data', onRetry }: ErrorStateProps) {
   return (
-    // role="alert": kegagalan memuat harus terdengar begitu terjadi, bukan
-    // menunggu pengguna kebetulan menyusuri halaman sampai menemukannya.
     <div role="alert" className="flex flex-col items-center justify-center py-16 gap-2">
       <span className="text-5xl" aria-hidden="true"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
       <p className="font-semibold text-gray-700 text-sm mt-1">{message}</p>

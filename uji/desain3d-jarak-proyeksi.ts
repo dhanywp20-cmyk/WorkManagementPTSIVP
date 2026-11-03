@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-jarak-proyeksi.ts - Projection distance (L) Desain 3D seperti kalkulator Panasonic (inti/jarakProyeksi.ts):
- * diukur dari UJUNG LENSA (bukan tengah badan), bisa diatur, dan posisi lensa X / Y / Z bisa diisi langsung.
- *
- * Jalankan: npx tsx uji/desain3d-jarak-proyeksi.ts
- */
 import {
   aturJarakProyeksi, bendaBaru, daftarRuang, jarakProyeksi, keDunia, lebarGambarDi, LENSA_MZ882, lensaMZ882, lensaProyektor,
   posisiDariLensa, sinarProyektor, type Benda, type Ruang,
@@ -18,7 +12,6 @@ const ruang: Ruang = { p: 12, l: 12, t: 4, lantai: 'polos', r2: null };
 const K = daftarRuang(ruang)[0];
 const lensa = (b: Benda) => keDunia(b, lensaProyektor(b));
 
-//  Layar di dinding depan (muka layar menghadap +z), PT-MZ882 + ET-ELS20 lurus menghadap layar.
 const layar: Benda = { ...bendaBaru('layar', K), id: 'layar', x: 6, z: 0.05, elev: 0.8, rot: 0, w: 2.751, h: 1.719, d: 0.04 };
 const mukaZ = layar.z + layar.d / 2;
 const p0: Benda = { ...bendaBaru('proyektor', K, { pasangProyektor: 'plafon' }), id: 'p', x: 6, z: 6, elev: 2.6, rot: 180, tilt: 0, offsetLensa: 0, ...lensaMZ882(LENSA_MZ882.ELS20, LENSA_MZ882.ELS20.trMin) };

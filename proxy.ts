@@ -1,74 +1,39 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/**
- * Berkas statis di /public dikenali dari EKSTENSINYA, bukan dari daftar nama.
- *
- * Ini menutup satu kelas bug, bukan satu bug. Sebelumnya tiap berkas publik
- * harus didaftarkan namanya di PUBLIC_PREFIXES; berkas baru yang lupa
- * didaftarkan ikut kena gerbang sesi, jadi pengunjung yang BELUM login
- * dialihkan ke /dashboard saat memintanya - peramban menerima HTML, bukan
- * gambar, dan <img>-nya gagal. Persis yang terjadi pada /logo-mark.png: logo
- * hilang di halaman login, lalu muncul sendiri sesudah login karena cookie
- * sesinya sudah ada. Itu juga yang membuatnya terasa "sesekali".
- *
- * Berkas di /public memang tidak pernah rahasia - ia dilayani CDN dan bisa
- * diambil siapa saja yang tahu URL-nya. Gerbang sesi ada untuk HALAMAN dan
- * API, bukan untuk gambar dan suara. `.html` sengaja TIDAK ikut: beberapa
- * berkas pratinjau di /public berupa HTML dan tidak perlu dibuka ke publik.
- */
 const BERKAS_STATIS = /\.(png|jpe?g|gif|svg|webp|avif|ico|bmp|wav|mp3|ogg|m4a|mp4|webm|woff2?|ttf|otf|eot|txt|map|webmanifest)$/i;
 
-// Static assets + auth API endpoints that don't require a session.
-// /project-progress/share/ = link View-Only yang sengaja dibagikan ke user luar;
-// datanya dibaca lewat /api/project-progress/share/ (service_role, read-only).
 const PUBLIC_PREFIXES = [
   '/_next/', '/favicon', '/IVP_Background',
   '/project-progress/share/',
   '/api/project-progress/share/',
-  // Checklist Tools: link yang dibagikan admin ke tim untuk dicentang tanpa
-  // login. Route-nya memeriksa token sendiri dan hanya bisa mencentang item.
   '/checklist/share/',
   '/api/checklist/share/',
-  // Kelas Eksternal Learning Center: quiz untuk customer tanpa akun. Route-nya memeriksa token
-  // kelas & token peserta sendiri; kunci jawaban tidak pernah dikirim.
   '/kelas/',
   '/api/kelas/',
   '/icons/',
 ];
 
-// Exact public paths (pages + API routes that handle their own auth or need no auth)
 const PUBLIC_EXACT = [
   '/dashboard',
   '/',
-  // PWA installability: Chrome fetches ini SEBELUM login (dari layar login) -
-  // kalau diblok jadi 302 ke /dashboard, Chrome dapat HTML bukan JSON/JS dan
-  // diam-diam menganggap app tidak installable (menu "Install app" tak muncul).
   '/manifest.webmanifest',
   '/sw.js',
-  // Pemantau uptime - tidak menyentuh basis data (lihat route-nya).
   '/api/health',
-  // Laporan galat dari layar pengguna (juga dari layar login) - dibatasi ukuran & jumlah di route-nya.
   '/api/galat',
   '/api/auth/login',
-  // Langkah kedua login (kode authenticator) - tiketnya ditandatangani server, 5 menit.
   '/api/auth/login-2fa',
   '/api/auth/logout',
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
   '/api/auth/hash',
   '/api/auth/session',
-  '/api/auth/set-credential', // registrasi publik: set password user baru (first-time only)
-  '/api/auth/register', // registrasi publik: buat akun baru (guest/Pending Approval, atau bypass event LC)
+  '/api/auth/set-credential',
+  '/api/auth/register',
 ];
 
-// Cron jobs are called by Vercel scheduler with CRON_SECRET, not a user session
 const CRON_PREFIX = '/api/cron/';
-// Pemantau eksternal (JARVIS Sentinel) memanggil dengan MONITOR_TOKEN, bukan sesi pengguna -
-// route-nya memeriksa token sendiri (lib/monitor.ts). Jalur persis, bukan awalan.
 const MONITOR_PATH = '/api/monitor';
-// DIWAYPI (asisten desktop pemilik akun) memanggil dengan token pribadinya, bukan cookie - route-nya
-// memeriksa token sendiri (lib/token-integrasi.ts) dan hanya menjalankan aksi dari daftar tetap.
 const INTEGRASI_DIWAYPI_PATH = '/api/integrasi/diwaypi';
 
 export function proxy(request: NextRequest) {
@@ -76,8 +41,6 @@ export function proxy(request: NextRequest) {
 
   if (PUBLIC_EXACT.includes(pathname)) return NextResponse.next();
   if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next();
-  //  Cek /api/ lebih dulu: rute API tidak boleh lolos hanya karena ujung
-  //  jalurnya kebetulan berakhiran seperti nama berkas.
   if (!pathname.startsWith('/api/') && BERKAS_STATIS.test(pathname)) return NextResponse.next();
   if (pathname.startsWith(CRON_PREFIX)) return NextResponse.next();
   if (pathname === MONITOR_PATH) return NextResponse.next();
@@ -85,11 +48,9 @@ export function proxy(request: NextRequest) {
 
   const session = request.cookies.get('ivp_session');
   if (!session?.value) {
-    // API calls return 401 instead of redirect
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    //  Bawa alamat asal: setelah login portal kembali ke sana (lib/tujuan-lanjut.ts memvalidasi).
     const keLogin = new URL('/dashboard', request.url);
     keLogin.searchParams.set('lanjut', pathname + request.nextUrl.search);
     return NextResponse.redirect(keLogin);
@@ -98,18 +59,6 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
-/*
-  Sejak Next 16 proxy berjalan di runtime Node.js: di Vercel ia FUNGSI di region bom1, bukan lagi kode
-  edge di kota terdekat. Tiap permintaan yang cocok matcher harus menunggu fungsi itu (dan bangun dari
-  dingin bila lama tidak dipakai) sebelum dilayani - termasuk halaman statis yang sebenarnya siap di CDN.
-  Karena itu matcher dibatasi:
-   - /api/* SELALU lewat proxy (401 tanpa cookie), apa pun header-nya.
-   - Halaman hanya saat dibuka langsung (ketik alamat / refresh / tautan). Pindah menu di dalam portal &
-     prefetch-nya membawa header `RSC` dan dilayani langsung dari CDN - halaman portal statis, tanpa data;
-     data dijaga RLS & pemeriksaan sesi di tiap API. Cookie yang hilang di tengah jalan ditangani
-     KerangkaPortal (event SESI_HABIS dari lib/supabase.ts).
-   - Berkas /public (gambar, ikon, suara) tidak lewat proxy sama sekali - sama dengan BERKAS_STATIS di atas.
-*/
 export const config = {
   matcher: [
     '/api/:path*',

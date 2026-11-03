@@ -1,11 +1,3 @@
-/**
- * uji/checklist-barang.ts - Checklist Barang (AV Solution Tools): impor Excel / PDF, draf, PDF hasil.
- *
- * PDF diuji sungguhan: tabel dibuat pdfkit -> dibaca pdf.js (alur yang sama dengan cekbarang/berkas.ts),
- * dan PDF hasil gambarChecklist dibaca balik untuk memastikan isi, halaman & tanda tangan.
- *
- * Jalankan: npm test -- checklist-barang
- */
 import { readFileSync, writeFileSync } from 'fs';
 import PDFDocument from 'pdfkit';
 import {
@@ -35,7 +27,6 @@ function buat(gambar: (d: Dok) => void, opsi: object = {}): Promise<Uint8Array> 
 
 async function potongPdf(data: Uint8Array): Promise<{ halaman: PotongPdf[][]; teks: string[] }> {
   const lib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  //  Salinan: pdf.js memindahkan (detach) buffer yang diberikan.
   const tugas = lib.getDocument({ data: data.slice(), disableFontFace: true, useSystemFonts: false });
   const dok = await tugas.promise;
   const halaman: PotongPdf[][] = [], teks: string[] = [];
@@ -141,7 +132,6 @@ async function potongPdf(data: Uint8Array): Promise<{ halaman: PotongPdf[][]; te
       })),
     ],
   };
-  //  PNG 1x1 hitam sebagai tanda tangan.
   dok.penanda[0] = { label: 'Diserahkan oleh', nama: 'Budi Santoso', ttd: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' };
   dok.penanda[2] = { label: 'Diterima oleh', nama: 'Sari', ttd: 'data:image/png;base64,rusak' };
   let galatGambar = '';

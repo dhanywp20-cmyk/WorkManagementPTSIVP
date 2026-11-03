@@ -1,7 +1,6 @@
 'use client';
 import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 
-/** FormRuanganUtama - dipecah dari app/(portal)/form-require-project/_components/Modals.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, RoomDetail, BrandPicMapping } from '../shared';
 import { RoomSection, type InitialFormType } from '../Modals';
@@ -36,9 +35,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
   return (
     <>
       {activeRoomIdx === 0 ? (
-        /* Ruangan 1 (main form) - same style as RoomSection */
         <>
-        {/* Nama Ruangan 1 */}
         <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
           <span className="text-xs font-black text-teal-700 flex-shrink-0">Ruangan 1</span>
           <input value={form.room_name} onChange={e => setForm(prev => ({ ...prev, room_name: e.target.value }))}
@@ -46,7 +43,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-medium bg-white outline-none focus:border-teal-400" />
         </div>
 
-        {/* Kebutuhan */}
         <div className="mb-4">
           <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Kebutuhan *</label>
           <div className="flex flex-wrap gap-2">
@@ -65,7 +61,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             placeholder="Other kebutuhan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-none" />
         </div>
 
-        {/* Solution Product */}
         <div className="mb-4">
           <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Solution Product *</label>
           <div className="flex flex-wrap gap-2">
@@ -84,7 +79,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             placeholder="Other solution..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-none" />
         </div>
 
-        {/* Brand Display 1 & 2 + Middleware — kembar dari RoomSection di atas. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
           <div>
             <label htmlFor="f-form-require-project-components-modals-19" className="block text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-500 font-normal">(opsional)</span></label>
@@ -127,7 +121,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
           </div>
         </div>
 
-        {/* Layout Signage — only if Signage */}
         {form.kebutuhan.includes('Signage') && (
           <div className="mb-4 pt-2 border-t border-gray-100">
             <div className="mb-4">
@@ -163,7 +156,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
           </div>
         )}
 
-        {/* Source */}
         <div className="mb-4 pt-2 border-t border-gray-100">
           <div className="mb-4">
             <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Source</label>
@@ -186,12 +178,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
         </div>
 
-        {/* Camera + Audio — 2 kolom.
-            Blok ini DUPLIKAT dari RoomSection di atas: form ruangan ditulis
-            dua kali — inline untuk Ruangan 1 (terikat `form`), dan sebagai
-            komponen untuk ruangan ke-2 dst (terikat `rooms[i]`). Perubahan
-            tata letak WAJIB dikerjakan di keduanya, kalau tidak yang berubah
-            hanya ruangan yang jarang dibuka. */}
         <div className="mb-4 pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
         <div>
           <div className="mb-4">
@@ -252,7 +238,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         </div>
         </div>
 
-        {/* Wallplate + Tabletop — 2 col */}
         <div className="mb-4 pt-2 border-t border-gray-100 grid grid-cols-2 gap-3">
           <div>
             <div className="mb-4">
@@ -282,7 +267,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
           </div>
         </div>
 
-        {/* Wireless + Controller — 2 kolom, sama seperti Camera+Audio. */}
         <div className="mb-4 pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
         <div>
           <div className="mb-4">
@@ -351,14 +335,12 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         </div>
         </div>
 
-        {/* Ukuran, Suggest, Keterangan */}
         <div className="mb-4 pt-2 border-t border-gray-100 space-y-3">
           <div><label htmlFor="f-form-require-project-components-modals-30" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P×L×T)</label><input id="f-form-require-project-components-modals-30" value={form.ukuran_ruangan} onChange={e=>setForm(p=>({...p,ukuran_ruangan:e.target.value}))} placeholder="e.g. 8m×6m×3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
           <div><label htmlFor="f-form-require-project-components-modals-31" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W×H)</label><input id="f-form-require-project-components-modals-31" value={form.suggest_tampilan} onChange={e=>setForm(p=>({...p,suggest_tampilan:e.target.value}))} placeholder="e.g. 1920×1080 atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
           <div><label htmlFor="f-form-require-project-components-modals-32" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label><textarea id="f-form-require-project-components-modals-32" value={form.keterangan_lain} onChange={e=>setForm(p=>({...p,keterangan_lain:e.target.value}))} rows={2} placeholder="Info tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 resize-none"/></div>
         </div>
 
-        {/* Foto + BOQ — 2 col, only for non-team */}
         {!['admin','superadmin','team_pts','team'].includes((currentUser?.role || '').toLowerCase().trim()) && (
           <div className="pt-2 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -408,7 +390,6 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         )}
         </>
       ) : (
-        /* Extra Room (RoomSection component) */
         <RoomSection
           room={rooms[activeRoomIdx - 1]}
           rIdx={activeRoomIdx - 1}

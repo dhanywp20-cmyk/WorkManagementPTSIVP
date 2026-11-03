@@ -1,5 +1,4 @@
 'use client';
-/** Kartu spesifikasi: brand / modul / cabinet, mode ukuran atau jumlah, daya & berat per unit, refresh & bit. */
 import { Angka, Catatan, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
 import { kunciModul, pitchNyata } from '@/lib/av-hitung';
 import { CABINET, PITCH } from '../data';

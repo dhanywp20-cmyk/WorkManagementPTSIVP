@@ -1,8 +1,4 @@
 'use client';
-/**
- * Audio · impedansi speaker low-Z (seri / paralel / seri-paralel) & rugi kabel speaker ke beban itu,
- * dengan saran ukuran kabel (rugi ≤ 0,5 dB). Rumus: lib/av-audio-jaringan.ts.
- */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { impedansiSpeaker, rugiKabel, saranKabel, type Susunan, UKURAN_KABEL_MM2 } from '@/lib/av-audio-jaringan';

@@ -1,26 +1,3 @@
-/*
-  UJI: periksaSkema() menolak dua tahapan pencairan dengan "Tahun ke-" yang
-  sama.
-
-  Bug nyata dari laporan: proyek "Korlantas TMC Soreang" (BAST Agu 2026)
-  tahapan T3-nya tercatat "Tahun 2027" - PERSIS sama dengan T1 - padahal
-  seharusnya BAST + 3 = 2029. Sudah dicoba "Hapus Tahapan" lalu digenerate
-  ulang, hasilnya tetap sama. generateTranches() sendiri sudah benar (BAST +
-  tahunKe per tahapan, dibuktikan uji/tahapan-installer.ts) - artinya sumber
-  angka yang salah ada di skema TERSIMPAN: dua entri sk.tranche kebetulan
-  punya `tahunKe` yang sama, kemungkinan sisa dari cara lama sebelum porsi
-  Installer dipindah jadi baris tambahan (dulu tahap terakhir "diambil alih"
-  untuk Installer, dan seseorang mungkin pernah menyamakan tahunKe-nya secara
-  manual sebagai workaround).
-
-  periksaSkema() sebelumnya tidak pernah memeriksa hal ini - total tahapan
-  tetap 100% walau dua tahapannya berbagi tahun yang sama, jadi tidak ada
-  peringatan apa pun sampai tahapannya sungguh tergenerate salah. Uji ini
-  membuktikan validasinya sekarang menangkap kasus itu SEBELUM admin
-  menyimpan skema yang rusak.
-
-    npx tsx uji/tahun-tahapan-kembar.ts
-*/
 process.env.NEXT_PUBLIC_SUPABASE_URL ||= 'https://x.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||= 'dummy';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ||= 'https://y.supabase.co';
@@ -47,7 +24,7 @@ console.log('\n2. Kasus nyata: T3 kebetulan bertahun sama dengan T1');
     tranche: [
       { nomor: 1, persen: 50, tahunKe: 1 },
       { nomor: 2, persen: 35, tahunKe: 2 },
-      { nomor: 3, persen: 15, tahunKe: 1 }, // <- bug: harusnya 3
+      { nomor: 3, persen: 15, tahunKe: 1 },
     ],
   };
   const masalah = periksaSkema(sk).filter(m => m.bidang === 'tranche');

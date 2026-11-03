@@ -1,5 +1,4 @@
 'use client';
-/** Kalkulator daya & panas perangkat (VA, arus, BTU). */
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { type Beban, hitungDaya } from '@/lib/av-hitung';
@@ -18,7 +17,6 @@ export function KalkulatorDaya() {
   const [tegangan, setTegangan] = useState(220);
   const [pf, setPf] = useState(0.9);
   const h = useMemo(() => hitungDaya(beban, tegangan, pf), [beban, tegangan, pf]);
-  //  Lama cadangan UPS dari baterai terpasang (perkiraan; pakai tabel runtime pabrikan untuk angka pasti).
   const [batV, setBatV] = useState(12); const [batAh, setBatAh] = useState(9); const [batN, setBatN] = useState(2);
   const runtime = runtimeUPSMenit(h.totalW, batV, batAh, batN);
   const ubah = (i: number, x: Partial<Beban>) => setBeban(b => b.map((v, j) => (j === i ? { ...v, ...x } : v)));

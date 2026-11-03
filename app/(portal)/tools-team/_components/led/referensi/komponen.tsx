@@ -1,5 +1,4 @@
 'use client';
-/** Sel isian & tombol kecil tabel referensi LED. */
 import { Ikon } from '@/components/shared/Ikon';
 import { BRAND_UMUM } from '@/lib/av-hitung';
 import { useState } from 'react';
@@ -19,7 +18,6 @@ export function SelTeks({ nilai, onUbah, lebar = 'w-28', label }: { nilai: strin
   return <input type="text" aria-label={label} value={nilai} onChange={e => onUbah(e.target.value)} className={`${sel} ${lebar}`} />;
 }
 
-/** Nama brand: disimpan saat selesai mengetik (blur / Enter) supaya modulnya tidak ikut berpindah tiap huruf. */
 export function NamaBrand({ nilai, onSimpan }: { nilai: string; onSimpan: (v: string) => void }) {
   const [teks, setTeks] = useState<string | null>(null);
   const simpan = () => { if (teks !== null && teks.trim() && teks.trim() !== nilai) onSimpan(teks.trim()); setTeks(null); };

@@ -1,8 +1,3 @@
-/**
- * uji/urutan-soal.ts - aturan urutan soal Bank Soal.
- *
- * Jalankan: npx tsx uji/urutan-soal.ts
- */
 import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya, SoalTerurut } from '../lib/urutan-soal';
 
 let lulus = 0, gagal = 0;
@@ -20,19 +15,16 @@ console.log('\n1. Pengurutan');
   cek('bernomor terurut naik', JSON.stringify(hasil) === '["a","b","c"]', hasil.join(','));
 }
 {
-  // Campuran: yang sudah diatur tangan tidak boleh terselip oleh yang baru.
   const daftar = [s('baru', null, '2026-05-05'), s('a', 1, '2026-01-01'), s('b', 2, '2026-01-01')];
   const hasil = [...daftar].sort(bandingkanUrutan).map(q => q.id);
   cek('yang belum bernomor jatuh ke bawah', JSON.stringify(hasil) === '["a","b","baru"]', hasil.join(','));
 }
 {
-  // Perilaku SEBELUM kolomnya ada harus tetap: terbaru di atas.
   const daftar = [s('lama', undefined, '2026-01-01'), s('baru', undefined, '2026-08-01')];
   const hasil = [...daftar].sort(bandingkanUrutan).map(q => q.id);
   cek('tanpa kolom urutan: created_at menurun', JSON.stringify(hasil) === '["baru","lama"]', hasil.join(','));
 }
 {
-  // Satu angkatan Generate AI: created_at seri. Yang penting hasilnya TETAP.
   const seri = [s('x', null, '2026-03-03'), s('y', null, '2026-03-03'), s('z', null, '2026-03-03')];
   const a = [...seri].sort(bandingkanUrutan).map(q => q.id).join(',');
   const b = [...seri].reverse().sort(bandingkanUrutan).map(q => q.id).join(',');
@@ -42,7 +34,7 @@ console.log('\n1. Pengurutan');
 console.log('\n2. Hemat penulisan');
 {
   const grup = [s('a', 1), s('b', 2), s('c', 3), s('d', 4), s('e', 5)];
-  const baru = geser(grup, 1, 1)!;           // tukar b <-> c
+  const baru = geser(grup, 1, 1)!;
   const perubahan = perubahanUrutan(baru);
   cek('tukar 2 soal = 2 penulisan', perubahan.length === 2, `${perubahan.length}`);
   cek('nomor barunya benar',
@@ -51,7 +43,6 @@ console.log('\n2. Hemat penulisan');
     JSON.stringify(perubahan));
 }
 {
-  // Grup yang sama sekali belum bernomor: sekali geser, semuanya dinomori.
   const grup = [s('a', null), s('b', null), s('c', null)];
   const baru = geser(grup, 0, 1)!;
   cek('grup belum bernomor: seluruhnya ditulis', perubahanUrutan(baru).length === 3);
@@ -71,7 +62,6 @@ console.log('\n3. Batas geser');
     JSON.stringify(grup.map(q => q.id)) === '["a","b","c"]');
 }
 {
-  // Geser berkali-kali harus tetap menghasilkan nomor 1..n tanpa bolong.
   let grup = [s('a', 1), s('b', 2), s('c', 3), s('d', 4)];
   for (const [i, arah] of [[0, 1], [3, -1], [1, 1], [2, -1]] as [number, -1 | 1][]) {
     const baru = geser(grup, i, arah);
@@ -93,7 +83,6 @@ console.log('\n4. Soal baru masuk di ekor');
   cek('grup belum bernomor mulai dari 1', nomorBerikutnya([s('a', null), s('b', null)]) === 1);
 }
 {
-  // Soal baru harus benar-benar tampil paling bawah, bukan sekadar bernomor besar.
   const grup = [s('a', 1), s('b', 2)];
   const baru = [...grup, s('baru', nomorBerikutnya(grup))];
   const hasil = [...baru].sort(bandingkanUrutan).map(q => q.id);

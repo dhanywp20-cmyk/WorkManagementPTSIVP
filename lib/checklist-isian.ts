@@ -1,7 +1,3 @@
-/**
- * lib/checklist-isian.ts - pembersih isian dari body permintaan, dipakai
- * route server Project Progress. Murni (tanpa supabase).
- */
 
 import { BATAS, type StatusProyek } from './checklist';
 
@@ -14,7 +10,6 @@ export function teksAtauNull(v: unknown, batas: number): string | null {
   return t || null;
 }
 
-/** YYYY-MM-DD yang sah, atau null. */
 export function tanggal(v: unknown): string | null {
   const t = String(v ?? '').trim().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t)) return null;
@@ -39,12 +34,6 @@ export interface IsianProyek {
   target_date: string | null;
 }
 
-/**
- * Isian proyek dari form. Galat berupa kalimat yang bisa ditampilkan apa
- * adanya. Tipe hasilnya ditulis eksplisit: tanpa itu TypeScript melebur dua
- * cabang jadi satu bentuk berproperti opsional, dan `'galat' in hasil` tidak
- * lagi menyempitkan tipenya.
- */
 export function isianProyek(b: Record<string, unknown>): { galat: string } | { isian: IsianProyek } {
   const nama = teks(b.nama, BATAS.judul);
   if (!nama) return { galat: 'Nama proyek wajib diisi.' };

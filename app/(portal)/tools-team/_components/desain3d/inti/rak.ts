@@ -1,7 +1,3 @@
-/**
- * Rack elevation: isi rack 19" per U (urutan dari atas). Dipakai tekstur isi rack 3D,
- * diagram elevation (SVG) di panel, lembar cetak, dan PNG. Murni - tanpa three.js / React.
- */
 import type { Benda } from './tipe';
 
 export type JenisPerangkatRak =
@@ -25,7 +21,6 @@ export const PERANGKAT_RAK: Record<JenisPerangkatRak, { label: string; u: number
 };
 export const JENIS_RAK = Object.keys(PERANGKAT_RAK) as JenisPerangkatRak[];
 
-/** Isi bawaan (sama dengan gambar rack sebelum ada rack elevation): jaringan di atas, UPS di bawah. */
 export function isiRakBawaan(U: number): PerangkatRak[] {
   const urutan: [JenisPerangkatRak, number][] = [['patch', 1], ['kabel', 1], ['switch', 1], ['patch', 1], ['switch', 1], ['kosong', 1], ['server', 2], ['server', 2], ['nas', 2],
     ['kosong', 1], ['amp', 2], ['dsp', 1], ['matrix', 2], ['kosong', 1], ['amp', 2], ['server', 2], ['kosong', 2]];
@@ -45,7 +40,6 @@ export function isiRakBawaan(U: number): PerangkatRak[] {
 export const uRak = (b: Pick<Benda, 'rakU'>) => Math.max(4, b.rakU ?? 20);
 export const isiRakDari = (b: Pick<Benda, 'rakU' | 'isiRak'>): PerangkatRak[] => (b.isiRak?.length ? b.isiRak : isiRakBawaan(uRak(b)));
 
-/** Posisi tiap perangkat: U teratas & terbawah (U1 = paling bawah), sisa U kosong, dan yang tidak muat. */
 export function susunRak(b: Pick<Benda, 'rakU' | 'isiRak'>) {
   const U = uRak(b);
   let atas = U;
@@ -59,7 +53,6 @@ export function susunRak(b: Pick<Benda, 'rakU' | 'isiRak'>) {
   return { U, posisi, terpakai: Math.min(U, terpakai), sisa: Math.max(0, atas), lewat: Math.max(0, -atas) };
 }
 
-/** Bersihkan isi rack dari data tersimpan / template (jenis dikenal, 1-12 U, nama <= 60 huruf, maks 60 baris). */
 export function bersihkanIsiRak(x: unknown): PerangkatRak[] | undefined {
   if (!Array.isArray(x)) return undefined;
   const hasil = x.slice(0, 60).flatMap(v => {
@@ -74,7 +67,6 @@ export function bersihkanIsiRak(x: unknown): PerangkatRak[] | undefined {
 
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-/** Diagram rack elevation (tampak depan) - SVG mandiri untuk panel, cetak, dan PNG. */
 export function svgElevasiRak(b: Pick<Benda, 'rakU' | 'isiRak' | 'nama'>, judul = true): string {
   const s = susunRak(b);
   const tU = s.U > 32 ? 14 : 18, lebar = 300, ox = 36, oy = judul ? 34 : 10;

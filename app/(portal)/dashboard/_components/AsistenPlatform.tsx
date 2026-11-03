@@ -4,22 +4,10 @@ import { Ikon } from '@/components/shared/Ikon';
 import { ModalPortal } from '@/components/shared/ModalPortal';
 import { PANDUAN, cariPanduan, type Panduan } from '@/lib/panduan';
 
-/**
- * Asisten Platform - satu tombol melayang (menggantikan "Jelajahi Platform")
- * yang membuka panel dua tab:
- *   - Tanya: obrolan dengan asisten AI (/api/asisten) yang membaca data
- *     platform dengan hak akses penanya sendiri.
- *   - Panduan: cara pakai modul yang sedang dibuka (lib/panduan.ts), modul
- *     lain, dan tombol memulai tur platform.
- *
- * Tombolnya tetap "mengalah" seperti tombol Jelajahi dulu: tampil penuh
- * sebentar lalu menyingkir ke tepi kanan supaya tidak menutupi tombol aksi.
- */
 type Pesan = { peran: 'user' | 'model'; teks: string; galat?: boolean };
 
 const KUNCI_SIMPAN = 'wm_asisten_obrolan';
 
-/** Markdown minimal & aman: butir "- ", **tebal**, baris baru. React meng-escape teksnya. */
 function TeksAsisten({ teks }: { teks: string }) {
   const tebal = (baris: string) => baris.split(/(\*\*[^*]+\*\*)/g).map((b, i) =>
     b.startsWith('**') && b.endsWith('**') ? <strong key={i}>{b.slice(2, -2)}</strong> : <React.Fragment key={i}>{b}</React.Fragment>);
@@ -68,9 +56,7 @@ function KartuPanduan({ p }: { p: Panduan }) {
 }
 
 export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
-  /** Kunci modul yang sedang dibuka (lib/panduan.ts), mis. 'ticketing'. */
   modul: string;
-  /** Supervisor/Manager/Admin - menambah saran pertanyaan tentang tim. */
   atasan: boolean;
   onMulaiTur: () => void;
 }) {
@@ -91,12 +77,11 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
 
   useEffect(() => { setModulPanduan(modul); }, [modul]);
 
-  // Obrolan bertahan selama tab peramban terbuka (bukan lintas perangkat).
   useEffect(() => {
-    try { const s = sessionStorage.getItem(KUNCI_SIMPAN); if (s) setPesan(JSON.parse(s)); } catch { /* abaikan */ }
+    try { const s = sessionStorage.getItem(KUNCI_SIMPAN); if (s) setPesan(JSON.parse(s)); } catch {  }
   }, []);
   useEffect(() => {
-    try { sessionStorage.setItem(KUNCI_SIMPAN, JSON.stringify(pesan.slice(-20))); } catch { /* abaikan */ }
+    try { sessionStorage.setItem(KUNCI_SIMPAN, JSON.stringify(pesan.slice(-20))); } catch {  }
     ujungRef.current?.scrollIntoView({ block: 'end' });
   }, [pesan, sibuk]);
 
@@ -138,9 +123,6 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
     ...(atasan ? ['Siapa yang belum isi Daily Report hari ini?'] : ['Daily Report saya hari ini sudah lengkap?']),
     `Bagaimana cara pakai ${cariPanduan(modul)?.judul ?? 'Beranda'}?`,
   ];
-  //  Satu kasus per lini produk yang kita pasang, bukan LED saja - dijawab
-  //  dari tiket lama yang Solved & Tech Note, atau langkah cek umum bila
-  //  belum pernah ada tiketnya (lihat prompt di /api/asisten).
   const saranTroubleshoot = [
     'Cara mengatasi layar LED blank / sebagian mati?',
     'Cara mengatasi touch interactive display tidak merespon?',

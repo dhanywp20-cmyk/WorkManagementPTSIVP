@@ -9,16 +9,6 @@ import { BATAS, validasiDraft } from '@/lib/checklist';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * /api/project-progress/checklist/<id> - satu checklist lokasi.
- *   GET    -> isi lengkap + hak akun ini + riwayat
- *   PATCH  -> { aksi, ... } - lihat cabang di bawah. Centang & kendala
- *             dikirim berkelompok lewat aksi 'simpan', bukan per klik.
- *   DELETE -> admin: hapus checklist
- *
- * Admin: semua aksi. Anggota (yang di-assign): semua kecuali ubah info
- * checklist, atur anggota, dan hapus.
- */
 export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const params = await ctx.params;
   const s = await ambilAkun(request);
@@ -66,7 +56,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       const { error } = await db.from('checklist_daftar')
         .update({ judul, keterangan: teks(body.keterangan, BATAS.keterangan), start_date, target_date }).eq('id', id);
       if (error) return galat(error.message, 500);
-      //  Terpisah: sebelum migrasi 053 kolomnya belum ada - info lain tetap tersimpan.
       if (body.support_lokasi !== undefined) {
         const { error: sErr } = await db.from('checklist_daftar').update({ support_lokasi: teks(body.support_lokasi, BATAS.support) }).eq('id', id);
         if (sErr) return galat('Info tersimpan, tetapi "Support di lokasi" belum: kolomnya belum ada di basis data (jalankan migrasi 053).', 500);
@@ -79,7 +68,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       try {
         const { anggota, baru } = await aturAnggota(db, id, daftarId(body.anggota));
         await sentuh(db, id, akses.proyekId);
-        // Yang baru di-assign dikabari lewat Telegram pribadinya.
         const kabar = await kabariAnggotaBaru(db, id, baru, { baseUrl: request.nextUrl.origin, oleh: akun.nama });
         return ok({ anggota, kabar });
       } catch (e) {
@@ -104,7 +92,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
     }
 
     case 'simpan': {
-      // Semua centang & kendala satu sesi kerja dalam SATU permintaan.
       const hasil = await simpanPerubahan(db, id, body.perubahan, akun.nama, 'admin');
       if ('galat' in hasil) return galat(hasil.galat, hasil.status);
       return ok(hasil);
@@ -150,8 +137,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       if (!bagian) return galat('Bagian tidak ditemukan.', 404);
       const { count } = await db.from('checklist_item').select('id', { count: 'exact', head: true }).eq('daftar_id', id);
       if ((count ?? 0) >= BATAS.item) return galat(`Maksimal ${BATAS.item} item per checklist.`);
-      // Urutan dihitung se-checklist; tampilan mengurutkan per bagian, jadi
-      // item baru selalu muncul di ujung bagiannya.
       const { data: akhir } = await db.from('checklist_item').select('urutan')
         .eq('daftar_id', id).order('urutan', { ascending: false }).limit(1).maybeSingle();
       const { data: item, error } = await db.from('checklist_item').insert({

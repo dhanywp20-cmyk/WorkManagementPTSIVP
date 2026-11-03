@@ -1,13 +1,3 @@
-/**
- * uji/desain3d-susun-blending.ts - Susun edge blending di Desain 3D (inti/susunBlending.ts) dibandingkan dengan
- * kalkulator Panasonic & Kalkulator AV › Edge blending:
- *  - jarak lensa ke layar = rumus lensa Panasonic (L = TR x W - b) dengan TR di DALAM rentang zoom lensa;
- *  - tiap proyektor lurus (tilt 0, tanpa keystone), lens shift di dalam daerah lensa (segi delapan Panasonic);
- *  - overlap yang TERUKUR dari sinar 3D (inti/blending.ts) = overlap yang direncanakan (% , cm, px);
- *  - layar tertutup penuh; ruang kurang dalam & badan bertabrakan dilaporkan.
- *
- * Jalankan: npx tsx uji/desain3d-susun-blending.ts
- */
 import { readFileSync } from 'fs';
 import type { EntriPustaka } from '../lib/pustaka';
 import {
@@ -34,7 +24,6 @@ const model = (cari: string): Benda => {
   return { ...b, ...isiDariPustaka(b, pustaka(cari)) } as Benda;
 };
 
-/** Titik sinar (u, v) di bidang muka layar (z tetap). */
 const keLayar = (L: Lensa, zMuka: number, u: number, v: number): Titik | null => {
   const d = arahSinar(L, u, v);
   if (d[2] >= 0) return null;
@@ -60,10 +49,8 @@ function periksa(judul: string, cari: string, w: number, h: number, kolom: numbe
   cek('lens shift di dalam daerah lensa (segi delapan Panasonic)', p.every(q => { const s = batasShift(q); return !s.lewatV && !s.lewatH && !s.lewatGabungan; }));
   const [lo, hi] = zoomLensa(contoh);
   cek(`TR di dalam rentang zoom ${lo.toFixed(3)}-${hi.toFixed(3)}`, p.every(q => (q.throwRatio ?? 0) >= lo - 1e-6 && (q.throwRatio ?? 0) <= hi + 1e-6));
-  //  Jarak ujung lensa ke bidang layar = rumus lensa Panasonic untuk gambar selebar ubin pada zoom itu.
   const zMuka = l.z + l.d / 2;
   const [jMin, jMax] = jarakUntukLebar(contoh, r.lebarSatuM);
-  //  Lebar gambar nyata di layar (dari sinar 3D) = lebar ubin rencana.
   const lebarNyata = p.map(q => { const L = lensaDari(q); return keLayar(L, zMuka, 0.5, 0)![0] - keLayar(L, zMuka, -0.5, 0)![0]; });
   cek(`lebar gambar tiap proyektor di layar = ${r.lebarSatuM.toFixed(3)} m (selisih < 1 cm)`, lebarNyata.every(x => Math.abs(Math.abs(x) - r.lebarSatuM) < 0.01), lebarNyata.map(x => Math.abs(x).toFixed(3)).join(', '));
   cek(`jarak lempar dalam rentang lensa Panasonic ${jMin.toFixed(3)}-${jMax.toFixed(3)} m`, p.every(q => {
@@ -71,7 +58,6 @@ function periksa(judul: string, cari: string, w: number, h: number, kolom: numbe
     const d = Math.abs(tip[2] - zMuka);
     return d >= jMin - 0.012 && d <= jMax + 0.012;
   }));
-  //  Overlap terukur dari sinar 3D = rencana.
   const s = p.map(q => sampel(q, zMuka));
   const bl = hitungBlending(s);
   if (kolom > 1) {

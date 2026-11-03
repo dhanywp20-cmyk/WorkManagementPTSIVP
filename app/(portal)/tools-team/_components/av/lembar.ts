@@ -1,11 +1,9 @@
-/** Lembar cetak / PNG bersama kalkulator AV. */
 import { bukaCetak, type Lembar, namaBerkas, type Seksi, unduhLembarPNG } from '../bersama/cetak';
 
 export type Baris = [string, string, boolean?];
 
 const info = (b: Baris[]) => b.map(([label, nilai, sorot]) => ({ label, nilai, sorot }));
 
-/** Lembar cetak sederhana: masukan | hasil, plus seksi tambahan (tabel). */
 export function lembarAV(judul: string, masukan: Baris[], hasil: Baris[], catatan: string, tambahan: Seksi[] = []): Lembar {
   return {
     judul, subjudul: 'Kalkulator AV · AV Solution Tools',
@@ -15,7 +13,6 @@ export function lembarAV(judul: string, masukan: Baris[], hasil: Baris[], catata
   };
 }
 
-/** Cetak, PNG, dan Simpan ke proyek (tools_av_hasil) - dipakai semua hasil Kalkulator AV. */
 export const aksiLembar = (l: () => Lembar, nama: string) => ({
   onCetak: () => bukaCetak(l()), onPng: () => unduhLembarPNG(l(), namaBerkas(nama)),
   simpan: { judul: nama, lembar: l },

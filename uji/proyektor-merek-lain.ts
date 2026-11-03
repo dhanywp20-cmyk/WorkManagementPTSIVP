@@ -1,12 +1,3 @@
-/**
- * uji/proyektor-merek-lain.ts - katalog proyektor merek SELAIN Panasonic (desain3d/inti/katalogLain.ts):
- *   Epson    dari Projector Throw Distance Simulator (lib/data/epson-tdc.json)
- *   Vivitek  dari Projection Simulator               (lib/data/vivitek-tdc.json)
- * Angka jarak dibandingkan dengan rumus kalkulator merek itu sendiri (koefisien mentah ditulis di sini sebagai acuan),
- * lens shift (segi delapan Epson, offset + shift satu arah Vivitek), lumen per lensa, dan katalog Panasonic TIDAK berubah.
- *
- * Jalankan: npx tsx uji/proyektor-merek-lain.ts
- */
 import epson from '../lib/data/epson-tdc.json';
 import vivitek from '../lib/data/vivitek-tdc.json';
 import panasonic from '../lib/data/panasonic-tdc.json';
@@ -21,7 +12,6 @@ function cek(nama: string, syarat: boolean, info = '') {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}${info ? ` - ${info}` : ''}`); }
 }
 const E = epson as unknown as KatalogLain, V = vivitek as unknown as KatalogLain, P = panasonic as unknown as KatalogTdc;
-/** Lebar gambar (m) layar `d` inci pada rasio. */
 const lebar = (d: number, r: RasioProyektor) => { const { lebar: w, tinggi: h } = RASIO_PROYEKTOR[r]; return (d * 0.0254 * w) / Math.hypot(w, h); };
 const L = (tr: number, b: number, d: number, r: RasioProyektor) => tr * lebar(d, r) - b;
 
@@ -65,7 +55,6 @@ const x8 = lensaPadaRasio(du8, st, '16:10');
 cek(`D88-ST001 TR 1,73-2,27, b 0 (${x8.trW}-${x8.trT}, ${x8.bW})`, x8.trW === 1.73 && x8.trT === 2.27 && x8.bW === 0);
 cek('16:9 di panel 16:10 (letterbox): TR terhadap lebar gambar sama', lensaPadaRasio(du8, st, '16:9').trW === 1.73);
 cek('4:3 di panel 16:10 (pillarbox): TR x 1,2', Math.abs(lensaPadaRasio(du8, st, '4:3').trW - 1.73 * 1.2) < 1e-6);
-//  UST: tabel TR per diagonal Vivitek (DW770UST) -> garis L = TR x W - b.
 const dw = V.model.find(m => m.n === 'DW770UST')!;
 const xu = lensaPadaRasio(dw, dw.l[0], '16:10');
 const TABEL: [number, number][] = [[80, 0.3426], [87, 0.346], [97, 0.349], [100, 0.35]];

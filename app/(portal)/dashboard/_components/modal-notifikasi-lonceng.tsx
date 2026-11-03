@@ -1,10 +1,7 @@
 'use client';
-/** modal-notifikasi-lonceng.tsx - dipecah dari modal-notifikasi.tsx (scripts/pecah-modul.mjs); modal-notifikasi.tsx tetap mengekspor ulang semuanya. */
 import { Ikon } from '@/components/shared/Ikon';
 import { useEffect, useRef, useState } from 'react';
 import { NotifBellProps } from './shared';
-
-// Notification Bell Component
 
 export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick, onMarkAllRead }: NotifBellProps) {
   const [open, setOpen] = useState(false);
@@ -14,12 +11,6 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    /*
-      Area modul adalah iframe - klik di dalamnya tidak memicu mousedown di
-      dokumen induk, jadi panel tetap terbuka. Klik ke iframe memindahkan
-      fokus keluar dari window induk (blur), itu yang ditangkap di sini.
-      Escape juga ditangani supaya panel bisa ditutup dari keyboard.
-    */
     const tutup = () => setOpen(false);
     const saatEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handler);
@@ -58,8 +49,6 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
         }}
       >
         <Icon className="w-4 h-4 flex-shrink-0" style={{ color: count > 0 ? color : '#64748b' }} />
-        {/* Label hanya di layar lebar: di 1280px dengan sidebar terbuka, lima
-            chip berlabel mendorong deretan header keluar layar. */}
         <span className="text-xs font-bold hidden 2xl:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
           <span className="flex items-center justify-center rounded-full text-white font-black text-[11px] min-w-[18px] h-[18px] px-1 animate-pulse"

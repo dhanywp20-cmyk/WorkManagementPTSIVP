@@ -5,16 +5,6 @@ import { KOLOM_ITEM, NO_STORE, galat, supportPerDaftar, tokenSah } from '@/lib/c
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * GET /api/project-progress/share/<token> - PUBLIK, link View-Only satu
- * proyek (semua checklist lokasinya). Dipakai /project-progress/share/<token>.
- *
- * Token Project Progress lama ikut disalin ke checklist_proyek oleh migrasi
- * 025, jadi link yang sudah tersebar sebelum pergantian tetap terbuka.
- *
- * Keamanan: service_role di server, hanya BACA, kolom dipilih eksplisit -
- * share_token proyek maupun checklist tidak pernah ikut keluar.
- */
 export async function GET(_request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const params = await ctx.params;
   const token = (params.token ?? '').trim();
@@ -34,8 +24,6 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
 
   let bagian: unknown[] = [];
   let items: unknown[] = [];
-  //  Nama handler (anggota checklist) - untuk ringkasan "Dikerjakan Oleh" & nama Handler per lokasi;
-  //  nama yang sama sudah tampil di item yang mereka centang. Tanpa user_id.
   let anggota: unknown[] = [];
   let support = new Map<string, string>();
   if (ids.length) {
@@ -46,8 +34,6 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
       supportPerDaftar(db, ids),
     ]);
     support = sMap;
-    // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
-    // tampak "proyek kosong" padahal datanya ada.
     if (bRes.error || iRes.error) return galat(bRes.error?.message ?? iRes.error?.message ?? 'Gagal memuat.', 500);
     bagian = bRes.data ?? [];
     items = iRes.data ?? [];

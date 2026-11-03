@@ -1,6 +1,5 @@
 'use client';
 
-/** useServicesTicket - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { sendWANotif, User, Ticket } from './shared';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { appLink } from '@/lib/app-url';
@@ -28,10 +27,6 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
       setUploading(true);
       setShowLoadingPopup(true);
       setLoadingMessage("Approving ticket untuk Team Services...");
-      //  Diperiksa: ini penulisan pertama dan yang menentukan alur ini
-      //  benar-benar jalan. Kalau gagal diam-diam, activity log & notifikasi
-      //  "diterima Team Services" di bawah tetap terkirim walau tickenya
-      //  sendiri tidak pernah pindah status.
       const { data: terubah, error: galatUtama } = await supabase.from("tickets")
         .update({ services_status: "Pending" }).eq("id", ticket.id).select("id");
       if (galatUtama || !terubah || terubah.length === 0) {
@@ -56,13 +51,6 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
         assigned_to_services: false,
         file_url: "", file_name: "", photo_url: "", photo_name: ""
       }]);
-      /*
-        Serah terima ke Team Services sebelumnya tidak mengabari siapa pun.
-        Sales yang melaporkan dan PTS yang menyerahkan sama-sama tidak tahu
-        ticketnya sudah diterima - padahal sejak titik ini penanganannya
-        berpindah tangan, dan merekalah yang akan ditanyai kalau ada
-        perkembangan. sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
-      */
       try {
         const pihak = [ticket.created_by, ticket.assign_name].filter(Boolean) as string[];
         const penerima = users.filter(u =>
@@ -87,7 +75,7 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
             created_by: currentUser?.full_name ?? '',
           });
         }
-      } catch { /* kabar gagal tidak boleh membatalkan serah terimanya */ }
+      } catch {  }
 
       await fetchData();
       setLoadingMessage("✅ Ticket diterima oleh Team Services!");
@@ -106,7 +94,6 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
           setUploading(true);
           setShowLoadingPopup(true);
           setLoadingMessage("Mengembalikan ticket ke Team PTS IVP...");
-          //  Diperiksa - lihat catatan yang sama di approveServicesTicket.
           const { data: terubah, error: galatUtama } = await supabase.from("tickets")
             .update({ current_team: "Team PTS IVP", services_status: null, status: "In Progress" })
             .eq("id", ticket.id).select("id");
@@ -127,10 +114,6 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
             file_url: "", file_name: "", photo_url: "", photo_name: ""
           }]);
           try {
-            //  select('id') + panjangnya diperiksa: RLS yang menolak diam-diam
-            //  (0 baris, tanpa galat) tidak melempar apa pun ke catch di
-            //  bawah - dilempar manual di sini supaya pesan "catatan di
-            //  basis data Services gagal diperbarui" benar-benar muncul.
             const { data: terubahSvc, error: galatSvc } = await supabaseServices.from("tickets")
               .update({ services_status: "Returned to PTS", current_team: "Team PTS IVP" }).eq("id", ticket.id).select("id");
             if (galatSvc) throw galatSvc;
@@ -147,17 +130,8 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
               file_url: "", file_name: "", photo_url: "", photo_name: ""
             }]);
           } catch (e: any) {
-            // Sisi PTS sudah mengambil ticket ini kembali, jadi tidak ada yang
-            // hilang. Yang tersisa cuma catatan di basis data Services yang
-            // belum ikut berubah - itu harus terlihat, bukan didiamkan.
             notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}).`);
           }
-          /*
-            Ticket kembali menjadi tanggung jawab PTS, tapi sebelumnya tidak
-            ada yang diberi tahu - jadi pekerjaan yang dikembalikan bisa
-            menganggur karena sisi PTS mengira masih ditangani Services.
-            Dikabari ke penangan PTS, pelapor, dan admin/Manager Full Access.
-          */
           try {
             const pihak = [ticket.created_by, ticket.assign_name].filter(Boolean) as string[];
             const penerima = new Map<string, any>();
@@ -177,7 +151,6 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
               `🔗 ${appLink()}`,
             ].join('\n');
             for (const u of penerima.values()) {
-              //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
               if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanKembali });
               void createNotification({
                 user_id: u.id, type: 'ticket',
@@ -187,7 +160,7 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
                 created_by: currentUser?.full_name ?? '',
               });
             }
-          } catch { /* kabar gagal tidak boleh membatalkan pengembaliannya */ }
+          } catch {  }
 
           await fetchData();
           setLoadingMessage("✅ Ticket dikembalikan ke Team PTS IVP.");

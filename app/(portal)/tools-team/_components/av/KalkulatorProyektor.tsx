@@ -1,11 +1,4 @@
 'use client';
-/**
- * Kalkulator proyektor: jarak lempar (lensa zoom), tinggi pasang lensa (lens shift), kecerahan menurut
- * kategori kontras ANSI/INFOCOMM 3M-2011 + susut cahaya, dan edge blending (PanelBlending).
- * Rumus: lib/av-layar-proyektor.ts. Model & lensa Panasonic: katalog resmi Throw Distance Calculator - angka lensa per
- * rasio sinyal, panel native (letterbox), lumen & lens shift dari fungsi yang sama dengan Desain 3D (lensaPadaRasio).
- * Merek lain (Epson, Vivitek): katalog terpisah (PilihMerekLain), angka lensanya diterapkan dengan cara yang sama.
- */
 import { Angka, Catatan, f, fTetap, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import {
   BATAS_B, bagianPanelRasio, type KatalogLain, type LensaLain, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, lensaPadaRasioLain, type ModelLain, type ModelTdc,
@@ -32,31 +25,21 @@ const LUX = [
   { v: 50, l: 'Gelap (bioskop) ±50 lux' }, { v: 150, l: 'Redup ±150 lux' },
   { v: 300, l: 'Ruang rapat ±300 lux' }, { v: 500, l: 'Kelas / kantor terang ±500 lux' }, { v: 750, l: 'Sangat terang ±750 lux' },
 ];
-/**
- * Rasio gambar proyektor = tabel Desain 3D: 17:9 (Native 4K DCI) dan 21:9 = 64:27 (2560 x 1080) seperti kalkulator
- * Panasonic - dulu 21/9 = 2,333, lebar gambar 21:9 meleset ±0,8%.
- */
 const RASIO_PROYEKTOR = (Object.keys(RASIO_GAMBAR) as RasioProyektor[]).map(k => ({ v: k, l: RASIO_GAMBAR[k].label, w: RASIO_GAMBAR[k].lebar, h: RASIO_GAMBAR[k].tinggi }));
 const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
-/** Resolusi Pustaka -> rasio panel (sama dengan desain3d/inti/pustaka.ts). */
 const RASIO_DARI_RESOLUSI: Record<string, string> = { XGA: '4:3', FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10', '4KDCI': '17:9' };
 const CATATAN = 'Kecerahan dari kategori kontras ANSI/INFOCOMM 3M-2011: kontras = (cahaya proyektor + cahaya ruang di layar) / cahaya ruang di layar - rumus kalkulator Panasonic. Gain layar tidak mengubah kontras (gambar & cahaya ruang sama-sama dipantulkan kain layar), hanya luminance (cd/m² = lux × gain / π). Lux = cahaya ruang yang JATUH DI LAYAR (ukur dengan lux meter menghadap ruangan), bukan di meja. Lumen spesifikasi sudah memperhitungkan susut cahaya sampai akhir umur sumber cahaya.';
 
 export function KalkulatorProyektor() {
-  /** Ukuran gambar diisi sebagai diagonal (inci, seperti kalkulator Panasonic) atau lebar (m). */
   const [modeUkuran, setModeUkuran] = useState<'diagonal' | 'lebar'>('diagonal');
   const [diagonal, setDiagonal] = useState(120);
   const [lebarIsi, setLebarIsi] = useState(3);
   const [rasioK, setRasioK] = useState('16:10');
   const [throwMin, setThrowMin] = useState(1.39);
   const [throwMax, setThrowMax] = useState(2.09);
-  /** Koreksi jarak b rumus lensa L = TR x lebar - b (datasheet / kalkulator pabrikan) di ujung wide; 0 = L = TR x lebar. */
   const [koreksi, setKoreksi] = useState(0);
-  /** b di ujung tele - kalkulator Panasonic menyimpan b sendiri untuk wide & tele; null = sama dengan wide. */
   const [koreksiTele, setKoreksiTele] = useState<number | null>(null);
-  /** Proyektor tanpa lens shift: pusat gambar tetap sekian % tinggi gambar di atas lensa (null = punya lens shift). */
   const [offsetTetap, setOffsetTetap] = useState<number | null>(null);
-  /** Kontras asli proyektor (x:1) - membatasi kontras di ruang gelap seperti kalkulator Panasonic; 0 = abaikan. */
   const [kontrasAsli, setKontrasAsli] = useState(0);
   const [lux, setLux] = useState(300);
   const [gain, setGain] = useState(1);
@@ -65,29 +48,17 @@ export function KalkulatorProyektor() {
   const [bawah, setBawah] = useState(0.9);
   const [shiftAtas, setShiftAtas] = useState(50);
   const [shiftBawah, setShiftBawah] = useState(50);
-  /** Lens shift kiri-kanan (% lebar gambar) dari Pustaka; 0 = tidak diketahui / tidak bisa. */
   const [shiftH, setShiftH] = useState(0);
-  /** Gantung plafon (terbalik) atau di meja: menentukan sisi lensa terhadap gambar. */
   const [pasang, setPasang] = useState<Pemasangan>('plafon');
-  /** Resolusi model Pustaka (WUXGA, 4K, ...) - dipakai Edge blending. */
   const [resolusiModel, setResolusiModel] = useState<string | null>(null);
-  /** Model dari Pustaka (opsional): lumennya dibandingkan dengan kebutuhan. */
   const [model, setModel] = useState<{ nama: string; lumen: number } | null>(null);
-  /**
-   * Rasio PANEL native bila beda dengan rasio sinyal (16:9 di panel WUXGA 16:10 = letterbox, lumen gambar 90%) - null =
-   * panel = rasio sinyal. Diisi dari katalog Panasonic, atau manual.
-   */
   const [rasioPanel, setRasioPanel] = useState<RasioProyektor | null>(null);
-  /** Lensa dari katalog Panasonic: mengganti rasio sinyal memakai koefisien Panasonic rasio itu. null = isian manual / Pustaka. */
   const [panasonic, setPanasonic] = useState<{ m: ModelTdc; l: LensaTdc; versi: string } | null>(null);
-  /** Lensa dari katalog merek lain (Epson, Vivitek) - sama perannya dengan `panasonic`, katalog terpisah. */
   const [lain, setLain] = useState<{ k: KatalogLain; m: ModelLain; l: LensaLain } | null>(null);
-  /** Rumus lensa dari dua hasil kalkulator pabrikan (RumusLensaPabrikan) - proyektor di luar katalog. */
   const pakaiRumus = (ujung: 'min' | 'maks', tr: number, b: number) => {
     setPanasonic(null); setLain(null);
     if (ujung === 'min') { setThrowMin(tr); setKoreksi(b); } else { setThrowMax(tr); setKoreksiTele(b); }
   };
-  /** Angka lensa Panasonic pada satu rasio sinyal: TR & b wide / tele, lens shift (poligon) atau offset tetap. */
   const terapkanLensa = (x: LensaPadaRasio) => {
     setRasioK(x.rasio); setThrowMin(x.trW); setThrowMax(x.trT); setKoreksi(x.bW); setKoreksiTele(x.bT);
     const persen = (v: number) => Math.round(v * 1e4) / 100;
@@ -99,15 +70,10 @@ export function KalkulatorProyektor() {
     setKontrasAsli(m.c ?? 0); setResolusiModel(resolusiPanel(m) ?? null); setModel({ nama: `Panasonic ${m.n} + ${l.n}`, lumen: m.lm });
     setLain(null);
   };
-  /** Model + lensa merek lain: lumen per lensa bila katalog menyebutnya (Epson: lensa UST / long lebih redup). */
   const pakaiLain = (k: KatalogLain, m: ModelLain, l: LensaLain, rasio: RasioProyektor) => {
     setPanasonic(null); setLain({ k, m, l }); setRasioPanel(m.a); terapkanLensa(lensaPadaRasioLain(m, l, rasio));
     setKontrasAsli(m.c ?? 0); setResolusiModel(resolusiPanel(m) ?? null); setModel({ nama: `${k.merek} ${m.n} + ${l.n}`, lumen: l.lm || m.lm });
   };
-  /**
-   * Ganti rasio sinyal. TR relatif LEBAR GAMBAR, jadi ikut berubah: lensa Panasonic memakai koefisien rasio itu (persis
-   * kalkulatornya); panel native diisi -> dari geometri potong panel (lebar panel tetap) - sama dengan Desain 3D.
-   */
   const ubahRasio = (v: string) => {
     const r = v as RasioProyektor;
     if (panasonic?.l.ar[r]) { terapkanLensa(lensaPadaRasio(panasonic.m, panasonic.l, r)); return; }
@@ -122,7 +88,6 @@ export function KalkulatorProyektor() {
     const rp = RASIO_DARI_RESOLUSI[teksDari(e, 'resolusi') ?? ''];
     if (rp) setRasioK(rp);
     setPanasonic(null); setLain(null); setRasioPanel(null);
-    //  Data lensa diganti UTUH dari model: nilai model sebelumnya tidak boleh tertinggal.
     const ada = (k: string) => typeof e.data[k] === 'number';
     setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax)); setKoreksi(angkaDari(e, 'koreksiJarak', 0));
     setKoreksiTele(ada('koreksiJarakTele') ? angkaDari(e, 'koreksiJarakTele') : null);
@@ -140,26 +105,18 @@ export function KalkulatorProyektor() {
   const diag = (Math.hypot(lebar, tinggi) * 1000) / 25.4;
   const kat = KONTRAS_ANSI.find(k => k.v === kontras)!;
   const sus = SUMBER.find(s => s.v === sumber)!;
-  /** Bagian panel yang dipakai gambar (letterbox / pillarbox) - "Projector output" Panasonic = lumen x bagian ini. */
   const bp = bagianPanelRasio(rasioPanel ?? (r.v as RasioProyektor), r.v as RasioProyektor);
   const bagianLuas = bp.lebar * bp.tinggi;
   const potong = bagianLuas < 0.9999;
-  //  Lumen yang harus JATUH DI GAMBAR; lumen proyektor (datasheet, panel penuh) = itu / bagian panel.
   const perluGambar = lumenUntukKontras(luas, lux, kat.rasio, kontrasAsli || undefined);
   const perlu = perluGambar / bagianLuas;
   const spek = lumenSpesifikasi(perlu, sus.susut);
-  /** Kategori kontras melebihi kontras asli proyektor: lumen berapa pun tidak cukup. */
   const takTercapai = !Number.isFinite(perlu);
   const lempar = rentangJarakLempar(lebar, throwMin, throwMax, koreksi, koreksiTele ?? koreksi);
-  //  Tanpa lens shift: hanya satu tinggi lensa yang menghasilkan gambar tegak (offset tetap, sisi lensa ikut pemasangan).
   const tetapM = offsetTetap !== null ? tinggiLensaTetap(bawah, tinggi, offsetTetap, pasang) : 0;
   const lensa = offsetTetap !== null ? { terendahM: tetapM, tertinggiM: tetapM } : rentangTinggiLensa(bawah, tinggi, shiftAtas, shiftBawah, pasang);
   const teksPasang = pasang === 'plafon' ? 'gantung plafon' : 'di meja';
   const geserH = offsetTetap === null && shiftH > 0 ? (lebar * shiftH) / 100 : 0;
-  /**
-   * Model: Projector output (lumen di gambar = lumen x bagian panel), Screen illuminance (lux = output / luas), luminance &
-   * kontras di ruang ini - keluaran kalkulator Panasonic. Dulu dari lumen panel penuh: 16:9 di panel 16:10 lux +11%.
-   */
   const outputModel = model && model.lumen > 0 ? model.lumen * bagianLuas : 0;
   const luxModel = outputModel ? outputModel / luas : 0;
   const kontrasModel = luxModel ? kontrasDiLayar(outputModel, luas, lux, kontrasAsli || undefined) : 0;
@@ -188,14 +145,10 @@ export function KalkulatorProyektor() {
       ...(luxModel ? [['Model di layar', `${f(outputModel, 0)} lm · ${f(luxModel, 0)} lux · ${f(luminanceLayar(luxModel, gain), 0)} cd/m² · kontras ${f(kontrasModel, 1)} : 1`] as [string, string]] : []),
       ['Lumen perlu', takTercapai ? 'tidak tercapai (melebihi kontras asli)' : `±${f(perlu, 0)} lm`], ['Lumen spesifikasi', takTercapai ? '—' : `±${f(spek, 0)} lm`, true]],
     CATATAN);
-  //  Pustaka kosong / gagal dimuat: sel pilihan model tidak dipesan (tidak meninggalkan lubang di baris pertama).
   const adaPustaka = usePustaka('proyektor').entri.length > 0;
   const teksModel = model ? `${model.nama}${model.lumen ? ` · ${f(model.lumen, 0)} lm` : ''}${resolusiModel ? ` · ${resolusiModel}` : ''}${panasonic ? ` · Panasonic TDC ${panasonic.versi}` : ''}${lain ? ` · ${SUMBER_LAIN[lain.k.merek].singkat} ${lain.k.versi}` : ''}` : '';
   return (
     <div className="space-y-4">
-      {/*  Urutan: (1) proyektor & lensa - dipakai keduanya, lebar penuh & berjajar supaya tidak memanjang ke bawah;
-          (2) Edge blending - yang paling sering dipakai untuk immersive; (3) satu proyektor: ukuran & kecerahan.
-          Dulu semua isian (±15) menumpuk di satu kolom sempit di samping hasil yang pendek, blending di paling bawah. */}
       <Kartu judul="Proyektor & lensa">
         <div className="space-y-3">
           <PilihPanasonic rasio={rasioK as RasioProyektor} sumber={panasonic ? `${panasonic.m.n} + ${panasonic.l.n}` : undefined} onPakai={pakaiPanasonic} />

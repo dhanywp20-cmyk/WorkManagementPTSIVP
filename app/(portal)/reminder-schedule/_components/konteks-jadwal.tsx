@@ -1,34 +1,21 @@
 'use client';
 
-/**
- * konteks-jadwal.tsx - SATU sumber keadaan & aksi halaman Request Schedule untuk komponen di bawahnya.
- *
- * Dulu page meneruskan semuanya sebagai props satu per satu: page -> IsiJadwal (71 props) -> ReminderListBody (~50)
- * dan page -> PopupDetailJadwal (64, perantara murni) -> ReminderDetailPopup. Kini page mengisi konteks ini SEKALI,
- * dikelompokkan per irisan, dan tiap komponen mengambil irisan yang ia perlukan (lihat docs/audit/struktur-kode.md §3).
- *
- * Keadaan TETAP milik page (useState di page / hook-nya) - konteks hanya jalur antar, bukan penyimpanan baru,
- * jadi perilaku & urutan render sama dengan sebelumnya.
- */
 import { createContext, useContext } from 'react';
 import { Status, Reminder, TeamUser, GuestUser } from './shared';
 
 export interface NilaiKonteksJadwal {
-  /** Siapa yang membuka halaman. */
   sesi: {
     currentUser: TeamUser | null;
     isAdmin: boolean;
     isGuest: boolean;
     isManager: boolean;
   };
-  /** Boleh tidaknya aksi - cermin UI dari RLS. */
   izin: {
     bolehEditReminder: (r: Reminder) => boolean;
     canApproveAssign: boolean;
     canInternalApprove: (r: Reminder) => boolean;
     isMyReviewStage: (r: Reminder) => boolean;
   };
-  /** Data jadwal & status muat. */
   data: {
     fetchError: string | null;
     fetchReminders: () => Promise<void>;
@@ -39,7 +26,6 @@ export interface NilaiKonteksJadwal {
     reminders: Reminder[];
     setFetchError: import("react").Dispatch<import("react").SetStateAction<string | null>>;
   };
-  /** Angka & donat kartu statistik. */
   ringkasan: {
     doneCount: number;
     pendingCount: number;
@@ -50,7 +36,6 @@ export interface NilaiKonteksJadwal {
     todayCount: number;
     totalCount: number;
   };
-  /** Penyaring & pencarian daftar. */
   filter: {
     availableYears: string[];
     filterCategory: string;
@@ -74,7 +59,6 @@ export interface NilaiKonteksJadwal {
     setSearchTeamHandler: import("react").Dispatch<import("react").SetStateAction<string>>;
     setSelectedCalDay: import("react").Dispatch<import("react").SetStateAction<string | null>>;
   };
-  /** Mode tampilan & kalender mini. */
   tampilan: {
     calOnlyDay: string | null;
     calendarMonth: Date;
@@ -82,7 +66,6 @@ export interface NilaiKonteksJadwal {
     setCalendarMonth: import("react").Dispatch<import("react").SetStateAction<Date>>;
     view: "list" | "form";
   };
-  /** Pilih banyak & hapus massal. */
   pilih: {
     bulkDeleting: boolean;
     selectMode: boolean;
@@ -92,7 +75,6 @@ export interface NilaiKonteksJadwal {
     setSelectedIds: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
     toggleSelectAll: () => void;
   };
-  /** Aksi per jadwal (approve, tolak, edit, WA, ...). */
   aksi: {
     handleAdminReject: (r: Reminder) => void;
     handleExportExcel: () => void;
@@ -115,7 +97,6 @@ export interface NilaiKonteksJadwal {
     resendingFormReview: boolean;
     sendingWA: string | null;
   };
-  /** Popup detail: ubah status & mode penyelesaian. */
   detail: {
     bastDate: string;
     bukaEditDetailPelaksanaan: (r: Reminder) => void;

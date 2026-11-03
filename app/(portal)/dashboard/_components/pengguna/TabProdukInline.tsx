@@ -1,7 +1,6 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 
-/** TabProdukInline - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { PRODUCT_TYPES } from '@/app/(portal)/reminder-schedule/_components/shared';
 import React from 'react';
@@ -34,7 +33,6 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
     <>
       {activeTab === 'product' && (
         <div className="p-5 space-y-5">
-          {/* Routing tipe produk → TIM (bukan orang) */}
           <div className="p-4 rounded-xl border border-rose-200 bg-rose-50">
             <p className="text-xs font-bold text-rose-700 mb-1"><IkonTeks nama="🎯" />Routing Tipe Produk → Tim</p>
             <Keterangan className="ml-1">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</Keterangan>
@@ -83,7 +81,6 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
             </div>
           </div>
 
-          {/* Akun Manager (gerbang approval) */}
           <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
             <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="👑" />Akun Manager (gerbang approval)</p>
             <Keterangan className="ml-1">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</Keterangan>
@@ -96,7 +93,6 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
             </div>
           </div>
 
-          {/* Internal / External Sales */}
           <div className="p-4 rounded-xl border border-sky-200 bg-sky-50">
             <p className="text-xs font-bold text-sky-700 mb-1"><IkonTeks nama="🏷" />Sales Internal / External</p>
             <Keterangan className="ml-1">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</Keterangan>
@@ -105,12 +101,6 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
               <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
                 className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-sky-200 bg-white" />
             </div>
-            {/* TANPA max-h di sini: tab ini sudah menggulir sebagai satu blok
-                (bungkusnya flex-1 overflow-y-auto di induk). Kotak
-                setinggi 256px yang menggulir sendiri DI DALAM blok yang
-                juga menggulir berarti dua scrollbar bertumpuk - dan
-                508px konten tersembunyi di baliknya, terukur langsung:
-                scrollHeight - clientHeight = 508px pada max-h-64 ini. */}
             <div className="space-y-1.5 pr-1">
               {allUsers.filter(u => (u.role || '').toLowerCase() === 'guest' && (!internalSearch || u.full_name?.toLowerCase().includes(internalSearch.toLowerCase()))).map(u => (
                 <div key={u.id} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">

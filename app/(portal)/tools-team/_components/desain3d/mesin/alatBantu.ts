@@ -1,7 +1,3 @@
-/**
- * desain3d/mesin/alatBantu.ts - Alat bantu kanvas: label ukuran & produk, garis jarak terjauh, kerucut sudut pandang, sinar proyektor (mesin/sinar.ts), jangkauan speaker, jalur kabel, garis ukuran display (mm).
- * Dipanggil useAdegan setiap keadaan terkait berubah; isi lama dibuang dulu oleh pemanggil / fungsi ini.
- */
 import { f } from '../../bersama/ui';
 import { type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, modulLA, ruangDari, sebaranSpeaker, sebaranVSpeaker, TINGGI_DENGAR, telingaPenonton, tipeSpeakerDari } from '../inti';
 import { gambarJalurKabel } from './gambarKabel';
@@ -19,17 +15,13 @@ export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garis
 export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   const { THREE, grupBantu, CSS2DObject } = m;
   const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar, setInfoBlending, setUkuranCahaya, tampilan, sinarNyata, gambarLayar } = k;
-  //  Isi lama dibuang BESERTA geometri & materialnya: efek ini berjalan tiap
-  //  frame selama benda diseret, jadi tanpa dispose memori GPU terus naik.
   grupBantu.traverse(o => {
     const el = (o as { element?: HTMLElement }).element; if (el) el.remove();
     const mesh = o as T.Mesh; mesh.geometry?.dispose();
     const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
-    //  Tekstur ikut dibuang (cahaya proyektor bertulisan keterangan - mesin/sinar.ts).
     mats.forEach(mt => { (mt as T.MeshBasicMaterial).map?.dispose(); mt.dispose(); });
   });
   grupBantu.clear();
-  /** Label CSS2D biasa - ikut anti-tumpuk (mesin/label.ts) dengan prioritas `p`. */
   const label = (teks: string, pos: T.Vector3, nada: 'biru' | 'hijau' | 'merah' | 'abu' | 'ungu' = 'biru', p: number = PRIORITAS_LABEL.sedang) => {
     const el = mengalah(document.createElement('div'), p);
     el.textContent = teks;
@@ -38,15 +30,12 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
     return el;
   };
-  /** Label produk: kecil, bergaris penunjuk dari titik benda (dy -1 = utamakan di atas, 1 = di bawah). */
-  //  Garis penunjuk ke label yang ditata di tempat kosong di sekitar benda (mesin/labelProduk.ts).
   const labelP = (teks: string, pos: T.Vector3, dy: -1 | 1 = -1) => { grupBantu.add(buatLabelProduk(m, teks, pos, dy)); };
   for (const a of analisis) {
     const d = a.d;
     const r = (d.rot * Math.PI) / 180;
     const pusat = new THREE.Vector3(d.x, d.elev + d.h / 2, d.z);
     if (kerucut) {
-      // Kerucut nyaman ±sudutNyaman (bawaan 45°) di lantai, sejauh penonton terjauh (min 3 m), dipotong di dinding ruangnya.
       const k = kotakRuang[a.ri] ?? kotakRuang[0];
       const panjang = Math.max(3, a.terjauh + 0.5);
       const potong = [
@@ -60,13 +49,9 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
       kipas.position.set(d.x, 0.01, d.z); grupBantu.add(kipas);
     }
     if (ukur || (labelProduk && !d.sembunyiLabel)) {
-      //  Garis ukuran aktif: label cukup nama, digeser di atas angka mm supaya tidak bertumpuk.
-      //  Ukuran mati tetapi label produk hidup: cukup nama display.
       const adaGaris = garisUkur && !d.sembunyiUkur;
       const naik = adaGaris ? Math.max(0.1, Math.min(0.3, Math.max(d.w, d.h) * 0.04)) + (d.jenis === 'layar' ? 0.22 : 0) + Math.max(0.1, Math.min(0.25, Math.max(d.w, d.h) * 0.035)) * 2.2 : 0.02;
       labelP(adaGaris || !ukur ? d.nama : `${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + naik, d.z));
-      //  Garis & label penonton terjauh = bagian analisis sudut pandang: ikut centang "Sudut pandang". Tidak di
-      //  tampilan "Dari kursi": kamera sudah di posisi penonton, garisnya jatuh tepat menutupi gambar layar.
       if (kerucut && a.terjauhP && tampilan !== 'kursi') {
         const ujung = new THREE.Vector3(a.terjauhP.x, 1.2, a.terjauhP.z);
         const garis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pusat, ujung]),
@@ -77,11 +62,7 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
       }
     }
   }
-  //  Sinar proyektor, keterangan di bidang gambar, cahaya di benda & area blending - mesin/sinar.ts.
   gambarSinar(m, { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, teksSinar, setInfoBlending, setUkuranCahaya, sinarNyata, gambarLayar }, labelP);
-  //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
-  //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Tampil hanya bila
-  //  dinyalakan: centang "Jangkauan speaker" (semua) atau "Tampilkan jangkauan" di panel Atur speaker itu.
   for (const b of benda) {
     if (!(b.jenis === 'speaker' || b.jenis === 'speaker-plafon')) continue;
     if (!(jangkau || b.tampilJangkauan)) continue;
@@ -94,7 +75,6 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     const r = (b.rot * Math.PI) / 180;
     const maju = new THREE.Vector3(Math.sin(r), 0, Math.cos(r)), kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
     const isi = (warna: number, opasitas: number) => new THREE.MeshBasicMaterial({ color: warna, transparent: true, opacity: opasitas, side: THREE.DoubleSide, depthWrite: false, clippingPlanes: potong });
-    /** Kerucut elips dari O sepanjang `sumbu`: lebar sebaran H (sepanjang kanan) x V (tegak lurus). */
     const kerucutElips = (O: T.Vector3, sumbu: T.Vector3, H: number, V: number, L: number, warna: number, opasitas: number) => {
       const rH = L * Math.tan((Math.min(170, H) / 2) * Math.PI / 180), rV = L * Math.tan((Math.min(170, V) / 2) * Math.PI / 180);
       const geo = new THREE.ConeGeometry(1, L, 48, 1, true); geo.translate(0, -L / 2, 0); geo.scale(rH, 1, rV);
@@ -117,10 +97,6 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     }
     const tipe = tipeSpeakerDari(b), H = sebaranSpeaker(b), V = sebaranVSpeaker(b), L = jangkauanDari(b);
     if (tipe === 'linearray') {
-      //  Tiap modul: berkas sempit (V per modul) ke arah sudutnya, warna bergradasi atas -> bawah,
-      //  garis sumbu + titik jatuh di telinga penonton (ikut tinggi tribun / panggung) = di mana modul itu
-      //  "mendarat". Sumbu yang lebih dulu menabrak dinding / plafon ruangnya ditandai abu-abu & tidak dihitung
-      //  sebagai jangkauan (dulu modul teratas "menjangkau 72 m" di auditorium 20 m).
       const berkas = berkasLineArray(b, { x0: k.x0, x1: k.x0 + k.p, z0: 0, z1: k.l, t: k.t, telinga: telingaPenonton(benda, b) });
       const n = berkas.length, jatuh: number[] = [];
       let keDinding = 0;
@@ -142,7 +118,6 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
       label(`${b.nama}: ${modulLA(b)} modul · ${f(H, 0)}° H${teks}`, new THREE.Vector3(b.x, b.elev + b.h + 0.25, b.z), 'abu');
       continue;
     }
-    //  Speaker dinding sedikit menunduk (10°) ke pendengar; portable & kotak berdiri lurus ke depan.
     const tunduk = tipe === 'kolom' ? 0 : 0.175;
     const tinggiPancar = tipe === 'kolom' ? b.elev + b.h - Math.min(0.85, Math.max(0.3, b.h * 0.36)) / 2 : b.elev + b.h / 2;
     const O = new THREE.Vector3(b.x, tinggiPancar, b.z).addScaledVector(maju, tipe === 'kolom' ? 0.06 : b.d / 2);
@@ -154,29 +129,19 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     kotakRuang.forEach((k, i) => {
       label(`${f(k.p)} m`, new THREE.Vector3(k.x0 + k.p / 2, 0.05, k.l + 0.25), 'biru', PRIORITAS_LABEL.ruang);
       label(`${f(k.l)} m`, new THREE.Vector3(k.x0 + k.p + (i === kotakRuang.length - 1 ? 0.3 : -0.3), 0.05, k.l / 2), 'biru', PRIORITAS_LABEL.ruang);
-      //  Tinggi plafon: garis tegak lantai -> plafon di pojok depan-kanan (sudut dinding display, selalu
-      //  terlihat dari kamera depan) + angkanya di tengah garis. Tiap ruang bisa beda tinggi.
       const xt = k.x0 + k.p - 0.04, zt = 0.04;
       const tegak = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xt, 0, zt), new THREE.Vector3(xt, k.t, zt)]),
         new THREE.LineDashedMaterial({ color: 0x1d4ed8, dashSize: 0.12, gapSize: 0.06 }));
       tegak.computeLineDistances(); grupBantu.add(tegak);
       label(`plafon ${f(k.t)} m`, new THREE.Vector3(xt - 0.1, k.t / 2, zt + 0.1), 'biru', PRIORITAS_LABEL.ruang);
-      //  Di lantai pojok depan-kiri, bukan di tengah setinggi plafon: dari
-      //  sudut kamera mana pun posisi itu jatuh tepat di atas display yang
-      //  menempel di dinding, sehingga label "Ruang N" menutupi label ukuran
-      //  display. Pojok depan-kiri jauh dari display & label ukuran ruang.
       if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu', PRIORITAS_LABEL.ruang);
     });
   }
-  //  Jalur kabel ke rack (warna legend per jenis kabel).
   if (tampilKabel) gambarJalurKabel(THREE, grupBantu, kabel);
   if (tampilShare) gambarShare(m, benda);
-  //  Label produk: satu label per nama benda per ruang (kembar = "× jumlah"), di atas benda;
-  //  benda di plafon (speaker plafon, proyektor gantung) labelnya di bawah benda.
   if (labelProduk) {
     const grup = new Map<string, Benda[]>();
     for (const b of benda) {
-      //  Interior (meja, kursi, tribun, lampu) tidak diberi label - cukup perangkat AV.
       if (DISPLAY.includes(b.jenis) || ['meja', 'kursi', 'tribun', 'lampu'].includes(b.jenis) || b.sembunyiLabel) continue;
       const nama = b.nama.replace(/\s+\d+(\.\d+)?$/, '').trim() || b.nama;
       const kunci = `${ruangDari(ruang, b.x)}|${nama}`;
@@ -190,6 +155,5 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
         new THREE.Vector3(b.x, diPlafon ? Math.max(0.3, b.elev - 0.02) : atas + 0.02, b.z), diPlafon ? 1 : -1);
     }
   }
-  //  Garis ukuran display: lebar di atas & tinggi di kanan, ujung bertanda, angka dalam mm.
   if (garisUkur) gambarGarisUkurDisplay(m, benda);
 }

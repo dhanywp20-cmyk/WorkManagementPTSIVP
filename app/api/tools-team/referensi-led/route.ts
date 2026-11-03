@@ -1,14 +1,3 @@
-/**
- * /api/tools-team/referensi-led - tabel referensi Kalkulator LED (modul,
- * sending card, video processor) yang dipakai bersama seluruh tim.
- *
- *   GET     siapa pun yang masuk: referensi bersama (null = pakai bawaan).
- *   PUT     Admin/Full Access: simpan untuk seluruh tim.
- *   DELETE  Admin/Full Access: kembalikan ke tabel bawaan.
- *
- * Disimpan sebagai satu baris app_settings lewat service role, divalidasi
- * ketat (lib/tools-team.ts) sebelum ditulis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';

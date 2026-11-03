@@ -1,27 +1,21 @@
-/** av-hitung-koneksi.ts - dipecah dari av-hitung.ts (scripts/pecah-modul.mjs); av-hitung.ts tetap mengekspor ulang semuanya. */
 
-// ── Screen connection LED (urutan kabel data, seperti NovaLCT) ─────────────
 
 export type SudutMulai = 'kiri-atas' | 'kanan-atas' | 'kiri-bawah' | 'kanan-bawah';
 
-/** Satu receiving card di grid: [kolom, baris], 0 = kiri / atas. */
 export type SelRC = [number, number];
 
 export interface OpsiKoneksi {
-  /** Grid receiving card (satu sel = satu receiving card). */ kolom: number; baris: number;
-  /** Pixel satu receiving card bila semua sama. */ pxPerRC?: number;
-  /** Lebar tiap kolom & tinggi tiap baris receiving card (px) - menimpa pxPerRC (ukuran berbeda-beda). */
+   kolom: number; baris: number;
+   pxPerRC?: number;
   lebarPx?: number[]; tinggiPx?: number[];
-  /** Sel tanpa receiving card (layar tidak persegi / ada lubang). */ kosong?: SelRC[];
-  /** Kabel manual: urutan receiving card per port (indeks 0 = port 1). Diisi = template diabaikan. */ manual?: SelRC[][] | null;
+   kosong?: SelRC[];
+   manual?: SelRC[][] | null;
   pxPerPort: number;
-  /** Receiving card pertama di pojok mana, kabel berjalan mendatar (per baris) atau tegak (per kolom). */
   mulai: SudutMulai; arah: 'horizontal' | 'vertikal';
-  /** S = ular (bolak-balik), Z = tiap baris/kolom mulai dari sisi yang sama. */ pola: 'S' | 'Z';
-  /** baris = tiap port mengambil baris/kolom utuh (kabel rapi; garis yang melebihi kapasitas port dibagi ke
-   *  beberapa zona sama lebar); penuh = port diisi sampai batas (port paling hemat). */ bagi: 'baris' | 'penuh';
-  /** Persentase kapasitas port yang boleh dipakai (bawaan 100). */ bebanMaks?: number;
-  /** Port per controller / sending card - untuk penomoran "controller-port-RC". 0 = satu controller. */ portPerKartu?: number;
+   pola: 'S' | 'Z';
+   bagi: 'baris' | 'penuh';
+   bebanMaks?: number;
+   portPerKartu?: number;
 }
 
 export interface SelKoneksi { c: number; r: number; port: number; urut: number; kartu: number; px: number }
@@ -29,19 +23,14 @@ export interface SelKoneksi { c: number; r: number; port: number; urut: number; 
 export interface PortKoneksi { port: number; kartu: number; jumlah: number; px: number; beban: number; mulai: { c: number; r: number } | null }
 
 export interface HasilKoneksi {
-  /** Semua receiving card dalam urutan kabel (rantai port 1, lalu port 2, ...). */ sel: SelKoneksi[];
+   sel: SelKoneksi[];
   port: PortKoneksi[];
-  /** Receiving card terbesar yang muat per port (patokan). */ rcPerPortMaks: number; jumlahPort: number; jumlahKartu: number;
-  /** Peringatan bila satu receiving card melebihi kapasitas satu port. */ galat: string | null;
-  /** Receiving card yang belum tersambung ke port mana pun (mode manual). */ tanpaPort: { c: number; r: number }[];
-  /** Port yang bebannya melewati batas. */ lewat: number[];
+   rcPerPortMaks: number; jumlahPort: number; jumlahKartu: number;
+   galat: string | null;
+   tanpaPort: { c: number; r: number }[];
+   lewat: number[];
 }
 
-/**
- * Urutan kabel data receiving card & pembagian ke port LAN. Kolom c 0.. dari kiri,
- * baris r 0.. dari atas. Satu receiving card tidak bisa dibagi ke dua port; port dibatasi
- * jumlah PIXEL (receiving card boleh berbeda ukuran), bukan jumlah kartu.
- */
 export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
   const K = Math.max(1, Math.round(o.kolom)), B = Math.max(1, Math.round(o.baris));
   const di = (c: number, r: number) => r * K + c;
@@ -60,7 +49,6 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
 
   const potongan: { c: number; r: number }[][] = [];
   if (o.manual) {
-    //  Manual: urutan dari pengguna; sel di luar grid, kosong, atau dobel diabaikan.
     const dipakai = new Set<number>();
     for (const rantai of o.manual) {
       const isi: { c: number; r: number }[] = [];
@@ -74,8 +62,6 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
     }
   } else {
     const kiri = o.mulai.startsWith('kiri'), atas = o.mulai.endsWith('atas');
-    //  Garis = baris (horizontal) atau kolom (vertikal), urut dari pojok mulai. Posisi di sepanjang garis
-    //  dihitung dari sisi mulai lalu dipetakan ke kolom/baris sebenarnya.
     const nGaris = o.arah === 'horizontal' ? B : K, panjang = o.arah === 'horizontal' ? K : B;
     const awalDiSisiMulai = o.arah === 'horizontal' ? kiri : atas;
     const selDi = (g: number, pos: number) => {
@@ -93,8 +79,6 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
       return isi;
     };
     if (o.bagi === 'baris') {
-      //  Zona: baris utuh yang lebih besar dari kapasitas port -> layar dibagi beberapa zona sama lebar,
-      //  tiap zona dikabel sendiri dari sisi mulai (seperti layar lebar di lapangan).
       const batasZona = (z: number, n: number) => [Math.round((z * panjang) / n), Math.round(((z + 1) * panjang) / n)];
       const pxRuas = (g: number, p0: number, p1: number) => { let t = 0; for (let p = p0; p < p1; p++) t += pxPos(g, p); return t; };
       const muat = (n: number) => {
@@ -108,8 +92,6 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
       while (nZona < panjang && !muat(nZona)) nZona++;
       for (let z = 0; z < nZona; z++) {
         const [p0, p1] = batasZona(z, nZona);
-        //  Garis dikelompokkan per port selama muat; tiap port mulai lagi dari sisi mulai (kabel dari
-        //  arah controller), pola S membalik arah di dalam port.
         let grup: number[] = [], jumlah = 0;
         const tutup = () => {
           if (grup.length) potongan.push(grup.flatMap((g, j) => ruas(g, p0, p1, o.pola === 'Z' || j % 2 === 0)));
@@ -124,7 +106,6 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
         tutup();
       }
     } else {
-      //  Isi penuh: satu ular di seluruh layar, dipotong tiap kali port penuh.
       let isi: { c: number; r: number }[] = [], jumlah = 0;
       for (let g = 0; g < nGaris; g++) {
         for (const s of ruas(g, 0, panjang, o.pola === 'Z' || g % 2 === 0)) {
@@ -159,14 +140,8 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
   };
 }
 
-// ── Receiving card (kapasitas per kartu) ───────────────────────────────────
+export interface ReceivingCard { nama: string;  w: number;  h: number; ket: string }
 
-export interface ReceivingCard { nama: string; /** px maks mendatar */ w: number; /** px maks tegak */ h: number; ket: string }
-
-/**
- * Receiving card Novastar umum: area maksimal per kartu pada 60 Hz (nilai datasheet umum;
- * kapasitas sebenarnya bergantung IC driver & scan modul - cek NovaLCT sebelum penawaran).
- */
 export const RECEIVING_CARD: ReceivingCard[] = [
   { nama: 'A4s Plus', w: 256, h: 256, ket: 'Ekonomis; layar kecil / modul besar' },
   { nama: 'A5s Plus', w: 512, h: 384, ket: 'Umum indoor & outdoor' },
@@ -175,10 +150,6 @@ export const RECEIVING_CARD: ReceivingCard[] = [
   { nama: 'A10s Plus', w: 512, h: 512, ket: 'Premium fine pitch, HDR, refresh tinggi' },
 ];
 
-/**
- * Jumlah unit (modul/cabinet) per receiving card. Mulai dari usulan (mis. ±500 mm per kartu,
- * mengikuti cabinet) lalu dikecilkan sampai area kartu muat di kapasitas receiving card.
- */
 export function unitPerRC(rc: ReceivingCard, pxX: number, pxY: number, usulKol: number, usulBaris: number) {
   let kol = Math.max(1, Math.round(usulKol)), baris = Math.max(1, Math.round(usulBaris));
   while (kol > 1 && kol * pxX > rc.w) kol--;

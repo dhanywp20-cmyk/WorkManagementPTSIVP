@@ -3,7 +3,6 @@ import { NO_STORE, ambilAkun, galat, hakAtas, simpanFoto } from '@/lib/checklist
 
 export const dynamic = 'force-dynamic';
 
-/** POST /api/project-progress/checklist/<id>/foto - multipart: itemId, full, thumb. */
 export async function POST(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const params = await ctx.params;
   const s = await ambilAkun(request);

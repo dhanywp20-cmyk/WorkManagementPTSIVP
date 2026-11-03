@@ -1,25 +1,3 @@
-/*
-  UJI: BAST sebuah jadwal multi-tanggal harus menempel di SELURUH barisnya.
-
-  Bug nyata: proyek "Steak 21 Gading Serpong" muncul di Incentive tanpa BAST
-  ("Belum diisi") sehingga tombol Generate Tahapan tidak pernah tampil - padahal
-  formulir penyelesaiannya jelas sudah diisi, dan status Completed-nya dikunci
-  sehingga tidak bisa diulang.
-
-  Sebabnya dua aturan yang tidak sepakat soal "baris mana yang mewakili proyek":
-
-    - Reminder Schedule menulis mode/BAST/installer ke SATU baris saja, yaitu
-      baris yang kebetulan dibuka dari daftar - tanggal paling AWAL.
-    - Incentive memilih wakil proyeknya lewat gabungkanProyek(), yang sengaja
-      mengambil tanggal paling AKHIR (tanggal selesai itulah yang cocok dengan
-      BAST untuk pekerjaan berhari-hari).
-
-  Jadi untuk jadwal satu hari keduanya menunjuk baris yang sama dan semuanya
-  tampak baik-baik saja; begitu jadwalnya lebih dari satu hari, yang diisi dan
-  yang dibaca adalah baris yang berbeda.
-
-    node uji/bast-sebatch.mjs
-*/
 
 let lulus = 0, gagal = 0;
 function ok(nama, syarat, ket = '') {
@@ -27,7 +5,6 @@ function ok(nama, syarat, ket = '') {
   else { gagal++; console.log(`  GAGAL ${nama}${ket ? ' — ' + ket : ''}`); }
 }
 
-/** Wakil proyek menurut lib/kelompok-insentif.ts: due_date paling akhir. */
 function wakilProyek(baris) {
   return [...baris].sort((a, b) =>
     (b.due_date ?? '').localeCompare(a.due_date ?? '') || a.id.localeCompare(b.id))[0];
@@ -42,7 +19,6 @@ const jadwalTigaHari = () => ([
 console.log('\n1. Cara LAMA (tulis ke satu baris yang dibuka) - membuktikan bugnya nyata');
 {
   const baris = jadwalTigaHari();
-  //  Yang dibuka dari daftar adalah baris paling awal.
   baris[0].bast_date = '2026-06-17';
 
   const wakil = wakilProyek(baris);

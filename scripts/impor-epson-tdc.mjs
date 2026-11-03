@@ -1,23 +1,3 @@
-/**
- * scripts/impor-epson-tdc.mjs - Buat katalog proyektor Epson (lib/data/epson-tdc.json) dari data Epson Projector Throw
- * Distance Simulator resmi (https://download.epson.com.sg/tdc/V272/), format sama dengan katalog Panasonic
- * (desain3d/inti/katalogPanasonic.ts) supaya dipilih dengan cara yang sama.
- *
- * Jalankan:
- *   node scripts/impor-epson-tdc.mjs arsip/tdc/epson-2.7.2        dari ARSIP lokal (tanpa internet - situs Epson tutup pun jalan)
- *   node scripts/impor-epson-tdc.mjs [url dasar simulator] [versi]  dari situs Epson; data mentahnya sekaligus diarsipkan ke
- *                                                                   arsip/tdc/epson-<versi>/ (bawaan: V272, versi 2.7.2)
- *
- * Data simulator hanya DIBACA sebagai JSON (projectorSpec, projectorLensSpec, optionLensList, optionLensSpec,
- * brightness), tidak ada kode Epson yang dijalankan. Arsip menyimpan berkas persis seperti dari Epson (termasuk BOM).
- *
- * Rumus jarak Epson per rasio sinyal, ujung wide & tele: L(cm) = a x diagonal(inci) + b (size2dist), jarak dari ujung
- * lensa ke layar - sama dengan titik ukur Desain 3D. Dikonversi seperti Panasonic:
- *   TR = a / 100 / 0,0254 x diagonal/lebar gambar,  b(Desain 3D) = -b / 100   ->  L = TR x lebar gambar - b
- * Lens shift: V / H min-max + batas kombinasi Hv (H penuh -> V hanya Hv min..Hv max), cara simulator Epson. Titik tengah
- * gambar boleh di segi enam (0,Vmin) (Hmax,Hvmin) (Hmax,Hvmax) (0,Vmax) (Hmin,Hvmax) (Hmin,Hvmin); disimpan sebagai
- * daerah gambar utuh (segi enam + persegi gambar = segi delapan simulator Epson) seperti poligon Panasonic.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,10 +6,8 @@ const akar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BERKAS = ['projectorSpec', 'projectorLensSpec', 'optionLensList', 'optionLensSpec', 'brightness'];
 const [sumberArg = 'https://download.epson.com.sg/tdc/V272/', versiArg] = process.argv.slice(2);
 const lokal = fs.existsSync(sumberArg) && fs.statSync(sumberArg).isDirectory();
-/** Versi: argumen, nama folder arsip (epson-2.7.2), atau bawaan. */
 const versi = versiArg ?? (lokal ? path.basename(sumberArg).replace(/^epson-/, '') : '2.7.2');
 const arsip = lokal ? sumberArg : path.join(akar, 'arsip', 'tdc', `epson-${versi}`);
-/** Teks JSON Epson (berkas aslinya ber-BOM). */
 const urai = (t) => JSON.parse(t.replace(/^﻿/, ''));
 async function ambil(f) {
   if (lokal) return urai(fs.readFileSync(path.join(arsip, `${f}.json`), 'utf8'));
@@ -52,9 +30,7 @@ Buat ulang katalog tanpa internet: \`node scripts/impor-epson-tdc.mjs ${path.rel
 const RASIO = { '16:10': [16, 10], '16:9': [16, 9], '4:3': [4, 3], '17:9': [17, 9], '21:9': [64, 27] };
 const angka = (v) => { const x = Number(String(v ?? '').replace(/[, ]/g, '')); return Number.isFinite(x) ? x : 0; };
 const bulat = (v, d = 6) => Math.round(v * 10 ** d) / 10 ** d;
-/** Persen atau pecahan -> pecahan (aturan simulator Epson: |x| < 1 sudah pecahan). */
 const pecahan = (x) => { const v = angka(x); return Math.abs(v) < 1 ? v : v / 100; };
-/** Kelompok "Category" simulator Epson (findMatchingModel): 1..6, 0 = All. */
 const GRUP = { 0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 6: 3, 7: 3, 8: 4, 9: 5, 5: 6 };
 const KATEGORI = [
   { v: 0, l: 'All' }, { v: 1, l: 'Standard / Classroom / Mobile' }, { v: 2, l: 'Short Throw / Ultra Short Throw' }, { v: 3, l: 'Signage / Lighting' },
@@ -70,10 +46,8 @@ function resolusiDari(r) {
   if (n.startsWith('4K')) return '4K';
   return null;
 }
-/** Rasio panel native dari resolusi (lensa opsional menyimpan rasio sendiri, tidak selalu panel). */
 const RASIO_RESOLUSI = { WUXGA: '16:10', WXGA: '16:10', SXGAP: '4:3', XGA: '4:3', FHD: '16:9', '4K': '16:9' };
 
-/** Hull cembung (monotone chain), titik [x, y]. */
 function hull(t) {
   const p = [...t].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const silang = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
@@ -82,15 +56,10 @@ function hull(t) {
   for (const q of p.reverse()) { while (atas.length >= 2 && silang(atas.at(-2), atas.at(-1), q) <= 1e-12) atas.pop(); atas.push(q); }
   return [...bawah.slice(0, -1), ...atas.slice(0, -1)];
 }
-/**
- * Daerah lens shift (poligon daerah gambar, satuan panel) dari angka Epson, atau null bila tanpa lens shift.
- * Titik tengah gambar: segi enam simulator Epson (Hv kosong = 0); daerah gambar = titik itu + persegi gambar.
- */
 function poligonShift(s) {
   const vMin = pecahan(s.lensShiftVMin), vMax = pecahan(s.lensShiftVMax), hMin = pecahan(s.lensShiftHMin), hMax = pecahan(s.lensShiftHMax);
   if (vMin === vMax && hMin === hMax) return null;
   const hvMin = pecahan(s.lensShiftHvMin), hvMax = pecahan(s.lensShiftHvMax);
-  //  Rentang satu arah (Vmin > 0 / Vmax < 0): Hv relatif terhadap ujung itu (I simulator Epson).
   const I = vMin > 0 ? vMin : vMax < 0 ? vMax : 0;
   const tengah = hMin === hMax
     ? [[hMin, vMin], [hMin, vMax]]
@@ -99,7 +68,6 @@ function poligonShift(s) {
   return hull(titik).flatMap(([x, y]) => [bulat(x, 4), bulat(y, 4)]);
 }
 
-/** Koefisien per rasio sinyal dari entri lensa (ratio1..5, s2dWa1 ...). */
 function koefisien(s) {
   const ar = {};
   let dMin = Infinity, dMaks = 0;
@@ -118,7 +86,6 @@ function koefisien(s) {
   }
   return { ar, d: [Number.isFinite(dMin) ? dMin : 0, dMaks] };
 }
-/** Tinggi gambar per inci diagonal (cm) pada rasio native. */
 const tinggiPerInci = (ra) => { const [w, h] = RASIO[ra] ?? [16, 10]; return (2.54 * h) / Math.hypot(w, h); };
 
 const brLensa = new Map(br.optionLens.map(x => [`${x.code}|${x.lensId}`, x]));
@@ -141,12 +108,10 @@ for (const p of ps) {
     let off = 0, khusus = false;
     if (!pg) {
       off = pecahan(shift.lensShiftVMin);
-      //  Tanpa lens shift: posisi tetap gambar dari rumus simulator Epson - lensa "long lens" (wv) & ultra short throw (v1b).
       const i1 = [1, 2, 3, 4, 5].find(i => s[`ratio${i}`] === native) ?? 1;
       const hpi = tinggiPerInci(native);
       if (tetapLensa && p.type === 0 && angka(s[`tv1${i1}`]) && angka(s[`tv2${i1}`]) && angka(s[`wv2${i1}`])) off = angka(s[`wv2${i1}`]) / hpi - 0.5;
       if (p.category === 4) {
-        //  UST: (tinggi/2 + v1b(D) - mu) / tinggi, diambil di tengah rentang ukuran layar (Epson: sedikit berubah ikut ukuran).
         const D = (d[0] + d[1]) / 2, h = hpi * D;
         off = (h / 2 + angka(s[`v1bWa${i1}`]) * D + angka(s[`v1bWb${i1}`]) - angka(s.mu) / 10) / h;
         khusus = true;
@@ -164,7 +129,6 @@ for (const p of ps) {
       const s = specOpsi.get(id);
       if (!s) continue;
       const b = brLensa.get(`${p.code}|${id}`);
-      //  Lens shift & lumen per KOMBINASI proyektor + lensa (brightness.json); tanpa entri = angka lensa.
       tambah(String(s.name ?? id).replace(/\s+V\d+H\w+$/, ''), s, b ?? s, b ? angka(b.brightness) : 0, false);
     }
   } else {

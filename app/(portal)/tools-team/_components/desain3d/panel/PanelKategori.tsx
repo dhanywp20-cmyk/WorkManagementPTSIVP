@@ -1,9 +1,4 @@
 'use client';
-/**
- * Panel template kategori ruangan (terkunci - perubahan hanya di salinan).
- * Tiap kartu: ikon, judul, keterangan isi ruangan, penanda kategori yang sedang terpasang, dan
- * penanda default Admin (simpan/useTemplateKategori.ts). Tombol atur hanya untuk Admin / Full Access.
- */
 import { KATEGORI_RUANG } from '../inti';
 import type { AlatDesain } from './alat';
 
@@ -15,7 +10,6 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
   const { asal, sisi, statusSimpan } = a.K;
   const { bolehAtur, daftar, jadikanDefault, kembalikanBawaan, pilihKategori, sibuk } = a.template;
   if (sisi !== 'kategori') return null;
-  //  Kategori yang isinya sedang di kanvas (asal.nama = "<judul>" atau "<judul> · default Admin").
   const terpasang = asal.jenis === 'template' ? KATEGORI_RUANG.find(k => asal.nama === k.judul || asal.nama?.startsWith(`${k.judul} ·`))?.id : undefined;
   return (
     <>
@@ -36,7 +30,6 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
           return (
             <div key={k.id}
               className={`rounded-xl border overflow-hidden transition-colors ${aktif ? 'border-blue-300 bg-blue-50/70' : t ? 'border-amber-300 bg-white' : 'border-slate-200 bg-white hover:border-blue-200'}`}>
-              {/* Ikon, judul tebal, keterangan isi ruangan di bawahnya - seperti tampilan awal Desain 3D. */}
               <button type="button" onClick={() => void pilihKategori(k.id)} disabled={memuat} aria-busy={memuat} aria-current={aktif || undefined}
                 className={`w-full flex items-start gap-3 text-left px-3 py-2.5 disabled:opacity-60 ${aktif ? '' : 'hover:bg-blue-50/50'}`}>
                 <span className="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">{k.ikon}</span>

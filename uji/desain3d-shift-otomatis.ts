@@ -1,10 +1,3 @@
-/**
- * uji/desain3d-shift-otomatis.ts - tombol "Otomatis ke layar" lens shift (inti/proyektor.ts shiftOtomatis): posisi,
- * pan, tilt & zoom tetap, lens shift vertikal & horizontal diatur supaya pusat gambar tepat di pusat layar, dibatasi
- * kemampuan lensa (batas kotak atau daerah segi delapan kalkulator Panasonic).
- *
- * Jalankan: npx tsx uji/desain3d-shift-otomatis.ts
- */
 import katalog from '../lib/data/panasonic-tdc.json';
 import {
   batasShift, bendaBaru, daftarRuang, isiDariKatalog, sinarProyektor, shiftOtomatis, type Benda, type KatalogTdc, type Ruang,
@@ -46,7 +39,6 @@ cek(`batas terisi dari katalog: atas +${Math.round(bv.atas! * 100)}%, bawah ${Ma
 const h3 = shiftOtomatis(vmz, [layar, vmz], ruang)!;
 const b3 = batasShift({ ...vmz, offsetLensa: h3.offsetLensa, geserLensaH: h3.geserLensaH });
 cek(`hasil di dalam daerah lensa (V ${(h3.offsetLensa * 100).toFixed(1)}%, H ${(h3.geserLensaH * 100).toFixed(1)}%)`, !b3.lewatV && !b3.lewatH && !b3.lewatGabungan);
-//  Ketinggian yang shift-nya masih muat (vertikal ~30%, horizontal kecil): harus tepat di tengah layar.
 const tanpaBatas = (e: number) => { const q = { ...vmz, x: 6.05, elev: e, poligonShift: undefined }; return shiftOtomatis(q, [layar, q], ruang)!.offsetLensa; };
 let elev = 2.9;
 while (elev > 1 && tanpaBatas(elev) > 0.3) elev -= 0.01;

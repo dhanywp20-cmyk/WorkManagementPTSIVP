@@ -1,14 +1,8 @@
 import type * as T from 'three';
 import type { JalurKabel } from '../inti';
 
-/** Jari-jari tabung kabel di kanvas (m): Ø 1,2 cm - masih terlihat dari jauh & di foto tanpa menutupi perangkat. */
 const JARI = 0.006;
 
-/**
- * Gambar jalur kabel sebagai tabung berwarna (warna legend), satu InstancedMesh per warna:
- * tiap ruas lurus = satu instance silinder, sendi = bola kecil supaya belokan tidak bercelah.
- * Bahan tanpa pencahayaan (MeshBasic) supaya warnanya persis sama dengan legend.
- */
 export function gambarJalurKabel(THREE: typeof T, grup: T.Group, jalur: JalurKabel[]) {
   const perWarna = new Map<number, { ruas: [T.Vector3, T.Vector3][]; sendi: T.Vector3[] }>();
   for (const j of jalur) {

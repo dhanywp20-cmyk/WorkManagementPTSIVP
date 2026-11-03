@@ -1,29 +1,18 @@
-/**
- * desain3d/inti/susunBlending.ts - Susun proyektor IDENTIK menjadi satu gambar edge blending di layar, dengan cara
- * kalkulator Panasonic: tiap proyektor LURUS (tanpa keystone) tepat di depan pusat ubinnya, jarak lempar dari
- * rumus lensa (TR di dalam rentang zoom + koreksi b), tinggi lensa memakai lens shift di dalam daerah lensa.
- * Ukuran ubin, overlap & peta piksel dari rencanaBlending (lib/av-layar-proyektor.ts) - angka yang sama dengan
- * Kalkulator AV › Proyektor › Edge blending. Yang tidak tercapai (ruang kurang dalam, shift kurang sehingga perlu
- * tilt, badan bertabrakan) dilaporkan, bukan disembunyikan.
- *
- * Murni (diuji di uji/desain3d-susun-blending.ts).
- */
 import { rencanaBlending, type RencanaBlending } from '@/lib/av-layar-proyektor';
 import { idBaru } from './katalog';
 import { pasangKeLayar, rasioProyektorDari, resolusiProyektorDari, sinarProyektor } from './proyektor';
 import { ruangDari } from './ruang';
 import type { Benda, Kotak, Ruang } from './tipe';
 
-export interface AturSusunBlending { kolom: number; baris: number; /** % lebar & tinggi gambar satu proyektor */ overlapPersen: number }
+export interface AturSusunBlending { kolom: number; baris: number;  overlapPersen: number }
 
 export interface HasilSusunBlending {
   benda: Benda[];
-  /** Proyektor yang dipakai, urut ubin (kiri-atas -> kanan-bawah, dilihat dari penonton). */ ids: string[];
+   ids: string[];
   rencana: RencanaBlending;
-  /** Hal yang tidak tercapai / perlu dicek - kosong = semua sesuai lensa. */ peringatan: string[];
+   peringatan: string[];
 }
 
-/** Data optik & badan yang disamakan dari proyektor contoh: blending butuh model, lensa & panel yang sama. */
 const SAMA: (keyof Benda)[] = [
   'w', 'h', 'd', 'pasangProyektor', 'throwRatio', 'trMin', 'trMax', 'koreksiJarak', 'koreksiJarakTele', 'offsetLensa', 'offsetTetap',
   'shiftAtasMaks', 'shiftBawahMaks', 'shiftHMaks', 'poligonShift', 'rasioProyektor', 'resolusiProyektor', 'lumen', 'kontrasAsli',
@@ -31,10 +20,6 @@ const SAMA: (keyof Benda)[] = [
 
 const cm = (m: number) => `${Math.round(m * 100)} cm`;
 
-/**
- * Susun `aturan.kolom` × `aturan.baris` proyektor seperti `contoh` ke layar `l`. Proyektor lain di ruang yang sama
- * yang sudah menyorot layar itu dipakai lebih dulu (urut kiri -> kanan), kekurangannya disalin dari `contoh`.
- */
 export function susunBlending(contoh: Benda, semua: Benda[], l: Benda, k: Kotak, ruang: Ruang, aturan: AturSusunBlending): HasilSusunBlending {
   const kolom = Math.max(1, Math.min(12, Math.round(aturan.kolom))), baris = Math.max(1, Math.min(6, Math.round(aturan.baris)));
   const n = kolom * baris;
@@ -45,7 +30,6 @@ export function susunBlending(contoh: Benda, semua: Benda[], l: Benda, k: Kotak,
   });
   const m = rencana.lebarSatuM / res.x;
 
-  //  Proyektor yang sudah menyorot layar ini (termasuk contoh), urut dari kiri ke kanan dilihat dari penonton.
   const rl = (l.rot * Math.PI) / 180, ri = ruangDari(ruang, l.x);
   const u = (b: Benda) => (b.x - l.x) * Math.cos(rl) - (b.z - l.z) * Math.sin(rl);
   const ada = semua.filter(b => b.jenis === 'proyektor' && ruangDari(ruang, b.x) === ri
@@ -58,7 +42,6 @@ export function susunBlending(contoh: Benda, semua: Benda[], l: Benda, k: Kotak,
   let kurang = 0, tiltMaks = 0, lewat = 0;
   for (let i = 0; i < n; i++) {
     const pt = rencana.peta[i];
-    //  Pusat ubin dari pusat kanvas (kanvas di tengah layar; kelebihan satu arah di-mask rata kiri-kanan / atas-bawah).
     const du = (pt.x + res.x / 2 - rencana.kanvasX / 2) * m, dv = (rencana.kanvasY / 2 - (pt.y + res.y / 2)) * m;
     const lama = ada[i];
     const awal: Benda = lama

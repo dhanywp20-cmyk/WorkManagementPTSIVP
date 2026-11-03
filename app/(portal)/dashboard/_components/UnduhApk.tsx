@@ -3,10 +3,6 @@ import { useEffect, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
 import { ambilRilisTerbaru, formatUkuran, kodeVersiAplikasi, URL_UNDUH_APK, type RilisAndroid } from '@/lib/rilis-android';
 
-/**
- * Tombol unduh APK Android di Profil - selalu rilis TERBARU yang diunggah
- * admin (Admin Panel -> Aplikasi Android). Belum ada rilis -> tidak tampil.
- */
 export function UnduhApk() {
   const [rilis, setRilis] = useState<RilisAndroid | null>(null);
   const [kodeTerpasang, setKodeTerpasang] = useState<number | null>(null);

@@ -1,38 +1,14 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 
-/**
- * Paginasi daftar - SATU mekanisme untuk semua modul.
- *
- * Sebelumnya cuma Ticketing yang punya paginasi (30 baris/halaman, ditulis
- * langsung di halamannya). Modul lain merender SELURUH hasil saring dalam
- * satu tabel: begitu datanya menumpuk, halamannya memanjang ratusan baris,
- * menggulung jadi satu-satunya cara menemukan apa pun, dan setiap penyaringan
- * ulang memaksa browser mengecat seluruh daftar dari awal.
- *
- * Dipakai lewat `usePaginasi(daftarTersaring)` + `<Paginasi {...} />`.
- */
-
-/**
- * Jumlah baris per halaman di SELURUH platform.
- *
- * Satu angka di satu tempat - kalau nanti mau diubah, cukup di sini dan
- * semua modul ikut. Jangan tulis angkanya langsung di halaman mana pun;
- * itu persis bagaimana Ticketing sempat berjalan sendiri di angka 30
- * sementara modul lain tidak berpaginasi sama sekali.
- */
 export const BARIS_PER_HALAMAN = 15;
 
 export interface HasilPaginasi<T> {
-  /** Halaman aktif, SUDAH dijamin berada dalam rentang yang sah. */
   halaman: number;
   setHalaman: (n: number) => void;
   totalHalaman: number;
-  /** Potongan data untuk halaman aktif - ini yang dirender tabel. */
   potongan: T[];
-  /** Indeks baris pertama halaman ini di dalam daftar penuh (basis 0). */
   mulai: number;
-  /** Jumlah baris di SELURUH daftar (bukan cuma halaman ini). */
   total: number;
   perHalaman: number;
 }
@@ -42,21 +18,10 @@ export function usePaginasi<T>(daftar: T[], perHalaman = BARIS_PER_HALAMAN): Has
   const total = daftar.length;
   const totalHalaman = Math.max(1, Math.ceil(total / perHalaman));
 
-  /*
-    Kembali ke halaman 1 begitu daftarnya menyusut melewati halaman aktif.
-
-    Tanpa ini, seseorang yang sedang di halaman 5 lalu mengetik kata kunci
-    yang menyisakan 8 baris akan melihat TABEL KOSONG - datanya ada, tapi
-    halaman 5 dari 1 halaman memang tidak berisi apa-apa. Kegagalan seperti
-    ini tidak pernah dilaporkan sebagai bug paginasi; yang dilaporkan
-    "datanya hilang setelah difilter".
-  */
   useEffect(() => {
     if (halaman > totalHalaman) setHalaman(1);
   }, [halaman, totalHalaman]);
 
-  //  Dipakai untuk memotong SEKARANG juga, tidak menunggu efek di atas
-  //  berjalan - kalau tidak, ada satu kali render dengan potongan kosong.
   const halamanAman = Math.min(halaman, totalHalaman);
   const mulai = (halamanAman - 1) * perHalaman;
   const potongan = useMemo(
@@ -67,13 +32,6 @@ export function usePaginasi<T>(daftar: T[], perHalaman = BARIS_PER_HALAMAN): Has
   return { halaman: halamanAman, setHalaman, totalHalaman, potongan, mulai, total, perHalaman };
 }
 
-/**
- * Bilah navigasi halaman. Gayanya mengikuti Ticketing (satu-satunya modul
- * yang sudah punya paginasi sebelum ini) supaya tidak ada dua bentuk pager
- * berbeda di satu produk.
- *
- * `satuan` cuma untuk label jumlah, mis. "tiket", "jadwal", "project".
- */
 export function Paginasi({
   halaman, setHalaman, totalHalaman, mulai, total, perHalaman,
   satuan = 'baris', warna = '#dc2626',
@@ -85,12 +43,8 @@ export function Paginasi({
   total: number;
   perHalaman: number;
   satuan?: string;
-  /** Warna tombol halaman aktif - disamakan dengan aksen modulnya. */
   warna?: string;
 }) {
-  //  Bilahnya TETAP dirender walau cuma satu halaman: label "menampilkan
-  //  1-8 dari 8" itu sendiri informasi yang berguna, dan bilah yang muncul-
-  //  hilang membuat tinggi tabel melompat setiap kali filter diubah.
   const tombolHalaman = useMemo(() => {
     const maks = Math.min(5, totalHalaman);
     return Array.from({ length: maks }, (_, i) => {

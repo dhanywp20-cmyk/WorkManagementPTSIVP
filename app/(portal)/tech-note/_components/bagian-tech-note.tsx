@@ -1,6 +1,5 @@
 'use client';
 
-/** Deklarasi tingkat modul tech-note/page.tsx (scripts/pindah-tingkat-modul.mjs). */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
@@ -22,16 +21,9 @@ import { ModalDetailNote } from './ModalDetailNote';
 import { ModalUnggahNote } from './ModalUnggahNote';
 import { ModalBuatFolder } from './ModalBuatFolder';
 import { IsiTechNote } from './IsiTechNote';import { linkOneDriveSah, KATEGORI_FOLDER } from './aturan-tech-note';
-//  Dipindah ke aturan-tech-note.ts (dipakai juga oleh hook); diekspor ulang untuk pemakai lama.
 export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from './aturan-tech-note';
 
 
-/**
- * Link Tech Note wajib berkas OneDrive / SharePoint lewat https. Dulu link apa pun diterima -
- * termasuk 'javascript:' yang ikut dirender sebagai <a href> dan bisa dijalankan saat orang
- * lain mengekliknya.
- */
-/** href aman untuk link lama yang mungkin belum lolos aturan di atas. */
 export const hrefAman = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : undefined);
 
 export function Spinner() {
@@ -73,18 +65,12 @@ export function StatusBadge({ status }: { status: TechNote['status'] }) {
   );
 }
 
-// KPI Summary
-// Admin/supervisor: tampilkan ringkasan semua tim (tanpa menyebut target per orang)
-// Team/user: TIDAK tampilkan progress pribadi & target KKM - cukup info singkat
 export function TechNoteKPISummary({ technotes, currentUser, year }:
   { technotes: TechNote[]; currentUser: User; year: number }) {
-  // Sama dengan canManage di komponen induk - akun Full Access juga melihat
-  // ringkasan seluruh tim, bukan cuma catatannya sendiri.
   const isAdmin = hasFullAccess(currentUser as never)
     || ['admin','superadmin','supervisor'].includes(currentUser.role);
 
   if (isAdmin) {
-    // Admin: ringkasan global - tanpa menyebut "Target: X/orang"
     const totalApproved = technotes.filter(t => t.status === 'approved').length;
     const totalPending  = technotes.filter(t => t.status === 'pending').length;
     return (
@@ -109,8 +95,6 @@ export function TechNoteKPISummary({ technotes, currentUser, year }:
     );
   }
 
-  // Team/user biasa: tidak tampilkan progress pribadi & target KKM
-  // Hanya tampilkan jumlah note yang visible bagi mereka
   const approvedCount = technotes.filter(t => t.status === 'approved').length;
   const myPendingCount = technotes.filter(t => t.author_id === currentUser.id && t.status === 'pending').length;
   return (
@@ -137,10 +121,6 @@ export function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, c
   folders: TechNoteFolder[]; technotes: TechNote[];
   selected: string | null; onSelect: (id: string | null) => void;
   onAdd: () => void; canManage: boolean;
-  // Di layar sempit sidebar ini SELALU makan ~224px tetap - sisa lebar
-  // buat daftar Tech Note jadi terlalu sempit untuk dibaca. mobileOpen
-  // mengubahnya jadi drawer yang disembunyikan sampai tombol "📁 Folder"
-  // ditekan, sama seperti pola drawer sidebar utama di dashboard.
   mobileOpen: boolean; onCloseMobile: () => void;
 }) {
   const [expanded, setExpanded] = useState<Record<string,boolean>>({});
@@ -176,7 +156,6 @@ export function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, c
   }
 
   return (<>
-    {/* Backdrop - mobile drawer only */}
     {mobileOpen && (
       <div aria-hidden="true" className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
     )}
@@ -196,7 +175,6 @@ export function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, c
           <button onClick={onCloseMobile} aria-label="Tutup daftar folder" className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100">✕</button>
         </div>
       </div>
-      {/* All */}
       <div {...bisaDiklik(() => onSelect(null))}
         className="flex items-center gap-2 rounded-xl px-2.5 py-2 cursor-pointer transition-all mb-1"
         style={{ background: selected===null ? 'rgba(236,72,153,0.10)':'transparent',
@@ -210,7 +188,6 @@ export function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, c
   </>);
 }
 
-// Approval History
 export function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   if (!history.length) return null;
   return (
@@ -262,9 +239,6 @@ export function Modal({ open, onClose, title, width=560, children }:{
 }
 
 export function Field({ label, children }:{ label:string; children:React.ReactNode }) {
-  //  Isian dibungkus DI DALAM <label> - lihat catatan yang sama di FormField
-  //  bersama (components/shared/FormParts.tsx). <label> yang cuma berdiri di
-  //  atasnya tidak menamai isiannya secara program.
   return (
     <label className="block mb-4">
       <span className="block text-[12px] font-bold text-slate-600 mb-1.5">{label}</span>
@@ -278,7 +252,6 @@ export const inputCls = [
   'placeholder-slate-400 bg-gray-50 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100',
 ].join(' ');
 
-// Main Page
 export function TechNotePageInner() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [folders,    setFolders]    = useState<TechNoteFolder[]>([]);
@@ -294,14 +267,8 @@ export function TechNotePageInner() {
   const [showFolderModal,  setShowFolderModal]  = useState(false);
   const [showFolderDrawer, setShowFolderDrawer] = useState(false);
   const [showUploadModal,  setShowUploadModal]  = useState(false);
-  // Edit & hapus tech note.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
-  /*
-    Toast menggantikan alert() bawaan browser (4 titik) - tampilannya beda
-    total dari seluruh platform, menyebutkan nama domain, dan memblokir
-    halaman sampai ditekan OK.
-  */
   const [toast, setToast] = useState<Notif | null>(null);
   const beritahu = (type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -313,9 +280,6 @@ export function TechNotePageInner() {
 
   const [folderForm,   setFolderForm]   = useState({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' as string });
   const [uploadForm,   setUploadForm]   = useState({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
-  // Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada proteksi unsaved-changes
-  // di modal Upload/Edit - snapshot diambil saat modal dibuka, dibandingkan
-  // saat mau ditutup.
   const uploadSnapshotRef = useRef<typeof uploadForm | null>(null);
   const closeUploadModal = () => {
     const dirty = uploadSnapshotRef.current
@@ -325,10 +289,6 @@ export function TechNotePageInner() {
       setShowUploadModal(false); setEditingNote(null);
       setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
     };
-    //  ConfirmDialog, bukan window.confirm: yang bawaan memblokir seluruh
-    //  halaman, tidak bisa diberi gaya, dan menyebutkan nama domain di
-    //  judulnya - padahal ini pertanyaan biasa tentang isian yang belum
-    //  disimpan.
     if (!dirty) { tutup(); return; }
     setConfirmState({
       message: 'Tutup tanpa menyimpan?',
@@ -341,21 +301,10 @@ export function TechNotePageInner() {
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
 
-  /**
-   * Boleh mengelola: admin/superadmin, Supervisor, atau akun Team PTS yang
-   * diberi Full Access lewat Admin Panel. Lewat helper terpusat di
-   * lib/constants.ts, sama dengan modul lain - mencocokkan daftar role sendiri
-   * membuat toggle Full Access tidak berlaku di sini.
-   */
   const canManage = hasFullAccess(currentUser as never)
     || ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');
   const isTeam = !canManage;
 
-  /**
-   * Penulis note sendiri boleh Edit (mis. salah ketik, atau perlu revisi
-   * setelah ditolak) walau bukan canManage - tapi tidak boleh Hapus, itu
-   * tetap khusus canManage sesuai aturan Full Access platform ini.
-   */
   const bolehEditNote = (n: TechNote): boolean =>
     canManage || (!!currentUser?.id && n.author_id === currentUser.id);
 
@@ -375,17 +324,6 @@ export function TechNotePageInner() {
   useEffect(() => { fetchFolders(); }, [fetchFolders]);
   useEffect(() => { if (currentUser) fetchNotes(); }, [fetchNotes, currentUser]);
 
-  /*
-    Deep-link dari notifikasi (?open=<id>): buka Tech Note-nya langsung,
-    bukan cuma daftarnya. Ketiga notifikasi Tech Note ("menunggu review",
-    "diajukan ulang", "sudah direview") membawa ref_id catatannya, dan
-    tanpa ini penerimanya mendarat di daftar lalu harus mencari sendiri
-    catatan mana yang dimaksud.
-
-    Ref sekali-jalan: daftar catatan di-fetch ulang tiap kali tahun/filter
-    berubah, dan tanpa penjaga ini detailnya akan terbuka lagi setiap fetch
-    walau sudah ditutup.
-  */
   const searchParams = useSearchParams();
   const sudahBukaDariNotif = useRef(false);
   useEffect(() => {
@@ -418,7 +356,6 @@ export function TechNotePageInner() {
     <div className="flex flex-col h-screen font-sans bg-gray-50"
       style={{ background: 'var(--latar-halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
 
-      {/* ── Top Nav ── header baku semua modul (components/shared/PageHeader) */}
       <PageHeader icon="📝" title="Tech Note R&D" subtitle="Dokumentasi teknikal & R&D · KPI 10%">
             <select aria-label="Tahun" value={year} onChange={e=>setYear(Number(e.target.value))}
               className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
@@ -434,7 +371,6 @@ export function TechNotePageInner() {
         canManage={canManage} currentUser={currentUser} fetchError={fetchError} fetchNotes={fetchNotes} filterStatus={filterStatus} filtered={filtered} folders={folders} loading={loading} openDetail={openDetail} pendingCount={pendingCount} search={search} selectedFolder={selectedFolder} setFilterStatus={setFilterStatus} setSearch={setSearch} setSelectedFolder={setSelectedFolder} setShowFolderDrawer={setShowFolderDrawer} setShowFolderModal={setShowFolderModal} setTab={setTab} showFolderDrawer={showFolderDrawer} tab={tab} technotes={technotes} year={year}
       />
 
-      {/* ══ MODAL: Add Folder ══ */}
       <ModalBuatFolder
         folderForm={folderForm} folders={folders} saveFolder={saveFolder} saving={saving} setFolderForm={setFolderForm} setShowFolderModal={setShowFolderModal} showFolderModal={showFolderModal}
       />
@@ -442,17 +378,14 @@ export function TechNotePageInner() {
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <Toast notif={toast} />
 
-      {/* ══ MODAL: Upload Tech Note ══ */}
       <ModalUnggahNote
         closeUploadModal={closeUploadModal} editingNote={editingNote} folders={folders} saving={saving} setUploadForm={setUploadForm} showUploadModal={showUploadModal} submitTechNote={submitTechNote} uploadForm={uploadForm}
       />
 
-      {/* ══ MODAL: Detail Tech Note ══ */}
       <ModalDetailNote
         bolehEditNote={bolehEditNote} bukaEditNote={bukaEditNote} canManage={canManage} detailHistory={detailHistory} detailNote={detailNote} hapusNote={hapusNote} setApprovalForm={setApprovalForm} setApproveModal={setApproveModal} setDetailNote={setDetailNote}
       />
 
-      {/* ══ MODAL: Approval Decision ══ */}
       <ModalApprovalNote
         approvalForm={approvalForm} approveModal={approveModal} saving={saving} setApprovalForm={setApprovalForm} setApproveModal={setApproveModal} submitApproval={submitApproval}
       />

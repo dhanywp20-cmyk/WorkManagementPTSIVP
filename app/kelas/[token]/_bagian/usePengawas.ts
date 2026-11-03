@@ -1,17 +1,10 @@
 'use client';
 
-/**
- * Pengawas quiz di perangkat peserta: pindah tab/aplikasi, keluar jendela (split screen / jendela
- * lain), dan salin/tempel/klik kanan (sekaligus diblokir). Tiap kejadian dilaporkan ke server
- * (dicatat atomik + log waktu) - angka di layar admin berasal dari server, bukan dari peramban.
- */
 import { useEffect, useRef, useState } from 'react';
 import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal';
 import { laporPelanggaran, type HasilLapor } from './api';
 
-/** Salin/tempel beruntun (mis. tahan Ctrl+C) dihitung satu kali per 2 detik. */
 const JEDA_SALIN_MS = 2000;
-/** blur yang diikuti tab tersembunyi dalam waktu ini = pindah tab, bukan keluar jendela. */
 const JEDA_BLUR_MS = 400;
 
 export interface Peringatan { jenis: JenisPelanggaran; label: string; total: number | null; batas: number | null }

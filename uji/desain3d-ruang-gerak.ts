@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-ruang-gerak.ts - Cek ruang gerak (inti/ruangGerak.ts): benda bertumpuk, menembus dinding /
- * plafon, ayunan pintu, jarak meja rapat ke dinding, servis depan rack, jarak ke dinding; template pabrik bersih.
- *
- * Jalankan: npm test -- desain3d-ruang-gerak
- */
 import {
   type Benda, cekRuangGerak, jarakKeDinding, KATEGORI_RUANG, type Ruang, templateRuang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';

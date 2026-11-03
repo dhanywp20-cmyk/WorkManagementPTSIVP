@@ -1,14 +1,5 @@
 'use client';
 
-/**
- * Detail lokasi di link View-Only.
- *  - Desktop (>= 1024px): panel lebar hampir layar penuh, dua kolom: kiri daftar semua lokasi untuk
- *    berpindah, kanan isi checklist dengan bagian disusun 2 kolom (layar lebar tidak terbuang).
- *  - Tablet: panel dari kanan tanpa daftar; HP: lembar dari bawah. ‹ › pindah lokasi.
- * Isi kanan: tim (Handler + Support di lokasi), ringkasan lokasi (waktu, Dikerjakan Oleh, laju
- * harian - sama dengan detail checklist di aplikasi), lalu bagian. Bagian yang belum selesai terbuka.
- * Esc ditangani PenjagaDialog lewat tombol "Tutup".
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, HardHat, MapPin, Users, X } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
@@ -22,7 +13,6 @@ const DURASI = 220;
 
 const warnaJadwal = (l: RingkasLokasi) => (l.jadwal === 'terlambat' ? TEMA.bahaya : l.jadwal === 'selesai' ? TEMA.selesai : TEMA.samar);
 
-/** Handler & Support di lokasi - satu baris chip, dipakai panel dan kartu lokasi. */
 export function TimLokasi({ handler, support, kecil = false }: { handler: string[]; support: string; kecil?: boolean }) {
   if (!handler.length && !support) return null;
   const ukuran = kecil ? 'text-[11px]' : 'text-[12px]';
@@ -53,17 +43,13 @@ export function TimLokasi({ handler, support, kecil = false }: { handler: string
 export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, support, bagian, items, onPilih, onTutup }: {
   lokasi: RingkasLokasi; semua: RingkasLokasi[]; keterangan: string;
   jadwal: { start_date: string | null; target_date: string | null };
-  /** Handler checklist ini (nama saja). */
   anggota: AnggotaNama[]; support: string;
   bagian: ChecklistBagian[]; items: ChecklistItem[];
   onPilih: (id: string) => void; onTutup: () => void;
 }) {
   const [masuk, setMasuk] = useState(false);
-  //  Buka/Tutup semua, berlaku untuk lokasi tempat tombolnya ditekan. Pindah lokasi -> kembali ke
-  //  bawaan (null: bagian yang belum selesai terbuka).
   const [pilihanBuka, setPilihanBuka] = useState<{ id: string; buka: boolean } | null>(null);
   const semuaBuka = pilihanBuka?.id === lokasi.id ? pilihanBuka.buka : null;
-  //  Desktop/tablet: geser dari kanan. HP: naik dari bawah. Panel dipasang sesudah diklik, jadi window ada.
   const [geser] = useState(() => window.matchMedia('(min-width: 768px)').matches ? 'translate3d(100%,0,0)' : 'translate3d(0,100%,0)');
   const isi = useRef<HTMLDivElement>(null);
 
@@ -73,7 +59,6 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
     document.body.style.overflow = 'hidden';
     return () => { cancelAnimationFrame(id); document.body.style.overflow = lama; };
   }, []);
-  //  Pindah lokasi: mulai dari atas, panel tidak diputar ulang animasinya.
   useEffect(() => { isi.current?.scrollTo({ top: 0 }); }, [lokasi.id]);
 
   const tutup = () => { setMasuk(false); window.setTimeout(onTutup, DURASI); };
@@ -97,7 +82,6 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
         className="absolute flex overflow-hidden shadow-2xl inset-x-0 bottom-0 h-[92dvh] rounded-t-2xl md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[min(900px,92vw)] md:rounded-none md:rounded-l-2xl lg:w-[min(1480px,96vw)]"
         style={{ background: 'var(--halaman, #f3f5f8)', transform: masuk ? 'none' : geser, transition: `transform ${DURASI}ms cubic-bezier(.2,.8,.2,1)` }}
       >
-        {/* Daftar lokasi - desktop saja */}
         <nav aria-label="Lokasi" className="hidden lg:flex flex-col w-72 flex-shrink-0" style={{ background: NETRAL.permukaan, borderRight: `1px solid ${NETRAL.garis}` }}>
           <p className="px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: TEMA.samar, borderBottom: `1px solid ${NETRAL.garis}` }}>
             Lokasi · {semua.length}
@@ -165,8 +149,6 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
                 </button>
               </div>
             )}
-            {/* Layar lebar: bagian mengalir dalam 2 kolom, bukan satu kolom panjang. Kunci ikut
-                semuaBuka supaya Buka/Tutup semua memasang ulang panel dengan keadaan awal baru. */}
             <div className="xl:columns-2 xl:gap-4">
               {bagian.map(b => (
                 <div key={`${b.id}-${semuaBuka}`} className="mb-3 break-inside-avoid">

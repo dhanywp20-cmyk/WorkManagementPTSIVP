@@ -2,19 +2,11 @@ import { statusConfig, type ProjectRequest } from './shared';
 import { esc, escObjek } from '@/lib/lembar-cetak';
 import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
 
-/**
- * Lembar cetak satu Request Design Project.
- *
- * Label Sales Internal (CC) diterima jadi argumen, bukan dihitung di sini:
- * penyusunannya butuh peta nama internal sales yang hanya ada di halaman.
- */
 const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = []): void {
   if (!asli) return;
-  //  Semua teks request di-escape SEKALI di sini (diisi Sales / tamu); jendela cetak berjalan di origin aplikasi
-  //  dengan hak orang yang menekan Cetak. Seksi Desain 3D meng-escape isinya sendiri (htmlSeksiDesain3D).
   const selectedRequest = escObjek(asli);
   ccLabel = esc(ccLabel);
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
@@ -189,7 +181,6 @@ ${selectedRequest.assign_name ? `
   const w = window.open('', '_blank');
   if (w) {
     w.document.write(printContent); w.document.close();
-    //  Tunggu gambar Design 3D selesai dimuat sebelum dialog cetak.
     const gambar = Array.from(w.document.images);
     Promise.all(gambar.map(g => (g.complete ? Promise.resolve() : new Promise(r => { g.onload = g.onerror = () => r(null); }))))
       .then(() => setTimeout(() => w.print(), 200));

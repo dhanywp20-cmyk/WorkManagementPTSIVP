@@ -1,6 +1,5 @@
 'use client';
 
-/** HeaderDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { TombolSetujui, TombolTolak, TombolTugaskan } from '@/components/shared';
 import { unduhPaketRequest } from '../paket-unduhan';
@@ -66,26 +65,21 @@ export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest,
         </div>
         </div>
         <div className="flex gap-1.5 sm:gap-2 flex-wrap sm:flex-shrink-0">
-          {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
           {canInternalApproveProject(selectedRequest) && (
             <>
               <TombolSetujui ukuran="kecil" onClick={() => setInternalApproveTarget(selectedRequest)}>Setujui &amp; Teruskan ke Admin</TombolSetujui>
               <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />
             </>
           )}
-          {/* Setujui/Tolak: admin/superadmin/Full Access - juga saat masih internal_review (melewati review
-              Sales Internal; basis data mengizinkan hanya admin/Full Access, lihat guard_project_requests_review_columns) */}
           {bisaKelolaRequest && detailIsPending && (
             <>
               <TombolSetujui ukuran="kecil" onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}>Setujui &amp; Tugaskan</TombolSetujui>
               <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />
             </>
           )}
-          {/* Supervisor yang di-route: wajib assign lanjut ke Tim PTS (atau sendiri) */}
           {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
             <TombolTugaskan ukuran="kecil" onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}>Tugaskan Tim</TombolTugaskan>
           )}
-          {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
           {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
             <button onClick={() => handleStatusUpdate(selectedRequest, 'in_progress', detailRoomIdx)}
               className="tombol-utama px-2 py-1 sm:px-3 sm:py-1.5 rounded-kontrol text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
@@ -93,7 +87,6 @@ export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest,
               Mulai In Progress
             </button>
           )}
-          {/* Status update: admin/superadmin/Full Access, atau PTS yang di-assign */}
           {isPTS && !detailIsPending && (bisaKelolaRequest || detailRoomAssignName === currentUser.full_name) && (
             <button onClick={() => { setSelectedNewStatus(''); setStatusUpdateModal({ open: true, req: selectedRequest, roomIdx: detailRoomIdx }); }}
               className="tombol-utama px-2 py-1 sm:px-3 sm:py-1.5 rounded-kontrol text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">

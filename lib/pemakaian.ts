@@ -1,13 +1,4 @@
-/**
- * lib/pemakaian.ts - catatan pemakaian menu (tabel pemakaian_menu, migrasi 058).
- *
- * - catatPemakaian(): dipanggil peramban saat modul dibuka (KerangkaPortal) dan saat alat
- *   AV Solution Tools berganti (tools-team/page.tsx). Modul yang sama dalam 10 menit dilewati.
- * - modulSah()/subSah(): saringan /api/pemakaian - hanya rute portal yang dikenal.
- * - ringkasPemakaian(): murni, dipakai GET /api/pemakaian & diuji di uji/pemakaian.ts.
- */
 
-/** Rute portal = folder app/(portal) (uji/pemakaian.ts memastikan daftar ini tetap sama). */
 export const MODUL_DICATAT = [
   'dashboard', 'daily-report', 'form-require-project', 'form-review', 'incentive-pts', 'kpi-team',
   'learning-center', 'picket-showroom', 'project-progress', 'reminder-schedule', 'summary-project',
@@ -15,18 +6,15 @@ export const MODUL_DICATAT = [
 ] as const;
 export type ModulDicatat = typeof MODUL_DICATAT[number];
 
-/** Alat di AV Solution Tools (ALAT di tools-team/page.tsx). */
 export const ALAT_TOOLS = ['3d', 'led', 'av', 'banding', 'cekbarang', 'pustaka'] as const;
 
 export const modulSah = (v: unknown): v is ModulDicatat => typeof v === 'string' && (MODUL_DICATAT as readonly string[]).includes(v);
-/** Sub hanya untuk AV Solution Tools; modul lain selalu tanpa sub. */
 export const subSah = (modul: ModulDicatat, v: unknown): boolean =>
   v === null || v === undefined || v === '' ? true : modul === 'tools-team' && (ALAT_TOOLS as readonly string[]).includes(String(v));
 
 const JEDA_MS = 10 * 60_000;
 const terakhir = new Map<string, number>();
 
-/** Fire-and-forget: tidak pernah melempar, tidak menunggu, tidak mengganggu perpindahan menu. */
 export function catatPemakaian(modul: string, sub?: string | null): void {
   if (typeof window === 'undefined') return;
   const kunci = `${modul}|${sub ?? ''}`;
@@ -38,11 +26,9 @@ export function catatPemakaian(modul: string, sub?: string | null): void {
       method: 'POST', credentials: 'include', keepalive: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ modul, sub: sub ?? null }),
-    }).catch(() => { /* pencatatan tidak boleh mengganggu pemakaian */ });
-  } catch { /* idem */ }
+    }).catch(() => {  });
+  } catch {  }
 }
-
-/* ── Ringkasan untuk tab Pemakaian ─────────────────────────────────────────── */
 
 export type Kelompok = 'admin' | 'team' | 'marketing' | 'lain';
 export const LABEL_KELOMPOK: Record<Kelompok, string> = {
@@ -66,19 +52,14 @@ export interface RingkasModul {
   modul: string;
   kunjungan: number;
   pengguna: number;
-  /** Pengguna unik per kelompok. */
   perKelompok: Record<Kelompok, number>;
   terakhir: string | null;
 }
 export interface RingkasPemakaian {
   modul: RingkasModul[];
-  /** Modul yang tidak dibuka sama sekali dalam rentang ini. */
   tidakDibuka: string[];
-  /** Alat AV Solution Tools: kunjungan & pengguna unik. */
   alat: { sub: string; kunjungan: number; pengguna: number }[];
-  /** Akun paling aktif (jumlah kunjungan). */
   teraktif: { nama: string; kelompok: Kelompok; kunjungan: number; modul: number }[];
-  /** Akun yang membuka platform per kelompok vs total akun kelompok itu. */
   jangkauan: Record<Kelompok, { aktif: number; total: number }>;
 }
 
@@ -111,7 +92,6 @@ export function ringkasPemakaian(baris: BarisPemakaian[], akun: AkunPemakaian[])
 
   const jangkauan = { admin: { aktif: 0, total: 0 }, team: { aktif: 0, total: 0 }, marketing: { aktif: 0, total: 0 }, lain: { aktif: 0, total: 0 } };
   for (const a of akun) jangkauan[kelompokAkun(a)].total++;
-  //  Hanya akun yang masih ada - akun terhapus tidak boleh menaikkan "aktif" melewati "total".
   for (const id of perAkun.keys()) { const a = peta.get(id); if (a) jangkauan[kelompokAkun(a)].aktif++; }
 
   return {

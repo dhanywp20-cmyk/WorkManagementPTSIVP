@@ -20,11 +20,6 @@ import { appLink } from '@/lib/app-url';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { DOMAIN_ONEDRIVE, linkOneDriveSah, hrefAman, Spinner, Avatar, StatusBadge, TechNoteKPISummary, KATEGORI_FOLDER, KategoriFolder, FolderSidebar, HistoryTimeline, Modal, Field, inputCls, TechNotePageInner } from './_components/bagian-tech-note';
 
-/*
-  useSearchParams() (dipakai deep-link ?open= di dalam) WAJIB berada di dalam
-  batas Suspense - tanpa itu Next.js menolak halaman ini saat prerender.
-  Pola yang sama dipakai app/ticketing/page.tsx.
-*/
 export default function TechNotePage() {
   return (
     <Suspense>

@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalUnggahNote - dipecah dari app/(portal)/tech-note/_components/bagian-tech-note.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';
 import { TechNoteFolder, TechNote } from './shared';

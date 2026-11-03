@@ -1,13 +1,7 @@
-/** Tekstur isi rack: gambar muka perangkat per U (switch, amplifier, matrix, server ...). */
 import { type Benda, susunRak } from '../inti/index';
 import { acak, kanvas } from './tekstur';
 import type * as T from 'three';
 
-/**
- * Isi rack tampak depan (1 U = 48 px): patch panel, switch, server, NAS, amplifier, DSP,
- * matrix, cable manager, blank panel, dan UPS di bawah - lengkap dengan port & LED.
- */
-/** Tekstur isi rack dari rack elevation (perangkat per U dari atas; sisa U = blank panel). */
 export function teksturIsiRak(THREE: typeof T, b: Benda): T.Texture {
   const s = susunRak(b), u = s.U;
   const pxU = 48, W = 512, H = Math.max(1, u) * pxU;
@@ -29,7 +23,6 @@ function gambarPerangkat(g: CanvasRenderingContext2D, jenis: string, y: number, 
   const badan = jenis === 'server' || jenis === 'nas' ? '#c9ccd1' : jenis === 'kosong' ? '#14171b' : '#23272e';
   g.fillStyle = badan; g.fillRect(2, y + 1, W - 4, h - 2);
   g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(2, y + 1, W - 4, 2);
-  //  Telinga rack + baut.
   g.fillStyle = jenis === 'server' || jenis === 'nas' ? '#9ca3af' : '#1a1d22'; g.fillRect(2, y + 1, telinga, h - 2); g.fillRect(W - 2 - telinga, y + 1, telinga, h - 2);
   g.fillStyle = '#6b7280';
   for (const by of h > 60 ? [y + 12, y + h - 12] : [y + h / 2]) { g.beginPath(); g.arc(13, by, 3.5, 0, Math.PI * 2); g.arc(W - 13, by, 3.5, 0, Math.PI * 2); g.fill(); }

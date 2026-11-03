@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalEditForm - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { SalesPicker, ModalPortal, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { Z } from '@/lib/z-index';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -36,7 +35,6 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
       {editFormModal && selectedRequest && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center p-4" style={{ ...LATAR_MODAL, zIndex: Z.overlayTop }}>
-          {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala bergradasi kuning sendiri. */}
           <div className={`${KARTU_MODAL} w-full max-w-2xl max-h-full flex flex-col overflow-hidden`}>
             <KepalaModal judul="Edit Kebutuhan Project" keterangan={selectedRequest.project_name} onTutup={() => setEditFormModal(false)} />
             <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-gray-50">
@@ -58,7 +56,6 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
                       placeholder="Contoh: Gedung Wisma 46 Lt.12, Jl. MH Thamrin No.1, Jakarta Pusat" rows={4}
                       className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white resize-none" />
                   </div>
-                  {/* Sales: hidden for guest (auto from account), admin/team can edit */}
                   {isPTS && (
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Sales / Account</label>
@@ -73,7 +70,6 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
                 </div>
               </div>
 
-              {/* Target Selesai — semua role termasuk Guest bisa ubah */}
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -93,7 +89,6 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
                 </div>
               </div>
 
-              {/* Tab per ruangan - Ruangan 1 = kolom request, Ruangan 2+ = rooms[] */}
               <div className="sticky top-0 z-10 bg-gray-50 pb-1">
                 <div className="flex items-center bg-amber-50 border border-amber-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
                   <button aria-label="Sebelumnya" type="button" onClick={() => setEditRoomIdx(i => Math.max(0, i - 1))} disabled={editRoomIdx === 0}

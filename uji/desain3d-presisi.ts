@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-presisi.ts - presisi Desain 3D (inti/presisi.ts): snap grid, kerapatan grid yang digambar,
- * dan penggaris (panjang, rincian datar / tinggi, format mm, penyaring data tersimpan).
- *
- * Jalankan: npm test -- desain3d-presisi
- */
 import {
   bulatkanKe, formatPanjang, jarakGrid, MAKS_PENGGARIS, panjangGaris, penggarisSah, rincianGaris, snapSah, titikSnap,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';

@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalReroute - alihkan pekerjaan ke Supervisor / anggota tim lain. Semua keadaan tetap milik induk. Kerangka: ModalSetujui bersama. */
 import { KotakInfo, ModalSetujui, PilihPenugasan } from '@/components/shared';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import { ProjectRequest } from './shared';
@@ -26,7 +25,6 @@ export function ModalReroute({ isAdmin, isSuperAdmin, rerouteSaving, rerouteTarg
         <KotakInfo>Sekarang dikerjakan: <strong>{rerouteTarget.assign_name || 'belum ditugaskan'}</strong></KotakInfo>
         <PilihPenugasan label="Alihkan ke" nilai={rerouteTo} onUbah={setRerouteTo} kosong="- Pilih tujuan -" pilihan={[
           ...rosterPTS.filter(u => u.jabatan === 'Supervisor').map(u => ({ v: u.id, l: `${u.full_name} (Supervisor)`, grup: 'Supervisor' })),
-          //  Toggle per akun + aturan Manager (hanya Admin murni yang boleh menugaskan Manager) - lib/teams.ts.
           ...rosterPTS.filter(u => u.jabatan !== 'Supervisor' && bolehDitugaskanOleh(u, isAdmin || isSuperAdmin)).map(u => ({ v: u.id, l: u.full_name, grup: 'Anggota Tim' })),
         ]} />
         <p className="text-[11px] text-slate-500">

@@ -1,11 +1,3 @@
-/**
- * Pola uji LED pada resolusi asli layar - diputar dari media player / controller saat commissioning:
- *   grid   kotak per cabinet + label K1B1 (cek urutan mapping & cabinet tertukar), diagonal & lingkaran
- *          (cek skala/rasio), garis tepi 1 px (cek piksel terpotong di pinggir)
- *   warna  bar warna + gradasi abu & RGB (cek kalibrasi, banding warna, kedalaman bit)
- *   polos  satu warna penuh (cek piksel mati / modul belang)
- * Digambar di koordinat piksel asli; pratinjau memakai skala yang sama.
- */
 import { garisCabinet, labelCabinet } from '@/lib/led-banding';
 
 export type JenisPola = 'grid' | 'warna' | 'polos';
@@ -25,7 +17,6 @@ function gambarGrid(c: CanvasRenderingContext2D, p: PolaUji) {
   c.fillStyle = '#e2e8f0';
   for (const x of g.x) c.fillRect(Math.min(x, W - 1), 0, 1, H);
   for (const y of g.y) c.fillRect(0, Math.min(y, H - 1), W, 1);
-  //  Diagonal + lingkaran: harus lurus & bulat sempurna bila skala/rasio benar.
   const tebal = Math.max(1, Math.round(Math.min(W, H) / 400));
   c.lineWidth = tebal;
   c.strokeStyle = '#ef4444';
@@ -35,10 +26,8 @@ function gambarGrid(c: CanvasRenderingContext2D, p: PolaUji) {
   c.strokeStyle = '#facc15';
   const s = Math.min(W, H) * 0.06;
   c.beginPath(); c.moveTo(W / 2 - s, H / 2); c.lineTo(W / 2 + s, H / 2); c.moveTo(W / 2, H / 2 - s); c.lineTo(W / 2, H / 2 + s); c.stroke();
-  //  Tepi 1 px warna mencolok di keempat sisi.
   c.fillStyle = '#f0f';
   c.fillRect(0, 0, W, 1); c.fillRect(0, H - 1, W, 1); c.fillRect(0, 0, 1, H); c.fillRect(W - 1, 0, 1, H);
-  //  Label tiap cabinet (dilewati bila terlalu kecil untuk terbaca).
   const fs = Math.floor(Math.min(p.pxCabX, p.pxCabY) * 0.22);
   c.textAlign = 'center'; c.textBaseline = 'middle';
   if (fs >= 7) {
@@ -61,7 +50,6 @@ function gambarWarna(c: CanvasRenderingContext2D, p: PolaUji) {
   const bar = ['#ffffff', '#ffff00', '#00ffff', '#00ff00', '#ff00ff', '#ff0000', '#0000ff', '#000000'];
   const tBar = Math.round(H * 0.6);
   bar.forEach((w, i) => { c.fillStyle = w; c.fillRect(Math.round((i * W) / bar.length), 0, Math.ceil(W / bar.length), tBar); });
-  //  4 gradasi: abu, merah, hijau, biru - banding/garis bertangga = kedalaman bit / kalibrasi kurang.
   const ramp = ['255,255,255', '255,0,0', '0,255,0', '0,0,255'];
   const tR = (H - tBar) / ramp.length;
   ramp.forEach((rgb, i) => {
@@ -78,7 +66,6 @@ export function gambarPola(c: CanvasRenderingContext2D, p: PolaUji) {
   else { c.fillStyle = p.warna; c.fillRect(0, 0, p.resX, p.resY); }
 }
 
-/** Kanvas pola uji; skala < 1 untuk pratinjau (koordinat gambar tetap piksel asli). */
 export function kanvasPola(p: PolaUji, skala = 1, kanvas?: HTMLCanvasElement): HTMLCanvasElement {
   const k = kanvas ?? document.createElement('canvas');
   k.width = Math.max(1, Math.round(p.resX * skala));

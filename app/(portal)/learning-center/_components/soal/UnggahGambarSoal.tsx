@@ -1,11 +1,5 @@
 'use client';
 
-/**
- * Gambar opsional sebuah soal (lc_questions.gambar_url, migrasi 054) di form tambah & ubah soal.
- * Dikecilkan di peramban dulu (maks 1600 px) supaya ringan dibuka di HP peserta Kuis Live, lalu
- * diunggah lewat /api/admin/kelas-eksternal/unggah (jenis 'soal' - admin / Full Access, sama dengan
- * policy tulis lc_questions).
- */
 import { useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 
@@ -18,7 +12,7 @@ export function UnggahGambarSoal({ url, ubah }: { url: string | null | undefined
     if (!berkas) return;
     setSibuk(true); setGalat('');
     let siap = berkas;
-    try { const { compressImage } = await import('@/lib/image-compress'); siap = await compressImage(berkas, { maxDim: 1600, quality: 0.82 }); } catch { /* kirim aslinya */ }
+    try { const { compressImage } = await import('@/lib/image-compress'); siap = await compressImage(berkas, { maxDim: 1600, quality: 0.82 }); } catch {  }
     const fd = new FormData();
     fd.append('berkas', siap); fd.append('jenis', 'soal');
     try {
@@ -40,7 +34,6 @@ export function UnggahGambarSoal({ url, ubah }: { url: string | null | undefined
         onChange={e => { void unggah(e.target.files?.[0]); e.target.value = ''; }} />
       {url ? (
         <div className="flex items-start gap-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="Gambar soal" className="h-24 w-auto max-w-[60%] object-contain rounded-lg border border-slate-200 bg-slate-50" />
           <div className="flex flex-col gap-1.5">
             <button type="button" onClick={() => input.current?.click()} disabled={sibuk}

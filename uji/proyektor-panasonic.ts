@@ -1,17 +1,3 @@
-/**
- * uji/proyektor-panasonic.ts - hitungan proyektor Desain 3D dibandingkan dengan kalkulator jarak lempar
- * Panasonic (https://docs.connect.panasonic.com/projector/calculator/tdc/, versi 2.79, mode Advance):
- * PT-RQ50K (51.000 lm pusat) + lensa ET-D3QW200, rasio 17:9 (Native 4K), gain 1,00, cahaya ruang 200 lux.
- *
- *   100" -> gambar 2,245 x 1,188 m, jarak 1,189-1,418 m, 19.117 lux, 6.085 cd/m², kontras 96:1
- *   200" -> lebar 4,490 m, jarak 2,460-2,919 m
- *
- * Dua titik itu memberi rumus lensa L = 0,566 x SW - 0,082 (min) & L = 0,669 x SW - 0,083 (maks): bukan
- * L = TR x SW murni, sehingga Desain 3D memakai TR terlebar/terpanjang + koreksi jarak b = 0,082 m.
- * Akurasi kalkulator pabrikan sendiri ±5%; di sini toleransi 0,5%.
- *
- * Jalankan: npx tsx uji/proyektor-panasonic.ts
- */
 import {
   batasShift, bendaBaru, isiDariPustaka, jarakUntukLebar, keDunia, keGambar, kontrasProyektor, lebarGambarDi, lensaDari,
   lensaProyektor, luminanceDari, proyektorKeLayar, rasioGambarProyektor, sinarProyektor, type Benda, type Ruang,
@@ -23,12 +9,10 @@ function cek(nama: string, syarat: boolean, catatan = '') {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); }
   else { gagal++; console.log(`  GAGAL ${nama}${catatan ? ' - ' + catatan : ''}`); }
 }
-/** Selisih relatif <= tol (bawaan 0,5%). */
 const mirip = (a: number, b: number, tol = 0.005) => Math.abs(a - b) <= Math.abs(b) * tol;
 
 const ruang: Ruang = { p: 10, l: 10, t: 4, lantai: 'polos', r2: null };
 const K = { x0: 0, p: 10, l: 10, t: 4 };
-/** PT-RQ50K + ET-D3QW200 di meja (Desktop), lurus, tanpa lens shift. */
 const rq50k: Benda = {
   ...bendaBaru('proyektor', K, { pasangProyektor: 'meja' }), nama: 'PT-RQ50K', lumen: 51000, rasioProyektor: '17:9',
   trMin: 0.566, trMax: 0.669, throwRatio: 0.566, koreksiJarak: 0.082, offsetLensa: 0, geserLensaH: 0, tilt: 0, rot: 180,
@@ -56,7 +40,6 @@ cek('kontras = (lux gambar + 200) / 200 ±96 : 1', Math.floor((19117 + 200) / 20
 cek('gain 1,3 menaikkan luminance 30%, kontras tidak berubah', mirip(luminanceDari(19117, 1.3), 6085 * 1.3));
 
 console.log('\n4. Mesin sinar Desain 3D memakai rumus yang sama');
-//  Layar 100" di dinding depan, proyektor menghadap layar pada jarak lensa 1,189 m.
 const layar: Benda = { ...bendaBaru('layar', K, { diag: 100, rasio: '16:9' } as Partial<Benda>), x: 5, z: 0.05, elev: 0.8, rot: 0, gainLayar: 1.2 };
 const mukaLayar = keDunia(layar, [0, layar.h / 2, layar.d / 2])[2];
 const p0 = { ...rq50k, x: 5, z: 3, elev: 1.2 };
@@ -79,7 +62,6 @@ const pas = proyektorKeLayar({ ...rq50k, x: 5, z: 6, elev: 1.2 }, layar, K, ruan
 const snPas = sinarProyektor(pas, [layar, pas], ruang);
 const lebarPerlu = Math.max(layar.w, layar.h / rasioGambarProyektor(rq50k));
 cek('gambar tepat selebar yang diperlukan layar (±1 cm)', Math.abs(snPas.lebar - lebarPerlu) < 0.01, `${snPas.lebar.toFixed(3)} vs ${lebarPerlu.toFixed(3)}`);
-//  Posisi hasil pasang dibulatkan ke 1 cm (bulat2), jadi jarak boleh selisih <= 5 mm.
 cek('jarak lensa = TR x lebar - b (posisi dibulatkan 1 cm)', Math.abs(snPas.jarak - ((pas.throwRatio ?? 0) * lebarPerlu - 0.082)) <= 0.006, `${snPas.jarak.toFixed(4)}`);
 
 console.log('\n6. Batas lens shift datasheet');

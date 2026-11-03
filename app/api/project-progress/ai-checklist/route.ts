@@ -3,29 +3,9 @@ import { NO_STORE, akunLihatSemua, ambilAkun, galat } from '@/lib/checklist-serv
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
 
 export const dynamic = 'force-dynamic';
-// Membaca PDF wiring diagram + foto rak bisa lebih dari 30 detik (batas umum
-// route API di vercel.json). Route ini diberi entri khusus 60 detik di sana.
 export const maxDuration = 60;
 
-/**
- * POST /api/project-progress/ai-checklist - susun checklist pekerjaan dari
- * wiring diagram, foto/layout rak, dan daftar perangkat memakai model AI
- * platform (Gemini, token & model dari Admin Panel).
- *
- * multipart:
- *   berkas     PDF / PNG / JPG / WEBP (boleh beberapa) - dikirim apa adanya ke AI
- *   lampiran   teks (boleh beberapa) - mis. daftar perangkat Excel yang sudah
- *              diubah ke CSV di peramban
- *   instruksi  teks bebas tambahan dari pengguna (opsional)
- *
- * Hasilnya HANYA teks Markdown berformat impor checklist; tidak ada yang
- * disimpan di sini. Pengguna memeriksa & mengedit dulu di layar impor, lalu
- * menyimpannya lewat jalur impor biasa. Berkas tidak disimpan ke Supabase
- * (hemat penyimpanan & egress paket gratis).
- */
-
 const JENIS_BERKAS = new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']);
-// Vercel menolak body di atas ~4,5 MB; sisakan ruang untuk teks & kerangka multipart.
 const BATAS_TOTAL = 4 * 1024 * 1024;
 const BATAS_JUMLAH = 6;
 const BATAS_TEKS = 60_000;
@@ -60,7 +40,6 @@ FORMAT KELUARAN - Markdown SAJA, tanpa \`\`\` dan tanpa kalimat pembuka/penutup:
 export async function POST(request: NextRequest) {
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
-  // Admin & tim internal (yang mengerjakan & mengisi checklist). Sales tidak.
   if (!akunLihatSemua(s.akun)) return galat('Fitur AI checklist untuk admin dan tim.', 403);
 
   let form: FormData;
@@ -79,7 +58,6 @@ export async function POST(request: NextRequest) {
   }
   const teksLampiran = lampiran.join('\n\n').slice(0, BATAS_TEKS);
 
-  // Jatah dicatat sesudah isian lolos - unggahan yang salah tidak memakan kuota.
   const ditolak = await jatahAI(s.akun.id, 'checklist-ai');
   if (ditolak) return galat(ditolak, 429);
 

@@ -1,5 +1,4 @@
 'use client';
-/** Keadaan Kalkulator LED: isian, referensi produk, hasil hitung, hardware, data koneksi & daya, BOM. */
 import { useMemo, useState } from 'react';
 import { useRiwayat } from '../bersama/riwayat';
 import type { FileAktifLED } from './FileLED';
@@ -14,7 +13,6 @@ import type { SubLED } from './panel/BarSub';
 
 export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; onSub?: (sub: SubLED) => void }) {
   const [tampilan, setTampilan] = useState<SubLED>(subAwal);
-  //  Akun pimpinan: menghitung & mencetak boleh, menyimpan ke server tidak.
   const [hanyaLihat] = useState(() => isPimpinan(getSession()));
   const pindah = (v: SubLED) => { setTampilan(v); onSub?.(v); };
   const refLED = useReferensiLED();
@@ -53,10 +51,8 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const [koneksi, setKoneksi] = useState<PengaturanKoneksi>(KONEKSI_AWAL);
   const [dayaLED, setDayaLED] = useState<PengaturanDaya>(DAYA_AWAL);
   const [bom, setBom] = useState<PengaturanBOM>(BOM_AWAL);
-  /** Harga satuan per baris BOM (Rp), ikut tersimpan bersama hitungan. */
   const [harga, setHarga] = useState<Record<string, number>>({});
 
-  //  Potret seluruh isian: dasar undo/redo dan simpan/buka hitungan.
   const isian = useMemo(() => ({
     modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
@@ -65,7 +61,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
     refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga]);
   type Isian = typeof isian;
-  /** Kembalikan isian; kunci yang tidak ada (hitungan versi lama) dibiarkan. */
   const terapkan = (v: Partial<Isian>) => {
     const pasang = <K extends keyof Isian>(k: K, setel: (x: Isian[K]) => void) => { if (k in v) setel(v[k] as Isian[K]); };
     pasang('modeHw', setModeHw); pasang('vpPilih', setVpPilih); pasang('kartuPilih', setKartuPilih);
@@ -76,7 +71,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     pasang('kolomIn', setKolomIn); pasang('barisIn', setBarisIn); pasang('dayaUnit', setDayaUnit); pasang('beratUnit', setBeratUnit);
     pasang('faktorRata', setFaktorRata); pasang('refresh', setRefresh); pasang('bit', setBit); pasang('tegangan', setTegangan);
     pasang('faktorDaya', setFaktorDaya);
-    //  Hitungan lama belum punya screen connection -> pengaturan bawaan.
     setKoneksi(bersihkanKoneksi(v.koneksi));
     setDayaLED(bersihkanDaya(v.dayaLED)); setBom(bersihkanBOM(v.bom)); setHarga(bersihkanHarga(v.harga));
   };
@@ -84,7 +78,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
   const [fileAktif, setFileAktif] = useState<FileAktifLED | null>(null);
 
-  //  Satuan aktif: modul/cabinet dari referensi brand, atau cabinet ukuran bebas.
   const modul = cariModul(daftarModul, modulKode) ?? daftarModul[0];
   const brandAda = daftarBrand(refLED.data.brand, daftarModul, true);
   const brandAktif = brandModul(modul);
@@ -92,7 +85,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const u = satuan === 'modul'
     ? { pitch: modul.pitch, w: modul.w, h: modul.h, pxX: modul.pxW, pxY: modul.pxH, kode: modul.kode, merek: brandAktif, model: modul.model ?? '' }
     : { pitch, w: cabW, h: cabH, pxX: pikselUnit(cabW, pitch), pxY: pikselUnit(cabH, pitch), kode: `P${pitch}`, merek: '', model: '' };
-  /** Nama produk di ringkasan & cetak: brand (kecuali Umum) + model + pitch. */
   const labelLED = [u.merek !== BRAND_UMUM && u.merek, u.model, u.kode].filter(Boolean).join(' ');
   const px = pxIn ?? { x: u.pxX, y: u.pxY };
   const namaUnit = satuan === 'modul' ? (modul.unit ?? 'modul') : 'cabinet';
@@ -109,14 +101,12 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   }), [u.pitch, u.w, u.h, kolom, baris, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan, faktorDaya]);
   const hw = saranHardware(h.totalPx, h.portLAN, daftarKartu, daftarVP);
   const vpSaja = daftarVP.filter(v => !(v.senderBawaan && v.port > 0));
-  //  Mode manual: VP pilihan; sending card hanya dibutuhkan bila VP tidak all-in-one.
   const vpM = daftarVP.find(v => v.nama === vpPilih) ?? null;
   const vpAio = !!vpM && vpM.senderBawaan && vpM.port > 0;
   const kartuM = vpAio ? null : (daftarKartu.find(k => k.nama === kartuPilih) ?? hw.kartu?.hw ?? null);
   const teksHw = modeHw === 'manual'
     ? [vpM && `${kapasitasHardware(vpM, h.totalPx, h.portLAN).qty}× ${vpM.nama}`, kartuM && `${kapasitasHardware(kartuM, h.totalPx, h.portLAN).qty}× ${kartuM.nama}`].filter(Boolean).join(' + ')
     : '';
-  //  Screen connection: port per controller dari hardware terpilih (manual) atau opsi A/B (otomatis).
   const hwKoneksi = modeHw === 'manual' ? (vpAio ? vpM : kartuM) : (hw.vp?.hw ?? hw.kartu?.hw ?? null);
   const dataKoneksi: DataKoneksi = useMemo(() => ({
     kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan: namaUnit, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
@@ -128,7 +118,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
 
-  //  Daftar material dari kalkulator + screen connection + power connection (semua screen).
   const tKon = useMemo(() => susunKoneksi(dataKoneksi, koneksi), [dataKoneksi, koneksi]);
   const hDaya = useMemo(() => susunDaya(dataDaya, dayaLED), [dataDaya, dayaLED]);
   const ctrlBom = (() => {
@@ -157,7 +146,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     const m = cariModul(daftarModul, k);
     if (m) setLingkungan(LINGKUNGAN_TIPE[m.tipe]);
   };
-  /** Ganti brand: pilih modul brand itu yang pitch-nya sama, atau yang pertama. */
   const pilihBrand = (nama: string) => {
     const daftar = daftarModul.filter(m => brandModul(m) === nama);
     const m = daftar.find(x => x.kode === modul.kode) ?? daftar[0];

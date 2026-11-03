@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-denah.ts - Denah 2D (inti/denah.ts) & formatnya (inti/denahFormat.ts): dinding dengan
- * pintu / jendela, tapak benda ikut rotasi, benda plafon putus-putus, garis ukur, skala cetak, SVG & DXF.
- *
- * Jalankan: npm test -- desain3d-denah
- */
 import {
   type Benda, denahDari, dxfDenah, KATEGORI_RUANG, type Ruang, skalaDenah, sudutTapak, svgDenah, templateRuang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';

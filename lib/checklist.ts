@@ -1,24 +1,3 @@
-/**
- * lib/checklist.ts - tipe, pembaca impor, dan hitungan progres Project
- * Progress berbasis checklist (Proyek -> Checklist per lokasi -> Bagian -> Item).
- *
- * Berkas ini MURNI (tanpa supabase, tanpa DOM) supaya bisa dipakai di semua
- * sisi: halaman Project Progress (pratinjau impor), route server (validasi
- * ulang isi impor & hak akses), halaman link share, dan antrean kerja Beranda.
- *
- * DUA JALAN IMPOR, satu bentuk hasil (DraftChecklist):
- *
- *  1. Teks / Markdown - bentuk yang keluar dari dokumen checklist (ekspor
- *     Markdown) atau diketik bebas:
- *        # Judul checklist          -> judul (baris # pertama saja)
- *        ## 1. Persiapan            -> bagian
- *        ### Zona WALL / **Zona WALL** sebaris penuh -> kelompok di dalam bagian
- *        - [ ] Pasang bracket       -> item (- [x] = sudah selesai)
- *        teks lain, tabel |..|      -> catatan bagian (tetap tampil, tidak dicentang)
- *
- *  2. Baris tabel dari Excel/CSV - kolom Bagian | Kelompok | Item | Catatan
- *     (+ Status opsional). Hasil Ekspor Excel dari modul ini bisa diimpor balik.
- */
 
 import { appBaseUrl } from './app-url';
 
@@ -42,7 +21,6 @@ export interface DraftChecklist {
 }
 
 export type SumberChecklist = 'teks' | 'excel' | 'duplikat' | 'kosong' | 'reminder' | 'migrasi';
-/** 'admin' = dari dalam aplikasi (login), 'link' = dari link share tanpa login. */
 export type LewatCentang = 'admin' | 'link';
 export type StatusProyek = 'in_progress' | 'done' | 'blocked';
 export type AsalData = 'manual' | 'auto_reminder' | 'migrasi';
@@ -65,7 +43,6 @@ export interface ChecklistProyek {
   target_date: string | null;
   origin: AsalData;
   share_aktif: boolean;
-  /** Hanya dikirim ke admin. Halaman share tidak pernah menerimanya. */
   share_token?: string | null;
   dibuat_oleh_nama: string | null;
   created_at: string;
@@ -83,11 +60,9 @@ export interface ChecklistDaftar {
   proyek_id: string;
   judul: string;
   keterangan: string;
-  /** Nama orang di lokasi, diketik manual (handler remote / tanpa akun). '' = tidak diisi. Migrasi 053. */
   support_lokasi?: string;
   sumber: SumberChecklist;
   share_aktif: boolean;
-  /** Hanya dikirim ke admin & anggota. Halaman share tidak pernah menerimanya. */
   share_token?: string | null;
   start_date: string | null;
   target_date: string | null;
@@ -118,14 +93,12 @@ export interface ChecklistItem {
   selesai_oleh: string | null;
   selesai_pada: string | null;
   selesai_lewat: LewatCentang | null;
-  /** Ditandai bermasalah - pengganti status Stuck & Isu di Project Progress lama. */
   kendala: boolean;
   kendala_catatan: string;
   kendala_oleh: string | null;
   kendala_pada: string | null;
   foto_url: string | null;
   foto_thumb_url: string | null;
-  /** Hanya di peramban: ada perubahan yang belum disimpan pada item ini. */
   tertunda?: boolean;
 }
 
@@ -141,11 +114,8 @@ export interface ChecklistRiwayat {
   created_at: string;
 }
 
-/** Hak pengguna terhadap SATU checklist - dihitung server, dipakai UI. */
 export interface HakChecklist {
-  /** Admin: ubah info, anggota, hapus checklist. */
   admin: boolean;
-  /** Admin atau anggota: centang, kendala, ubah/tambah item, impor, link share. */
   edit: boolean;
 }
 
@@ -159,7 +129,6 @@ export interface ChecklistDetail {
   hak?: HakChecklist;
 }
 
-/** Angka ringkas satu checklist - untuk kartu di detail proyek & daftar proyek. */
 export interface StatChecklist {
   total: number;
   selesai: number;
@@ -169,30 +138,23 @@ export interface StatChecklist {
 export interface ChecklistRingkas extends ChecklistDaftar {
   anggota: ChecklistAnggota[];
   stat: StatChecklist;
-  /** Pengguna ini anggota checklist tersebut. */
   saya: boolean;
 }
 
 export interface ProyekRingkas extends ChecklistProyek {
   jumlah_checklist: number;
   stat: StatChecklist;
-  /** Target terdekat yang belum selesai di antara checklist-nya. */
   target_terdekat: string | null;
-  /** Pengguna ini anggota minimal satu checklist di proyek ini. */
   saya: boolean;
 }
 
 export interface ProyekDetail {
   proyek: ChecklistProyek;
   checklist: ChecklistRingkas[];
-  /** Handler & jumlah selesai per hari (WIB) untuk ringkasan - diagregasi di server, bukan daftar item. */
   aktivitas?: { kontribusi: { nama: string; jumlah: number }[]; perHari: Record<string, number> };
-  /** Admin: ubah/hapus proyek, buat checklist, link proyek. */
   admin: boolean;
 }
 
-// Batas teknis (bukan aturan bisnis): menjaga satu impor tidak membengkak
-// sampai request-nya ditolak server atau halamannya berat dibuka di HP.
 export const BATAS = {
   bagian: 100,
   item: 1500,
@@ -201,32 +163,18 @@ export const BATAS = {
   catatan: 5000,
   keterangan: 5000,
   nama: 60,
-  /** Nama "Support di lokasi" (boleh beberapa, dipisah koma). */
   support: 200,
-  /** Perubahan (centang/kendala) per satu kali Simpan. */
   perubahan: 500,
 } as const;
 
-/**
- * Satu perubahan yang menunggu tombol Simpan. Centang & kendala TIDAK dikirim
- * per klik - dikumpulkan di peramban lalu dikirim sekali, supaya satu sesi
- * kerja di lapangan = satu permintaan ke server (hemat kuota Vercel &
- * egress Supabase paket gratis).
- */
 export interface PerubahanItem {
   itemId: string;
-  /** Nilai tujuan centang. Tidak ada = centang tidak berubah. */
   selesai?: boolean;
-  /** Nilai tujuan kendala. Tidak ada = kendala tidak berubah. */
   kendala?: boolean;
   catatan?: string;
-  /** Kapan perubahan dibuat di perangkat (ISO) - dicatat sebagai waktu pengerjaan. */
   waktu?: string;
 }
 
-// ── Progres & jadwal ───────────────────────────────────────────────────────
-
-/** Tanggal hari ini YYYY-MM-DD, zona waktu perangkat (bukan UTC). */
 export function hariIni(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -240,10 +188,6 @@ function selisihHari(a: string, b: string): number {
 
 export type KeadaanJadwal = 'selesai' | 'terlambat' | 'dekat' | 'aman' | 'tanpa';
 
-/**
- * Keadaan jadwal terhadap target. 'dekat' = target <= 3 hari lagi - ambang
- * yang sama dengan antrean kerja Beranda di Project Progress lama.
- */
 export function keadaanJadwal(target: string | null, tuntas: boolean, hari = hariIni()): { keadaan: KeadaanJadwal; label: string } {
   if (tuntas) return { keadaan: 'selesai', label: 'Selesai' };
   if (!target) return { keadaan: 'tanpa', label: 'Tanpa target' };
@@ -281,21 +225,17 @@ export function progresDari(selesai: number, total: number): Progres {
   return { selesai, total, persen: total ? Math.round((selesai / total) * 100) : 0 };
 }
 
-// ── Pembaca teks / Markdown ────────────────────────────────────────────────
-
-/** Buang penanda Markdown sebaris supaya teks item bersih saat dicentang. */
 export function bersihkanSebaris(s: string): string {
   return s
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')   // [teks](url) -> teks
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/(^|\s)\*(\S[^*]*?)\*(?=\s|$)/g, '$1$2')
-    .replace(/\\([\\`*_{}[\]()#+\-.!|])/g, '$1') // escape Markdown
+    .replace(/\\([\\`*_{}[\]()#+\-.!|])/g, '$1')
     .trim();
 }
 
-/** Rapikan kumpulan baris catatan: buang baris kosong di ujung & yang beruntun. */
 function rapikanCatatan(baris: string[]): string {
   const hasil: string[] = [];
   for (const b of baris) {
@@ -306,16 +246,12 @@ function rapikanCatatan(baris: string[]): string {
   return hasil.join('\n');
 }
 
-// Isi kurung boleh spasi berapa pun ([ ], [  ], [x], [ x ]) - teks yang
-// diketik/ditempel ulang sering berubah spasinya.
 const RE_ITEM = /^\s*(?:[-*+]|\d+[.)])\s+\[\s*([xX]?)\s*\]\s+(.+)$/;
 const RE_BULLET_ANAK = /^\s{2,}(?:[-*+]|\d+[.)])\s+(.+)$/;
 
 export function bacaTeks(sumber: string): DraftChecklist {
   const baris = sumber
     .replace(/\r/g, '')
-    // Token blok/chip dari dokumen Claude (mis. tanggal, embed) tidak berarti
-    // apa-apa di luar dokumennya.
     .replace(/<\?claude[^?]*\?>/g, '')
     .split('\n');
 
@@ -325,9 +261,6 @@ export function bacaTeks(sumber: string): DraftChecklist {
   let kini: (DraftBagian & { _catatan: string[] }) | null = null;
   let kelompok = '';
   let itemTerakhir: DraftItem | null = null;
-  // Judul kelompok yang belum diikuti item. Bila yang menyusul justru catatan
-  // (mis. "**Peta port**" lalu tabel), judulnya ikut ke catatan supaya tabel
-  // tidak kehilangan keterangannya.
   let judulTertunda: string | null = null;
 
   const pastikanBagian = () => {
@@ -349,9 +282,7 @@ export function bacaTeks(sumber: string): DraftChecklist {
       continue;
     }
 
-    // Gambar/embed (mis. grafik progres di dokumen) tidak ikut.
     if (/^!\[[^\]]*\]\([^)]*\)$/.test(t)) continue;
-    // ...termasuk penggantinya saat dokumen diekspor ke Markdown.
     if (/^(&#91;|\\?\[)embedded content/i.test(t)) continue;
 
     let m = /^#\s+(.+)$/.exec(t);
@@ -393,7 +324,6 @@ export function bacaTeks(sumber: string): DraftChecklist {
       continue;
     }
 
-    // Poin menjorok tepat di bawah item = rincian item itu, bukan catatan bagian.
     m = RE_BULLET_ANAK.exec(mentah);
     if (m && itemTerakhir) {
       itemTerakhir.catatan = [itemTerakhir.catatan, bersihkanSebaris(m[1])].filter(Boolean).join('\n');
@@ -416,8 +346,6 @@ export function bacaTeks(sumber: string): DraftChecklist {
   };
 }
 
-// ── Pembaca baris tabel (Excel / CSV) ──────────────────────────────────────
-
 export const KOLOM_TEMPLATE = ['Bagian', 'Kelompok', 'Item', 'Catatan', 'Status'] as const;
 
 type KunciKolom = 'bagian' | 'kelompok' | 'item' | 'catatan' | 'status';
@@ -439,12 +367,6 @@ function statusSelesai(v: string): boolean {
   return ['selesai', 'done', 'ya', 'yes', 'v', 'x', '✓', '✔', 'true', '1'].includes(v.toLowerCase());
 }
 
-/**
- * baris[0] dianggap header bila memuat salah satu nama kolom yang dikenali;
- * kalau tidak, urutan kolom template (Bagian, Kelompok, Item, Catatan, Status)
- * dipakai. Sel Bagian yang kosong mewarisi baris di atasnya - sel gabungan
- * (merge) di Excel terbaca kosong di baris kedua dan seterusnya.
- */
 export function bacaBaris(baris: unknown[][], judulCadangan = ''): DraftChecklist {
   const rows = baris.map(r => (Array.isArray(r) ? r.map(sel) : []))
     .filter(r => r.some(c => c !== ''));
@@ -482,7 +404,6 @@ export function bacaBaris(baris: unknown[][], judulCadangan = ''): DraftChecklis
     if (teks) {
       kini.items.push({ kelompok: ambil(r, 'kelompok'), teks, catatan, selesai: statusSelesai(ambil(r, 'status')) });
     } else if (catatan) {
-      // Baris tanpa item tapi bercatatan = catatan untuk bagiannya.
       kini.catatan = [kini.catatan, catatan].filter(Boolean).join('\n');
     }
   }
@@ -490,7 +411,6 @@ export function bacaBaris(baris: unknown[][], judulCadangan = ''): DraftChecklis
   return { judul: judulCadangan, keterangan: '', bagian: bagian.filter(b => b.items.length || b.catatan) };
 }
 
-/** Isi contoh untuk tombol "Unduh template Excel". */
 export const CONTOH_TEMPLATE: string[][] = [
   [...KOLOM_TEMPLATE],
   ['1. Persiapan', '', 'Cek fisik semua perangkat sesuai daftar', 'Jumlah, model, aksesori', ''],
@@ -500,16 +420,10 @@ export const CONTOH_TEMPLATE: string[][] = [
   ['3. Pengujian', '', 'Uji semua sumber tampil di display', '', ''],
 ];
 
-// ── Validasi (dipakai server; klien memakai hasil yang sama untuk pratinjau) ──
-
 export function hitungItemDraft(d: DraftChecklist): number {
   return d.bagian.reduce((s, b) => s + b.items.length, 0);
 }
 
-/**
- * Pastikan draf dari klien utuh dan dalam batas. Mengembalikan pesan galat
- * yang bisa ditampilkan apa adanya, atau draf yang sudah dipangkas & rapi.
- */
 export function validasiDraft(masuk: unknown): { galat: string } | { draft: DraftChecklist } {
   const d = masuk as Partial<DraftChecklist> | null;
   if (!d || typeof d !== 'object') return { galat: 'Isi checklist tidak terbaca.' };
@@ -546,9 +460,6 @@ export function validasiNama(v: unknown): string | null {
   return nama;
 }
 
-// ── Lain-lain ──────────────────────────────────────────────────────────────
-
-/** URL absolut halaman share. Domain dari appBaseUrl(): dari Preview Vercel tetap ke domain produksi. */
 export function urlShareChecklist(token: string): string {
   return `${appBaseUrl()}/checklist/share/${token}`;
 }
@@ -561,7 +472,6 @@ export function formatWaktu(iso: string | null | undefined): string {
     d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** Item dikelompokkan per kelompok, urutan pertama kemunculan dipertahankan. */
 export function kelompokkan<T extends { kelompok: string }>(items: T[]): { kelompok: string; items: T[] }[] {
   const hasil: { kelompok: string; items: T[] }[] = [];
   for (const it of items) {

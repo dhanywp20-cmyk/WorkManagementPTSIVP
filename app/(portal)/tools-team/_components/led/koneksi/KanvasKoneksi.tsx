@@ -1,5 +1,4 @@
 'use client';
-/** Kanvas diagram Screen Connection (klik / seret di mode manual) + unduh PNG / SVG. */
 import { warnaPort } from './data';
 import { kelasTombol } from './komponen';
 import { Download, Image as IkonGambar } from 'lucide-react';
@@ -23,8 +22,6 @@ export function KanvasKoneksi({ a }: { a: AlatRuangKoneksi }) {
             <button type="button" onClick={unduhSVG} title="Unduh diagram sebagai SVG (vektor, bisa diedit di Illustrator / Inkscape)" className={kelasTombol}><Download size={14} /> SVG</button>
           </div>
         </div>
-        {/* HP: diagram diberi lebar minimum (±48 px per receiving card) lalu digeser mendatar,
-            supaya sel tetap cukup besar untuk diketuk / diseret saat menyambung kabel. */}
         <div className="overflow-x-auto">
         <div className="p-2 [&>svg]:mx-auto [&>svg]:block select-none" role="img" style={{ minWidth: Math.min(1100, t.K * 48 + 110) }}
           aria-label={`Diagram koneksi ${t.portTerpakai} port untuk ${k.sel.length} receiving card`}
@@ -32,7 +29,7 @@ export function KanvasKoneksi({ a }: { a: AlatRuangKoneksi }) {
             if (!alatEf) return;
             const sel = selDari(e.target as Element); if (!sel) return;
             e.preventDefault();
-            try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* abaikan */ }
+            try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {  }
             klikSel(sel[0], sel[1]);
           }}
           onPointerMove={e => {

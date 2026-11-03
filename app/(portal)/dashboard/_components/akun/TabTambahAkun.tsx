@@ -1,6 +1,5 @@
 'use client';
 
-/** TabTambahAkun - dipecah dari app/(portal)/dashboard/_components/modal-akun.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from '../shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';
@@ -39,7 +38,6 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
               <label htmlFor="f-dashboard-components-modal-akun-33" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
               <select id="f-dashboard-components-modal-akun-33" value={newUser.divisi} onChange={e => {
                 const divisi = e.target.value;
-                //  Administrator & Viewer melihat semua menu - dicentang semua (masih bisa dikurangi di bawah).
                 const semua = divisi === 'Administrator' || divisi === 'Viewer';
                 setNewUser({ ...newUser, divisi, pts_type: '', pts_daerah: '', sales_division: '', allowed_menus: semua ? [...ALL_MENU_KEYS] : (newUser.divisi === 'Administrator' || newUser.divisi === 'Viewer' ? DEFAULT_MENU_KEYS : newUser.allowed_menus) });
               }}

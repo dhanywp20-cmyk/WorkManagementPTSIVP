@@ -1,9 +1,4 @@
 'use client';
-/**
- * Pemasangan layar & penonton terdekat: tepi atas vs plafon, sudut leher penonton terdekat (batas
- * nyaman 30°), dan resolusi yang cukup tajam pada jarak itu (ketajaman mata 1 menit busur).
- * Rumus: lib/av-layar-proyektor.ts.
- */
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { cekResolusi, jarakTerdekatNyamanM, sudutKeAtasDerajat } from '@/lib/av-layar-proyektor';

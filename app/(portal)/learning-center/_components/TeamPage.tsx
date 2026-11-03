@@ -13,12 +13,6 @@ import { GambarSoal } from '@/components/shared/GambarSoal';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
-  /**
-   * Langsung buka detail attempt ini begitu daftar selesai dimuat. Dipakai
-   * tombol "Nilai Sekarang" di Laporan: admin sudah menunjuk satu jawaban,
-   * jadi memaksanya memilih ulang dari daftar hanya menambah satu langkah
-   * yang tidak perlu.
-   */
   autoOpenAttemptId?: string | null;
 }) {
   const [attempts, setAttempts] = useState<any[]>([]);
@@ -29,47 +23,23 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const [manualScores, setManualScores] = useState<Record<string, string>>({});
   const [savingGrade, setSavingGrade] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
-  // Saran AI (bukan skor final - lihat gradeEssayWithAI di shared.tsx)
   const [aiFeedback, setAiFeedback] = useState<Record<string, string>>({});
   const [aiGradingIds, setAiGradingIds] = useState<Set<string>>(new Set());
   const [aiError, setAiError] = useState<Record<string, string>>({});
-  /** Skor saran AI, disimpan terpisah dari manualScores supaya admin bisa melihat
-      angka asli dari AI walau ia sudah menimpanya dengan nilai sendiri. */
   const [aiScores, setAiScores] = useState<Record<string, number>>({});
-  /** Sedang menilai seluruh essay peserta ini sekaligus. */
   const [menilaiBorongan, setMenilaiBorongan] = useState(false);
-  /*
-    Pengaturan penilai dipegang di layar ini, bukan hanya di Admin Panel.
-
-    Mengganti model adalah hal yang dilakukan JUSTRU saat menilai - biasanya
-    setelah melihat pesan "jatah habis" atau hasil yang meleset. Menyuruh orang
-    keluar ke Admin Panel pada saat itu berarti meninggalkan daftar jawaban yang
-    sedang dikerjakan, lalu mencari jalan kembali ke peserta yang sama.
-
-    Yang TIDAK ikut pindah ke sini: tokennya. Ia tidak punya alasan muncul di
-    layar penilaian, dan layar ini bisa dibuka orang yang bukan pengurus.
-  */
   const [setelanPenilai, setSetelanPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
   const [daftarModel, setDaftarModel] = useState<ModelAI[]>([]);
   const [galatModel, setGalatModel] = useState('');
   const bolehAturModel = isAdminView && hasFullAccess(getSession<User>() ?? {});
-  //  Pimpinan (lib/pimpinan.ts) melihat jawaban peserta tetapi TIDAK menilai: tanpa kolom nilai, tombol
-  //  AI, tombol simpan, dan tanpa penilaian otomatis saat dibuka (itu menulis ke lc_answers).
   const bolehNilai = isAdminView && !isPimpinan(getSession<User>() ?? {});
 
   useEffect(() => {
-    // Kalau gagal, penilaian otomatis tetap mati - itu sisi yang aman.
     ambilPengaturanPenilai().then(setSetelanPenilai).catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!bolehAturModel) return;
-    /*
-      Daftarnya ditanyakan ke Google, bukan ditulis di kode. Nama model berbeda
-      antar kunci dan antar wilayah, dan diganti tanpa pemberitahuan - daftar
-      tertutup di kode akan menawarkan nama yang tidak ada, dan kekeliruannya
-      baru ketahuan saat tombol Nilai ditekan.
-    */
     ambilDaftarModel('penilai')
       .then(m => { setDaftarModel(m); setGalatModel(''); })
       .catch(e => setGalatModel(e instanceof Error ? e.message : 'Gagal membaca daftar model.'));
@@ -77,12 +47,11 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
 
   const penilaiOtomatis = setelanPenilai.otomatis;
 
-  /** Simpan model pilihan sebagai bawaan baru - berlaku untuk penilai berikutnya juga. */
   const gantiModel = async (model: string) => {
     const bersih = model.trim();
     if (!bersih || bersih === setelanPenilai.model) return;
     const baru = { ...setelanPenilai, model: bersih };
-    setSetelanPenilai(baru);                       // tampak seketika
+    setSetelanPenilai(baru);
     const r = await simpanPengaturanPenilai(baru);
     if (!r.ok) {
       setDialog({ type: 'error', title: 'Model gagal disimpan', message: r.pesan ?? 'Coba lagi.' });
@@ -128,9 +97,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
       const adaAi     = a.ai_score !== null && a.ai_score !== undefined;
       if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
       if (adaAi) aiScoreMap[a.question_id] = Number(a.ai_score);
-      // Nilai admin selalu menang. Kalau belum ada, skor AI yang tersimpan
-      // dipakai sebagai isian awal sekaligus penanda bahwa soal ini tidak perlu
-      // dinilai AI ulang.
       if (adaManual)      scoreMap[a.question_id] = String(a.manual_score);
       else if (adaAi)     scoreMap[a.question_id] = String(a.ai_score);
     });
@@ -139,19 +105,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     setAiScores(aiScoreMap);
     setLoadingDetail(false);
 
-    /*
-      Penilaian otomatis saat halaman dibuka sekarang HARUS dinyalakan dulu.
-
-      Dulu ini berjalan selalu, dan satu panggilan AI ditembakkan per soal
-      essay. Membuka satu peserta berisi 5 essay berarti 5 permintaan - jadi
-      sekadar MELIHAT jawaban orang menghabiskan jatah, bahkan ketika
-      penilainya sudah tahu nilainya dan cuma ingin membacanya. Dengan jatah
-      harian gratis yang hanya puluhan permintaan, beberapa kali buka-tutup
-      halaman sudah cukup menghabiskannya - dan itu persis yang terjadi.
-
-      Kalaupun dinyalakan, sekarang seluruh essay dinilai dalam SATU panggilan,
-      bukan satu per soal.
-    */
     if (bolehNilai && penilaiOtomatis) {
       const belum = orderedQs
         .filter(q => q.question_type === 'essay')
@@ -162,16 +115,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     }
   };
 
-  /*
-    Nilai SELURUH essay satu peserta dalam satu panggilan.
-
-    Satu peserta 5 essay: 5 permintaan jadi 1. Satu sesi 30 peserta: 150 jadi
-    30. Itu bukan penghematan yang enak dimiliki - jatah harian gratis Gemini
-    2.5 Flash hanya puluhan permintaan, jadi bentuk lama memang tidak pernah
-    bisa menyelesaikan satu sesi pun.
-
-    Kegagalan AI tidak pernah menghalangi penilaian manual; itu tetap berlaku.
-  */
   const nilaiBorongan = async (attemptId: string, daftarSoal: Question[], jawaban: any[]) => {
     const bahan: SoalDinilai[] = daftarSoal
       .filter(q => q.question_type === 'essay')
@@ -197,7 +140,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
 
       setAiFeedback(p => ({ ...p, ...Object.fromEntries(idHasil.map(i => [i, hasil[i].feedback])) }));
       setAiScores(p => ({ ...p, ...Object.fromEntries(idHasil.map(i => [i, hasil[i].score])) }));
-      // Tidak menimpa nilai yang sudah diketik penilai sambil menunggu.
       setManualScores(p => {
         const n = { ...p };
         for (const i of idHasil) if (n[i] === undefined) n[i] = String(hasil[i].score);
@@ -209,11 +151,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
           .eq('attempt_id', attemptId).eq('question_id', i)
       ));
 
-      /*
-        Soal yang tidak terjawab AI ditandai, bukan didiamkan. Membiarkannya
-        kosong membuatnya tampak sama dengan soal yang memang belum giliran
-        dinilai, dan penilai akan menunggu sesuatu yang tidak akan datang.
-      */
       const tertinggal = bahan.filter(b => !hasil[b.id]);
       if (tertinggal.length > 0) {
         setAiError(p => ({
@@ -230,7 +167,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     }
   };
 
-  /** Best-effort - kegagalan AI TIDAK PERNAH menghalangi penilaian manual. */
   const runAiGrading = async (attemptId: string, q: Question, studentText: string) => {
     setAiGradingIds(p => new Set(p).add(q.id));
     setAiError(p => { const n = { ...p }; delete n[q.id]; return n; });
@@ -238,7 +174,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
       const result = await gradeEssayWithAI(q.question, q.model_answer, studentText);
       setAiFeedback(p => ({ ...p, [q.id]: result.feedback }));
       setAiScores(p => ({ ...p, [q.id]: result.score }));
-      // Jangan timpa kalau admin sudah sempat mengetik nilai sendiri sambil menunggu AI.
       setManualScores(p => (p[q.id] !== undefined ? p : { ...p, [q.id]: String(result.score) }));
       void supabase.from('lc_answers')
         .update({ ai_score: result.score, ai_feedback: result.feedback })
@@ -266,17 +201,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     const passingGrade = selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70;
     const passed = finalScore >= passingGrade;
     const totalCorrect = questions.filter(q => (Number(manualScores[q.id]) || 0) >= passingGrade).length;
-    //  Diperiksa: nilai peserta ikut memengaruhi KPI-nya - kalau tersimpannya
-    //  gagal diam-diam (RLS menolak 0 baris tanpa galat), "berhasil disimpan"
-    //  akan menampilkan nilai yang sebetulnya masih belum ada di basis data.
-    /*
-      H7 (audit): dua admin bisa membuka attempt yang sama dan menekan Simpan
-      hampir bersamaan - tanpa penjaga, keduanya sama-sama berhasil menimpa
-      nilai satu sama lain tanpa pemberitahuan. `.eq('grading_status',
-      'pending_review')` membuat update kedua (yang datang setelah attempt
-      ini sudah 'graded') tidak mengenai baris mana pun - dibedakan dari
-      galat lain lewat pengecekan status terkini di bawah.
-    */
     const { data: terubah, error } = await supabase.from('lc_quiz_attempts').update({
       score: finalScore, passed, total_correct: totalCorrect, total_questions: questions.length,
       grading_status: 'graded', graded_by: grader?.id ?? null, graded_at: new Date().toISOString(),
@@ -296,9 +220,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
     setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
 
-    // M15 (docs/UX-WORKFLOW-AUDIT.md): dulu peserta tidak pernah diberi tahu
-    // essay-nya sudah dinilai - padahal MyQuizPage.tsx menjanjikan "Skor akan
-    // muncul setelah admin selesai menilai" tanpa ada dorongan aktif apa pun.
     const judulSesi = (selectedAttempt as any)?.lc_quiz_sessions?.title as string | undefined;
     void createNotification({
       user_id: selectedAttempt.user_id,
@@ -325,19 +246,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
             className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all flex items-center gap-2">← Kembali</button>
         </div>
 
-        {/*
-          Bilah penilai AI - menempel di bawah judul yang juga sticky.
-
-          Mengganti model adalah hal yang dilakukan JUSTRU saat menilai:
-          biasanya setelah melihat "jatah habis" atau hasil yang meleset.
-          Menyuruh orang keluar ke Admin Panel pada saat itu berarti
-          meninggalkan daftar jawaban yang sedang dikerjakan, lalu mencari jalan
-          kembali ke peserta yang sama.
-
-          Hanya muncul untuk yang boleh membuka Admin Panel - layar ini bisa
-          dibuka penilai yang bukan pengurus, dan model yang dipakai bersama
-          bukan miliknya untuk diubah.
-        */}
         {bolehAturModel && questions.some(q => q.question_type === 'essay') && (
           <div className="flex items-center gap-2 flex-wrap px-4 sm:px-8 py-2 border-b sticky top-[64px] sm:top-[84px] z-10"
             style={{ background: '#faf7ff', borderColor: '#ede9fe' }}>
@@ -349,25 +257,12 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               <select value={setelanPenilai.model} onChange={e => gantiModel(e.target.value)}
                 aria-label="Model AI penilai"
                 className="text-xs font-semibold text-indigo-800 bg-white border border-violet-200 rounded-lg px-2 py-1.5 max-w-[260px] outline-none focus:border-violet-400">
-                {/*
-                  Model tersimpan yang TIDAK ada di daftar tetap ditampilkan.
-                  Tanpa ini, model yang sudah dihentikan Google diam-diam
-                  tergantikan oleh baris pertama daftar - dan pemakainya mengira
-                  itulah yang selama ini terpakai.
-                */}
                 {!daftarModel.some(m => m.id === setelanPenilai.model) && (
                   <option value={setelanPenilai.model}>{setelanPenilai.model} — tidak ada di daftar</option>
                 )}
                 {daftarModel.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
               </select>
             ) : galatModel ? (
-              /*
-                Daftar gagal dimuat - baru di sinilah isian ketik manual muncul.
-                Bukan sebagai jalur utama: mengetik nama model adalah cara paling
-                mudah salah, dan salahnya baru ketahuan saat tombol Nilai ditekan.
-                Tapi tanpa jalan apa pun, kunci yang bermasalah membuat penilaian
-                terkunci pada model yang mungkin justru sedang habis jatahnya.
-              */
               <>
                 <input defaultValue={setelanPenilai.model}
                   onBlur={e => gantiModel(e.target.value)}
@@ -420,10 +315,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               {questions.map((q, idx) => {
                 const ans = getAnswerFor(q.id);
                 if (q.question_type === 'essay') {
-                  // Latar SOLID: halaman Learning Center memakai foto sebagai latar, dan
-                  // kartu semi-transparan (bg-indigo-50/40) membuat foto itu tembus ke
-                  // belakang teks soal - pertanyaan & jawaban jadi sulit dibaca justru
-                  // saat admin perlu membacanya untuk menilai.
                   return (
                     <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">
                       <div className="flex items-start gap-3 mb-3">
@@ -438,19 +329,9 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         <div className="bg-white rounded-xl border border-slate-200 p-3">
                           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Jawaban Peserta</p>
                           {ans?.answer_thumb_url ? (
-                            /*
-                              Yang dimuat daftar ini PRATINJAU-nya, bukan gambar
-                              penuh. Satu sesi bisa berisi puluhan jawaban; kalau
-                              masing-masing memuat berkas 250 KB hanya untuk
-                              ditampilkan sebesar perangko, satu kali buka daftar
-                              sudah menghabiskan berpuluh megabyte - dan itu
-                              terulang tiap kali halamannya dibuka. Gambar penuh
-                              baru diunduh ketika penilai benar-benar mengkliknya.
-                            */
                             <a href={ans.answer_image_url ?? ans.answer_thumb_url}
                               target="_blank" rel="noopener noreferrer"
                               className="inline-block group" title="Klik untuk membuka gambar ukuran penuh">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={ans.answer_thumb_url} alt="Jawaban bergambar peserta"
                                 loading="lazy"
                                 className="w-40 h-40 object-cover rounded-lg border border-slate-200 group-hover:border-slate-400 transition-all" />
@@ -487,8 +368,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                   )}
                                 </div>
                                 <p className="text-xs text-violet-800 leading-relaxed">{aiFeedback[q.id]}</p>
-                                {/* Terlihat jelas kalau admin memberi keringanan/koreksi — angka
-                                    AI tetap ditampilkan apa adanya di sebelah nilai akhir. */}
                                 {aiScores[q.id] !== undefined && manualScores[q.id] !== undefined
                                   && manualScores[q.id] !== '' && Number(manualScores[q.id]) !== aiScores[q.id] && (
                                   <p className="text-[11px] font-semibold text-amber-700 mt-1.5">
@@ -500,18 +379,11 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             {aiError[q.id] && (
                               <p className="text-xs text-rose-500 italic"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiError[q.id]} — isi nilai manual di bawah.</p>
                             )}
-                            {/* Tanpa keterangan ini, admin melihat kolom nilai kosong tanpa
-                                saran AI dan tidak tahu apakah AI-nya rusak atau memang tidak
-                                ada yang bisa dinilai. */}
                             {!ans?.essay_text?.trim() && !ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
                                 <IkonTeks nama="🤖" />Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
                               </p>
                             )}
-                            {/* Jawaban bergambar dinilai manusia. AI di sini hanya
-                                membandingkan TEKS dengan kunci referensi - ia tidak
-                                melihat gambarnya sama sekali, jadi nilai apa pun yang
-                                ia berikan akan menyesatkan. */}
                             {ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
                                 <IkonTeks nama="🖐" />Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
@@ -560,10 +432,6 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="!mx-0 mt-2 border border-slate-200" />
                       </div>
                     </div>
-                    {/* 1 kolom di ponsel: dipaksa 2 kolom + ml-10 (jarak
-                        sejajar nomor soal) menyisakan ruang sangat sempit
-                        buat teks opsi di layar sempit, jadi teks panjang
-                        terpotong/menumpuk berantakan. */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-2 sm:ml-10">
                       {(['A','B','C','D'] as const).map(opt => {
                         const optVal = (q as any)[`option_${opt.toLowerCase()}`];
@@ -586,17 +454,8 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                   </div>
                 );
               })}
-              {/* pr-14 pada tombol simpan: memberi jarak dari tombol melayang "Jelajahi
-                  Platform" di tepi kanan-bawah, supaya tombol simpan tidak tertutup. */}
               {bolehNilai && questions.some(q => q.question_type === 'essay') && (
                 <div className="sticky bottom-4 flex justify-end items-center gap-2 pr-14">
-                  {/*
-                    Satu tombol untuk SELURUH essay peserta ini - satu panggilan
-                    AI, bukan satu per soal. Sengaja diletakkan bersebelahan
-                    dengan Simpan Nilai karena urutan kerjanya memang begitu:
-                    minta saran, periksa, lalu simpan. Penilaian tetap bisa
-                    diselesaikan tanpa menekannya sama sekali.
-                  */}
                   <button type="button" disabled={menilaiBorongan || savingGrade}
                     onClick={() => selectedAttempt && nilaiBorongan(selectedAttempt.id, questions, answerDetails)}
                     title="Menilai semua jawaban essay peserta ini dalam satu permintaan ke AI"

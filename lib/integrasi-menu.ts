@@ -1,13 +1,3 @@
-/**
- * lib/integrasi-menu.ts - aksi BACA DIWAYPI untuk menu di luar tahap 1-2: Request Design Project
- * (detail + hak per tombol), persetujuan tiket, Tech Note, Unit Movement, Form Review, Piket
- * Showroom, KPI Team, Incentive PTS (bagian sendiri), Learning Center, Summary Project.
- *
- * Aturan lihat tiap menu disalin dari halamannya (dikutip di tiap fungsi) dan dipasang DI
- * QUERY - sama dengan halaman - di atas RLS yang berlaku karena `db` = klien pemilik token.
- * hakDesain() diekspor: sisi tulis (lib/integrasi-tulis.ts) memakai aturan yang sama persis
- * untuk menolak sebelum menulis apa pun.
- */
 import { hasFullAccess } from '@/lib/constants';
 import { filterLingkup, type LingkupProject } from '@/lib/project-scope';
 import { bisaLihatSemuaTamu } from '@/lib/piket-akses';
@@ -20,7 +10,6 @@ type Baris = Record<string, unknown>;
 type Aksi = (a: Record<string, unknown>, k: KonteksAksi) => Promise<HasilAksi>;
 const str = (v: unknown) => (typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v));
 
-// ================================================================ Request Design Project
 export interface RuanganDesain {
   room_name?: string | null; status?: string | null; assign_name?: string | null; assign_user_id?: string | null;
   approved_by?: string | null; approved_at?: string | null;
@@ -35,14 +24,12 @@ export interface RequestDesain {
   internal_approved_at?: string | null; internal_approved_at_2?: string | null;
 }
 
-/** getRoomStatus / getRoomAssignName (form-require-project/_components/shared.ts). */
 export const statusRuangan = (r: RequestDesain, i: number) => (i === 0 ? r.status : r.rooms?.[i - 1]?.status ?? r.status);
 export const handlerRuangan = (r: RequestDesain, i: number) =>
   (i === 0 ? r.assign_name : r.rooms?.[i - 1]?.assign_name ?? r.assign_name) ?? null;
 export const namaRuangan = (r: RequestDesain, i: number) =>
   (i === 0 ? r.room_name : r.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`;
 
-/** `ruangan`: nomor 1..n (1 = ruangan pertama) atau nama ruangan. Bawaan ruangan pertama. */
 export function indeksRuangan(a: Record<string, unknown>, r: RequestDesain): number | null {
   const v = a.ruangan;
   if (v === undefined || v === null || v === '') return 0;
@@ -53,7 +40,6 @@ export function indeksRuangan(a: Record<string, unknown>, r: RequestDesain): num
   return null;
 }
 
-/** Sales Internal pengulas (utama / kedua utk brand BOTH) yang bagiannya belum di-approve. */
 export function bolehReviewInternal(r: RequestDesain, uid: string): boolean {
   if (r.routing_status !== 'internal_review') return false;
   if (uid === r.internal_sales_id && !r.internal_approved_at) return true;
@@ -61,15 +47,10 @@ export function bolehReviewInternal(r: RequestDesain, uid: string): boolean {
 }
 
 export interface HakDesain {
-  /** Pilihan Update Status yang tampil di ModalUpdateStatus untuk ruangan ini. */
   ubah_status: string[];
-  /** Approve & Assign PTS (approve awal, hanya ruangan pertama). */
   approve: boolean;
-  /** Supervisor yang di-route: assign lanjut ke tim / kerjakan sendiri. */
   assign_supervisor: boolean;
-  /** Re-assign Tim PTS dari Admin Controls. */
   reassign: boolean;
-  /** Opsi "Route ke Supervisor" di popup assign. */
   route_supervisor: boolean;
   tolak: boolean;
   review_internal: boolean;
@@ -78,12 +59,6 @@ export interface HakDesain {
   alasan_pesan?: string;
 }
 
-/**
- * Hak tiap tombol Request Design untuk satu ruangan - form-require-project/page.tsx (isPTS,
- * isTeamPTS, bisaKelolaRequest, canSetInProgress, canInternalApproveProject), HeaderDetail.tsx,
- * ModalUpdateStatus.tsx, KontrolAdminDetail.tsx, BlokAssignPTS.tsx, ModalDetailRequest.tsx,
- * usePesanLampiran.ts. Dipakai baca (aksi_tersedia) DAN tulis (penolakan sebelum menulis).
- */
 export function hakDesain(r: RequestDesain, u: KonteksAksi['u'], t: AkunTambahan, i: number): HakDesain {
   const role = peranDari(u);
   const me = u.full_name ?? '';
@@ -130,14 +105,12 @@ export function hakDesain(r: RequestDesain, u: KonteksAksi['u'], t: AkunTambahan
   };
 }
 
-/** Aturan tampilan halaman untuk Team PTS biasa: hanya request yang sudah di-assign / di-route ke dia. */
 export function terlihatTeamPTS(r: { assign_name?: string | null; assigned_supervisor_id?: string | null }, u: KonteksAksi['u']): boolean {
   const role = peranDari(u);
   if (!((role === 'team_pts' || role === 'team') && u.jabatan !== 'Manager')) return true;
   return !!r.assign_name || r.assigned_supervisor_id === u.id;
 }
 
-/** Satu request yang boleh dilihat pemilik token, atau galat yang bisa diucapkan. */
 export async function muatRequestDesain(id: unknown, k: KonteksAksi): Promise<RequestDesain | HasilAksi> {
   const rid = idSah(id);
   if (!rid) return gagal('id request tidak sah (ambil dari desain_cari).');
@@ -178,12 +151,6 @@ const desainDetail: Aksi = async (a, k) => {
   };
 };
 
-// ================================================================ Ticketing: menunggu persetujuan
-/**
- * Ticket yang menunggu keputusan pemilik token: Waiting Approval (antrean Approve di Ticketing,
- * RLS menentukan siapa yang melihatnya) + ticket yang di-route ke dia sebagai Supervisor dan
- * belum di-assign ke handler.
- */
 const tiketPersetujuan: Aksi = async (_a, k) => {
   const kolom = 'id, project_name, issue_case, product, sales_name, sales_division, created_by, date, created_at, status, assign_name, routing_status, assigned_supervisor_id';
   const [{ data: wa, error }, { data: sup }] = await Promise.all([
@@ -198,13 +165,8 @@ const tiketPersetujuan: Aksi = async (_a, k) => {
     boleh_approve: ['admin', 'superadmin'].includes(peranDari(k.u)) || hasFullAccess(k.u) };
 };
 
-// ================================================================ Tech Note
 const STATUS_CATATAN = ['pending', 'approved', 'revision', 'rejected'];
 
-/**
- * Aturan visibilitas tech-note/_components/useMuatTechNote.ts: pengelola (hasFullAccess) melihat
- * semua tech note tahun itu; lainnya = semua yang approved + miliknya sendiri apa pun statusnya.
- */
 const catatanCari: Aksi = async (a, k) => {
   const tahun = /^\d{4}$/.test(str(a.tahun)) ? str(a.tahun) : hariIniWIB().slice(0, 4);
   const kelola = hasFullAccess(k.u);
@@ -245,7 +207,6 @@ const catatanDetail: Aksi = async (a, k) => {
   const { data: n, error } = await k.db.from('tech_notes').select('*').eq('id', id).maybeSingle();
   if (error) return gagal(error.message);
   const c = n as Baris | null;
-  //  Sama dengan daftar di layar: bukan pengelola hanya melihat yang approved atau miliknya.
   if (!c || (!hasFullAccess(k.u) && c.status !== 'approved' && c.author_id !== k.u.id)) {
     return gagal('Tech note tidak ditemukan atau Anda tidak punya akses.');
   }
@@ -254,11 +215,9 @@ const catatanDetail: Aksi = async (a, k) => {
   return { ok: true, catatan: c, riwayat: riwayat ?? [], boleh_review: hasFullAccess(k.u) && c.status === 'pending' };
 };
 
-// ================================================================ Unit Movement
 const KOLOM_UNIT = 'id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,'
   + 'created_by,created_at,kondisi_barang,expected_return_date,return_confirmed';
 
-/** Orang dalam PTS melihat seluruh lalu lintas unit; lainnya hanya yang ia catat / yang mencatat namanya. */
 export function orangDalamUnit(u: KonteksAksi['u'], t: AkunTambahan): boolean {
   return hasFullAccess(u) || t.pimpinan || ['admin', 'superadmin', 'team', 'team_pts', 'marketing'].includes(peranDari(u));
 }
@@ -287,18 +246,15 @@ const unitCari: Aksi = async (a, k) => {
   return { ok: true, jumlah: baris.length, terlambat_kembali: terlambat.length, log: baris.slice(0, BARIS) };
 };
 
-// ================================================================ Form Review
 const KOLOM_REVIEW = 'id,reminder_id,project_name,address,sales_name,sales_division,assign_name,assigned_to,reminder_category,'
   + 'review_category,product_demo,grade_product_knowledge,catatan_grade_product_knowledge,product_bast,grade_training_customer,'
   + 'catatan_grade_training_customer,grade_product_knowledge_bast,catatan_grade_product_knowledge_bast,guest_username,created_at,updated_at';
 
-/** Penyaring FormReviewPageInner.fetchReviewsQuiet: guest = miliknya, team tanpa Full Access = yang ia tangani. */
 const reviewCari: Aksi = async (a, k) => {
   const t = await akunTambahan(k);
   let q = k.db.from('form_reviews').select(KOLOM_REVIEW).order('created_at', { ascending: false }).limit(500);
   const role = peranDari(k.u);
   if (role === 'guest' && !t.pimpinan) {
-    //  Nilai dikutip ganda (nama bisa memuat koma) - pola unit_cari / lib/identitas.ts kutipNilai.
     const kutip = (v: string | null | undefined) => `"${(v ?? '').replace(/"/g, '')}"`;
     q = q.or(`guest_username.eq.${kutip(k.u.username)},sales_name.eq.${kutip(k.u.full_name)}`);
   }
@@ -319,7 +275,6 @@ const reviewCari: Aksi = async (a, k) => {
     review: baris.slice(0, BARIS) };
 };
 
-// ================================================================ Piket Showroom
 function senin(tgl: string): string {
   const d = new Date(`${tgl}T00:00:00Z`);
   const hari = d.getUTCDay();
@@ -328,14 +283,12 @@ function senin(tgl: string): string {
 }
 const tambahHari = (tgl: string, n: number) => new Date(Date.parse(`${tgl}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
-/** bacaPicPiket (picket-showroom/_components/shared.ts): kolom pic dulu, lalu kolom lama per tim. */
 export function picPiket(r: Baris): string | null {
   const p = r.pic as { name?: string; user_id?: string } | null | undefined;
   if (p && typeof p === 'object' && p.user_id) return p.name ?? '';
   return str(r.pic_ivp_name) || str(r.pic_ump_name) || str(r.pic_mvi_name) || null;
 }
 
-/** Lingkup Sales (hitungLingkupProject, lib/project-scope.ts) dengan klien pemilik token. */
 export async function lingkupServer(k: KonteksAksi, t: AkunTambahan): Promise<LingkupProject> {
   if (adalahPTS(k.u)) return { semua: true, divisi: [], namaSendiri: k.u.full_name ?? '' };
   const divisi = new Set<string>();
@@ -347,10 +300,6 @@ export async function lingkupServer(k: KonteksAksi, t: AkunTambahan): Promise<Li
   return { semua: false, divisi: Array.from(divisi), namaSendiri: k.u.full_name ?? '' };
 }
 
-/**
- * Roster piket minggu ini + depan (atau minggu dari `tanggal`) dan kegiatan tiap hari. Kegiatan
- * tamu dibatasi lingkup Sales persis seperti picket-showroom/page.tsx fetchData.
- */
 const piketJadwal: Aksi = async (a, k) => {
   const acuan = tglSah(a.tanggal) ?? hariIniWIB();
   const wk = senin(acuan), wk2 = tambahHari(wk, 7);
@@ -375,12 +324,6 @@ const piketJadwal: Aksi = async (a, k) => {
   return { ok: true, minggu: `${wk} s/d ${tambahHari(wk2, 6)}`, hari_ini: daftar.find(d => d.tanggal === hari) ?? null, jadwal: daftar };
 };
 
-// ================================================================ KPI Team
-/**
- * KPI resmi = snapshot yang disimpan halaman KPI Team (kpi_period_snapshots, finalKPI per
- * anggota). Cakupan sama dengan kpi-team/page.tsx: admin / Full Access / pimpinan = semua,
- * Supervisor tim PTS = timnya, anggota team = hanya barisnya sendiri.
- */
 const kpi: Aksi = async (a, k) => {
   const t = await akunTambahan(k);
   const role = peranDari(k.u);
@@ -405,8 +348,6 @@ const kpi: Aksi = async (a, k) => {
     periode_lain: snap.map(x => x.period_label), anggota: anggota.map(({ id: _id, ...m }) => m) };
 };
 
-// ================================================================ Incentive PTS
-/** Bagian insentif pemilik token (incentive_splits miliknya), status tahapan, nama project. */
 const insentifSaya: Aksi = async (a, k) => {
   const { data: split, error } = await k.db.from('incentive_splits').select('id, project_id, tranche_id, role, percentage, amount, created_at')
     .eq('user_id', k.u.id).limit(1000);
@@ -432,11 +373,6 @@ const insentifSaya: Aksi = async (a, k) => {
     bagian: baris.sort((x, y) => str(y.tahun_bayar).localeCompare(str(x.tahun_bayar))).slice(0, 50) };
 };
 
-// ================================================================ Learning Center
-/**
- * Sesi kuis aktif, attempt pemilik token, dan rekap kelulusan tahunan (pengali KPI) - rekapnya
- * dari RPC rekap_lc_tahunan, sumber yang sama dengan halaman KPI (lib/kpi-lc-tahunan.ts).
- */
 const belajar: Aksi = async (_a, k) => {
   const tahun = Number(hariIniWIB().slice(0, 4));
   const [{ data: sesi, error }, { data: att }, { count: materi }, { data: rekap }] = await Promise.all([
@@ -465,8 +401,6 @@ const belajar: Aksi = async (_a, k) => {
   };
 };
 
-// ================================================================ Summary Project
-/** daftarProject (lib/summary-project.ts) dengan lingkup yang sama, klien pemilik token. */
 const projectCari: Aksi = async (a, k) => {
   const t = await akunTambahan(k);
   let q = k.db.from('v_project_summary').select('*').order('last_activity', { ascending: false, nullsFirst: false }).limit(BARIS);
@@ -487,7 +421,6 @@ const KOLOM_DETAIL_PROJECT: Record<string, string> = {
   form_reviews: 'id, project_name, reminder_id, review_category, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast',
 };
 
-/** ambilDetailProject (lib/summary-project.ts): record yang DIPETAKAN ke project ini. */
 const projectDetail: Aksi = async (a, k) => {
   const id = idSah(a.id);
   if (!id) return gagal('id project tidak sah (ambil dari project_cari).');

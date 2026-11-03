@@ -22,7 +22,6 @@ import { TabUserCC } from './pengguna/TabUserCC';
 import { TabIVP } from './pengguna/TabIVP';
 import { TabAtasan } from './pengguna/TabAtasan';
 
-// UserManagementModal
 interface UserManagementModalProps {
   onClose: () => void;
 }
@@ -41,8 +40,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
   const [ivpUserId, setIvpUserId] = useState('');
-  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI'); // brand mapping: House (MVI) / Global (IVP)
-  // User CC: selected user, then checklist of supervisor IDs to CC
+  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI');
   const [selectedCCUserId, setSelectedCCUserId] = useState('');
   const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
   const [ccSaving, setCcSaving] = useState(false);
@@ -78,7 +76,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP');
 
-  // Users eligible for CC mapping (non-IVP guest with jabatan set)
   const ccEligibleUsers = allUsers.filter(u =>
     u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP'
   ).sort((a, b) => {
@@ -87,19 +84,16 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     return ta - tb;
   });
 
-  // When user is selected for CC tab, load their current mappings
   useEffect(() => {
     if (!selectedCCUserId) { setCcChecked(new Set()); return; }
     const existing = userSupMaps.filter(m => m.user_id === selectedCCUserId).map(m => m.supervisor_id);
     setCcChecked(new Set(existing));
   }, [selectedCCUserId, userSupMaps]);
 
-  // Auto-suggest CC targets based on jabatan rules
   const getAutoSuggestedCC = (userId: string): string[] => {
     const user = getUserById(userId);
     if (!user?.jabatan || !user.sales_division) return [];
     const ccJabatan = JABATAN_CC_RULES[user.jabatan as JabatanType] ?? [];
-    // Find users in same division who have the CC jabatan
     const supIds = divSupMaps
       .filter(m => m.sales_division === user.sales_division)
       .map(m => m.supervisor_id);
@@ -112,13 +106,9 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     if (!selectedCCUserId) return;
     setCcSaving(true);
     try {
-      //  Diperiksa: RLS yang diam-diam menolak (0 baris, tanpa galat)
-      //  akan meninggalkan mapping LAMA tetap aktif sementara layar sudah
-      //  menunjukkan yang baru - notifikasi CC berikutnya akan salah kirim.
       const { data: terhapus, error: galatHapus } = await supabase.from('user_supervisor_mappings')
         .delete().eq('user_id', selectedCCUserId).select('id');
       if (galatHapus) { notify('error', 'Gagal menghapus mapping lama: ' + galatHapus.message); setCcSaving(false); return; }
-      // Insert new
       const toInsert = Array.from(ccChecked).map(supId => ({ user_id: selectedCCUserId, supervisor_id: supId }));
       if (toInsert.length > 0) {
         const { error } = await supabase.from('user_supervisor_mappings').insert(toInsert);
@@ -144,8 +134,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleDeleteAtasan = (id: string) => {
     setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      //  select('id') supaya penolakan diam-diam RLS ikut terlihat, bukan
-      //  tampak berhasil padahal mapping routing-nya masih aktif.
       const { data, error } = await supabase.from('division_supervisor_mappings').delete().eq('id', id).select('id');
       if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
@@ -154,7 +142,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleAddIvp = async () => {
     if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
-    // 1 divisi bisa punya mapping per brand (MVI / IVP). Cegah duplikat brand yg sama utk divisi.
     const dupBrand = divIvpMaps.find(m => m.sales_division === ivpDiv && (m.brand_type ?? 'MVI') === ivpBrand);
     if (dupBrand) { notify('info', `Divisi ${ivpDiv} sudah punya Sales Internal utk brand ${ivpBrand}. Hapus dulu kalau mau ganti.`); return; }
     setSaving(true);
@@ -166,7 +153,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   const handleDeleteIvp = (id: string) => {
     setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
       const { data, error } = await supabase.from('division_ivp_mappings').delete().eq('id', id).select('id');
       if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
@@ -190,17 +176,16 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   const selectedJabatan = selectedUserObj?.jabatan as JabatanType | undefined;
   const autoSuggested = selectedCCUserId ? getAutoSuggestedCC(selectedCCUserId) : [];
 
-  // Potential CC targets for selected user: all users with jabatan tier >= their tier
   const potentialCCTargets = selectedUserObj ? allUsers.filter(u => {
     if (u.id === selectedCCUserId) return false;
     if (!u.jabatan) return false;
     const targetTier = JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0;
     const selfTier = JABATAN_CONFIG[selectedJabatan as JabatanType]?.tier ?? 0;
-    return targetTier > selfTier; // only higher-tier users
+    return targetTier > selfTier;
   }).sort((a, b) => {
     const ta = JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0;
     const tb = JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0;
-    return tb - ta; // highest first
+    return tb - ta;
   }) : [];
 
   return (
@@ -209,7 +194,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 
-        {/* Header */}
         <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
@@ -233,7 +217,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
           <button onClick={() => setActiveTab('atasan')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
@@ -251,20 +234,16 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
         <div className="flex-1 overflow-y-auto flex flex-col min-h-0">
 
-          {/* ══ TAB ATASAN ══ */}
           <TabAtasan
             ATASAN_JABATAN={ATASAN_JABATAN} activeTab={activeTab} allUsers={allUsers} atasanByDiv={atasanByDiv} atasanDiv={atasanDiv} atasanSupId={atasanSupId} getUserById={getUserById} handleAddAtasan={handleAddAtasan} handleDeleteAtasan={handleDeleteAtasan} jabatanBadge={jabatanBadge} loadingData={loadingData} nonIvpDivisions={nonIvpDivisions} saving={saving} setAtasanDiv={setAtasanDiv} setAtasanSupId={setAtasanSupId} supervisorCandidates={supervisorCandidates}
           />
 
-          {/* ══ TAB IVP ══ */}
           <TabIVP
             activeTab={activeTab} getUserById={getUserById} handleAddIvp={handleAddIvp} handleDeleteIvp={handleDeleteIvp} ivpBrand={ivpBrand} ivpByDiv={ivpByDiv} ivpDiv={ivpDiv} ivpUserId={ivpUserId} ivpUsers={ivpUsers} loadingData={loadingData} nonIvpDivisions={nonIvpDivisions} saving={saving} setIvpBrand={setIvpBrand} setIvpDiv={setIvpDiv} setIvpUserId={setIvpUserId}
           />
 
-          {/* ══ TAB USER CC ══ */}
           {activeTab === 'user_cc' && (
             <div className="flex flex-1 overflow-hidden min-h-0">
-              {/* Left: user list */}
               <div className="w-56 border-r border-slate-200 flex flex-col flex-shrink-0">
                 <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100">
                   <p className="text-[11px] font-bold text-teal-700 uppercase tracking-widest">Pilih User</p>
@@ -297,7 +276,6 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 </div>
               </div>
 
-              {/* Right: checklist */}
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                 {!selectedCCUserId ? (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500 py-12">
@@ -420,7 +398,7 @@ export function UserManagementInline() {
   const [atasanSupId, setAtasanSupId] = useState('');
   const [ivpDiv, setIvpDiv] = useState('');
   const [ivpUserId, setIvpUserId] = useState('');
-  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI'); // brand mapping: House (MVI) / Global (IVP)
+  const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI');
   const [selectedCCUserId, setSelectedCCUserId] = useState('');
   const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
   const [ccSaving, setCcSaving] = useState(false);
@@ -436,13 +414,9 @@ export function UserManagementInline() {
       supabase.from('division_supervisor_mappings').select('id,sales_division,supervisor_id').order('sales_division'),
       supabase.from('division_ivp_mappings').select('id,sales_division,ivp_id,brand_type').order('sales_division'),
       supabase.from('user_supervisor_mappings').select('id,user_id,supervisor_id'),
-      // Query terpisah & tahan-error: jika kolom atasan_id belum ada (migration belum jalan),
-      // ini hanya error sendiri tanpa mematahkan load user utama.
       supabase.from('users').select('id, atasan_id'),
-      // Routing pipeline (Fase 1) - tahan-error bila tabel/setting belum ada.
       supabase.from('product_team_map').select('id,product_type,team_types').order('product_type'),
       supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle(),
-      // Flag Internal/External Sales - tahan-error bila kolom belum ada.
       supabase.from('users').select('id, is_internal_sales'),
     ]);
     if (usersRes.data) {
@@ -460,13 +434,11 @@ export function UserManagementInline() {
 
   const getUserById = (id: string) => allUsers.find(u => u.id === id);
   const ATASAN_JABATAN: JabatanType[] = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
-  // Kandidat atasan: guest (Sales) ATAU team (PTS) dengan jabatan struktural
   const supervisorCandidates = allUsers.filter(u => ['guest', 'team'].includes(u.role?.toLowerCase() ?? '') && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
-  // Grup non-Sales (tim internal / IVP) yang juga bisa dipetakan atasan-nya
   const INTERNAL_GROUPS = ['PTS', 'IVP'];
   const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
 
@@ -488,9 +460,6 @@ export function UserManagementInline() {
     if (!selectedCCUserId) return;
     setCcSaving(true);
     try {
-      //  Diperiksa: RLS yang diam-diam menolak (0 baris, tanpa galat) akan
-      //  meninggalkan mapping LAMA tetap aktif sementara layar menunjukkan
-      //  yang baru - notifikasi CC berikutnya akan salah kirim.
       const { error: galatHapus } = await supabase.from('user_supervisor_mappings').delete().eq('user_id', selectedCCUserId).select('id');
       if (galatHapus) { notify('error', 'Gagal menghapus mapping lama: ' + galatHapus.message); setCcSaving(false); return; }
       const toInsert = Array.from(ccChecked).map(supId => ({ user_id: selectedCCUserId, supervisor_id: supId }));
@@ -516,8 +485,6 @@ export function UserManagementInline() {
 
   const handleDeleteAtasan = (id: string) => {
     setConfirmState({ message: 'Hapus mapping atasan ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      //  select('id') supaya penolakan diam-diam RLS ikut terlihat, bukan
-      //  tampak berhasil padahal mapping routing-nya masih aktif.
       const { data, error } = await supabase.from('division_supervisor_mappings').delete().eq('id', id).select('id');
       if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
@@ -526,7 +493,6 @@ export function UserManagementInline() {
 
   const handleAddIvp = async () => {
     if (!ivpDiv || !ivpUserId) { notify('error', 'Pilih divisi dan IVP & MVI Account.'); return; }
-    // 1 divisi bisa punya mapping per brand (MVI / IVP). Cegah duplikat brand yg sama utk divisi.
     const dupBrand = divIvpMaps.find(m => m.sales_division === ivpDiv && (m.brand_type ?? 'MVI') === ivpBrand);
     if (dupBrand) { notify('info', `Divisi ${ivpDiv} sudah punya Sales Internal utk brand ${ivpBrand}. Hapus dulu kalau mau ganti.`); return; }
     setSaving(true);
@@ -538,7 +504,6 @@ export function UserManagementInline() {
 
   const handleDeleteIvp = (id: string) => {
     setConfirmState({ message: 'Hapus mapping IVP ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
       const { data, error } = await supabase.from('division_ivp_mappings').delete().eq('id', id).select('id');
       if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus mapping.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
@@ -552,7 +517,6 @@ export function UserManagementInline() {
     return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
-  // Struktur Organisasi (atasan_id) helpers
   const orgGroupOf = (u: User | undefined): 'Sales' | 'Marketing' | 'PTS' | 'Lainnya' => {
     if (!u) return 'Lainnya';
     const tt = (u.team_type || '').toLowerCase();
@@ -568,7 +532,6 @@ export function UserManagementInline() {
     PTS:       { bg: '#E1F5EE', color: '#085041' },
     Lainnya:   { bg: '#F1EFE8', color: '#444441' },
   };
-  // Routing pipeline: tipe produk  TIM (bukan orang) + akun Manager
   const toggleProdTeamType = (tt: string) => {
     setProdTeamTypes(prev => prev.includes(tt) ? prev.filter(x => x !== tt) : [...prev, tt]);
   };
@@ -582,7 +545,6 @@ export function UserManagementInline() {
   };
   const handleDeleteProdSup = (id: string) => {
     setConfirmState({ message: 'Hapus routing tipe produk ini?', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      //  select('id') supaya penolakan diam-diam RLS ikut terlihat.
       const { data, error } = await supabase.from('product_team_map').delete().eq('id', id).select('id');
       if (error || !data || data.length === 0) { notify('error', 'Gagal menghapus routing.'); return; }
       notify('success', 'Dihapus.'); await fetchAll();
@@ -596,8 +558,6 @@ export function UserManagementInline() {
     else notify('success', 'Akun Manager disimpan!');
     setSavingMgr(false);
   };
-  // Supervisor tim dicari LIVE dari Struktur Organisasi (team_type + jabatan=Supervisor) -
-  // tidak disimpan, jadi otomatis benar walau supervisornya berganti orang.
   const getSupervisorsForTeam = (teamType: string): string =>
     allUsers.filter(u => u.team_type === teamType && u.jabatan === 'Supervisor').map(u => u.full_name).join(', ') || '— (belum ada Supervisor di tim ini)';
   const handleToggleInternalSales = async (userId: string, current: boolean) => {
@@ -660,7 +620,6 @@ export function UserManagementInline() {
   const ivpByDiv: Record<string, typeof divIvpMaps> = {};
   divIvpMaps.forEach(m => { if (!ivpByDiv[m.sales_division]) ivpByDiv[m.sales_division] = []; ivpByDiv[m.sales_division].push(m); });
 
-  // Group IVP/MVI mappings by person (ivp_id) - each person shows all divisions they handle
   const ivpByUser: Record<string, { user: User | undefined; group: 'IVP' | 'MVI'; maps: typeof divIvpMaps }> = {};
   divIvpMaps.forEach(m => {
     if (!ivpByUser[m.ivp_id]) {
@@ -682,7 +641,6 @@ export function UserManagementInline() {
     return targetTier > selfTier;
   }).sort((a, b) => (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0)) : [];
 
-  // Search filter for atasan/ivp tabs
   const filteredAtasanByDiv = Object.entries(atasanByDiv).filter(([div]) => !searchQuery || div.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredIvpByUser = Object.entries(ivpByUser).filter(([, { user }]) => !searchQuery || user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
@@ -695,13 +653,8 @@ export function UserManagementInline() {
         </div>
       )}
 
-      {/* Isi dibungkus kartu putih di atas latar slate — bentuk yang sama
-          dengan Kartu di halaman Profil. Sebelumnya tab dan isinya menempel
-          langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
-          belum jadi dibanding bagian lain. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      {/* Tabs */}
       <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏛" />Struktur Organisasi
@@ -718,16 +671,9 @@ export function UserManagementInline() {
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏷" />CC per User ({userSupMaps.length})
         </button>
-        {/* Divisi Sales ada DI SINI, bukan di pengaturan tampilan: yang
-            mengurusnya orang yang sama dengan yang mengurus akun, dan divisi
-            baru berarti sesuatu lewat akun yang memakainya. */}
         <button onClick={() => setActiveTab('divisi')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'divisi' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏷" />Divisi Sales
         </button>
-        {/* Lingkup Manager melengkapi Struktur Organisasi: pohon atasan menjawab
-            siapa membawahi SIAPA, lingkup menjawab siapa membawahi KELOMPOK
-            mana - dan yang kedua itulah yang menentukan pekerjaan kelompok lain
-            ikut terbaca atau tidak. */}
         <button onClick={() => setActiveTab('lingkup')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'lingkup' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🧭" />Lingkup Manager
         </button>
@@ -738,12 +684,10 @@ export function UserManagementInline() {
           <div className="flex items-center justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-teal-600 border-teal-200 animate-spin" /></div>
         ) : (
           <>
-            {/* ══ TAB STRUKTUR ORGANISASI ══ */}
             <TabStrukturOrganisasi
               ORG_GROUP_STYLE={ORG_GROUP_STYLE} activeTab={activeTab} allUsers={allUsers} handleSetAtasan={handleSetAtasan} jabatanBadge={jabatanBadge} orgChildren={orgChildren} orgFilter={orgFilter} orgGroupOf={orgGroupOf} orgSearch={orgSearch} orgSelectedId={orgSelectedId} orgTierOf={orgTierOf} orgVisible={orgVisible} saving={saving} setOrgFilter={setOrgFilter} setOrgSearch={setOrgSearch} setOrgSelectedId={setOrgSelectedId}
             />
 
-            {/* Search bar for atasan & ivp tabs */}
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
               <div className="px-5 pt-4 flex-shrink-0">
                 <div className="relative">
@@ -771,14 +715,12 @@ export function UserManagementInline() {
               activeTab={activeTab} autoSuggested={autoSuggested} ccChecked={ccChecked} ccEligibleUsers={ccEligibleUsers} ccSaving={ccSaving} handleSaveUserCC={handleSaveUserCC} potentialCCTargets={potentialCCTargets} searchQuery={searchQuery} selectedCCUserId={selectedCCUserId} selectedUserObj={selectedUserObj} setCcChecked={setCcChecked} setSearchQuery={setSearchQuery} setSelectedCCUserId={setSelectedCCUserId}
             />
 
-            {/* ══ TAB DIVISI SALES ══ */}
             {activeTab === 'divisi' && (
               <div className="p-5">
                 <DivisiSalesInline />
               </div>
             )}
 
-            {/* ══ TAB LINGKUP MANAGER ══ */}
             {activeTab === 'lingkup' && (
               <div className="p-5">
                 <LingkupManagerInline />

@@ -3,8 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 
-// Types
-
 interface FlowChip {
   icon: string;
   label: string;
@@ -21,8 +19,6 @@ interface TourStep {
   accentBg: string;
   flow?: FlowChip[];
 }
-
-// Steps
 
 const ALL_STEPS: TourStep[] = [
   {
@@ -165,16 +161,12 @@ const ALL_STEPS: TourStep[] = [
 
 const getTourKey = (userId: string) => `pts_tour_done_${userId}`;
 
-// Flow chip color
-
 function chipStyle(state: FlowChip['state']): React.CSSProperties {
   if (state === 'done')   return { background: '#dcfce7', color: '#15803d', border: '1px solid #bbf7d0' };
   if (state === 'active') return { background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' };
   if (state === 'wait')   return { background: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
   return { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' };
 }
-
-// Mini flow visualization
 
 function FlowViz({ flow }: { flow: FlowChip[] }) {
   return (
@@ -203,8 +195,6 @@ function FlowViz({ flow }: { flow: FlowChip[] }) {
   );
 }
 
-// Progress dots
-
 function ProgressDots({ total, current, color }: { total: number; current: number; color: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
@@ -221,8 +211,6 @@ function ProgressDots({ total, current, color }: { total: number; current: numbe
   );
 }
 
-// Spotlight overlay (4-quad technique)
-
 function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => void }) {
   const pad = 10;
   const x = rect.left - pad;
@@ -233,15 +221,10 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
 
   return (
     <>
-      {/* Top */}
       <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, bottom: `calc(100vh - ${y}px)`, background: dark, zIndex: 1500 }} />
-      {/* Bottom */}
       <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, top: y + h, background: dark, zIndex: 1500 }} />
-      {/* Left */}
       <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', top: y, left: 0, width: Math.max(0, x), height: h, background: dark, zIndex: 1500 }} />
-      {/* Right */}
       <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', top: y, left: x + w, right: 0, height: h, background: dark, zIndex: 1500 }} />
-      {/* Highlight ring */}
       <div style={{
         position: 'fixed', top: y, left: x, width: w, height: h,
         borderRadius: 12, zIndex: 1501, pointerEvents: 'none',
@@ -253,15 +236,11 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
   );
 }
 
-// Full dark backdrop (for center-mode steps)
-
 function FullBackdrop({ onClick }: { onClick: () => void }) {
   return (
     <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,23,0.75)', zIndex: 1500 }} />
   );
 }
-
-// Props
 
 interface Props {
   currentUser: User;
@@ -271,8 +250,6 @@ interface Props {
   onHighlightKey?: (key: string | null) => void;
   onVisibleChange?: (visible: boolean) => void;
 }
-
-// Main component
 
 export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow, onDone, onHighlightKey, onVisibleChange }: Props) {
   const [visible, setVisible]     = useState(false);
@@ -293,14 +270,12 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   useEffect(() => {
     if (menuCount === 0) return;
     if (forceShow) { setStep(0); setVisible(true); return; }
-    try { if (!localStorage.getItem(tourKey)) { setStep(0); setVisible(true); } } catch { /* noop */ }
+    try { if (!localStorage.getItem(tourKey)) { setStep(0); setVisible(true); } } catch {  }
   }, [forceShow, tourKey, menuCount]);
 
-  // Recompute spotlight & popup position when step changes
   useEffect(() => {
     if (!visible) { onHighlightKey?.(null); setSpotRect(null); setPopupPos(null); return; }
     if (!s?.menuKey) {
-      // Center modal - no spotlight
       onHighlightKey?.(null);
       setSpotRect(null);
       setPopupPos({ top: 0, left: 0, side: 'center' });
@@ -314,7 +289,6 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
       const vH  = window.innerHeight;
       const pad = 10;
       setSpotRect(r);
-      // Determine which side to show popup
       const cardW = 320;
       const spaceRight = vW - (r.right + pad);
       const spaceLeft  = r.left - pad;
@@ -335,7 +309,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   const close = useCallback(() => {
     setVisible(false); setSpotRect(null); setPopupPos(null);
     onHighlightKey?.(null);
-    try { localStorage.setItem(tourKey, '1'); } catch { /* noop */ }
+    try { localStorage.setItem(tourKey, '1'); } catch {  }
     onDone?.();
   }, [tourKey, onDone]);
 
@@ -369,13 +343,11 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
 
   return (
     <>
-      {/* Spotlight or full backdrop */}
       {isSidebar && spotRect
         ? <SpotlightOverlay rect={spotRect} onClick={close} />
         : <FullBackdrop onClick={close} />
       }
 
-      {/* Tooltip arrow (sidebar mode) */}
       {isSidebar && spotRect && (
         <div style={{
           position: 'fixed',
@@ -394,7 +366,6 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
         }} />
       )}
 
-      {/* Popup card */}
       <div style={cardStyle}>
         <div style={{
           background: 'white',
@@ -404,10 +375,8 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
           animation: 'tourCardIn 0.26s cubic-bezier(0.175,0.885,0.32,1.275) forwards',
         }}>
 
-          {/* Top accent strip */}
           <div style={{ height: 3, background: `linear-gradient(90deg,${s.color},${s.color}60,transparent)` }} />
 
-          {/* Header */}
           <div style={{ padding: '14px 16px 12px', background: s.accentBg }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, ...slideStyle }}>
               <div style={{
@@ -428,7 +397,6 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
             </div>
           </div>
 
-          {/* Body */}
           <div style={{ padding: '12px 16px 4px', ...slideStyle }}>
             <p style={{ fontSize: 12.5, color: '#475569', lineHeight: 1.65, margin: 0 }}>
               {s.desc}
@@ -436,7 +404,6 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
             {s.flow && <FlowViz flow={s.flow} />}
           </div>
 
-          {/* Footer */}
           <div style={{ padding: '12px 16px 16px' }}>
             <ProgressDots total={steps.length} current={step} color={s.color} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
@@ -468,7 +435,6 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
         </div>
       </div>
 
-      {/* Keyframes */}
       <style>{`
         @keyframes tourCardIn {
           0%   { opacity:0; transform:scale(0.88) translateY(8px); }
@@ -483,23 +449,9 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
   );
 }
 
-// "Jelajahi Platform" floating button
-
-/**
- * Tombol melayang "Jelajahi Platform".
- *
- * Tombol ini menempel di pojok kanan-bawah SEMUA halaman, sehingga menutupi
- * tombol aksi yang kebetulan berada di posisi sama (mis. "Simpan Nilai Essay"
- * di Learning Center). Karena panduan hanya sesekali dipakai sementara tombol
- * di bawahnya dipakai untuk bekerja, tombol ini yang mengalah: tampil penuh
- * sebentar setelah halaman dibuka, lalu menyingkir ke tepi kanan dan menyisakan
- * ikon kecil. Klik ikonnya untuk memunculkannya kembali.
- */
 export function JelajahiButton({ onClick }: { onClick: () => void }) {
   const [melebar, setMelebar] = useState(true);
 
-  // Menyingkir sendiri 5 detik setelah halaman dibuka/di-refresh. Timer di-set
-  // ulang tiap kali tombol dilebarkan lagi, supaya tidak menetap menutupi layar.
   useEffect(() => {
     if (!melebar) return;
     const t = setTimeout(() => setMelebar(false), 5000);

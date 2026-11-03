@@ -1,5 +1,4 @@
 'use client';
-/** Ukuran receiving card: ikut kalkulator atau custom per kolom / baris (px), sel kosong. */
 import { Angka, Segmen, Catatan } from '../../bersama/ui';
 import { AngkaKecil, kelasJudul, kelasTombol } from './komponen';
 import { SquareDashed } from 'lucide-react';

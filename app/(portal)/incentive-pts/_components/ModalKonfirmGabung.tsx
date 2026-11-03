@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalKonfirmGabung - gabungkan beberapa jadwal jadi satu proyek insentif. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { KotakInfo, Modal, TombolModal } from '@/components/shared';
 import { type KandidatGabung } from './calc';
 

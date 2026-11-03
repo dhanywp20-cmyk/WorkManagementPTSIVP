@@ -1,14 +1,7 @@
-/** Perhitungan kamera murni: posisi pas memuat kotak, animasi terbang, batas dunia. */
 import { daftarRuang, type Ruang } from '../inti';
 import type * as T from 'three';
 import type { Mesin } from './tipe';
 
-/**
- * Posisi kamera searah `arah` dari `target` yang memuat seluruh `kotak` di
- * kanvas. Tepat untuk perspektif: tiap pojok kotak harus masuk kerucut
- * pandang, yaitu jarak >= (kedalaman pojok ke arah kamera) + (simpangan
- * kanan/atas pojok ÷ tan setengah FOV).
- */
 export function posisiPas(m: Mesin, target: T.Vector3, arah: T.Vector3, kotak: T.Box3, longgar = 1.06) {
   const { THREE, kamera } = m;
   const maju = arah.clone().negate();
@@ -23,7 +16,6 @@ export function posisiPas(m: Mesin, target: T.Vector3, arah: T.Vector3, kotak: T
   return target.clone().addScaledVector(arah, Math.max(1, jarak));
 }
 
-/** Pindahkan kamera (beranimasi, kecuali `langsung`). */
 export function terbangKe(m: Mesin, pos: T.Vector3, target: T.Vector3, langsung = false) {
   if (langsung) {
     m.terbang = null; m.kamera.position.copy(pos); m.orbit.target.copy(target); m.orbit.update();
@@ -38,7 +30,6 @@ export function terbangKe(m: Mesin, pos: T.Vector3, target: T.Vector3, langsung 
   };
 }
 
-/** Batas dunia (gabungan ruang). */
 export function batasDunia(r: Ruang) {
   const k = daftarRuang(r);
   return { x: k.reduce((m, x) => Math.max(m, x.x0 + x.p), 0), z: k.reduce((m, x) => Math.max(m, x.l), 0), t: k.reduce((m, x) => Math.max(m, x.t), 0) };

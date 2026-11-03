@@ -1,6 +1,5 @@
 'use client';
 
-/** FilterLaporanHarian - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { type TeamUser } from '@/app/(portal)/reminder-schedule/_components/shared';
 
 export interface FilterLaporanHarianProps {

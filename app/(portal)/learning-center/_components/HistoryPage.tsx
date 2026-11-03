@@ -22,9 +22,6 @@ export function HistoryPage({ user }: { user: User }) {
   }, [user.id]);
 
   if (viewingAttempt) {
-    //  autoOpenAttemptId: lihat catatan yang sama di ScorePage.tsx - tanpa
-    //  ini "Lihat Jawaban" pada satu baris membuka LIST attempt dari awal,
-    //  dan baris yang sama harus diklik SEKALI LAGI di dalamnya.
     return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} autoOpenAttemptId={viewingAttempt.id} />;
   }
 

@@ -1,9 +1,4 @@
 'use client';
-/**
- * Daftar entri satu jenis pustaka: cari, tabel (kolom dari registri) atau kartu artikel; Admin bisa
- * tambah / ubah / hapus semua entri, Team hanya entri buatannya (`bolehUbah` dari server).
- * Artikel dibuka di modal baca.
- */
 import { useMemo, useState } from 'react';
 import { ConfirmDialog, type ConfirmState, Toast, useNotif } from '@/components/shared';
 import { Modal } from '@/components/shared/Modal';
@@ -25,10 +20,8 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
   const [ubah, setUbah] = useState<EntriPustaka | null | 'baru'>(null);
   const [baca, setBaca] = useState<EntriPustaka | null>(null);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
-  //  Hasil hapus lewat Toast bersama (sama dengan menu lain), bukan paragraf status sendiri.
   const { notif, notify } = useNotif();
   const kolom = jenis.bidang.filter(b => b.kolom);
-  //  "Milik saya" hanya berarti bila sebagian entri boleh diubah akun ini (Team: entri buatannya sendiri).
   const [milikSaya, setMilikSaya] = useState(false);
   const adaMilik = entri.some(e => e.bolehUbah) && entri.some(e => !e.bolehUbah);
   const daftar = useMemo(() => {

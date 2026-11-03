@@ -1,19 +1,9 @@
-/**
- * lib/pustaka.ts - Pustaka Tools Team: katalog produk, data acuan & artikel panduan yang diisi tim
- * (Admin / Full Access) lewat menu Tools Team › Pustaka, bukan ditulis di kode.
- *
- * Satu REGISTRI jenis: tiap jenis mendefinisikan bidangnya sekali, lalu dipakai untuk validasi server
- * (/api/tools-team/pustaka), formulir admin, tabel daftar, dan isian otomatis di kalkulator. Menambah
- * jenis baru = menambah satu entri JENIS_PUSTAKA. Kalkulator selalu punya nilai bawaan kode bila
- * pustaka kosong / gagal dimuat, jadi tidak pernah macet.
- */
 
 export type TipeBidang = 'teks' | 'angka' | 'pilih' | 'panjang';
 export interface Bidang {
   k: string; l: string; tipe: TipeBidang;
   satuan?: string; wajib?: boolean; min?: number; maks?: number;
   opsi?: { v: string; l: string }[];
-  /** Ditampilkan sebagai kolom di tabel daftar. */
   kolom?: boolean;
 }
 export type KelompokPustaka = 'produk' | 'data' | 'artikel';
@@ -29,20 +19,13 @@ const RESOLUSI: Bidang = { k: 'resolusi', l: 'Resolusi', tipe: 'pilih', kolom: t
 export const JENIS_PUSTAKA: JenisPustaka[] = [
   { v: 'proyektor', l: 'Proyektor', ikon: '📽', kelompok: 'produk', ket: 'Dipakai Kalkulator AV › Proyektor (throw, lens shift, lumen).', bidang: [
     MEREK, { k: 'lumen', l: 'Lumen', tipe: 'angka', satuan: 'lm', min: 100, maks: 100000, wajib: true, kolom: true }, RESOLUSI,
-    //  Throw ratio & b dari KALKULATOR pabrikan (rumus jarak lensa), bukan angka brosur: brosur Panasonic PT-MZ882
-    //  1,61-2,76, kalkulatornya 1,639-2,788 - selisih ±2% itu sendiri sudah beberapa cm di gambar 3 m.
     { k: 'throwMin', l: 'Throw ratio min (wide)', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
     { k: 'throwMaks', l: 'Throw ratio maks (tele)', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
-    //  Lens shift: 0 = tidak bisa digeser; kosong = tidak diketahui (tidak dibatasi).
     { k: 'shiftAtas', l: 'Lens shift atas', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
     { k: 'shiftBawah', l: 'Lens shift bawah', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
     { k: 'shiftHorizontal', l: 'Lens shift kiri-kanan', tipe: 'angka', satuan: '%', min: 0, maks: 100 },
-    //  Daerah shift sebenarnya (segi delapan Panasonic, dsb.): shift vertikal & horizontal penuh tidak bisa bersamaan.
     { k: 'poligonShift', l: 'Daerah lens shift (poligon x,y; ...)', tipe: 'teks' },
-    //  Proyektor tanpa lens shift (portabel / short throw): pusat gambar selalu sekian % tinggi gambar di atas lensa.
     { k: 'offsetTetap', l: 'Offset gambar tetap (tanpa lens shift)', tipe: 'angka', satuan: '%', min: -50, maks: 150 },
-    //  Rumus jarak lempar datasheet lensa: L = TR x lebar gambar - b (mis. Panasonic: L = 0,566 x SW - 0,082).
-    //  Kalkulator Panasonic memakai b sendiri di ujung wide & tele.
     { k: 'koreksiJarak', l: 'Koreksi jarak b wide (L = TR × lebar − b)', tipe: 'angka', satuan: 'm', min: -1, maks: 1 },
     { k: 'koreksiJarakTele', l: 'Koreksi jarak b tele (kosong = sama dengan wide)', tipe: 'angka', satuan: 'm', min: -1, maks: 1 },
     { k: 'kontras', l: 'Kontras asli (full on / full off)', tipe: 'angka', satuan: ': 1', min: 100, maks: 100000000 },
@@ -88,13 +71,8 @@ export const JENIS_PUSTAKA: JenisPustaka[] = [
 
 export const KODE_JENIS = JENIS_PUSTAKA.map(j => j.v);
 
-/** Kunci allowed_menus untuk izin Pustaka akun Marketing / Sales (dicentang Admin di akses menu akun). */
 export const KUNCI_MENU_PUSTAKA = 'tools-pustaka';
 
-/**
- * Siapa yang boleh membuka Pustaka: Admin & akun Team (PTS) selalu, akun pimpinan (lihat-semua),
- * selain itu (Marketing / Sales) hanya bila Admin mencentang izin Pustaka di akses menu akunnya.
- */
 export function bolehLihatPustaka(u: { role?: string | null; allowed_menus?: string[] | null; pimpinan?: boolean | null } | null | undefined): boolean {
   if (!u) return false;
   const r = (u.role ?? '').toLowerCase();
@@ -105,21 +83,15 @@ export const jenisPustaka = (v: string) => JENIS_PUSTAKA.find(j => j.v === v);
 
 export interface EntriPustaka {
   id: string; jenis: string; nama: string; data: Record<string, string | number>; diubah_oleh_nama?: string | null; updated_at?: string;
-  /** Dihitung server: akun ini boleh mengubah / menghapus entri ini (lihat bolehUbahEntri). */
   bolehUbah?: boolean;
 }
 
-/**
- * Siapa boleh mengubah / menghapus SATU entri: Admin (admin / superadmin) semua entri; anggota Team
- * berhak atur hanya entri buatannya sendiri. Isi awal migrasi 040 (dibuat_oleh kosong) = milik Admin.
- */
 export function bolehUbahEntri(akun: { id: string; admin: boolean }, dibuatOleh: string | null | undefined): boolean {
   return akun.admin || (!!dibuatOleh && dibuatOleh === akun.id);
 }
 
 export const MAKS_TEKS = 200, MAKS_PANJANG = 20000, MAKS_NAMA = 120;
 
-/** Validasi & bersihkan isian satu entri menurut registri. Bidang tak dikenal dibuang. */
 export function periksaEntri(jenis: unknown, nama: unknown, data: unknown):
   { ok: true; jenis: string; nama: string; data: Record<string, string | number> } | { ok: false; alasan: string } {
   const j = typeof jenis === 'string' ? jenisPustaka(jenis) : undefined;
@@ -149,19 +121,10 @@ export function periksaEntri(jenis: unknown, nama: unknown, data: unknown):
   return { ok: true, jenis: j.v, nama: n, data: hasil };
 }
 
-/** Angka dari data entri (dengan cadangan), untuk mengisi kalkulator. */
 export const angkaDari = (e: EntriPustaka, k: string, cadangan = 0) => (typeof e.data[k] === 'number' ? (e.data[k] as number) : cadangan);
 export const teksDari = (e: EntriPustaka, k: string) => (e.data[k] === undefined ? '' : String(e.data[k]));
-/** Tap pertama dari "3/6/12" atau "7,5/15/30" (W) - dipisah garis miring/titik koma/spasi; koma = desimal. */
 export const tapPertama = (e: EntriPustaka) => teksDari(e, 'tap').split(/[/; ]+/).map(x => Number(x.replace(',', '.'))).find(x => x > 0) ?? 0;
 
-/**
- * Daerah lens shift sebagai poligon, cara kalkulator Panasonic (LensShiftVp): titik-titik tepi daerah yang boleh
- * ditempati GAMBAR, dalam satuan lebar (x) & tinggi (y) gambar, gambar di tengah sumbu lensa = kotak ±0,5. Contoh
- * PT-MZ882 + lensa standar: "-0.5,1.17; 0.5,1.17; 0.85,0.5; 0.85,-0.5; 0.5,-1.17; -0.5,-1.17; -0.85,-0.5; -0.85,0.5".
- * Diterima teks "x,y; x,y; ..." (Pustaka) atau larik angka datar [x0, y0, x1, y1, ...] (desain / template).
- * Kembali larik datar 3-24 titik dengan |angka| <= 3, atau undefined bila tidak sah.
- */
 export function bacaPoligonShift(v: unknown): number[] | undefined {
   const angka = typeof v === 'string'
     ? v.split(';').map(s => s.trim()).filter(Boolean).flatMap(s => s.split(',').map(x => Number(x.trim())))
@@ -171,10 +134,6 @@ export function bacaPoligonShift(v: unknown): number[] | undefined {
   return angka as number[];
 }
 
-/**
- * Koefisien lensa per rasio sinyal dari katalog Panasonic ({ '16:9': [TR wide, TR tele, b wide, b tele] }) - disaring:
- * hanya rasio yang dikenal, TR 0,005..50, b -5..5 (katalog Panasonic: TR 0,01-20,1, b sampai 1,33). undefined bila kosong / rusak.
- */
 export function bacaKoefRasio(v: unknown): Partial<Record<'16:9' | '16:10' | '17:9' | '4:3' | '21:9', [number, number, number, number]>> | undefined {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
   const hasil: Record<string, [number, number, number, number]> = {};

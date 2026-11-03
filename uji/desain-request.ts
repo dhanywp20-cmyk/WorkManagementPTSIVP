@@ -1,10 +1,3 @@
-/**
- * uji/desain-request.ts - Design 3D (Tools Team) sebagai tautan OPSIONAL di
- * Request Design Project: ringkasan desain, aturan siapa boleh menautkan,
- * dan seksi cetak/ZIP yang hanya muncul bila ada tautan.
- *
- * Jalankan: npx tsx uji/desain-request.ts
- */
 import { periksaDesain, ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
 import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/(portal)/form-require-project/_components/desain-3d-request';
 

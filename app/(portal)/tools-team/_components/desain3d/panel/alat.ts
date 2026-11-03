@@ -1,4 +1,3 @@
-/** Semua yang dibutuhkan panel Desain 3D: keadaan + hook engine (lihat Desain3D.tsx). */
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { useKamera } from '../mesin/useKamera';
 import type { useAksiDesain } from '../aksi/useAksiDesain';

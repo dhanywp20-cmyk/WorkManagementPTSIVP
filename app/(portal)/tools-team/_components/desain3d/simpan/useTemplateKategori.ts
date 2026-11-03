@@ -1,15 +1,4 @@
 'use client';
-/**
- * Template default per kategori ruangan yang ditetapkan Admin (Tools Team > Desain 3D).
- *
- * Admin / Full Access bisa menjadikan isi kanvasnya template default sebuah kategori; siapa pun yang
- * memilih kategori itu lalu mendapat isi tersebut alih-alih template bawaan kode. Tetap "terkunci":
- * yang dipasang ke kanvas hanya salinan - Simpan selalu membuat file baru milik pengguna.
- *
- * Daftar ringkas (kategori mana yang punya template Admin) dimuat sekali; isi lengkapnya baru diambil
- * saat kategorinya dipilih, lalu diingat selama `updated_at`-nya sama (hemat egress).
- * Server: /api/tools-team/template-kategori (migrasi 039). Bagian dari Desain3D.tsx - lihat README.
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { contohAwal, KATEGORI_RUANG, type KategoriRuang } from '../inti';
 import { RUANG_AWAL, type KeadaanDesain } from '../useKeadaanDesain';
@@ -20,7 +9,6 @@ import { daftarkanTekstur, teksturUntukSimpan } from './teksturRuang';
 import { muatGambarLayar } from './aset';
 
 const API = '/api/tools-team/template-kategori';
-/** Batas tunggu lapisan "Memuat template" saat server lambat - sesudahnya kanvas dibuka apa adanya. */
 const BATAS_TUNGGU_MS = 12000;
 
 export interface InfoTemplateKategori { kategori: KategoriRuang; nama: string; ditetapkan_oleh_nama: string | null; updated_at: string }
@@ -34,40 +22,16 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     setKonfirmasi, setNamaDesain, setPesan, setRuang, setStatusSimpan, setVersiGambar, siap } = K;
   const [daftar, setDaftar] = useState<Partial<Record<KategoriRuang, InfoTemplateKategori>>>({});
   const [bolehAtur, setBolehAtur] = useState(false);
-  /** Kategori yang sedang dimuat / disimpan (tombolnya dinonaktifkan). */
   const [sibuk, setSibuk] = useState<KategoriRuang | null>(null);
   const isiCache = useRef(new Map<KategoriRuang, { updated_at: string; isi: IsiTemplateKategori }>());
 
-  /*
-    Kanvas AWAL (halaman dibuka / di-refresh).
-
-    Dulu: kanvas selalu mulai dari template pabrikan, lalu sesudah DUA permintaan berurutan (daftar,
-    lalu isi) baru diganti default Admin - pengguna melihat versi pabrikan, layar tersendat, lalu
-    melompat ke default Admin.
-
-    Sekarang:
-      - Perangkat yang sudah pernah memuat ingat isi default Admin (simpan/templateAwal.ts):
-        useKeadaanDesain langsung membuka kanvas dengan isi itu. Server hanya dicek di belakang.
-      - Perangkat yang belum pernah (atau terakhir ingat "tidak ada default"): kanvas ditutup lapisan
-        "Memuat template" (penuh, tidak tembus) sampai server menjawab
-        (satu permintaan - daftar + isi kategori awal sekaligus lewat ?awal=), jadi versi pabrikan
-        tidak pernah terlihat.
-      - Admin mengubah / mengembalikan bawaan sejak kunjungan terakhir: kanvas mengikuti server,
-        selama pengguna belum mengubah kanvas atau membuka berkas lain.
-    Riwayat Undo dimulai dari isi awal itu (Undo tidak kembali ke versi pabrikan).
-  */
-  //  Ditutup kecuali perangkat sudah ingat ISI default Admin (langsung tampil). Ingatan "tidak ada default"
-  //  juga ditutup sampai server menjawab: Admin bisa saja baru menetapkan default sejak kunjungan terakhir,
-  //  dan tanpa ini versi pabrikan sempat tampil lalu melompat.
   const [menungguAwal, setMenungguAwal] = useState(!isiDariIngatan(ingatanAwal));
   const awalSelesai = useRef(false);
   const bendaAwal = useRef(benda);
   const asalAwal = useRef(asal);
   const asalRef = useRef(asal); asalRef.current = asal;
   const mulaiRiwayat = useRef(false);
-  /** Gambar konten layar template awal yang menunggu mesin 3D siap (tekstur butuh THREE). */
   const layarTertunda = useRef<Record<string, string> | null>(isiDariIngatan(ingatanAwal)?.layar ?? null);
-  //  Kanvas awal dari ingatan perangkat: gambar tekstur lantai / dinding-nya ikut didaftarkan.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { daftarkanTekstur(K, isiDariIngatan(ingatanAwal)?.tekstur); }, []);
   const belumDiubah = () => bendaRef.current === bendaAwal.current && asalRef.current === asalAwal.current;
@@ -82,12 +46,10 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
         mulaiRiwayat.current = true;
         if (!mesin.current) layarTertunda.current = isi.layar ?? null;
         aksi.pasangKategoriYa(KATEGORI_AWAL, isi);
-        //  Pemuatan awal: kamera langsung di posisi akhir (tanpa animasi terbang yang terlihat seperti "ganti").
         pasSetelahTemplate.current = 'langsung';
       }
     } else {
       tulisIngatanAwal({ kosong: true });
-      //  Ingatan memuat default Admin yang sudah dihapus: kembali ke kanvas pabrikan.
       if (ingat && belumDiubah()) {
         mulaiRiwayat.current = true;
         layarTertunda.current = null;
@@ -96,10 +58,6 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
       }
     }
   };
-  /**
-   * Lapisan "Memuat" baru dibuka setelah adegan 3D dibangun ulang dengan isi Admin & tergambar: state baru
-   * di-commit, efek adegan berjalan sesudah frame dicat - tanpa jeda ini beberapa frame isi pabrikan sempat terlihat.
-   */
   const selesaiAwal = () => {
     if (awalSelesai.current) return;
     awalSelesai.current = true;
@@ -122,7 +80,7 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
       setDaftar(peta);
       setBolehAtur(!!j.bolehAtur && !hanyaLihat);
       if (pertama && !awalSelesai.current && 'awal' in j) terapkanAwal(j.awal as BarisTemplate | null);
-    } catch { /* tanpa jaringan: kategori tetap memakai template bawaan */ } finally {
+    } catch {  } finally {
       if (pertama) selesaiAwal();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +94,6 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [potret]);
 
-  //  Tekstur layar template awal dipasang begitu mesin 3D siap.
   useEffect(() => {
     const m = mesin.current, layar = layarTertunda.current;
     if (!siap || !m || !layar) return;
@@ -146,10 +103,6 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     }
   }, [siap, menungguAwal, mesin, gambarLayar, setVersiGambar]);
 
-  /**
-   * Isi lengkap template Admin kategori `id` (diingat selama updated_at sama). null = gagal dimuat;
-   * 'hilang' = sudah dihapus Admin lain sejak daftar dimuat.
-   */
   const ambilIsi = async (id: KategoriRuang, info: InfoTemplateKategori): Promise<IsiTemplateKategori | null | 'hilang'> => {
     const ingat = isiCache.current.get(id);
     if (ingat && ingat.updated_at === info.updated_at) return ingat.isi;
@@ -166,7 +119,6 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     } catch { return null; }
   };
 
-  /** Pilih kategori: template Admin bila ada, selain itu template bawaan kode. */
   const pilihKategori = async (id: KategoriRuang) => {
     const info = daftar[id];
     if (!info) { aksi.pasangKategori(id); return; }
@@ -179,7 +131,6 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     } finally { setSibuk(null); }
   };
 
-  /** Admin: jadikan isi kanvas sekarang template default kategori `id`. */
   const jadikanDefault = (id: KategoriRuang) => {
     if (!benda.length) { setStatusSimpan({ teks: 'Kanvas masih kosong - susun desainnya dulu sebelum dijadikan template.', nada: 'galat' }); return; }
     setKonfirmasi({
@@ -202,14 +153,12 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
       const j = await r.json().catch(() => null);
       if (!r.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menyimpan template default.', nada: 'galat' }); return; }
       isiCache.current.delete(id);
-      //  Perangkat Admin sendiri langsung memakai default barunya saat di-refresh.
       if (id === KATEGORI_AWAL && j.template?.updated_at) tulisIngatanAwal({ updated_at: j.template.updated_at, isi: { nama, ...data } });
       setStatusSimpan({ teks: `Isi kanvas sekarang menjadi template default "${judulKategori(id)}" untuk semua pengguna.`, nada: 'ok' });
       void muatDaftar();
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); } finally { setSibuk(null); }
   };
 
-  /** Admin: hapus template Admin kategori `id` - kembali ke template bawaan kode. */
   const kembalikanBawaan = (id: KategoriRuang) => setKonfirmasi({
     message: `Kembalikan "${judulKategori(id)}" ke template bawaan?`, danger: true, confirmLabel: 'Kembalikan',
     description: 'Template default dari Admin dihapus; pengguna kembali mendapat template bawaan aplikasi. Desain di kanvas tidak berubah.',

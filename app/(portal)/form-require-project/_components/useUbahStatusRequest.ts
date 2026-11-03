@@ -1,6 +1,5 @@
 'use client';
 
-/** useUbahStatusRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { User, ProjectRequest, RoomDetail, sendWANotif } from './shared';
 import { supabase } from '@/lib/supabase';
 import { notifyProjectStatusChange } from '@/lib/notifications';
@@ -23,12 +22,6 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
     if (statusUpdatingRef.current.has(req.id)) return;
     statusUpdatingRef.current.add(req.id);
     try {
-    //  select('id') supaya RLS yang menolak diam-diam (0 baris, tanpa galat)
-    //  ikut terlihat - lihat catatan yang sama di handleDeleteConfirm.
-    //  Ruangan pertama (roomIdx 0) pakai kolom request langsung seperti semula;
-    //  ruangan lain (1+) statusnya hidup di dalam array JSONB `rooms`, jadi
-    //  yang ditulis adalah salinan array itu dengan elemen ybs diubah - lihat
-    //  getRoomStatus() di shared.ts untuk kenapa modelnya begini.
     let updatedRooms: RoomDetail[] | undefined;
     const updatePayload: Record<string, unknown> = roomIdx === 0
       ? { status: newStatus }
@@ -51,23 +44,12 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
     }
     await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Status diupdate menjadi: ${newStatus.replace('_', ' ').toUpperCase()}` }]);
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
-    // In-app notification to the requester
     try {
       if (req.requester_id) {
         notifyProjectStatusChange(req.requester_id, req.id, req.project_name, newStatus, currentUser.full_name).catch(() => {});
       }
-    } catch { /* ignore */ }
+    } catch {  }
 
-    /*
-      Kabar perubahan status ke pihak yang menunggunya.
-
-      Sebelum ini tahap ini HANYA badge in-app ke requester - artinya Sales
-      yang mengajukan baru tahu design-nya sudah dikerjakan atau selesai kalau
-      kebetulan membuka platform. Untuk status 'completed' pihak yang perlu
-      tahu lebih dari satu: Sales pengaju, dan yang mengerjakan berhak
-      menerima ucapan terima kasih atas pekerjaannya - pola yang sama dengan
-      penyelesaian ticket.
-    */
     try {
       const selesai = newStatus === 'completed';
       const nama = [req.sales_name, req.assign_name, req.ivp_assignee].filter(Boolean) as string[];
@@ -99,11 +81,9 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
              `Halo *${u.full_name}*, status request berubah menjadi *${newStatus}* oleh *${currentUser.full_name}*:`,
              ringkas, garis,
              `🔗 ${appLink()}`].join('\n');
-        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
         if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan , event: 'project.updated' });
       }
-    } catch { /* kabar gagal tidak boleh membatalkan perubahan statusnya */ }
-    // Audit
+    } catch {  }
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'status_change', module: 'project', target_id: req.id, target_name: req.project_name, old_value: req.status, new_value: newStatus }).catch(() => {});
     } finally {
       statusUpdatingRef.current.delete(req.id);

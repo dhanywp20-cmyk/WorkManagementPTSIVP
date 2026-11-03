@@ -1,13 +1,3 @@
-/**
- * lib/telegram-server.ts - kirim salinan Telegram ke pemilik sebuah NOMOR, dari SERVER.
- * HANYA untuk sisi server (membaca token bot lewat bacaRahasia).
- *
- * Padanan server dari kirimTelegramKeNomor (lib/telegram-pribadi.ts). Versi peramban
- * menembak /api/notifikasi/telegram dengan URL relatif - di server itu gagal diam-diam,
- * jadi aksi yang dijalankan dari server (DIWAYPI) kehilangan salinan Telegram-nya.
- * Langkahnya sama: kanal Telegram harus menyala, nomor dinormalkan lalu dipetakan ke
- * telegram_chat_id, kirim teks polos (tanpa parse_mode - lihat route Telegram).
- */
 import { bacaRahasia } from '@/lib/rahasia-server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';

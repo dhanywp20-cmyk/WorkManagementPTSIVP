@@ -17,15 +17,12 @@ import { Ikon } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
 import { URL_XLSX } from '@/lib/xlsx-loader';
 
-// Main Page
-
 function UnitMovementPageInner() {
-  //  Daftar event: Admin Panel › Daftar Pilihan.
   const daftarEvent = useDaftarPilihan('unit-event');
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User|null>(null);
   const [isLoggedIn,  setIsLoggedIn]  = useState(false);
-  const [appReady,    setAppReady]    = useState(false); // full page loading state
+  const [appReady,    setAppReady]    = useState(false);
 
   const [logs,        setLogs]        = useState<MovementLog[]>([]);
   const [loading,     setLoading]     = useState(false);
@@ -38,7 +35,6 @@ function UnitMovementPageInner() {
   const [filterYear,   setFilterYear]   = useState('All');
   const [searchQuery,  setSearchQuery]  = useState('');
 
-  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchQuery(q);
@@ -77,30 +73,15 @@ function UnitMovementPageInner() {
   const fetchLogs = async () => {
     setLoading(true);
     setFetchError(null);
-    // Isolasi antar-Sales
-    // movement_logs memuat project_name, jadi daftar lengkapnya membocorkan
-    // nama project divisi lain ke Sales yang tidak berkepentingan. Orang dalam
-    // PTS (admin/team/marketing) memang perlu melihat seluruh lalu lintas unit;
-    // Sales hanya perlu yang dia catat sendiri atau yang mencatat namanya.
-    //
-    // Penyaringan dipasang DI QUERY, bukan saat render - kalau disaring saat
-    // render, barisnya sudah terkirim ke browser dan terbaca lewat DevTools.
-    //  Akun pimpinan (lib/pimpinan.ts) melihat SELURUH lalu lintas unit seperti orang dalam,
-    //  hanya baca - dulu ia jatuh ke cabang Sales (role guest) sehingga daftarnya kosong.
     const peran = (currentUser?.role ?? '').toLowerCase();
     const orangDalam = hasFullAccess(currentUser) || isPimpinan(currentUser) ||
       ['admin','superadmin','team','team_pts','marketing'].includes(peran);
 
     let q = supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
     if (!orangDalam) {
-      // Tanpa sesi yang terbaca, jangan tampilkan apa pun - bukan tampilkan
-      // semuanya. Batas yang gagal ke arah "terbuka" lebih berbahaya daripada
-      // tidak ada batas, karena terlihat seolah sudah aman.
       if (!currentUser) { setLogs([]); setLoading(false); return; }
       const nama = (currentUser.full_name ?? '').replace(/"/g,'');
       const user = (currentUser.username ?? '').replace(/"/g,'');
-      // Nilai dikutip ganda: nama bisa memuat koma, dan tanpa kutip PostgREST
-      // membacanya sebagai pemisah kondisi sehingga batasnya justru melar.
       q = q.or(`created_by.eq."${user}",nama_luar.eq."${nama}"`);
     }
 
@@ -111,9 +92,6 @@ function UnitMovementPageInner() {
   };
 
   const fetchTeamMembers = async () => {
-    //  Anggota kelompok PTS yang bisa ditugaskan, dari pengaturan admin -
-    //  bukan dua nama tim yang dipaku (komentar lamanya bahkan menyebut
-    //  "Hanya Team PTS IVP" padahal isinya sudah dua).
     const {data} = await supabase.from('users').select('full_name').in('team_type', namaKelompokPTSDitugaskan()).order('full_name');
     if (data&&data.length>0) setTeamMembers(data.map((u:any)=>u.full_name));
   };
@@ -128,13 +106,6 @@ function UnitMovementPageInner() {
     notify('success','Log berhasil dihapus!'); fetchLogs();
   };
 
-  /*
-    H5 (audit): return_confirmed dibaca (dipakai openLoans buat menyaring
-    barang yang belum kembali) tapi tidak pernah ditulis di mana pun - Open
-    Loan tidak akan pernah kosong walau barangnya sudah sungguh kembali,
-    karena tidak ada jalan untuk menandainya. Ditulis langsung di baris
-    "Keluar" yang sama - tidak perlu baris "Masuk" pasangan untuk kasus ini.
-  */
   const handleMarkReturned = async (log: MovementLog) => {
     const {error} = await supabase.from('movement_logs').update({return_confirmed:true}).eq('id',log.id);
     if (error) { notify('error','Gagal menandai kembali: '+error.message); return; }
@@ -142,18 +113,8 @@ function UnitMovementPageInner() {
     notify('success','Barang ditandai sudah kembali!'); fetchLogs();
   };
 
-  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (lihat lib/constants.ts hasFullAccess).
   const isAdmin   = hasFullAccess(currentUser);
   const canAddLog = !isPimpinan(currentUser) && (isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??''));
-  /*
-    Boleh EDIT baris log ini - kebijakan platform: pencatatnya sendiri
-    (created_by) boleh membetulkan salah ketik (SN, tanggal, dsb), Admin/
-    Full Access tanpa batas. Dulu Edit&Hapus SAMA-SAMA cuma isAdmin - orang
-    yang mencatat sendiri tidak bisa membetulkan catatannya, harus lewat
-    admin. Hapus TETAP admin/Full Access saja (isAdmin), sama seperti
-    modul lain.
-  */
   const bolehEditLog = (log: MovementLog): boolean =>
     isAdmin || (!!currentUser?.username && log.created_by === currentUser.username);
 
@@ -175,9 +136,6 @@ function UnitMovementPageInner() {
     return true;
   }),[logs,filterStatus,filterEvent,filterPTS,filterYear,searchQuery]);
 
-  //  Paginasi riwayat log. Tabel "Pinjaman Aktif" di atasnya sengaja
-  //  TIDAK dipaginasi - isinya cuma unit yang sedang keluar, dan justru
-  //  daftar itu yang harus terlihat utuh sekali pandang.
   const hal = usePaginasi(filteredLogs);
 
   const exportToExcel = () => {
@@ -234,7 +192,6 @@ function UnitMovementPageInner() {
     return Object.entries(c).map(([label,value],i)=>({label,value,color:COLORS[i%COLORS.length]})).sort((a,b)=>b.value-a.value);
   },[filteredLogs]);
 
-  // Open Loans: Keluar items with expected_return_date that have passed & not confirmed returned
   const today = new Date().toISOString().split('T')[0];
   const openLoans = useMemo(()=>logs.filter(l=>
     l.status_barang === 'Keluar'
@@ -242,8 +199,6 @@ function UnitMovementPageInner() {
     && l.expected_return_date
     && l.expected_return_date < today
   ).sort((a,b)=>(a.expected_return_date??'').localeCompare(b.expected_return_date??'')),[logs, today]);
-
-  // Loading / Not Authenticated screen
 
   if (!appReady) return (
     <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
@@ -277,8 +232,6 @@ function UnitMovementPageInner() {
       {editLog!==undefined&&<AddEditModal log={editLog} currentUser={currentUser!} teamMembers={teamMembers}
         onClose={()=>setEditLog(undefined)}
         onSave={()=>{setEditLog(undefined);fetchLogs();notify('success',editLog?'Log diperbarui!':'Log ditambahkan!');}}/>}
-      {/* Z.overlayTop — konfirmasi hapus bisa dipicu dari dalam ViewModal
-          (Z.overlay), jadi harus selalu selapis di atasnya. */}
       {deleteConfirm&&(
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
@@ -297,7 +250,6 @@ function UnitMovementPageInner() {
 
       <Toast notif={notif} />
 
-      {/* Header */}
       <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking">
         {canAddLog&&(
           <button onClick={()=>setEditLog(null)}
@@ -310,7 +262,6 @@ function UnitMovementPageInner() {
 
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-6 py-6 space-y-6 w-full">
 
-        {/* Stat Cards — 3 saja, tanpa Anggota PTS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 animate-slide-up anim-d80">
           {[
             { label:'Total Log',     value:filteredLogs.length, sub:'Semua catatan', accent:'#4f46e5' },
@@ -319,7 +270,6 @@ function UnitMovementPageInner() {
           ].map((card, i) => <StatCard key={i} {...card} />)}
         </div>
 
-        {/* ── Open Loans Alert ── */}
         {openLoans.length > 0 && (
           <div className="rounded-2xl overflow-hidden animate-slide-up" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(239,68,68,0.3)',boxShadow:'0 4px 16px rgba(239,68,68,0.12)'}}>
             <div className="flex items-center gap-3 px-5 py-3" style={{background:'rgba(239,68,68,0.07)',borderBottom:'1px solid rgba(239,68,68,0.15)'}}>
@@ -400,7 +350,6 @@ function UnitMovementPageInner() {
           </div>
         )}
 
-        {/* Pie Charts */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           <MiniPieChart data={statusPieData} title="Status Barang" icon="📦"
             activeFilter={filterStatus!=='All'?filterStatus:null}
@@ -413,7 +362,6 @@ function UnitMovementPageInner() {
             onSliceClick={l=>setFilterEvent(p=>p===l?'All':l)}/>
         </div>
 
-        {/* Table */}
         <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)',backdropFilter:'blur(12px)'}}>
           <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4 gap-2 sm:gap-3" style={{borderBottom:'1px solid rgba(0,0,0,0.07)'}}>
             <div className="flex items-center gap-3">
@@ -460,7 +408,6 @@ function UnitMovementPageInner() {
             </div>
           </div>
 
-          {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
           <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
             {filteredLogs.length === 0 && (
               <ListEmptyState
@@ -497,7 +444,6 @@ function UnitMovementPageInner() {
             })}
           </div>
 
-          {/* ── DESKTOP: tabel ── */}
           <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
             <table className="w-full text-sm tabel-kartu" style={{minWidth:1100}}>
               <thead>
@@ -562,7 +508,6 @@ function UnitMovementPageInner() {
                           {log.event||'-'}
                         </span>
                       </td>
-                      {/* Type & SN — wide, no truncation, each item on its own line */}
                       <td className="px-3 py-3" style={{minWidth:300}}>
                         {typeLines.length>0 ? (
                           <div className="space-y-0.5">
@@ -575,7 +520,6 @@ function UnitMovementPageInner() {
                           <p className="text-[11px] text-gray-500 font-mono mt-1">SN: {log.serial_number}</p>
                         )}
                       </td>
-                      {/* Action */}
                       <td className="px-1 py-3 text-center">
                         <ActionGroup>
                           <ViewIconBtn onClick={()=>setViewLog(log)} label="Lihat" />

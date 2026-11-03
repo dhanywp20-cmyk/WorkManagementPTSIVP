@@ -2,21 +2,6 @@
 import { Ikon } from './Ikon';
 import { NETRAL } from '@/lib/desain';
 
-/**
- * Kartu "angka utama + peringkat berbatang" - pengganti donut untuk data
- * besaran per entitas (progres %, jumlah isu per project).
- *
- * Donut dipakai untuk komposisi (bagian dari keseluruhan). Progres tiap
- * project bukan bagian dari apa pun, dan donut dengan satu irisan tidak
- * menyampaikan apa-apa. Di sini:
- *  - angka utama besar di atas (rata-rata / total),
- *  - opsional: satu batang komposisi (mis. Selesai/Berjalan/Belum mulai)
- *    dengan celah 2px antarsegmen + legenda berlabel,
- *  - daftar peringkat: batang tipis SATU warna (besaran, bukan identitas),
- *    angka rata kanan dengan warna tinta, bukan warna batang,
- *  - baris bernilai nol dilipat jadi satu kalimat, bukan deretan 0%.
- */
-
 export type Segmen = { label: string; value: number; color: string };
 export type BarisPeringkat = { label: string; value: number; teks?: string };
 
@@ -30,12 +15,9 @@ export function KartuPeringkat({
   ketAngka: string;
   segmen?: Segmen[];
   baris: BarisPeringkat[];
-  /** Nilai penuh skala batang (100 untuk persen; bawaan = nilai terbesar). */
   maks?: number;
   warnaBatang: string;
-  /** Kalimat untuk baris yang dilipat, mis. "6 project belum mulai". */
   lipatan?: { teks: string; rincian?: string };
-  /** Pesan bila tidak ada baris sama sekali. */
   kosong?: string;
   onPilih?: (label: string) => void;
   batas?: number;

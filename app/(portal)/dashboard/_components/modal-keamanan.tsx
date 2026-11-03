@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * Admin Panel -> Sistem -> Keamanan Login. Wajib 2FA untuk admin, status 2FA per akun, dan reset
- * (HP hilang). Semua lewat /api/admin/2fa - pengaturannya terkunci dari peramban (migrasi 049).
- */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
@@ -17,7 +13,6 @@ export function KeamananInline() {
   const [pesan, setPesan] = useState<{ galat: boolean; teks: string } | null>(null);
   const [sibuk, setSibuk] = useState(false);
   const [memuat, setMemuat] = useState(true);
-  //  Konfirmasi memakai dialog platform, bukan window.confirm bawaan peramban (tampilannya beda tiap peramban & memblokir halaman).
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
 
   const muat = useCallback(async () => {

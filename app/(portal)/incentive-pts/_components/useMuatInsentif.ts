@@ -1,6 +1,5 @@
 'use client';
 
-/** useMuatInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets, findUpline, resolveUserId, OrgUser, ambilSkema, type SkemaInsentif } from './calc';
 import { supabase } from '@/lib/supabase';
 import { type CurrentUser } from './aturan-halaman';
@@ -27,9 +26,6 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
   const { allUsers, setAllSplits, setAllUsers, setDetailProject, setDetailSplits, setDetailSupports, setDetailTranches, setLateTickets, setLoading, setProjects, setPtsTeamMappings, setSkema, setSupportMap, setTranches, skema } = k;
   const loadAll = async () => {
     setLoading(true);
-    // Skema dimuat bersama data lain. Selama ia belum ada, layar tidak
-    // menghitung apa pun (lihat calcHandlerSplit) - lebih baik kolomnya kosong
-    // sesaat daripada menampilkan angka dari aturan yang salah.
     const [projRes, trancheRes, splitRes, lateRes, sk] = await Promise.all([
       fetchIncentiveProjects(), fetchTranches(), fetchVisibleSplits(), fetchLateTickets(), ambilSkema(),
     ]);
@@ -41,7 +37,6 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
     const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
       supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, access_level, jabatan').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
-      // Query terpisah & tahan-error: atasan_id dari Struktur Organisasi
       supabase.from('users').select('id, atasan_id'),
     ]);
     if (usersRes.data) {
@@ -49,7 +44,6 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
       setAllUsers((usersRes.data as CurrentUser[]).map(u => ({ ...u, atasan_id: atasanMap.get(u.id as string) ?? null })));
     }
     if (ptsTeamRes.data) setPtsTeamMappings(ptsTeamRes.data as { staff_user_id: string; supervisor_user_id: string }[]);
-    // Support per project (dari ticket Troubleshooting selesai) - untuk filter visibilitas list
     const { data: trouble } = await supabase.from('reminders').select('project_name, assigned_to, assign_name').eq('category', 'Troubleshooting').eq('status', 'done');
     const sm = new Map<string, Set<string>>();
     for (const t of (trouble || []) as { project_name: string | null; assigned_to: string | null; assign_name: string | null }[]) {
@@ -65,9 +59,6 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
 
   const openProjectDetail = async (p: IncentiveProjectRow) => {
     setDetailProject(p);
-    //  Tahun-tahun yang dinilai diambil dari jadwal tahapan itu sendiri, bukan
-    //  angka 3 yang ditulis tangan - kalau tahapannya kelak jadi 2 atau 4 tahun,
-    //  daftar ini ikut tanpa disentuh.
     const tahunDinilai = Array.from(new Set((skema?.tranche ?? []).map(t => t.tahunKe))).sort((a, b) => a - b);
     const [splitsRes, tranchesRes, ...supportsPerTahun] = await Promise.all([
       fetchVisibleSplits(p.id),
@@ -76,12 +67,6 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
     ]);
     setDetailSplits(splitsRes.data || []);
     setDetailTranches((tranchesRes.data || []) as IncentiveTranche[]);
-    //  PIC, Supervisor, dan Manager dikeluarkan dari daftar yang DITAMPILKAN,
-    //  bukan cuma dari yang dibayar. Mesin hitung sudah membuangnya (lihat
-    //  tanpaPeranTetap di calc.ts); kalau layar ini tetap menampilkannya, orang
-    //  membaca "Yoga dapat porsi Support" padahal tidak - dan selisih antara
-    //  yang terlihat dan yang dibayar adalah hal terakhir yang boleh terjadi
-    //  di layar nominal.
     const rapikan = (v: string) => (v ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
     const orgList = allUsers as unknown as OrgUser[];
     const picIdDetail = resolveUserId((p.pic_id || p.assigned_to) as string, p.assign_name, orgList);

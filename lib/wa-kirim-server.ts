@@ -1,21 +1,3 @@
-/**
- * lib/wa-kirim-server.ts - satu-satunya tempat permintaan HTTP ke gateway
- * WhatsApp dibentuk. HANYA untuk sisi server.
- *
- * Jangan mengimpornya dari komponen 'use client': ia membaca token mentah
- * lewat bacaRahasia(), dan apa pun yang ter-bundle ke peramban ikut terbaca
- * pengunjung.
- *
- * Berkas ini menerjemahkan pilihan penyedia (lib/notifikasi/penyedia-wa.ts)
- * jadi panggilan yang sesungguhnya. Route /api/notifikasi/whatsapp memakainya
- * untuk Tes Koneksi & Kirim Pesan Tes, dan /api/notifikasi/whatsapp/kirim
- * memakainya untuk pengiriman biasa saat penyedianya BUKAN Fonnte.
- *
- * Bentuk jawabannya sengaja diseragamkan jadi { ok, alasan } - tiap gateway
- * melaporkan kegagalan dengan caranya sendiri (Fonnte lewat status:false di
- * badan 200, Meta lewat error.message, webhook kustom lewat kode HTTP), dan
- * pemanggilnya tidak perlu tahu perbedaan itu.
- */
 
 import { bacaRahasia } from '@/lib/rahasia-server';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -24,7 +6,6 @@ import { penyediaWA, type PenyediaWA } from '@/lib/notifikasi/penyedia-wa';
 export interface HasilWA {
   ok: boolean;
   alasan?: string;
-  /** Nama perangkat/nomor yang terbaca saat Tes Koneksi. */
   perangkat?: string;
 }
 
@@ -33,14 +14,6 @@ interface KonfigWA {
   config: Record<string, string>;
 }
 
-/**
- * Baca penyedia yang dipilih admin dari app_settings.
- *
- * Dibaca dengan service_role, bukan anon: route ini berjalan di server dan
- * app_settings sudah dikunci RLS. Gagal baca = jatuh ke Fonnte, sama seperti
- * bawaan di lib/notifikasi/pengaturan.ts - pengaturan yang tidak terbaca tidak
- * boleh membuat pengiriman berhenti, ia harus jatuh ke perilaku hari ini.
- */
 async function bacaKonfig(): Promise<KonfigWA> {
   try {
     const db = getAdminClient();
@@ -49,14 +22,12 @@ async function bacaKonfig(): Promise<KonfigWA> {
       const j = JSON.parse(data.value as string) as { waPenyedia?: PenyediaWA; waConfig?: Record<string, string> };
       return { penyedia: j.waPenyedia ?? 'fonnte', config: j.waConfig ?? {} };
     }
-  } catch { /* diam - jatuh ke Fonnte di bawah */ }
+  } catch {  }
   return { penyedia: 'fonnte', config: {} };
 }
 
-/** Versi Graph API yang dipanggil untuk Cloud API. */
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-/** Tanya gateway apakah kredensialnya sah, TANPA mengirim pesan ke siapa pun. */
 export async function cekKoneksiWA(): Promise<HasilWA> {
   const { penyedia, config } = await bacaKonfig();
   const def = penyediaWA(penyedia);
@@ -102,7 +73,6 @@ export async function cekKoneksiWA(): Promise<HasilWA> {
   return { ok: false, alasan: 'Penyedia tidak dikenal.' };
 }
 
-/** Kirim satu pesan WA lewat penyedia yang sedang dipilih. */
 export async function kirimWA(target: string, pesan: string): Promise<HasilWA> {
   const nomor = target.trim();
   const isi = pesan.trim();
@@ -147,10 +117,6 @@ export async function kirimWA(target: string, pesan: string): Promise<HasilWA> {
       });
       const j = await r.json() as { error?: { message?: string; error_data?: { details?: string } } };
       if (j?.error) {
-        //  Pesan Meta untuk pelanggaran jendela 24 jam berbunyi teknis
-        //  ("Message failed to send because more than 24 hours have passed").
-        //  Diteruskan apa adanya - menyederhanakannya justru menyembunyikan
-        //  sebab yang paling sering terjadi di platform ini.
         return { ok: false, alasan: j.error.error_data?.details ?? j.error.message ?? 'Meta menolak pesan.' };
       }
       return { ok: true };
@@ -172,8 +138,6 @@ export async function kirimWA(target: string, pesan: string): Promise<HasilWA> {
         },
         body: JSON.stringify({ target: nomor, message: isi }),
       });
-      //  Untuk alamat sembarangan, satu-satunya tanda berhasil yang bisa
-      //  diandalkan adalah kode HTTP-nya. Badan jawabannya bisa apa saja.
       if (!r.ok) return { ok: false, alasan: `Endpoint membalas HTTP ${r.status}.` };
       return { ok: true };
     } catch {
@@ -184,7 +148,6 @@ export async function kirimWA(target: string, pesan: string): Promise<HasilWA> {
   return { ok: false, alasan: 'Penyedia tidak dikenal.' };
 }
 
-/** Penyedia yang sedang dipilih - dipakai klien untuk memutuskan jalur kirim. */
 export async function penyediaTerpilih(): Promise<PenyediaWA> {
   return (await bacaKonfig()).penyedia;
 }

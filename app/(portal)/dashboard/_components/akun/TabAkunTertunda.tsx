@@ -1,6 +1,5 @@
 'use client';
 
-/** TabAkunTertunda - dipecah dari app/(portal)/dashboard/_components/modal-akun.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { User, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from '../shared';
 import { TombolSetujui, TombolTolak, Username } from '@/components/shared';

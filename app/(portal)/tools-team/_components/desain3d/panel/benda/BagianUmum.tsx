@@ -1,18 +1,15 @@
 'use client';
-/** Bagian umum panel Atur benda: warna, ukuran produk, posisi, label, konten layar, simpan ke Produk saya. */
 import { Angka, Pilih, Catatan } from '../../../bersama/ui';
 import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
 import { PosisiProyektor } from './PosisiProyektor';
 
-/** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
   videowall: '#0a0a0a', led: '#1f2937', layar: '#111827', ifp: '#1f2937', tv: '#111111', meja: '#6c452b', kursi: '#30353d',
   speaker: '#16181c', 'speaker-plafon': '#f4f5f7', mic: '#111827', touchpanel: '#c7ccd3', kamera: '#50555d',
   proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b', bidang: '#f3f4f6', panggung: '#6b6b6b', objek: '#e5e7eb',
 };
-/** Apa yang diwarnai, per jenis - supaya jelas bagian mana yang berubah. */
 const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
   videowall: 'bezel & rangka', led: 'rangka cabinet', layar: 'bingkai', ifp: 'bezel', tv: 'bezel', meja: 'permukaan (laminasi polos)',
   kursi: 'kain / cangkang', speaker: 'kabinet & gril', 'speaker-plafon': 'cincin & gril', mic: 'badan / kain', touchpanel: 'badan',
@@ -21,7 +18,6 @@ const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
 
 export function BagianUmum({ c }: { c: KonteksAtur }) {
   const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk, setUkuran } = c;
-  //  LED: lebar / tinggi dibulatkan ke kelipatan cabinet utuh (inti/produk.ts susunanLED).
   const setLebarTinggi = b.jenis === 'led' ? setUkuran : set;
   const proyektor = b.jenis === 'proyektor';
   return (
@@ -68,7 +64,6 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
       </div>
       )}
 
-      {/*  Proyektor: posisi di ujung lensa + projection distance (kalkulator Panasonic) - PosisiProyektor. */}
       {proyektor ? <PosisiProyektor c={c} /> : (
       <div>
         <span className={label}>Posisi</span>

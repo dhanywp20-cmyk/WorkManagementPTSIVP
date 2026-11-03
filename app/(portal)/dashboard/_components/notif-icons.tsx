@@ -1,15 +1,3 @@
-/**
- * Ikon garis (bukan emoji) untuk NotificationBar - satu bahasa visual dengan
- * ikon pencarian/menu yang sudah ada di header (stroke=currentColor, sudut
- * membulat). Sebelumnya tiap lonceng memakai emoji (🎫🏗️🗓️⭐🔔) yang gaya
- * dan bobotnya beda-beda tergantung sistem operasi/peramban - berdampingan
- * dengan ikon SVG yang rapi, hasilnya terlihat tidak seragam.
- *
- * Warna ikon dilempar lewat prop `style`/currentColor, bukan dipaku - jadi
- * tiap lonceng tetap tampil dengan warna aksennya sendiri (Ticket=rose,
- * Require=ungu, Reminder=cyan, dst) yang sudah didefinisikan di
- * NotificationBar, hanya bentuknya yang sekarang seragam.
- */
 import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -36,7 +24,6 @@ export function IconTicket(props: IconProps) {
   );
 }
 
-/** Require (Request Design Project) - motif tas kerja/proyek. */
 export function IconBriefcase(props: IconProps) {
   return (
     <svg {...base} {...props}>
@@ -66,7 +53,6 @@ export function IconStar(props: IconProps) {
   );
 }
 
-/** Sama persis dengan bell badge total di NotificationBar - satu bentuk lonceng untuk semua. */
 export function IconBell(props: IconProps) {
   return (
     <svg {...base} {...props}>

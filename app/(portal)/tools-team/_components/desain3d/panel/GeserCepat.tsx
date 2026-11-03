@@ -1,9 +1,4 @@
 'use client';
-/**
- * Geser cepat benda terpilih tanpa menyeret gizmo: kiri / kanan / maju / mundur MENGIKUTI arah kamera
- * (layar), naik / turun. Juga tombol panah keyboard (PageUp / PageDown = naik / turun, Shift = 1 cm).
- * Tombol tengah = besar langkah. Benda terkunci tidak bergeser.
- */
 import { useEffect, useState } from 'react';
 import { ArrowBigDown, ArrowBigUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { jepitProyektor } from '../inti';
@@ -17,7 +12,6 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   const [iLangkah, setILangkah] = useState(1);
   const langkahDasar = snap.aktif ? snap.langkah : LANGKAH[iLangkah];
 
-  /** Sumbu lantai yang paling sejajar dengan kanan layar -> arah kanan & maju (menjauhi kamera). */
   const arahLayar = () => {
     const m = mesin.current;
     if (!m) return { kanan: [1, 0], maju: [0, -1] };
@@ -34,7 +28,6 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
     setBenda(bs => bs.map(b => {
       if (!ids.has(b.id) || b.terkunci) return b;
       if (b.jenis === 'proyektor') {
-        //  Badan boleh menembus dinding / plafon - yang dijaga di dalam ruang hanya lensanya.
         const j = jepitProyektor({ ...b, x: b.x + dx, z: b.z + dz, elev: b.elev + dNaik * langkah }, batas.x, batas.z, plafonDi(Math.min(batas.x, Math.max(0, b.x + dx))));
         return { ...b, x: r(j.x), z: r(j.z), elev: r(j.elev) };
       }
@@ -62,8 +55,6 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
 
   if (!terpilih || terpilih.terkunci) return null;
   const t = 'h-9 grid place-items-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 active:bg-blue-100';
-  //  Panel "Geser" di bilah benda terpilih: tombol panah seperti papan ketik (kiri-maju-mundur-kanan) | naik, turun | langkah.
-  //  Komponen tetap terpasang walau panelnya tertutup, supaya panah keyboard selalu jalan.
   return (
     <div className="flex items-stretch gap-2" role="group" aria-label="Geser cepat">
       <div className="grid grid-cols-3 gap-1 w-[7.5rem]">

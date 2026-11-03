@@ -7,9 +7,7 @@ import { supabase, SearchInput } from './shared';
 import { ModalPortal, DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-
 export function AnalyticsPage() {
-  // Lihat catatan yang sama di AdminDashboard.tsx.
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
@@ -21,17 +19,12 @@ export function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTeam, setActiveTeam] = useState<TeamFilter>('PTS');
 
-  // Drill-down state
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
   const [userAttempts, setUserAttempts] = useState<any[]>([]);
   const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
     const load = async () => {
-      // '*' disengaja & TANPA embed users(...) - lihat catatan di AdminDashboard. lc_quiz_attempts punya DUA
-      // relasi ke users (user_id & graded_by/penilai essay): embed users(...) ditolak PostgREST ("lebih dari
-      // satu relasi"), data jadi null dan SELURUH halaman ini kosong tanpa pesan apa pun. Data pengguna
-      // diambil terpisah lalu digabung lewat user_id.
       const [{ data: mentah }, { data: pengguna }] = await Promise.all([
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('users').select('id, full_name, sales_division, team_type, role'),
@@ -41,8 +34,7 @@ export function AnalyticsPage() {
       const a = mentah ? mentah.map((x: any) => ({ ...x, users: petaUser[x.user_id] ?? null })) : null;
 
       if (a) {
-        const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
-        // Per user
+        const graded = a.filter((att: any) => att.grading_status !== 'pending_review');
         const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; times: number[]; passed: number; flags: number }> = {};
         graded.forEach((att: any) => {
           if (!byUser[att.user_id]) byUser[att.user_id] = {
@@ -64,21 +56,10 @@ export function AnalyticsPage() {
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
           avgTime: v.times.length ? v.times.reduce((s: number, n: number) => s + n, 0) / v.times.length : Infinity,
           total: v.scores.length, passed: v.passed, flags: v.flags,
-          // Sama seperti AdminDashboard.tsx (Top Performers) - skor rata-rata
-          // sama TIDAK berarti urutannya bebas. Tanpa tie-break kedua ini,
-          // dua peserta yang seri terurut menurut urutan baris apa adanya dari
-          // database, bukan siapa yang mengerjakan lebih cepat - halaman ini
-          // (Analytics, dilihat admin) dan AdminDashboard menampilkan
-          // peringkat orang yang SAMA, jadi kalau cuma salah satu yang
-          // dibetulkan, admin akan melihat urutan berbeda antar dua layar
-          // untuk data yang identik.
-          //  Kunci ketiga (uid): hasil untuk data yang sama harus selalu
-          //  identik. Lihat catatan yang sama di AdminDashboard.tsx.
         })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime || a.uid.localeCompare(b.uid));
         setAllTopUsers(allUsers);
         setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
-        // Per Sales Division
         const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
         graded.forEach((att: any) => {
           const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
@@ -98,14 +79,12 @@ export function AnalyticsPage() {
           scoreLow:  v.scores.filter(s => s < 60).length,
         })).sort((a, b) => b.avg - a.avg));
 
-        // Nasional (semua divisi digabung) - dipakai sebagai pembanding
         const allScores = graded.map((att: any) => att.score ?? 0);
         setNationalAvg(allScores.length ? allScores.reduce((s: number, n: number) => s + n, 0) / allScores.length : null);
       }
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        //  Attempt terkirim semua sesi sudah ada di `a` - dikelompokkan, bukan satu query per sesi (N+1).
         const perSesi = new Map<string, any[]>();
         for (const x of (a ?? []) as any[]) {
           const daftar = perSesi.get(x.quiz_session_id);
@@ -136,19 +115,14 @@ export function AnalyticsPage() {
     load();
   }, []);
 
-  // Re-filter topUsers whenever team switch changes
   useEffect(() => {
     if (allTopUsers.length > 0) {
       setTopUsers(allTopUsers.filter(u => matchesTeamFilter(u, activeTeam)).slice(0, 20));
       setSearch('');
     }
-    // kunciCabang: lihat catatan yang sama di AdminDashboard.tsx - daftar
-    // kelompok datang asinkron, jadi hasil saringan harus dihitung ulang
-    // begitu daftar itu tiba.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeam, allTopUsers, kunciCabang]);
 
-  // Load detail attempts when a user is selected
   useEffect(() => {
     if (!selectedUser) return;
     setLoadingUser(true);
@@ -166,7 +140,6 @@ export function AnalyticsPage() {
     .filter(u => !divisionFilter || u.salesDivision === divisionFilter)
     .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()));
 
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
@@ -182,8 +155,6 @@ export function AnalyticsPage() {
       </div>
 
       <div className="p-4 sm:p-8 space-y-10">
-
-
 
         {sessionStats.length > 0 && (
           <section>
@@ -259,7 +230,6 @@ export function AnalyticsPage() {
           </section>
         )}
 
-        {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
             <h3 className="text-[11px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
@@ -348,7 +318,6 @@ export function AnalyticsPage() {
           </div>
         </section>
 
-        {/* ── Top Performers — Sales Division ───────────────────────────── */}
         {divisionStats.length > 0 && (
           <section>
             <h3 className="text-[11px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
@@ -444,7 +413,6 @@ export function AnalyticsPage() {
         )}
       </div>
 
-      {/* ─── User Detail Modal ─────────────────────────────────────────────── */}
       {selectedUser && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
@@ -452,7 +420,6 @@ export function AnalyticsPage() {
           onClick={() => setSelectedUser(null)}>
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col"
             onClick={e => e.stopPropagation()}>
-            {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
               <div>
                 <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
@@ -470,7 +437,6 @@ export function AnalyticsPage() {
                 </div>
               ) : (
                 <>
-                  {/* Summary cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {[
                       { label: 'Total Quiz', value: userAttempts.length, color: 'text-slate-800' },
@@ -499,7 +465,6 @@ export function AnalyticsPage() {
                     ))}
                   </div>
 
-                  {/* Per-attempt list */}
                   <div className="space-y-3">
                     {userAttempts.length === 0 && (
                       <p className="text-center text-slate-500 py-8 text-sm">Belum ada quiz yang diselesaikan</p>
@@ -510,7 +475,6 @@ export function AnalyticsPage() {
                       const tabSw = a.tab_switches ?? 0;
                       return (
                         <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-sm transition-all">
-                          {/* Score donut */}
                           <DonutChart
                             segments={[
                               { value: score, color: score >= passing ? (score >= 80 ? '#10b981' : '#f59e0b') : '#f43f5e' },
@@ -519,7 +483,6 @@ export function AnalyticsPage() {
                             size={56} strokeWidth={8}
                             label={score.toFixed(0)}
                           />
-                          {/* Info */}
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-slate-800 truncate">
                               {a.lc_quiz_sessions?.session_name ?? '—'}
@@ -539,7 +502,6 @@ export function AnalyticsPage() {
                               )}
                             </div>
                           </div>
-                          {/* Right: score detail */}
                           <div className="text-right flex-shrink-0 space-y-0.5">
                             <p className="text-xs font-semibold text-slate-600">
                               {a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar

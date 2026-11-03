@@ -5,12 +5,6 @@ import { isianProyek, statusProyek } from '@/lib/checklist-isian';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * /api/project-progress/<proyekId>
- *   GET    -> info proyek + checklist per lokasi yang boleh dilihat
- *   PATCH  -> admin: { aksi: 'ubahInfo' | 'status' | 'share' | 'tokenBaru', ... }
- *   DELETE -> admin: hapus proyek beserta semua checklist & riwayatnya
- */
 export async function GET(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
   const params = await ctx.params;
   const s = await ambilAkun(request);
@@ -62,8 +56,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ proye
       return NextResponse.json({ ok: true }, { headers: NO_STORE });
     }
     case 'share': {
-      // Token dipakai ulang saat link dinyalakan lagi - link yang sudah
-      // tersebar tetap berlaku. Memutus link lama = aksi 'tokenBaru'.
       const share_token = ada.share_token ?? tokenBaru();
       const share_aktif = body.aktif === true;
       const { error } = await db.from('checklist_proyek').update({ share_aktif, share_token }).eq('id', id);

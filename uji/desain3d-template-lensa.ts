@@ -1,11 +1,3 @@
-/**
- * uji/desain3d-template-lensa.ts - Template Mapping & Immersive memakai lensa NYATA Panasonic PT-MZ882:
- *  - data lensa template (inti/lensaPanasonic.ts) = Pustaka (migrasi 057, kalkulator Panasonic) - bidang demi bidang;
- *  - tiap proyektor template: zoom di dalam rentang lensanya, lens shift di dalam daerah lensa;
- *  - jarak lempar template = rumus Panasonic L = A × diagonal − B pada zoom itu (lewat jarakUntukLebar).
- *
- * Jalankan: npx tsx uji/desain3d-template-lensa.ts
- */
 import { readFileSync } from 'fs';
 import type { EntriPustaka } from '../lib/pustaka';
 import {

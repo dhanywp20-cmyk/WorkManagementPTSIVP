@@ -1,20 +1,16 @@
-/** Screen Connection: pengaturan, data dari Kalkulator LED, susunan kabel per port (murni, tanpa React). */
 import { type HasilKoneksi, hitungKoneksi, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av-hitung';
 
-/** Pengaturan screen connection (disimpan bersama hitungan LED, ikut undo/redo). */
 export interface PengaturanKoneksi {
   mode: 'template' | 'manual';
   mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z'; bagi: 'baris' | 'penuh';
-  /** Batas beban port (%). */ beban: number;
-  /** Jumlah modul/cabinet per receiving card (mendatar × tegak); null = otomatis. */ rcKol: number | null; rcBaris: number | null;
-  /** Port LAN per controller; null = ikut hardware terpilih. */ ppk: number | null;
-  /** Ukuran receiving card bebas: lebar tiap kolom & tinggi tiap baris (px). null = ikut kalkulator. */
+   beban: number;
+   rcKol: number | null; rcBaris: number | null;
+   ppk: number | null;
   lebarKol: number[] | null; tinggiBaris: number[] | null;
-  /** Sel tanpa receiving card. */ kosong: SelRC[];
-  /** Kabel manual per port. */ manual: SelRC[][] | null;
-  /** Kapasitas port (px); null = dari refresh & bit kalkulator. */ pxPort: number | null;
-  /** Model receiving card (RECEIVING_CARD); null = umum ±512×512. */ rcModel: string | null;
-  /** Kabel cadangan: tidak, loop (ujung rantai kembali ke port cadangan controller yang sama), atau controller cadangan. */
+   kosong: SelRC[];
+   manual: SelRC[][] | null;
+   pxPort: number | null;
+   rcModel: string | null;
   cadangan: 'tidak' | 'loop' | 'controller';
 }
 
@@ -23,7 +19,6 @@ export const KONEKSI_AWAL: PengaturanKoneksi = {
   lebarKol: null, tinggiBaris: null, kosong: [], manual: null, pxPort: null, rcModel: null, cadangan: 'tidak',
 };
 
-/** Pengaturan dari hitungan tersimpan: nilai asing / tidak sah diganti bawaan. */
 export function bersihkanKoneksi(x: unknown): PengaturanKoneksi {
   const o = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
   const pilih = <T extends string>(v: unknown, sah: readonly T[], awal: T): T => (sah.includes(v as T) ? (v as T) : awal);
@@ -51,13 +46,12 @@ export function bersihkanKoneksi(x: unknown): PengaturanKoneksi {
   };
 }
 
-/** Data layar dari kalkulator. */
 export interface DataKoneksi {
-  /** Susunan unit (modul / cabinet). */ kolom: number; baris: number;
-  /** Ukuran unit (mm) & pixel per unit. */ wUnit: number; hUnit: number; pxX: number; pxY: number;
+   kolom: number; baris: number;
+   wUnit: number; hUnit: number; pxX: number; pxY: number;
   satuan: 'modul' | 'cabinet';
-  pxPerPort: number; /** Perkiraan port dari total pixel. */ portIdeal: number;
-  /** Port per unit hardware & namanya (0 / null = belum ada). */ ppkHw: number; namaHw: string | null;
+  pxPerPort: number;  portIdeal: number;
+   ppkHw: number; namaHw: string | null;
   refresh: number; bit: number;
 }
 
@@ -69,26 +63,21 @@ export const SUDUT: { v: SudutMulai; l: string }[] = [
   { v: 'kiri-atas', l: 'Kiri atas' }, { v: 'kanan-atas', l: 'Kanan atas' }, { v: 'kiri-bawah', l: 'Kiri bawah' }, { v: 'kanan-bawah', l: 'Kanan bawah' },
 ];
 
-/** Batas umum area satu receiving card (512 × 512 px). */
 export const PX_RC_UMUM = 512 * 512;
 
 export const kunci = (c: number, r: number) => `${c},${r}`;
 
-/** Grid receiving card (ukuran tiap kolom/baris) & urutan kabelnya. */
 export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
   const otoKol = d.satuan === 'cabinet' ? 1 : Math.max(1, Math.round(500 / Math.max(1, d.wUnit)));
   const otoBaris = d.satuan === 'cabinet' ? 1 : Math.max(1, Math.round(500 / Math.max(1, d.hUnit)));
-  //  Model receiving card dipilih: usulan otomatis dikecilkan sampai muat kapasitas kartu.
   const rc = RECEIVING_CARD.find(r => r.nama === s.rcModel) ?? null;
   const oto = rc ? unitPerRC(rc, d.pxX, d.pxY, otoKol, otoBaris) : { kol: otoKol, baris: otoBaris };
   const rcKol = Math.min(d.kolom, Math.max(1, Math.round(s.rcKol ?? oto.kol)));
   const rcBaris = Math.min(d.baris, Math.max(1, Math.round(s.rcBaris ?? oto.baris)));
   const custom = !!(s.lebarKol?.length && s.tinggiBaris?.length);
-  //  Ikut kalkulator: receiving card di tepi kanan/bawah memuat sisa modul (ukurannya tepat, bukan dibulatkan).
   const lebar = custom ? s.lebarKol! : Array.from({ length: Math.ceil(d.kolom / rcKol) }, (_, c) => Math.min(rcKol, d.kolom - c * rcKol) * d.pxX);
   const tinggi = custom ? s.tinggiBaris! : Array.from({ length: Math.ceil(d.baris / rcBaris) }, (_, r) => Math.min(rcBaris, d.baris - r * rcBaris) * d.pxY);
   const K = lebar.length, B = tinggi.length;
-  //  Loop cadangan: separuh port tiap controller untuk kabel utama, separuh untuk kabel cadangan.
   const ppkPenuh = Math.max(0, Math.round(s.ppk ?? d.ppkHw));
   const ppk = s.cadangan === 'loop' && ppkPenuh > 1 ? Math.floor(ppkPenuh / 2) : ppkPenuh;
   const pxPort = s.pxPort ?? d.pxPerPort;
@@ -97,17 +86,14 @@ export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
     kolom: K, baris: B, lebarPx: lebar, tinggiPx: tinggi, kosong: s.kosong, manual: s.mode === 'manual' ? (s.manual ?? []) : null,
     pxPerPort: pxPort, mulai: s.mulai, arah: s.arah, pola: s.pola, bagi: s.bagi, bebanMaks: s.beban, portPerKartu: ppk,
   });
-  //  Port kosong (mode manual) tidak dihitung; controller = sampai port terakhir yang terisi.
   const terisi = hasil.port.filter(p => p.jumlah);
   const portTerpakai = terisi.length;
   const controller = !terisi.length ? 0 : ppk > 0 ? Math.ceil(terisi[terisi.length - 1].port / ppk) : 1;
   const cadangan = s.cadangan;
-  //  Kapasitas model receiving card: kartu terbesar di grid harus muat.
   const rcLewat = rc ? lebar.some(w => w > rc.w) || tinggi.some(h => h > rc.h) : false;
   return {
     K, B, lebar, tinggi, custom, rcKol, rcBaris, otoKol: oto.kol, otoBaris: oto.baris, ppk, ppkPenuh, pxPort, kosong, hasil, arah: s.arah, portTerpakai, controller,
     rc, rcLewat, cadangan,
-    /** Kabel LAN cadangan & controller cadangan. */
     portCadangan: cadangan === 'tidak' ? 0 : portTerpakai, controllerCadangan: cadangan === 'controller' ? controller : 0,
     resX: lebar.reduce((a, b) => a + b, 0), resY: tinggi.reduce((a, b) => a + b, 0),
   };
@@ -115,13 +101,11 @@ export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
 
 export type Susunan = ReturnType<typeof susunKoneksi>;
 
-/** Rantai kabel per port dari hasil (untuk menyalin template ke manual). */
 export const rantaiDari = (h: HasilKoneksi): SelRC[][] => h.port.map(p => h.sel.filter(x => x.port === p.port).map(x => [x.c, x.r] as SelRC));
 
 export const namaPort = (t: Susunan, port: number) =>
   t.ppk > 0 && t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · port ${((port - 1) % t.ppk) + 1}` : `Port ${port}`;
 
-/** Tujuan kabel cadangan dari ujung rantai port `port`. */
 export const namaCadangan = (t: Susunan, port: number) => {
   if (t.cadangan === 'controller') return `${t.controller > 1 && t.ppk > 0 ? `Controller cadangan ${Math.ceil(port / t.ppk)}` : 'Controller cadangan'} · port ${t.ppk > 0 ? ((port - 1) % t.ppk) + 1 : port}`;
   if (t.ppk <= 0) return `Port cadangan ${port}`;

@@ -1,6 +1,5 @@
 'use client';
 
-/** KartuRuanganDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 
 export interface KartuRuanganDetailProps {

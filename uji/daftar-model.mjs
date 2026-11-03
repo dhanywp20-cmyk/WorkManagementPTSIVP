@@ -1,13 +1,3 @@
-/**
- * uji/daftar-model.mjs - penyaringan daftar model dari Google.
- *
- * Ada karena satu kekeliruan yang terulang: nama model DITEBAK, tidak
- * diperiksa. Yang diuji di sini adalah pengolahan jawaban Google jadi daftar
- * pilihan - bagian yang menentukan apakah orang menerima pilihan yang benar
- * atau daftar yang menyesatkan.
- *
- *   node uji/daftar-model.mjs
- */
 function olahModel(data) {
   return ((data?.models ?? []))
     .filter(m => (m.supportedGenerationMethods ?? []).includes('generateContent'))
@@ -30,8 +20,6 @@ console.log('\n1. Bentuk jawaban Google');
   cek('awalan "models/" dibuang', hasil[0].id === 'gemini-2.5-flash', hasil[0].id);
 }
 {
-  // Yang paling merugikan: model penyematan / pembuat gambar ikut tampil, lalu
-  // dipilih, lalu gagal dengan pesan yang tidak nyambung.
   const hasil = olahModel({ models: [
     { name: 'models/text-embedding-004', supportedGenerationMethods: ['embedContent'] },
     { name: 'models/imagen-3.0', supportedGenerationMethods: ['predict'] },
@@ -64,12 +52,10 @@ console.log('\n2. Jawaban yang cacat tidak boleh meledak');
 
 console.log('\n3. Model tersimpan yang tidak ada di daftar');
 {
-  // Perilaku UI: entri tambahan ditampilkan supaya pilihan lama tidak
-  // diam-diam tergantikan baris pertama daftar.
   const daftar = olahModel({ models: [
     { name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] },
   ]});
-  const tersimpan = 'gemini-2.5-flash-lite';   // nama yang pernah ditebak dan ternyata tidak ada
+  const tersimpan = 'gemini-2.5-flash-lite';
   const perluEntriTambahan = !daftar.some(m => m.id === tersimpan);
   cek('model tersimpan yang hilang terdeteksi', perluEntriTambahan === true);
   cek('model tersimpan yang ada tidak digandakan',

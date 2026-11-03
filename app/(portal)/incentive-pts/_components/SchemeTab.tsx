@@ -1,5 +1,4 @@
 'use client';
-// Incentive PTS - Tab: Skema Pembagian
 
 import { useState, useEffect } from 'react';
 import {
@@ -12,19 +11,8 @@ import { IkonTeks } from '@/components/shared/Ikon';
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100';
 
-/** Contoh nominal untuk pratinjau - angka bulat supaya mudah dicocokkan manual. */
 const CONTOH = 5_000_000;
 
-/**
- * Penunjuk total persen yang hidup saat angkanya diketik.
- *
- * Kotak merah di bawah halaman sudah menahan skema yang tidak berjumlah 100
- * agar tidak tersimpan, tapi ia baru terbaca setelah orangnya menggulir ke
- * bawah - dan ia tidak menyebutkan bagian MANA yang berat sebelah. Lencana ini
- * duduk tepat di judul tiap bagian dan menyebutkan selisihnya, jadi
- * ketidakseimbangan terlihat pada ketikan yang membuatnya, bukan di ujung
- * halaman beberapa gulir kemudian.
- */
 function TotalPersen({ nilai }: { nilai: number }) {
   const bulat = Math.round(nilai * 100) / 100;
   const pas = bulat === 100;
@@ -43,21 +31,10 @@ function TotalPersen({ nilai }: { nilai: number }) {
   );
 }
 
-/**
- * Satu seksi bernomor dengan garis aksen di kiri judulnya.
- *
- * Gunanya jenjang: tanpa ini seluruh halaman berupa kartu putih seragam, dan
- * mata tidak punya petunjuk mana yang pokok dan mana yang pelengkap. Nomor
- * urut juga membuat halamannya bisa dirujuk lisan ("lihat seksi 2") - berguna
- * saat menjelaskan skema ke Finance lewat telepon.
- */
 function Seksi({ no, judul, ket, warna, children }: {
   no: string; judul: string; ket: string; warna: string; children: React.ReactNode;
 }) {
   return (
-    // bg-slate-100 SOLID, bukan /70. Halaman ini berlatar foto gedung; latar
-    // tembus pandang membuat teks keterangan duduk langsung di atas foto, dan
-    // rasio kontras di atas foto tidak bisa dijamin berapa pun warna teksnya.
     <section className="rounded-2xl bg-slate-100 border border-slate-200 p-3 sm:p-4">
       <div className="flex items-start gap-2.5 mb-3">
         <span className="flex-shrink-0 w-6 h-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center mt-0.5"
@@ -87,15 +64,11 @@ export function SchemeTab({ olehNama, notify }: {
   if (!sk) return <div className="py-16 text-center text-sm text-gray-500">Memuat skema…</div>;
 
   const ubah = (patch: Partial<SkemaInsentif>) => setSk({ ...sk, ...patch });
-  //  Galat MENAHAN penyimpanan; peringatan hanya memberi tahu. Dipisah supaya
-  //  tombol Simpan tidak terkunci oleh hal yang perhitungannya sebenarnya benar.
   const semuaMasalah = periksaSkema(sk);
   const masalah = semuaMasalah.filter(m => !m.peringatan);
   const peringatan = semuaMasalah.filter(m => m.peringatan);
   const berubah = JSON.stringify(sk) !== awal;
 
-  //  Dihitung dari state yang sedang disunting, bukan dari yang tersimpan -
-  //  itu memang gunanya: angkanya bergerak seiring ketikan.
   const totalPorsi = sk.porsi.reduce((t, p) => t + (p.persen || 0), 0);
   const totalTanpaSupport = Object.values(sk.tanpaSupport).reduce((t, n) => t + (n || 0), 0);
   const totalTranche = sk.tranche.reduce((t, x) => t + (x.persen || 0), 0);
@@ -123,10 +96,6 @@ export function SchemeTab({ olehNama, notify }: {
     notify('success', 'Skema tersimpan sebagai versi baru. Proyek yang tahapannya sudah dibuat tetap memakai skema lamanya.');
   };
 
-  // Pratinjau: memakai mesin hitung yang SAMA dengan proses sebenarnya
-  // Kalau pratinjau memakai rumusnya sendiri, ia bisa menampilkan angka yang
-  // tidak pernah terjadi saat batch dijalankan - persis jenis selisih yang
-  // paling sulit ditelusuri belakangan.
   const contohPenerima = [
     { peran: 'pic', user_id: '1', user_name: 'PIC' },
     ...sk.porsi.filter(p => p.peran === 'support').flatMap(() => [
@@ -141,7 +110,6 @@ export function SchemeTab({ olehNama, notify }: {
 
   return (
     <div className="space-y-3">
-      {/* ── Kepala ── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
         <h2 className="font-bold text-gray-800 text-base"><IkonTeks nama="🧮" />Skema Pembagian Insentif</h2>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">
@@ -155,29 +123,6 @@ export function SchemeTab({ olehNama, notify }: {
         </p>
       </div>
 
-
-      {/*
-        TATA LETAK BERSEKSI, bukan sembilan kartu mengambang dalam satu grid.
-
-        Bentuk lama menaruh semuanya sebagai kartu putih seragam di satu grid
-        rapat. Akibatnya tidak ada jenjang sama sekali: "Porsi Normal" terlihat
-        sama pentingnya dengan "Riwayat Skema", dan hal-hal yang saling
-        bergantung - setelan Installer dengan akibatnya pada porsi Remote -
-        terpisah jauh oleh kartu yang tidak berhubungan.
-
-        Sekarang tiap seksi punya judul dengan garis aksen dan keterangan
-        singkat, lalu kartunya duduk DI DALAM seksi itu. Yang berpasangan
-        diletakkan berdampingan dengan items-stretch supaya tingginya sama -
-        itu yang membuat barisannya rata, bukan kebetulan panjang isinya.
-      */}
-
-      {/*
-        SEKSI 1 - CAKUPAN. Ditaruh paling atas karena ia menjawab pertanyaan
-        yang mendahului semua angka di bawahnya: proyek mana yang masuk hitungan
-        sama sekali. Dulu jawabannya dipaku di kode (INCENTIVE_CATEGORIES),
-        sehingga menambah satu jenis layanan berarti mengubah kode lalu deploy
-        ulang - tidak bisa dipakai perusahaan yang menamai layanannya sendiri.
-      */}
       <Seksi no="1" judul="Cakupan Proyek" warna="#0d9488"
         ket="Kategori Request Schedule mana yang dihitung sebagai proyek insentif. Namanya harus PERSIS sama dengan pilihan kategori di Request Schedule.">
         <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
@@ -208,12 +153,6 @@ export function SchemeTab({ olehNama, notify }: {
               className="text-xs font-bold text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-3 py-1.5 hover:bg-teal-100">
               + Tambah kategori
             </button>
-            {/*
-              Peringatan, bukan pencegahan. Mengubah kategori TIDAK menyentuh
-              proyek yang tahapannya sudah dibuat - itu memang disengaja - tapi
-              orang yang menghapus satu kategori berhak tahu bahwa daftar
-              proyeknya akan menyusut sebelum ia menyimpan.
-            */}
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 mt-2">
               <p className="text-[11px] text-amber-800 leading-relaxed">
                 <strong>Perhatian.</strong> Menghapus sebuah kategori membuat proyek berkategori itu
@@ -229,7 +168,6 @@ export function SchemeTab({ olehNama, notify }: {
       <Seksi no="2" judul="Pembagian Porsi" warna="#e11d48"
         ket="Dasar seluruh perhitungan. Dua sisi dari satu keputusan: ada Support yang membantu, atau tidak ada.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-      {/* ── Porsi normal ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -271,7 +209,6 @@ export function SchemeTab({ olehNama, notify }: {
           </p>
         </div>
       </div>
-      {/* ── Tanpa support ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -292,18 +229,6 @@ export function SchemeTab({ olehNama, notify }: {
                 aria-label={`Porsi ${p.label} tanpa support`} className={inputKecil} />
             </div>
           ))}
-          {/*
-            Isian "Jendela penilaian support (bulan)" DIHAPUS dari sini.
-
-            Jendelanya kini mengikuti jadwal Tahapan Pencairan di bawah: Support
-            dinilai ulang tiap tahun pencairan, jadi tahun ke-2 memakai rentang
-            tahun ke-2, dan seterusnya. Angkanya sudah ditentukan tahapan, jadi
-            isian ini tidak lagi berpengaruh pada apa pun.
-
-            Dihapus, bukan dibiarkan: kotak isian yang tidak menyambung ke mana
-            pun lebih berbahaya daripada tidak ada - admin akan mengubahnya,
-            tidak terjadi apa-apa, dan tidak ada yang menjelaskan kenapa.
-          */}
           <div className="sm:col-span-3 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
             <p className="text-[11px] text-sky-800 leading-relaxed">
               <strong>Support dinilai per tahun pencairan.</strong> Yang menangani ticket
@@ -322,7 +247,6 @@ export function SchemeTab({ olehNama, notify }: {
       <Seksi no="3" judul="PTS Daerah &amp; Mode Remote" warna="#2563eb"
         ket="Dinaikkan ke sini karena porsi Remote adalah AKIBAT langsung dari setelan PTS Daerah — keduanya harus terbaca bersamaan.">
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,22rem)_1fr] gap-3 items-stretch">
-      {/* ── PTS Daerah ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
@@ -377,21 +301,6 @@ export function SchemeTab({ olehNama, notify }: {
           </div>
         )}
       </div>
-      {/*
-        Pola pembagian saat PTS Daerah aktif.
-
-        Angka-angka ini TIDAK bisa disunting sendiri, dan itu disengaja. Ia
-        diturunkan dari Porsi Normal / Tanpa Support di atas dikali (100 -
-        porsi PTS Daerah)%. Kalau dijadikan isian tersendiri, akan ada EMPAT
-        tabel yang masing-masing harus dijaga berjumlah 100% - dan begitu
-        salah satunya diubah tanpa yang lain, platform membayar angka yang
-        tidak sama dengan dokumen tanpa ada yang memberi tahu.
-
-        Jadi yang bisa diatur tetap satu tempat (porsi dasar + porsi
-        PTS Daerah), sementara panel ini memperlihatkan hasilnya supaya tidak
-        perlu dihitung di kepala. Dihitung dengan mesin yang SAMA dengan
-        proses pencairan sesungguhnya.
-      */}
       {persenInstaller(sk, true) > 0 && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden h-full flex flex-col">
           <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
@@ -412,12 +321,6 @@ export function SchemeTab({ olehNama, notify }: {
             </label>
           </div>
           {sk.porsiRemote.aktif ? (
-            /*
-              DIATUR SENDIRI. Angkanya dipakai apa adanya oleh mesin hitung -
-              tidak dikali apa pun. Baris Installer ikut di dalam tabel supaya
-              yang terbaca admin adalah pembagian utuh yang berjumlah 100%,
-              bukan angka yang masih harus dikalikan sendiri di kepala.
-            */
             <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
               {([
                 ['adaSupport', 'Ada Support PTS di tahun itu'],
@@ -503,7 +406,6 @@ export function SchemeTab({ olehNama, notify }: {
       <Seksi no="4" judul="Aturan Khusus &amp; Pencairan" warna="#7c3aed"
         ket="Perkecualian saat peran merangkap, dan jadwal pencairannya.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
-      {/* ── Aturan khusus ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">Aturan Khusus</h3>
@@ -520,13 +422,6 @@ export function SchemeTab({ olehNama, notify }: {
                 <option key={p.peran} value={p.peran}>{p.label}</option>
               ))}
             </select>
-            {/*
-              Akibat pilihan ini ditampilkan sebagai ANGKA, bukan dibiarkan
-              dibayangkan. Aturan ini yang paling sulit dinilai benar-salahnya
-              dari nama pilihannya saja: "dialihkan ke Manager" dan "dialihkan
-              ke PIC" terdengar sama netral, padahal selisihnya belasan persen
-              dari pool dan jatuh ke orang yang berbeda.
-            */}
             {(() => {
               const spv = sk.porsi.find(p => p.peran === 'supervisor')?.persen ?? 0;
               const tujuan = sk.hangusSupervisorKe;
@@ -545,12 +440,6 @@ export function SchemeTab({ olehNama, notify }: {
               );
             })()}
           </div>
-          {/*
-            Manager sebagai PIC kini punya DUA keadaan, sama seperti skema
-            standar. Sebelumnya cuma satu angka, jadi Manager selalu menerima
-            seluruh pool - termasuk pada tahun ke-2 dan ke-3 ketika timnya yang
-            mengerjakan Troubleshooting-nya, dan mereka tidak dapat apa-apa.
-          */}
           <div className="sm:col-span-2">
             <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
               Manager sebagai PIC — porsi per tahun pencairan
@@ -585,12 +474,6 @@ export function SchemeTab({ olehNama, notify }: {
               })}
             </div>
           </div>
-          {/*
-            Supervisor merangkap PIC PUNYA TABEL SENDIRI bila saklar ini
-            dinyalakan - menanggung DUA peran sekaligus, dengan beban yang
-            berbeda-beda menurut Remote/Onsite dan ada/tidaknya Support.
-            Saklar mati (bawaan) = perilaku LAMA di atas ("dialihkan ke ...").
-          */}
           <div className="sm:col-span-2 rounded-xl border border-violet-100 bg-violet-50/40 p-2.5">
             <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
               <span className="text-[11px] font-black uppercase tracking-widest text-violet-700">
@@ -614,8 +497,6 @@ export function SchemeTab({ olehNama, notify }: {
                   ] as const).map(([kunciMode, kunciPeta, judul]) => {
                     const peta = sk.supervisorSebagaiPic[kunciMode][kunciPeta];
                     const total = Object.values(peta).reduce((t, n) => t + (n || 0), 0);
-                    //  Installer hanya ditawarkan pada grup Remote - onsite tidak
-                    //  pernah membayar Installer (lihat installerHanyaRemote).
                     const barisPeran = [
                       { k: 'pic', l: 'PIC (Supervisor)' },
                       { k: 'support', l: 'Tim Support' },
@@ -662,7 +543,6 @@ export function SchemeTab({ olehNama, notify }: {
           </div>
         </div>
       </div>
-      {/* ── Tahapan pencairan ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <h3 className="font-bold text-gray-800 text-sm">Tahapan Pencairan Tim PTS</h3>
@@ -701,7 +581,6 @@ export function SchemeTab({ olehNama, notify }: {
 
       <Seksi no="5" judul="Pratinjau" warna="#0891b2"
         ket="Dihitung dengan mesin yang sama seperti proses pencairan sesungguhnya.">
-      {/* ── Pratinjau ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm">Pratinjau — pool {rp(CONTOH)}</h3>
@@ -737,12 +616,6 @@ export function SchemeTab({ olehNama, notify }: {
             );
           })}
         </div>
-        {/*
-          Syaratnya persenInstaller(), bukan installerRemotePersen > 0. Angkanya
-          bisa tersimpan > 0 sementara saklarnya dimatikan - dan pratinjau yang
-          memperlihatkan porsi Installer padahal hitungannya memberi nol persis
-          jenis selisih yang membuat orang percaya pada angka yang salah.
-        */}
         {persenInstaller(sk, true) > 0 && (
           <div className="px-4 sm:px-5 pb-5">
             <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
@@ -774,7 +647,6 @@ export function SchemeTab({ olehNama, notify }: {
 
       <Seksi no="6" judul="Riwayat Skema" warna="#64748b"
         ket="Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa.">
-      {/* ── Riwayat versi skema ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
           <h3 className="font-bold text-gray-800 text-sm"><IkonTeks nama="🕘" />Riwayat Skema</h3>
@@ -809,7 +681,6 @@ export function SchemeTab({ olehNama, notify }: {
       </div>
       </Seksi>
 
-      {/* ── Simpan ── */}
       {masalah.length > 0 && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4">
           <p className="text-xs font-bold text-rose-700 mb-1.5">

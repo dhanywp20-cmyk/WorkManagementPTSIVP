@@ -1,6 +1,5 @@
 'use client';
 
-/** PopupTicketAktif - request yang masih aktif saat halaman dibuka. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 import { ProjectRequest, statusConfig } from './shared';
 

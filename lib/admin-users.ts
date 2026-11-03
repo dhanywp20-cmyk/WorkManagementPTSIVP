@@ -1,11 +1,3 @@
-/**
- * lib/admin-users.ts - pemanggil /api/admin/users dari klien.
- *
- * Operasi yang menyentuh kolom hak akses (role, team_type, allow_incentive_input,
- * allowed_menus) WAJIB lewat sini - kolom itu dibekukan untuk anon oleh trigger DB
- * (sql/lock-users-privileged-columns.sql). Route server memverifikasi admin lalu
- * menulis pakai service-role. Mengembalikan { error? } seperti pola supabase.
- */
 
 type Res = { error: { message: string } | null };
 
@@ -24,34 +16,15 @@ async function call(body: Record<string, unknown>): Promise<{ data?: { id?: stri
   }
 }
 
-/** Buat user baru (kolom hak akses di-set di server). Mengembalikan id baru. */
 export async function adminCreateUser(payload: Record<string, unknown>): Promise<{ id?: string; error: { message: string } | null }> {
   const { data, error } = await call({ action: 'create', payload });
   return { id: data?.id, error };
 }
 
-/** Update field user (termasuk role/team_type/allowed_menus). */
 export async function adminUpdateUser(userId: string, payload: Record<string, unknown>): Promise<Res> {
   return call({ action: 'update', userId, payload });
 }
 
-/*
-  adminSetIncentiveInput & adminSetIncentiveBrandScope DIHAPUS dari sini.
-
-  Keduanya pindah ke lib/incentive-akses-api.ts, yang memanggil
-  /api/incentive/akses. Bukan sekadar pindah tempat: penjaganya berbeda -
-  route baru menerima pemegang akses PENUH modul insentif, bukan hanya role
-  'admin', supaya Manager PTS bisa mengatur timnya sendiri. Menyisakan
-  pasangan lama di sini berarti dua jalan mengubah satu setelan dengan syarat
-  yang berbeda, dan itu persoalan yang baru saja dibereskan.
-*/
-
-/**
- * Toggle "Full Access" - akses setara admin di modul data (Piket Showroom,
- * Learning Center, KPI Team, Form Review, Ticketing, Reminder Schedule, Daily
- * Report, Unit Movement, Project Progress) untuk akun Team PTS tertentu.
- * Lihat lib/constants.ts hasFullAccess() dan sql/user-full-access-toggle.sql.
- */
 export async function adminSetAccessLevel(userId: string, value: 'full' | 'guest'): Promise<Res> {
   return call({ action: 'setAccessLevel', userId, value });
 }

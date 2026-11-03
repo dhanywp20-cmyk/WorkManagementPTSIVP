@@ -1,14 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { bacaMerekUntukManifest } from '@/lib/merek-server';
 
-/**
- * Manifest PWA - dibuat DINAMIS (bukan public/manifest.json statis) supaya
- * nama & warna platform ikut pengaturan merek dari Admin Panel, bukan
- * dipaku ke satu company. Ikonnya sendiri masih berkas statis di
- * public/icons/ - lihat catatan di lib/merek-server.ts kenapa itu belum
- * ikut dinamis (butuh pipeline pengubahan ukuran logo unggahan admin
- * menjadi ukuran ikon PWA yang sah, di luar cakupan perubahan ini).
- */
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const m = await bacaMerekUntukManifest();
   return {

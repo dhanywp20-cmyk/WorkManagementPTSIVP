@@ -1,17 +1,3 @@
-/**
- * /api/android - rilis APK Android (Admin Panel -> Aplikasi Android).
- *
- *   GET                 siapa pun yang masuk: rilis terbaru (metadata saja).
- *   GET ?riwayat=1      admin: + 10 rilis terakhir.
- *   POST {aksi:'siapkan', versi, kode_versi, ukuran}
- *                       admin: signed upload URL. Peramban mengunggah APK
- *                       LANGSUNG ke Supabase Storage - tidak lewat Vercel
- *                       (batas body 4,5 MB & hemat bandwidth fungsi).
- *   POST {aksi:'terbitkan', path, versi, kode_versi, catatan, wajib}
- *                       admin: cek berkasnya benar ada, catat rilisnya, dan
- *                       buang berkas rilis lama (sisakan 2) supaya kuota
- *                       Storage free plan tidak habis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { pastikanAdmin, pastikanMasuk } from '@/lib/penjaga-admin';
@@ -92,7 +78,6 @@ export async function POST(req: NextRequest) {
       return gagal(error?.message ?? 'Gagal mencatat rilis.', 500);
     }
 
-    // Berkas lama dibuang, barisnya tetap (riwayat & catatan perubahan).
     const { data: lama } = await db.from('rilis_android').select('id, path')
       .not('path', 'is', null).order('kode_versi', { ascending: false }).range(SIMPAN_BERKAS, 50);
     if (lama?.length) {

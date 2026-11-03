@@ -1,12 +1,5 @@
 'use client';
 
-/**
- * LayarMasuk - layar masuk, daftar akun & lupa password portal (dipecah dari KerangkaPortal).
- *
- * Semua state form tinggal di sini; KerangkaPortal hanya menerima hasilnya: `onMasuk` saat
- * password benar (sesi & token dipasang), lalu `onSelesai` setelah animasi penutup selesai -
- * baru saat itu layar ini diganti portal.
- */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { User } from '../dashboard/_components/shared';
 import { JABATAN_LIST, JABATAN_CONFIG } from '../dashboard/_components/shared';
@@ -17,9 +10,7 @@ import { IkonTeks } from '@/components/shared/Ikon';
 import { LangkahDuaFaktor, type HasilMasuk } from './LangkahDuaFaktor';
 
 export function LayarMasuk({ onMasuk, onSelesai }: {
-  /** Password benar: pasang sesi, token & pengguna. */
   onMasuk: (pengguna: User, dbToken: string | null) => void;
-  /** Animasi penutup selesai - ganti layar ini dengan portal. */
   onSelesai: () => void;
 }) {
   const merek = useMerek();
@@ -28,27 +19,15 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginErr, setLoginErr] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
-  /** Password benar tapi akun ber-2FA (atau admin wajib 2FA): tiket untuk langkah kedua. */
   const [langkah2fa, setLangkah2fa] = useState<{ tahap: 'kode_2fa' | 'daftar_2fa'; tantangan: string } | null>(null);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [showRegPwd, setShowRegPwd] = useState(false);
   const [showRegConfirmPwd, setShowRegConfirmPwd] = useState(false);
   const [showLoginPwd, setShowLoginPwd] = useState(false);
-  /* Animasi kartu login saat berpindah masuk  daftar.
-     'masuk'       kartu tumbuh keluar dari koper (adegan penuh diputar ulang)
-     'tukarKeluar' kartu lama menyusut & memudar, isinya belum diganti
-     'tukarMasuk'  isi sudah berganti, kartu baru muncul sementara koper berputar */
   const [animKartu, setAnimKartu] = useState<'masuk' | 'tukarKeluar' | 'tukarMasuk'>('masuk');
-  /* Login sudah lolos, tapi halaman login belum ditinggalkan: tombol berubah
-     jadi tanda centang dan koper menutup kembali. Lihat catatan di handleLogin
-     soal kenapa perpindahannya sengaja ditunda. */
   const [masukBerhasil, setMasukBerhasil] = useState(false);
-  /** Nama depan untuk sapaan di animasi sukses. */
   const [namaSapa, setNamaSapa] = useState('');
-  /* Naik tiap kali animasi kartu perlu diulang. Dipakai sebagai key React
-     supaya animasi CSS benar-benar dijalankan lagi, bukan diabaikan karena
-     elemennya dianggap sama. */
   const [putaranAnim, setPutaranAnim] = useState(0);
   const jedaTukarRef = useRef<number | null>(null);
   const [registerForm, setRegisterForm] = useState({
@@ -65,10 +44,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
-  // true kalau pendaftaran ini lolos lewat kode event (lihat REGISTER_BYPASS_*
-  // di app/api/auth/register/route.ts) dan langsung aktif tanpa approval admin.
   const [registerBypass, setRegisterBypass] = useState(false);
-  // Forgot password flow
   const [showForgot, setShowForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
   const [forgotUsername, setForgotUsername] = useState('');
@@ -78,13 +54,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotMsg, setForgotMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [forgotMaskedPhone, setForgotMaskedPhone] = useState('');
-  /* Perpindahan antara form masuk dan form daftar.
-     Ke DAFTAR  : kartu ditutup dulu 240 ms, baru isinya diganti - kalau tidak,
-                  isi baru terlihat menyusut keluar dan efek tukarnya rusak,
-                  karena React mengganti isi pada saat diklik, bukan di tengah
-                  animasi. Kopernya berputar di tempat.
-     Ke MASUK   : seluruh adegan koper diputar ulang dari nol, dan kartunya
-                  tumbuh lagi dari dalam koper. */
   const pindahForm = useCallback((keDaftar: boolean) => {
     if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current);
     if (keDaftar) {
@@ -106,21 +75,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   }, []);
   useEffect(() => () => { if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current); }, []);
 
-  /*
-    Link/QR Code dari Admin Panel > Kode Acara membawa ?kode=XXXX.
-
-    SENGAJA mendarat di form MASUK, bukan langsung dilempar ke form Daftar -
-    QR/link yang sama dibagikan ke SEMUA peserta acara, dan sebagian dari
-    mereka sudah pernah mendaftar sebelumnya (lewat kode acara acara lalu,
-    atau didaftarkan admin). Memaksa semua orang ke form Daftar berarti yang
-    sudah punya akun harus mencari sendiri tombol "Masuk" dulu. Kode acara
-    tetap disiapkan di sini - begitu orang yang BELUM punya akun mengklik
-    Daftar sendiri, kodenya sudah terisi, tidak perlu mengetik ulang.
-
-    window.location.search dibaca langsung (bukan useSearchParams) karena
-    ini cuma dibaca SEKALI saat halaman terbuka, dan menghindari keharusan
-    membungkus seluruh halaman ini dengan <Suspense> hanya untuk itu.
-  */
   useEffect(() => {
     const kode = new URLSearchParams(window.location.search).get('kode');
     if (kode) setRegisterForm(f => ({ ...f, event_code: kode }));
@@ -147,7 +101,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
   };
 
-  /** Sesi sudah dibuat server (lewat password, atau password + kode 2FA). */
   const lanjutMasuk = (result: HasilMasuk) => {
     setLangkah2fa(null);
     const data = result.user as unknown as User;
@@ -157,11 +110,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
     }
     onMasuk(data, result.db_token ?? null);
 
-    /* Perpindahan ke dashboard ditunda sebentar supaya tanda berhasil + sapaan terbaca, lalu halaman
-       login memudar (lc-masuk-pudar di globals.css: jeda 640ms + 260ms) dan dashboard memudar masuk.
-       900ms = akhir pemudaran itu; angka ini WAJIB ikut berubah bila durasi di globals.css diubah,
-       kalau tidak halaman login dilepas dari DOM di tengah gerakan. Hanya dibayar saat orang benar-benar
-       menekan tombol login (atau memasukkan kode 2FA). */
     setNamaSapa(((data.full_name as string | undefined) ?? '').trim().split(/\s+/)[0] ?? '');
     setMasukBerhasil(true);
     const pakaiAnimasi = typeof window !== 'undefined'
@@ -211,8 +159,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
     const { full_name, username, password, confirm_password, divisi, pts_type, sales_division } = registerForm;
     if (!full_name.trim()) { setRegisterErr('Nama lengkap wajib diisi!'); return; }
     if (!username.trim()) { setRegisterErr('Email wajib diisi!'); return; }
-    // Registrasi baru WAJIB email valid (disimpan di kolom username). Akun lama
-    // yang terlanjur pakai username non-email tidak terpengaruh.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(username.trim())) { setRegisterErr('Masukkan alamat email yang valid (contoh: nama@perusahaan.com).'); return; }
     if (!password || password.length < 8) { setRegisterErr('Password minimal 8 karakter!'); return; }
     if (!/[A-Z]/.test(password)) { setRegisterErr('Password harus mengandung minimal 1 huruf kapital!'); return; }
@@ -230,14 +176,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
 
     setRegisterLoading(true);
     try {
-      // Seluruh pendaftaran dikerjakan di server - lihat /api/auth/register.
-      //
-      // Sebelumnya peramban memeriksa username ganda lalu menulis sendiri ke
-      // tabel users. Keduanya menuntut tabel itu terbuka untuk pengunjung yang
-      // belum login, dan "terbuka" berlaku untuk SELURUH tabel: siapa pun yang
-      // memegang anon key bisa membaca 74 akun beserta nama, username, dan
-      // nomor teleponnya. Username di sini adalah pengenal login, jadi daftar
-      // itu sekaligus menyerahkan daftar sasaran yang lengkap.
       const daftarRes = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,10 +184,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
           username: username.trim().toLowerCase(),
           password,
           sales_division: requestedDivision,
-          //  Dipakai server HANYA untuk menyusun team_type di jalur kode acara
-          //  (akun itu tidak pernah lewat approval admin, jadi tidak ada
-          //  langkah lain yang mengisinya). role & allowed_menus tetap tidak
-          //  pernah ditentukan peramban - lihat catatan di /api/auth/register.
           divisi,
           pts_type,
           jabatan: registerForm.jabatan.trim() || null,
@@ -263,11 +197,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
         setRegisterLoading(false);
         return;
       }
-      // Pemberitahuan ke admin ikut dikerjakan /api/auth/register - versi
-      // lamanya di sini harus membaca tabel users tanpa token untuk mencari
-      // siapa adminnya, persis pembacaan yang sedang ditutup.
-      // `bypass` datang dari server (lihat REGISTER_BYPASS_* di route.ts) -
-      // peramban cuma menampilkan hasilnya, tidak pernah menentukan sendiri.
       setRegisterBypass(Boolean(hasilDaftar.bypass));
       setRegisterSuccess(true);
       setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '', event_code: '' });
@@ -278,14 +207,8 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   };
 
     return (
-      // SATU background penuh utk seluruh halaman (tidak dipotong per panel) -
-      // tiap panel hanya overlay transparan di atas gambar yang sama.
       <>
-      {/* Seluruh isi halaman login ada di dalam bungkus ini supaya bisa dihisap
-          masuk ke koper sebagai satu benda. Lapisan kopernya SENGAJA di luar —
-          kalau ikut di dalam, kopernya akan menghisap dirinya sendiri. */}
       <div className={`${masukBerhasil ? 'lc-masuk-pudar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
-        {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
         <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden`}
           style={{ background: gradasiPanelLogin(merek) }}>
           <div className="flex items-center gap-2.5">
@@ -301,9 +224,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
               ))}
             </div>
           </div>
-          {/*  Kredit & identitas build duduk di baris yang sama: keduanya
-               keterangan tentang perangkat lunaknya, bukan tentang isi
-               halaman, jadi tidak pantas dipisah jadi dua blok. */}
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-white/55 text-xs">
               © {new Date().getFullYear()} {merek.namaPerusahaan}
@@ -313,8 +233,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
           </div>
         </div>
 
-        {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
-            contrast), form dlm kartu frosted ── */}
         <div className={`relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8`}
           style={{ background: `rgba(255,255,255,${angkaTembus(merek.tembusKanan, 0.55)})` }}>
           <div
@@ -324,12 +242,9 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 : animKartu === 'tukarKeluar' ? 'lc-tukar-keluar' : 'lc-tukar-masuk'
             } kaca-login w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} p-6 pt-8 sm:p-9 sm:pt-11`}
           >
-            {/* Kartu kaca: bingkai + isi kaca + dua serpihan sudut (app/globals.css, "Kartu login kaca"). */}
             <span aria-hidden="true" className="kaca-latar" />
             <span aria-hidden="true" className="kaca-serpih kaca-serpih-atas" />
             <span aria-hidden="true" className="kaca-serpih kaca-serpih-bawah" />
-            {/* Berhasil masuk: tanda centang digambar + sapaan, menutupi form di tempat (tinggi kartu tidak
-                berubah, jadi tidak ada loncatan tata letak). */}
             {masukBerhasil && (
               <div className="lc-sukses absolute inset-0 z-10 kaca-isi flex flex-col items-center justify-center text-center px-6" role="status" aria-live="polite">
                 <svg viewBox="0 0 52 52" width="80" height="80" aria-hidden="true" focusable="false">
@@ -343,7 +258,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
               </div>
             )}
             <div className="mb-8">
-              {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
                 <LogoMerek ukuran="lg" />
                 <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-500 font-normal">· {merek.namaPortal}</span></span>
@@ -392,8 +306,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="kaca-tombol w-full py-3.5 rounded-xl font-bold transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {masukBerhasil ? (
                     <>
-                      {/* Kepastian bahwa passwordnya benar — inilah yang orang
-                          tunggu, dan ia tampil seketika, tidak menunggu animasi. */}
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                       Berhasil masuk
                     </>
@@ -430,7 +342,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 ) : (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-                      {/* Kolom Kiri */}
                       <div className="space-y-3">
                         <div>
                           <label htmlFor="f-dashboard-page-2" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
@@ -475,7 +386,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                           </div>
                         </div>
                       </div>
-                      {/* Kolom Kanan */}
                       <div className="space-y-3">
                         <div>
                           <label htmlFor="f-dashboard-page-4" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
@@ -524,9 +434,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         </div>
                       </div>
                     </div>
-                    {/* Kode Acara: opsional, hanya dipakai untuk onboarding massal
-                        (mis. peserta Learning Center) yang dibagikan panitia. Kosong
-                        = alur normal, tetap menunggu approval admin seperti biasa. */}
                     <div>
                       <label htmlFor="f-dashboard-page-9" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
                       <input id="f-dashboard-page-9" type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
@@ -548,7 +455,6 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
           </div>
         </div>
 
-        {/* ── Forgot Password Modal (login page) ── */}
         {showForgot && (
         <ModalPortal>
           <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">

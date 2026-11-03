@@ -22,7 +22,6 @@ export interface NewTicketForm {
   customer_phone: string;
   sales_name: string;
   sales_division: string;
-  /** Id orang di balik sales_name. Kosong bila diketik manual, bukan dipilih. */
   sales_user_id?: string | null;
   sn_unit: string;
   product: string;
@@ -34,18 +33,12 @@ export interface NewTicketForm {
   current_team: string;
   photo: File | null;
   reminder_id: string | null;
-  brand?: Brand;   // Sales External pilih brand (MVI/IVP/BOTH)  CC ke Sales Internal brand itu
+  brand?: Brand;
 }
 
 export interface ReminderRef {
   id: string;
-  /** Nama project bisa tersimpan di sini pada data lama - lihat pencarian di bawah. */
   title?: string;
-  /**
-   * Asal baris ini. Menentukan apakah ticket baru boleh ditautkan ke reminder:
-   * hanya baris dari tabel reminders yang punya reminder_id yang sah. Baris
-   * dari tabel tickets cuma dipakai untuk menyalin data project.
-   */
   _sumber?: 'reminder' | 'ticket';
   project_name: string;
   address: string;
@@ -56,10 +49,6 @@ export interface ReminderRef {
   pic_phone: string;
   category: string;
   assign_name: string;
-  /**
-   * Tanggal jadwal (reminders.due_date) atau tanggal ticket lama. Satu project
-   * bisa punya beberapa jadwal - tanggal inilah yang membedakannya di daftar.
-   */
   due_date?: string | null;
 }
 
@@ -78,58 +67,26 @@ interface Props {
 export function NewTicketModal({ onClose, form, setForm, uploading, currentUser, users, teamPTSMembers, supervisorMembers = [], onSubmit }: Props) {
   const set = (patch: Partial<NewTicketForm>) => setForm({ ...form, ...patch });
 
-  // Admin/superadmin ATAU Manager PTS boleh tentukan penanganan langsung saat create.
   const canAssignDirect = currentUser?.role === 'admin' || currentUser?.role === 'superadmin'
     || hasFullAccess(currentUser);
 
-  // Creator = Sales Internal (guest)  boleh isi SBU (buat ticket atas nama Sales External).
   const isInternalSalesGuest = currentUser?.role === 'guest' && !!users.find(u => u.id === currentUser.id)?.is_internal_sales;
-  // Sales External (guest bukan internal)  WAJIB pilih Brand (menentukan Sales Internal yg di-CC).
   const isExternalGuest = currentUser?.role === 'guest' && !isInternalSalesGuest;
   const externalSalesUsers = users.filter(u => u.role === 'guest' && !u.is_internal_sales && u.id !== currentUser?.id)
     .map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null }));
 
   const [projectType, setProjectType] = useState<'new' | 'existing'>('new');
-  /*
-    Pemilihan tipe project didahulukan, sebelum form terlihat - dan sekarang
-    tiga langkah, bukan dua: pilih tipe -> CARI -> form.
-
-    Sebelumnya memilih "Project yang sudah ada" langsung membuka form penuh
-    dengan kotak pencarian sebagai salah satu isiannya - dan form itu berat,
-    banyak kolom, sebagian besar kosong sampai project-nya dipilih. Yang
-    terlihat pertama kali adalah formulir panjang yang tampak belum diisi,
-    bukan alat pencarian. Orang mengira harus mengetik dulu ke kolom-kolom itu.
-
-    Langkah 'cari' memisahkan pencariannya jadi tahap sendiri, ringan, cuma
-    berisi kotak cari dan hasilnya. Form penuh baru muncul SETELAH satu project
-    dipilih dan dikonfirmasi - jadi begitu formnya terlihat, ia sudah terisi.
-  */
   const [langkah, setLangkah] = useState<'pilih' | 'cari' | 'form'>('pilih');
-  /** Pilihan yang disorot di langkah 'cari', belum dikonfirmasi ke form. */
   const [praPilih, setPraPilih] = useState<ReminderRef | null>(null);
   const [reminderQuery, setReminderQuery] = useState('');
   const [reminderResults, setReminderResults] = useState<ReminderRef[]>([]);
   const [reminderSearching, setReminderSearching] = useState(false);
-  /** Apakah pencarian terakhir benar-benar dipersempit ke divisi si pencari. */
   const [pencarianDibatasi, setPencarianDibatasi] = useState(false);
-  /** Pesan galat kueri pencarian, bila basis data menolaknya. */
   const [galatCari, setGalatCari] = useState<string | null>(null);
   const [selectedReminder, setSelectedReminder] = useState<ReminderRef | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /**
-   * Cari project yang sudah ada - WAJIB dibatasi lingkup si pencari. Memilih
-   * satu hasil menyalin alamat, PIC, dan nomor teleponnya ke form, jadi
-   * pencarian tanpa batas divisi sama saja dengan membuka daftar pelanggan
-   * divisi lain. Lingkupnya dihitung di lib/project-scope.ts supaya aturannya
-   * satu, bukan diturunkan ulang di tiap tempat yang punya pencarian.
-   */
   const searchReminders = useCallback(async (q: string) => {
-    // Kueri kosong BUKAN "tidak ada yang dicari" - dipakai untuk menampilkan
-    // daftar project terbaru begitu langkah 'cari' dibuka, sebelum siapa pun
-    // mengetik apa pun. Tanpa ini, langkah 'cari' membuka kotak kosong yang
-    // menyuruh orang mengetik dulu baru terlihat sesuatu, padahal daftar
-    // project terbaru sudah cukup untuk kebanyakan kasus.
     const kosong = !q.trim();
     setReminderSearching(true);
     const lingkup = await hitungLingkupProject(currentUser as never);
@@ -137,24 +94,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     const filter = filterLingkup(lingkup);
     setPencarianDibatasi(!!filter);
 
-    // HANYA jadwal Konfigurasi / Konfigurasi & Training / Training.
-    //
-    // Memilih hasil menautkan tickets.reminder_id ke jadwal itu, dan porsi
-    // Support di Incentive PTS mencocokkan ticket lewat reminder_id ke proyek
-    // insentif - yaitu jadwal berkategori ini. Menawarkan Standby Event,
-    // Maintenance, dsb. hanya membuka jalan salah klik yang memutus tautannya.
-    // Karena alasan yang sama tabel tickets tidak lagi ikut dicari: baris dari
-    // sana tidak punya reminder_id sama sekali. Project tanpa jadwal insentif
-    // dibuat lewat "Project Baru".
-    //
-    // Saringannya di kueri, bukan sesudahnya: kalau disaring belakangan, batas
-    // 15 baris bisa habis dimakan kategori lain dan jadwal Konfigurasi yang
-    // sah tidak pernah sampai ke daftar.
-    //
-    // Daftar kolom di bawah sengaja TIDAK memuat `title`. Kolom itu tidak ada
-    // di basis data ini - menyebutnya, walau cuma di daftar select, membuat
-    // PostgREST menolak seluruh kueri dengan "column reminders.title does not
-    // exist", dan penolakan itu tampil sebagai "project tidak ditemukan".
     const kolomReminder = 'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name, due_date';
     const kategori = kategoriInsentif();
     type Kueri = { in(k: string, v: string[]): Kueri; or(f: string): Kueri };
@@ -166,12 +105,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       ? await reminderTerbaru<ReminderRef>(kolomReminder, 20, batasi)
       : await cariReminderByNama<ReminderRef>(q, kolomReminder, 15, batasi);
 
-    // Galat TIDAK ditelan. Pencarian yang ditolak basis data dan pencarian yang
-    // memang nihil terlihat sama persis dari luar, dan yang pertama menyesatkan.
     setGalatCari(rRes.error?.message ?? null);
 
-    // Satu project bisa punya beberapa jadwal insentif (Konfigurasi lalu
-    // Training). Aturan penyatuannya ada di lib/gabung-hasil-proyek.ts.
     const jadwal = ((rRes.data ?? []) as ReminderRef[]).map(r => ({ ...r, _sumber: 'reminder' as const }));
     setReminderResults(gabungHasilProyek(jadwal, [], 15));
     setReminderSearching(false);
@@ -196,9 +131,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
       product: r.product || '',
       customer_phone: r.pic_phone || '',
       assign_name: r.assign_name || form.assign_name,
-      // Hanya baris dari tabel reminders yang boleh menautkan reminder_id.
-      // Memakai id ticket di sini akan menunjuk ke baris yang tidak ada di
-      // tabel reminders - tautannya rusak, dan sinkronisasi progress ikut salah.
       reminder_id: r._sumber === 'ticket' ? null : r.id,
     });
   };
@@ -214,18 +146,14 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     }
   };
 
-  /** Sorot pilihan di langkah 'cari' - BELUM mengisi form. Itu baru terjadi saat "OK, Isi Form". */
   const sorotPilihan = (r: ReminderRef) => setPraPilih(r);
 
-  /** Konfirmasi: baru di sinilah form terisi dan langkahnya berpindah. */
   const konfirmasiPilihan = () => {
     if (!praPilih) return;
     selectReminder(praPilih);
     setLangkah('form');
   };
 
-  // Begitu langkah 'cari' dibuka, langsung tampilkan project terbaru - senada
-  // dengan Reminder Schedule, yang menampilkan daftar tanpa menunggu ketikan.
   useEffect(() => {
     if (langkah === 'cari') searchReminders('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,8 +174,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   );
 
   return (
-  //  Kerangka Modal bersama (judul, tombol tutup, Esc, lapisan) - dulu kepala bergradasi merah sendiri.
-  //  Footer milik Modal: tombol Buat Ticket tidak ikut tergulir bersama kolom.
   <Modal buka onTutup={onClose} judul="Buat Ticket Baru" keterangan="Isi detail ticket & informasi troubleshooting" ukuran="penuh" tutupDiLuar={false}
     footer={<>
       <BatalButton onClick={onClose} />
@@ -258,20 +184,16 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
         blockedLabel={isExternalGuest && !form.brand ? "Pilih Brand dulu" : undefined}
       />
     </>}>
-          {/* Tiga kolom menyamping — pola yang sama dengan form Request Schedule. Di bawah xl satu kolom. */}
           <div className="grid grid-cols-1 satulayar:grid-cols-3 gap-5">
 
-          {/* ── Kolom 1: ticket ini tentang apa ── */}
           <KolomInfoTiket
             form={form} galatCari={galatCari} handleQueryChange={handleQueryChange} isExternalGuest={isExternalGuest} pencarianDibatasi={pencarianDibatasi} projectType={projectType} reminderQuery={reminderQuery} reminderResults={reminderResults} reminderSearching={reminderSearching} selectReminder={selectReminder} selectedReminder={selectedReminder} set={set} setSelectedReminder={setSelectedReminder} switchProjectType={switchProjectType}
           />
 
-          {/* ── Kolom 2: barang & keluhannya ── */}
           <KolomBarangKeluhan
             form={form} set={set}
           />
 
-          {/* ── Kolom 3: penugasan & lampiran ── */}
           <KolomPenugasanTiket
             canAssignDirect={canAssignDirect} currentUser={currentUser} externalSalesUsers={externalSalesUsers} form={form} isInternalSalesGuest={isInternalSalesGuest} set={set} supervisorMembers={supervisorMembers} teamPTSMembers={teamPTSMembers} users={users}
           />

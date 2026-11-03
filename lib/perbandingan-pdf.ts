@@ -1,15 +1,6 @@
-/**
- * lib/perbandingan-pdf.ts - Menggambar PDF Product Comparison dengan pdfkit, mengikuti template baku owner
- * ("LG 22SM3G-B vs DigiSIGN DSN-LAD-015 Comparison (EN).pdf"): ukuran, warna & jarak diukur dari PDF itu
- * (A4, margin 16 mm, Liberation Sans ≈ Arimo, ✓ DejaVu Sans Bold). Tanpa footer.
- *
- * Dipakai peramban (pdfkit standalone) & tes Node (pdfkit) - huruf didaftarkan pemanggil dengan nama
- * 'Sans', 'SansBold', 'SansItalic', 'Centang'.
- */
 import { type KartuBanding, LABEL, type NilaiSpek, teksNilai } from './perbandingan';
 import { type BarisTeks, type DokPdf, gambarBaris, type Potong, potongKaya, tataBaris } from './perbandingan-teks';
 
-/** Bagian pdfkit yang dipakai untuk bentuk. */
 export interface DokPenuh extends DokPdf {
   page: { width: number; height: number };
   addPage(): DokPenuh; rect(x: number, y: number, w: number, h: number): DokPenuh;
@@ -31,7 +22,6 @@ const W = {
 
 const tinggiTeks = (b: BarisTeks[], lh: number) => Math.max(1, b.length) * lh;
 
-/** Potongan sel nilai sesuai gaya template. */
 function potongNilai(n: NilaiSpek, kolom: number, bahasa: KartuBanding['bahasa']): Potong[] {
   const t = teksNilai(n, bahasa);
   if (n.status === 'tidak-disebut') return [{ t, f: 'SansItalic', c: W.abu }];
@@ -45,7 +35,6 @@ export function gambarPerbandingan(doc: DokPenuh, k: KartuBanding) {
   const bawah = () => doc.page.height - MB;
   let y = 51;
 
-  // ── Header ──
   const lebarPengantar = 440;
   const bJudul = tataBaris(doc, [{ t: k.judul, f: 'SansBold', c: W.putih }], CW - 36, 18.5);
   const bPengantar = tataBaris(doc, [{ t: k.pengantar, f: 'Sans', c: W.pengantar }], lebarPengantar, 8.6);
@@ -60,7 +49,6 @@ export function gambarPerbandingan(doc: DokPenuh, k: KartuBanding) {
   if (k.pengantar) gambarBaris(doc, bPengantar, ML + 18, cy, 8.6, 13.4);
   y += tHeader + 7.7;
 
-  // ── Kartu produk (indeks 0 = RECOMMENDED) ──
   const n = k.produk.length, jarakK = 9, wK = (CW - jarakK * (n - 1)) / n, pad = 11.2;
   const isiKartu = k.produk.map((p, i) => ({
     merek: tataBaris(doc, [{ t: p.merek.toUpperCase(), f: 'SansBold', c: i === 0 ? W.merekUnggul : W.merekLain }], wK - pad * 2 - (i === 0 ? 74 : 0), 7.6, 0.9),
@@ -87,10 +75,8 @@ export function gambarPerbandingan(doc: DokPenuh, k: KartuBanding) {
   });
   y += tKartu + 13.2;
 
-  // ── Bagian bernomor + tabel ──
   const wSpek = CW * 0.3, wNilai = (CW - wSpek) / n;
   const xKolom = (j: number) => (j < 0 ? ML : ML + wSpek + j * wNilai);
-  //  Kepala tabel: satu baris setinggi 20 pt seperti template; nama produk panjang (3-4 kolom) boleh 2-3 baris.
   const isiKepala = [tataBaris(doc, [{ t: L.spesifikasi, f: 'SansBold', c: W.putih }], wSpek - 13.4, 7.6, 0.6),
     ...k.produk.map(p => tataBaris(doc, [{ t: p.nama.toUpperCase(), f: 'SansBold', c: W.putih }], wNilai - 13.4, 7.6, 0.6).slice(0, 3))];
   const barisKepala = Math.max(...isiKepala.map(b => b.length));
@@ -107,7 +93,6 @@ export function gambarPerbandingan(doc: DokPenuh, k: KartuBanding) {
         ...r.nilai.map((v, j) => tataBaris(doc, potongNilai(v, j, k.bahasa), wNilai - 13.4, 8.4))];
       return { sel, h: Math.max(...sel.map(s => s.length)) * 12.4 + 8.8 };
     });
-    //  Judul bagian tidak boleh tertinggal sendirian di bawah halaman.
     if (y + 19.2 + tKepala + (baris[0]?.h ?? 21) > bawah()) { doc.addPage(); y = MT; }
     doc.roundedRect(ML, y, 13.5, 13.5, 3).fill(W.lencana);
     gambarBaris(doc, tataBaris(doc, [{ t: String(bi + 1), f: 'SansBold', c: W.putih }], 13.5, 8.3), ML, y, 8.3, 13.5, { tengah: 13.5 });
@@ -127,7 +112,6 @@ export function gambarPerbandingan(doc: DokPenuh, k: KartuBanding) {
     y += 13.6;
   });
 
-  // ── Ringkasan & rekomendasi ──
   const pd = 13.1, wIsi = CW - pd * 2;
   const bRingkas = tataBaris(doc, potongKaya(k.ringkasan, 'Sans', W.ringkasTeks), wIsi, 8.7);
   const ns = k.sorotan.length, jarakS = 7.5, wS = ns ? (wIsi - jarakS * (ns - 1)) / ns : 0;

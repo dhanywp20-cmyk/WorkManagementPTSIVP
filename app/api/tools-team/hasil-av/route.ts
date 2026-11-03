@@ -1,15 +1,3 @@
-/**
- * /api/tools-team/hasil-av - hasil Kalkulator AV yang disimpan ke proyek Project Progress.
- *
- *   GET ?proyek=<id>   daftar hasil satu proyek (siapa pun yang boleh melihat proyeknya).
- *   POST {proyek_id, judul, catatan?, ringkasan, lembar}
- *                      simpan potret hasil. Siapa pun yang masuk & boleh melihat proyek itu,
- *                      kecuali akun pimpinan (hanya lihat).
- *   DELETE ?id=        pembuat atau Admin/Full Access.
- *
- * Tabel tools_av_hasil ber-RLS tanpa policy (migrasi 055): hanya service role di sini.
- * Lembar dibersihkan (lib/av-hasil.ts) - hanya seksi info/tabel, tanpa HTML mentah.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { ambilAkun, bolehLihatProyek, galat, NO_STORE, type Db } from '@/lib/checklist-server';
 import { hasFullAccess } from '@/lib/constants';

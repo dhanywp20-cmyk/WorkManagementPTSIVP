@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * Mengerjakan quiz: satu soal per layar, daftar nomor, waktu mundur, draf jawaban di perangkat.
- * Dikirim otomatis bila waktu habis, batas pelanggaran tercapai, atau admin mengakhiri kelas.
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Grid3x3, Timer } from 'lucide-react';
 import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
@@ -11,7 +7,6 @@ import { bacaDraf, panggilKelas, tulisDraf, type InfoKelas, type Percobaan } fro
 import { usePengawas } from './usePengawas';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 
-/** Mode admin: cek tiap 15 dtk apakah kelas diakhiri pengajar. */
 const CEK_DIAKHIRI_MS = 15_000;
 
 const fmtWaktu = (ms: number) => {
@@ -29,8 +24,6 @@ export function LayarQuiz({ kelas, judul, data, modeAdmin, onKirim }: {
   const [lihatDaftar, setLihatDaftar] = useState(false);
   const [konfirmasi, setKonfirmasi] = useState(false);
   const [mengirim, setMengirim] = useState(false);
-  //  Waktu dihitung dari jam server saat mulai (sisaMs) + jam perangkat sejak itu - mengubah jam HP
-  //  tidak menambah waktu; server juga menandai kiriman yang lewat batas.
   const [batasAwal] = useState<number | null>(() => (data.sisaMs === null ? null : Date.now() + data.sisaMs));
   const batas = useRef<number | null>(batasAwal);
   const [sisa, setSisa] = useState<number | null>(data.sisaMs);

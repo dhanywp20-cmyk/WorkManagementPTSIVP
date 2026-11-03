@@ -4,36 +4,24 @@ import { hasFullAccess } from '@/lib/constants';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import type { AdminField } from '@/lib/admin-edit';
 
-// WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
 export { sendWANotif } from '@/lib/wa';
 
-// Hierarki jabatan & aturan CC - satu sumber kebenaran di lib/jabatan.ts,
-// diimpor (bukan cuma re-export) karena JABATAN_CC_RULES juga dipakai
-// langsung di fetchWACCTargets di bawah ini. Dilonggarkan ke Record<string,...>
-// di sini karena diindeks dengan jabatan dinamis (kolom users.jabatan, tipe
-// string biasa) - lib/jabatan.ts sendiri tetap ketat (Record<JabatanType,...>).
 import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
 const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
 export { JABATAN_TIER, JABATAN_CC_RULES };
 
-// CC ke atasan berdasarkan jabatan tier + IVP handler
-// userId  = id user yang trigger event (untuk lookup jabatan mereka)
-// salesDiv = sales_division user (untuk lookup IVP handler)
 export async function fetchWACCTargets(
   userId: string,
   salesDiv: string
 ): Promise<{ phone: string; name: string; relation: string }[]> {
   const targets: { phone: string; name: string; relation: string }[] = [];
   try {
-    // 1. Ambil jabatan user ybs
     const { data: userData } = await supabase.from("users").select("jabatan").eq("id", userId).maybeSingle();
     const jabatan = userData?.jabatan as string | undefined;
 
     if (jabatan && JABATAN_CC_RULES[jabatan]) {
       const ccJabatanList = JABATAN_CC_RULES[jabatan];
       if (ccJabatanList.length > 0) {
-        // 2. Ambil user dengan jabatan yang masuk list CC, dari divisi yang sama
-        //    Prioritas: div_supervisor_mappings  semua atasan yang terdaftar untuk divisi ini
         const { data: supMaps } = await supabase
           .from("division_supervisor_mappings")
           .select("supervisor_id")
@@ -52,7 +40,6 @@ export async function fetchWACCTargets(
           });
         }
 
-        // 3. Juga ambil dari user_supervisor_mappings (per-user mapping manual)
         const { data: userSupMaps } = await supabase
           .from("user_supervisor_mappings")
           .select("supervisor_id")
@@ -73,7 +60,6 @@ export async function fetchWACCTargets(
       }
     }
 
-    // 4. IVP handler untuk divisi ini
     if (salesDiv && salesDiv !== "IVP") {
       const { data: ivpRes } = await supabase
         .from("division_ivp_mappings").select("ivp_id").eq("sales_division", salesDiv);
@@ -92,7 +78,6 @@ export async function fetchWACCTargets(
   return targets;
 }
 
-// Status list khusus Team Services
 export const SERVICES_STATUSES = [
   "Waiting Approval",
   "Pending",
@@ -131,68 +116,21 @@ export interface TeamMember {
   bisa_ditugaskan?: boolean | null;
 }
 
-/**
- * Jeda polling cadangan di halaman Ticketing.
- *
- * Realtime (postgres_changes) yang menangani perubahan langsung; polling ini
- * cuma jaring pengaman kalau realtime meleset - dan jaring pengaman tidak perlu
- * ditebar dua kali semenit. Lihat catatan panjangnya di page.tsx: nilai lama
- * (30 detik, tanpa henti walau tab tersembunyi) sanggup menghabiskan hampir
- * seluruh kuota egress bulanan lewat satu tab yang menganggur.
- */
 export const JEDA_POLLING_MS = 120_000;
 
-/** Event realtime dikumpulkan selama ini sebelum diproses (1 perubahan = 2-4 event beruntun). */
 export const JEDA_GABUNG_REALTIME_MS = 800;
-/** Lebih dari sekian ticket berubah sekaligus -> satu muat ulang penuh lebih murah. */
 export const MAKS_SEGAR_SEBAGIAN = 10;
-/** Daftar akun & referensi garansi dimuat ulang paling sering sekali per jeda ini (kecuali muat ulang manual). */
 export const JEDA_DATA_PENDUKUNG_MS = 10 * 60_000;
 
-/**
- * Kolom activity_logs yang benar-benar dibutuhkan DAFTAR tiket.
- *
- * Daftar memakai log untuk tiga hal saja: lencana jumlah, menebak handler PTS
- * saat assign_name kosong (ringkasPenanganan), dan mencari kapan tiket jadi
- * Solved (isTicketOverdue). Ketiganya tidak menyentuh notes, action_taken,
- * maupun tautan berkas/foto - padahal justru kolom-kolom itu yang membentuk
- * 61% ukuran log (129 KB -> 50 KB pada data hari ini).
- *
- * Isi lengkapnya dimuat saat satu tiket benar-benar dibuka - lihat
- * muatLogPenuh() di page.tsx.
- */
 export const KOLOM_LOG_RINGKAS =
   'id, ticket_id, handler_name, team_type, assigned_to_services, new_status, created_at';
 
-/**
- * Berapa bulan ke belakang yang ditarik saat filter tahun masih "terbaru".
- *
- * Biaya polling tumbuh mengikuti besar tabel: hari ini 84 tiket, tahun depan
- * bisa ribuan, dan SETIAP polling ikut membesar. Jendela ini yang membuatnya
- * berhenti tumbuh.
- *
- * Tiket lama TIDAK hilang - pemakai tinggal memilih tahunnya di penyaring, dan
- * kueri berikutnya mengambil tahun itu. Karena itu pilihan bawaannya diberi
- * label "12 Bulan Terakhir", bukan "Semua Tahun": daftar yang menyebut dirinya
- * memuat semuanya padahal berhenti di 12 bulan adalah kebohongan kecil yang
- * baru ketahuan saat seseorang mencari tiket lama dan menyimpulkan datanya
- * hilang.
- */
 export const RENTANG_BULAN_TIKET = 12;
 
-/** Penyaring tahun bawaan - lihat RENTANG_BULAN_TIKET. */
 export const TAHUN_TERBARU = 'terbaru';
 
 export interface RentangTiket { dari: string; sebelum: string }
 
-/**
- * Batas created_at untuk kueri daftar tiket.
- *
- * `sebelum` selalu ada supaya kedua cabang memakai bentuk rantai yang sama;
- * untuk jendela bergulir ia sengaja ditaruh sangat jauh di depan, yang artinya
- * "tanpa batas atas" - tiket yang dibuat saat halaman sedang terbuka tetap
- * ikut terambil, berapa lama pun tab itu ditinggalkan.
- */
 export function rentangTiket(filterTahun: string): RentangTiket {
   if (filterTahun && filterTahun !== TAHUN_TERBARU && /^\d{4}$/.test(filterTahun)) {
     const t = Number(filterTahun);
@@ -248,12 +186,11 @@ export interface Ticket {
   reminder_id?: string | null | undefined;
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   escalation_notified_at?: string | null;
-  // Routing: tahap Supervisor (Admin approve  SPV assign) + CC Sales Internal.
-  routing_status?: string | null;          // 'supervisor_assign' | null
-  assigned_supervisor_id?: string | null;  // Supervisor yg wajib assign lanjut ke tim
-  internal_sales_id?: string | null;       // Sales Internal yg di-CC (informational, bukan gate)
-  internal_sales_id_2?: string | null;     // Sales Internal kedua (brand IVP saat BOTH)
-  brand?: string | null;                   // 'MVI' | 'IVP' | 'BOTH' - brand yg dipilih Sales External
+  routing_status?: string | null;
+  assigned_supervisor_id?: string | null;
+  internal_sales_id?: string | null;
+  internal_sales_id_2?: string | null;
+  brand?: string | null;
 }
 
 export interface OverdueSetting {
@@ -272,7 +209,6 @@ export const SALES_DIVISIONS = [
   'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ] as const;
 
-// Helper Functions
 export function formatDateTime(dateString: string) {
   if (!dateString) return "-";
   let normalized = dateString;
@@ -291,35 +227,14 @@ export function formatDateTime(dateString: string) {
   return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds}`;
 }
 
-// Penanganan tiket dari sudut pandang Team PTS IVP
-/**
- * Satu tiket bisa berpindah tangan ke Team Services, dan itu dulu membuat tiga
- * hal salah tampil - di layar View Ticket maupun di laporan cetak:
- *
- *   1. Baris "Team" memakai current_team. Padahal current_team menyatakan tiket
- *      sedang ADA DI MANA, bukan siapa yang mengerjakannya. Akibatnya handler
- *      PTS tercetak seolah anggota Team Services.
- *   2. Status "Solved" berdiri sendiri tanpa keterangan, padahal pekerjaannya
- *      diteruskan pihak lain - pembacanya mengira selesai sepenuhnya di PTS.
- *   3. Lembar tanda tangan hanya bertuliskan "Tanda Tangan", tidak menyebut
- *      siapa yang bertanggung jawab.
- *
- * Aturannya ditaruh di sini, satu tempat, supaya layar dan cetakan tidak
- * pernah menjawab berbeda untuk tiket yang sama.
- */
 export const TEAM_PTS = "Team PTS IVP";
 export const TEAM_SERVICES = "Team Services";
 
 export interface RingkasPenanganan {
-  /** Nama orang Team PTS yang terakhir memegang tiket - yang menandatangani. */
   handlerPTS: string;
-  /** Team si penanda tangan. Selalu Team PTS IVP, apa pun isi current_team. */
   teamHandler: string;
-  /** Tiket ini pernah dilimpahkan ke Team Services. */
   keServices: boolean;
-  /** Imbuhan keterangan, kosong bila tidak pernah dilimpahkan. */
   catatanServices: string;
-  /** Status PTS beserta keterangan pelimpahannya, siap ditampilkan. */
   statusLengkap: string;
 }
 
@@ -333,10 +248,6 @@ export function ringkasPenanganan(t: {
 }): RingkasPenanganan {
   const logs = t.activity_logs ?? [];
 
-  // assign_name memang sengaja TIDAK diubah saat pelimpahan (lihat
-  // handleAddActivity: "assign_name TETAP handler PTS terakhir"), jadi ia sudah
-  // berisi orang yang tepat. Activity log dipakai sebagai cadangan untuk tiket
-  // lama yang assign_name-nya terlanjur kosong.
   const logPTS = logs
     .filter(l => (l.team_type || TEAM_PTS) !== TEAM_SERVICES && String(l.handler_name || '').trim())
     .sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime())[0];
@@ -358,8 +269,6 @@ export function ringkasPenanganan(t: {
   };
 }
 
-// Warna badge status - satu peta dipakai di seluruh halaman (kartu, tabel,
-// popup detail, cetak).
 export const statusColors: Record<string, string> = {
   "Waiting Approval": "bg-orange-50 text-orange-600 border-orange-200",
   Rejected: "bg-red-100 text-red-700 border-red-300",
@@ -416,7 +325,6 @@ export function getWarrantyInfo(projectName: string, projectReminders: Record<st
   const key = (projectName || "").trim().toLowerCase();
   const refs = projectReminders[key];
   if (!refs || refs.length === 0) return null;
-  // Prioritaskan yang punya warranty_years, lalu ambil yang due_date paling baru
   const withWarranty = refs.filter(r => r.warranty_years);
   const best = withWarranty.length > 0
     ? withWarranty.reduce((a, b) => (a.due_date > b.due_date ? a : b))
@@ -433,14 +341,6 @@ export function getWarrantyInfo(projectName: string, projectReminders: Record<st
   return { isIn, diffDays, wy, bastStr, expiryStr, assignName: best.assign_name, category: best.category };
 }
 
-/**
- * "Pending" bukan satu status, melainkan beberapa: Pending, Pending Action,
- * dan Pending Check. Kartu ringkasan dulu mencocokkannya PERSIS dengan
- * "Pending" saja, sehingga ticket yang duduk di Pending Action tidak
- * terhitung di kartu mana pun - bukan pending, bukan in-progress, bukan
- * solved. Ia hilang begitu saja dari ringkasan, padahal justru status itulah
- * yang paling perlu ditindaklanjuti.
- */
 export function adalahPending(st: string | undefined | null): boolean {
   return (st ?? '').startsWith('Pending');
 }
@@ -453,13 +353,6 @@ export function bolehUpdateTicket(t: Ticket, currentUser: User | null): boolean 
   );
 }
 
-/**
- * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail. Sengaja
- * TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
- * ketiganya milik bagian Re-route yang punya syarat (bolehReroute) dan efek
- * samping sendiri (WA ke penerima baru). Kalau ikut di sini, mengetik nama
- * di kotak teks bisa memindahkan pekerjaan orang tanpa ada yang diberi tahu.
- */
 export const TICKET_ADMIN_FIELDS: AdminField[] = [
   { key: 'project_name',   label: 'Nama Project',    span: 2 },
   { key: 'date',           label: 'Tanggal',         type: 'date' },
@@ -476,24 +369,13 @@ export const TICKET_ADMIN_FIELDS: AdminField[] = [
   { key: 'status',         label: 'Status', type: 'select',
     options: ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].map(v => ({ value: v, label: v })) },
   { key: 'current_team',   label: 'Team Penanganan', type: 'select',
-    //  Dari pengaturan admin, bukan empat nama tetap - kelompok baru
-    //  langsung bisa dijadikan filter tanpa deploy.
     options: namaSemuaKelompokTim().map(v => ({ value: v, label: v })) },
   { key: 'brand',          label: 'Brand', type: 'select',
     options: BRAND_OPTIONS.map(b => ({ value: b.value, label: b.label })) },
 ];
 
-/**
- * Re-route hanya boleh selama pekerjaannya BELUM jalan.
- *
- * Begitu ticket melewati "Pending", sudah ada orang yang menelepon customer,
- * datang ke lokasi, atau mulai memperbaiki. Memindahkannya saat itu bukan
- * membetulkan salah route - itu membuang pekerjaan yang sudah terlanjur
- * dikerjakan, dan riwayatnya jadi menunjuk orang yang tidak mengerjakannya.
- */
 export function bolehReroute(t: Ticket): boolean {
   if (['Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].includes(t.status)) return false;
-  // Ticket yang sudah masuk alur Team Services punya tahapannya sendiri.
   const ss = t.services_status ?? '';
   if (ss && !['Waiting Approval', 'Pending'].includes(ss)) return false;
   return true;

@@ -1,9 +1,4 @@
 'use client';
-/**
- * Product Comparison (battle card) - Tools Team. Brosur PDF -> perbandingan (template baku owner) -> PDF.
- *   Orang produk (Admin & Team PTS) mengunduh langsung; Sales / Marketing mengajukan verifikasi ke Admin /
- *   Supervisor Team PTS IVP & MVI dulu (lib/perbandingan.ts). Detail alur data: app/api/tools-team/perbandingan.
- */
 import { useState } from 'react';
 import { ConfirmDialog, type ConfirmState, ModalTolak, TombolSetujui, TombolTolak } from '@/components/shared';
 import { Bot, CheckCheck, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
@@ -131,7 +126,6 @@ export function ProductComparison() {
                   {mode.jenis === 'periksa' && (
                     <>
                       <input value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Catatan (opsional)" aria-label="Catatan persetujuan" className="w-56 rounded-lg border border-slate-200 px-2.5 py-2 text-base sm:text-[13px]" />
-                      {/*  Pola persetujuan bersama: Tolak membuka ModalTolak (alasan wajib), Setujui tombol utama. */}
                       <TombolTolak disabled={!!kerja} onClick={() => setTolakBuka(true)} />
                       <TombolSetujui disabled={cek > 0 || !!kerja} onClick={() => void jalankan('setuju', async () => { await p.putuskan(mode.r.id, 'setujui', catatan, kartu); setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); return 'Disetujui - pengaju bisa mengunduh PDF.'; })} />
                       <ModalTolak buka={tolakBuka} onTutup={() => setTolakBuka(false)} judul="Tolak Pengajuan Comparison" sibuk={kerja === 'tolak'}

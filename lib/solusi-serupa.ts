@@ -1,15 +1,3 @@
-/**
- * lib/solusi-serupa.ts - cari tiket lama yang sudah Solved dengan kasus mirip,
- * beserta catatan penyelesaiannya, plus Tech Note R&D yang relevan.
- *
- * Sengaja TANPA AI: pencocokan kata kunci di Postgres (ilike) lalu diberi
- * skor jumlah kata yang cocok. Cepat, gratis, dan hasilnya bisa dijelaskan
- * ("cocok karena: hdmi, blank"). Dipakai panel "Solusi serupa" di detail
- * tiket dan alat `solusi_serupa` milik Asisten.
- *
- * Klien yang diberikan menentukan hak baca - panggil dengan klien milik
- * user (lib/ai-server.ts klienSebagaiUser) supaya RLS tetap berlaku.
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 const KATA_UMUM = new Set([
@@ -18,7 +6,6 @@ const KATA_UMUM = new Set([
   'tolong', 'customer', 'user', 'the', 'and', 'not', 'for', 'with', 'tiket', 'ticket', 'issue',
 ]);
 
-/** Kata kunci bermakna (>=3 huruf, bukan kata umum), maksimal 6. */
 export function kataKunci(teks: string): string[] {
   const kata = (teks || '').toLowerCase()
     .replace(/[^a-z0-9\s-]/g, ' ')
@@ -63,8 +50,6 @@ export async function cariSolusiSerupa(db: SupabaseClient, teks: string, opsi: {
     .sort((a, b) => b.cocok.length - a.cocok.length)
     .slice(0, batas);
 
-  //  Catatan penyelesaian = aktivitas terakhir tiket itu (biasanya yang
-  //  mengubah status ke Solved). Satu kueri untuk semua kandidat.
   const solusiPer = new Map<string, string>();
   if (tiket.length) {
     const { data: akt } = await db.from('activity_logs')

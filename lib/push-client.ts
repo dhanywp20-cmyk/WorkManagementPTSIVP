@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * lib/push-client.ts - sisi peramban dari push notification asli.
- * Lihat lib/web-push-server.ts & app/api/push/* untuk sisi server.
- */
-
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -14,7 +9,6 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-/** Daftarkan service worker - aman dipanggil berkali-kali (browser dedupe sendiri). */
 export async function daftarSW(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return null;
   try {
@@ -25,7 +19,6 @@ export async function daftarSW(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export function pushDidukung(): boolean {
-  // Di aplikasi Android notifikasinya native (FCM), bukan web push.
   return typeof window !== 'undefined'
     && !navigator.userAgent.includes('WorkManagementAndroid')
     && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -54,7 +47,6 @@ async function ambilVapidPublicKey(): Promise<string | null> {
   }
 }
 
-/** Sudah berlangganan push di PERANGKAT INI (browser ini)? */
 export async function sudahBerlanggananPush(): Promise<boolean> {
   if (!pushDidukung()) return false;
   try {
@@ -66,7 +58,6 @@ export async function sudahBerlanggananPush(): Promise<boolean> {
   }
 }
 
-/** Minta izin (kalau belum diputuskan) lalu daftarkan perangkat ini untuk menerima push. */
 export async function aktifkanPushNotif(): Promise<{ ok: boolean; alasan?: string }> {
   if (!pushDidukung()) return { ok: false, alasan: 'Peramban ini tidak mendukung push notification.' };
 
@@ -110,7 +101,6 @@ export async function aktifkanPushNotif(): Promise<{ ok: boolean; alasan?: strin
   return { ok: true };
 }
 
-/** Matikan push di perangkat ini. */
 export async function matikanPushNotif(): Promise<void> {
   if (!pushDidukung()) return;
   try {
@@ -121,8 +111,8 @@ export async function matikanPushNotif(): Promise<void> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint: sub.endpoint }),
-      }).catch(() => { /* abaikan - baris DB yatim dibersihkan otomatis saat push berikutnya gagal 410 */ });
+      }).catch(() => {  });
       await sub.unsubscribe();
     }
-  } catch { /* abaikan */ }
+  } catch {  }
 }

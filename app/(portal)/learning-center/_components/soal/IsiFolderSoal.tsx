@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiFolderSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Material, Question, FolderNode } from '../shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { getFolderColor } from '../QuestionsPage';
@@ -75,7 +74,6 @@ export function IsiFolderSoal({ folderTree, generatePanelJSX, handleDeleteFolder
                     <p className="text-sm font-bold text-slate-800 truncate pr-6">{fKey}</p>
                     <p className="text-xs text-slate-500 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
                   </button>
-                  {/* Folder action buttons */}
                   <div data-tulis className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button aria-label="Ubah nama folder"
                       onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
@@ -109,7 +107,7 @@ export function IsiFolderSoal({ folderTree, generatePanelJSX, handleDeleteFolder
             </div>
           )}
         </div>
-        </div>{/* end max-w-5xl */}
+        </div>
       </div>
     </>
   );

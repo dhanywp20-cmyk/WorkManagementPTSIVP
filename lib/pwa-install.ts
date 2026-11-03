@@ -1,21 +1,9 @@
 'use client';
 
-/**
- * Status & aksi install PWA, dipusatkan di satu tempat - sebelumnya event
- * `beforeinstallprompt` (Chrome/Android) hanya ditangkap sendiri oleh
- * PwaBootstrap (banner otomatis), jadi tidak ada cara bagi tempat lain
- * (mis. tombol di Profil) untuk memicu prompt install yang sama.
- *
- * Event ini hanya ditembakkan browser SEKALI per kunjungan/tab, jadi harus
- * ditangkap di level modul (bukan di dalam komponen yang bisa mount lebih
- * dari sekali) supaya siapa pun yang butuh bisa memakai prompt yang sama.
- */
-
 let promptEvent: any = null;
 let statusTerpasang = false;
 const pendengar = new Set<() => void>();
 
-/** Dibuka di aplikasi Android native (android/) - user agent-nya ditandai. */
 export function diAplikasiAndroid(): boolean {
   return typeof navigator !== 'undefined' && navigator.userAgent.includes('WorkManagementAndroid');
 }
@@ -24,7 +12,6 @@ function cekTerpasang(): boolean {
   if (typeof window === 'undefined') return false;
   if (diAplikasiAndroid()) return true;
   if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
-  // iOS Safari lama belum punya display-mode media query - pakai properti khususnya.
   return !!(window.navigator as any).standalone;
 }
 
@@ -52,12 +39,6 @@ if (typeof window !== 'undefined') {
 
 export type StatusInstallPWA = 'terpasang' | 'siap' | 'ios' | 'belum-siap';
 
-/**
- * 'terpasang'  - sudah berjalan sebagai app terpasang, tidak perlu tawaran apa pun.
- * 'siap'       - Chrome/Android sudah menyiapkan prompt asli, tinggal dipicu.
- * 'ios'        - Safari iOS tidak punya prompt otomatis, perlu langkah manual.
- * 'belum-siap' - browser lain / prompt belum ditembak - arahkan ke panduan manual.
- */
 export function statusInstalasiPWA(): StatusInstallPWA {
   if (statusTerpasang) return 'terpasang';
   if (promptEvent) return 'siap';
@@ -65,13 +46,11 @@ export function statusInstalasiPWA(): StatusInstallPWA {
   return 'belum-siap';
 }
 
-/** Dipanggil komponen yang perlu ikut re-render begitu status di atas berubah. */
 export function subscribeInstallPWA(fn: () => void): () => void {
   pendengar.add(fn);
   return () => pendengar.delete(fn);
 }
 
-/** Memicu prompt install asli. Mengembalikan false kalau memang belum tersedia (bukan galat). */
 export async function pasangAplikasiPWA(): Promise<boolean> {
   if (!promptEvent) return false;
   promptEvent.prompt();

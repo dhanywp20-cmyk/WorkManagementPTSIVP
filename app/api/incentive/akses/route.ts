@@ -5,20 +5,6 @@ import { aksesSah, bisaKonfigPenuh, tingkatAkses } from '@/lib/incentive-akses';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * /api/incentive/akses - mengatur SIAPA BOLEH APA di modul Incentive PTS.
- *
- * Terpisah dari /api/admin/users karena penjaganya berbeda: yang boleh
- * memakai route ini adalah pemegang akses PENUH modul insentif, bukan hanya
- * role 'admin'. Itu justru inti perubahannya - Manager PTS harus bisa
- * mengatur timnya sendiri tanpa menunggu admin platform.
- *
- * Kolom `incentive_akses` & `incentive_brand_scope` dibekukan untuk anon oleh
- * trigger guard_users_privileged_columns, jadi route inilah satu-satunya jalan
- * sah mengubahnya - tidak ada yang bisa menaikkan aksesnya sendiri lewat REST
- * dengan anon key.
- */
-
 async function penjaga(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) return { galat: NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 }) };
@@ -47,19 +33,11 @@ export async function POST(request: NextRequest) {
       const nilai = aksesSah(body.value);
       if (!nilai) return NextResponse.json({ error: 'Tingkat akses harus penuh, input, atau lihat.' }, { status: 400 });
 
-      /*
-        Tidak boleh menurunkan akses DIRI SENDIRI dari layar ini. Bukan soal
-        keamanan - orang yang melakukannya langsung kehilangan layar yang
-        baru saja ia pakai, dan tidak ada jalan kembali selain meminta admin.
-        Lebih baik ditolak dengan kalimat yang menjelaskan sebabnya.
-      */
       if (userId === caller!.id && nilai !== 'penuh') {
         return NextResponse.json({ error: 'Tidak bisa menurunkan akses Anda sendiri. Minta pemegang akses penuh lain yang melakukannya.' }, { status: 400 });
       }
 
       const { error } = await supabase!.from('users')
-        //  allow_incentive_input ikut disamakan supaya layar/route lama yang
-        //  masih membaca kolom itu tidak berbeda pendapat dengan kolom baru.
         .update({ incentive_akses: nilai, allow_incentive_input: nilai !== 'lihat' })
         .eq('id', userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
@@ -83,7 +61,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** GET - tingkat akses PEMANGGIL sendiri, untuk halaman yang perlu memastikan ke server. */
 export async function GET(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) return NextResponse.json({ error: 'Sesi tidak valid.' }, { status: 401 });

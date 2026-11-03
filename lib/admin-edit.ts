@@ -1,9 +1,3 @@
-/**
- * Perkakas bersama untuk panel "Edit Detail & Re-route" milik admin, dipakai
- * Ticketing, Request Schedule, dan Request Design Project. Bentuk datanya
- * berbeda-beda, tapi tiga hal ini sama di ketiganya: menentukan apa yang
- * berubah, menuliskannya ke audit trail, dan memberitahukannya lewat WA.
- */
 
 export type AdminFieldType = 'text' | 'textarea' | 'tel' | 'date' | 'time' | 'number' | 'select';
 
@@ -12,7 +6,6 @@ export interface AdminField {
   label: string;
   type?: AdminFieldType;
   options?: { value: string; label: string }[];
-  /** Lebar kolom pada grid 3 kolom. Default 1. */
   span?: 1 | 2 | 3;
   placeholder?: string;
 }
@@ -24,62 +17,18 @@ export interface Perubahan {
   ke: string;
 }
 
-/**
- * Penanda tujuan "alihkan ke Supervisor" pada dropdown assign, bentuknya
- * `SUP::<id>::<nama>`. Ini nilai INTERNAL <option> - id-nya dipakai mengisi
- * assigned_supervisor_id, bukan untuk dibaca manusia.
- */
 export const PENANDA_SUPERVISOR = 'SUP::';
 
-/** Baca penanda supervisor jadi id + nama. Null bila nilainya bukan penanda. */
 export function bacaTujuanSupervisor(nilai: unknown): { id: string; nama: string } | null {
   if (typeof nilai !== 'string' || !nilai.startsWith(PENANDA_SUPERVISOR)) return null;
   const bagian = nilai.split('::');
-  // Nama sengaja disambung kembali: kalau suatu saat ada nama bertanda '::',
-  // yang terpotong hanya id-nya, bukan namanya.
   return { id: bagian[1] ?? '', nama: bagian.slice(2).join('::') };
 }
 
-/**
- * Ganti setiap kemunculan `SUP::<uuid>::<nama>` DI MANA PUN di dalam sebuah
- * teks dengan `<nama> (Supervisor)`.
- *
- * KENAPA INI PERLU, PADAHAL PENULISANNYA SUDAH DIPERBAIKI
- *
- * Baris audit_trail yang SUDAH TERSIMPAN sebelum perbaikan itu tetap membawa
- * teks mentahnya - memperbaiki kode yang menulis tidak menulis ulang baris
- * lama. Dan menulis ulang seluruh riwayat baris lama berisiko sendiri:
- * mengubah bukti yang sudah tercatat.
- *
- * Jadi pembersihannya dipindah ke titik yang aman disentuh berkali-kali:
- * SAAT DITAMPILKAN. Sekali fungsi ini dipasang di panel yang menampilkan
- * notes/old_value/new_value, baris lama maupun baru sama-sama bersih -
- * dan kalau suatu saat ada jalur tulis lain yang terlewat menerjemahkan
- * penandanya, gejalanya tidak akan pernah sampai ke layar.
- *
- * Regex-nya sengaja BUKAN dijangkarkan ke awal string (beda dari
- * bacaTujuanSupervisor di atas): penanda ini muncul DI TENGAH kalimat, mis.
- * "Ditugaskan ke: (kosong) -> SUP::uuid::Nama". [^;\n]+ (RAKUS, bukan malas)
- * mengambil nama SAMPAI ';' atau baris baru - format catatan menyambung
- * beberapa perubahan dengan '; ', jadi itu batas amannya.
- *
- * Diuji sungguhan sebelum dipasang: kuantifier malas (+?) yang dicoba
- * pertama kali TERBUKTI SALAH - tanpa apa pun sesudah grupnya untuk memaksa
- * perluasan, ia berhenti sesudah SATU huruf ("Y" dari "Yoga KS"), bukan
- * nama lengkapnya. Rakus (+) mengambil sebanyak mungkin dalam batas kelas
- * karakternya, dan itu yang benar di sini.
- */
 export function bersihkanPenandaSupervisor(teks: string): string {
   return teks.replace(/SUP::[0-9a-fA-F-]+::([^;\n]+)/g, (_cocok, nama: string) => `${nama.trim()} (Supervisor)`);
 }
 
-/**
- * Ubah nilai apa pun jadi teks yang enak dibaca manusia di audit & WA.
- *
- * Penanda `SUP::<id>::<nama>` diterjemahkan ke namanya. Tanpa ini, uuid mentah
- * ikut tercetak di Riwayat Perubahan yang dibaca Sales dan tim - membocorkan
- * pengenal internal sekaligus membuat catatannya tidak terbaca.
- */
 function jadikanTeks(v: unknown): string {
   const sup = bacaTujuanSupervisor(v);
   if (sup) return `${sup.nama || 'Supervisor'} (Supervisor)`;
@@ -88,14 +37,6 @@ function jadikanTeks(v: unknown): string {
   return String(v);
 }
 
-/**
- * Bandingkan nilai lama dan baru, kembalikan HANYA yang benar-benar berubah.
- *
- * Perbandingannya sengaja lewat teks: nilai dari <input> selalu string,
- * sementara nilai dari database bisa number/null. Tanpa penyeragaman ini,
- * membuka lalu menutup form tanpa mengubah apa pun akan tercatat sebagai
- * belasan "perubahan" - dan ikut mengirim WA.
- */
 export function bandingkan(
   fields: AdminField[],
   lama: Record<string, unknown>,
@@ -103,11 +44,6 @@ export function bandingkan(
 ): Perubahan[] {
   const hasil: Perubahan[] = [];
   for (const f of fields) {
-    // Field yang TIDAK ikut form ini dilewati. Tidak ikut form berarti tidak
-    // pernah dikirim ke database, jadi nilainya di sana tetap seperti semula -
-    // mencatatnya sebagai "→ (kosong)" akan melaporkan perubahan yang tidak
-    // pernah terjadi. Dikosongkan sungguhan tetap terbaca, karena <input>
-    // mengirim string kosong, bukan menghilangkan kuncinya.
     if (!(f.key in baru) || baru[f.key] === undefined) continue;
     const a = lama[f.key];
     const b = baru[f.key];
@@ -119,18 +55,10 @@ export function bandingkan(
   return hasil;
 }
 
-/** Ringkasan satu baris per perubahan - dipakai di catatan audit. */
 export function ringkasPerubahan(p: Perubahan[]): string {
   return p.map(x => `${x.label}: ${x.dari} → ${x.ke}`).join('; ');
 }
 
-/**
- * Pesan WA untuk orang yang menangani pekerjaan ini.
- *
- * Isinya menyebut APA yang berubah, bukan sekadar "ada perubahan" - supaya
- * penerimanya tidak perlu membuka platform hanya untuk tahu apakah perubahan
- * itu menyangkut dirinya.
- */
 export function pesanWAPerubahan(opts: {
   namaPenerima: string;
   namaPengubah: string;
@@ -153,9 +81,6 @@ export function pesanWAPerubahan(opts: {
   ];
   if (perubahan.length > 0) {
     baris.push(garis, '*Yang berubah:*');
-    // Dibatasi 12 baris: WA memotong pesan yang terlalu panjang, dan daftar
-    // yang terpotong di tengah lebih membingungkan daripada yang jelas-jelas
-    // menyebut sisanya berapa.
     for (const x of perubahan.slice(0, 12)) baris.push(`• ${x.label}: ${x.dari} → ${x.ke}`);
     if (perubahan.length > 12) baris.push(`• …dan ${perubahan.length - 12} perubahan lain`);
   }

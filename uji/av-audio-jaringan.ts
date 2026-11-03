@@ -1,9 +1,3 @@
-/**
- * uji/av-audio-jaringan.ts - rumus lanjutan Kalkulator AV: line 70/100 V, impedansi, kabel speaker,
- * RT60, daya untuk SPL, Dante/AVoIP, PoE, rak, UPS. Angka pembanding dihitung manual.
- *
- * Jalankan: npx tsx uji/av-audio-jaringan.ts
- */
 import { amplifierLine, danteMbps, dayaUntukSPL, hitungPoE, hitungRak, impedansiSpeaker, rt60Sabine, rugiKabel, runtimeUPSMenit, saranKabel, saranLink, serapanTambahanM2 } from '../lib/av-audio-jaringan';
 
 let lulus = 0, gagal = 0;

@@ -1,11 +1,3 @@
-/**
- * lib/suara-notif-bawaan.ts - pengaturan suara notifikasi (Admin Panel › Kelompok & Notifikasi):
- * berkas suara unggahan Admin & volume. Murni (tanpa React/Supabase) - diuji di uji/suara-notif.ts.
- *
- * Berlaku untuk ALARM DI HALAMAN (web & aplikasi Android saat terbuka). Notifikasi push di HP
- * memakai suara sistem / suara bawaan APK - peramban & kanal notifikasi Android tidak bisa diganti
- * dari server.
- */
 
 export const KUNCI_SUARA_NOTIF = 'suara_notifikasi';
 export const BERKAS_BAWAAN = '/notif.wav';
@@ -22,7 +14,6 @@ export const TIPE_SUARA: Record<string, string> = {
 
 const jepit = (v: number, min: number, maks: number) => Math.min(maks, Math.max(min, v));
 
-/** URL suara yang diterima: hanya https (Supabase Storage) atau jalur lokal /...; selain itu = bawaan. */
 export function urlSuaraSah(u: unknown): string | null {
   if (typeof u !== 'string' || !u.trim()) return null;
   const v = u.trim();
@@ -30,7 +21,6 @@ export function urlSuaraSah(u: unknown): string | null {
   try { return new URL(v).protocol === 'https:' ? v : null; } catch { return null; }
 }
 
-/** Nilai app_settings (objek / teks JSON / rusak) -> pengaturan lengkap & aman. */
 export function bacaSuaraNotif(nilai: unknown): SuaraNotif {
   let o: unknown = nilai;
   if (typeof o === 'string') { try { o = JSON.parse(o); } catch { o = null; } }
@@ -41,10 +31,8 @@ export function bacaSuaraNotif(nilai: unknown): SuaraNotif {
   return { url, nama: url ? nama : SUARA_BAWAAN.nama, volume: Math.round(vol * 100) / 100 };
 }
 
-/** Berkas yang akan diputar. */
 export const sumberSuara = (s: SuaraNotif) => s.url ?? BERKAS_BAWAAN;
 
-/** Periksa berkas unggahan sebelum dikirim: tipe audio yang dikenal & ukuran. null = boleh. */
 export function periksaBerkasSuara(tipe: string, ukuran: number): string | null {
   if (!TIPE_SUARA[tipe]) return 'Berkasnya harus suara MP3, WAV, OGG, M4A/AAC, atau WebM.';
   if (ukuran > MAKS_BYTE_SUARA) return `Ukurannya ${(ukuran / 1048576).toFixed(1)} MB, batasnya 1 MB.`;
@@ -52,7 +40,6 @@ export function periksaBerkasSuara(tipe: string, ukuran: number): string | null 
   return null;
 }
 
-/** Durasi: notifikasi harus singkat - suara panjang mengganggu & boros kuota unduhan. */
 export function periksaDurasiSuara(detik: number): string | null {
   if (!Number.isFinite(detik) || detik <= 0) return 'Durasi suara tidak terbaca - coba berkas lain.';
   if (detik > MAKS_DETIK_SUARA) return `Durasinya ${detik.toFixed(1)} detik, maksimal ${MAKS_DETIK_SUARA} detik.`;

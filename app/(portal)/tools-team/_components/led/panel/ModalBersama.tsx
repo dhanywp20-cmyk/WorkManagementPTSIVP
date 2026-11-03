@@ -1,5 +1,4 @@
 'use client';
-/** Modal bersama: editor referensi produk & buka / simpan file hitungan. */
 import { f } from '../../bersama/ui';
 import { FileLED } from '../FileLED';
 import { EditorReferensiLED } from '../referensi/EditorReferensiLED';

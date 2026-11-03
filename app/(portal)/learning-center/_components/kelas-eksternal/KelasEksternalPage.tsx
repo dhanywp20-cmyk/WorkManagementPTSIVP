@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Learning Center -> Kelas Eksternal: quiz untuk customer tanpa akun. Admin membuat kelas (soal dari
- * Bank Soal), membagikan link/QR, lalu melihat nilai. Halaman customer: /kelas/<token>.
- * Dua format: Kuis Live (ala Kahoot, dipandu dari LayarHost) dan Ujian mandiri (nilai & KKM).
- */
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Copy, ExternalLink, MonitorPlay, Pencil, Play, Plus, QrCode, RotateCcw, Square, Trash2, Users } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
@@ -68,7 +63,6 @@ export function KelasEksternalPage() {
     else kabarkan(aksi === 'mulai' ? 'Quiz dimulai - peserta di ruang tunggu langsung masuk.' : aksi === 'akhiri' ? 'Kelas diakhiri.' : 'Kelas dibuka lagi.');
   };
 
-  //  Ruang tunggu: jumlah peserta hadir disegarkan tiap 10 dtk selama ada kelas mode admin yang menunggu.
   const adaMenunggu = (daftar ?? []).some(k => k.mode_mulai === 'admin' && !k.dimulai_pada && k.aktif);
   useEffect(() => {
     if (!adaMenunggu) return;
@@ -196,7 +190,6 @@ export function KelasEksternalPage() {
         <Modal buka onTutup={() => setQr(null)} judul={qr.judul} ukuran="sm"
           footer={<TombolModal onClick={() => setQr(null)}>Tutup</TombolModal>}>
           <div className="text-center space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qr.gambar} alt={`QR ${qr.judul}`} width={260} height={260} className="mx-auto rounded-lg border border-slate-200" />
           </div>
         </Modal>
@@ -208,7 +201,6 @@ export function KelasEksternalPage() {
 
 const LABEL_LIVE: Record<ReturnType<typeof statusLive>, string> = { buka: 'Dibuka', nonaktif: 'Nonaktif', selesai: 'Selesai', penuh: 'Penuh' };
 
-/** Kartu Kuis Live: tombol utama membuka layar host (proyektor). */
 function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }: {
   k: Baris; ubah: boolean; onHost: () => void; onHasil: () => void; onUbah: () => void; onSalin: () => void; onQr: () => void; onHapus: () => void;
 }) {
@@ -225,7 +217,6 @@ function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }:
         }}>
         {k.logo_url && (
           <span className="flex-shrink-0 rounded-lg bg-white/95 px-1.5 py-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={k.logo_url} alt="" className="h-7 w-auto max-w-[90px] object-contain" />
           </span>
         )}

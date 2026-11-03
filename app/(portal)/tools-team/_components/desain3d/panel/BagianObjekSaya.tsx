@@ -1,5 +1,4 @@
 'use client';
-/** Panel Tambah > "Objek saya": objek pribadi akun ini - pasang, hapus, ekspor (.json) & impor dari akun lain. */
 import { useRef, useState } from 'react';
 import { Download, Trash2, Upload } from 'lucide-react';
 import { LABEL } from '../inti';

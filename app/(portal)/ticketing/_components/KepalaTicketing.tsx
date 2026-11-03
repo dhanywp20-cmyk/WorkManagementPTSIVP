@@ -1,6 +1,5 @@
 'use client';
 
-/** KepalaTicketing - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { PageHeader } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { User, Ticket } from './shared';
@@ -32,7 +31,6 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
   return (
     <>
       <PageHeader icon="🎫" title="Ticket Troubleshooting">
-        {/* Bell notif */}
         {currentUser?.role !== "guest" && (
           <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-xl transition-all hover:bg-red-50 border-2 border-transparent hover:border-red-200" title="Notifications">
             <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,7 +44,6 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
           </button>
         )}
 
-        {/* Approval button */}
         {canApproveAssign && pendingApprovalTickets.length > 0 && (
           <button onClick={() => { setApprovalAssignees({}); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="tombol-kedua relative flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90">
             <IkonTeks nama="⏳" />Approval
@@ -54,7 +51,6 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
           </button>
         )}
 
-        {/* Services Approval button */}
         {currentUserTeamType === "Team Services" && pendingServicesApprovalTickets.length > 0 && (
           <button onClick={() => setShowServicesApprovalModal(true)} className="tombol-kedua relative flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90">
             <IkonTeks nama="🔧" />Ticket Masuk
@@ -62,7 +58,6 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
           </button>
         )}
 
-        {/* Reminder button */}
         {canManageTickets && (
           <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="tombol-kedua flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90" title="Reminder harian: Briefing pagi 06.00 WIB">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +67,6 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
           </button>
         )}
 
-        {/* New Ticket button */}
         {canCreateTicket && (
           <button onClick={() => { (() => {
             const nextShow = !showNewTicket;

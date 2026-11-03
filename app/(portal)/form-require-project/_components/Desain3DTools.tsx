@@ -11,7 +11,6 @@ interface DesainTim {
   ruang: { p: number; l: number; t: number; r2?: { aktif: boolean } | null } | null;
 }
 
-/** Pratinjau versi: dimuat malas, di-cache peramban (versi tidak berubah) - hemat egress. */
 function Pratinjau({ id, versi, alt, className }: { id: string; versi: number; alt: string; className: string }) {
   const [gagal, setGagal] = useState(false);
   if (gagal) return <div className={`${className} rounded-lg border border-gray-200 bg-violet-50 grid place-items-center flex-shrink-0 text-violet-400`}><Ikon nama="🧊" ukuran={20} /></div>;
@@ -21,16 +20,6 @@ function Pratinjau({ id, versi, alt, className }: { id: string; versi: number; a
 
 const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
-/**
- * Design 3D dari Tools Team untuk SATU ruangan request - tambahan opsional di
- * samping file Design 3D (PDF). Ruangan tanpa tautan tetap normal; panel ini
- * tidak menampilkan apa pun bagi yang tidak bisa menautkan dan belum ada isinya.
- *
- * `mintaPilih` dinaikkan halaman induk (menu "Upload File") untuk membuka
- * pemilih tanpa memindahkan state ke page.tsx. Data dimuat halaman induk SEKALI
- * per request (dipakai juga untuk cetak/ZIP); panel hanya meminta muat ulang
- * setelah menautkan / melepas.
- */
 export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mintaPilih, data, muatUlang, notify }: {
   requestId: string; roomIdx: number; namaRuang: string; projectName: string; mintaPilih: number;
   data: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string } | null;
@@ -41,7 +30,6 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
   const izin = data?.izin ?? [];
   const galat = data?.galat ?? '';
   const [sibuk, setSibuk] = useState(false);
-  /** Konfirmasi memakai dialog platform, bukan confirm() bawaan browser. */
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [pilih, setPilih] = useState(false);
   const [buka, setBuka] = useState<string | null>(null);
@@ -49,7 +37,6 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
 
   const izinIni = izin[roomIdx];
   const bolehUbah = !!izinIni?.ok;
-  //  Hanya permintaan BARU dari menu yang membuka pemilih (bukan saat panel dipasang ulang).
   const mintaTerakhir = useRef(mintaPilih);
   useEffect(() => {
     if (mintaPilih !== mintaTerakhir.current) { mintaTerakhir.current = mintaPilih; setPilih(true); }
@@ -72,7 +59,6 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
   };
 
   if (semua === null) return null;
-  //  Opsional: tidak ada isi dan tidak bisa menautkan -> tidak ada yang perlu ditampilkan.
   if (!tautan.length && !bolehUbah && !galat) return null;
 
   return (
@@ -177,7 +163,6 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
   );
 }
 
-/** Pemilih desain tim: cari di server, yang namanya cocok dengan project/ruangan diberi tanda "Disarankan". */
 function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, onPilih }: {
   buka: boolean; onTutup: () => void; projectName: string; namaRuang: string; sudah: Set<string>; sibuk: boolean;
   onPilih: (d: DesainTim) => void;

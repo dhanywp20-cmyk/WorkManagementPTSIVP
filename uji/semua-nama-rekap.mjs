@@ -1,21 +1,3 @@
-/*
-  UJI: SEMUA nama yang muncul di Tabel 1 (Summary) harus tercatat di rekap
-  per orang - termasuk yang seluruh proyeknya masih "belum input" nominal.
-
-  Bug nyata dari laporan: "semua nama juga di summary total nominalnya bukan
-  hanya nominal project!" - beberapa nama (mis. yang HANYA muncul di proyek
-  ber-status "belum input") diam-diam tidak pernah tercantum sama sekali di
-  rekap Total Incentive Per Orang, karena rekap itu dibangun murni dari
-  `akumulasi`, dan `akumulasi` sengaja hanya mencatat proyek yang final
-  (nominal & mode sudah diisi).
-
-  Perbaikannya memisahkan dua peta: `semuaNama` (siapa saja yang muncul,
-  apa pun status nominal proyeknya) dan `akumulasi` (uang sungguhan, hanya
-  dari proyek final). Nama yang ada di `semuaNama` tapi tidak di `akumulasi`
-  tetap ditambahkan ke rekap dengan total Rp 0 dan ditandai `belumFinal`.
-
-    node uji/semua-nama-rekap.mjs
-*/
 
 let lulus = 0, gagal = 0;
 function ok(nama, syarat, ket = '') {
@@ -23,7 +5,6 @@ function ok(nama, syarat, ket = '') {
   else { gagal++; console.log(`  GAGAL ${nama}${ket ? ' — ' + ket : ''}`); }
 }
 
-// Meniru persis logika di exportSummaryIncentive.
 function bangunRekap(proyekList) {
   const semuaNama = new Map();
   const akumulasi = [];
@@ -59,14 +40,12 @@ function bangunRekap(proyekList) {
 console.log('\n1. Kasus nyata dari laporan: sebagian project "belum input"');
 {
   const proyek = [
-    // Final - masuk akumulasi
     { bastDate: '2026-02-09', isEstimate: false, splits: [
       { nama: 'Yoga KS', peran: 'pic', jumlah: 550_000 },
       { nama: 'Dhany Wahyu', peran: 'manager', jumlah: 450_000 },
     ]},
-    // "belum input" - TIDAK masuk akumulasi, tapi orangnya tetap tercatat
     { bastDate: null, isEstimate: true, splits: [
-      { nama: 'Ferdinan Agustinus', peran: 'pic', jumlah: 550_000 }, // pool contoh, BUKAN uang sungguhan
+      { nama: 'Ferdinan Agustinus', peran: 'pic', jumlah: 550_000 },
       { nama: 'Dhany Wahyu', peran: 'manager', jumlah: 450_000 },
     ]},
     { bastDate: null, isEstimate: true, splits: [
@@ -87,7 +66,6 @@ console.log('\n1. Kasus nyata dari laporan: sebagian project "belum input"');
   ok('Taufik wahyudi (hanya di project belum-input) juga tetap tercatat', perOrang.has('Taufik wahyudi'));
   ok('Taufik wahyudi total Rp 0', perOrang.get('Taufik wahyudi').total === 0);
 
-  //  Dhany muncul di KEDUA jenis project - hanya project final yang dihitung.
   ok('Dhany Wahyu (muncul di project final DAN belum-input) tidak dobel',
     perOrang.get('Dhany Wahyu').total === 450_000);
   ok('Dhany Wahyu TIDAK ditandai belumFinal - dia sudah punya project final',

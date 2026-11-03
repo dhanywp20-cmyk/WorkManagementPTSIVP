@@ -1,8 +1,3 @@
-/**
- * uji/briefing-pagi.ts - saklar Briefing Pagi & aturan alert Telegram kesehatan sistem.
- *
- * Jalankan: npx tsx uji/briefing-pagi.ts
- */
 import { rapikanBriefing, BRIEFING_BAWAAN } from '../lib/briefing-pagi';
 import { pesanAlert, perluKirimAlert, sidikPeringatan, JEDA_ALERT_JAM } from '../lib/kesehatan-server';
 import type { Peringatan } from '../lib/kesehatan';

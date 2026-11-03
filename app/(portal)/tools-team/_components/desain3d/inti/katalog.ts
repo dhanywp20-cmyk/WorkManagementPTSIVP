@@ -1,7 +1,3 @@
-/**
- * desain3d/inti/katalog.ts - Katalog "Tambah benda", pembuat benda baru (ukuran & posisi awal), set ruang kelas, dan utilitas benda.
- * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
- */
 import { setLampuGrid, SPEK_LAMPU } from './cahaya';
 import { SPEK_PERANGKAT } from './perangkat';
 import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
@@ -11,7 +7,6 @@ import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LAB
 
 export interface ItemKatalog {
   kunci: string; label: string; ket: string; jenis: Jenis; atur?: Partial<Benda>;
-  /** Preset beberapa benda sekaligus (mis. set ruang kelas) - menggantikan satu benda `jenis`. */
   set?: (k: Kotak) => Benda[];
 }
 export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
@@ -55,7 +50,6 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     ],
   },
   {
-    //  Sumber presentasi. Dongle, HP, tablet & laptop + dongle = share NIRKABEL ke display (tanpa kabel ke rack).
     grup: 'Perangkat & share nirkabel', item: [
       { kunci: 'pc', label: 'PC desktop', ket: SPEK_PERANGKAT.pc.ket, jenis: 'perangkat', atur: { tipePerangkat: 'pc' } },
       { kunci: 'laptop', label: 'Laptop', ket: 'Laptop 14" terbuka di meja', jenis: 'perangkat', atur: { tipePerangkat: 'laptop' } },
@@ -107,7 +101,6 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     ],
   },
   {
-    //  Bentuk dasar untuk menyusun objek mapping sendiri (gedung = balok + prisma atap, tugu = silinder + kerucut, dst.).
     grup: 'Objek mapping - bentuk dasar', item: [
       { kunci: 'objek-kotak', label: 'Kotak / balok', ket: 'Gedung, podium, kubus mapping', jenis: 'objek', atur: { bentukObjek: 'kotak' } },
       { kunci: 'objek-silinder', label: 'Silinder', ket: 'Tugu, tiang, tabung', jenis: 'objek', atur: { bentukObjek: 'silinder' } },
@@ -119,15 +112,10 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     ],
   },
 ];
-/** Ukuran awal objek mapping (m): lebar, tinggi, tebal. */
 const UKURAN_OBJEK: Record<BentukObjek, [number, number, number]> = {
   kotak: [1.2, 1.2, 1.2], silinder: [0.8, 1.8, 0.8], bola: [1.2, 1.2, 1.2], kubah: [1.6, 0.8, 1.6], kerucut: [1, 1.5, 1],
   piramida: [1.4, 1.2, 1.4], prisma: [1.6, 0.8, 1.2], gambar: [1, 2, 0.3],
 };
-/**
- * Tinggi permukaan atas alas di titik (x, z): panggung / alas / meja yang tapaknya memuat titik itu
- * (rotasi diperhitungkan). 0 = lantai. Objek & model impor baru diletakkan di atasnya, bukan terbenam.
- */
 export function tinggiAlasDi(benda: Benda[], x: number, z: number, kecuali?: string): number {
   let tinggi = 0;
   for (const b of benda) {
@@ -140,7 +128,6 @@ export function tinggiAlasDi(benda: Benda[], x: number, z: number, kecuali?: str
 }
 let nomor = 0;
 export const idBaru = () => `b${Date.now().toString(36)}${(nomor++).toString(36)}`;
-/** Benda baru di tengah ruang k (dinding depan untuk display). */
 export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Benda {
   const dasar = { id: idBaru(), jenis, nama: LABEL[jenis], x: k.x0 + k.p / 2, z: k.l / 2, rot: 0, ...atur };
   const jadi = (b: Benda) => terapkanUkuran(b);
@@ -151,7 +138,6 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     }
     case 'led': {
       const ps = atur.pasang ?? 'hollow';
-      //  9 x 5 cabinet 500 x 500 mm = 4,5 x 2,5 m (±16:9), P2.5 = 1800 x 1000 px. Ukuran selalu kelipatan cabinet.
       return jadi({ ...dasar, z: 0.05 + CELAH_PASANG[ps], w: 4.5, h: 2.5, d: 0.1, elev: ps === 'standfloor' ? 0.72 : 0.6, pitch: 2.5, cabW: 500, cabH: 500, pasang: ps, konten: 'pola', ...atur } as Benda);
     }
     case 'layar': { const b = jadi({ ...dasar, z: 0.05, w: 0, h: 0, d: 0.03, elev: 0.9, diag: 120, rasio: '16:9', konten: 'pola', ...atur } as Benda); return { ...b, nama: `Layar ${b.diag}" ${b.rasio}` }; }
@@ -169,7 +155,6 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       if (bentuk === 'bulat') return { ...dasar, nama: 'Meja bundar', z: k.l * 0.55, w: 1.2, h: 0.75, d: 1.2, elev: 0, bentukMeja: 'bulat', finish: 'walnut', ...atur };
       if (bentuk === 'kelas') return { ...dasar, nama: 'Meja kelas', z: k.l * 0.5, w: 1.2, h: 0.75, d: 0.5, elev: 0, bentukMeja: 'kelas', finish: 'oak', ...atur };
       if (bentuk === 'dosen') return { ...dasar, nama: 'Meja dosen', x: k.x0 + Math.min(1.8, k.p * 0.25), z: 1.5, w: 1.6, h: 0.75, d: 0.75, elev: 0, bentukMeja: 'dosen', finish: 'oak', ...atur };
-      //  MAXHUB SL22MC: 786 x 420 mm, tinggi bisa diatur 0,99-1,19 m.
       if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.786, h: 1.1, d: 0.42, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
       if (bentuk === 'kredensa') return { ...dasar, nama: 'Kredensa', z: 0.25, w: Math.min(2.4, k.p * 0.5), h: 0.75, d: 0.45, elev: 0, bentukMeja: 'kredensa', finish: 'walnut', ...atur };
       if (bentuk === 'operator') return { ...dasar, nama: 'Meja operator', z: Math.min(k.l - 1, k.l * 0.55), w: 1.8, h: 0.75, d: 0.8, elev: 0, bentukMeja: 'operator', monitorMeja: 4, finish: 'walnut', ...atur };
@@ -208,7 +193,6 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'perangkat': {
       const t = atur.tipePerangkat ?? 'laptop', sp = SPEK_PERANGKAT[t];
       const nama = t === 'laptop' && atur.pakaiDongle ? 'Laptop + dongle WyreStorm' : sp.label;
-      //  Di atas meja rapat bawaan (tinggi 0,75 m), menghadap ke depan ruang (layar laptop/monitor ke penonton di belakangnya).
       return { ...dasar, nama, z: k.l * 0.55, w: sp.w, h: sp.h, d: sp.d, elev: 0.75, rot: 180, tipePerangkat: t, ...atur };
     }
     case 'lift': return { ...dasar, nama: 'Paperless display lift', z: k.l * 0.55, w: 0.55, h: 0.3, d: 0.22, elev: 0.75, naik: true, ...atur };
@@ -218,7 +202,6 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, tipeRak: 'kaca', ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
     case 'teks': {
-      //  Teks dinding setinggi mata di dinding depan; teks lantai rebah di tengah; teks melayang di atas kepala.
       const hadap = atur.hadapTeks ?? 'berdiri';
       const elev = hadap === 'lantai' ? 0.002 : hadap === 'kamera' ? 2.2 : 1.6;
       return terapkanUkuran({ ...dasar, nama: 'Keterangan', teks: 'Keterangan', tinggiHuruf: TINGGI_HURUF_AWAL, hadapTeks: hadap, warna: '#0f172a',
@@ -268,14 +251,7 @@ export function contohAwal(r: Ruang): Benda[] {
     { ...bendaBaru('speaker-plafon', k), z: k.l / 3 }, { ...bendaBaru('speaker-plafon', k), z: (k.l * 2) / 3 },
     bendaBaru('rak', k)];
 }
-/**
- * Set ruang kelas: deret meja siswa (2 orang/meja) menghadap dinding depan
- * (tempat display), kursi di belakang tiap meja, dan meja pengajar di depan
- * kiri. Jumlah kolom/baris menyesuaikan ukuran ruang (maks 4 x 6 meja).
- */
-/** Pilihan Set ruang kelas; yang kosong dihitung otomatis dari ukuran ruang. */
 export interface OpsiKelas { kolom?: number; baris?: number; jarakBaris?: number; celah?: number; kursiPerMeja?: number; pengajar?: boolean }
-/** Hitungan Set ruang kelas yang dipakai: isian sendiri, atau otomatis dari ukuran ruang. */
 export function ukuranSetKelas(k: Kotak, o: OpsiKelas = {}) {
   const perMeja = Math.max(1, Math.min(3, Math.round(o.kursiPerMeja ?? 2)));
   const lebar = perMeja === 1 ? 0.7 : perMeja === 2 ? 1.2 : 1.7;
@@ -306,7 +282,6 @@ export function setRuangKelas(k: Kotak, o: OpsiKelas = {}): Benda[] {
   });
   return hasil;
 }
-/** Titik penonton: kursi, dan kursi bayangan di sekeliling meja yang belum berkursi. */
 export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[] {
   const tribun = b.filter(x => x.jenis === 'tribun').flatMap(t => kursiTribun(t).map((p, i) => ({ x: p.x, z: p.z, id: `${t.id}#${i}` })));
   const kursi = b.filter(x => x.jenis === 'kursi');
@@ -319,7 +294,6 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
   }
   return hasil;
 }
-/** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,

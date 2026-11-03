@@ -1,6 +1,4 @@
-/** calc-format.ts - dipecah dari calc.ts (scripts/pecah-modul.mjs); calc.ts tetap mengekspor ulang semuanya. */
 
-// Formatting
 
 export function formatRupiah(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');

@@ -4,34 +4,6 @@ import { getSessionUser } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/learning-center/submit-quiz
- *
- * Penilaian quiz ABCD - dipindah ke sini dari MyQuizPage.tsx (client).
- *
- * KENAPA PINDAH KE SINI
- *
- * Sebelumnya `lc_questions.select('*')` (termasuk `correct_answer`) ditarik ke
- * browser SAAT QUIZ DIMULAI, sebelum satu soal pun dijawab - siapa pun yang
- * membuka DevTools/Network tab (atau sekadar console log) langsung melihat
- * kunci jawaban seluruh soal sebelum mengerjakan. Skor & status lulus juga
- * dihitung di klien lalu ditulis langsung ke `lc_quiz_attempts`/`lc_answers` -
- * RLS `lca_milik`/`lcj_milik` cuma memeriksa KEPEMILIKAN baris (`user_id =
- * jwt_claim('sub')`), bukan KEBENARAN nilainya, jadi seorang peserta yang
- * mengerti cara memanggil PostgREST langsung bisa menulis skor 100 untuk
- * dirinya sendiri tanpa menjawab apa pun dengan benar.
- *
- * Pola yang sama seperti /api/learning-center/rank: agregasi/keputusan yang
- * butuh data sensitif (di sini: kunci jawaban) dipindah ke server dengan
- * service-role, dan yang dikembalikan ke klien HANYA hasil akhirnya - kunci
- * jawaban per soal BARU dikirim di response INI, SETELAH submit tersimpan,
- * supaya layar "Review Jawaban" (menunjukkan mana yang benar/salah) tetap
- * bisa bekerja tanpa quiz lain di masa depan mewarisi jalur bocor yang sama.
- *
- * Essay TIDAK lewat sini - essay tidak dinilai otomatis (grading_status
- * 'pending_review', admin menilai manual di ReportPage), jadi tidak ada kunci
- * jawaban yang perlu dijaga di jalur submit-nya.
- */
 export async function POST(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) return NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 });
@@ -41,9 +13,6 @@ export async function POST(request: NextRequest) {
 
   const supabase = getAdminClient();
 
-  // Kepemilikan attempt diverifikasi di sini (bukan cuma RLS) - service-role
-  // melewati RLS, jadi pemeriksaan "ini attempt milik pemanggil" wajib
-  // dikerjakan manual persis seperti /api/incentive/splits.
   const { data: attempt } = await supabase
     .from('lc_quiz_attempts').select('*').eq('id', attemptId).eq('user_id', caller.id).maybeSingle();
   if (!attempt) return NextResponse.json({ error: 'Attempt tidak ditemukan.' }, { status: 404 });
@@ -77,8 +46,6 @@ export async function POST(request: NextRequest) {
     perQuestion[q.id] = { correct_answer: q.correct_answer, is_correct: isCorrect };
   }
 
-  // Tulis is_correct per jawaban - dipakai halaman rekap admin (ReportPage)
-  // yang membaca kolom ini langsung, bukan menghitung ulang.
   await Promise.all(
     answerRows.map(a => {
       const pq = perQuestion[a.question_id];
@@ -92,13 +59,6 @@ export async function POST(request: NextRequest) {
   const passed = score >= session.passing_grade;
   const timeTakenSec = Math.round((Date.now() - new Date(attempt.started_at).getTime()) / 1000);
 
-  //  tabSwitches dari klien dipakai sebagai penyelamat terakhir - pencatatan
-  //  per-kejadian saat quiz berjalan (MyQuizPage.tsx) fire-and-forget tanpa
-  //  penanganan galat, jadi bisa gagal diam-diam dan angkanya di baris ini
-  //  ketinggalan dari yang sebenarnya terjadi di browser peserta. Diambil
-  //  yang LEBIH BESAR antara yang sudah tersimpan dan yang dilaporkan klien
-  //  saat submit - tidak pernah mengurangi jumlah pelanggaran yang sudah
-  //  tercatat, cuma menambal yang sempat hilang.
   const tabSwitchesFinal = Math.max(attempt.tab_switches ?? 0, typeof tabSwitches === 'number' ? tabSwitches : 0);
 
   const { error } = await supabase.from('lc_quiz_attempts').update({

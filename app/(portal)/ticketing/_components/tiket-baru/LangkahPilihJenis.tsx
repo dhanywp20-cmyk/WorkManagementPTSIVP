@@ -1,6 +1,5 @@
 'use client';
 
-/** LangkahPilihJenis - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal, TombolModal } from '@/components/shared';
 

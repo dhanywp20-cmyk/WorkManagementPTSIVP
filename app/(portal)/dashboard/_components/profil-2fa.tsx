@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * Profil -> Keamanan & Sandi -> Verifikasi 2 langkah (2FA). Status & perubahan lewat /api/auth/2fa
- * (sesi cookie); rahasia & kode cadangan tidak pernah bisa dibaca ulang dari peramban.
- */
 import React, { useCallback, useEffect, useState } from 'react';
 import { DaftarKodeCadangan, InputKode2FA, PanelDaftar2FA } from '@/components/shared/DuaFaktor';
 

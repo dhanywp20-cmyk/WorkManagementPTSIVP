@@ -1,38 +1,25 @@
-/**
- * lib/checklist-barang.ts - Checklist Barang (AV Solution Tools): baca daftar barang dari Excel / PDF,
- * ringkasan hasil cek, dan gambar PDF hasil checklist (pdfkit) lengkap dengan kolom tanda tangan.
- *
- * MURNI (tanpa DOM / React / jaringan) supaya dipakai peramban (pdfkit standalone) & uji Node
- * (uji/checklist-barang.ts). Semua berjalan di peramban - berkas tidak pernah diunggah ke server.
- *
- * Impor - dua sumber, satu pemetaan kolom:
- *  - Excel / CSV: baris sel (string[][]) -> cari baris kepala (Nama Barang | Qty | Satuan | ...).
- *  - PDF: potongan teks pdf.js (x, y) -> disusun jadi baris & sel; bila ada baris kepala, tiap sel
- *    ditempatkan ke kolom kepala terdekat (sel kosong di tabel PDF tidak menggeser kolom). PDF tanpa
- *    tabel (daftar biasa "1. Speaker 2 pcs") dibaca per baris.
- */
 
 export type StatusCek = '' | 'ok' | 'tidak';
 
 export interface ItemBarang {
   id: string;
   nama: string;
-  /** Merk / tipe / kode / SN - tampil kecil di bawah nama. */ spek: string;
+   spek: string;
   qty: string;
   satuan: string;
   ket: string;
   status: StatusCek;
-  /** Baris judul kelompok (mis. "AUDIO SYSTEM") - tidak dicentang. */ grup?: boolean;
+   grup?: boolean;
 }
 
-export interface Penanda { label: string; nama: string; /** PNG data URL dari pad tanda tangan, '' = tanda tangan basah. */ ttd: string }
+export interface Penanda { label: string; nama: string;  ttd: string }
 
 export interface DokChecklist {
   judul: string;
   nomor: string;
   project: string;
   lokasi: string;
-  /** YYYY-MM-DD (input date). */ tanggal: string;
+   tanggal: string;
   catatan: string;
   items: ItemBarang[];
   penanda: Penanda[];
@@ -56,7 +43,6 @@ export function dokBaru(tanggal: string): DokChecklist {
   return { judul: 'Checklist Barang', nomor: '', project: '', lokasi: '', tanggal, catatan: '', items: [], penanda: PENANDA_BAWAAN.map(p => ({ ...p })) };
 }
 
-/** Draf tersimpan di perangkat (localStorage) -> dokumen yang sah, atau null bila rusak / bentuk lama. */
 export function bacaDraf(x: unknown): DokChecklist | null {
   const o = x as Record<string, unknown> | null;
   if (!o || typeof o !== 'object' || !Array.isArray(o.items) || !Array.isArray(o.penanda)) return null;
@@ -95,26 +81,19 @@ export function ringkas(items: ItemBarang[]) {
 }
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-/** "2026-10-29" -> "29 Oktober 2026" (tanpa locale, hasil sama di peramban & Node). */
 export function tglIndo(s: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
   return m && +m[2] >= 1 && +m[2] <= 12 ? `${+m[3]} ${BULAN[+m[2] - 1]} ${m[1]}` : s;
 }
 
-/** Checklist-Barang-<judul>-<tanggal>.pdf, aman untuk nama berkas. */
 export function namaBerkasPdf(d: Pick<DokChecklist, 'judul' | 'project' | 'tanggal'>): string {
   const bersih = (s: string) => s.normalize('NFKD').replace(/[^\w.\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 50);
   const bagian = ['Checklist-Barang', bersih(d.project) || (d.judul === 'Checklist Barang' ? '' : bersih(d.judul)), d.tanggal].filter(Boolean);
   return `${bagian.join('-')}.pdf`;
 }
 
-// ---------------------------------------------------------------------------------------------
-// Pemetaan kolom
-// ---------------------------------------------------------------------------------------------
-
 type Peran = 'no' | 'nama' | 'spek' | 'qty' | 'satuan' | 'ket' | 'status';
 
-/** Urutan penting: kepala dicocokkan ke peran PERTAMA yang cocok ("Kode Barang" = spek, bukan nama). */
 const POLA_KEPALA: [Peran, RegExp][] = [
   ['no', /^(no|nomor|num|nr|#)\.?$/],
   ['qty', /^(qty|q'ty|jumlah|jml|kuantitas|quantity|vol|volume|banyak(nya)?)\b/],
@@ -134,10 +113,8 @@ function peranKepala(s: string): Peran | null {
   return null;
 }
 
-/** Peran tiap kolom baris kepala; null bila baris ini bukan kepala tabel barang. */
 function petakanKepala(baris: string[]): (Peran | null)[] | null {
   const peran: (Peran | null)[] = baris.map(peranKepala);
-  //  Peran tunggal kecuali spek/nama/ket (boleh gabungan "Merk" + "Tipe"): kolom kedua dengan peran sama diabaikan.
   const ada = new Set<Peran>();
   for (let i = 0; i < peran.length; i++) {
     const p = peran[i];
@@ -166,7 +143,6 @@ const SATUAN = 'pcs|pc|unit|units|set|sets|buah|bh|roll|rol|meter|mtr|m|ls|lot|b
 const RE_SATUAN = new RegExp(`^(${SATUAN})\\.?$`, 'i');
 const RE_QTY_SATUAN = new RegExp(`^(\\d+(?:[.,]\\d+)?)\\s*(${SATUAN})?\\.?$`, 'i');
 
-/** Teks sel yang bersih: tanpa karakter kendali, spasi dirapikan. */
 export function sel(v: unknown): string {
   if (v === null || v === undefined) return '';
   // eslint-disable-next-line no-control-regex
@@ -180,7 +156,6 @@ const statusDari = (s: string): StatusCek => (RE_OK.test(s) ? 'ok' : RE_TIDAK.te
 const RE_TOTAL = /^(sub ?total|total|grand ?total|jumlah)\b/i;
 const RE_HALAMAN = /^(halaman|page|hal\.?)\s*\d+/i;
 
-/** Tebak kolom saat berkas tidak punya baris kepala. */
 function tebakPeran(baris: string[][]): (Peran | null)[] {
   const lebar = Math.max(0, ...baris.map(r => r.length));
   const st = Array.from({ length: lebar }, (_, j) => {
@@ -211,7 +186,6 @@ function tebakPeran(baris: string[][]): (Peran | null)[] {
   return peran;
 }
 
-/** Baris kepala yang terulang (tabel PDF per halaman / lembar Excel bertumpuk). */
 const barisKepala = (r: string[]) => petakanKepala(r) !== null && r.filter(Boolean).every(v => peranKepala(v) !== null);
 
 function dariKolom(baris: string[][], peran: (Peran | null)[]): ItemBarang[] {
@@ -227,18 +201,14 @@ function dariKolom(baris: string[][], peran: (Peran | null)[]): ItemBarang[] {
     const no = ambil(r, 'no'), ket = ambil(r, 'ket'), status = ambil(r, 'status');
     if (!nama && spek) { nama = spek; spek = ''; }
     if (!nama || RE_TOTAL.test(nama) || RE_HALAMAN.test(nama)) continue;
-    //  "2 pcs" dalam satu sel qty.
     const qs = RE_QTY_SATUAN.exec(qty);
     if (qs && qs[2] && !satuan) { qty = qs[1]; satuan = qs[2]; }
-    //  Judul kelompok: tanpa qty, tanpa nomor urut angka, tanpa isian lain (tabel yang memang punya kolom qty).
     const grup = adaKolomQty && !qty && !/^\d+\.?$/.test(no) && !spek && !satuan && !ket && !status;
     out.push(itemBaru(grup ? { nama, grup: true } : { nama, spek, qty, satuan, ket, status: statusDari(status) }));
   }
-  //  Kelompok tanpa isi (judul terakhir / judul berurutan) bukan kelompok - jadikan item biasa.
   return out.filter((it, i) => !it.grup || (out[i + 1] && !out[i + 1].grup));
 }
 
-/** Excel / CSV: baris sel (lembar apa adanya) -> daftar barang. */
 export function bacaTabel(baris: unknown[][]): ItemBarang[] {
   const bersih = baris.map(r => (Array.isArray(r) ? r.map(sel) : [])).filter(r => r.some(Boolean));
   const kepala = cariKepala(bersih);
@@ -246,16 +216,10 @@ export function bacaTabel(baris: unknown[][]): ItemBarang[] {
   return dariKolom(bersih, tebakPeran(bersih));
 }
 
-// ---------------------------------------------------------------------------------------------
-// PDF
-// ---------------------------------------------------------------------------------------------
-
-/** Satu potongan teks pdf.js: x, y (koordinat PDF, y ke atas), lebar & tinggi huruf. */
 export interface PotongPdf { str: string; x: number; y: number; w: number; h: number }
 interface SelPdf { t: string; x0: number; x1: number }
 interface BarisPdf { y: number; h: number; sel: SelPdf[] }
 
-/** Potongan per halaman -> baris (atas ke bawah) berisi sel; jarak lebar antar potongan = batas sel. */
 export function susunBarisPdf(halaman: PotongPdf[][]): BarisPdf[][] {
   return halaman.map(potong => {
     const p = potong.filter(x => x.str.trim()).sort((a, b) => b.y - a.y || a.x - b.x);
@@ -281,7 +245,6 @@ export function susunBarisPdf(halaman: PotongPdf[][]): BarisPdf[][] {
   });
 }
 
-/** Sel baris PDF -> kolom kepala yang paling menutupi sel (atau terdekat). */
 function tempatkan(b: BarisPdf, kolom: SelPdf[]): string[] {
   const out = kolom.map(() => '');
   const batas = kolom.map((k, i) => ({
@@ -299,7 +262,6 @@ function tempatkan(b: BarisPdf, kolom: SelPdf[]): string[] {
   return out;
 }
 
-/** Daftar tanpa tabel: "1. Speaker ceiling   8 pcs" / "- HDMI 5m x2". */
 export function barisTeks(selBaris: string[]): ItemBarang | null {
   const s = selBaris.map(sel).filter(Boolean);
   if (!s.length) return null;
@@ -322,7 +284,6 @@ export function barisTeks(selBaris: string[]): ItemBarang | null {
 
 const SEMUA_HURUF_BESAR = (s: string) => /\p{Lu}/u.test(s) && s === s.toUpperCase();
 
-/** PDF: potongan teks per halaman -> daftar barang. */
 export function bacaPdf(halaman: PotongPdf[][]): ItemBarang[] {
   const semua = susunBarisPdf(halaman);
   const datar = semua.flatMap((bs, hal) => bs.map(b => ({ ...b, hal })));
@@ -339,7 +300,6 @@ export function bacaPdf(halaman: PotongPdf[][]): ItemBarang[] {
     const isiNo = idx('no') >= 0 && r[idx('no')];
     const isiQty = idx('qty') >= 0 && r[idx('qty')];
     const teksBaris = r.filter(Boolean).join(' ');
-    //  Nama barang yang terbungkus 2 baris di tabel PDF: baris lanjutan tanpa nomor & qty, rapat di bawah item.
     const lanjutan: boolean = !!lalu?.item && lalu.hal === b.hal && !isiNo && !isiQty && !barisKepala(r)
       && lalu.y - b.y <= Math.max(lalu.h, b.h) * 1.6 && !SEMUA_HURUF_BESAR(teksBaris);
     if (lanjutan && baris.length) {
@@ -351,11 +311,6 @@ export function bacaPdf(halaman: PotongPdf[][]): ItemBarang[] {
   return dariKolom(baris, peran);
 }
 
-// ---------------------------------------------------------------------------------------------
-// PDF hasil (pdfkit)
-// ---------------------------------------------------------------------------------------------
-
-/** Bagian pdfkit yang dipakai. Huruf didaftarkan pemanggil: 'Sans' & 'SansBold'. */
 export interface DokCek {
   page: { width: number; height: number };
   font(n: string): DokCek; fontSize(s: number): DokCek; fillColor(c: string): DokCek; strokeColor(c: string): DokCek;
@@ -375,7 +330,6 @@ const W = {
 };
 const M = 36, PAD = 5, BAWAH = 44;
 
-/** Kotak status: centang hijau / silang merah / kosong (digambar - tidak bergantung huruf). */
 function kotakCek(doc: DokCek, x: number, y: number, s: number, st: StatusCek) {
   if (!st) { doc.lineWidth(0.8).roundedRect(x, y, s, s, 2).stroke(W.abu); return; }
   doc.roundedRect(x, y, s, s, 2).fill(st === 'ok' ? W.hijau : W.merah);
@@ -387,9 +341,8 @@ function kotakCek(doc: DokCek, x: number, y: number, s: number, st: StatusCek) {
 
 interface Kolom { k: 'no' | 'nama' | 'qty' | 'satuan' | 'cek' | 'ket'; l: string; w: number; rata?: 'center' | 'right' }
 
-export interface OpsiPdf { /** Teks kaki kiri, mis. "Dicetak 29 Oktober 2026 14:05 oleh Budi". */ dicetak?: string }
+export interface OpsiPdf {  dicetak?: string }
 
-/** Gambar seluruh dokumen ke `doc` (pdfkit dengan bufferPages: true, margin 0). */
 export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
   const PW = doc.page.width, PH = doc.page.height, CW = PW - 2 * M;
   const judul = d.judul.trim() || 'Checklist Barang';
@@ -408,7 +361,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
 
   let y = 0;
 
-  // -- Kepala halaman pertama
   doc.rect(0, 0, PW, 84).fill(W.navy);
   doc.font('SansBold').fontSize(7.5).fillColor(W.eyebrow).text('CHECKLIST BARANG', M, 22, { characterSpacing: 1.2, lineBreak: false });
   const lebarJudul = CW - 170;
@@ -422,7 +374,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
   });
   y = Math.max(84, 34 + hJudul + 12) + 14;
 
-  // -- Info project / lokasi
   const info = [['Project / Customer', d.project], ['Lokasi', d.lokasi]].filter(([, v]) => v.trim());
   if (info.length) {
     const w = CW / info.length;
@@ -435,7 +386,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
     y += tinggi + 12;
   }
 
-  // -- Ringkasan
   const ubin: [string, number, string][] = [['Total item', r.total, W.teks], ['Sesuai / ada', r.ok, W.hijau], ['Tidak sesuai', r.tidak, W.merah], ['Belum dicek', r.belum, W.redup]];
   const wu = (CW - 3 * 8) / 4;
   ubin.forEach(([l, n, c], i) => {
@@ -446,7 +396,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
   });
   y += 36 + 14;
 
-  // -- Tabel
   const kepalaTabel = () => {
     doc.rect(M, y, CW, 20).fill(W.kepala);
     kol.forEach((k, i) => doc.font('SansBold').fontSize(8).fillColor(W.teks)
@@ -473,7 +422,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
     if (it.grup) {
       doc.font('SansBold').fontSize(8.5);
       const h = doc.heightOfString(it.nama, { width: CW - 2 * PAD }) + 2 * PAD + 2;
-      //  Judul kelompok tidak boleh tertinggal sendirian di dasar halaman.
       if (y + h + 24 > batas()) { halamanBaru(); kepalaTabel(); }
       doc.rect(M, y, CW, h).fill(W.grup);
       doc.font('SansBold').fontSize(8.5).fillColor(W.navy).text(it.nama, M + PAD, y + PAD + 1, { width: CW - 2 * PAD });
@@ -504,7 +452,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
     y += h;
   });
 
-  // -- Legenda
   y += 8;
   if (y + 14 > batas()) halamanBaru();
   let lx = M;
@@ -517,7 +464,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
   });
   y += 20;
 
-  // -- Catatan
   const catatan = d.catatan.trim();
   if (catatan) {
     doc.font('Sans').fontSize(8.5);
@@ -529,7 +475,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
     y += h + 14;
   }
 
-  // -- Tanda tangan (satu blok utuh, pindah halaman bila tidak muat)
   const pen = d.penanda.slice(0, MAKS_PENANDA);
   if (pen.length) {
     const T = 112;
@@ -540,7 +485,7 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
       const x = M + i * w;
       doc.font('Sans').fontSize(8.5).fillColor(W.teks).text(p.label || '', x + 6, y, { width: w - 12, align: 'center', height: 12, ellipsis: true });
       if (/^data:image\/(png|jpeg);base64,/.test(p.ttd)) {
-        try { doc.image(p.ttd, x + 18, y + 16, { fit: [w - 36, 58], align: 'center', valign: 'center' }); } catch { /* gambar rusak: biarkan kosong untuk tanda tangan basah */ }
+        try { doc.image(p.ttd, x + 18, y + 16, { fit: [w - 36, 58], align: 'center', valign: 'center' }); } catch {  }
       }
       doc.lineWidth(0.7).moveTo(x + 18, y + 80).lineTo(x + w - 18, y + 80).stroke(W.teks);
       doc.font('SansBold').fontSize(8.5).fillColor(W.teks).text(p.nama.trim() ? p.nama.trim() : '', x + 6, y + 84, { width: w - 12, align: 'center', height: 12, ellipsis: true });
@@ -548,7 +493,6 @@ export function gambarChecklist(doc: DokCek, d: DokChecklist, o: OpsiPdf = {}) {
     y += T;
   }
 
-  // -- Kaki tiap halaman
   const { start, count } = doc.bufferedPageRange();
   for (let i = 0; i < count; i++) {
     doc.switchToPage(start + i);

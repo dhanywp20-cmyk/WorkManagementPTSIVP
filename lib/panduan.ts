@@ -1,20 +1,7 @@
-/**
- * lib/panduan.ts - panduan singkat per modul.
- *
- * Satu sumber untuk dua pemakai:
- *   - tab "Panduan" di panel Asisten (dibaca manusia, kontekstual dengan
- *     halaman yang sedang dibuka), dan
- *   - alat `panduan_modul` milik asisten AI (dibaca model), supaya jawaban
- *     "cara ..." berpijak pada alur platform ini, bukan karangan model.
- *
- * Tulis seperti menjelaskan ke rekan baru: apa gunanya, langkah inti,
- * jebakan yang sering terjadi. Kalau alur di aplikasi berubah, ubah di sini.
- */
 
 export interface Panduan {
   kunci: string;
   judul: string;
-  /** Satu kalimat: modul ini untuk apa. */
   guna: string;
   langkah: string[];
   tips: string[];
@@ -221,7 +208,6 @@ export function cariPanduan(kunci: string | null | undefined): Panduan | undefin
   return PANDUAN.find(p => p.kunci === kunci);
 }
 
-/** Panduan sebagai teks polos untuk konteks model. */
 export function panduanTeks(p: Panduan): string {
   return `${p.judul}: ${p.guna}\nLangkah:\n${p.langkah.map((l, i) => `${i + 1}. ${l}`).join('\n')}\nTips:\n${p.tips.map(t => `- ${t}`).join('\n')}`;
 }

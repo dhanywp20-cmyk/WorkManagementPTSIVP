@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * ModalTolakRequest - dipecah dari app/(portal)/form-require-project/page.tsx. Semua keadaan tetap milik induk.
- * Kerangka: ModalTolak bersama (components/shared/Persetujuan.tsx) - sama dengan Ticketing & Request Schedule.
- */
 import { ModalTolak } from '@/components/shared';
 import { ProjectRequest } from '../shared';
 

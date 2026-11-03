@@ -8,31 +8,14 @@ import { supabase } from '@/lib/supabase';
 import { DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * Bentuk nama kelompok dari apa yang diketik admin.
- *
- * Nama yang disimpan HARUS sama persis dengan isi users.team_type - itulah
- * yang dicocokkan seluruh platform - jadi awalannya dibakukan di sini supaya
- * admin cukup mengetik "SBY", bukan menghafal bentuk penuhnya.
- *
- * Awalan yang SUDAH diketik ikut dibuang lebih dulu. Tanpa itu, admin yang
- * mengetik "PTS Daerah" mendapat "Team PTS PTS Daerah" - persis yang terjadi
- * pada kelompok PTS Daerah pertama, dan label dobelnya ("PTS PTS Daerah")
- * ikut tampil di dropdown Tipe PTS pada form akun.
- */
 export function namaKelompokDari(ketikan: string): string {
   const asli = ketikan.trim();
   let inti = asli;
-  //  Berulang, bukan sekali: "Team PTS PTS Daerah" (nama yang terlanjur dobel)
-  //  harus ikut kembali menjadi "Team PTS Daerah" kalau diketik ulang.
   let sebelum: string;
   do {
     sebelum = inti;
     inti = inti.replace(/^team\s+/i, '').replace(/^pts\s+/i, '').trim();
   } while (inti !== sebelum);
-  //  Kalau seluruh ketikan habis tersaring (admin mengetik "PTS" saja),
-  //  pakai ketikan aslinya - lebih baik namanya kurang rapi daripada tombol
-  //  Tambah yang diam saja tanpa memberi tahu kenapa.
   const dipakai = inti || asli;
   return dipakai ? `Team PTS ${dipakai}` : '';
 }
@@ -41,14 +24,6 @@ const LABEL_JENIS: Record<JenisKelompok, string> = {
   pts: 'Team PTS', services: 'Services', marketing: 'Marketing', sales: 'Sales',
 };
 
-/**
- * Bagian "Kelompok & Notifikasi" pada Admin Panel.
- *
- * Satu tabel: baris = kelompok, kolom = lonceng. Bentuk ini dipilih karena
- * pertanyaan yang biasanya muncul bukan "apa hak kelompok X" melainkan "siapa
- * saja yang dapat lonceng Review" - dan itu terbaca sekali lihat kalau
- * disusun sebagai tabel, bukan sebagai daftar kartu.
- */
 export function KelompokSettingInline() {
   const [daftar, setDaftar] = useState<Kelompok[]>([]);
   const [terpakai, setTerpakai] = useState<Record<string, number>>({});
@@ -57,14 +32,6 @@ export function KelompokSettingInline() {
   const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
   const [siap, setSiap] = useState(false);
   const [menerapkan, setMenerapkan] = useState<string | null>(null);
-  /**
-   * Nilai "Tampilan Dashboard" saat halaman dimuat / terakhir diterapkan.
-   *
-   * Dipakai untuk tahu kelompok mana yang setelannya BARU diubah tapi akun
-   * lamanya belum disamakan - tanpa penanda ini, admin mengubah dropdown,
-   * menekan Simpan, lalu heran kenapa akun yang sudah ada tidak berubah.
-   * Persis yang terjadi pada kelompok PTS Daerah.
-   */
   const [dashboardTerpakai, setDashboardTerpakai] = useState<Record<string, 'team' | 'sales'>>({});
 
   const beritahu = (jenis: 'ok' | 'gagal', teks: string) => {
@@ -85,15 +52,6 @@ export function KelompokSettingInline() {
   const ubah = (nama: string, patch: Partial<Kelompok>) =>
     setDaftar(d => d.map(k => (k.nama === nama ? { ...k, ...patch } : k)));
 
-  /**
-   * Samakan menu akun yang SUDAH ADA di kelompok ini dengan pilihan
-   * "Tampilan Dashboard"-nya.
-   *
-   * Sengaja tombol terpisah, bukan otomatis ikut saat pilihannya diganti:
-   * menu tiap akun boleh disesuaikan satu per satu di Account Settings, dan
-   * menimpanya diam-diam akan menghapus penyesuaian yang sudah dibuat admin
-   * tanpa ia sadari. Di sini admin memilih sendiri kapan menyamakannya.
-   */
   const terapkanKeAkun = async (k: Kelompok) => {
     const jumlah = terpakai[k.nama] ?? 0;
     if (!k.nama || jumlah === 0) return;
@@ -108,20 +66,6 @@ export function KelompokSettingInline() {
     beritahu('ok', `Menu ${jumlah} akun di ${k.label} disamakan dengan tampilan "${k.dashboard === 'sales' ? 'Seperti Sales' : 'Seperti Team'}". Mereka perlu memuat ulang halamannya.`);
   };
 
-  /**
-   * Centang "PTS Cabang" ikut menyesuaikan dua bawaan yang, kalau dibiarkan,
-   * membuat mitra luar diperlakukan seperti anggota tim internal.
-   *
-   * Kelompok baru lahir dengan ditugaskan:true dan SELURUH lonceng - masuk
-   * akal untuk tim internal, tapi salah untuk kelompok Cabang: anggotanya
-   * memang hanya dipilih di SATU titik (dropdown PTS Daerah saat jadwal
-   * Remote diselesaikan), bukan di dropdown assign Ticketing/Request
-   * Schedule/Design Project, dan tidak perlu menerima lonceng tiket internal.
-   * Ini persis yang terjadi pada kelompok PTS Daerah pertama yang dibuat.
-   *
-   * Hanya menyesuaikan saat DINYALAKAN, dan semuanya tetap bisa dikembalikan
-   * admin - ini bawaan yang menolong, bukan aturan yang mengunci.
-   */
   const tandaiCabang = (k: Kelompok) => {
     if (k.cabang) { ubah(k.nama, { cabang: false }); return; }
     const perluDisesuaikan = k.ditugaskan || k.lonceng.length > 1;
@@ -167,9 +111,6 @@ export function KelompokSettingInline() {
     const { error } = await simpanKelompok(daftar);
     setMenyimpan(false);
     if (error) { beritahu('gagal', 'Gagal menyimpan: ' + error); return; }
-    //  Menyimpan setelan TIDAK menyentuh akun yang sudah ada - itu disengaja
-    //  (lihat terapkanKeAkun), tapi diam saja soal itu membuat admin mengira
-    //  perubahannya gagal. Jadi disebutkan, lengkap dengan nama kelompoknya.
     const perluTerapkan = daftar.filter(k =>
       k.nama && (terpakai[k.nama] ?? 0) > 0 && dashboardTerpakai[k.nama] !== k.dashboard);
     beritahu('ok', perluTerapkan.length > 0
@@ -248,9 +189,6 @@ export function KelompokSettingInline() {
                           <option value="sales">Seperti Sales</option>
                         </select>
                         {jumlah > 0 && (() => {
-                          //  Menonjol kalau setelannya sudah diubah tapi akun lamanya
-                          //  belum disamakan - tombol yang tampak sama saja dalam dua
-                          //  keadaan itulah yang membuat orang mengira sudah selesai.
                           const belumSelaras = dashboardTerpakai[k.nama] !== k.dashboard;
                           return (
                             <button type="button" onClick={() => terapkanKeAkun(k)} disabled={menerapkan === k.nama}

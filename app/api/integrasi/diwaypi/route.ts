@@ -1,12 +1,3 @@
-/**
- * /api/integrasi/diwaypi - satu-satunya pintu yang menerima token DIWAYPI (Authorization: Bearer dwp_...).
- *   GET  -> siapa pemilik token + cakupannya (dipakai DIWAYPI untuk memeriksa token)
- *   POST -> { aksi, args } -> jalankan SATU aksi dari daftar tetap (lib/integrasi-aksi.ts)
- *
- * Dikecualikan dari gerbang sesi di proxy.ts (jalur persis), seperti /api/monitor: route ini
- * memeriksa tokennya sendiri. Setiap aksi berjalan SEBAGAI pemilik token (klienSebagaiUser),
- * peran dibaca ulang dari tabel users tiap permintaan - pencabutan hak berlaku seketika.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
@@ -28,8 +19,6 @@ async function pemilik(req: NextRequest) {
     { status: 401, headers: { ...KEPALA, 'WWW-Authenticate': 'Bearer' } }) };
   const u = await muatUser(p.userId);
   if (!u) return { galat: NextResponse.json({ ok: false, galat: 'Akun pemilik token tidak ditemukan.' }, { status: 401, headers: KEPALA }) };
-  //  Diperiksa tiap permintaan, bukan hanya saat token dibuat: token akun yang Full Access-nya
-  //  dicabut langsung tidak berlaku lagi.
   if (!bolehDiwaypiDan2FA(u)) return { galat: NextResponse.json({ ok: false, galat: 'Integrasi DIWAYPI hanya untuk admin & akun yang ditunjuk.' }, { status: 403, headers: KEPALA }) };
   return { p, u, admin };
 }
@@ -54,9 +43,7 @@ export async function POST(req: NextRequest) {
     const db = klienSebagaiUser(s.u);
     const hasil = await jalankanAksi(aksi, args, {
       db, admin: s.admin, u: s.u, cakupan: s.p.cakupan,
-      //  WA/Telegram, in-app + push, audit: padanan server dari fungsi peramban (lib/efek-server.ts).
       efek: buatEfekServer(db, s.admin, s.u.id),
-      //  Yang di peramban dimuat saat halaman Reminder Schedule dibuka.
       muatAturan: async () => { await Promise.all([muatKelompok(), muatKategoriInsentif()]); },
     });
     return NextResponse.json(hasil, { status: hasil.ok ? 200 : 400, headers: KEPALA });

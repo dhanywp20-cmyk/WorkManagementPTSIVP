@@ -1,5 +1,4 @@
 'use client';
-/** Atur bidang / layar mapping: datar, cekung, cembung, pilar 360°. */
 import { Angka, f, Segmen } from '../../../bersama/ui';
 import { type Benda, lengkungDari, terapkanUkuran, ukuranBidang } from '../../inti';
 import type { KonteksAtur } from './konteks';
@@ -13,7 +12,6 @@ export function AturBidang({ c }: { c: KonteksAtur }) {
         const bentuk = b.bentukBidang ?? 'lengkung';
         const NAMA_BIDANG: Record<string, string> = { datar: 'Layar mapping datar', lengkung: 'Layar mapping cekung', cembung: 'Layar mapping cembung' };
         const namaBawaan = /^(Bidang|Layar) mapping (lengkung|cekung|cembung|datar)$/.test(b.nama);
-        //  Ganti bentuk dengan lebar tetap: datar -> lengkung 10% dari lebar, lengkung -> datar selebar tali busurnya.
         const gantiBentuk = (v: 'datar' | 'lengkung' | 'cembung') => {
           const lebar = u.busur >= 180 ? 4 : u.w;
           const x: Partial<Benda> = v === 'datar' ? { bentukBidang: v, w: lebar } : { bentukBidang: v, ...(bentuk === 'datar' || u.busur >= 180 ? lengkungDari(lebar, lebar * 0.1) : {}) };

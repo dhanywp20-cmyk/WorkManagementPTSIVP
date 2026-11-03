@@ -6,15 +6,9 @@ import { type DataDaya, MCB_SIRKUIT, type PengaturanDaya, susunDaya, WARNA_FASE 
 import { svgDaya, svgPosterDaya } from './svg';
 import { Download, Image as IkonGambar } from 'lucide-react';
 import { useMemo, useState } from 'react';
-/**
- * Power Connection LED: unit (modul/cabinet) disambung berurutan per sirkuit listrik,
- * tiap sirkuit dibatasi MCB-nya (beban kontinu 80%), lalu dibagi ke fase R/S/T supaya seimbang.
- * Diagram & tabelnya ikut cetak, PNG, dan SVG seperti Screen Connection.
- */
 
 const kelasTombol = 'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40';
 
-/** Ruang kerja Power Connection (sub menu LED Videotron). */
 export function RuangDaya({ d, s, onUbah, namaFile }: { d: DataDaya; s: PengaturanDaya; onUbah: (s: PengaturanDaya) => void; namaFile: string }) {
   const h = useMemo(() => susunDaya(d, s), [d, s]);
   const svg = useMemo(() => svgDaya(d, h, s.arah), [d, h, s.arah]);

@@ -1,9 +1,4 @@
 'use client';
-/**
- * exportPengajuan-data.ts - bagian HITUNG Summary Incentive (dipecah dari exportPengajuan.ts):
- * proyek -> pembagian per peran -> akumulasi per orang & per tahun pembayaran. Murni, tanpa ExcelJS;
- * bangunWorkbookSummary memanggilnya sekali lalu menulis Tabel 1/2/3 dari hasilnya.
- */
 import {
   IncentiveProjectRow, calculateIncentiveSplits, findUpline, resolveUserId, OrgUser,
   type SkemaInsentif,
@@ -28,12 +23,6 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
   tahapUrut: SkemaInsentif['tranche'];
   totalPersenTahap: number;
 }) {
-  /*
-    Data proyek diproses SEKALI di sini, sebelum satu sel pun ditulis -
-    supaya rentang tahun (untuk judul & Tabel 3) sudah diketahui lebih dulu,
-    dan Tabel 1/2/3 semuanya membaca dari struktur yang sama persis, bukan
-    dihitung ulang tiga kali dengan risiko saling menyimpang.
-  */
 
   const daftarProyek: Proyek[] = projects.map(p => {
     const projectSupports = supportsMap.get(p.project_name) || [];
@@ -63,10 +52,6 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
     };
   });
 
-  //  Akumulasi UANG SUNGGUHAN per orang - hanya proyek final (bukan estimasi),
-  //  dipakai Tabel 2 & 3. Nama SETIAP orang dicatat terpisah (semuaNama),
-  //  supaya yang seluruh proyeknya masih "belum input" tetap muncul di Tabel
-  //  2 dengan total Rp 0 - bukan hilang begitu saja dari rekap.
   const akumulasi: { nama: string; peran: string; jumlah: number; bastYear: number }[] = [];
   const semuaNamaTim = new Map<string, Set<string>>();
   for (const pr of daftarProyek) {
@@ -80,10 +65,6 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
   }
 
   const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3 };
-  //  `total`/`jumlah` di sini HANYA dipakai untuk pengurutan (orangUrut) dan
-  //  sebagai cache angka `result` di sumCell (lihat selRpByNama di dekat
-  //  Tabel 1 untuk RUMUS sungguhan yang dirujuk Tabel 2 - dibangun belakangan
-  //  dari alamat sel asli, bukan dari array ini).
   const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number }>();
   for (const { nama, peran, jumlah } of akumulasi) {
     const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0 };
@@ -102,7 +83,6 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
     return pa - pb || a.nama.localeCompare(b.nama, 'id');
   });
 
-  //  Uang per orang per TAHUN PEMBAYARAN (Tim PTS) + Installer (lunas tahun pertama).
   const perOrangTahun = new Map<string, Map<number, number>>();
   const tahunSet = new Set<number>();
   for (const { nama, jumlah, bastYear } of akumulasi) {
@@ -114,8 +94,6 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
     }
     perOrangTahun.set(nama, ember);
   }
-  //  Installer: baris TERSENDIRI (bukan digabung ke perOrangTahun Tim PTS -
-  //  perannya beda skema, disatukan nanti hanya saat dicetak).
   const installerList: BarisInstaller[] = [];
   for (const pr of daftarProyek) {
     if (pr.isEstimate || !pr.bastYear) continue;

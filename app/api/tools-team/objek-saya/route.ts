@@ -1,15 +1,3 @@
-/**
- * /api/tools-team/objek-saya - "Objek saya" Desain 3D: objek PRIBADI per akun (lib/objek-saya.ts).
- *
- *   GET                  daftar objek milik akun ini (tanpa isi model) + kuota.
- *   GET ?id=&model=1     isi model 3D (GLB data URL) satu objek milik akun ini - diambil saat dipasang.
- *   POST { objek: [...] } simpan satu objek atau impor beberapa sekaligus (berkas ekspor akun lain).
- *   DELETE ?id=          hapus objek milik akun ini.
- *
- * Setiap kueri dibatasi user_id = akun yang masuk: objek orang lain tidak bisa dibaca, diubah, atau
- * dihapus. Berbagi ke akun lain hanya lewat ekspor / impor berkas. Tabel ber-RLS tanpa policy (migrasi
- * 043) - hanya service role di sini. Akun pimpinan hanya-lihat tidak boleh menulis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -45,7 +33,6 @@ export async function GET(req: NextRequest) {
     if (error) return gagal(error.message, 500);
     const model = (data as { model: string | null } | null)?.model;
     if (!model) return gagal('Model tidak ditemukan.', 404);
-    //  Isi model satu id tidak pernah berubah (tidak ada endpoint ubah) - cache permanen, cukup diunduh sekali.
     return NextResponse.json({ ok: true, model }, { headers: { 'Cache-Control': 'private, max-age=31536000, immutable' } });
   }
   const [{ data, error }, k] = await Promise.all([
@@ -75,7 +62,6 @@ export async function POST(req: NextRequest) {
   const jumlahModel = sah.filter(o => o.model).length;
   if (k.model + jumlahModel > MAKS_MODEL_PER_AKUN) return gagal(`Model 3D di Objek saya maksimal ${MAKS_MODEL_PER_AKUN} - hapus model yang tidak dipakai dulu.`);
   if (jumlahModel) {
-    //  Pengaman kuota paket gratis: total model seluruh akun dibatasi.
     const { data: semuaModel } = await db.from(TABEL).select('ukuran_model').gt('ukuran_model', 0);
     const terpakai = ((semuaModel ?? []) as { ukuran_model: number }[]).reduce((s, r) => s + r.ukuran_model, 0);
     const tambahan = sah.reduce((s, o) => s + (o.model?.length ?? 0), 0);

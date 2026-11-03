@@ -1,6 +1,5 @@
 'use client';
 
-/** useMuatJadwal - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Reminder, TeamUser } from './shared';
 import { ambilReminderUntuk } from './data-reminder';
 import { getSession } from '@/lib/auth';

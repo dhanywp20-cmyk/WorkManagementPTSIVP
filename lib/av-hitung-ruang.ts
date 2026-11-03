@@ -1,14 +1,5 @@
-/** av-hitung-ruang.ts - dipecah dari av-hitung.ts (scripts/pecah-modul.mjs); av-hitung.ts tetap mengekspor ulang semuanya. */
 import { MCB_STANDAR } from './av-hitung-led';
 
-// ── Ukuran layar & jarak pandang (aturan 4-6-8) ────────────────────────────
-
-/**
- * Tinggi gambar minimum dari jarak penonton terjauh:
- *  - Inspeksi detail (gambar teknik, angka kecil): D = 4 × H
- *  - Analitis (spreadsheet, dokumen): D = 6 × H
- *  - Tontonan umum (video, presentasi): D = 8 × H
- */
 export const FAKTOR_PANDANG = { detail: 4, analitis: 6, umum: 8 } as const;
 
 export type JenisPandang = keyof typeof FAKTOR_PANDANG;
@@ -29,30 +20,19 @@ export function jarakMaksDariLayar(tinggiLayarM: number, jenis: JenisPandang) {
   return tinggiLayarM * FAKTOR_PANDANG[jenis];
 }
 
-// ── Proyektor ──────────────────────────────────────────────────────────────
-
 export function jarakLempar(throwRatio: number, lebarGambarM: number) { return throwRatio * lebarGambarM; }
 
-/**
- * Lumen yang dibutuhkan: luas layar (m²) × target kecerahan (lux di layar)
- * / gain layar. Target kecerahan disarankan >= 5-10× cahaya ruangan agar
- * kontras cukup (AVIXA: rasio kontras 15:1 untuk analitis).
- */
 export function lumenDibutuhkan(luasM2: number, cahayaRuanganLux: number, gainLayar = 1, kelipatanKontras = 7) {
   return Math.ceil((luasM2 * cahayaRuanganLux * kelipatanKontras) / Math.max(0.3, gainLayar));
 }
 
-// ── Bandwidth sinyal video ─────────────────────────────────────────────────
-
 export type Chroma = '4:4:4' | '4:2:2' | '4:2:0';
 
-/** Total piksel termasuk blanking (CVT-RB umum untuk resolusi populer). */
 const TIMING: Record<string, [number, number]> = {
   '1280x720': [1650, 750], '1920x1080': [2200, 1125], '2560x1440': [2720, 1481],
   '3840x2160': [4400, 2250], '4096x2160': [4400, 2250], '5120x2880': [5280, 2962], '7680x4320': [9000, 4400],
 };
 
-/** Gbps data video mentah termasuk blanking (perkiraan). */
 export function bandwidthGbps(lebar: number, tinggi: number, hz: number, bit: number, chroma: Chroma) {
   const [ht, vt] = TIMING[`${lebar}x${tinggi}`] ?? [Math.round(lebar * 1.08), Math.round(tinggi * 1.04)];
   const faktorChroma = chroma === '4:4:4' ? 3 : chroma === '4:2:2' ? 2 : 1.5;
@@ -61,7 +41,6 @@ export function bandwidthGbps(lebar: number, tinggi: number, hz: number, bit: nu
   return { dataGbps, pixelClockMHz: (ht * vt * hz) / 1e6 };
 }
 
-/** Kapasitas data efektif per antarmuka (setelah overhead encoding). */
 export const ANTARMUKA: { nama: string; gbps: number; panjang: string }[] = [
   { nama: 'HDMI 1.4', gbps: 8.16, panjang: '±10 m pasif; lebih jauh pakai AOC/extender' },
   { nama: 'HDMI 2.0', gbps: 14.4, panjang: '±5-7 m pasif; AOC sampai 50 m+' },
@@ -72,20 +51,10 @@ export const ANTARMUKA: { nama: string; gbps: number; panjang: string }[] = [
   { nama: 'SDI 12G', gbps: 11.88, panjang: '±50-70 m coax' },
 ];
 
-// ── Audio ──────────────────────────────────────────────────────────────────
-
-/** SPL pada jarak tertentu (hukum kuadrat terbalik, medan bebas). */
 export function splPadaJarak(spl1m: number, jarakM: number) { return spl1m - 20 * Math.log10(Math.max(0.1, jarakM)); }
 
-/** SPL maksimum speaker dari sensitivitas (dB @1W/1m) dan daya (W). */
 export function splMaks(sensitivitas: number, dayaW: number) { return sensitivitas + 10 * Math.log10(Math.max(0.01, dayaW)); }
 
-/**
- * Speaker plafon: diameter cakupan di ketinggian telinga =
- * 2 × (tinggi plafon − tinggi telinga) × tan(sudut/2). Jarak antar speaker
- * untuk tumpang-tindih tepi ke tepi = diameter; untuk merata (minimum
- * overlap) dipakai ~0.7 × diameter.
- */
 export function speakerPlafon(panjangM: number, lebarM: number, tinggiPlafonM: number, telingaM: number, sudutDerajat: number, rapat = true) {
   const h = Math.max(0.3, tinggiPlafonM - telingaM);
   const diameter = 2 * h * Math.tan((sudutDerajat * Math.PI) / 360);
@@ -94,8 +63,6 @@ export function speakerPlafon(panjangM: number, lebarM: number, tinggiPlafonM: n
   const baris = Math.max(1, Math.ceil(lebarM / jarak));
   return { diameterM: diameter, jarakM: jarak, kolom, baris, jumlah: kolom * baris };
 }
-
-// ── Daya, UPS & panas ──────────────────────────────────────────────────────
 
 export interface Beban { nama: string; watt: number; jumlah: number }
 
@@ -108,7 +75,6 @@ export function hitungDaya(beban: Beban[], tegangan = 220, faktorDaya = 0.9, cad
     upsVA: Math.ceil((va * (1 + cadangan)) / 500) * 500,
     mcbA: MCB_STANDAR.find(r => r >= arusA * 1.25) ?? Math.ceil((arusA * 1.25) / 10) * 10,
     btu: totalW * 3.412,
-    /** PK AC perkiraan: 1 PK ≈ 9.000 BTU/h - hanya untuk beban perangkat. */
     pkAC: (totalW * 3.412) / 9000,
   };
 }

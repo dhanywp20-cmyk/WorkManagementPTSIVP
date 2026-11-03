@@ -1,8 +1,3 @@
-/**
- * lib/kesehatan-server.ts - pengumpul data Kesehatan Sistem (service role) + alert Telegram admin.
- * Dipakai route /api/admin/kesehatan (halaman) dan cron escalate & digest (alert otomatis).
- * Hanya sisi server - jangan di-import dari komponen klien.
- */
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { bacaPengaturan, kanalUntuk } from '@/lib/notifikasi/pengaturan';
@@ -37,10 +32,8 @@ export async function kumpulkanKesehatan(db: SupabaseClient): Promise<DataKeseha
 }
 
 export const KUNCI_ALERT_TERAKHIR = 'kesehatan_alert_terakhir';
-/** Peringatan yang sama tidak dikirim ulang dalam rentang ini (cron escalate & digest sama-sama memeriksa). */
 export const JEDA_ALERT_JAM = 20;
 
-/** Isi pesan alert dari daftar peringatan merah. */
 export function pesanAlert(merah: Peringatan[]): string {
   return [
     `🚨 Kesehatan Sistem Work Management: ${merah.length} peringatan merah`,
@@ -51,22 +44,15 @@ export function pesanAlert(merah: Peringatan[]): string {
   ].join('\n');
 }
 
-/** Sidik isi peringatan - alert dikirim ulang bila isinya berubah, atau setelah JEDA_ALERT_JAM. */
 export const sidikPeringatan = (merah: Peringatan[]) =>
   createHash('sha1').update(merah.map(p => p.teks).join('\n')).digest('hex').slice(0, 16);
 
-/** Perlu kirim? Isi berubah, atau yang sama tapi sudah > JEDA_ALERT_JAM jam sejak kirim terakhir. */
 export function perluKirimAlert(sidik: string, terakhir: { sidik: string; waktu: string } | null, sekarang: number): boolean {
   if (!terakhir) return true;
   if (terakhir.sidik !== sidik) return true;
   return sekarang - new Date(terakhir.waktu).getTime() > JEDA_ALERT_JAM * 3_600_000;
 }
 
-/**
- * Periksa kesehatan; bila ada peringatan MERAH, kirim ke Telegram semua admin / pemegang Full
- * Access yang sudah menautkan Telegram. Dipanggil di akhir cron (gagalnya tidak boleh
- * menggagalkan cron itu sendiri).
- */
 export async function kirimAlertKesehatan(db: SupabaseClient): Promise<{ merah: number; terkirim: number; alasan?: string }> {
   try {
     const data = await kumpulkanKesehatan(db);
@@ -80,7 +66,6 @@ export async function kirimAlertKesehatan(db: SupabaseClient): Promise<{ merah: 
 
     const [token, pengaturan] = await Promise.all([bacaRahasia('telegram.bot_token'), bacaPengaturan()]);
     if (!token || !pengaturan.aktif.telegram) return { merah: merah.length, terkirim: 0, alasan: 'Telegram belum aktif' };
-    //  Saklar per kejadian di Admin Panel -> Integrations (baris "Peringatan merah Kesehatan Sistem").
     if (!kanalUntuk('system.health_alert', pengaturan).includes('telegram')) return { merah: merah.length, terkirim: 0, alasan: 'alert dimatikan di Admin Panel' };
 
     const { data: admin } = await db.from('users').select('telegram_chat_id')
@@ -97,7 +82,7 @@ export async function kirimAlertKesehatan(db: SupabaseClient): Promise<{ merah: 
           body: JSON.stringify({ chat_id: chat, text: teks }),
         });
         if ((await r.json().catch(() => ({})))?.ok) terkirim++;
-      } catch { /* satu chat gagal tidak menghentikan yang lain */ }
+      } catch {  }
     }
     if (terkirim) await db.from('app_settings').upsert({ key: KUNCI_ALERT_TERAKHIR, value: { sidik, waktu: new Date().toISOString() } }, { onConflict: 'key' });
     return { merah: merah.length, terkirim };

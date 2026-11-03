@@ -1,9 +1,3 @@
-/**
- * uji/pustaka.ts - registri Pustaka Tools Team: validasi entri, dan isi awal migrasi 040 harus lolos
- * validasi yang sama dengan server (kalau tidak, admin tidak bisa menyimpan ulang entri bawaan).
- *
- * Jalankan: npx tsx uji/pustaka.ts
- */
 import { readFileSync } from 'node:fs';
 import { bolehLihatPustaka, bolehUbahEntri, JENIS_PUSTAKA, KUNCI_MENU_PUSTAKA, periksaEntri, tapPertama } from '../lib/pustaka';
 

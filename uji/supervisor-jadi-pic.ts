@@ -23,8 +23,6 @@ const tampil = (judul: string, r: any[]) => {
 let gagal = 0;
 const cek = (s: boolean, l: string) => { console.log(`${s ? 'OK  ' : 'GAGAL'}  ${l}`); if (!s) gagal++; };
 
-// KASUS NYATA: pic_id KOSONG (kolomnya tidak diisi alur normal), PIC & Supervisor
-// orang yang sama - Yoga KS. Inilah yang di layar membayar Yoga dua kali.
 const A = tampil('BPKP ICT Timur — PIC & Supervisor sama-sama Yoga KS, pic_id kosong',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
     'u-yoga', 'Yoga KS', [{ user_id: 'ferdinan', user_name: 'Ferdinan Agustinus' }]));
@@ -35,7 +33,6 @@ cek(!A.r.some(s => s.role === 'supervisor'), 'Baris Supervisor hilang saat ia ja
 cek(Math.abs(A.tot - POOL) <= 1, `Total tetap Rp ${POOL.toLocaleString('id-ID')}`);
 cek(Math.abs(A.pct - 100) < 0.01, 'Total persen tetap 100%');
 
-// Porsi Supervisor yang hangus mengikuti setting hangusSupervisorKe.
 sk.hangusSupervisorKe = 'manager';
 const B = tampil('Porsi Supervisor dialihkan ke MANAGER (setting sekarang)',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
@@ -50,7 +47,6 @@ cek(C.r.find(s => s.role === 'pic')?.percentage === 75, 'PIC jadi 75% (60 + 15)'
 cek(C.r.find(s => s.role === 'manager')?.percentage === 8, 'Manager tetap 8%');
 cek(Math.abs(C.tot - POOL) <= 1 && Math.abs(C.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
-// Kendali: PIC dan Supervisor orang BERBEDA - tidak boleh ikut terhapus.
 sk.hangusSupervisorKe = 'manager';
 const D = tampil('Kendali — PIC Pandu, Supervisor Yoga (orang berbeda)',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
@@ -58,10 +54,6 @@ const D = tampil('Kendali — PIC Pandu, Supervisor Yoga (orang berbeda)',
 cek(D.r.find(s => s.role === 'supervisor')?.percentage === 15, 'Supervisor tetap dapat 15%');
 cek(D.r.find(s => s.role === 'manager')?.percentage === 8, 'Manager tetap 8%');
 
-
-// ── PIC menangani sendiri Troubleshooting-nya ──────────────────────────────
-// Yoga PIC, dan Yoga juga yang menangani ticket. Ia TIDAK boleh menerima
-// porsi Support di atas porsi PIC-nya.
 sk.hangusSupervisorKe = 'manager';
 const E = tampil('PIC Pandu, dan yang menangani Troubleshooting Pandu sendiri',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
@@ -84,17 +76,12 @@ cek(sup[0]?.percentage === 17, 'Ferdinan dapat 17% PENUH, bukan dibagi dua denga
 cek(F.r.find(s => s.role === 'pic')?.percentage === 60, 'PIC tetap 60% (skema ada support)');
 cek(Math.abs(F.tot - POOL) <= 1 && Math.abs(F.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
-// Supervisor merangkap PIC DAN menangani sendiri Troubleshooting-nya.
 const G = tampil('Yoga = PIC + Supervisor + penangan Troubleshooting (tiga-tiganya)',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
     'u-yoga', 'Yoga KS', [{ user_id: 'u-yoga', user_name: 'Yoga KS' }]));
 cek(G.r.filter(s => s.user_name === 'Yoga KS').length === 1, 'Yoga tetap muncul SEKALI saja');
 cek(Math.abs(G.tot - POOL) <= 1 && Math.abs(G.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
-
-// ── Supervisor & Manager juga tidak boleh terdeteksi sebagai Support ───────
-// Menangani Troubleshooting anak buah MEMANG tugas mereka, dan itulah yang
-// dibayar porsi koordinasi. Mendeteksinya lagi sebagai Support = dobel.
 const H = tampil('PIC Pandu; yang menangani Troubleshooting justru Supervisor Yoga',
   calculateStandardScheme(sk, POOL, 'onsite', '', 'Pandu Kusuma Adji', 'u-dhany', 'Dhany Wahyu',
     'u-yoga', 'Yoga KS', [{ user_id: 'u-yoga', user_name: 'Yoga KS' }]));
@@ -123,10 +110,6 @@ cek(supJ.length === 1 && supJ[0].user_name === 'Ferdinan Agustinus',
 cek(supJ[0]?.percentage === 17, 'Ferdinan dapat 17% PENUH, tidak dibagi bertiga');
 cek(Math.abs(J.tot - POOL) <= 1 && Math.abs(J.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
-// ── Tabel KHUSUS Supervisor-sebagai-PIC (saklar dinyalakan) ────────────────
-// Sebelumnya porsi Supervisor cuma dipindah ke Manager di atas peta PIC-staff
-// biasa - tidak membedakan Remote/Onsite atau ada/tidaknya Support sama
-// sekali. Angka di bawah dari permintaan pemilik kebijakan sendiri.
 const sk2: SkemaInsentif = {
   ...sk,
   supervisorSebagaiPic: {
@@ -177,8 +160,6 @@ cek(N.r.find(s => s.role === 'support')?.percentage === 15, 'Support (Ferdinan) 
 cek(N.r.find(s => s.role === 'manager')?.percentage === 25, 'Manager 25%');
 cek(Math.abs(N.tot - POOL) <= 1 && Math.abs(N.pct - 100) < 0.01, 'Tetap 100% / Rp 1.000.000');
 
-// Kendali: saklar MATI (sk lama) harus tetap perilaku LAMA - fold ke Manager,
-// tidak boleh diam-diam ikut memakai tabel sk2 di atas.
 const O = tampil('[Saklar MATI] Remote, Supervisor=PIC, TANPA support - perilaku LAMA tetap',
   calculateStandardScheme(sk, POOL, 'remote', '', 'Yoga KS', 'u-dhany', 'Dhany Wahyu',
     'u-yoga', 'Yoga KS', []));

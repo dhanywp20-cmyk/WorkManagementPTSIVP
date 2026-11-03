@@ -1,10 +1,3 @@
-/**
- * uji/kelas-eksternal.ts - Kelas Eksternal Learning Center (quiz customer tanpa akun).
- * Aturan (lib/kelas-eksternal.ts) + pengaman route: kunci jawaban tidak pernah keluar, tabel
- * terkunci, halaman publik tanpa header platform.
- *
- * Jalankan: npm test -- kelas-eksternal
- */
 import { readFileSync } from 'fs';
 import {
   acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban, rapikanDataPeserta,

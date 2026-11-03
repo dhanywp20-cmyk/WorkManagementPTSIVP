@@ -11,9 +11,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   const kgs=kegiatanList.filter(k=>k.piket_id===row.id);
   const dateLabel=new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari kelompok PTS
-  //  di luar IVP/UMP/MVI (tersimpan di kolom `pic` JSONB) tidak pernah
-  //  tampil di sini.
   const picBaris=bacaPicPiket(row);
   const picList=picBaris?[[picBaris.name,labelKelompokPTS(picBaris.team_type)||picBaris.team_type] as [string,string]]:[];
 
@@ -34,7 +31,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl my-4 flex flex-col"
         style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
 
-        {/* Header */}
         <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 rounded-t-2xl flex-shrink-0 relative">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Jadwal</p>
@@ -47,7 +43,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
 
         <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
 
-          {/* PIC Section */}
           <div>
             <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3"><IkonTeks nama="👥" />Petugas Piket (PIC)</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -70,7 +65,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             </div>
           </div>
 
-          {/* Kegiatan Section */}
           {kgs.length===0?(
             <div className="text-center py-10 px-6 rounded-xl" style={{background:'rgba(0,0,0,0.03)',border:'1.5px dashed rgba(0,0,0,0.1)'}}>
               <div className="text-4xl mb-2"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
@@ -84,7 +78,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                 const kColor=KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent;
                 return(
                   <div key={i} className="rounded-xl overflow-hidden border-2" style={{borderColor:`${kColor}25`,background:'rgba(255,255,255,0.5)'}}>
-                    {/* Kegiatan header */}
                     <div className="px-4 py-3 flex items-center justify-between" style={{background:`${kColor}08`,borderBottom:`1px solid ${kColor}20`}}>
                       <div className="flex items-center gap-3">
                         <span className="text-[11px] font-black px-2.5 py-1 rounded text-white" style={{background:kColor}}>{kg.jenis_kegiatan}</span>
@@ -94,7 +87,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                     </div>
 
                     <div className="px-4 py-4 grid grid-cols-2 gap-x-6 gap-y-4">
-                      {/* Jam Section */}
                       {kg.jam_mulai&&(
                         <div className="col-span-2 grid grid-cols-2 gap-6">
                           <div>
@@ -108,7 +100,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </div>
                       )}
 
-                      {/* Produk */}
                       {kg.produk&&kg.produk.length>0&&(
                         <div className="col-span-2">
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="📦" />Produk yang Digunakan</p>
@@ -121,7 +112,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </div>
                       )}
 
-                      {/* Produk Lain — beban daya unit di luar list */}
                       {kg.produk_lain&&kg.produk_lain.length>0&&(
                         <div className="col-span-2">
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</p>
@@ -137,7 +127,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </div>
                       )}
 
-                      {/* Demo Product fields */}
                       {kg.jenis_kegiatan==='Demo Product'&&(
                         <>
                           {kg.tamu_instansi&&(
@@ -168,7 +157,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </>
                       )}
 
-                      {/* RnD fields */}
                       {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
                         <div className="col-span-2">
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="👥" />Team yang RnD</p>
@@ -176,7 +164,6 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         </div>
                       )}
 
-                      {/* Keterangan */}
                       {kg.keterangan&&(
                         <div className="col-span-2">
                           <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="📝" />Keterangan</p>
@@ -190,12 +177,10 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             </div>
           )}
 
-          {/* Meta Info */}
           <div className="pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between text-xs">
               <div>
                 {(()=>{
-                  // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
                   const lastEdited=kgs.filter(k=>k.edited_by_name).sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
                   return lastEdited?.edited_by_name?(
                     <div className="flex items-center gap-2 text-slate-600">
@@ -219,17 +204,11 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 flex gap-3 border-t border-slate-200" style={{background:'rgba(0,0,0,0.02)'}}>
           <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl font-bold text-sm transition-all"
             style={{background:'rgba(100,116,139,0.1)',color:'#475569',border:'1px solid rgba(100,116,139,0.25)'}}>
             Tutup
           </button>
-          {/* Tombol Edit hanya muncul bila pemanggil memang memberi onEdit -
-              yaitu untuk Tim PTS. Dulu ia selalu dirender dan memanggil
-              onEdit?.(), sehingga akun yang tidak boleh menyunting tetap
-              melihat tombolnya dan menekannya tidak melakukan apa-apa: tombol
-              yang diam lebih membingungkan daripada tombol yang tidak ada. */}
           {onEdit&&(
             <button onClick={handleEditClick} className="flex-1 px-4 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
               style={{background:dc.grad,boxShadow:`0 4px 12px ${dc.accent}30`}}>

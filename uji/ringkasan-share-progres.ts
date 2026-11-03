@@ -1,10 +1,3 @@
-/**
- * uji/ringkasan-share-progres.ts - ringkasan & grafik Project Progress (semua tampilan):
- * angka (app/(portal)/project-progress/_components/ringkasan/hitung.ts), "Dikerjakan Oleh" hanya
- * handler - proyek: lokasi per handler, satu lokasi: item per handler (lib/checklist-ringkasan.ts), dan aturan "tiap fakta tampil sekali".
- *
- * Jalankan: npm test -- ringkasan-share-progres
- */
 import { readFileSync } from 'fs';
 import {
   hitungRingkasan, MAKS_HARI_LAJU, lajuDariPeta, ringkasChecklist, ringkasDaftarProyek, ringkasDariLokasi,
@@ -33,10 +26,10 @@ const daftar = [
 const anggota = [{ daftar_id: 'a', nama: 'Ade' }, { daftar_id: 'b', nama: 'Yoga KS' }];
 const items = [
   item('a', { selesai: true, selesai_oleh: 'Ade', selesai_pada: '2026-10-01T03:00:00Z' }),
-  item('a', { selesai: true, selesai_oleh: 'Dhany (Admin)', selesai_pada: '2026-10-02T03:00:00Z' }),   // admin bantu
-  item('b', { selesai: true, selesai_oleh: 'yoga ks ', selesai_pada: '2026-10-02T04:00:00Z' }),         // beda huruf/spasi
+  item('a', { selesai: true, selesai_oleh: 'Dhany (Admin)', selesai_pada: '2026-10-02T03:00:00Z' }),
+  item('b', { selesai: true, selesai_oleh: 'yoga ks ', selesai_pada: '2026-10-02T04:00:00Z' }),
   item('b', { kendala: true }),
-  item('c', { selesai: true, selesai_oleh: 'Ade', selesai_pada: '2026-10-03T04:00:00Z' }),              // Ade bukan handler di c
+  item('c', { selesai: true, selesai_oleh: 'Ade', selesai_pada: '2026-10-03T04:00:00Z' }),
   item('c'),
 ];
 const r = hitungRingkasan({ start_date: '2026-09-25', target_date: '2026-10-23' }, daftar, items, anggota, HARI);
