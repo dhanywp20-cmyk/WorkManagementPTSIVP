@@ -1,7 +1,6 @@
 'use client';
 import { appBaseUrl } from '@/lib/app-url';
 import { useRouter } from 'next/navigation';
-import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import {
   SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan, KepalaModal,
@@ -9,14 +8,13 @@ import {
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { ModePenyelesaianPanel } from './ModePenyelesaianPanel';
 import {
-  Reminder, TeamUser, GuestUser, Status,
-  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, STATUS_CONFIG,
-  REPEAT_OPTIONS, formatDate, cleanRequestNotes,
+  Reminder, Status, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, STATUS_CONFIG, REPEAT_OPTIONS, formatDate, cleanRequestNotes,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { buatIcs } from '@/lib/ics';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { hasFullAccess } from '@/lib/constants';
+import { useKonteksJadwal } from './konteks-jadwal';
 
 /**
  * Popup detail reminder (header + info project + timeline + garansi +
@@ -25,107 +23,22 @@ import { hasFullAccess } from '@/lib/constants';
  * (JSX identik). State & handler tetap di page.tsx, komponen ini murni
  * presentasional.
  */
-export function ReminderDetailPopup({
-  detailReminder, setDetailReminder,
-  showModeModal, setShowModeModal,
-  pendingStatus, setPendingStatus,
-  statusPhoto, setStatusPhoto,
-  statusPhotoPreview, setStatusPhotoPreview,
-  showRiwayat, setShowRiwayat,
-  isAdmin, isManager, currentUser,
-  isMyReviewStage,
-  canInternalApprove, setInternalApproveTarget, handleInternalReject,
-  canApproveAssign, setApproveTarget, setApproveBatchSiblings, reminders,
-  setApproveAssignTo, setApproveDate, setApproveTime,
-  handleAdminReject,
-  openSupervisorAssign,
-  bolehEditReminder, setRescheduleTarget,
-  resendingFormReview, handleResendFormReview,
-  sendingWA, handleSendWA,
-  openEdit,
-  statusPhotoRef,
-  handleConfirmStatusUpdate, updatingStatus,
-  guestUsers,
-  modePenyelesaian, setModePenyelesaian,
-  installerName, setInstallerName,
-  installerUserId, setInstallerUserId,
-  daftarCabang,
-  installerDaerah, setInstallerDaerah,
-  bastDate, setBastDate,
-  displayType, setDisplayType,
-  requiresMiddleware, setRequiresMiddleware,
-  requiresControllerAuto, setRequiresControllerAuto,
-  controllerBrand, setControllerBrand,
-  setPendingPhotoUrl,
-  savingMode, handleModeConfirm,
-  modeEditSaja, bukaEditDetailPelaksanaan,
-}: {
-  detailReminder: Reminder;
-  setDetailReminder: (r: Reminder | null) => void;
-  showModeModal: boolean;
-  setShowModeModal: (v: boolean) => void;
-  pendingStatus: Status | null;
-  setPendingStatus: (v: Status | null) => void;
-  statusPhoto: File | null;
-  setStatusPhoto: (v: File | null) => void;
-  statusPhotoPreview: string | null;
-  setStatusPhotoPreview: (v: string | null) => void;
-  showRiwayat: boolean;
-  setShowRiwayat: Dispatch<SetStateAction<boolean>>;
-  isAdmin: boolean;
-  isManager: boolean;
-  currentUser: TeamUser | null;
-  isMyReviewStage: (r: Reminder) => boolean;
-  canInternalApprove: (r: Reminder) => boolean;
-  setInternalApproveTarget: (r: Reminder) => void;
-  handleInternalReject: (r: Reminder) => void;
-  canApproveAssign: boolean;
-  setApproveTarget: (r: Reminder) => void;
-  setApproveBatchSiblings: (r: Reminder[]) => void;
-  reminders: Reminder[];
-  setApproveAssignTo: (v: string) => void;
-  setApproveDate: (v: string) => void;
-  setApproveTime: (v: string) => void;
-  handleAdminReject: (r: Reminder) => void;
-  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
-  bolehEditReminder: (r: Reminder) => boolean;
-  setRescheduleTarget: (r: Reminder) => void;
-  resendingFormReview: boolean;
-  handleResendFormReview: (r: Reminder) => void;
-  sendingWA: string | null;
-  handleSendWA: (r: Reminder) => void;
-  openEdit: (r: Reminder) => void;
-  statusPhotoRef: RefObject<HTMLInputElement | null>;
-  handleConfirmStatusUpdate: () => void;
-  updatingStatus: boolean;
-  guestUsers: GuestUser[];
-  modePenyelesaian: 'onsite' | 'remote' | null;
-  setModePenyelesaian: (v: 'onsite' | 'remote' | null) => void;
-  installerName: string;
-  setInstallerName: (v: string) => void;
-  installerUserId: string | null;
-  setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
-  installerDaerah: string;
-  setInstallerDaerah: (v: string) => void;
-  bastDate: string;
-  setBastDate: (v: string) => void;
-  displayType: 'led' | 'lcd' | 'mix' | null;
-  setDisplayType: (v: 'led' | 'lcd' | 'mix' | null) => void;
-  requiresMiddleware: boolean;
-  setRequiresMiddleware: (v: boolean) => void;
-  requiresControllerAuto: boolean;
-  setRequiresControllerAuto: (v: boolean) => void;
-  controllerBrand: 'cue' | 'extron' | 'wyrestorm' | null;
-  setControllerBrand: (v: 'cue' | 'extron' | 'wyrestorm' | null) => void;
-  setPendingPhotoUrl: (v: undefined) => void;
-  savingMode: boolean;
-  handleModeConfirm: () => void;
-  /** true saat panel Mode dipakai mengisi ulang jadwal yang sudah Completed. */
-  modeEditSaja: boolean;
-  /** Buka panel Mode untuk jadwal yang sudah Completed (status tidak diubah). */
-  bukaEditDetailPelaksanaan: (r: Reminder) => void;
-}) {
+export function ReminderDetailPopup({ detailReminder }: { detailReminder: Reminder }) {
+  const k = useKonteksJadwal();
+  const { isAdmin, isManager, currentUser } = k.sesi;
+  const { isMyReviewStage, canInternalApprove, canApproveAssign, bolehEditReminder } = k.izin;
+  const { reminders, guestUsers } = k.data;
+  const {
+    setDetailReminder, setInternalApproveTarget, handleInternalReject, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo, setApproveDate, setApproveTime,
+    handleAdminReject, openSupervisorAssign, setRescheduleTarget, resendingFormReview, handleResendFormReview, sendingWA, handleSendWA, openEdit
+  } = k.aksi;
+  const {
+    showModeModal, setShowModeModal, pendingStatus, setPendingStatus, statusPhoto, setStatusPhoto, statusPhotoPreview, setStatusPhotoPreview, showRiwayat,
+    setShowRiwayat, statusPhotoRef, handleConfirmStatusUpdate, updatingStatus, modePenyelesaian, setModePenyelesaian, installerName, setInstallerName, installerUserId,
+    setInstallerUserId, daftarCabang, installerDaerah, setInstallerDaerah, bastDate, setBastDate, displayType, setDisplayType, requiresMiddleware, setRequiresMiddleware,
+    requiresControllerAuto, setRequiresControllerAuto, controllerBrand, setControllerBrand, setPendingPhotoUrl, savingMode, handleModeConfirm, modeEditSaja,
+    bukaEditDetailPelaksanaan
+  } = k.detail;
   //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
   //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
   const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);

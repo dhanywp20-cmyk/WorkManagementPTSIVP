@@ -410,11 +410,6 @@
       "barisPanjang": 9,
       "propsMaks": 2
     },
-    "app/(portal)/reminder-schedule/_components/IsiJadwal.tsx": {
-      "baris": 214,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
     "app/(portal)/reminder-schedule/_components/KepalaJadwal.tsx": {
       "baris": 73,
       "barisPanjang": 1,
@@ -425,13 +420,8 @@
       "barisPanjang": 1,
       "propsMaks": 2
     },
-    "app/(portal)/reminder-schedule/_components/PopupDetailJadwal.tsx": {
-      "baris": 118,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
     "app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx": {
-      "baris": 836,
+      "baris": 749,
       "barisPanjang": 1,
       "propsMaks": 3
     },
@@ -441,7 +431,7 @@
       "propsMaks": 3
     },
     "app/(portal)/reminder-schedule/_components/ReminderListBody.tsx": {
-      "baris": 560,
+      "baris": 501,
       "barisPanjang": 4,
       "propsMaks": 2
     },
@@ -496,9 +486,9 @@
       "propsMaks": 0
     },
     "app/(portal)/reminder-schedule/page.tsx": {
-      "baris": 895,
-      "barisPanjang": 10,
-      "propsMaks": 71
+      "baris": 889,
+      "barisPanjang": 8,
+      "propsMaks": 8
     },
     "app/(portal)/tech-note/_components/bagian-tech-note.tsx": {
       "baris": 461,

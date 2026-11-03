@@ -2,18 +2,15 @@
 import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ErrorState, ListEmptyState, MobileListCard, MobileCardBadge,
-  Paginasi, usePaginasi,
+  ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup, ErrorState, ListEmptyState, MobileListCard, MobileCardBadge, Paginasi, usePaginasi,
 } from '@/components/shared';
 import { StatusBadge } from './Badges';
 import {
-  Reminder, TeamUser, GuestUser, Status,
-  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG,
-  formatDatetime, isDueToday, layakIncentive, diluarIncentive,
+  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, formatDatetime, isDueToday, layakIncentive, diluarIncentive,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
+import { useKonteksJadwal } from './konteks-jadwal';
 
 /**
  * Error/loading/empty state + daftar reminder (kartu mobile & tabel
@@ -21,76 +18,20 @@ import { hasFullAccess } from '@/lib/constants';
  * (JSX identik). State & handler tetap di page.tsx, komponen ini murni
  * presentasional.
  */
-export function ReminderListBody({
-  fetchError, setFetchError, fetchReminders, listLoading,
-  filteredReminders, reminders, groupedReminders,
-  filterStatus, filterYear, filterCategory, productFilter, setProductFilter,
-  searchProject, searchSales, searchDivisionSales, searchTeamHandler, searchProduct,
-  setFilterStatus, setFilterYear, setFilterCategory,
-  setSearchProject, setSearchSales, setSearchDivisionSales, setSearchTeamHandler, setSearchProduct,
-  setDetailReminder,
-  bolehEditReminder, setRescheduleTarget,
-  canInternalApprove, setInternalApproveTarget, handleInternalReject,
-  canApproveAssign, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo, setApproveDate, setApproveTime,
-  handleAdminReject,
-  currentUser, openSupervisorAssign,
-  isAdmin, isManager,
-  syncKeIncentive, syncing,
-  openDeleteModal,
-  selectMode, selectedIds, setSelectedIds, toggleSelectAll,
-  guestUsers,
-}: {
-  fetchError: string | null;
-  setFetchError: (v: string | null) => void;
-  fetchReminders: () => void;
-  listLoading: boolean;
-  filteredReminders: Reminder[];
-  reminders: Reminder[];
-  groupedReminders: Reminder[][];
-  filterStatus: Status | 'all';
-  filterYear: string;
-  filterCategory: string;
-  productFilter: string | null;
-  setProductFilter: (v: string | null) => void;
-  searchProject: string;
-  searchSales: string;
-  searchDivisionSales: string;
-  searchTeamHandler: string;
-  searchProduct: string;
-  setFilterStatus: (v: Status | 'all') => void;
-  setFilterYear: (v: string) => void;
-  setFilterCategory: (v: string) => void;
-  setSearchProject: (v: string) => void;
-  setSearchSales: (v: string) => void;
-  setSearchDivisionSales: (v: string) => void;
-  setSearchTeamHandler: (v: string) => void;
-  setSearchProduct: (v: string) => void;
-  setDetailReminder: (r: Reminder) => void;
-  bolehEditReminder: (r: Reminder) => boolean;
-  setRescheduleTarget: (r: Reminder) => void;
-  canInternalApprove: (r: Reminder) => boolean;
-  setInternalApproveTarget: (r: Reminder) => void;
-  handleInternalReject: (r: Reminder) => void;
-  canApproveAssign: boolean;
-  setApproveTarget: (r: Reminder) => void;
-  setApproveBatchSiblings: (r: Reminder[]) => void;
-  setApproveAssignTo: (v: string) => void;
-  setApproveDate: (v: string) => void;
-  setApproveTime: (v: string) => void;
-  handleAdminReject: (r: Reminder) => void;
-  currentUser: TeamUser | null;
-  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
-  isAdmin: boolean;
-  isManager: boolean;
-  syncKeIncentive: (r: Reminder) => void;
-  syncing: string | null;
-  openDeleteModal: (r: Reminder) => void;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setSelectedIds: (updater: (prev: Set<string>) => Set<string>) => void;
-  toggleSelectAll: () => void;
-  guestUsers: GuestUser[];
-}) {
+export function ReminderListBody() {
+  const k = useKonteksJadwal();
+  const { currentUser, isAdmin, isManager } = k.sesi;
+  const { bolehEditReminder, canInternalApprove, canApproveAssign } = k.izin;
+  const { fetchError, setFetchError, fetchReminders, listLoading, filteredReminders, reminders, groupedReminders, guestUsers } = k.data;
+  const {
+    filterStatus, filterYear, filterCategory, productFilter, setProductFilter, searchProject, searchSales, searchDivisionSales, searchTeamHandler, searchProduct,
+    setFilterStatus, setFilterYear, setFilterCategory, setSearchProject, setSearchSales, setSearchDivisionSales, setSearchTeamHandler, setSearchProduct
+  } = k.filter;
+  const { selectMode, selectedIds, setSelectedIds, toggleSelectAll } = k.pilih;
+  const {
+    setDetailReminder, setRescheduleTarget, setInternalApproveTarget, handleInternalReject, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo,
+    setApproveDate, setApproveTime, handleAdminReject, openSupervisorAssign, syncKeIncentive, syncing, openDeleteModal
+  } = k.aksi;
   //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
   //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
   const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);

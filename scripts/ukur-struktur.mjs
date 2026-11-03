@@ -13,7 +13,7 @@
  *                                               (HANYA setelah angkanya membaik - lihat uji/struktur-kode.mjs)
  */
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 /** Ambang. Berkas di atas ambang ini tercatat di baseline dan tidak boleh memburuk; berkas baru tidak boleh melewatinya. */
 export const BATAS = { baris: 600, karakter: 300, props: 25 };
@@ -21,7 +21,8 @@ export const BATAS = { baris: 600, karakter: 300, props: 25 };
 export function daftarBerkas() {
   //  Bukan pola 'lib/**/*.ts': pathspec git itu melewatkan berkas yang langsung di lib/ (mis. lib/auth.ts).
   return execSync('git ls-files -- app lib components', { encoding: 'utf8' })
-    .split('\n').filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith('.d.ts'));
+    //  existsSync: berkas yang sudah dihapus tapi belum di-commit masih terdaftar di git.
+    .split('\n').filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith('.d.ts') && existsSync(f));
 }
 
 /** Ukuran satu berkas dari isinya (murni - dipakai juga oleh uji). */
