@@ -1,43 +1,19 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
-import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
-import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
-import { isAssignablePTSTeam, bolehDitugaskanOleh } from '@/lib/teams';
-import { namaKelompokCabang } from '@/lib/kelompok';
-import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
-import { normalkanNama } from '@/lib/kelompok-insentif';
-import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
+import { clearSession, getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
-import { penerimaAdminBernomor } from '@/lib/penerima-admin';
-import { adalahKategoriInsentif, muatKategoriInsentif } from '@/lib/incentive-scheme';
-import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
+import { muatKategoriInsentif } from '@/lib/incentive-scheme';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
-import { compressImage } from '@/lib/image-compress';
-import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
+import { kutipNilai, cobaIdentitas } from '@/lib/identitas';
 
-import {
-  Priority, Status, RepeatType, Reminder, TeamUser, GuestUser,
-  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
-  PRIORITY_CONFIG, STATUS_CONFIG, CATEGORIES, CATEGORY_CONFIG,
-  SALES_DIVISIONS, PIE_COLORS,
-  formatDate, formatDatetime, isDueToday, newBatchId,
-  sendFonnteWA, resolveSupervisorsForProductType, type SupervisorCandidate,
-  DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTargets,
-  layakIncentive, diluarIncentive, REMINDER_FIELDS } from './_components/shared';
-import {
-  LoadingScreen, PageHeader,
-} from '@/components/shared';
-import { MiniCalendar } from './_components/MiniCalendar';
+import { Status, Reminder, TeamUser, GuestUser, resolveSupervisorsForProductType, diluarIncentive } from './_components/shared';
+import { LoadingScreen } from '@/components/shared';
 import { RescheduleModal } from './_components/RescheduleModal';
-import { appLink } from '@/lib/app-url';
-import { ambilReminderUntuk } from './_components/data-reminder';
-import { kelompokkanReminder, pieKategori, pieDivisiSales, pieTeamPts, pieProduk } from './_components/olah-data';
 import { RequestJadwalModal, type JadwalRequest } from './_components/RequestJadwalModal';
 import { ReminderFormModal, type ReminderForm } from './_components/ReminderFormModal';
 import { KonfirmasiApproveInternal, ModalHapus, PopupNotifikasi, PopupLonceng } from './_components/PopupRingkas';
@@ -45,14 +21,8 @@ import { RejectReasonModal } from './_components/RejectReasonModal';
 import { BulkDeleteConfirmModal } from './_components/BulkDeleteConfirmModal';
 import { TanyaLanjutanModal, PilihTipeReminderModal, CariProyekLamaModal } from './_components/LapisEmpatModals';
 import { ApproveAssignModal, SupervisorAssignModal } from './_components/ApproveAssignModals';
-import { StatsSection } from './_components/StatsSection';
-import { FilterBar } from './_components/FilterBar';
-import { ModePenyelesaianPanel } from './_components/ModePenyelesaianPanel';
-import { ReminderListBody } from './_components/ReminderListBody';
 import { ReminderDetailPopup } from './_components/ReminderDetailPopup';
-import { IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
-import { URL_XLSX } from '@/lib/xlsx-loader';
 import { useAlurPersetujuan } from './_components/useAlurPersetujuan';
 import { useAksiStatus } from './_components/useAksiStatus';
 import { useSimpanJadwal } from './_components/useSimpanJadwal';
@@ -64,7 +34,7 @@ import { useAksiMassalJadwal } from './_components/useAksiMassalJadwal';
 import { useProyekLama } from './_components/useProyekLama';
 import { IsiJadwal } from './_components/IsiJadwal';
 import { KepalaJadwal } from './_components/KepalaJadwal';
-import { PopupDetailJadwal } from './_components/PopupDetailJadwal';
+import { KonteksJadwal, type NilaiKonteksJadwal } from './_components/konteks-jadwal';
 import { useStateApproval } from './_components/useStateApproval';
 import { useStateModePenyelesaian } from './_components/useStateModePenyelesaian';
 
@@ -587,9 +557,36 @@ function ReminderSchedulePageInner() {
   };
 
   // Not ready - tampilkan loading screen saat pertama kali fetch data
+  /*
+    Konteks halaman (_components/konteks-jadwal.tsx): satu objek berkelompok untuk seluruh komponen di bawah,
+    menggantikan ±130 props yang dulu diteruskan satu per satu. Dua setter dibungkus seperti di PopupDetailJadwal
+    lama: keduanya menjaga modeEditSaja tidak tertinggal menyala (lihat catatan di JSX bawah).
+  */
+  const konteksJadwal: NilaiKonteksJadwal = {
+    sesi: { currentUser, isAdmin, isGuest, isManager },
+    izin: { bolehEditReminder, canApproveAssign, canInternalApprove, isMyReviewStage },
+    data: { fetchError, fetchReminders, filteredReminders, groupedReminders, guestUsers, listLoading, reminders, setFetchError },
+    ringkasan: { doneCount, pendingCount, productPieData, projectPieData, salesPieData, teamPtsPieData, todayCount, totalCount },
+    filter: { availableYears, filterCategory, filterStatus, filterYear, productFilter, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay,
+      setFilterCategory, setFilterStatus, setFilterYear, setProductFilter, setSearchDivisionSales, setSearchProduct, setSearchProject, setSearchSales, setSearchTeamHandler,
+      setSelectedCalDay },
+    tampilan: { calOnlyDay, calendarMonth, setCalOnlyDay, setCalendarMonth, view },
+    pilih: { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds, toggleSelectAll },
+    aksi: { handleAdminReject, handleExportExcel, handleInternalReject, handleResendFormReview, handleSendWA, openDeleteModal, openEdit, openSupervisorAssign, resendingFormReview,
+      sendingWA, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveTarget, setApproveTime, setDetailReminder, setInternalApproveTarget, setRescheduleTarget,
+      syncKeIncentive, syncing },
+    detail: { bastDate, bukaEditDetailPelaksanaan, controllerBrand, displayType, handleConfirmStatusUpdate, handleModeConfirm, installerDaerah, installerName, installerUserId, modeEditSaja,
+      modePenyelesaian, pendingStatus, daftarCabang: ptsCabangUsers, requiresControllerAuto, requiresMiddleware, savingMode, setBastDate, setControllerBrand, setDisplayType,
+      setInstallerDaerah, setInstallerName, setInstallerUserId, setModeEditSaja, setModePenyelesaian, setPendingPhotoUrl,
+      setPendingStatus: (v: Status | null) => { setPendingStatus(v); if (v) setModeEditSaja(false); }, setRequiresControllerAuto, setRequiresMiddleware,
+      setShowModeModal: (v: boolean) => { setShowModeModal(v); if (!v) setModeEditSaja(false); }, setShowRiwayat, setStatusPhoto, setStatusPhotoPreview, showModeModal, showRiwayat,
+      statusPhoto, statusPhotoPreview, statusPhotoRef, updatingStatus },
+  };
+
   if (!appReady) return <LoadingScreen />;
 
   return (
+    <KonteksJadwal.Provider value={konteksJadwal}>
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
       background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
@@ -836,9 +833,7 @@ function ReminderSchedulePageInner() {
             menjaga modeEditSaja tidak tertinggal menyala. Kalau panel edit
             ditutup/dibatalkan lalu jadwal LAIN ditandai Completed, flag yang
             tertinggal akan membuat statusnya tidak pernah ikut tersimpan. */}
-        <PopupDetailJadwal
-          bastDate={bastDate} bolehEditReminder={bolehEditReminder} bukaEditDetailPelaksanaan={bukaEditDetailPelaksanaan} canApproveAssign={canApproveAssign} canInternalApprove={canInternalApprove} controllerBrand={controllerBrand} currentUser={currentUser} detailReminder={detailReminder} displayType={displayType} guestUsers={guestUsers} handleAdminReject={handleAdminReject} handleConfirmStatusUpdate={handleConfirmStatusUpdate} handleInternalReject={handleInternalReject} handleModeConfirm={handleModeConfirm} handleResendFormReview={handleResendFormReview} handleSendWA={handleSendWA} installerDaerah={installerDaerah} installerName={installerName} installerUserId={installerUserId} isAdmin={isAdmin} isManager={isManager} isMyReviewStage={isMyReviewStage} modeEditSaja={modeEditSaja} modePenyelesaian={modePenyelesaian} openEdit={openEdit} openSupervisorAssign={openSupervisorAssign} pendingStatus={pendingStatus} ptsCabangUsers={ptsCabangUsers} reminders={reminders} requiresControllerAuto={requiresControllerAuto} requiresMiddleware={requiresMiddleware} resendingFormReview={resendingFormReview} savingMode={savingMode} sendingWA={sendingWA} setApproveAssignTo={setApproveAssignTo} setApproveBatchSiblings={setApproveBatchSiblings} setApproveDate={setApproveDate} setApproveTarget={setApproveTarget} setApproveTime={setApproveTime} setBastDate={setBastDate} setControllerBrand={setControllerBrand} setDetailReminder={setDetailReminder} setDisplayType={setDisplayType} setInstallerDaerah={setInstallerDaerah} setInstallerName={setInstallerName} setInstallerUserId={setInstallerUserId} setInternalApproveTarget={setInternalApproveTarget} setModeEditSaja={setModeEditSaja} setModePenyelesaian={setModePenyelesaian} setPendingPhotoUrl={setPendingPhotoUrl} setPendingStatus={setPendingStatus} setRequiresControllerAuto={setRequiresControllerAuto} setRequiresMiddleware={setRequiresMiddleware} setRescheduleTarget={setRescheduleTarget} setShowModeModal={setShowModeModal} setShowRiwayat={setShowRiwayat} setStatusPhoto={setStatusPhoto} setStatusPhotoPreview={setStatusPhotoPreview} showModeModal={showModeModal} showRiwayat={showRiwayat} statusPhoto={statusPhoto} statusPhotoPreview={statusPhotoPreview} statusPhotoRef={statusPhotoRef} updatingStatus={updatingStatus}
-        />
+        {detailReminder && <ReminderDetailPopup detailReminder={detailReminder} />}
 
         {/* ── HEADER ── */}
         <KepalaJadwal
@@ -855,9 +850,7 @@ function ReminderSchedulePageInner() {
           yang benar adalah membetulkan elemen yang melebar itu sendiri
           (truncate/min-w-0 di sumbernya), bukan menyembunyikan gejalanya.
         */}
-        <IsiJadwal
-          availableYears={availableYears} bolehEditReminder={bolehEditReminder} bulkDeleting={bulkDeleting} calOnlyDay={calOnlyDay} calendarMonth={calendarMonth} canApproveAssign={canApproveAssign} canInternalApprove={canInternalApprove} currentUser={currentUser} doneCount={doneCount} fetchError={fetchError} fetchReminders={fetchReminders} filterCategory={filterCategory} filterStatus={filterStatus} filterYear={filterYear} filteredReminders={filteredReminders} groupedReminders={groupedReminders} guestUsers={guestUsers} handleAdminReject={handleAdminReject} handleExportExcel={handleExportExcel} handleInternalReject={handleInternalReject} isAdmin={isAdmin} isGuest={isGuest} isManager={isManager} listLoading={listLoading} openDeleteModal={openDeleteModal} openSupervisorAssign={openSupervisorAssign} pendingCount={pendingCount} productFilter={productFilter} productPieData={productPieData} projectPieData={projectPieData} reminders={reminders} salesPieData={salesPieData} searchDivisionSales={searchDivisionSales} searchProduct={searchProduct} searchProject={searchProject} searchSales={searchSales} searchTeamHandler={searchTeamHandler} selectMode={selectMode} selectedCalDay={selectedCalDay} selectedIds={selectedIds} setApproveAssignTo={setApproveAssignTo} setApproveBatchSiblings={setApproveBatchSiblings} setApproveDate={setApproveDate} setApproveTarget={setApproveTarget} setApproveTime={setApproveTime} setBulkConfirm={setBulkConfirm} setCalOnlyDay={setCalOnlyDay} setCalendarMonth={setCalendarMonth} setDetailReminder={setDetailReminder} setFetchError={setFetchError} setFilterCategory={setFilterCategory} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setInternalApproveTarget={setInternalApproveTarget} setProductFilter={setProductFilter} setRescheduleTarget={setRescheduleTarget} setSearchDivisionSales={setSearchDivisionSales} setSearchProduct={setSearchProduct} setSearchProject={setSearchProject} setSearchSales={setSearchSales} setSearchTeamHandler={setSearchTeamHandler} setSelectMode={setSelectMode} setSelectedCalDay={setSelectedCalDay} setSelectedIds={setSelectedIds} syncKeIncentive={syncKeIncentive} syncing={syncing} teamPtsPieData={teamPtsPieData} todayCount={todayCount} toggleSelectAll={toggleSelectAll} totalCount={totalCount} view={view}
-        />
+        <IsiJadwal />
 
       </div>
 
@@ -883,6 +876,7 @@ function ReminderSchedulePageInner() {
       `}</style>
 
     </div>
+    </KonteksJadwal.Provider>
   );
 }
 

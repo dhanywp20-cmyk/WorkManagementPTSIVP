@@ -1,87 +1,25 @@
 'use client';
 
-/** IsiJadwal - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
+/** IsiJadwal - isi halaman (statistik, filter, daftar, kalender); keadaan dari konteks-jadwal.tsx. Asal: dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StatsSection } from './StatsSection';
 import { FilterBar } from './FilterBar';
 import { ReminderListBody } from './ReminderListBody';
+import { useKonteksJadwal } from './konteks-jadwal';
 import { MiniCalendar } from './MiniCalendar';
-import { Status, Reminder, TeamUser, GuestUser } from './shared';
 
-export interface IsiJadwalProps {
-  availableYears: string[];
-  bolehEditReminder: (r: Reminder) => boolean;
-  bulkDeleting: boolean;
-  calOnlyDay: string | null;
-  calendarMonth: Date;
-  canApproveAssign: boolean;
-  canInternalApprove: (r: Reminder) => boolean;
-  currentUser: TeamUser | null;
-  doneCount: number;
-  fetchError: string | null;
-  fetchReminders: () => Promise<void>;
-  filterCategory: string;
-  filterStatus: Status | "all";
-  filterYear: string;
-  filteredReminders: Reminder[];
-  groupedReminders: Reminder[][];
-  guestUsers: GuestUser[];
-  handleAdminReject: (r: Reminder) => void;
-  handleExportExcel: () => void;
-  handleInternalReject: (r: Reminder) => void;
-  isAdmin: boolean;
-  isGuest: boolean;
-  isManager: boolean;
-  listLoading: boolean;
-  openDeleteModal: (r: Reminder) => void;
-  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
-  pendingCount: number;
-  productFilter: string | null;
-  productPieData: import("@/app/(portal)/reminder-schedule/_components/olah-data").IrisPie[];
-  projectPieData: import("@/app/(portal)/reminder-schedule/_components/olah-data").IrisPie[];
-  reminders: Reminder[];
-  salesPieData: import("@/app/(portal)/reminder-schedule/_components/olah-data").IrisPie[];
-  searchDivisionSales: string;
-  searchProduct: string;
-  searchProject: string;
-  searchSales: string;
-  searchTeamHandler: string;
-  selectMode: boolean;
-  selectedCalDay: string | null;
-  selectedIds: Set<string>;
-  setApproveAssignTo: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setApproveBatchSiblings: import("react").Dispatch<import("react").SetStateAction<Reminder[]>>;
-  setApproveDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setApproveTarget: import("react").Dispatch<import("react").SetStateAction<Reminder | null>>;
-  setApproveTime: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setBulkConfirm: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setCalOnlyDay: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setCalendarMonth: import("react").Dispatch<import("react").SetStateAction<Date>>;
-  setDetailReminder: import("react").Dispatch<import("react").SetStateAction<Reminder | null>>;
-  setFetchError: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<Status | "all">>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setInternalApproveTarget: import("react").Dispatch<import("react").SetStateAction<Reminder | null>>;
-  setProductFilter: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setRescheduleTarget: import("react").Dispatch<import("react").SetStateAction<Reminder | null>>;
-  setSearchDivisionSales: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchProduct: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSales: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchTeamHandler: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectMode: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setSelectedCalDay: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setSelectedIds: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
-  syncKeIncentive: (r: Reminder) => Promise<void>;
-  syncing: string | null;
-  teamPtsPieData: import("@/app/(portal)/reminder-schedule/_components/olah-data").IrisPie[];
-  todayCount: number;
-  toggleSelectAll: () => void;
-  totalCount: number;
-  view: "list" | "form";
-}
-
-export function IsiJadwal({ availableYears, bolehEditReminder, bulkDeleting, calOnlyDay, calendarMonth, canApproveAssign, canInternalApprove, currentUser, doneCount, fetchError, fetchReminders, filterCategory, filterStatus, filterYear, filteredReminders, groupedReminders, guestUsers, handleAdminReject, handleExportExcel, handleInternalReject, isAdmin, isGuest, isManager, listLoading, openDeleteModal, openSupervisorAssign, pendingCount, productFilter, productPieData, projectPieData, reminders, salesPieData, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectMode, selectedCalDay, selectedIds, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveTarget, setApproveTime, setBulkConfirm, setCalOnlyDay, setCalendarMonth, setDetailReminder, setFetchError, setFilterCategory, setFilterStatus, setFilterYear, setInternalApproveTarget, setProductFilter, setRescheduleTarget, setSearchDivisionSales, setSearchProduct, setSearchProject, setSearchSales, setSearchTeamHandler, setSelectMode, setSelectedCalDay, setSelectedIds, syncKeIncentive, syncing, teamPtsPieData, todayCount, toggleSelectAll, totalCount, view }: IsiJadwalProps) {
+export function IsiJadwal() {
+  const k = useKonteksJadwal();
+  const { isAdmin, isGuest, isManager } = k.sesi;
+  const { fetchReminders, filteredReminders, listLoading, reminders } = k.data;
+  const { doneCount, pendingCount, productPieData, projectPieData, salesPieData, teamPtsPieData, todayCount, totalCount } = k.ringkasan;
+  const {
+    availableYears, filterCategory, filterStatus, filterYear, productFilter, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler,
+    selectedCalDay, setFilterCategory, setFilterStatus, setFilterYear, setProductFilter, setSearchDivisionSales, setSearchProduct, setSearchProject, setSearchSales,
+    setSearchTeamHandler, setSelectedCalDay
+  } = k.filter;
+  const { calOnlyDay, calendarMonth, setCalOnlyDay, setCalendarMonth, view } = k.tampilan;
+  const { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds } = k.pilih;
+  const { handleExportExcel } = k.aksi;
   return (
     <>
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
@@ -163,29 +101,7 @@ export function IsiJadwal({ availableYears, bolehEditReminder, bulkDeleting, cal
                   productFilter={productFilter}
                 />
 
-                <ReminderListBody
-                  fetchError={fetchError} setFetchError={setFetchError} fetchReminders={fetchReminders} listLoading={listLoading}
-                  filteredReminders={filteredReminders} reminders={reminders} groupedReminders={groupedReminders}
-                  filterStatus={filterStatus} filterYear={filterYear} filterCategory={filterCategory}
-                  productFilter={productFilter} setProductFilter={setProductFilter}
-                  searchProject={searchProject} searchSales={searchSales} searchDivisionSales={searchDivisionSales}
-                  searchTeamHandler={searchTeamHandler} searchProduct={searchProduct}
-                  setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setFilterCategory={setFilterCategory}
-                  setSearchProject={setSearchProject} setSearchSales={setSearchSales} setSearchDivisionSales={setSearchDivisionSales}
-                  setSearchTeamHandler={setSearchTeamHandler} setSearchProduct={setSearchProduct}
-                  setDetailReminder={setDetailReminder}
-                  bolehEditReminder={bolehEditReminder} setRescheduleTarget={setRescheduleTarget}
-                  canInternalApprove={canInternalApprove} setInternalApproveTarget={setInternalApproveTarget} handleInternalReject={handleInternalReject}
-                  canApproveAssign={canApproveAssign} setApproveTarget={setApproveTarget} setApproveBatchSiblings={setApproveBatchSiblings}
-                  setApproveAssignTo={setApproveAssignTo} setApproveDate={setApproveDate} setApproveTime={setApproveTime}
-                  handleAdminReject={handleAdminReject}
-                  currentUser={currentUser} openSupervisorAssign={openSupervisorAssign}
-                  isAdmin={isAdmin} isManager={isManager}
-                  syncKeIncentive={syncKeIncentive} syncing={syncing}
-                  openDeleteModal={openDeleteModal}
-                  selectMode={selectMode} selectedIds={selectedIds} setSelectedIds={setSelectedIds} toggleSelectAll={toggleSelectAll}
-                  guestUsers={guestUsers}
-                />
+                <ReminderListBody />
               </div>
 
               {/* ── MINI CALENDAR SIDEBAR — admin & team saja, disembunyikan utk guest/sales.

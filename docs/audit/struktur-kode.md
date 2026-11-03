@@ -94,10 +94,34 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 | Fase | Isi | Risiko | Status |
 |---|---|---|---|
 | 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai (PR ini)** |
-| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | berikutnya |
+| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule selesai** (§5); berikutnya Request Design Project |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
 | 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
 | 6 | `lib/` dikelompokkan ke subfolder per domain (`lib/incentive/`, `lib/av/`, `lib/wa/`, …) dengan ekspor ulang supaya impor lama tetap jalan | rendah | — |
 
 Urutan Fase 2 dipilih dari ukuran props drilling (§S1) dan seberapa sering modulnya diubah.
+
+## 5. Catatan Fase 2 — Request Schedule (pola acuan untuk modul lain)
+
+- `reminder-schedule/_components/konteks-jadwal.tsx`: `NilaiKonteksJadwal` dengan irisan `sesi`, `izin`, `data`,
+  `ringkasan`, `filter`, `tampilan`, `pilih`, `aksi`, `detail`. Tipenya diambil dari interface hasil pemecahan lama
+  (tipe persis dari page), bukan diketik ulang.
+- Page mengisi konteks **sekali** (`konteksJadwal`, ±20 baris berkelompok) dan membungkus isinya dengan
+  `<KonteksJadwal.Provider>`. Keadaan tetap milik page — konteks hanya jalur, bukan penyimpanan baru.
+- Komponen mengambil irisan yang ia perlukan: `const k = useKonteksJadwal(); const { … } = k.filter;`.
+- `PopupDetailJadwal` (perantara murni 64 props) dihapus; `<IsiJadwal />` dan
+  `<ReminderDetailPopup detailReminder={…} />` tanpa drilling. `StatsSection`/`FilterBar` tetap berprops karena juga
+  dipakai Ticketing.
+- 61 impor tak terpakai di page (sisa pemecahan mekanis) dibuang — semuanya tanpa efek samping saat dimuat.
+
+| Ukuran | Sebelum | Sesudah |
+|---|---|---|
+| Props terbanyak di satu baris (page) | 71 | 8 |
+| God line di page | 10 | 8 |
+| `page.tsx` | 895 baris | 889 |
+| `ReminderDetailPopup.tsx` / `ReminderListBody.tsx` | 836 / 560 | 749 / 501 |
+| `IsiJadwal.tsx` | 214 | 128 (keluar dari baseline) |
+
+Verifikasi: skrip peramban yang sama dijalankan terhadap build `main` dan build refaktor (Admin, Full Access, Manager
+PTS UMP: daftar, pencarian, popup detail, tombol Setujui/Tolak/Riwayat) — hasilnya identik.
