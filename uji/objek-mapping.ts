@@ -1,10 +1,3 @@
-/**
- * uji/objek-mapping.ts - objek mapping Desain 3D (Tools Team): siluet "Objek dari gambar"
- * (topeng latar, tepi luar & lubang, penyederhanaan, validasi), aturan impor berkas 3D
- * (format utama, satuan, posisi tegak), dan geometri tiap bentuk objek.
- *
- * Jalankan: npx tsx uji/objek-mapping.ts
- */
 import {
   adaTransparansi, buatTopeng, bersihkanTopeng, konturDariPiksel, konturSah, luasPoligon, sederhanakan, telusuriTepi, warnaTepi,
 } from '../app/(portal)/tools-team/_components/desain3d/impor/kontur';
@@ -20,7 +13,6 @@ function cek(nama: string, syarat: boolean, catatan = '') {
 }
 const dekat = (a: number, b: number, tol = 0.02) => Math.abs(a - b) <= tol;
 
-/** Gambar RGBA w x h, latar `latar`, lalu `isi(x, y)` -> warna piksel objek atau null. */
 function gambar(w: number, h: number, latar: [number, number, number, number], isi: (x: number, y: number) => [number, number, number, number] | null) {
   const d = new Uint8ClampedArray(w * h * 4);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -32,7 +24,6 @@ function gambar(w: number, h: number, latar: [number, number, number, number], i
 const PUTIH: [number, number, number, number] = [255, 255, 255, 255];
 const HITAM: [number, number, number, number] = [20, 20, 20, 255];
 const KOSONG: [number, number, number, number] = [0, 0, 0, 0];
-/** Luas kontur ternormalisasi (semua bagian, lubang dikurangi). */
 const luasKontur = (k: { l: number[]; h?: number[][] }[]) => k.reduce((s, b) => s + Math.abs(luasPoligon(b.l)) - (b.h ?? []).reduce((t, h) => t + Math.abs(luasPoligon(h)), 0), 0);
 
 console.log('Topeng & warna latar');
@@ -51,7 +42,6 @@ console.log('Topeng & warna latar');
 
 console.log('Isi banjir dari tepi: bagian putih di dalam objek tetap objek');
 {
-  //  Persegi hitam 20x20 dengan "jendela" putih 6x6 di tengah (tidak tersambung ke tepi).
   const g = gambar(40, 40, PUTIH, (x, y) => {
     if (!(x >= 10 && x < 30 && y >= 10 && y < 30)) return null;
     return x >= 17 && x < 23 && y >= 17 && y < 23 ? PUTIH : HITAM;
@@ -94,7 +84,7 @@ console.log('Dua objek terpisah & bintik noda');
   const g = gambar(80, 40, PUTIH, (x, y) => {
     if (x >= 5 && x < 30 && y >= 5 && y < 35) return HITAM;
     if (x >= 45 && x < 75 && y >= 10 && y < 30) return HITAM;
-    if (x === 38 && y === 2) return HITAM;  // bintik 1 piksel
+    if (x === 38 && y === 2) return HITAM;
     return null;
   });
   const r = konturDariPiksel(g, 80, 40, { latar: 'warna', toleransi: 20 })!;
@@ -107,10 +97,9 @@ console.log('Lubang kecil ditutup, piksel bersinggungan sudut tetap valid');
   const w = 30, h = 30;
   const t = new Uint8Array(w * h);
   for (let y = 5; y < 25; y++) for (let x = 5; x < 25; x++) t[y * w + x] = 1;
-  t[15 * w + 15] = 0;  // lubang 1 piksel
+  t[15 * w + 15] = 0;
   const b = bersihkanTopeng(t, w, h);
   cek('lubang 1 piksel ditutup', b[15 * w + 15] === 1);
-  //  Dua piksel bersinggungan sudut (pelana).
   const s = new Uint8Array(4 * 4); s[1 * 4 + 1] = 1; s[2 * 4 + 2] = 1;
   const p = telusuriTepi(s, 4, 4);
   cek('pelana: 2 poligon terpisah', p.length === 2 && p.every(q => dekat(Math.abs(luasPoligon(q)), 1, 1e-9)), JSON.stringify(p));
@@ -172,7 +161,6 @@ console.log('Geometri objek mapping: kotak batas = w × h × d, alas di lantai')
   const a = { ...g, kontur: [{ l: [0, 0, 1, 0, 0.5, 1] }] }, b2 = { ...g, kontur: [{ l: [0, 0, 1, 0, 0.6, 1] }] };
   cek('kontur berubah -> model dibangun ulang', tandaBentuk(a) !== tandaBentuk(b2));
   cek('bentuk berubah -> dibangun ulang', tandaBentuk({ ...g, bentukObjek: 'kotak' }) !== tandaBentuk({ ...g, bentukObjek: 'bola' }));
-  //  Model impor ditegakkan: kotak berkas 2 (x) × 1 (y) × 4 (z, atas) -> tegak 4 m.
   const isi = new THREE.Mesh(new THREE.BoxGeometry(2, 1, 4));
   const m = { ...bendaBaru('model', K), w: 2, h: 4, d: 1, putarModel: 90, modelKunci: 'x' };
   const km = new THREE.Box3().setFromObject(buatModel(m, { THREE, layar: () => null, model: () => isi })).getSize(new THREE.Vector3());

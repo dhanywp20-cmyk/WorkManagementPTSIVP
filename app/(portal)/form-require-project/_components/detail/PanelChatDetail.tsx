@@ -1,6 +1,5 @@
 'use client';
 
-/** PanelChatDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, ProjectRequest, ProjectMessage } from '../shared';
 
@@ -28,7 +27,6 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
       <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.5] overflow-hidden bg-white/95 min-w-0`}>
         <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="💬" />Discussion Chat</p>
-          {/* Room filter tabs for chat */}
           {(() => {
             const chatRooms = selectedRequest.rooms || [];
             if (chatRooms.length === 0) return <p className="text-[11px] text-gray-500">{messages.filter(m => m.sender_role !== 'system').length} pesan</p>;
@@ -52,18 +50,15 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {(() => {
-            // Filter messages by chatRoomFilter
             const filteredMsgs = chatRoomFilter === 'all'
               ? messages
               : messages.filter(m => {
                   if (m.sender_role === 'system') return true;
-                  // Show messages prefixed with this room label, or unprefixed (general/Ruangan 1)
                   const hasPrefix = m.message.startsWith('[') && m.message.includes(']');
                   if (hasPrefix) {
                     const prefix = m.message.match(/^\[([^\]]+)\]/)?.[1] || '';
                     return prefix === chatRoomFilter;
                   }
-                  // Unprefixed messages: show only in 'all' or Ruangan 1 (first room)
                   const firstRoomLabel = selectedRequest.room_name?.trim() || 'Ruangan 1';
                   return chatRoomFilter === firstRoomLabel;
                 });
@@ -81,7 +76,6 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
                   <div className="bg-gray-100 text-gray-500 text-xs px-4 py-2 rounded-full font-medium max-w-sm text-center">{msg.message}</div>
                 </div>
               );
-              // Strip room prefix from display
               const displayMsg = msg.message.replace(/^\[[^\]]+\]\s*/, '');
               const msgRoomLabel = msg.message.match(/^\[([^\]]+)\]/)?.[1];
               return (
@@ -117,7 +111,6 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
         </div>
 
         <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-gray-50">
-          {/* Show which room this message will go to */}
           {chatRoomFilter !== 'all' && selectedRequest.status !== 'rejected' && selectedRequest.status !== 'pending' && (
             <div className="mb-2 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-[11px] text-teal-700 font-semibold flex items-center gap-1.5">
               <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>

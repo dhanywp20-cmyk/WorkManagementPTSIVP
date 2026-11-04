@@ -6,13 +6,6 @@ import { kirimNotifikasi } from '@/lib/notifikasi/router';
 import { appLink } from '@/lib/app-url';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * Sebar perubahan nama/username user ke semua snapshot di tabel terkait, lewat
- * SQL function propagate_user_rename. Tiga hasil yang berbeda artinya bagi
- * admin: ok (semua tabel terbarui), sebagian (fungsi SQL menangkap galat per
- * tabel lalu lanjut), gagal (RPC-nya sendiri gagal, tidak ada yang tersebar).
- * Akun sendiri sudah tersimpan sebelum fungsi ini dipanggil.
- */
 export type HasilSebar = { taraf: 'ok' | 'sebagian' | 'gagal'; pesan: string };
 
 export async function propagateUserRename(
@@ -41,28 +34,12 @@ export async function propagateUserRename(
   return beres;
 }
 
-/** Kalimat yang ditampilkan ke admin untuk tiap hasil penyebaran. */
 export function pesanSebar(h: HasilSebar): string {
   if (h.taraf === 'ok')       return 'Akun diperbarui & nama tersebar ke data terkait.';
   if (h.taraf === 'sebagian') return `Akun diperbarui. Nama tersebar, kecuali di: ${h.pesan}.`;
   return `Akun tersimpan, tapi sebar nama ke data terkait gagal: ${h.pesan}`;
 }
 
-/**
- * WA selamat datang saat akun baru dibuat - dipakai kedua handleAddUser di
- * bawah (list lama & baru). Fire-and-forget, tidak boleh menggagalkan alur
- * create-akun.
- *
- * TITIK PERTAMA yang dipindah ke notification engine (lib/notifikasi) - lihat
- * komentar panjang di lib/notifikasi/router.ts untuk kenapa 47 titik WA
- * lainnya BELUM ikut dipindah. Ini dipilih sebagai bukti pola karena kecil,
- * berdiri sendiri, dan pesannya mudah dibandingkan sebelum/sesudah - bukan
- * karena paling penting.
- *
- * Isi pesan PERSIS SAMA dengan sebelum dipindah - hanya jalur pengirimannya
- * yang berubah, dari sendWANotif() langsung menjadi lewat router yang sama
- * dengan event lain.
- */
 export function sendWelcomeWA(phone: string | null | undefined, fullName: string, username: string, password: string) {
   if (!phone) return;
   const msg =
@@ -86,12 +63,6 @@ export function maskPhone(phone?: string): string {
 export const KOLOM_PROFIL_DASAR =
   'id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type';
 
-/**
- * Ambil profil user, dengan jalur mundur bila created_at / access_level belum
- * ada di basis data. PostgREST menolak SELURUH query kalau satu kolom saja tak
- * dikenal, jadi tanpa jalur mundur satu kolom yang hilang mengosongkan seluruh
- * halaman Profil.
- */
 export async function ambilProfil(id: string) {
   const lengkap = await supabase.from('users')
     .select(`${KOLOM_PROFIL_DASAR},created_at,access_level,telegram_chat_id`).eq('id', id).single();
@@ -99,13 +70,6 @@ export async function ambilProfil(id: string) {
   return await supabase.from('users').select(KOLOM_PROFIL_DASAR).eq('id', id).single();
 }
 
-/**
- * Kartu bersection-header - bentuk dasar tampilan Profil.
- *
- * Dibuat satu kali lalu dipakai berulang, bukan disalin per bagian: enam
- * bagian dengan markup kartu yang disalin manual sudah cukup untuk membuat
- * pembatas, padding, dan tebal border-nya pelan-pelan berbeda satu sama lain.
- */
 export function Kartu({ icon, judul, hitung, children }: {
   icon: string; judul: string; hitung?: string; children: React.ReactNode;
 }) {
@@ -126,7 +90,6 @@ export function Kartu({ icon, judul, hitung, children }: {
   );
 }
 
-/** Satu baris "label di kiri, nilai di kanan". */
 export function Baris({ icon, label, value, children }: {
   icon: string; label: string; value?: string; children?: React.ReactNode;
 }) {
@@ -142,7 +105,6 @@ export function Baris({ icon, label, value, children }: {
   );
 }
 
-/** Kelompok orang pada Struktur Organisasi (atasan / IVP / bawahan). */
 export function Kelompok({ label, kosong, orang, warna }: {
   label: string; kosong: string; warna: string;
   orang: { full_name: string; jabatan?: string; sales_division?: string; phone_number?: string }[];
@@ -167,13 +129,6 @@ export function Kelompok({ label, kosong, orang, warna }: {
   );
 }
 
-// Inline variants (no fixed overlay, used inside AdminPanelModal)
-
-/**
- * Strip info di puncak tiap bagian Admin Panel. Satu bentuk untuk semua bagian,
- * mengikuti bahasa visual halaman Profil: netral, dengan angka penting di
- * kanan. Warna per bagian membuat berpindah tab terasa berpindah aplikasi.
- */
 export function StripInfo({ icon, judul, keterangan, angka, satuan }: {
   icon: string; judul: string; keterangan: React.ReactNode;
   angka?: number | string; satuan?: string;

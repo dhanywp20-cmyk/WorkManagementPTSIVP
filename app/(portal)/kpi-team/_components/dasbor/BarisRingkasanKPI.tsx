@@ -1,6 +1,5 @@
 'use client';
 
-/** BarisRingkasanKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/(portal)/dashboard/_components/widgets/primitives';
 import { AKSEN, HBarChart, KakiUbin, KepalaUbin, inisial, type KPIData } from '../DashboardKPI';
 
@@ -14,13 +13,6 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
-        {/*
-          Beban handler sebagai PAPAN PERINGKAT, bukan bar chart.
-          Datanya sering cuma satu atau dua orang, dan grafik batang
-          berisi satu batang tidak membandingkan apa pun - yang dibaca
-          orang di sana adalah nama dan angkanya. Orang teratas diberi
-          aksen penuh, sisanya abu: penekanan, bukan peringkat berwarna.
-        */}
         <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="🏅" judul="Beban Handler" warna={AKSEN} catatan="Open"/>
@@ -44,7 +36,6 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
             </> : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
         </div>
 
-        {/* DIVISI */}
         <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="🏢" judul="Ticket per Divisi" warna={AKSEN}/>
@@ -54,11 +45,6 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
               : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
         </div>
 
-        {/*
-          Produk enam kolom: labelnya yang paling panjang di baris ini
-          ("Philips 55BDL2105X", "Microvision MV-U55…"), dan 3+3+6
-          menggenapkan barisnya jadi dua belas tanpa slot menggantung.
-        */}
         <div className={`${UBIN} lg:col-span-6 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="📦" judul="Ticket per Produk" warna={AKSEN} catatan="6 teratas"/>

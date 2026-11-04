@@ -5,13 +5,6 @@ import { supabase } from '@/lib/supabase';
 import { bersihkanPenandaSupervisor } from '@/lib/admin-edit';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * components/shared/AuditTrailPanel.tsx - riwayat perubahan sebuah record.
- *
- * Pasang di modal detail, sebutkan target_id-nya, dan riwayat yang dicatat
- * logAudit() muncul di tempat pertanyaan "siapa yang mengubah ini?" lahir.
- */
-
 export interface AuditEntry {
   id: string;
   target_id: string;
@@ -24,7 +17,6 @@ export interface AuditEntry {
   created_at: string;
 }
 
-/** Label & warna per aksi. Warna dipakai pada titik penanda, bukan latar penuh. */
 const AKSI: Record<string, { label: string; warna: string }> = {
   create:        { label: 'Dibuat',           warna: '#10b981' },
   update:        { label: 'Diubah',           warna: '#0ea5e9' },
@@ -39,11 +31,6 @@ const AKSI: Record<string, { label: string; warna: string }> = {
   download:      { label: 'File diunduh',     warna: '#64748b' },
 };
 
-/*
-  Tanggal TANPA jam (mis. due_date / bast_date "2026-09-28" pada langkah turunan) dulu
-  dibaca new Date() sebagai 00:00 UTC = 07:00 WIB, lalu tampil "6 jam lalu" atau (untuk
-  tanggal mendatang) "baru saja" - jam yang tidak pernah ada. Tanggal saja = tampilkan tanggal.
-*/
 const hanyaTanggal = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso.trim());
 const labelTanggal = (iso: string) =>
   new Date(iso.trim() + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -59,7 +46,6 @@ function waktuRelatif(iso: string): string {
   return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** Tanggal + jam pendek tetap (bukan relatif) - dipakai alur mendatar, sebaris. */
 function tanggalPendek(iso: string): string {
   if (hanyaTanggal(iso)) return new Date(iso.trim() + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   const d = new Date(iso);
@@ -68,11 +54,6 @@ function tanggalPendek(iso: string): string {
   return `${tanggal} ${jam}`;
 }
 
-/**
- * Label satu langkah pada alur MENDATAR. Beda dari label aksi biasa: yang
- * ingin dilihat orang di sebuah alur status bukan "Status berubah" (generik),
- * tapi status APA yang dicapai - jadi status_change dilabeli new_value-nya.
- */
 function labelLangkah(e: AuditEntry): string {
   if (e.action === 'status_change' && e.new_value) return e.new_value;
   return AKSI[e.action]?.label ?? e.action;
@@ -83,65 +64,16 @@ export function AuditTrailPanel({
   selaluTerbuka = false, sembunyikanBilaKosong = true, awal = null, turunan = [],
   kompak = false, arah = 'vertikal', data,
 }: {
-  /**
-   * Record yang riwayatnya ditampilkan. Panel diam bila kosong.
-   *
-   * Boleh berupa daftar id - dipakai saat satu layar perlu menggabungkan
-   * riwayat beberapa record sekaligus (mis. satu proyek + seluruh lokasi +
-   * seluruh komponennya) jadi satu garis waktu, bukan dipisah per record.
-   * `batas` tetap berlaku atas GABUNGANNYA, jadi hasilnya "N perubahan
-   * terbaru di proyek ini", bukan "N per lokasi".
-   */
   targetId: string | string[] | null | undefined;
-  /** Mempersempit ke satu modul - berguna bila id dipakai lintas tabel. */
   modul?: string;
   judul?: string;
   batas?: number;
-  /**
-   * Dipakai saat panel berdiri sendiri di samping detail: tidak perlu diklik
-   * dulu, dan kepalanya tidak jadi tombol.
-   */
   selaluTerbuka?: boolean;
-  /**
-   * Di dalam modal detail, panel kosong hanya menambah kebisingan - jadi
-   * disembunyikan. Tapi sebagai panel samping ia SUDAH dibuka sengaja oleh
-   * user, sehingga menghilang begitu saja justru membingungkan: lebih baik
-   * mengatakan "belum ada riwayat".
-   */
   sembunyikanBilaKosong?: boolean;
-  /**
-   * Baris pembuatan yang DITURUNKAN dari kolom created_at & created_by record
-   * itu sendiri, untuk record lama yang belum punya baris "dibuat" di
-   * audit_trail. Ditempatkan paling bawah dan tidak digandakan bila
-   * audit_trail ternyata sudah memuatnya.
-   */
   awal?: { oleh: string | null; waktu: string | null; keterangan?: string } | null;
-  /**
-   * Peristiwa lain yang DITURUNKAN dari record, untuk masa sebelum logAudit
-   * mencatatnya. Tiap entri hanya disisipkan bila audit_trail belum memuat
-   * aksi yang sama, jadi turunan ini menyingkir sendiri begitu catatan
-   * sungguhan masuk.
-   */
   turunan?: { aksi: string; oleh: string | null; waktu: string | null; keterangan?: string }[];
-  /**
-   * Mode timeline mini - ditempel langsung di bawah SATU field (status lokasi,
-   * atau satu baris komponen), bukan sebagai panel berdiri sendiri. Padding &
-   * jarak antar baris dipadatkan supaya tidak mendominasi kartu saat dipasang
-   * berulang (satu per komponen).
-   */
   kompak?: boolean;
-  /**
-   * 'horizontal' menggambar alur mendatar ala "Alur Request": label status
-   * dengan TANGGAL di bawahnya, bukan nama orang. Default 'vertikal' dipakai
-   * untuk riwayat berdetail lengkap (nilai lama/baru, catatan, siapa).
-   */
   arah?: 'vertikal' | 'horizontal';
-  /**
-   * Data siap-pakai untuk halaman yang TIDAK BOLEH menyentuh supabase langsung
-   * (mis. ProjectDetailView, yang juga dirender di halaman share publik tanpa
-   * session). Saat diisi, panel tidak pernah fetch sendiri; ia hanya menyaring
-   * `data` menurut `targetId` dan menganggapnya sudah difilter per modul.
-   */
   data?: AuditEntry[];
 }) {
   const modeStatis = data !== undefined;
@@ -149,17 +81,12 @@ export function AuditTrailPanel({
   const [memuatFetch, setMemuatFetch] = useState(!modeStatis);
   const [terbuka, setTerbuka] = useState(selaluTerbuka);
 
-  /* Kunci string yang stabil untuk dependency effect. targetId sebagai array
-     baru dibuat ulang tiap render oleh pemanggilnya (mis. `[proj.id, ...ids]`
-     ditulis langsung di JSX) - memakai array itu sendiri sebagai dependency
-     akan memicu fetch ulang tiap render, bukan tiap kali isinya benar-benar
-     berubah. String gabungan ini nilainya sama selama daftarnya sama. */
   const idsKey = Array.isArray(targetId)
     ? targetId.filter(Boolean).join(' ')
     : (targetId ?? '');
 
   useEffect(() => {
-    if (modeStatis) return; // data sudah tersedia - tidak pernah fetch dari supabase.
+    if (modeStatis) return;
     const ids = idsKey ? idsKey.split(' ') : [];
     if (ids.length === 0) { setEntriFetch([]); setMemuatFetch(false); return; }
     let batal = false;
@@ -189,17 +116,8 @@ export function AuditTrailPanel({
     : entriFetch;
   const memuat = modeStatis ? false : memuatFetch;
 
-  /**
-   * Gabungan yang benar-benar ditampilkan. Baris awal hanya disisipkan bila
-   * audit_trail belum memuat 'create' sendiri - kalau tidak, record baru akan
-   * menampilkan dua baris pembuatan yang sama.
-   */
   const aksiTercatat = new Set(entri.map(e => e.action));
 
-  /**
-   * Waktu catatan ASLI paling awal. Dipakai untuk membatasi waktu baris
-   * turunan di bawah - lihat alasannya di sana.
-   */
   const catatanAsliTerawal = entri.length > 0
     ? entri.reduce((min, e) => (e.created_at < min ? e.created_at : min), entri[0].created_at)
     : null;
@@ -207,13 +125,6 @@ export function AuditTrailPanel({
   const tambahan: AuditEntry[] = [];
   for (const t of turunan) {
     if (!t.waktu || aksiTercatat.has(t.aksi)) continue;
-    /**
-     * Baris turunan memakai kolom seperti `updated_at`, yang menyimpan waktu
-     * perubahan TERAKHIR dan bukan waktu peristiwanya, sehingga bisa tampak
-     * terjadi sesudah peristiwa yang menyusulnya. Karena turunan hanya
-     * menambal masa sebelum pencatatan sungguhan berjalan, waktunya dibatasi
-     * agar selalu sebelum catatan asli pertama.
-     */
     let waktu = t.waktu;
     if (catatanAsliTerawal && waktu >= catatanAsliTerawal) {
       waktu = new Date(new Date(catatanAsliTerawal).getTime() - 1000).toISOString();
@@ -232,7 +143,6 @@ export function AuditTrailPanel({
     });
   }
 
-  // Terbaru di atas - sama seperti urutan dari basis data.
   const semua: AuditEntry[] = [...entri, ...tambahan]
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
@@ -276,7 +186,6 @@ export function AuditTrailPanel({
           <p className="text-[11px] text-slate-500 py-1">Memuat riwayat…</p>
         ) : (
           <div className="flex items-start overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'thin' }}>
-            {/* Paling lama di kiri, terbaru di kanan — arah alur, bukan urutan basis data. */}
             {[...semua].reverse().map((e, i, arr) => {
               const cfg = AKSI[e.action] ?? { label: e.action, warna: '#94a3b8' };
               return (
@@ -318,7 +227,6 @@ export function AuditTrailPanel({
             return (
               <div key={e.id} className={kompak ? "flex gap-2 py-1" : "flex gap-3 py-2"}
                 style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(100,116,139,0.12)' }}>
-                {/* Garis waktu: titik + batang penghubung */}
                 <div className="flex flex-col items-center pt-1 flex-shrink-0">
                   <span className={kompak ? "w-1.5 h-1.5 rounded-full" : "w-2 h-2 rounded-full"} style={{ background: cfg.warna }} />
                   {i < semua.length - 1 && (
@@ -341,15 +249,6 @@ export function AuditTrailPanel({
                     </p>
                   )}
 
-                  {/*
-                    bersihkanPenandaSupervisor() dijalankan di SINI, saat
-                    ditampilkan - bukan hanya diandalkan dari jalur tulis.
-                    Baris yang sudah tersimpan sebelum jalur tulisnya
-                    diperbaiki tetap membawa "SUP::<uuid>::<nama>" mentah di
-                    kolom notes; menulis ulang kode yang MENULIS tidak
-                    membersihkan yang SUDAH tersimpan. Ini juga jaring
-                    pengaman untuk jalur tulis lain yang belum ketahuan.
-                  */}
                   {e.notes && !kompak && (
                     <p className="text-[11px] text-slate-500 mt-0.5 break-words">{bersihkanPenandaSupervisor(e.notes)}</p>
                   )}

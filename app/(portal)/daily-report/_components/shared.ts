@@ -93,7 +93,6 @@ export interface DailyReportTeamEntry {
   created_at: string;
 }
 
-// Unified flat row untuk listing real-time
 export interface LiveRow {
   source: 'reminder' | 'ticket' | 'manual';
   id: string;
@@ -112,24 +111,9 @@ export interface LiveRow {
   jam: string;
   raw_reminder?: ReminderActivity;
   raw_ticket?: TicketActivity;
-  // link ke daily_report jika sudah di-submit
   report_id?: string;
 }
 
-/**
- * Business date Daily Report - SELALU Asia/Jakarta (WIB, UTC+7), tidak
- * pernah tanggal UTC mentah dan tidak bergantung pada timezone environment
- * (server Vercel berjalan di UTC; browser peserta bisa disetel timezone
- * apa saja). `new Date().toISOString().split('T')[0]` - pola yang dipakai
- * fungsi ini SEBELUMNYA - mengambil tanggal UTC: jam 00:00-06:59 WIB
- * (yang di Jakarta SUDAH masuk hari baru) di UTC belum lewat tengah malam,
- * jadi terbaca sebagai tanggal KEMARIN. Aktivitas jam 01:00 WIB tanggal 15
- * bisa salah masuk Daily Report tanggal 14.
- *
- * Satu fungsi terpusat ini dipakai SEMUA tempat di Daily Report yang
- * butuh tanggal bisnis - lihat pemakainya di fetchAllTickets (report_date
- * dari created_at UTC) dan todayISO (tanggal "hari ini" untuk form/stats).
- */
 export function getBusinessDateJakarta(d: Date = new Date()): string {
   const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
   return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
@@ -146,25 +130,15 @@ export function formatLogTime(isoStr: string): string {
   return `${String(wib.getUTCHours()).padStart(2, '0')}:${String(wib.getUTCMinutes()).padStart(2, '0')}`;
 }
 
-// Fetch semua reminder dari SEMUA team users (untuk listing real-time)
-/**
- * Tanpa filter tanggal, daftar Daily Report dulu menarik SEMUA reminder & activity_logs
- * sejak awal (+ join tickets): makin lama makin lambat (pernah 10 detik), boros kuota
- * egress, dan diam-diam terpotong 1.000 baris oleh Supabase sehingga data lama hilang dari
- * tampilan tanpa pemberitahuan. Sekarang tanpa tanggal = RENTANG_HARI terakhir saja;
- * pilih tanggal untuk melihat hari yang lebih lama.
- */
 export const RENTANG_HARI = 60;
-/** Batas baris eksplisit (sama dengan batas Supabase) supaya pemotongan bisa dideteksi. */
 export const BATAS_BARIS = 1000;
-/** Tanggal WIB (YYYY-MM-DD) n hari yang lalu. */
 export function tanggalMundur(hari: number): string {
   return new Date(Date.now() + 7 * 3600_000 - hari * 86_400_000).toISOString().slice(0, 10);
 }
 
 export async function fetchAllReminders(opts: {
   date?: string;
-  usernames?: string[];   // filter by assigned_to
+  usernames?: string[];
 }): Promise<ReminderActivity[]> {
   let q = supabase
     .from('reminders')
@@ -200,7 +174,6 @@ export async function fetchAllReminders(opts: {
   } as any));
 }
 
-// Fetch semua ticket activity_logs (untuk listing real-time)
 export async function fetchAllTickets(opts: {
   date?: string;
   usernames?: string[];
@@ -225,21 +198,6 @@ export async function fetchAllTickets(opts: {
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllTickets:', error.message); return []; }
 
-  /*
-    1 baris per TICKET per pemanggilan fetch ini, bukan 1 baris per activity
-    log - keputusan yang sudah ada sebelumnya, dipertahankan di sini apa
-    adanya. Query di atas diurutkan created_at DESC, jadi baris pertama yang
-    ditemui untuk satu ticket_id adalah aktivitas TERBARUnya - itu yang
-    disimpan, entri lebih lama untuk ticket yang sama dibuang.
-    Konsekuensinya: kalau satu ticket ditangani 3x di hari yang sama (mis.
-    09:00 dibuka, 13:00 update status, 16:00 solved), Daily Report cuma
-    menampilkan baris 16:00 - representatif untuk status akhir hari itu,
-    tapi 2 activity sebelumnya tidak muncul sebagai baris terpisah. Ini
-    disengaja (mengikuti pola tampilan Ticketing sendiri: satu ticket = satu
-    status terkini, riwayatnya dilihat lewat detail ticket), BUKAN bug -
-    tidak diubah tanpa keluhan eksplisit karena mengubahnya berarti satu
-    ticket bisa muncul berkali-kali dan mengubah angka "Total Aktivitas".
-  */
   const seen = new Map<string, TicketActivity & { handler_username: string; report_date: string }>();
   for (const log of (data ?? []) as any[]) {
     const t = log.tickets as any;
@@ -257,13 +215,6 @@ export async function fetchAllTickets(opts: {
         sales_name: t?.sales_name ?? '',
         sales_division: t?.sales_division ?? '',
         handler_username: log.handler_username ?? '',
-        //  createdAt.split('T')[0] SEBELUMNYA di sini - itu tanggal UTC dari
-        //  timestamptz, bukan tanggal WIB. Aktivitas jam 18:00 UTC (01:00 WIB
-        //  keesokan harinya) tercatat masuk Daily Report tanggal HARI SEBELUM
-        //  yang sebenarnya menurut jam Jakarta. Query di atas SUDAH menyaring
-        //  memakai batas +07:00 (benar), tapi nilai report_date yang dikirim
-        //  ke tampilan tetap salah karena dihitung ulang dari createdAt UTC
-        //  dengan cara yang berbeda dari filternya.
         report_date: createdAt ? getBusinessDateJakarta(new Date(createdAt)) : '',
       } as any);
     }
@@ -271,7 +222,6 @@ export async function fetchAllTickets(opts: {
   return Array.from(seen.values());
 }
 
-// Fetch Reminder untuk 1 user + date (dipakai di form)
 export async function fetchReminderActivities(username: string, date: string): Promise<ReminderActivity[]> {
   if (!username || !date) return [];
   const { data, error } = await supabase
@@ -298,7 +248,6 @@ export async function fetchReminderActivities(username: string, date: string): P
   }));
 }
 
-// Fetch Ticket untuk 1 user + date (dipakai di form)
 export async function fetchTicketActivities(username: string, date: string): Promise<TicketActivity[]> {
   if (!username || !date) return [];
   const startUTC = new Date(date + 'T00:00:00+07:00').toISOString();
@@ -359,20 +308,6 @@ export async function saveReport(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-/**
- * Hapus SATU aktivitas manual dari sebuah daily report.
- *
- * Dilakukan dengan UPDATE (menulis ulang manual_activities tanpa baris itu),
- * BUKAN DELETE barisnya: satu daily_reports memuat seluruh laporan hari itu -
- * aktivitas manual, reminder, dan ticket sekaligus. Menghapus barisnya berarti
- * ikut membuang yang tidak diminta. Lagipula tabel ini memang tidak punya
- * policy DELETE; yang ada policy UPDATE "pemilik atau admin", yang persis
- * aturan yang dikehendaki - jadi izinnya ditegakkan basis data, bukan layar.
- *
- * Laporan yang kehilangan aktivitas terakhirnya tetap tersimpan sebagai baris
- * kosong. Baris tanpa aktivitas tidak memunculkan apa pun di daftar, jadi
- * hasilnya sama di mata pemakai, tanpa menghapus data apa pun.
- */
 export async function hapusAktivitasManual(
   reportId: string, sisa: ManualActivity[],
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -381,8 +316,6 @@ export async function hapusAktivitasManual(
     .eq('id', reportId)
     .select('id');
   if (error) return { ok: false, error: error.message };
-  //  RLS yang menolak menjawab 0 baris TANPA galat - diperiksa, bukan
-  //  dianggap berhasil begitu saja.
   if (!data || data.length === 0) return { ok: false, error: 'Tidak berwenang menghapus laporan ini.' };
   return { ok: true };
 }
@@ -393,17 +326,6 @@ export async function saveTeamEntries(
   enteredBy: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!entries.length) return { ok: true };
-  /*
-    Hapus-lalu-sisip: baris lama hari itu dibuang dulu supaya penyimpanan
-    ulang tidak menumpuk duplikat. Kalau delete-nya ditolak RLS diam-diam
-    (0 baris, tanpa galat) dan insert di bawah tetap jalan, hasilnya justru
-    KEBALIKAN dari yang dimaksud - entri lama DAN baru sama-sama ada.
-
-    Dihitung dulu berapa baris yang SEHARUSNYA ada (existingCount) sebelum
-    delete - tanpa ini, "0 baris terhapus" tidak bisa dibedakan antara
-    "memang belum pernah menyimpan hari ini" (wajar) dan "RLS menolak diam-
-    diam" (harus dibatalkan, bukan lanjut insert dan menumpuk duplikat).
-  */
   const { count: existingCount } = await supabase.from('daily_report_team_entries')
     .select('id', { count: 'exact', head: true }).eq('report_date', reportDate).eq('entered_by', enteredBy);
   const { data: dihapus, error: galatHapus } = await supabase.from('daily_report_team_entries')

@@ -1,9 +1,4 @@
 'use client';
-/**
- * "Objek saya" (pribadi per akun) di Desain 3D: simpan benda terpilih, pasang lagi ke desain, hapus,
- * ekspor ke berkas .json, dan impor berkas dari akun lain. Server: /api/tools-team/objek-saya;
- * aturan & penyaring isi: lib/objek-saya.ts. Beda dengan "Produk saya" (useProdukTim) yang milik tim.
- */
 import { useEffect, useRef, useState } from 'react';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { bacaBerkasObjekSaya, berkasObjekSaya, type IsiObjekSaya, MAKS_BYTE_MODEL, periksaObjekSaya } from '@/lib/objek-saya';
@@ -35,7 +30,6 @@ export function useObjekSaya(K: KeadaanDesain) {
   const [kuota, setKuota] = useState<KuotaObjek | null>(null);
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState<string | null>(null);
-  /** Isi model (data URL) per id objek - diambil sekali per sesi. */
   const modelCache = useRef(new Map<string, string>());
 
   const muat = async () => {
@@ -48,7 +42,6 @@ export function useObjekSaya(K: KeadaanDesain) {
   };
   useEffect(() => { if (sisi === 'tambah' && !daftar) void muat(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sisi]);
 
-  /** Model impor di memori -> GLB data URL. */
   const glbDari = (kunci: string): Promise<string | null> => new Promise(ok => {
     const m = mesin.current, src = modelImpor.current.get(kunci);
     if (!m || !src) { ok(null); return; }
@@ -64,7 +57,6 @@ export function useObjekSaya(K: KeadaanDesain) {
       return j.model as string;
     } catch { return null; }
   };
-  /** Kirim objek ke server: model satu per permintaan (batas ukuran permintaan Vercel), sisanya sekaligus. */
   const kirim = async (objek: IsiObjekSaya[]): Promise<{ baru: ObjekSayaC[]; galat: string[] }> => {
     const kelompok = [objek.filter(o => !o.model), ...objek.filter(o => o.model).map(o => [o])].filter(k => k.length);
     const baru: ObjekSayaC[] = [], galatnya: string[] = [];
@@ -79,7 +71,6 @@ export function useObjekSaya(K: KeadaanDesain) {
     return { baru, galat: galatnya };
   };
 
-  /** Simpan benda ke Objek saya. Mengembalikan pesan galat atau null. */
   const simpan = async (b: Benda, nama: string, ket: string): Promise<string | null> => {
     const { id: _id, x: _x, z: _z, rot: _r, modelKunci, ...atur } = b;
     void _id; void _x; void _z; void _r;
@@ -98,7 +89,6 @@ export function useObjekSaya(K: KeadaanDesain) {
     return null;
   };
 
-  /** Pasang objek ke ruang tujuan (model 3D diambil dari server lalu dipasang ke memori). */
   const tambah = async (o: ObjekSayaC) => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
     const atur = o.atur as Partial<Benda>;
@@ -130,7 +120,6 @@ export function useObjekSaya(K: KeadaanDesain) {
     },
   });
 
-  /** Ekspor objek terpilih (kosong = semua) ke berkas .json - bisa diimpor akun lain. */
   const ekspor = async (pilihan?: ObjekSayaC[]) => {
     const isi = pilihan?.length ? pilihan : daftar ?? [];
     if (!isi.length) return;
@@ -150,7 +139,6 @@ export function useObjekSaya(K: KeadaanDesain) {
     setPesan(`${objek.length} objek diekspor (${(blob.size / 1024).toFixed(0)} KB).`);
   };
 
-  /** Impor berkas ekspor (dari akun mana pun) ke Objek saya akun ini. */
   const impor = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { setPesan('Berkas terlalu besar (maks 12 MB).'); return; }

@@ -1,5 +1,4 @@
 'use client';
-/** Audio · speaker plafon & SPL (jarak, daya amplifier untuk SPL target). Bagian dari KalkulatorAudio. */
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { speakerPlafon, splMaks, splPadaJarak } from '@/lib/av-hitung';
@@ -17,7 +16,6 @@ export function AudioSpeaker() {
   const sp = speakerPlafon(p, l, t, telinga, sudut, rapat === 'rapat');
   const maks = splMaks(sens, daya);
   const diJarak = splPadaJarak(maks, jarak);
-  //  Kebalikannya: daya yang dibutuhkan untuk SPL target di pendengar (+ headroom puncak).
   const [target, setTarget] = useState(75); const [headroom, setHeadroom] = useState(10);
   const dayaPerlu = dayaUntukSPL(target, sens, jarak, headroom);
   const ringkas = () => mode === 'plafon'
@@ -84,4 +82,3 @@ export function AudioSpeaker() {
   );
 }
 
-/* ── Daya, UPS & panas ───────────────────────────────────────────────── */

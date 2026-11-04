@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * ModalApprovalNote - keputusan atas Tech Note (Setujui / Minta Revisi / Tolak). Semua keadaan tetap milik induk.
- * Kerangka: Modal bersama + label pola persetujuan (components/shared/Persetujuan.tsx) - sama dengan menu lain.
- */
 import { TechNote, formatDateShort } from './shared';
 import React from 'react';
 import { KotakInfo, LabelIsian, Modal, TombolModal, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
@@ -26,7 +22,6 @@ const AKSI: Record<string, { opsi: string; tombol: string; jenis: 'utama' | 'bah
 export function ModalApprovalNote({ approvalForm, approveModal, saving, setApprovalForm, setApproveModal, submitApproval }: ModalApprovalNoteProps) {
   if (!approveModal) return null;
   const aksi = AKSI[approvalForm.action] ?? AKSI.approved;
-  //  Setujui boleh tanpa catatan; Minta Revisi & Tolak wajib beralasan (sama dengan ModalTolak di menu lain).
   const perluCatatan = approvalForm.action !== 'approved';
   return (
     <Modal buka onTutup={() => setApproveModal(null)} judul="Keputusan Tech Note" tutupDiLuar={false}

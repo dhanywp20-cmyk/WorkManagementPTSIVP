@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalHapusMassal - hapus banyak request sekaligus. Kerangka: Modal bersama (sama dengan Ticketing & Request Schedule). */
 import { Modal, TombolModal } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { ProjectRequest } from '../shared';

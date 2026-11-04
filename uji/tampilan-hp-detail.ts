@@ -1,12 +1,3 @@
-/**
- * uji/tampilan-hp-detail.ts - popup detail jadwal rapi di HP (laporan 13 Okt 2026, 2 tangkapan layar).
- *
- * 1. Panel Riwayat & Mode Penyelesaian berdampingan dengan detail -> di HP detail terjepit jadi garis.
- * 2. Label alur ("Diteruskan", "Dikerjakan") terpotong di tengah kata.
- * 3. Lencana header tertimpa tombol Riwayat/Tutup; email keluar dari kartu "Assign To".
- *
- * Jalankan: npm test -- tampilan-hp-detail
- */
 import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;

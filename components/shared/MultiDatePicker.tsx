@@ -2,9 +2,9 @@
 import { useState } from 'react';
 
 interface MultiDatePickerProps {
-  dates: string[];              // semua tanggal terpilih (ISO yyyy-mm-dd), sudah unik & terurut
+  dates: string[];
   onChange: (dates: string[]) => void;
-  accentColor?: string;         // warna aksen sel/chip terpilih (default rose)
+  accentColor?: string;
 }
 
 const WEEKDAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -13,15 +13,10 @@ const MONTH_NAMES = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Ju
 const pad = (n: number) => String(n).padStart(2, '0');
 const toISO = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
-/**
- * Kalender mini multi-select - klik beberapa tanggal langsung (mis. tanggal
- * 1, 2, 3) tanpa buka date-picker berulang kali. Dipakai di form Request
- * Jadwal & buat Reminder agar bisa sekali submit untuk beberapa hari.
- */
 export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: MultiDatePickerProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth()); // 0-indexed
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
 
   const toggle = (iso: string) => {
     if (dates.includes(iso)) onChange(dates.filter(d => d !== iso));
@@ -53,8 +48,6 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
     <div role="group" aria-label="Pilih beberapa tanggal"
       className="rounded-xl p-2 mx-auto" style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.1)', maxWidth: 240 }}>
       <div className="flex items-center justify-between mb-1.5">
-        {/* '‹' dan '›' tidak punya arti apa pun saat dibacakan; namanya harus
-            ditulis terpisah dari lambangnya. */}
         <button type="button" onClick={() => changeMonth(-1)} aria-label="Bulan sebelumnya"
           className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">‹</span></button>
         <span className="text-xs font-bold text-slate-700" aria-live="polite">{MONTH_NAMES[viewMonth]} {viewYear}</span>

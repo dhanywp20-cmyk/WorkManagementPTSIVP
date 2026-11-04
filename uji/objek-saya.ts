@@ -1,9 +1,3 @@
-/**
- * uji/objek-saya.ts - "Objek saya" Desain 3D (lib/objek-saya.ts): penyaring isi (berkas impor bisa dari siapa
- * saja), syarat simpan, model 3D, dan ekspor -> impor bolak-balik antar akun.
- *
- * Jalankan: npm test -- objek-saya
- */
 import {
   bacaBerkasObjekSaya, berkasObjekSaya, bersihkanAturObjek, JENIS_OBJEK, MAKS_BYTE_MODEL, MAKS_IMPOR_SEKALI, periksaObjekSaya,
 } from '../lib/objek-saya';

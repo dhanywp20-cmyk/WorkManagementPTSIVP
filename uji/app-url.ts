@@ -1,12 +1,3 @@
-/**
- * uji/app-url.ts - tautan untuk orang lain tidak boleh membawa domain Preview Vercel.
- *
- * Bug 12 Okt 2026: link checklist tim & link "lihat saja" Project Progress yang disalin saat
- * menguji di Preview membawa domain `...-git-...vercel.app`, yang dikunci login Vercel - tim luar
- * terlempar ke halaman login ("link jadi private"). Sama halnya link di pesan WA.
- *
- * Jalankan: npm test -- app-url
- */
 import { readFileSync } from 'fs';
 import { adalahPreviewVercel } from '../lib/app-url';
 

@@ -1,9 +1,4 @@
 'use client';
-/**
- * Panel proyektor: susun proyektor identik menjadi edge blending ke layar (inti/susunBlending.ts) - lurus tanpa
- * keystone, TR di dalam rentang zoom, lens shift di dalam daerah lensa, seperti kalkulator Panasonic. Ukuran ubin
- * & overlap sama dengan Kalkulator AV › Proyektor › Edge blending.
- */
 import { useState } from 'react';
 import { Angka, Catatan, f } from '../../bersama/ui';
 import { rencanaBlending } from '@/lib/av-layar-proyektor';
@@ -16,7 +11,6 @@ export function SusunBlending({ p, layar, K }: { p: Benda; layar: Benda; K: Kead
   const [overlap, setOverlap] = useState(15);
   const [hasil, setHasil] = useState<{ teks: string; peringatan: string[] } | null>(null);
   const res = resolusiProyektorDari(p) ?? rasioProyektorDari(p).px;
-  //  Pratinjau ukuran ubin sebelum menyusun - rumus yang sama dengan susunBlending.
   const r = rencanaBlending({ kolom, baris, resX: res.x, resY: res.y, overlapH: overlap, overlapV: overlap, mode: 'target', targetLebarM: layar.w, targetTinggiM: layar.h });
   const susun = () => {
     const k = K.kotakRuang[ruangDari(K.ruang, layar.x)] ?? K.kotakRuang[0];

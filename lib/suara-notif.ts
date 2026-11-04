@@ -1,9 +1,3 @@
-/**
- * lib/suara-notif.ts - suara notifikasi yang diatur Admin (app_settings 'suara_notifikasi') +
- * unggah berkasnya ke bucket merek-files (tulis hanya Admin, RLS boleh_tulis_pengaturan).
- * Aturan & batas: lib/suara-notif-bawaan.ts. Pola sama dengan lib/merek.ts: module scope +
- * sessionStorage (satu query per tab), pendengar memperbarui alarm begitu Admin menyimpan.
- */
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { bacaSuaraNotif, KUNCI_SUARA_NOTIF, periksaBerkasSuara, periksaDurasiSuara, SUARA_BAWAAN, type SuaraNotif, TIPE_SUARA } from './suara-notif-bawaan';
@@ -19,7 +13,7 @@ function bacaSimpanan(): SuaraNotif | null {
 }
 function tulisSimpanan(v: SuaraNotif) {
   if (typeof window === 'undefined') return;
-  try { window.sessionStorage.setItem(SIMPAN, JSON.stringify(v)); } catch { /* abaikan */ }
+  try { window.sessionStorage.setItem(SIMPAN, JSON.stringify(v)); } catch {  }
 }
 
 let sekarang: SuaraNotif = bacaSimpanan() ?? SUARA_BAWAAN;
@@ -36,14 +30,13 @@ export function muatSuaraNotif(): Promise<void> {
       sekarang = bacaSuaraNotif(data?.value ?? null);
       tulisSimpanan(sekarang);
       beriTahu();
-    } catch { /* pertahankan nilai yang berlaku */ }
+    } catch {  }
   })();
   return pemuatan;
 }
 
 export const suaraNotif = (): SuaraNotif => sekarang;
 
-/** Dengarkan perubahan (alarm di halaman memperbarui berkas & volumenya). Mengembalikan pelepas. */
 export function dengarSuaraNotif(f: () => void): () => void {
   pendengar.add(f);
   return () => { pendengar.delete(f); };
@@ -71,7 +64,6 @@ export async function simpanSuaraNotif(s: SuaraNotif): Promise<{ error: string |
   return { error: null };
 }
 
-/** Durasi berkas suara (detik) dibaca peramban sebelum diunggah. */
 export function durasiBerkas(berkas: File): Promise<number> {
   return new Promise(ok => {
     const url = URL.createObjectURL(berkas);
@@ -84,10 +76,6 @@ export function durasiBerkas(berkas: File): Promise<number> {
   });
 }
 
-/**
- * Periksa lalu unggah berkas suara. Nama berkas unik (cache peramban 1 tahun aman - berkas baru =
- * URL baru), jadi tiap orang mengunduhnya sekali saja (hemat kuota Supabase).
- */
 export async function unggahSuaraNotif(berkas: File): Promise<{ url: string | null; error: string | null }> {
   const galat = periksaBerkasSuara(berkas.type, berkas.size) ?? periksaDurasiSuara(await durasiBerkas(berkas));
   if (galat) return { url: null, error: galat };

@@ -1,5 +1,4 @@
 'use client';
-/** Kapasitas per port, batas beban, cadangan (loop / port), controller. */
 import { Angka, Pilih, Segmen } from '../../bersama/ui';
 import { RECEIVING_CARD } from '@/lib/av-hitung';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';

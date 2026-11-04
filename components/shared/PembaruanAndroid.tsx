@@ -5,14 +5,6 @@ import { ambilRilisTerbaru, formatUkuran, kodeVersiAplikasi, URL_UNDUH_APK, type
 
 const KUNCI_DILEWATI = 'wm_apk_dilewati';
 
-/**
- * Hanya di dalam aplikasi Android: bila admin menerbitkan APK dengan kode
- * versi lebih tinggi dari yang terpasang, tampilkan ajakan update.
- * Rilis bertanda Wajib -> layar penuh tanpa tombol tutup.
- * Di peramban biasa tidak memanggil apa pun (nol egress). Diperiksa saat halaman dimuat DAN saat aplikasi dibuka
- * kembali dari latar belakang (event `wm-kembali`, android/MainActivity.java) - WebView aplikasi bisa berhari-hari
- * tanpa memuat ulang, sehingga pemeriksaan saat dimuat saja tidak pernah terjadi lagi.
- */
 export function PembaruanAndroid() {
   const [rilis, setRilis] = useState<RilisAndroid | null>(null);
 
@@ -23,7 +15,7 @@ export function PembaruanAndroid() {
     const periksa = (segarkan: boolean) => ambilRilisTerbaru(segarkan).then(r => {
       if (!hidup || !r || r.kode_versi <= terpasang) return;
       let dilewati = 0;
-      try { dilewati = Number(localStorage.getItem(KUNCI_DILEWATI)) || 0; } catch { /* abaikan */ }
+      try { dilewati = Number(localStorage.getItem(KUNCI_DILEWATI)) || 0; } catch {  }
       if (!r.wajib && dilewati >= r.kode_versi) return;
       setRilis(r);
     });
@@ -36,7 +28,7 @@ export function PembaruanAndroid() {
   if (!rilis) return null;
 
   const lewati = () => {
-    try { localStorage.setItem(KUNCI_DILEWATI, String(rilis.kode_versi)); } catch { /* abaikan */ }
+    try { localStorage.setItem(KUNCI_DILEWATI, String(rilis.kode_versi)); } catch {  }
     setRilis(null);
   };
 

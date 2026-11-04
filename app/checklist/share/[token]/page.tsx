@@ -15,35 +15,18 @@ import { BilahSimpan, useTertunda } from '@/app/(portal)/project-progress/_compo
 import { ringkasChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
 import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
-/**
- * Halaman link checklist untuk tim lapangan - PUBLIK, tanpa login.
- *
- * Yang bisa dilakukan di sini: mencentang / membatalkan item, menandai
- * kendala, dan mengunggah foto bukti. Data diambil & ditulis lewat
- * /api/checklist/share/<token> (service_role di server); halaman ini tidak
- * pernah menyentuh supabase langsung.
- *
- * HEMAT KUOTA (Vercel & Supabase paket gratis): centang & kendala ditampung
- * di HP dan dikirim SEKALI saat Simpan ditekan; halaman tidak memuat ulang
- * sendiri - hanya lewat tombol muat ulang.
- *
- * Nama diminta sekali lalu diingat di perangkat ini, supaya admin tahu siapa
- * mengerjakan apa dan kapan tanpa tim harus punya akun.
- */
-
 const KUNCI_NAMA = 'checklist_nama_pencentang';
 
 function bacaNama(): string {
   try { return window.localStorage.getItem(KUNCI_NAMA) ?? ''; } catch { return ''; }
 }
 function simpanNama(nama: string) {
-  try { window.localStorage.setItem(KUNCI_NAMA, nama); } catch { /* mode privat: cukup diingat selama halaman terbuka */ }
+  try { window.localStorage.setItem(KUNCI_NAMA, nama); } catch {  }
 }
 
 type Lanjutan = { jenis: 'simpan' } | null;
 
 export default function ChecklistSharePage() {
-  //  Next 15+: params halaman berupa Promise - di client component cukup useParams().
   const params = useParams<{ token: string }>();
   const [detail, setDetail] = useState<ChecklistDetail | null>(null);
   const [memuat, setMemuat] = useState(true);
@@ -95,7 +78,6 @@ export default function ChecklistSharePage() {
 
   const gantiItem = (baru: ChecklistItem) => setDetail(d => d && { ...d, items: d.items.map(i => (i.id === baru.id ? baru : i)) });
 
-  /** Kirim semua perubahan tertunda dalam SATU permintaan. */
   const simpan = async (siapa = nama) => {
     if (!t.jumlah || sibuk.current) return;
     if (!siapa) { setIsianNama(''); setMintaNama({ lanjut: { jenis: 'simpan' } }); return; }
@@ -241,8 +223,6 @@ export default function ChecklistSharePage() {
               return (
                 <PanelBagian key={b.id} bagian={b} items={items} sedangId={sedangId} sembunyikanSelesai={sembunyikan}
                   aksi={{ onToggle: t.toggle, onKendala: setKendalaUntuk, onFoto: unggahFoto }}
-                  // Bagian yang sudah tuntas dilipat supaya yang masih
-                  // dikerjakan langsung terlihat di layar HP.
                   terbukaAwal={s.total === 0 ? false : s.selesai < s.total} />
               );
             })}

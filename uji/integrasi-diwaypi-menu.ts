@@ -1,17 +1,3 @@
-/**
- * uji/integrasi-diwaypi-menu.ts - aksi DIWAYPI untuk semua menu di luar tahap 1-2
- * (lib/integrasi-menu.ts, lib/integrasi-tulis.ts, lib/integrasi-analisa.ts):
- *   - token baca-saja tidak bisa menjalankan aksi tulis mana pun, tanpa menyentuh DB;
- *   - hak tombol Request Design (hakDesain) = aturan layar form-require-project;
- *   - setiap aksi tulis MENOLAK sebelum menulis apa pun bila syarat tombolnya tidak terpenuhi;
- *   - baris & pesan (WA / in-app / chat sistem) sama dengan hook peramban;
- *   - update yang ditolak RLS (0 baris tanpa galat) dilaporkan gagal, tanpa kabar susulan;
- *   - penyaring lihat per menu terpasang di query (Unit Movement, Form Review, Tech Note);
- *   - analisa: periode & temuan deterministik.
- * Klien Supabase & pengirim tiruan - tidak ada jaringan.
- *
- * Jalankan: npm test -- integrasi-diwaypi-menu
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { AKSI_BACA, AKSI_TULIS, jalankanAksi, type KonteksAksi } from '../lib/integrasi-aksi';
 import { AKSI_MENU_TULIS } from '../lib/integrasi-tulis';
@@ -89,7 +75,6 @@ const ORANG = [
   { id: 'a-1', username: 'admin1', full_name: 'Admin Satu', role: 'admin', team_type: null, phone_number: '0811', jabatan: null },
   { id: 's-1', username: 'andi', full_name: 'Andi', role: 'guest', team_type: null, phone_number: '0815', jabatan: 'Staff', sales_division: 'A' },
 ];
-/** Jawaban umum untuk tabel users (daftar tim, supervisor, penerima admin, akun tambahan). */
 function jawabUsers(q: Kueri, tambahan: Partial<AkunTambahan> = {}): Hasil | undefined {
   if (q.tabel !== 'users' || q.op !== 'select') return undefined;
   if (q.kolom === '*') return { data: { ...tambahan } };
@@ -136,7 +121,6 @@ async function main() {
   cek('token baca-saja ditolak di SEMUA aksi tulis baru', semuaTolak);
   cek('...tanpa menyentuh DB / mengirim apa pun', kK.length === 0 && eK.wa.length === 0 && eK.inApp.length === 0);
 
-  // ------------------------------------------------------------ hakDesain = aturan layar
   console.log('hak Request Design');
   const hAdmin = hakDesain(dasarReq, admin, tanpaTambahan, 0);
   cek('admin + pending: Approve & Assign, Tolak, route Supervisor; belum ada Update Status',
@@ -162,7 +146,6 @@ async function main() {
   cek('Sales: request pending belum bisa chat', !hakDesain(dasarReq, sales, tanpaTambahan, 0).pesan);
   cek('PTS: request pending sudah bisa chat', hakDesain(dasarReq, team, tanpaTambahan, 0).pesan);
 
-  // ------------------------------------------------------------ desain_status
   console.log('desain_status');
   const jawabReq = (req: RequestDesain, barisUpdate = 1) => (q: Kueri): Hasil | undefined => {
     const u = jawabUsers(q); if (u) return u;
@@ -201,7 +184,6 @@ async function main() {
   cek('ruangan ke-2: yang ditulis array rooms, kolom request tidak disentuh',
     r4.ok === true && JSON.stringify(upd4?.nilai) === '{"rooms":[{"room_name":"Command Center","status":"in_progress","assign_name":"Dhany"}]}', JSON.stringify(upd4?.nilai));
 
-  // ------------------------------------------------------------ desain_assign
   console.log('desain_assign');
   const e5 = efekTiruan();
   const { db: d5, kueri: k5 } = klienTiruan(jawabReq(dasarReq));
@@ -227,7 +209,6 @@ async function main() {
   const r7b = await jalankanAksi('desain_assign', { id: dasarReq.id, handler: 'Orang Asing' }, ctx(klienTiruan(jawabReq(dasarReq)).db, admin, efekTiruan().efek));
   cek('handler yang tidak ada di daftar tim ditolak', !r7b.ok && /tidak ada di daftar/.test(String(r7b.galat)));
 
-  // ------------------------------------------------------------ desain_tolak / pesan
   console.log('desain_tolak & desain_pesan');
   const { db: d8, kueri: k8 } = klienTiruan(jawabReq(dasarReq));
   const r8 = await jalankanAksi('desain_tolak', { id: dasarReq.id }, ctx(d8, admin, efekTiruan().efek));
@@ -246,7 +227,6 @@ async function main() {
   const r11 = await jalankanAksi('desain_pesan', { id: disetujui.id, pesan: 'sudah dicek', ruangan: 2 }, ctx(d11, team, efekTiruan().efek));
   cek('PTS chat dengan label ruangan', r11.ok === true && JSON.stringify(k11.find(q => q.tabel === 'project_messages')?.nilai).includes('"message":"[Command Center] sudah dicek"'));
 
-  // ------------------------------------------------------------ tiket_buat / tiket_setujui
   console.log('tiket_buat & tiket_setujui');
   const jawabTiket = (tiket: Record<string, unknown> | null, barisUpdate = 1) => (q: Kueri): Hasil | undefined => {
     const u = jawabUsers(q); if (u) return u;
@@ -299,7 +279,6 @@ async function main() {
   cek('Supervisor yang di-route: kerjakan sendiri', r18.ok === true
     && JSON.stringify(k18.find(q => q.op === 'update')?.nilai) === '{"status":"Pending","assign_name":"Supri","routing_status":null}');
 
-  // ------------------------------------------------------------ Tech Note
   console.log('tech note');
   const folders = [{ id: 'f-1', name: 'LED Display' }];
   const jawabCatatan = (note: Record<string, unknown> | null) => (q: Kueri): Hasil | undefined => {
@@ -334,7 +313,6 @@ async function main() {
     ctx(klienTiruan(jawabCatatan({ ...pending, status: 'approved' })).db, manajer, efekTiruan().efek));
   cek('hanya yang Pending yang bisa direview', !r23.ok && /Pending/.test(String(r23.galat)));
 
-  // ------------------------------------------------------------ Unit Movement
   console.log('unit movement');
   const jawabUnit = (log: Record<string, unknown> | null, tambahan: Partial<AkunTambahan> = {}) => (q: Kueri): Hasil | undefined => {
     if (q.tabel === 'users' && q.kolom === 'full_name') return { data: [{ full_name: 'Dhany' }, { full_name: 'Budi' }] };
@@ -362,7 +340,6 @@ async function main() {
   const r28 = await jalankanAksi('unit_kembali', { id: '44444444-aaaa-bbbb-cccc-000000000001' }, ctx(d28, team, efekTiruan().efek));
   cek('tandai kembali: return_confirmed=true', r28.ok === true && JSON.stringify(k28.find(q => q.op === 'update')?.nilai) === '{"return_confirmed":true}');
 
-  // ------------------------------------------------------------ Piket
   console.log('piket');
   const jawabPiket = (adaDemo: number) => (q: Kueri): Hasil | undefined => {
     const u = jawabUsers(q); if (u) return u;
@@ -387,7 +364,6 @@ async function main() {
   const r32 = await jalankanAksi('piket_catat', { jenis: 'Karaoke' }, ctx(klienTiruan(jawabPiket(0)).db, team, efekTiruan().efek));
   cek('jenis kegiatan di luar daftar ditolak', !r32.ok && /Demo Product/.test(String(r32.galat)));
 
-  // ------------------------------------------------------------ penyaring baca
   console.log('penyaring lihat');
   const { db: d33, kueri: k33 } = klienTiruan(q => jawabUsers(q));
   await jalankanAksi('unit_cari', {}, ctx(d33, sales, efekTiruan().efek, ['baca']));
@@ -407,7 +383,6 @@ async function main() {
   const r37 = await jalankanAksi('desain_detail', { id: dasarReq.id }, ctx(d37, team, efekTiruan().efek, ['baca']));
   cek('Request Design: Team PTS biasa tidak melihat request yang belum di-assign', !r37.ok && /tidak punya akses/.test(String(r37.galat)));
 
-  // ------------------------------------------------------------ analisa
   console.log('analisa');
   const p1 = periodeAnalisa({}, '2026-10-20');
   const p2 = periodeAnalisa({ periode: 'minggu' }, '2026-10-20');

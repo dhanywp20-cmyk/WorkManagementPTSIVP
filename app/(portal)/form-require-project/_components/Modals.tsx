@@ -6,8 +6,6 @@ import { FormRuanganUtama } from './form-baru/FormRuanganUtama';
 import { KolomInfoProyekBaru } from './form-baru/KolomInfoProyekBaru';
 import { BrandPicMapping, emptyRoom, RoomDetail, User } from './shared';
 
-// NewFormModal
-
 export type InitialFormType = {
   project_name: string; room_name: string; project_location: string; sales_name: string; sales_division: string;
   kebutuhan: string[]; kebutuhan_other: string;
@@ -23,19 +21,10 @@ export type InitialFormType = {
   controller_automation: string; controller_type: string[];
   ukuran_ruangan: string; suggest_tampilan: string; keterangan_lain: string;
   brand_display: string; brand_display_pic_id: string; brand_display_pic_name: string;
-  /**
-   * Display KEDUA - satu ruangan bisa memakai dua produk display dari brand
-   * berbeda, dan tiap brand punya PIC-nya sendiri. Tanpa slot kedua, brand
-   * yang satunya hanya bisa dititipkan di kolom keterangan dan PIC-nya tidak
-   * pernah ikut ter-mapping.
-   *
-   * Opsional: ruangan yang dibuat sebelum kolom ini ada tidak memilikinya.
-   * Rooms disimpan sebagai JSONB, jadi tidak perlu migrasi basis data.
-   */
   brand_display_2?: string; brand_display_2_pic_id?: string; brand_display_2_pic_name?: string;
   brand_middleware: string; brand_middleware_pic_id: string; brand_middleware_pic_name: string;
   source_laptop_qty: string; source_pc_qty: string;
-  brand?: string; // Marketing Brand: 'MVI' | 'IVP' | 'BOTH' - Sales External pilih (routing Sales Internal)
+  brand?: string;
 };
 
 export interface NewFormModalProps {
@@ -55,7 +44,7 @@ export interface NewFormModalProps {
   onClose: () => void;
   onSubmit: () => void;
   salesGuestUsers: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[];
-  isInternalSalesGuest?: boolean; // creator = Sales Internal (guest)  tampilkan field SBU
+  isInternalSalesGuest?: boolean;
   rooms: RoomDetail[];
   setRooms: React.Dispatch<React.SetStateAction<RoomDetail[]>>;
   brandPicMappings: BrandPicMapping[];
@@ -80,14 +69,13 @@ export function NewFormModal({
   const toggleArr = (arr: string[], val: string): string[] =>
     arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
 
-  // Active room tab index for navigation (0 = Ruangan 1 / main form)
   const [activeRoomIdx, setActiveRoomIdx] = useState(0);
-  const totalRooms = 1 + rooms.length; // main room + extra rooms
+  const totalRooms = 1 + rooms.length;
   const goLeft = () => setActiveRoomIdx(i => Math.max(0, i - 1));
   const goRight = () => setActiveRoomIdx(i => Math.min(totalRooms - 1, i + 1));
   const addAndGoToRoom = () => {
     setRooms(p => [...p, emptyRoom()]);
-    setActiveRoomIdx(1 + rooms.length); // go to new room
+    setActiveRoomIdx(1 + rooms.length);
   };
 
   const CheckGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) => (
@@ -130,15 +118,9 @@ export function NewFormModal({
   return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-4" style={LATAR_MODAL}>
-      {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala bergradasi teal sendiri. */}
       <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
         <KepalaModal judul="Form Equipment Request — IVP & MVI" keterangan={<>Requester: <span className="font-bold">{currentUser.full_name}</span></>} onTutup={onClose} />
 
-        {/* Dua kolom, BUKAN tiga seperti form lain — pembagiannya mengikuti
-            isinya, bukan angka. Konfigurator ruangan di kanan berisi tab per
-            ruangan dengan puluhan isian perangkat; dipaksa selebar sepertiga
-            layar, tab-nya berdesakan dan justru lebih sulit dipakai daripada
-            saat harus digulir. Info project yang ringkas cukup di kolom kiri. */}
         <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden bg-gray-50">
           <div className="p-5 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
@@ -147,9 +129,7 @@ export function NewFormModal({
           />
 
           <div className="satulayar:col-span-2 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
-          {/* ── Room Tab Navigator ── */}
           <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-sm overflow-hidden">
-            {/* Tab bar */}
             <div className="flex items-center bg-teal-50 border-b border-teal-200 px-2 py-1.5 gap-1 overflow-x-auto">
               <button aria-label="Sebelumnya" type="button" onClick={goLeft} disabled={activeRoomIdx === 0}
                 className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
@@ -173,8 +153,6 @@ export function NewFormModal({
                 className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all whitespace-nowrap ml-1">
                 + Ruangan Lain
               </button>
-              {/* Pendorong ini hanya dipakai saat barisnya memang muat. Di ponsel
-                  ia mendorong penghitung ruangan keluar dari bagian yang terlihat. */}
               <div className="hidden sm:block flex-1"/>
               <span className="text-[11px] text-teal-700 font-bold mr-1">{activeRoomIdx+1}/{totalRooms}</span>
               {activeRoomIdx > 0 && (
@@ -185,15 +163,12 @@ export function NewFormModal({
               )}
             </div>
 
-            {/* Content — 2 columns */}
             <div className="p-5">
               <FormRuanganUtama
                 activeRoomIdx={activeRoomIdx} boqFormFile={boqFormFile} boqRoom1Ref={boqRoom1Ref} boqRoomMap={boqRoomMap} brandPicMappings={brandPicMappings} currentUser={currentUser} form={form} roomPhotoMap={roomPhotoMap} rooms={rooms} setActiveRoomIdx={setActiveRoomIdx} setBoqFormFile={setBoqFormFile} setBoqRoomMap={setBoqRoomMap} setForm={setForm} setRoomPhotoMap={setRoomPhotoMap} setRooms={setRooms} setSurveyPhotos={setSurveyPhotos} setSurveyPhotosPreviews={setSurveyPhotosPreviews} surveyPhotoRef={surveyPhotoRef} surveyPhotos={surveyPhotos} surveyPhotosPreviews={surveyPhotosPreviews} toggleArr={toggleArr}
               />
             </div>
           </div>
-
-
 
           </div>
           </div>

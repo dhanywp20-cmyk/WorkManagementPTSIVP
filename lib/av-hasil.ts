@@ -1,11 +1,3 @@
-/**
- * lib/av-hasil.ts - hasil Kalkulator AV yang disimpan ke proyek (tabel tools_av_hasil, migrasi 055).
- * Murni (tanpa basis data): dipakai /api/tools-team/hasil-av dan diuji di uji/av-hasil.ts.
- *
- * `lembar` dari peramban dibersihkan di sini sebelum disimpan, karena lembar yang tersimpan nanti
- * dicetak ulang oleh orang lain (htmlLembar menulis ke jendela baru). Hanya seksi 'info' & 'tabel'
- * yang diterima - seksi 'html' (HTML mentah) dibuang - dan semua teks dibatasi panjangnya.
- */
 import type { Lembar, Seksi } from './lembar-cetak';
 
 export const BATAS_HASIL = { judul: 120, catatan: 500, ringkasan: 4000, teks: 300, seksi: 12, baris: 200, kolom: 12 } as const;
@@ -36,10 +28,9 @@ function seksi(v: unknown): Seksi | null {
     const rataKanan = daftar(s.rataKanan, BATAS_HASIL.kolom).map(Number).filter(n => Number.isInteger(n) && n >= 0 && n < BATAS_HASIL.kolom);
     return { judul, jenis: 'tabel', kepala, isi, ...(rataKanan.length ? { rataKanan } : {}) };
   }
-  return null;   // 'html' & jenis lain dibuang
+  return null;
 }
 
-/** Lembar bersih: hanya judul, subjudul, kepala, seksi info/tabel, catatan, mendatar. */
 export function bersihkanLembar(v: unknown): Lembar | null {
   if (!v || typeof v !== 'object') return null;
   const l = v as Record<string, unknown>;
@@ -58,7 +49,6 @@ export function bersihkanLembar(v: unknown): Lembar | null {
   };
 }
 
-/** Isian POST yang sah, atau pesan galat. */
 export function periksaHasilAV(b: Record<string, unknown>): IsianHasilAV | { galat: string } {
   const proyek_id = String(b.proyek_id ?? '');
   if (!POLA_UUID.test(proyek_id)) return { galat: 'Pilih proyeknya dulu.' };

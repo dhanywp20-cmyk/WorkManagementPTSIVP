@@ -1,24 +1,12 @@
 import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
 import { escObjek, urlAman } from '@/lib/lembar-cetak';
 
-/**
- * Laporan cetak satu ticket: menyusun HTML lengkap dengan gaya cetaknya
- * sendiri lalu membukanya di jendela baru untuk dicetak sebagai PDF.
- *
- * Murni - tidak menyentuh state halaman sama sekali. Yang dibutuhkannya cuma
- * ticket-nya, dan itulah alasan fungsi sepanjang ini tidak perlu tinggal di
- * dalam komponen halaman.
- */
 export async function cetakTicket(asli: Ticket): Promise<void> {
-  //  Semua teks ticket & activity log di-escape SEKALI di sini: deskripsi, alamat, catatan, dll. diisi pengguna
-  //  (termasuk akun Sales) dan jendela cetak berjalan di origin aplikasi dengan hak orang yang menekan Cetak.
   const ticket = escObjek(asli);
   const printDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
   const statusLabel = ticket.status;
 
-  // Aturan handler/team/catatan pelimpahan hidup di satu tempat supaya layar
-  // View Ticket dan laporan cetak tidak pernah menjawab berbeda.
   const { handlerPTS, teamHandler, catatanServices } = ringkasPenanganan(ticket);
 
   const statusColor = ticket.status === "Solved" ? "#059669"
@@ -38,7 +26,6 @@ export async function cetakTicket(asli: Ticket): Promise<void> {
   const badge = (text: string, bg = "#fef3c7", color = "#92400e") =>
     `<span style="display:inline-block;padding:2px 10px;border-radius:20px;background:${bg};color:${color};font-size:11px;font-weight:700;margin:2px 2px 2px 0">${text}</span>`;
 
-  // Activity log rows
   const activityRows = (ticket.activity_logs || [])
     .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .map((log: any, idx: number) => {

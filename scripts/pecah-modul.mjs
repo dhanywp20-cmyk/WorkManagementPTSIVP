@@ -1,19 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/pecah-modul.mjs - Pecah satu modul .ts/.tsx menjadi beberapa modul saudara; berkas asal tetap
- * ada dan mengekspor ulang semuanya, jadi pemanggil tidak berubah.
- *
- *   node scripts/pecah-modul.mjs <berkas> <baris-awal>:<nama-modul> [<baris-awal>:<nama-modul> ...]
- *
- * Tiap pernyataan tingkat atas masuk ke modul yang rentangnya memuat baris awalnya (rentang berlaku
- * sampai baris-awal berikutnya). Nama modul `_` = TETAP di berkas asal (mis. komponen export default,
- * yang tidak ikut terbawa `export *`). Impor dan `export {..}` / `export .. from` tetap di berkas asal.
- * Prolog direktif ('use client') disalin ke baris pertama setiap berkas.
- * Compiler TypeScript yang menentukan:
- *   - nama yang dipakai lintas modul -> diekspor di modul asal & diimpor di modul pemakai;
- *   - impor berkas asal disalin ke tiap modul, lalu yang tidak terpakai dibuang (organizeImports).
- * Komentar di atas pernyataan ikut pindah bersamanya. Perilaku tidak berubah.
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +7,7 @@ const [berkas, ...spek] = process.argv.slice(2);
 if (!berkas || spek.length === 0) { console.error('pakai: <berkas> <baris>:<nama> ...'); process.exit(2); }
 const abs = path.resolve(berkas);
 const dir = path.dirname(abs);
-const ext = path.extname(abs);                       // .ts / .tsx - modul baru memakai ekstensi yang sama
+const ext = path.extname(abs);
 const dasar = path.basename(abs, ext);
 const teks = fs.readFileSync(abs, 'utf8');
 const nl = teks.includes('\r\n') ? '\r\n' : '\n';
@@ -37,12 +22,12 @@ const modulUntuk = (st) => {
   return m;
 };
 
-const direktif = [];       // 'use client' dsb. - harus tetap baris pertama di tiap berkas
+const direktif = [];
 const impor = [];
-const tetapDiBarrel = [];  // re-ekspor & pernyataan sebelum rentang pertama
-const tetapAsli = [];      // pernyataan bermodul `_`
+const tetapDiBarrel = [];
+const tetapAsli = [];
 const isi = new Map(rentang.filter(r => r.nama !== TETAP).map(r => [r.nama, []]));
-const asal = new Map();    // nama simbol -> modul
+const asal = new Map();
 let masihProlog = true;
 for (const st of sf.statements) {
   if (masihProlog && ts.isExpressionStatement(st) && ts.isStringLiteral(st.expression)) { direktif.push(st); continue; }
@@ -59,7 +44,6 @@ for (const st of sf.statements) {
   for (const n of nama) asal.set(n, m);
 }
 
-//  Nama yang dipakai sebuah pernyataan tetapi dideklarasikan di modul pecahan.
 function dipakai(st) {
   const hasil = new Set();
   (function jalan(n) {
@@ -74,7 +58,7 @@ function dipakai(st) {
   return hasil;
 }
 const perluEkspor = new Set();
-const imporSaudara = new Map([...[...isi.keys()].map(m => [m, new Map()]), [TETAP, new Map()]]);   // pemakai -> (modul asal -> nama)
+const imporSaudara = new Map([...[...isi.keys()].map(m => [m, new Map()]), [TETAP, new Map()]]);
 for (const [m, daftar] of [...isi, [TETAP, tetapAsli]]) for (const st of daftar) for (const n of dipakai(st)) {
   const a = asal.get(n);
   if (a === m) continue;
@@ -109,7 +93,6 @@ for (const [m, daftar] of isi) {
   berkasBaru.push(tujuan);
 }
 
-//  Berkas asal: prolog, impor, impor dari modul pecahan (untuk yang tetap), re-ekspor, yang tetap, export *.
 const asli = [
   prolog,
   blokImpor,
@@ -120,7 +103,6 @@ const asli = [
 ].filter(Boolean).join(nl) + nl;
 fs.writeFileSync(abs, asli);
 
-//  Buang impor yang tidak terpakai di semua berkas yang disentuh.
 const cfg = ts.getParsedCommandLineOfConfigFile(path.resolve('tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} });
 const semua = [abs, ...berkasBaru];
 const host = {
@@ -134,14 +116,12 @@ const host = {
 };
 const ls = ts.createLanguageService(host, ts.createDocumentRegistry());
 for (const f of semua) {
-  //  Berkas asal yang tinggal barrel murni dibiarkan: impornya dipakai oleh re-ekspor `export { .. }`.
   if (f === abs && tetapAsli.length === 0) continue;
   const ubah = ls.organizeImports({ type: 'file', fileName: f, skipDestructiveCodeActions: false }, { newLineCharacter: nl }, undefined);
   let t = fs.readFileSync(f, 'utf8');
   for (const fc of ubah) for (const c of [...fc.textChanges].sort((a, b) => b.span.start - a.span.start)) {
     t = t.slice(0, c.span.start) + c.newText + t.slice(c.span.start + c.span.length);
   }
-  //  organizeImports memecah daftar impor tanpa spasi - rapikan jadi satu baris `{ a, b }`.
   t = t.replace(/import (type )?\{([^}]*)\}\s*from\s*'([^']+)';/g, (_, tipe, isiImpor, dari) =>
     `import ${tipe ?? ''}{ ${isiImpor.split(',').map(x => x.trim()).filter(Boolean).join(', ')} } from '${dari}';`);
   fs.writeFileSync(f, t);

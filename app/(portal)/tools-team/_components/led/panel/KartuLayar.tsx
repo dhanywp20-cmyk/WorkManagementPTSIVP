@@ -1,6 +1,5 @@
 'use client';
 import type React from 'react';
-/** Kartu ringkasan layar di sub menu Screen / Power Connection. */
 import { f, Kartu } from '../../bersama/ui';
 import { ArrowRight } from 'lucide-react';
 import { AksiFile } from './AksiFile';

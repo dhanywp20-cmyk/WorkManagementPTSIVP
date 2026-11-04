@@ -1,24 +1,11 @@
 'use client';
 
-/**
- * Perubahan yang menunggu tombol Simpan.
- *
- * Centang & kendala TIDAK dikirim per klik. Semuanya ditampung di peramban,
- * langsung terlihat di layar (ditandai "belum disimpan"), lalu dikirim SEKALI
- * saat Simpan ditekan. Satu sesi kerja = satu permintaan ke server - penting
- * karena Vercel & Supabase dipakai di paket gratis (kuota egress & fungsi).
- *
- * Waktu tiap perubahan dicatat dari perangkat saat diklik, jadi riwayat
- * tetap menunjukkan kapan item dikerjakan, bukan kapan disimpan.
- */
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import type { ChecklistItem, LewatCentang, PerubahanItem } from '@/lib/checklist';
 import { TEMA } from './tampilan';
 
-/** Terapkan satu perubahan ke item - urutan sama dengan server (simpanPerubahan). */
 function terapkan(it: ChecklistItem, p: PerubahanItem, nama: string, lewat: LewatCentang): ChecklistItem {
   const hasil: ChecklistItem = { ...it, tertunda: true };
   const waktu = p.waktu ?? new Date().toISOString();
@@ -58,13 +45,11 @@ export function useTertunda(items: ChecklistItem[] | undefined, nama: string, le
     });
   }, [asli]);
 
-  /** Balik centang item seperti yang sedang TAMPIL. Kembali ke asal = tidak ada perubahan. */
   const toggle = useCallback((it: ChecklistItem) => {
     ubah(it.id, (p, dasar) => {
       const sekarang = terapkan(dasar, p, '', lewat);
       const tujuan = !sekarang.selesai;
       const baru: PerubahanItem = { ...p, selesai: tujuan };
-      // Menyelesaikan item melepas kendalanya - tidak perlu kendala tertunda.
       if (tujuan && baru.kendala === true) { delete baru.kendala; delete baru.catatan; }
       if (baru.selesai === dasar.selesai && !(dasar.kendala && tujuan)) delete baru.selesai;
       return baru.selesai === undefined && baru.kendala === undefined ? null : baru;
@@ -74,7 +59,6 @@ export function useTertunda(items: ChecklistItem[] | undefined, nama: string, le
   const aturKendala = useCallback((it: ChecklistItem, kendala: boolean, catatan: string) => {
     ubah(it.id, (p, dasar) => {
       const baru: PerubahanItem = { ...p, kendala, catatan: kendala ? catatan : undefined };
-      // Kendala membatalkan centang selesai.
       if (kendala) delete baru.selesai;
       if (kendala === dasar.kendala && (!kendala || catatan === dasar.kendala_catatan)) { delete baru.kendala; delete baru.catatan; }
       return baru.selesai === undefined && baru.kendala === undefined ? null : baru;
@@ -84,7 +68,6 @@ export function useTertunda(items: ChecklistItem[] | undefined, nama: string, le
   const daftar = useMemo(() => Array.from(peta.values()), [peta]);
   const reset = useCallback(() => setPeta(new Map()), []);
 
-  // Peringatan bila halaman ditutup / dimuat ulang sebelum Simpan.
   useEffect(() => {
     if (!peta.size) return;
     const tahan = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
@@ -95,7 +78,6 @@ export function useTertunda(items: ChecklistItem[] | undefined, nama: string, le
   return { tampil, toggle, aturKendala, daftar, jumlah: peta.size, reset };
 }
 
-/** Bilah menempel di bawah layar selama ada perubahan yang belum disimpan. */
 export function BilahSimpan({ jumlah, sibuk, onSimpan, onBatal }: {
   jumlah: number; sibuk: boolean; onSimpan: () => void; onBatal: () => void;
 }) {

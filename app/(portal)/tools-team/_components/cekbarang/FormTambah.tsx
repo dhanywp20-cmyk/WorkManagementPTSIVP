@@ -1,8 +1,4 @@
 'use client';
-/**
- * Tambah barang cepat: nama (+ merk / tipe, qty, satuan) -> Enter -> masuk daftar, kursor kembali ke nama.
- * Satuan terakhir dipertahankan supaya mengetik banyak barang sejenis lebih cepat.
- */
 import { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { ItemBarang } from '@/lib/checklist-barang';

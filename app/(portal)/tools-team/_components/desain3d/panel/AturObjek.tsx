@@ -3,16 +3,11 @@ import { Angka, f, Pilih, Segmen, Catatan } from '../../bersama/ui';
 import { type Benda, type BentukObjek, LABEL_BENTUK_OBJEK } from '../inti';
 import { FAKTOR_SATUAN, LABEL_SATUAN, type Satuan, ukuranModel } from '../impor/berkas3d';
 
-/**
- * Bagian panel "Atur benda" untuk objek mapping (bentuk dasar & siluet gambar) dan model 3D impor:
- * bentuk, foto permukaan, satuan berkas, posisi tegak, dan tinggi nyata yang menjaga proporsi.
- */
 export function AturObjek({ b, set, adaFoto, onGambarBaru }: {
   b: Benda; set: (x: Partial<Benda>) => void;
-  /** Foto permukaan objek gambar masih ada di memori (bisa dinyalakan lagi). */ adaFoto: boolean;
-  /** Buat ulang siluet dari gambar lain (posisi & nama tetap). */ onGambarBaru: () => void;
+   adaFoto: boolean;
+   onGambarBaru: () => void;
 }) {
-  /** Skala seragam dari tinggi baru - lebar & tebal ikut, bentuk tidak gepeng. */
   const skalaTinggi = (h: number) => {
     if (!(h > 0.01 && h <= 200) || !b.h) return;
     const k = h / b.h, r = (v: number) => Math.round(v * k * 1000) / 1000;
@@ -50,11 +45,9 @@ export function AturObjek({ b, set, adaFoto, onGambarBaru }: {
     );
   }
 
-  //  Model 3D impor.
   const putar = b.putarModel ?? 0;
   const ubahTegak = (v: number) => {
     if (b.ukuranFile) { set({ putarModel: v || undefined, ...ukuranModel(b.ukuranFile, b.satuanModel ?? 'm', v) }); return; }
-    //  Tanpa ukuran berkas (desain lama): tukar tinggi & tebal bila sumbu tegaknya berganti.
     const tukar = (Math.abs(Math.round(v / 90)) % 2) !== (Math.abs(Math.round(putar / 90)) % 2);
     set({ putarModel: v || undefined, ...(tukar ? { h: b.d, d: b.h } : {}) });
   };

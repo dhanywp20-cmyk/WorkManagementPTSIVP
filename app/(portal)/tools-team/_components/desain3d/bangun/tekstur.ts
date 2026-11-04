@@ -1,6 +1,5 @@
 import { type Ruang, warnaSah } from '../inti/index';
 import type * as T from 'three';
-/** Tekstur kanvas procedural (lantai, layar, rack, lampu) (dipisah dari model.ts). */
 
 export function kanvas(w: number, h: number, gambar: (c: CanvasRenderingContext2D) => void): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -10,7 +9,6 @@ export function kanvas(w: number, h: number, gambar: (c: CanvasRenderingContext2
 export function teksturLantai(THREE: typeof T, jenis: Ruang['lantai'], p: number, l: number, warna?: string): T.Texture {
   const c = kanvas(512, 512, g => {
     if (jenis === 'polos') {
-      //  Lantai polos berwarna bebas (vinyl, epoxy, karpet warna perusahaan) + bintik halus supaya tidak datar.
       g.fillStyle = warnaSah(warna) ?? '#9ca3af'; g.fillRect(0, 0, 512, 512);
       for (let i = 0; i < 5000; i++) { g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.05)'; g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2); }
     } else if (jenis === 'kayu') {
@@ -32,7 +30,6 @@ export function teksturLantai(THREE: typeof T, jenis: Ruang['lantai'], p: number
   });
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  //  Satu ubin tekstur = 2 m (kayu/karpet) atau 1,2 m (keramik 60×60 cm × 2).
   const ukuran = jenis === 'keramik' ? 1.2 : 2;
   t.repeat.set(p / ukuran, l / ukuran);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -40,7 +37,6 @@ export function teksturLantai(THREE: typeof T, jenis: Ruang['lantai'], p: number
   return t;
 }
 
-/** Pola uji layar (color bars + label) - konten bawaan display. */
 export function teksturPolaUji(THREE: typeof T, judul: string, rasio: number): T.Texture {
   const W = 1024, H = Math.max(256, Math.round(W / Math.max(0.3, rasio)));
   const c = kanvas(W, H, g => {
@@ -58,7 +54,6 @@ export function teksturPolaUji(THREE: typeof T, judul: string, rasio: number): T
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-/** Bilangan acak berbenih (konten contoh sama setiap kali model dibangun ulang). */
 export function acak(benih: number) {
   let a = benih >>> 0;
   return () => {
@@ -69,7 +64,6 @@ export function acak(benih: number) {
   };
 }
 
-/** Gradasi bundar untuk kolam cahaya lampu di lantai. */
 let kolamCache: T.Texture | null = null;
 
 export function teksturKolamCahaya(THREE: typeof T): T.Texture {
@@ -83,7 +77,6 @@ export function teksturKolamCahaya(THREE: typeof T): T.Texture {
   return kolamCache.clone();
 }
 
-/** Terang lampu mengikuti dimmer: emisif muka lampu & kolam cahaya di lantai. */
 export function aturNyalaLampu(g: T.Object3D, faktor: number) {
   g.traverse(o => {
     if (!o.userData.cahaya) return;
@@ -95,7 +88,6 @@ export function aturNyalaLampu(g: T.Object3D, faktor: number) {
   });
 }
 
-/** Garis sambungan (cabinet LED / bezel videowall) di atas konten. */
 export function teksturGrid(THREE: typeof T, kolom: number, baris: number, tebal = 2, warna = 'rgba(0,0,0,0.55)'): T.Texture {
   const W = 1024, H = Math.min(2048, Math.max(64, Math.round((1024 * baris) / Math.max(1, kolom))));
   const c = kanvas(W, H, g => {
@@ -107,7 +99,6 @@ export function teksturGrid(THREE: typeof T, kolom: number, baris: number, tebal
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-/** Tampilan antarmuka touch panel. */
 export function teksturPanel(THREE: typeof T): T.Texture {
   const c = kanvas(512, 320, g => {
     g.fillStyle = '#0f172a'; g.fillRect(0, 0, 512, 320);

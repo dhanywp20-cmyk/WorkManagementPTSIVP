@@ -1,9 +1,4 @@
 'use client';
-/**
- * Checklist Barang - impor daftar barang dari Excel / PDF, cek satu per satu (✓ sesuai / ✗ tidak),
- * lalu unduh PDF hasil lengkap dengan kolom tanda tangan. Semua di peramban; isian tersimpan otomatis
- * di perangkat ini (localStorage) sampai "Mulai baru". Logika murni: lib/checklist-barang.ts.
- */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck, FileDown, FileSpreadsheet, Pencil, Plus, RotateCcw, Search, Trash2, Upload } from 'lucide-react';
 import { getSession } from '@/lib/auth';
@@ -44,9 +39,8 @@ function Isian({ label, children, className = '' }: { label: string; children: R
 
 export function ChecklistBarang() {
   const [d, setD] = useState<DokChecklist>(() => muatDraf() ?? dokBaru(hariIni()));
-  //  Draf disimpan (tertunda) setiap ada perubahan - per perangkat, bukan data bersama.
   useEffect(() => {
-    const t = setTimeout(() => { try { localStorage.setItem(KUNCI, JSON.stringify(d)); } catch { /* penuh / diblokir: abaikan */ } }, 400);
+    const t = setTimeout(() => { try { localStorage.setItem(KUNCI, JSON.stringify(d)); } catch {  } }, 400);
     return () => clearTimeout(t);
   }, [d]);
 
@@ -81,7 +75,6 @@ export function ChecklistBarang() {
   const hapusItem = useCallback((id: string) => setD(x => ({ ...x, items: x.items.filter(it => it.id !== id) })), [setD]);
   const ubahPenanda = (i: number, p: Partial<Penanda>) => setD(x => ({ ...x, penanda: x.penanda.map((v, j) => (j === i ? { ...v, ...p } : v)) }));
 
-  //  Barang baru selalu terlihat: saringan & pencarian dilepas.
   const tambahItem = (isi: Pick<ItemBarang, 'nama' | 'spek' | 'qty' | 'satuan'>) => {
     setD(x => (x.items.length >= MAKS_ITEM ? x : { ...x, items: [...x.items, itemBaru(isi)] }));
     setCari(''); setSaring('semua'); setPesan(null);
@@ -238,7 +231,6 @@ export function ChecklistBarang() {
           </div>
         )}
 
-        {/* Satu posisi tetap untuk layar kosong & daftar: form tidak dipasang ulang, fokus & satuan terakhir tetap. */}
         {!impor && (
           <div className="mt-3 space-y-3">
             <FormTambah onTambah={tambahItem} penuh={d.items.length >= MAKS_ITEM} />

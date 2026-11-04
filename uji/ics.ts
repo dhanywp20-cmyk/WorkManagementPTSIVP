@@ -1,9 +1,3 @@
-/**
- * uji/ics.ts - berkas kalender .ics: WIB -> UTC, acara sehari penuh, escape teks, lipatan baris 75
- * oktet (termasuk karakter multi-byte), struktur VCALENDAR/VEVENT/VALARM.
- *
- * Jalankan: npx tsx uji/ics.ts
- */
 import { buatIcs, escIcs, lipat, utcDariWib } from '../lib/ics';
 
 let lulus = 0, gagal = 0;

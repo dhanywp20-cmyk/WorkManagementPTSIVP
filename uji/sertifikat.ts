@@ -1,9 +1,3 @@
-/**
- * uji/sertifikat.ts - sertifikat Learning Center: hanya untuk attempt lulus & bernilai final,
- * nomor tetap per attempt (tanggal WIB), tanggal Indonesia, ringkas judul.
- *
- * Jalankan: npx tsx uji/sertifikat.ts
- */
 import { bolehSertifikat, nomorSertifikat, ringkasJudul, tanggalSertifikat } from '../lib/sertifikat';
 
 let lulus = 0, gagal = 0;

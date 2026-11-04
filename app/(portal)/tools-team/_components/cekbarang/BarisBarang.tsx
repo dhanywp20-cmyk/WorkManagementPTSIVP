@@ -1,12 +1,10 @@
 'use client';
-/** Satu baris daftar Checklist Barang: mode cek (✓ / ✗ + keterangan) atau mode ubah daftar (isian + hapus). */
 import { memo } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import type { ItemBarang, StatusCek } from '@/lib/checklist-barang';
 
 const kelasIsian = 'min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-base sm:text-[13px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
-/** Kolom grid baris (mode cek) - dipakai juga kepala tabel di ChecklistBarang. */
 export const GRID_CEK = 'grid grid-cols-[1.75rem_minmax(0,1fr)_auto] sm:grid-cols-[2rem_minmax(0,1fr)_6.5rem_5.75rem_minmax(0,15rem)] gap-x-3';
 
 export const BarisBarang = memo(function BarisBarang({ it, no, ubah, onUbah, onHapus }: {

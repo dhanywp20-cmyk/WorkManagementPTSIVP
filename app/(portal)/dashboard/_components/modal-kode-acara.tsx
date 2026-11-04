@@ -10,22 +10,6 @@ import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import type { User } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-/**
- * Pengaturan pendaftaran lewat Kode Acara.
- *
- * Dulu ini hidup sebagai REGISTER_BYPASS_* di Vercel: membuka pendaftaran
- * untuk satu acara berarti menyunting variabel lingkungan lalu menunggu deploy
- * ulang, dan menutupnya kembali menuntut hal yang sama sekali lagi. Panitia
- * yang butuh mengubahnya di pagi hari acara harus menunggu orang yang punya
- * akses Vercel.
- *
- * Semua isian di sini lewat /api/admin/kode-acara, TIDAK langsung ke tabel
- * seperti pengaturan lain. Alasannya di route itu: kodenya rahasia, dan
- * kuncinya disimpan dengan nama yang membuat policy basis data menolak
- * peramban membacanya. Jadi jangan ubah layar ini untuk membaca app_settings
- * langsung - yang kembali cuma kosong.
- */
-
 interface AkunEvent {
   id: string;
   full_name: string | null;
@@ -48,7 +32,6 @@ interface Pengaturan {
 const tglSingkat = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-/** ISO -> nilai untuk <input type="datetime-local"> di zona waktu pemakai. */
 function keInputLokal(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso);
@@ -58,8 +41,6 @@ function keInputLokal(iso: string | null): string {
 }
 
 function acakKode(): string {
-  //  Tanpa 0/O/1/I/L: kode ini dibacakan panitia dan diketik ulang peserta di
-  //  ponsel, dan pasangan itulah yang paling sering tertukar.
   const huruf = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let hasil = '';
   const acak = new Uint32Array(10);
@@ -80,9 +61,6 @@ export function KodeAcaraInline() {
   const [asalUrl, setAsalUrl] = useState('');
   const [gambarQr, setGambarQr] = useState<string | null>(null);
   const [disalin, setDisalin] = useState(false);
-  //  Dari appBaseUrl(), BUKAN ditulis di kode - domain produksi bisa beda (custom domain, dst) dan
-  //  platform ini dijual ke banyak company. Dari Preview Vercel tetap ke domain produksi, karena
-  //  link pendaftaran ini dibuka orang yang tidak punya akun Vercel.
   useEffect(() => { setAsalUrl(appBaseUrl()); }, []);
 
   const ambil = useCallback(async () => {
@@ -102,14 +80,6 @@ export function KodeAcaraInline() {
     form.aktif !== awal.aktif || form.kode !== awal.kode || form.berlakuSampai !== awal.berlakuSampai
   );
 
-  //  Dibangun dari kode yang TERSIMPAN (awal), bukan form.kode yang sedang
-  //  diketik - QR/link yang dibagikan ke peserta harus selalu mengarah ke
-  //  kode yang benar-benar aktif di server saat ini, bukan draf yang belum
-  //  ditekan Simpan.
-  //
-  //  Mendarat di form MASUK, bukan langsung form Daftar (lihat catatan di
-  //  dashboard/page.tsx) - QR yang sama dibagikan ke semua peserta, dan
-  //  sebagian dari mereka sudah pernah mendaftar sebelumnya.
   const linkDaftar = asalUrl && awal?.kode?.trim()
     ? `${asalUrl}/dashboard?kode=${encodeURIComponent(awal.kode.trim())}`
     : '';
@@ -153,9 +123,6 @@ export function KodeAcaraInline() {
     } finally { setSimpan(false); }
   };
 
-  //  Sama seperti hapus akun di modal-akun.tsx: langsung ke tabel users (RLS
-  //  sudah mengizinkan admin), bukan lewat /api/admin/kode-acara - route itu
-  //  cuma mengurus kode & tanggalnya, bukan akun orangnya.
   const handleDeleteAkun = (id: string, nama: string) => {
     setConfirmState({
       message: `Hapus akun "${nama || 'ini'}"?`,
@@ -166,7 +133,6 @@ export function KodeAcaraInline() {
         setMenghapus(id);
         const { error } = await supabase.from('users').delete().eq('id', id).eq('daftar_via_event', true);
         setMenghapus(null);
-        //  Pesan asli disertakan - lihat catatan yang sama di modal-akun.tsx.
         if (error) { setPesan({ tipe: 'galat', teks: `Gagal menghapus akun: ${error.message}` }); return; }
         setPesan({ tipe: 'ok', teks: `Akun "${nama || ''}" dihapus.` });
         const admin = getSession<User>();
@@ -201,15 +167,9 @@ export function KodeAcaraInline() {
         </div>
       )}
 
-      {/* Kiri: pengaturan saklar & kode. Kanan: daftar pendaftar - kolom
-          sendiri supaya bisa bergulir sendiri tanpa menyeret form di
-          sebelahnya, sesuai permintaan: "list di samping kanan saja
-          supaya ideal untuk di scroll". */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
         <div className="space-y-5">
 
-          {/* Apa yang sebenarnya dilakukan saklar ini - disebut apa adanya, karena
-              yang dilewati adalah persetujuan admin, bukan sekadar "kemudahan". */}
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
             <p className="text-sm font-bold text-amber-900 mb-1">Apa yang dilakukan kode ini</p>
             <p className="text-xs text-amber-800 leading-relaxed">
@@ -229,7 +189,6 @@ export function KodeAcaraInline() {
             </div>
           )}
 
-          {/* Saklar utama */}
           <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-white cursor-pointer">
             <input
               id="kode-acara-aktif"
@@ -248,7 +207,6 @@ export function KodeAcaraInline() {
             </span>
           </label>
 
-          {/* Kode */}
           <div>
             <label htmlFor="kode-acara-nilai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
               Kode Acara
@@ -280,7 +238,6 @@ export function KodeAcaraInline() {
             </p>
           </div>
 
-          {/* Berlaku sampai */}
           <div>
             <label htmlFor="kode-acara-sampai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
               Berlaku Sampai <span className="text-slate-500 normal-case tracking-normal font-medium">(opsional)</span>
@@ -309,9 +266,6 @@ export function KodeAcaraInline() {
             </p>
           </div>
 
-          {/* Link & QR Code pendaftaran - dibagikan lewat poster/undangan
-              acara supaya peserta tidak perlu mengetik ulang kode yang baru
-              saja mereka lihat. */}
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
               Link &amp; QR Code Pendaftaran
@@ -377,21 +331,6 @@ export function KodeAcaraInline() {
           </div>
         </div>
 
-        {/* ── Ringkasan pendaftar acara ── */}
-        {/*
-          Tingginya diturunkan dari 90vh - tinggi Admin Panel yang sebenarnya
-          (lihat h-[90vh] di modal-admin-panel.tsx) - BUKAN dari 100vh.
-          Menghitung dari 100vh membuat panel ini bisa lebih tinggi daripada
-          bingkai modal yang benar-benar terlihat, sehingga ujung daftarnya
-          baru muncul setelah menggulung seluruh modal.
-
-          Angka tetap 420px yang dipakai sebelumnya menyelesaikan masalah itu
-          tapi kebablasan ke arah sebaliknya: pada layar mana pun panelnya
-          berhenti di sekitar setengah tinggi modal dan menyisakan ruang
-          kosong di bawahnya. 160px yang dikurangi di sini adalah jatah untuk
-          bilah judul Admin Panel plus padding isi - sisanya milik daftar,
-          jadi panel tumbuh mengikuti layar dan tetap muat di dalam modal.
-        */}
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[calc(90vh-160px)]">
           <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
             <span className="text-2xl"><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -404,10 +343,6 @@ export function KodeAcaraInline() {
                 di dalam divisi atau tim — jadi akunnya tetap terdata persis seperti akun yang dibuat admin.
               </p>
             </div>
-            {/*  Panel ini tidak ikut ke-refresh otomatis saat ada yang
-                mendaftar lewat kode acara di tab lain - tanpa tombol ini
-                satu-satunya cara melihat pendaftar terbaru adalah memuat
-                ulang seluruh URL Admin Panel. */}
             <button type="button" onClick={() => ambil()} disabled={muat} title="Muat ulang daftar pendaftar"
               aria-label="Muat ulang daftar pendaftar"
               className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
@@ -421,9 +356,6 @@ export function KodeAcaraInline() {
             <p className="p-4 text-sm text-slate-500">Belum ada yang mendaftar lewat kode acara.</p>
           ) : (
             <>
-              {/* Daftar namanya sendiri - bergulir sendiri, lepas dari form
-                  di kolom kiri, supaya panel tidak memanjang tak terbatas
-                  saat satu acara membawa puluhan peserta. */}
               <div className="overflow-y-auto flex-1">
                 <table className="w-full text-xs">
                   <thead className="sticky top-0 bg-white border-b border-slate-200">

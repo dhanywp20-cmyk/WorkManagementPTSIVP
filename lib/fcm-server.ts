@@ -1,12 +1,3 @@
-/**
- * lib/fcm-server.ts - push ke aplikasi Android lewat Firebase Cloud Messaging
- * (HTTP v1). Dipanggil kirimPushKeUser() di lib/web-push-server.ts, jadi
- * setiap notifikasi yang memicu web push ikut terkirim ke aplikasi.
- *
- * Kredensial: service account JSON dari Firebase Console, disimpan admin di
- * Admin Panel -> Integrations -> Push (rahasia_integrasi,
- * 'push.fcm_service_account'). Belum diisi = diam, bukan galat.
- */
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { bacaRahasia } from '@/lib/rahasia-server';
@@ -23,7 +14,7 @@ export function bacaAkunLayanan(teks: string | null): AkunLayanan | null {
   try {
     const j = JSON.parse(teks);
     if (j?.project_id && j?.client_email && j?.private_key) return j as AkunLayanan;
-  } catch { /* bukan JSON */ }
+  } catch {  }
   return null;
 }
 
@@ -54,7 +45,6 @@ async function ambilTokenAkses(sa: AkunLayanan): Promise<string | null> {
   return j.access_token;
 }
 
-/** Best-effort penuh: tidak pernah throw. Token yang sudah mati dihapus. */
 export async function kirimFcmKeUser(userIds: string[], payload: PushPayload): Promise<void> {
   try {
     if (!userIds.length) return;
@@ -77,11 +67,6 @@ export async function kirimFcmKeUser(userIds: string[], payload: PushPayload): P
           body: JSON.stringify({
             message: {
               token,
-              // DATA saja (tanpa blok `notification`): aplikasi SELALU yang menampilkan
-              // (LayananPesan -> Notifikasi.tampilkan), juga saat tertutup. Dengan blok
-              // notification, sistem yang menampilkan saat aplikasi di latar & tiap pesan
-              // berbunyi; kini aplikasi membatasi bunyi sekali per rentetan & senyap saat
-              // aplikasi dibuka (APK >= 1.0.2). APK lama juga membaca title/body dari data.
               data: { title: payload.title, body: payload.body ?? '', url: payload.url ?? '/dashboard' },
               android: { priority: 'HIGH' },
             },
@@ -91,8 +76,8 @@ export async function kirimFcmKeUser(userIds: string[], payload: PushPayload): P
           const t = await r.text();
           if (/UNREGISTERED|registration-token-not-registered|INVALID_ARGUMENT/i.test(t)) mati.push(token);
         }
-      } catch { /* gagal sesaat - biarkan */ }
+      } catch {  }
     }));
     if (mati.length) await db.from('fcm_tokens').delete().in('token', mati);
-  } catch { /* lihat catatan di atas */ }
+  } catch {  }
 }

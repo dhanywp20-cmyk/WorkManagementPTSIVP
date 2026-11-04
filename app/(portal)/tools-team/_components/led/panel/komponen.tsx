@@ -1,5 +1,4 @@
 'use client';
-/** Komponen kecil Kalkulator LED: isian teks, tombol referensi, bar pemakaian, kartu hardware. */
 import { f, kelasInput } from '../../bersama/ui';
 import { Ikon } from '@/components/shared/Ikon';
 import { type Hardware, kapasitasHardware } from '@/lib/av-hitung';
@@ -22,7 +21,6 @@ export function TombolRef({ onKlik, diubah }: { onKlik: () => void; diubah: bool
   );
 }
 
-/** Bilah pemakaian kapasitas (pixel / port). */
 export function Pakai({ label, persen }: { label: string; persen: number }) {
   const p = Math.min(100, Math.max(0, persen));
   const warna = persen > 100 ? 'bg-rose-600' : persen > 85 ? 'bg-amber-500' : 'bg-emerald-600';

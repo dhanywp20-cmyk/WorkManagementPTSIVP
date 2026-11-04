@@ -1,9 +1,3 @@
-/**
- * uji/project-progress.ts - logika murni Project Progress & Checklist:
- * jadwal, progres, pembaca teks/Excel, validasi isian dari server.
- *
- * Jalankan: npx tsx uji/project-progress.ts
- */
 import {
   keadaanJadwal, hitungProgres, progresDari, statDari, bersihkanSebaris,
   bacaTeks, bacaBaris, validasiDraft, validasiNama, kelompokkan, hitungItemDraft, BATAS,
@@ -33,7 +27,7 @@ cek('1 dari 3 = 33%', hitungProgres([{ selesai: true }, { selesai: false }, { se
 cek('2 dari 3 dibulatkan = 67%', progresDari(2, 3).persen === 67);
 cek('progresDari total 0 = 0%', progresDari(0, 0).persen === 0);
 const st = statDari([
-  { selesai: true, kendala: true },   // kendala yang sudah selesai tidak dihitung
+  { selesai: true, kendala: true },
   { selesai: false, kendala: true },
   { selesai: false, kendala: false },
 ]);
@@ -55,7 +49,7 @@ console.log('\n4. Pembaca baris Excel');
 const x1 = bacaBaris([
   ['Tahap', 'Tugas', 'Status'],
   ['Persiapan', 'Cek fisik', 'selesai'],
-  ['', 'Siapkan alat', ''],          // sel gabungan Excel terbaca kosong
+  ['', 'Siapkan alat', ''],
   ['Instalasi', 'Pasang bracket', 'x'],
 ], 'Cadangan');
 cek('header sinonim (Tahap/Tugas) dikenali', x1.bagian.length === 2);

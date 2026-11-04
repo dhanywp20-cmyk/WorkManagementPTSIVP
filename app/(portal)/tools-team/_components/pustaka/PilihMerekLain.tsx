@@ -1,17 +1,10 @@
 'use client';
-/**
- * Pilih model + lensa dari katalog RESMI merek selain Panasonic (Epson, Vivitek - data kalkulator / simulator jarak lempar
- * masing-masing, desain3d/inti/katalogLain.ts). Terpisah dari PilihPanasonic. Mengisi lensa, panel, lumen & lens shift
- * dengan angka yang sama dengan kalkulator merek itu. Dipakai Desain 3D (Atur proyektor) & Kalkulator AV - Proyektor.
- * Katalog merek dimuat saat dipilih saja.
- */
 import { useEffect, useMemo, useState } from 'react';
 import { Catatan } from '../bersama/ui';
 import {
   type KatalogLain, type LensaLain, MEREK_LAIN, type MerekLain, type ModelLain, muatKatalogLain, type RasioProyektor, rasioUntukLensa, SUMBER_LAIN,
 } from '../desain3d/inti';
 
-/** `rasio` = rasio sinyal sekarang (dipakai bila lensa mendukungnya), `sumber` = sumber data lensa sekarang. */
 export function PilihMerekLain({ rasio: rasioSekarang, sumber, onPakai }: {
   rasio?: RasioProyektor; sumber?: string; onPakai: (k: KatalogLain, m: ModelLain, l: LensaLain, rasio: RasioProyektor) => void;
 }) {

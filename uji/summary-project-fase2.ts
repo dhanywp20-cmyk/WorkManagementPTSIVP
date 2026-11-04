@@ -1,13 +1,3 @@
-/**
- * uji/summary-project-fase2.ts - Summary Project Phase 2 (P2-1 & P2-3), lihat docs/audit/project-summary-current-state.md.
- *
- *  1. P2-1: tautan /ticketing?open=<id> membuka ticket walau di luar jendela muat daftar - lewat ambilTiketTertentu
- *     (aturan tampil sama), menunggu daftar selesai dimuat, guest tidak lewat jalur tunggal, id divalidasi,
- *     ticket tidak ada -> pemberitahuan.
- *  2. P2-3: dokumen lineage ada & menyebut setiap menu sumber.
- *
- * Jalankan: npx tsx uji/summary-project-fase2.ts
- */
 import { readFileSync, existsSync } from 'fs';
 
 let lulus = 0, gagal = 0;

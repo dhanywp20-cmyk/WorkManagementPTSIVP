@@ -1,9 +1,3 @@
-/**
- * desain3d/mesin/blending.ts - Area blending antar proyektor di kanvas: zona ungu di permukaan yang
- * disinari dua proyektor + garis ukur berpanah & kartu keterangan (mesin/ukurBlending.ts). Ukurannya
- * dihitung murni di inti/blending.ts; di sini hanya raycast keterhalangan & zonanya. Hasil dikirim ke
- * keadaan untuk panel proyektor & lembar cetak.
- */
 import type * as T from 'three';
 import { hitungBlending, keGambar, type Benda, type Blending, type Lensa, type Titik } from '../inti';
 import type { Mesin } from './tipe';
@@ -11,22 +5,15 @@ import { gambarUkurBlending } from './ukurBlending';
 
 export interface DataBlend {
   p: Benda; L: Lensa; O: T.Vector3;
-  /** Benda & ruang yang bisa disinari proyektor ini (dirinya sendiri dikecualikan). */ sasaran: T.Object3D[];
-  /**
-   * Segitiga permukaan yang benar-benar tersinari proyektor ini (9 angka per segitiga, sisi depan menghadap
-   * lensa) - potongan sel yang sama dengan bidang cahayanya (mesin/sinar.ts), jadi tepi zona ikut tepat di tepi
-   * layar, pojok ruangan & bayangan benda, bukan bertangga selebar sel grid.
-   */
+   sasaran: T.Object3D[];
   zona: number[];
-  /** Normal tiap titik zona (menghadap lensa) - batas "permukaan mulai membelakangi lensa lawan" dipotong halus. */ zonaN: number[];
-  /** Mesh permukaan tiap segitiga zona - permukaan itu sendiri tidak dihitung menghalangi sinar lensa lawan. */ zonaMesh: string[];
+   zonaN: number[];
+   zonaMesh: string[];
   baris: (Titik | null)[]; kolom: (Titik | null)[];
 }
 
-/** Titik sudut poligon zona + nilai batas (>= 0 = di dalam): 4 sisi bingkai lawan & sudut datang dari kedua lensa. */
 interface Simpul { p: T.Vector3; f: number[] }
 
-/** Potong poligon cembung oleh satu batas f[c] >= 0 (Sutherland-Hodgman, interpolasi linear). */
 function potong(poli: Simpul[], c: number): Simpul[] {
   const hasil: Simpul[] = [];
   for (let i = 0; i < poli.length; i++) {
@@ -41,30 +28,22 @@ function potong(poli: Simpul[], c: number): Simpul[] {
   return hasil;
 }
 
-/**
- * Cahaya yang datang sangat miring (cos sudut datang < 0,08, ±85°) praktis tidak menerangi (< 8% terang tegak
- * lurus) dan batas bayangannya meloncat-loncat menyusuri permukaan - di zona blending dianggap tidak menyinari.
- */
 const COS_MIN = 0.08;
 
-/** Nama ringkas untuk label: tanpa akhiran "(blending)" template, "Proyektor 2" -> "P2". */
 const pendek = (n: string) => n.replace(/\s*\(blending\)\s*/i, '').replace(/^Proyektor\s*(?=\d)/i, 'P').trim() || n;
 
-/** Hasil sama (diabaikan titik label) -> keadaan tidak diperbarui, kanvas tidak digambar ulang berulang. */
 const kunci = (h: Blending[]) => JSON.stringify(h.map(b => [b.a, b.b, b.namaA, b.namaB, b.arah, b.lebarM.toFixed(3), b.persenA.toFixed(1), b.persenB.toFixed(1)]));
 
 export function gambarBlending(
   m: Mesin, data: DataBlend[],
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
-  /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
-  /** Zona ungu & garis ukur digambar (false = hanya dihitung, mis. untuk ramp blending Sinar nyata). */ gambar = true,
+   detail: boolean,
+   gambar = true,
 ): Blending[] {
   const { THREE, grupBantu } = m;
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
   const arah = new THREE.Vector3(), X = new THREE.Vector3();
 
-  //  Titik permukaan benar-benar disinari proyektor ke-i: sinar dari lensanya tidak terhalang
-  //  benda lain sebelum sampai ke titik itu (toleransi 5 cm). `abaikan` = mesh permukaan titik itu sendiri.
   const terlihat = (i: number, t: Titik, abaikan?: string) => {
     const d = data[i];
     X.set(t[0], t[1], t[2]);
@@ -83,16 +62,11 @@ export function gambarBlending(
   setInfo(v => (kunci(v) === kunci(hasil) ? v : hasil));
   if (!gambar) return hasil;
 
-  //  FrontSide: zona hanya di sisi permukaan yang menghadap lensa (ikut tembus bersama dinding yang disembunyikan).
   const bahan = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.FrontSide, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   for (const b of hasil) {
     const iA = data.findIndex(d => d.p.id === b.a), iB = data.findIndex(d => d.p.id === b.b);
     const A = data[iA], B = data[iB];
     if (!A || !B) continue;
-    //  Zona: tiap segitiga yang tersinari A dipotong (Sutherland-Hodgman) oleh bingkai gambar B - fungsi batas
-    //  |u| <= 0,5 & |v| <= 0,5 di koordinat lensa B - dan oleh cos sudut datang dari lensa A & B >= COS_MIN
-    //  (ujung layar cembung membelakangi lensa / disinari sangat miring), semuanya diinterpolasi linear antar
-    //  sudut sehingga tepinya halus. Terakhir hanya yang tidak terhalang benda lain dari lensa B.
     const pos: number[] = [], z = A.zona, zn = A.zonaN;
     for (let s = 0; s + 8 < z.length; s += 9) {
       let poli: Simpul[] = [];

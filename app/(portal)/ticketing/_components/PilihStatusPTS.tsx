@@ -1,11 +1,5 @@
 'use client';
 
-/**
- * Panel pilih status Team PTS di "Update Status". Status SEKARANG tampil terpisah dari pilihan,
- * yang tampil hanya status yang memang boleh dipilih (beserta artinya), dan ada opsi "tambah
- * catatan saja" untuk update tanpa ganti status. Tidak ada pilihan bawaan - harus dipilih sendiri.
- * Aturannya di alur-status.ts.
- */
 import { Ikon } from '@/components/shared/Ikon';
 import { ARTI_STATUS, alasanBelumBisa, bolehCatatanSaja, statusBerikutnya, type StatusAlurPTS } from './alur-status';
 
@@ -28,10 +22,8 @@ function Centang() {
 
 export function PilihStatusPTS({ sekarang, dipilih, onPilih, jadwalOnsite }: {
   sekarang: string;
-  /** '' = belum memilih. Sama dengan `sekarang` = tambah catatan saja. */
   dipilih: string;
   onPilih: (status: string) => void;
-  /** Isian jadwal yang tampil di bawah Onsite saat Onsite dipilih. */
   jadwalOnsite?: React.ReactNode;
 }) {
   const pilihan = statusBerikutnya(sekarang);

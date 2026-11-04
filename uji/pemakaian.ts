@@ -1,9 +1,3 @@
-/**
- * uji/pemakaian.ts - catatan pemakaian menu (lib/pemakaian.ts): daftar modul yang diterima server
- * sama persis dengan rute portal, saringan sub, pengelompokan akun, dan ringkasan tab Pemakaian.
- *
- * Jalankan: npx tsx uji/pemakaian.ts
- */
 import { readdirSync, statSync } from 'node:fs';
 import { MODUL_DICATAT, kelompokAkun, modulSah, ringkasPemakaian, subSah, type AkunPemakaian, type BarisPemakaian } from '../lib/pemakaian';
 

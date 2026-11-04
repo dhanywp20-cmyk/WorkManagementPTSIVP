@@ -1,20 +1,3 @@
-/**
- * /api/tools-team/pustaka - Pustaka Tools Team (produk, data acuan, artikel). Lihat lib/pustaka.ts.
- *
- *   GET ?jenis=a,b      Admin, Team, pimpinan, atau akun berizin 'tools-pustaka': entri jenis-jenis itu + `bolehAtur`.
- *                       Tanpa ?jenis = semua jenis kecuali isi artikel (ringkasan saja).
- *                       Tiap entri membawa `bolehUbah` (boleh ubah / hapus entri itu).
- *   POST {id?, jenis, nama, data}
- *                       Admin / Full Access: tambah (tanpa id) atau ubah entri. Data divalidasi
- *                       registri (periksaEntri) - bidang tak dikenal dibuang.
- *   DELETE ?id=         Admin / Full Access.
- *
- * Ubah & hapus satu entri: Admin (admin / superadmin) semua entri; Team Full Access hanya entri
- * buatannya sendiri (bolehUbahEntri) - ditegakkan di sini, bukan cuma tombol yang disembunyikan.
- *
- * Tabel ber-RLS tanpa policy (migrasi 040): hanya service role di sini. Hak dibaca ulang dari tabel
- * users; akun pimpinan hanya-lihat tidak boleh menulis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -31,7 +14,6 @@ const MAKS_ENTRI = 2000;
 const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 type Db = ReturnType<typeof getAdminClient>;
 
-/** atur = boleh menambah (Admin / Full Access, bukan pimpinan); admin = boleh mengubah entri siapa pun. */
 async function hakPustaka(db: Db, userId: string): Promise<{ atur: boolean; admin: boolean }> {
   const { data } = await db.from('users').select('role, access_level').eq('id', userId).maybeSingle();
   const u = data as { role?: string; access_level?: string } | null;
@@ -40,7 +22,6 @@ async function hakPustaka(db: Db, userId: string): Promise<{ atur: boolean; admi
   return { atur: true, admin: r === 'admin' || r === 'superadmin' };
 }
 
-/** Penjaga ubah / hapus satu entri: 404 bila tidak ada, 403 bila bukan pembuatnya (dan bukan Admin). */
 async function cekPemilik(db: Db, id: string, akun: { id: string; admin: boolean }): Promise<NextResponse | null> {
   const { data } = await db.from(TABEL).select('dibuat_oleh').eq('id', id).maybeSingle();
   if (!data) return gagal('Entri tidak ditemukan.', 404);
@@ -54,12 +35,10 @@ export async function GET(req: NextRequest) {
   const jaga = await pastikanMasuk(req);
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
-  //  Pustaka: Admin, Team & pimpinan; Marketing / Sales hanya dengan izin 'tools-pustaka' (allowed_menus).
   const { data: u } = await db.from('users').select('role, allowed_menus, pimpinan').eq('id', jaga.user.id).maybeSingle();
   if (!bolehLihatPustaka(u as Parameters<typeof bolehLihatPustaka>[0])) return gagal('Pustaka hanya untuk akun yang diberi izin.', 403);
   const minta = (req.nextUrl.searchParams.get('jenis') ?? '').split(',').map(x => x.trim()).filter(Boolean);
   if (minta.some(j => !KODE_JENIS.includes(j))) return gagal('Jenis pustaka tidak dikenal.');
-  //  Tanpa ?jenis: isi artikel (bisa panjang) tidak ikut - dibaca saat artikelnya dibuka.
   let q = db.from(TABEL).select(minta.length
     ? 'id, jenis, nama, data, diubah_oleh_nama, updated_at, dibuat_oleh'
     : 'id, jenis, nama, ringkas:data->ringkas, kategori:data->kategori, diubah_oleh_nama, updated_at, dibuat_oleh')
@@ -68,7 +47,6 @@ export async function GET(req: NextRequest) {
   const [{ data, error }, hak] = await Promise.all([q, hakPustaka(db, jaga.user.id)]);
   if (error) return gagal(error.message, 500);
   const akun = { id: jaga.user.id, admin: hak.admin };
-  //  dibuat_oleh (uuid) tidak dikirim ke peramban - cukup tanda boleh-ubah per entri.
   const entri = ((data ?? []) as unknown as ({ dibuat_oleh: string | null } & Record<string, unknown>)[])
     .map(({ dibuat_oleh, ...e }) => ({ ...e, bolehUbah: hak.atur && bolehUbahEntri(akun, dibuat_oleh) }));
   return NextResponse.json({ ok: true, entri, bolehAtur: hak.atur });

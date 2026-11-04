@@ -1,33 +1,3 @@
-/**
- * lib/kpi-lc-tahunan.ts - faktor pengali KPI dari kelulusan Learning Center
- * dalam SATU TAHUN kalender.
- *
- * Keputusan pemilik platform (2026-09-24):
- *   KPI akhir = KPI dasar × (sesi LC lulus ÷ sesi LC wajib di tahun itu).
- *   Sesi yang ditargetkan ke seseorang tetapi tidak ia kerjakan sampai sesi
- *   selesai dihitung TIDAK LULUS - supaya menghindari quiz tidak jadi cara
- *   mengamankan KPI.
- *
- * Satuan hitungnya SESI, bukan attempt: retake yang akhirnya lulus = sesi
- * lulus. Status lulus memakai `passed` dari attempt (passing grade milik
- * sesinya), bukan ambang lcMinScore global - sesi bisa punya passing grade
- * berbeda-beda (60/65/70/85).
- *
- * Basisnya tahun, bukan periode yang sedang dipilih di layar: "Bulan Ini"
- * yang kebetulan tanpa sesi LC tidak boleh menghapus kegagalan di bulan lain
- * pada tahun yang sama.
- *
- * Angka yang dipakai layar dihitung di SERVER (RPC rekap_lc_tahunan, migrasi
- * 017): RLS membuat anggota tim hanya bisa membaca attempt miliknya, dan
- * max-rows PostgREST memotong attempt diam-diam - dua-duanya membuat hasil
- * hitungan di peramban berbeda antara anggota dan atasannya.
- * `rekapLCTahunan` di bawah adalah cermin murni aturan yang sama, untuk
- * diuji (uji/kpi-lc-tahunan.ts) - UBAH KEDUANYA bersamaan.
- *
- * Sesi target "semua" (target_user_ids NULL) tidak menghukum yang tidak
- * ikut: sesi seperti itu juga dipakai untuk sesi khusus Sales. Attempt gagal
- * di sesi yang masih buka & boleh retake belum dihitung gagal.
- */
 
 import { supabase } from './supabase';
 
@@ -51,14 +21,10 @@ export interface AttemptLC {
 }
 
 export interface RekapLCTahunan {
-  /** Sesi yang masuk hitungan (dikerjakan, atau ditargetkan & sudah selesai). */
   wajib: number;
   lulus: number;
-  /** Dikerjakan tapi tidak lulus. */
   gagal: number;
-  /** Ditargetkan, sesi sudah selesai, tidak dikerjakan sama sekali. */
   tidakIkut: number;
-  /** Pengali KPI akhir, 0..1. Tanpa sesi wajib = 1 (tidak ada potongan). */
   faktor: number;
 }
 
@@ -68,11 +34,6 @@ export function tahunSesi(s: SesiLC): number {
   return new Date(s.open_at ?? s.scheduled_at ?? s.created_at).getFullYear();
 }
 
-/**
- * Sesi dianggap SUDAH SELESAI bila ditutup manual, waktu tutupnya lewat,
- * atau sudah nonaktif padahal pernah dikerjakan orang. Sesi nonaktif yang
- * belum pernah dikerjakan siapa pun adalah draf - tidak menghukum siapa pun.
- */
 export function sesiSelesai(s: SesiLC, adaAttempt: boolean, sekarang: Date): boolean {
   if (s.closed_at) return true;
   if (s.close_at && new Date(s.close_at) < sekarang) return true;
@@ -92,9 +53,7 @@ export function rekapLCTahunan(
     const selesai = sesiSelesai(s, adaAttemptDiSesi.has(s.id), sekarang);
     if (mine.length) {
       if (mine.some(a => a.passed === true)) { wajib++; lulus++; continue; }
-      // Essay yang belum dinilai: hasilnya belum ada - jangan dihukum dulu.
       if (mine.some(a => a.grading_status === 'pending_review')) continue;
-      // Masih bisa retake: belum final.
       if (s.allow_retake && !selesai) continue;
       wajib++; gagal++;
       continue;
@@ -105,12 +64,9 @@ export function rekapLCTahunan(
   return { wajib, lulus, gagal, tidakIkut, faktor: wajib ? lulus / wajib : 1 };
 }
 
-// buildMembers() halaman KPI dipanggil 3x per muat (periode kini, periode
-// sebelumnya, tab KPI) - tahun & anggotanya sama, jadi hasilnya dipakai ulang.
 const cache = new Map<string, { waktu: number; janji: Promise<Record<string, RekapLCTahunan>> }>();
 const UMUR_CACHE_MS = 60_000;
 
-/** Rekap per user dari RPC rekap_lc_tahunan. Gagal memuat = tanpa potongan (bukan potongan penuh). */
 export function ambilRekapLCTahunan(userIds: string[], tahun: number): Promise<Record<string, RekapLCTahunan>> {
   const kunci = `${tahun}:${[...userIds].sort().join(',')}`;
   const ada = cache.get(kunci);

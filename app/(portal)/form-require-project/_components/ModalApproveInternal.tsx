@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * ModalApproveInternal - dipecah dari app/(portal)/form-require-project/page.tsx. Semua keadaan tetap milik induk.
- * Kerangka: ModalSetujui bersama (components/shared/Persetujuan.tsx) - sama dengan Request Schedule.
- */
 import { KotakInfo, ModalSetujui } from '@/components/shared';
 import { ProjectRequest } from './shared';
 
@@ -41,7 +37,6 @@ export function ModalApproveInternal({ formatDate, handleInternalApproveProject,
           <Baris label="Kebutuhan">{(t.kebutuhan ?? []).join(', ') || '-'}</Baris>
           <Baris label="Diajukan">{formatDate(t.created_at)}</Baris>
         </div>
-        {/* Brand BOTH: dua reviewer, dan persetujuan ini belum tentu yang terakhir. */}
         {t.internal_sales_id_2 && (
           <KotakInfo>
             Request ini <strong>Kedua Brand</strong> - perlu persetujuan dua Sales Internal. Kalau yang satunya belum,

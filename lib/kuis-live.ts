@@ -1,34 +1,15 @@
-/**
- * lib/kuis-live.ts - format "Kuis Live" (ala Kahoot) Kelas Eksternal. Murni (tanpa basis data),
- * dipakai route server, layar host admin & halaman peserta, dan diuji di uji/kuis-live.ts.
- *
- * Admin memandu: lobi -> [siap -> soal -> hasil -> papan] x N -> selesai. Yang disimpan di basis
- * data hanya lobi/soal/papan/selesai; 'siap' (hitung mundur sebelum pilihan muncul) dan 'hasil'
- * (waktu habis, kunci dibuka) diturunkan dari live_soal_mulai/live_soal_tutup - jadi pergantian
- * karena waktu tidak butuh penjadwal di server, cukup jam.
- *
- * Jeda (live_jeda_pada): jam kuis DIBEKUKAN - semua tahap dihitung pada saat jeda ditekan, hitung
- * mundur berhenti, jawaban ditahan. Lanjutkan menggeser titik acuan sejauh lama jeda, jadi sisa
- * waktu soal persis sama seperti saat dijeda. Untuk momen membaca soal / diskusi dengan presenter.
- */
 import type { Pilihan } from './kelas-eksternal';
 
-//  Salinan PILIHAN dari kelas-eksternal - modul itu mengimpor berkas ini, jadi jangan impor balik.
 const PILIHAN: readonly Pilihan[] = ['A', 'B', 'C', 'D'];
 
-/** Jeda "Siap-siap" sebelum pilihan jawaban muncul. */
 export const HITUNG_MUNDUR_MS = 4000;
-/** Jawaban yang berangkat tepat sebelum waktu habis tetap diterima selama jeda jaringan ini. */
 export const TOLERANSI_MS = 800;
-/** Lama layar jawaban benar + distribusi tampil sebelum otomatis ke papan skor. */
 export const HASIL_MS = 6000;
-/** Lama papan skor tampil sebelum otomatis ke soal berikutnya (atau podium setelah soal terakhir). */
 export const PAPAN_MS = 6000;
 export const POIN_MAKS = 1000;
 export const PILIHAN_DETIK = [5, 10, 20, 30, 60, 90, 120, 240] as const;
 export const MAKS_PESERTA_LIVE = 500;
 
-/** 'papan' tersimpan hanya dari versi lama yang dipandu manual - kini papan diturunkan dari waktu. */
 export type TahapSimpan = 'lobi' | 'soal' | 'papan' | 'selesai';
 export type Tahap = 'lobi' | 'siap' | 'soal' | 'hasil' | 'papan' | 'selesai';
 
@@ -36,34 +17,23 @@ export interface StatusLive {
   detik_per_soal: number;
   live_tahap: TahapSimpan; live_indeks: number; live_urutan: string[];
   live_soal_mulai: string | null; live_soal_tutup: string | null; live_sesi: number;
-  /** Saat Jeda ditekan; null = berjalan (migrasi 054). */
   live_jeda_pada?: string | null;
 }
 
 const ms = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
 const iso = (t: number) => new Date(t).toISOString();
 
-/** Posisi permainan saat ini menurut jam. */
 export interface Jadwal {
   tahap: Tahap;
   indeks: number;
   mulaiMs: number | null;
   tutupMs: number | null;
-  /** Kapan tahap ini berganti otomatis; null = menunggu admin (lobi, selesai, atau sedang dijeda). */
   akhirMs: number | null;
-  /** Dijeda sejak kapan (jam kuis beku di titik ini); null = berjalan. */
   jedaMs: number | null;
 }
 
 type DasarJadwal = Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_urutan' | 'live_soal_mulai' | 'live_soal_tutup' | 'detik_per_soal' | 'live_jeda_pada'>;
 
-/**
- * Kuis berjalan sendiri mengikuti waktu: siap (hitung mundur) -> soal -> hasil -> papan -> soal
- * berikutnya -> ... -> selesai (podium). Basis data hanya menyimpan satu titik acuan (soal ke-i dan
- * waktunya); semua tahap sesudahnya dihitung dari situ, jadi tidak perlu penjadwal di server dan
- * semua layar - host maupun HP - sampai pada jawaban yang sama. Tombol Lewati / semua sudah
- * menjawab cukup menggeser titik acuan itu.
- */
 export function jadwalLive(k: DasarJadwal, sekarang = Date.now()): Jadwal {
   if (k.live_tahap === 'lobi' || k.live_tahap === 'selesai') {
     return { tahap: k.live_tahap, indeks: k.live_indeks, mulaiMs: null, tutupMs: null, akhirMs: null, jedaMs: null };
@@ -71,7 +41,6 @@ export function jadwalLive(k: DasarJadwal, sekarang = Date.now()): Jadwal {
   if (k.live_tahap === 'papan') {
     return { tahap: 'papan', indeks: k.live_indeks, mulaiMs: ms(k.live_soal_mulai), tutupMs: ms(k.live_soal_tutup), akhirMs: null, jedaMs: null };
   }
-  //  Dijeda: hitung pada saat jeda ditekan, tanpa pergantian otomatis.
   if (k.live_jeda_pada) {
     const jedaMs = ms(k.live_jeda_pada);
     return { ...jalankanJadwal(k, jedaMs), akhirMs: null, jedaMs };
@@ -99,21 +68,14 @@ function jalankanJadwal(k: DasarJadwal, sekarang: number): Omit<Jadwal, 'jedaMs'
   }
 }
 
-/** Tahap yang sedang berlaku menurut jam. */
 export const tahapEfektif = (k: DasarJadwal, sekarang = Date.now()): Tahap => jadwalLive(k, sekarang).tahap;
 
-/**
- * Poin ala Kahoot: benar seketika = 1000, benar tepat di detik terakhir = 500, salah = 0.
- * Pembaginya waktu soal penuh (bukan waktu sampai ditutup), jadi soal yang ditutup lebih cepat
- * karena semua sudah menjawab tidak mengubah nilai siapa pun.
- */
 export function poinKahoot(benar: boolean, waktuMs: number, durasiMs: number): number {
   if (!benar || durasiMs <= 0) return 0;
   const r = Math.min(1, Math.max(0, waktuMs / durasiMs));
   return Math.round(POIN_MAKS * (1 - r / 2));
 }
 
-/** Pemeriksaan jawaban masuk: masih soal yang sama & masih dalam waktu. */
 export function periksaJawab(k: StatusLive, indeks: unknown, pilihan: unknown, sekarang = Date.now()):
   { ok: true; pilihan: Pilihan; waktuMs: number; jadwal: Jadwal } | { ok: false; alasan: string } {
   const p = String(pilihan ?? '').toUpperCase();
@@ -128,10 +90,6 @@ export function periksaJawab(k: StatusLive, indeks: unknown, pilihan: unknown, s
   return { ok: true, pilihan: p as Pilihan, waktuMs: Math.min(durasi, Math.max(0, sekarang - (j.mulaiMs ?? sekarang))), jadwal: j };
 }
 
-/**
- * Soal terakhir yang poinnya SUDAH boleh terlihat. Selama soal berjalan, poin soal itu belum
- * dihitung - kalau tidak, skor yang naik membocorkan benar/salah sebelum kunci dibuka.
- */
 export function indeksTerhitung(k: DasarJadwal, sekarang = Date.now()): number {
   const j = jadwalLive(k, sekarang);
   if (j.tahap === 'lobi') return -1;
@@ -139,20 +97,11 @@ export function indeksTerhitung(k: DasarJadwal, sekarang = Date.now()): number {
   return j.indeks;
 }
 
-/**
- * 'live_tutup_soal' & 'live_lanjut' = nama lama 'live_lewati' (layar host versi sebelumnya).
- * live_jeda / live_lanjutkan  : bekukan / jalankan lagi jam kuis.
- * live_ulang_soal / live_mundur: mainkan ulang soal ini / soal sebelumnya - jawaban soal itu dan
- *                                sesudahnya di sesi ini dianulir (dihapus server, lihat anulirDari).
- * live_ulang                   : kembali ke lobi kapan saja; Mulai berikutnya = sesi baru, skor sesi
- *                                lama tetap tersimpan (Hasil -> pilih sesi).
- */
 export type AksiLive = 'live_mulai' | 'live_lewati' | 'live_tutup_soal' | 'live_lanjut' | 'live_akhiri' | 'live_ulang'
   | 'live_jeda' | 'live_lanjutkan' | 'live_ulang_soal' | 'live_mundur';
 export const AKSI_LIVE: readonly AksiLive[] = ['live_mulai', 'live_lewati', 'live_tutup_soal', 'live_lanjut', 'live_akhiri', 'live_ulang',
   'live_jeda', 'live_lanjutkan', 'live_ulang_soal', 'live_mundur'];
 
-/** Aksi yang menganulir jawaban: jawaban sesi ini dengan indeks >= nilai ini dihapus sesudah status berubah. */
 export function anulirDari(aksi: AksiLive, j: Pick<Jadwal, 'indeks'>): number | null {
   if (aksi === 'live_ulang_soal') return j.indeks;
   if (aksi === 'live_mundur') return Math.max(0, j.indeks - 1);
@@ -160,11 +109,6 @@ export function anulirDari(aksi: AksiLive, j: Pick<Jadwal, 'indeks'>): number | 
 }
 export type UbahanLive = Partial<Omit<StatusLive, 'detik_per_soal'>>;
 
-/**
- * Perubahan status untuk satu tombol admin, atau galat bila tombol itu tidak berlaku di tahap ini.
- * `urutanBaru` (soal yang sah, sudah diacak bila perlu) hanya dipakai saat Mulai.
- * Lewati = maju satu tahap sekarang juga: soal -> hasil -> papan -> soal berikutnya / podium.
- */
 export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(), urutanBaru: string[] = []): UbahanLive | { galat: string } {
   const j = jadwalLive(k, sekarang);
   const durasi = k.detik_per_soal * 1000;
@@ -174,7 +118,6 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
   });
   const berjalan = j.tahap !== 'lobi' && j.tahap !== 'selesai';
   const dijeda = !!j.jedaMs;
-  /** Soal j.indeks dengan batas jawab digeser ke `tutup` (mulai tidak boleh sesudah tutup). */
   const geser = (tutup: number): UbahanLive => ({
     live_tahap: 'soal', live_indeks: j.indeks,
     live_soal_tutup: iso(tutup), live_soal_mulai: iso(Math.min(j.mulaiMs ?? tutup, tutup)),
@@ -188,9 +131,7 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
     case 'live_tutup_soal':
     case 'live_lanjut':
       if (dijeda) return { galat: 'Kuis sedang dijeda - tekan Lanjutkan dulu.' };
-      //  Tutup soal: kunci langsung terbuka, jawaban yang datang sesudahnya ditolak.
       if (j.tahap === 'siap' || j.tahap === 'soal') return geser(sekarang - TOLERANSI_MS);
-      //  Hasil -> papan: mundurkan acuan sejauh lama layar hasil.
       if (j.tahap === 'hasil') return geser(sekarang - TOLERANSI_MS - HASIL_MS);
       if (j.tahap === 'papan') {
         return j.indeks + 1 < k.live_urutan.length ? soalBaru(j.indeks + 1) : { live_tahap: 'selesai', live_indeks: j.indeks };
@@ -202,7 +143,6 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
         ? { ...geser(sekarang - TOLERANSI_MS), live_tahap: 'selesai', live_jeda_pada: null }
         : { live_tahap: 'selesai', live_indeks: j.indeks, live_jeda_pada: null };
     case 'live_ulang':
-      //  Kapan saja (sesi bermasalah / dianulir): kembali ke lobi, peserta tetap terdaftar.
       if (j.tahap === 'lobi') return { galat: 'Kuis belum dimulai.' };
       return { live_tahap: 'lobi', live_indeks: 0, live_soal_mulai: null, live_soal_tutup: null, live_jeda_pada: null };
     case 'live_jeda':
@@ -211,7 +151,6 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
       return { live_jeda_pada: iso(sekarang) };
     case 'live_lanjutkan': {
       if (!k.live_jeda_pada) return { galat: 'Kuis tidak sedang dijeda.' };
-      //  Geser titik acuan sejauh lama jeda: sisa waktu sama persis seperti saat dijeda.
       const lama = Math.max(0, sekarang - ms(k.live_jeda_pada));
       return {
         live_jeda_pada: null,
@@ -228,10 +167,6 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
   }
 }
 
-/**
- * Tulis ulang titik acuan ke posisi sekarang (soal yang berjalan / selesai) supaya basis data
- * tidak tertinggal jauh dari jadwal. Tidak mengubah apa pun yang terlihat; null = sudah sama.
- */
 export function wujudkanLive(k: StatusLive, sekarang = Date.now()): UbahanLive | null {
   if (k.live_tahap !== 'soal' || k.live_jeda_pada) return null;
   const j = jadwalLive(k, sekarang);
@@ -240,19 +175,11 @@ export function wujudkanLive(k: StatusLive, sekarang = Date.now()): UbahanLive |
   return { live_indeks: j.indeks, live_soal_mulai: iso(j.mulaiMs!), live_soal_tutup: iso(j.tutupMs!) };
 }
 
-/** Semua peserta sudah menjawab soal ini -> soal boleh ditutup lebih awal. */
 export const semuaMenjawab = (jumlahMenjawab: number, jumlahPeserta: number) => jumlahPeserta > 0 && jumlahMenjawab >= jumlahPeserta;
 
-// ── Papan skor ───────────────────────────────────────────────────────────────
-
-/** Satu baris rekap dari lc_eks_live_papan (angka bigint bisa datang sebagai string). */
 export interface RekapPeserta { peserta_id: string; nama: string; poin: number | string; benar: number | string; dijawab: number | string; waktu_benar_ms: number | string }
 export interface BarisPapan { peserta_id: string; nama: string; poin: number; benar: number; dijawab: number; waktuBenarMs: number; peringkat: number }
 
-/**
- * Urutkan: poin terbanyak, lalu yang total waktu jawab benarnya lebih cepat. Peringkat sama hanya
- * bila poin DAN waktu sama persis (mis. dua-duanya 0).
- */
 export function susunPapan(rekap: RekapPeserta[]): BarisPapan[] {
   const baris = rekap.map(r => ({
     peserta_id: r.peserta_id, nama: r.nama, poin: Number(r.poin) || 0, benar: Number(r.benar) || 0,
@@ -266,7 +193,6 @@ export function susunPapan(rekap: RekapPeserta[]): BarisPapan[] {
   return baris;
 }
 
-/** Posisi satu peserta + siapa tepat di atasnya (untuk "120 poin di belakang Budi"). */
 export function posisiSaya(papan: BarisPapan[], pesertaId: string): { peringkat: number; poin: number; benar: number; jumlah: number; atas: { nama: string; selisih: number } | null } | null {
   const i = papan.findIndex(b => b.peserta_id === pesertaId);
   if (i < 0) return null;
@@ -275,51 +201,38 @@ export function posisiSaya(papan: BarisPapan[], pesertaId: string): { peringkat:
   return { peringkat: saya.peringkat, poin: saya.poin, benar: saya.benar, jumlah: papan.length, atas: atas ? { nama: atas.nama, selisih: atas.poin - saya.poin } : null };
 }
 
-/** Jumlah pemilih tiap pilihan. */
 export function distribusi(jawaban: { pilihan: string }[]): Record<Pilihan, number> {
   const d: Record<Pilihan, number> = { A: 0, B: 0, C: 0, D: 0 };
   for (const j of jawaban) if ((PILIHAN as readonly string[]).includes(j.pilihan)) d[j.pilihan as Pilihan]++;
   return d;
 }
 
-/** Waktu per soal dari isian admin: dibulatkan ke pilihan terdekat (5-240 detik). */
 export function rapikanDetik(v: unknown, bawaan = 20): number {
   const n = Number(v);
   if (!Number.isFinite(n) || n <= 0) return bawaan;
   return PILIHAN_DETIK.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a));
 }
 
-// ── Tampilan (tema, logo, latar) ────────────────────────────────────────────
-
 export const WARNA_BAWAAN = '#46178f';
-/** Pilihan cepat warna tema di form admin. */
 export const PALET_TEMA = ['#46178f', '#1368ce', '#0b2a5b', '#0e7c66', '#8b1e3f', '#c2410c', '#1f2937'] as const;
 
-/** Hanya #rrggbb (huruf kecil); selain itu = bawaan (null). */
 export function rapikanWarna(v: unknown): string | null {
   const s = String(v ?? '').trim().toLowerCase();
   return /^#[0-9a-f]{6}$/.test(s) ? s : null;
 }
 
-/** Folder unggahan logo/latar Kuis Live di bucket merek-files. */
 export const FOLDER_GAMBAR = 'kuis-live';
-/**
- * Hanya gambar hasil unggahan kita sendiri (bucket merek-files/kuis-live/) yang boleh dipasang -
- * link luar bisa berisi apa saja dan ikut tampil di HP semua peserta.
- */
 export function rapikanUrlGambar(v: unknown): string | null {
   const s = String(v ?? '').trim();
   return /^https:\/\/[a-z0-9.-]+\/storage\/v1\/object\/public\/merek-files\/kuis-live\/[A-Za-z0-9._-]{1,120}$/.test(s) ? s : null;
 }
 
-/** Teks di atas warna tema: putih kecuali warnanya sangat terang. */
 export function teksDiAtas(hex: string): '#ffffff' | '#111827' {
   const n = parseInt(hex.slice(1), 16);
   const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   return (0.299 * r + 0.587 * g + 0.114 * b) > 186 ? '#111827' : '#ffffff';
 }
 
-/** Label tahap untuk kartu admin. */
 export function labelTahap(t: Tahap, indeks: number, total: number): string {
   switch (t) {
     case 'lobi': return 'Lobi';
@@ -330,7 +243,6 @@ export function labelTahap(t: Tahap, indeks: number, total: number): string {
   }
 }
 
-/** Status pendaftaran Kuis Live (tanpa jadwal buka/tutup - admin yang memandu). */
 export function statusLive(k: DasarJadwal & { aktif: boolean; maks_peserta: number }, jumlahPeserta: number, sekarang = Date.now()): 'buka' | 'nonaktif' | 'selesai' | 'penuh' {
   if (!k.aktif) return 'nonaktif';
   if (tahapEfektif(k, sekarang) === 'selesai') return 'selesai';

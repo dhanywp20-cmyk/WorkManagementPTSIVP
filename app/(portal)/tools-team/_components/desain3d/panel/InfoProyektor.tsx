@@ -1,5 +1,4 @@
 'use client';
-/** Panel proyektor (Atur benda): jarak lempar, ukuran gambar, tombol mengepaskan ke layar, kontras vs lampu. */
 import { type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
@@ -7,11 +6,6 @@ import { SusunBlending } from './SusunBlending';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
   const { benda, gantiBenda, gridSinar, infoBlending, kotakRuang, ruang, setGridSinar, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
-  /**
-   * Sinar SEBENARNYA dari lensa (inti/cakupanProyektor.ts): ikut keystone saat menunduk & lengkung layar - angka
-   * "pas" di bawahnya memakai gambar persegi ideal. Sasaran = layar proyektor ini, atau bidang mapping yang paling
-   * banyak disinarinya; dihitung bersama semua proyektor yang menyinari sasaran yang sama (blending).
-   */
   const blokSinarSebenarnya = (layar: Benda | null) => {
     const semuaP = benda.filter(b => b.jenis === 'proyektor');
     const calon = layar ? [layar] : benda.filter(b => b.jenis === 'bidang' && ruangDari(ruang, b.x) === ruangDari(ruang, p.x));
@@ -36,10 +30,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       </p>
     );
   };
-  /**
-   * Mask ke bidang: tampilkan cahaya hanya di layar / bidang mapping - seperti hasil masking & warping di media
-   * server. Mati = sinar mentah proyektor (termasuk yang tumpah ke dinding), untuk merencanakan posisi & masking.
-   */
   const blokMask = () => {
     if (!benda.some(b => (b.jenis === 'bidang' || b.jenis === 'layar') && ruangDari(ruang, b.x) === ruangDari(ruang, p.x))) return null;
     return (
@@ -49,7 +39,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       </label>
     );
   };
-  /** Grid cahaya (seperti simulator proyektor): nyala/mati, jumlah kolom, warna garis, ukuran satu kotak (mm) di permukaan. */
   const blokGrid = (lebar: number, tinggi: number) => {
     const kg = kotakGrid(lebar, tinggi, p.gridKolom);
     const semuaP = benda.filter(b => b.jenis === 'proyektor');
@@ -77,10 +66,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       </div>
     );
   };
-  /**
-   * Hasil seperti Panasonic Throw Distance Calculator - susunan & angka sama dengan hasil kalkulator itu (inti/
-   * hasilPanasonic.ts); keterangan sinar di kanvas memakai fungsi yang sama, jadi keduanya selalu cocok.
-   */
   const blokHasilPanasonic = () => {
     const h = hasilPanasonic(p, benda, ruang);
     if (h.L === null) return <p className="text-[12px] text-slate-600">Sumbu lensa tidak mengenai layar, bidang, maupun permukaan ruang - projection distance tidak bisa dihitung.</p>;
@@ -115,7 +100,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       </div>
     );
   };
-  /** Area blending proyektor ini dengan proyektor lain (dihitung di kanvas, mesin/blending.ts). */
   const blend = tampilBlending ? infoBlending.filter(b => b.a === p.id || b.b === p.id) : [];
   const blokBlending = blend.length ? (
     <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-2 space-y-1">
@@ -132,12 +116,9 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       <Catatan>Isi persen ini di pengaturan edge blending (software / processor); umumnya 10-25% dari lebar / tinggi gambar.</Catatan>
     </div>
   ) : null;
-  /** Panel proyektor: jarak lempar, ukuran gambar, & tombol mengepaskan ke layar. */
-  /** Kontras gambar proyektor terhadap lampu ruangan + saran lumen / dimmer. */
   const blokKontras = (p: Benda, kePermukaan: boolean, layar: Benda | null = null) => {
     const kp = kontrasProyektor(p, benda, ruang, targetKontras);
     const warna = kp.cukup ? 'text-emerald-700' : kp.kontras >= targetKontras * 0.6 ? 'text-amber-700' : 'text-rose-700';
-    //  Dimmer semua lampu agar target tercapai (lux lampu ~ sebanding dengan dimmer).
     const ambPerlu = kp.luxGambar / Math.max(0.01, targetKontras - 1);
     const dimSekarang = ruang.dimmer ?? 100;
     const luxLampu = kp.cahaya.total - kp.cahaya.siang;
@@ -149,7 +130,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           className="block w-full min-w-0 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11.5px] text-slate-800">
           {TARGET_KONTRAS.map(t => <option key={t.v} value={t.v}>Target {t.l} · {t.ket}</option>)}
         </select>
-        {/*  Sama dengan kalkulator pabrikan (Panasonic TDC): iluminansi, luminance (lux x gain / π) & kontras di pusat gambar. */}
         <div className="grid grid-cols-2 gap-1.5 text-center">
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Gambar (iluminansi)</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Luminance · gain {f(kp.gain, 2)}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luminance, 0)} cd/m²</p></div>
@@ -218,7 +198,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const selisih = (sn.lebar - lyr.w) / lyr.w;
     const pasLebar = Math.abs(selisih) <= 0.03;
     const [zMin, zMax] = zoomLensa(p), trPas = sn.trPas ?? 0;
-    //  "Distance to screen (Min~Max)" kalkulator pabrikan: jarak ujung lensa ke layar agar gambar selebar layar.
     const [jMin, jMax] = jarakUntukLebar(p, Math.max(lyr.w, lyr.h / (sn.tinggi / Math.max(0.001, sn.lebar)))), kj = koreksiJarakDari(p);
     const zoomBisa = trPas >= zMin - 0.005 && trPas <= zMax + 0.005;
     const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
@@ -260,7 +239,6 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         {!(pasLebar && pasTinggi && pasSamping && Math.abs(tiltDari(p)) <= 1) && (
           <div className="flex gap-1.5 flex-wrap">
             {!pasTinggi && <button type="button" className={tombolKecil} onClick={() => gantiBenda(tiltKeLayar(p, lyr, ruang))}>Atur tilt otomatis</button>}
-            {/*  Hanya TR yang bisa dicapai lensa (rentang zoom) - di luar itu peringatan di atas menyuruh pindah / ganti lensa. */}
             {!pasLebar && zoomBisa && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1e6) / 1e6 })}>Pakai throw ratio {f(trPas, 4)}</button>}
             <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, lyr, k, ruang))}
               title="Proyektor lurus (tanpa keystone), jarak & zoom sesuai lensa, tinggi diatur (drop pole)">Posisikan otomatis (lurus, tanpa keystone)</button>

@@ -1,7 +1,3 @@
-/**
- * desain3d/mesin/presisi.ts - efek presisi di kanvas: snap gizmo (geser per langkah grid, putar per sudut),
- * grid lantai saat snap aktif, garis penggaris + label jarak, dan jarak benda terpilih ke dinding. Aturannya di inti/presisi.ts.
- */
 import type * as T from 'three';
 import { type Benda, formatPanjang, type GarisPenggaris, jarakGrid, jarakKeDinding, type Kotak, mm, rincianGaris, type Snap, sudutTapak, type Titik } from '../inti';
 import { mengalah } from './label';
@@ -9,14 +5,12 @@ import type { Mesin } from './tipe';
 
 type GizmoSnap = { setTranslationSnap?: (v: number | null) => void; setRotationSnap?: (v: number | null) => void };
 
-/** Gizmo: geser per langkah grid & putar per sudut snap (posisi dunia, jadi benda jatuh tepat di garis grid). */
 export function aturSnapGizmo(m: Mesin, snap: Snap) {
   const g = m.gizmo as unknown as GizmoSnap;
   g.setTranslationSnap?.(snap.aktif ? snap.langkah : null);
   g.setRotationSnap?.(snap.aktif ? (snap.sudut * Math.PI) / 180 : null);
 }
 
-/** Grup milik efek ini di adegan (dibuat sekali, isinya diganti tiap pembaruan). */
 function grup(m: Mesin, nama: string): T.Group {
   let g = m.scene.getObjectByName(nama) as T.Group | undefined;
   if (!g) { g = new m.THREE.Group(); g.name = nama; m.scene.add(g); }
@@ -30,7 +24,6 @@ function grup(m: Mesin, nama: string): T.Group {
   return g;
 }
 
-/** Grid lantai tiap ruang selama snap aktif: garis tiap langkah (direnggangkan bila terlalu rapat), garis tiap 1 m lebih tegas. */
 export function gambarGridSnap(m: Mesin, kotak: Kotak[], snap: Snap) {
   const g = grup(m, 'presisi-grid');
   if (!snap.aktif) return;
@@ -53,7 +46,6 @@ export function gambarGridSnap(m: Mesin, kotak: Kotak[], snap: Snap) {
   }
 }
 
-/** Garis penggaris tersimpan + garis yang sedang dibuat (titik pertama), dengan label panjang & tombol hapus. */
 export function gambarPenggaris(m: Mesin, daftar: GarisPenggaris[], titikAwal: Titik | null, hapus: (id: string) => void) {
   const g = grup(m, 'presisi-penggaris');
   const { THREE } = m;
@@ -69,12 +61,10 @@ export function gambarPenggaris(m: Mesin, daftar: GarisPenggaris[], titikAwal: T
     titik(gp.a); titik(gp.b);
     const r = rincianGaris(gp);
     const el = document.createElement('div');
-    //  Penggaris dibuat sendiri oleh engineer: selalu tampil (label lain yang menabrak yang mengalah).
     el.dataset.penting = '1';
     el.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 4px 2px 7px;border-radius:7px;background:#dc2626;color:#fff;font:700 11.5px system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);pointer-events:auto';
     const teks = document.createElement('span');
     teks.textContent = formatPanjang(Math.hypot(r.datar, r.tinggi));
-    //  Beda ketinggian berarti: tampilkan juga jarak datar & tinggi (mis. mata penonton ke tengah layar).
     if (r.tinggi > 0.05 && r.datar > 0.05) el.title = `Datar ${formatPanjang(r.datar)} · tinggi ${formatPanjang(r.tinggi)}`;
     const x = document.createElement('button');
     x.type = 'button'; x.textContent = '✕'; x.setAttribute('aria-label', 'Hapus garis ukur');
@@ -90,10 +80,6 @@ export function gambarPenggaris(m: Mesin, daftar: GarisPenggaris[], titikAwal: T
   if (titikAwal) titik(titikAwal);
 }
 
-/**
- * Jarak otomatis benda terpilih ke keempat dinding ruangnya (dan tinggi sisi bawah dari lantai untuk benda
- * dinding / gantung), seperti garis ukur software denah. Kosong bila tidak ada benda terpilih.
- */
 export function gambarJarakDinding(m: Mesin, b: Benda | null, k: Kotak | null) {
   const g = grup(m, 'presisi-jarak');
   if (!b || !k || b.jenis === 'teks') return;

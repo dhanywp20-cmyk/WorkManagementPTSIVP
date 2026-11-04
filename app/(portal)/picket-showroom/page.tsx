@@ -27,10 +27,7 @@ import { exportToExcel } from './_components/excel-export';
 import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-// Main Page
-
 function PiketShowroomPageInner() {
-  //  Daftar pilihan: Admin Panel › Daftar Pilihan.
   const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
   const daftarProduk = useDaftarPilihan('piket-produk');
   const searchParams = useSearchParams();
@@ -50,7 +47,6 @@ function PiketShowroomPageInner() {
   const [search,setSearch]=useState('');
   const [filterDay,setFilterDay]=useState<DayOfWeek|''>('');
 
-  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearch(q);
@@ -63,11 +59,6 @@ function PiketShowroomPageInner() {
   const [summaryYear,setSummaryYear]=useState<number>(new Date().getFullYear());
   const [summaryMonth,setSummaryMonth]=useState<number|null>(null);
   const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
-  /*
-    Toast menggantikan alert() bawaan browser. Tiga kegagalan di halaman ini
-    dulu dilaporkan lewat alert: tampilannya beda total dari seluruh platform,
-    menyebutkan nama domain, dan memblokir halaman sampai ditekan OK.
-  */
   const [toast,setToast]=useState<Notif|null>(null);
   const beritahu=(type:'success'|'error',msg:string)=>{ setToast({type,msg}); setTimeout(()=>setToast(null),3200); };
   const wk=toKey(weekStart);
@@ -75,29 +66,13 @@ function PiketShowroomPageInner() {
   useEffect(()=>{
     const u=getSession<{username?:string}>(); if(!u) return;
     setCurrentUser(u as unknown as UserRow);
-    /*
-      piket_akses dibaca ULANG dari basis data, tidak dipercayakan pada
-      salinan sesi di peramban. Sesi bisa berumur berhari-hari, sementara
-      setelannya baru saja diubah admin - dan tanpa ini resepsionis harus
-      logout/login dulu sebelum halamannya terisi, tanpa ada yang memberitahu.
-    */
     if(!u.username) return;
     supabase.from('users').select('piket_akses,piket_ubah,access_level,role,team_type').eq('username',u.username).single()
       .then(({data}:{data:{piket_akses:string|null;piket_ubah:boolean|null;access_level:string|null;role:string|null;team_type:string|null}|null})=>{
         if(data) setCurrentUser((prev:any)=>prev?{...prev,...data}:prev);
       });
   },[]);
-  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (lihat lib/constants.ts hasFullAccess) - mis. Manager PTS yang mengelola
-  // jadwal piket timnya sendiri.
   const isAdmin=hasFullAccess(currentUser);
-  /*
-    Hak MENGISI kegiatan piket - beda dari isAdmin (yang mengatur roster) dan
-    beda dari hak melihat. Tombol Edit dulu dirender tanpa syarat apa pun,
-    jadi setiap akun yang diberi menu Piket Showroom bisa mengubah catatan
-    hari itu - termasuk akun Sales & resepsionis yang seharusnya membaca saja.
-    Yang piket hari itu Tim PTS, dan merekalah yang mencatat tamunya.
-  */
   const bolehIsi=bisaIsiKegiatan(currentUser);
 
   const fetchData=useCallback(async()=>{
@@ -105,29 +80,9 @@ function PiketShowroomPageInner() {
     setFetchError(null);
     const wk2=toKey(addDays(weekStart,7));
     try {
-      // Isolasi antar-Sales pada catatan kegiatan tamu
-      // piket_tamu_detail mencatat nama_sales & sales_division: siapa membawa
-      // tamu mana, untuk project apa. Jadwal piketnya sendiri memang terbuka
-      // (itu roster PTS), tapi catatan kegiatannya tidak - Sales divisi lain
-      // tidak berkepentingan dengan daftar kunjungan pelanggan divisi tetangga.
-      //
-      // Batas dipasang DI QUERY, bukan saat render, supaya barisnya tidak
-      // pernah sampai ke browser dan terbaca lewat DevTools.
-      //  Batasnya HANYA untuk yang memang Sales. Resepsionis / front desk
-      //  bukan Sales - namanya tidak pernah muncul sebagai nama_sales - jadi
-      //  aturan lingkup Sales menyisakan NOL baris untuknya, dan seluruh
-      //  ringkasan halaman ini tampil kosong (total jam 0, semua pie chart
-      //  kosong). Bukan disembunyikan dengan sengaja, tapi efeknya sama.
-      //  Siapa yang dikecualikan diatur per akun (users.piket_akses), bukan
-      //  ditebak dari role atau dari kepemilikan menu.
       let kgQ = supabase.from('piket_tamu_detail').select('*').order('created_at');
       if (!bisaLihatSemuaTamu(currentUser)) {
         const lingkup = await hitungLingkupProject(currentUser as never);
-        //  sertakanTanpaPemilik: kegiatan tanpa nama sales sama sekali
-        //  (training internal, maintenance, standby - hampir separuh isi
-        //  tabel) bukan kunjungan pelanggan siapa pun. Tanpa ini, Sales pun
-        //  kehilangan separuh halaman, padahal batasannya cuma dimaksudkan
-        //  untuk menutup pelanggan divisi tetangga.
         const batas = filterLingkup(lingkup, 'nama_sales', 'sales_division', { sertakanTanpaPemilik: true });
         if (batas) kgQ = kgQ.or(batas);
       }
@@ -137,9 +92,9 @@ function PiketShowroomPageInner() {
         supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic,pic_ivp_name,pic_ump_name,pic_mvi_name,pic_ivp_id,pic_ump_id,pic_mvi_id'),
         supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',namaKelompokPTS()).order('full_name'),
         kgQ,
-        supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'), // optional — tabel mungkin belum ada
+        supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'),
       ]);
-      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error; // plRes sengaja tidak diikutkan (opsional)
+      const firstErr = wRes.error || aRes.error || uRes.error || kgRes.error;
       if (firstErr) { setFetchError(firstErr.message); setLoading(false); return; }
       if(wRes.data)setRows(wRes.data as PiketRow[]);
       if(aRes.data)setAllRows(aRes.data as PiketRow[]);
@@ -149,7 +104,6 @@ function PiketShowroomPageInner() {
         (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
         setKegiatanList((kgRes.data as KegiatanEntry[]).map(k=>({...k,produk_lain:plByKg[k.id||'']||[]})));
       }
-      // Holidays: optional - if table doesn't exist yet, silently ignore
       const hRes = await supabase.from('picket_holidays').select('date');
       if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));
     } catch (err: any) {
@@ -164,17 +118,12 @@ function PiketShowroomPageInner() {
     return()=>{supabase.removeChannel(ch);};
   },[fetchData]);
 
-  // FIX: isCurrWeek true jika salah satu dari 2 minggu yang ditampilkan adalah minggu ini
   const currMondayKey=toKey(getMonday(new Date()));
   const isCurrWeek=wk===currMondayKey||toKey(addDays(weekStart,7))===currMondayKey;
   const fmtW=(ws:Date)=>`${ws.toLocaleDateString('id-ID',{day:'2-digit',month:'short'})} – ${addDays(ws,4).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}`;
   const wLabel=fmtW(weekStart);
   const wLabel2=fmtW(addDays(weekStart,7));
 
-  // Generate virtual rows untuk minggu yang belum ada di DB
-  // FIX 1: Selalu tampilkan semua 10 hari kerja meski rolling name belum ada (PIC kosong)
-  // FIX 2: Hari yang sudah LEWAT (< hari ini) dan tidak ada di DB  tampil kosong tanpa rolling
-  //         supaya perubahan rolling tidak meretroaktif mengubah data historis yang belum disave
   const effectiveRows = useMemo(()=>{
     const todayKey = toKey(new Date());
     const existingKeys = new Set(rows.map(r=>`${r.week_start}__${r.day_of_week}`));
@@ -185,8 +134,6 @@ function PiketShowroomPageInner() {
         if(existingKeys.has(`${wkKey}__${day}`)) return;
         const date = getDayDate(ws, day);
         const dateKey = toKey(date);
-        // Hari lampau yang belum di-DB: tampilkan kosong (jangan pakai rolling)
-        // supaya history tidak berubah retroaktif saat rolling di-update
         const isPast = dateKey < todayKey;
         const name = isPast ? null : getRollingNameForDate(date, allRows, holidays);
         const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
@@ -195,8 +142,6 @@ function PiketShowroomPageInner() {
           week_start: wkKey,
           day_of_week: day,
           day_date: dateKey,
-          //  Satu pintu tulis - tim mana pun ikut tersimpan, bukan hanya tiga
-          //  yang kebetulan punya kolom sendiri.
           ...tulisPicPiket(u ? { id: u.id, full_name: name, team_type: u.team_type } : null),
           tamu_instansi: null, kebutuhan: [],
           created_at: '', updated_at: '',
@@ -206,7 +151,6 @@ function PiketShowroomPageInner() {
     return [...rows, ...virtual];
   }, [rows, allRows, weekStart, ptUsers, holidays]);
 
-  // Auto-save virtual row ke DB lalu buka FillDetailModal
   const handleFillVirtual = useCallback(async(row: PiketRow)=>{
     const{error}=await supabase.from('piket_schedules').upsert({
       week_start: row.week_start,
@@ -234,9 +178,6 @@ function PiketShowroomPageInner() {
       danger: true,
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        //  Diperiksa: fetchData() di bawah tetap membaca ulang dari server
-        //  (jadi layar tidak berbohong), tapi tanpa ini kegagalan lewat tanpa
-        //  penjelasan - kelihatannya "tidak terjadi apa-apa".
         const { data, error } = await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
         if (error || !data || data.length === 0) beritahu('error','Gagal menghapus kegiatan. Coba lagi.');
         else void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
@@ -246,14 +187,6 @@ function PiketShowroomPageInner() {
   },[fetchData, currentUser, setConfirmState]);
 
   const toggleHoliday = useCallback(async (date: string) => {
-    /*
-      Diperiksa hasilnya sebelum mengubah state layar - sebelumnya state
-      lokal diubah TANPA PEDULI hasil tulisannya. Kalau RLS menolak (0 baris,
-      tanpa galat), tanda libur hilang dari layar sesaat lalu MUNCUL LAGI
-      begitu halaman di-refresh, tanpa satu pun pesan yang menjelaskan
-      kenapa. Sekarang layar hanya berubah kalau basis data benar-benar
-      berubah.
-    */
     if (holidays.includes(date)) {
       const { data, error } = await supabase.from('picket_holidays').delete().eq('date', date).select('date');
       if (error || !data || data.length === 0) { beritahu('error','Gagal membatalkan libur. Coba lagi.'); return; }
@@ -272,9 +205,6 @@ function PiketShowroomPageInner() {
     return `${h}:${m}`;
   };
 
-  // Holiday cascade
-  // When a saved row's date is a holiday, its PIC is not consumed from the pool.
-  // The next non-holiday row takes that PIC instead - cascading forward.
   const cascadedRows = useMemo(() => {
     if (holidays.length === 0) return effectiveRows;
     const holidaySet = new Set(holidays);
@@ -334,7 +264,6 @@ function PiketShowroomPageInner() {
   const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{
     const produk=k.produk||[];
     if(produk.includes('All Product')){
-      // Distribusi ke semua produk spesifik
       PRODUK_SPESIFIK.forEach(p=>{acc[p]=(acc[p]||0)+1;});
     } else {
       produk.forEach(p=>{acc[p]=(acc[p]||0)+1;});
@@ -342,7 +271,6 @@ function PiketShowroomPageInner() {
     return acc;
   },{}as Record<string,number>)).sort(([,a],[,b])=>b-a).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
 
-  // Export Excel per-bulan (format sama dgn Export All) berdasarkan bulan terpilih di ringkasan.
   const MONTH_NAMES=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const exportMonth=()=>{
     if(summaryMonth===null)return;
@@ -359,7 +287,6 @@ function PiketShowroomPageInner() {
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
       <>
-        {/* Menutupi area modul saja (bukan portal ke <body>): header & menu portal tetap terlihat. */}
         <div role="status" aria-busy="true" className="absolute inset-0 z-40 flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
           <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
           <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
@@ -370,14 +297,7 @@ function PiketShowroomPageInner() {
       </>
       )}
 
-      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
-          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
-          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
-          aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
-        {/* ── HEADER ── */}
         <PageHeader icon="🏪" title="Piket Showroom" subtitle="IndoVisual Presentama · Jadwal Piket Tim PTS">
           <button onClick={()=>exportToExcel(allRows,kegiatanList)}
             className="tombol-kedua flex items-center gap-1.5 px-4 py-2 rounded-kontrol text-sm font-bold transition-all hover:scale-105">
@@ -401,7 +321,6 @@ function PiketShowroomPageInner() {
         </PageHeader>
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
-          {/* Keterangan hak akun ini, supaya tidak ada yang bertanya-tanya kenapa tidak ada tombol edit / kenapa datanya terbatas. */}
           {currentUser&&!bolehIsi&&(
             <p className="text-[12px] text-slate-700 bg-white/90 border border-slate-200 rounded-xl px-3.5 py-2">
               {bisaLihatSemuaTamu(currentUser)
@@ -421,14 +340,12 @@ function PiketShowroomPageInner() {
             <MiniPieChart data={divPieAll} title="Division Sales" icon="🏷️" activeFilter={filterDivision} onSliceClick={l=>setFilterDivision(filterDivision===l?null:l)}/>
           </div>
 
-          {/* ── TABLE (full width) ── */}
           <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)'}}>
             <div className="px-5 py-3.5 border-b border-gray-200 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Schedule Piket</span>
                   <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{displayRows.length}</span>
-                  {/* Week nav — 2 minggu */}
                   <div className="flex items-center gap-1">
                     <button onClick={()=>setWeekStart(d=>addDays(d,-28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
                     <button aria-label="Sebelumnya" onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
@@ -484,7 +401,6 @@ function PiketShowroomPageInner() {
               )}
             </div>
 
-            {/* ── Today Banner ── */}
             {(()=>{
               const now=new Date();
               const todayDow=now.getDay();
@@ -492,9 +408,6 @@ function PiketShowroomPageInner() {
               const todayName=DAYS_OF_WEEK[todayDow-1];
               const todayDc=isWeekday&&todayName?DAY_COLOR[todayName]:null;
               const todayInView=displayRows.find(r=>r.day_date===toKey(now));
-              //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari
-              //  kelompok PTS di luar IVP/UMP/MVI (tersimpan di kolom `pic`
-              //  JSONB lewat bacaPicPiket) tidak pernah muncul di sini.
               const todayPIC=todayInView?(bacaPicPiket(todayInView)?.name||'Belum ada PIC'):null;
               if(!isWeekday)return null;
               return(
@@ -519,7 +432,6 @@ function PiketShowroomPageInner() {
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <>
-              {/* ── MOBILE: list PIC per hari (kalender penuh hanya di web/desktop) ── */}
               <div className="md:hidden divide-y divide-gray-100">
                 {displayRows.length===0?(
                   <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada jadwal.</div>
@@ -527,9 +439,6 @@ function PiketShowroomPageInner() {
                   const dc=DAY_COLOR[row.day_of_week];
                   const todayRow=row.day_date===toKey(new Date());
                   const isHoliday=holidays.includes(row.day_date);
-                  //  H4 (audit): dulu membaca 3 kolom lama langsung, jadi PIC
-                  //  dari kelompok PTS di luar IVP/UMP/MVI (tersimpan di kolom
-                  //  `pic` JSONB) tidak pernah tampil di sini.
                   const picBaris=bacaPicPiket(row);
                   const pics=picBaris?[{team:labelKelompokPTS(picBaris.team_type)||picBaris.team_type,name:picBaris.name}]:[];
                   const isVirtual=row.id.startsWith('virtual-');
@@ -559,10 +468,6 @@ function PiketShowroomPageInner() {
                         )}
                         {jumlahKg>0&&<p className="text-[11px] text-slate-500 mt-1">{jumlahKg} kegiatan tercatat</p>}
                       </div>
-                      {/* Aksi - SAMA dengan kolom Action di tabel desktop. Dulu
-                          daftar HP tidak punya tombol sama sekali, jadi dari HP
-                          tidak ada seorang pun (admin sekalipun) yang bisa
-                          mengisi atau melihat detail piket. */}
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         <ActionGroup>
                           {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
@@ -585,15 +490,10 @@ function PiketShowroomPageInner() {
                 })}
               </div>
 
-              {/* ── DESKTOP: kalender/tabel penuh (TIDAK diubah) ── */}
               <div className="hidden md:block overflow-x-auto animate-zoom-in">
-                {/* ── TABLE ── */}
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
                     <col style={{width:'3%'}}/><col style={{width:'8%'}}/><col style={{width:'7%'}}/><col style={{width:'15%'}}/><col style={{width:'6%'}}/><col style={{width:'9%'}}/>
-                    {/*  Action (kolom terakhir) dipatok 116px, bukan 9%:
-                        isinya tiga tombol ikon berukuran tetap (Lihat/Edit/
-                        Hapus = 104px), sementara 9% dari 1050px cuma ~94px. */}
                     <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'21%'}}/><col style={{width:'5%'}}/><col style={{width:'116px'}}/>
                   </colgroup>
                   <thead>
@@ -645,17 +545,8 @@ function PiketShowroomPageInner() {
                                   {isHoliday&&<span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}><IkonTeks nama="🎌" />LIBUR</span>}
                                 </div>
                               </td>
-                              {/* PIC — tambah keterangan tim */}
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="space-y-1.5">
-                                  {/*
-                                    H4 (audit): dulu membaca 3 kolom lama langsung -
-                                    PIC dari kelompok PTS di luar IVP/UMP/MVI
-                                    (tersimpan di kolom `pic` JSONB) tidak pernah
-                                    tampil, dan `tc.dot` tanpa cadangan warna akan
-                                    membuat baris ini crash kalau nama timnya tidak
-                                    ada di TEAM_LABEL.
-                                  */}
                                   {(()=>{
                                     const picBaris=bacaPicPiket(row);
                                     if(!picBaris) return <span className="text-gray-400 text-xs">—</span>;
@@ -675,7 +566,6 @@ function PiketShowroomPageInner() {
                               </td>
                             </>
                           )}
-                          {/* Kegiatan + Kebutuhan (di bawah jenis kegiatan) */}
                           <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?(
                               <div className="flex flex-col gap-1">
@@ -683,12 +573,10 @@ function PiketShowroomPageInner() {
                                   style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
                                   {kg.jenis_kegiatan}
                                 </span>
-                                {/* RnD: tampilkan team_rnd dengan PTS info */}
                                 {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
                                   <div className="flex items-center gap-1 mt-0.5">
                                     <span className="text-[10px] font-semibold text-violet-500"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                     <span className="text-[10px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>
-                                    {/* Cari PTS team dari ptUsers */}
                                     {(()=>{
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
                                       const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
@@ -697,7 +585,6 @@ function PiketShowroomPageInner() {
                                     })()}
                                   </div>
                                 )}
-                                {/* Kebutuhan hanya untuk Demo Product */}
                                 {kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&(
                                   <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
@@ -711,7 +598,6 @@ function PiketShowroomPageInner() {
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Jam */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
@@ -720,7 +606,6 @@ function PiketShowroomPageInner() {
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Produk */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.produk&&kg.produk.length>0?(
                               <div className="flex flex-col gap-0.5">
@@ -728,23 +613,18 @@ function PiketShowroomPageInner() {
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Tamu */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Sales */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Keterangan */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.keterangan?<span className="text-[13px] text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-400 text-xs">—</span>}
                           </td>
-                          {/* Edit By — diambil dari piket_tamu_detail (kg terakhir) */}
                           {kgIdx===0&&(
                             <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                               {(()=>{
-                                // Ambil edited_by_name dari kegiatan yang paling terakhir di-update
                                 const lastEdited = (kgToShow as any[])
                                   .filter(k => k != null && !!(k as KegiatanEntry).edited_by_name)
                                   .sort((a:any,b:any)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0] as KegiatanEntry|undefined;
@@ -757,7 +637,6 @@ function PiketShowroomPageInner() {
                               })()}
                             </td>
                           )}
-                          {/* Action */}
                           {kgIdx===0&&(
                             <td className="px-1 py-3 align-middle text-center" rowSpan={kgToShow.length} style={{verticalAlign:'middle'}}>
                               <ActionGroup>

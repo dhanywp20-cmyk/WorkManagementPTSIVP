@@ -1,12 +1,3 @@
-/**
- * uji/olah-reminder.ts - pengelompokan & data pie Reminder Schedule (app/reminder-schedule/_components/olah-data.ts).
- *
- * Fungsi-fungsi itu dipindah dari page.tsx dan ditulis ulang lebih ringkas. Tes ini menjalankan
- * KODE ASLINYA (disalin apa adanya di bawah sebagai acuan) dan versi baru pada data acak, lalu
- * membandingkan hasilnya persis sama.
- *
- * Jalankan: npx tsx uji/olah-reminder.ts
- */
 import { kelompokkanReminder, pieKategori, pieDivisiSales, pieTeamPts, pieProduk } from '../app/(portal)/reminder-schedule/_components/olah-data';
 import { PIE_COLORS } from '../app/(portal)/reminder-schedule/_components/shared';
 
@@ -18,7 +9,6 @@ function cek(nama: string, syarat: boolean) {
 interface R { batch_id?: string | null; project_name?: string | null; title?: string | null; category: string; due_date: string; due_time?: string | null;
   sales_division?: string | null; assign_name?: string | null; product?: string | null }
 
-// ── KODE ASLI (disalin dari page.tsx sebelum dipindah) ──
 const asliGrup = (filteredReminders: R[]) => {
   const map = new Map<string, R[]>();
   for (const r of filteredReminders) {
@@ -49,7 +39,6 @@ const asliProduk = (sourceReminders: R[]) => {
   return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 };
 
-// ── data acak deterministik ──
 let benih = 12345;
 const acak = () => { benih = (benih * 1664525 + 1013904223) % 4294967296; return benih / 4294967296; };
 const pilih = <T,>(a: T[]) => a[Math.floor(acak() * a.length)];

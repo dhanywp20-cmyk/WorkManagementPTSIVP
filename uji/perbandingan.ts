@@ -1,10 +1,3 @@
-/**
- * uji/perbandingan.ts - Product Comparison (Tools Team): validasi berkas & kiriman, aturan akses & verifikasi,
- * anti-karangan (kutipan wajib ada di brosur), output AI tidak sah, PDF template (2/3/4 produk) dibaca ulang
- * dengan pdf.js, dan pemeriksaan statis rute (tanpa Storage, tanpa berkas sementara, tanpa log isi).
- *
- * Jalankan: npm test -- perbandingan
- */
 import { readFileSync } from 'fs';
 import PDFDocument from 'pdfkit';
 import {
@@ -129,7 +122,6 @@ async function main() {
 
   console.log('\n6. PDF template (dibaca ulang dengan pdf.js)');
   const pdf2 = await bacaPdf(await pdfKe(CONTOH));
-  //  pdf.js memecah kata (huruf berjarak) menjadi potongan - bandingkan tanpa spasi.
   const rapat = (t: string) => t.replace(/\s+/g, '');
   const semua = rapat(pdf2.halaman.join(' '));
   cek('3 halaman seperti PDF contoh', pdf2.halaman.length === 3);

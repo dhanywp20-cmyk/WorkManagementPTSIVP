@@ -2,42 +2,24 @@
 
 import React from 'react';
 
-/**
- * MobileListCard - kartu daftar untuk tampilan MOBILE, pola acuan dari
- * Ticket Troubleshooting: header (judul + badge status di kanan), meta
- * (lokasi/tanggal), grid 2-kolom label:value, lalu baris ikon aksi.
- *
- * Dipakai agar SEMUA platform punya gaya kartu mobile yang sama. Bungkus dalam
- * `<div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">` dan sembunyikan
- * tabel desktop dengan `hidden md:block` - TIDAK menyentuh tampilan desktop
- * sama sekali, keduanya cabang terpisah lewat Tailwind responsive prefix.
- *
- * Sebelumnya baris-baris ini rata dengan latar (divide-y tipis antar baris,
- * tanpa jarak/elevasi) - terlihat seperti daftar spreadsheet yang dipadatkan,
- * bukan kartu aplikasi mobile yang lazim (kartu terangkat dengan jarak &
- * bayangan tipis di atas kanvas abu-abu, ikon kategori di kiri, blok detail
- * yang disekat dari header). Diseragamkan ke bentuk itu di sini SEKALI -
- * otomatis berlaku ke 8 modul yang memakai komponen ini.
- */
-
 export interface MobileCardField {
   label: string;
   value: React.ReactNode;
-  span2?: boolean;          // ambil 2 kolom penuh
-  valueClass?: string;      // override warna/teks nilai
-  hide?: boolean;           // lewati kalau kosong
+  span2?: boolean;
+  valueClass?: string;
+  hide?: boolean;
 }
 
 interface MobileListCardProps {
   title: React.ReactNode;
-  titlePrefix?: React.ReactNode;   // mis. ikon  di depan judul
-  meta?: React.ReactNode;          // baris kecil di bawah judul (lokasi/tanggal)
-  badges?: React.ReactNode;        // badge status di kanan atas (boleh beberapa, stacked)
-  fields?: MobileCardField[];      // pasangan label:value (grid 2 kolom)
-  actions?: React.ReactNode;       // baris tombol/ikon aksi
-  accent?: string;                 // warna garis kiri (mis. merah utk overdue)
-  highlight?: boolean;             // latar sorot (mis. overdue)
-  onClick?: () => void;            // klik kartu (mis. buka detail)
+  titlePrefix?: React.ReactNode;
+  meta?: React.ReactNode;
+  badges?: React.ReactNode;
+  fields?: MobileCardField[];
+  actions?: React.ReactNode;
+  accent?: string;
+  highlight?: boolean;
+  onClick?: () => void;
 }
 
 export function MobileListCard({
@@ -45,18 +27,12 @@ export function MobileListCard({
 }: MobileListCardProps) {
   const visibleFields = (fields ?? []).filter(f => !f.hide);
   return (
-    // Kartu yang bisa diklik harus bisa dicapai keyboard juga. Sebuah <div>
-    // ber-onClick TIDAK masuk urutan Tab dan tidak menanggapi Enter/Spasi:
-    // bagi yang tidak memakai tetikus, detail baris ini sama sekali tidak
-    // terbuka. Bentuknya tetap <div> karena kartunya memuat tombol aksi di
-    // dalamnya, dan <button> di dalam <button> tidak sah.
     <div
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => {
         if (e.key === 'Enter' || e.key === ' ') {
-          // Spasi kalau tidak dicegah akan menggulir halaman, bukan membuka kartu.
           e.preventDefault();
           onClick();
         }
@@ -97,7 +73,6 @@ export function MobileListCard({
   );
 }
 
-/** Badge status kecil seragam untuk header kartu mobile. */
 export function MobileCardBadge({ children, className, style, title }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; title?: string;
 }) {

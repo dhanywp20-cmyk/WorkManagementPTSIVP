@@ -1,13 +1,10 @@
 'use client';
-/** Atur teks / keterangan manual: isi, tinggi huruf, arah hadap, warna tulisan & latar (inti/teks.ts). */
 import { Angka, Pilih } from '../../../bersama/ui';
 import { type HadapTeks, LABEL_HADAP_TEKS, MAKS_TEKS, TINGGI_HURUF_MAKS, TINGGI_HURUF_MIN, tinggiHurufSah, warnaSah } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
-/** Nama benda mengikuti baris pertama teks - kecuali sudah diganti sendiri. */
 const namaDari = (t: string | undefined) => (t ?? '').split('\n')[0].trim().slice(0, 40) || 'Teks';
 
-/** Tinggi pasang bawaan saat arah hadap diganti (lantai menempel, melayang di atas kepala). */
 const ELEV_HADAP: Record<HadapTeks, number> = { berdiri: 1.6, lantai: 0.002, kamera: 2.2 };
 
 export function AturTeks({ c }: { c: KonteksAtur }) {
@@ -19,7 +16,6 @@ export function AturTeks({ c }: { c: KonteksAtur }) {
     <div className="space-y-2.5">
       <label className="block">
         <span className={label}>Teks</span>
-        {/* Fokus otomatis; isi bawaan "Keterangan" langsung terpilih supaya tinggal diketik ulang. */}
         <textarea key={b.id} autoFocus onFocus={e => { if (e.target.value === 'Keterangan') e.target.select(); }}
           value={b.teks ?? ''} maxLength={MAKS_TEKS} rows={3} placeholder="Tulis keterangan…"
           onChange={e => setUkuran({ teks: e.target.value, nama: b.nama === namaDari(b.teks) ? namaDari(e.target.value) : b.nama })}

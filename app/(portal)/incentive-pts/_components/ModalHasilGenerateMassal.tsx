@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalHasilGenerateMassal - ringkasan hasil generate tahapan massal. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 
 export interface ModalHasilGenerateMassalProps {

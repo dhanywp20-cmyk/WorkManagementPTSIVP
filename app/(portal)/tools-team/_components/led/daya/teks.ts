@@ -1,4 +1,3 @@
-/** Teks ringkasan & bagian lembar cetak Power Connection. */
 import { esc, type Seksi } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { type DataDaya, type PengaturanDaya, susunDaya } from './data';
@@ -6,7 +5,6 @@ import { svgDaya } from './svg';
 
 export const teksCara = (s: PengaturanDaya) => `${s.fase === 3 ? '3 fase' : '1 fase'}, MCB ${s.mcb} A/sirkuit, beban maks ${s.beban}%, kabel ${s.arah === 'vertikal' ? 'tegak per kolom' : 'mendatar per baris'} pola ${s.pola}`;
 
-/** Ringkasan untuk Salin/WA. */
 export function ringkasanDaya(d: DataDaya, s: PengaturanDaya): string {
   const h = susunDaya(d, s);
   return [
@@ -18,7 +16,6 @@ export function ringkasanDaya(d: DataDaya, s: PengaturanDaya): string {
   ].filter(Boolean).join('\n');
 }
 
-/** Seksi lembar cetak: diagram + tabel sirkuit & fase. */
 export function seksiCetakDaya(d: DataDaya, s: PengaturanDaya): Seksi[] {
   const h = susunDaya(d, s);
   return [

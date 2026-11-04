@@ -2,16 +2,6 @@
 import { cloneElement, isValidElement, useEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { TOMBOL_TERLIHAT, urutNav, type MenuNav } from './nav-bawah';
 
-/**
- * Navigasi HP & aplikasi (APK) - pola aplikasi seluler, bukan sidebar: bar bawah berisi
- * Dashboard + SEMUA menu yang boleh dibuka akun ini + Admin Panel / Keluar, digeser kiri-kanan.
- * Lima tombol terlihat sekaligus; menu paling sering dipakai ada di depan; menu yang sedang
- * dibuka selalu digeser ke tengah. Hanya tampil di layar < md; desktop tetap memakai sidebar.
- *
- * Bar berada DI DALAM alur layout (anak flex-col terakhir sebelum footer), jadi area modul
- * menyusut setinggi bar - tidak ada konten yang tertutup.
- */
-
 const IKON_DASHBOARD = (
   <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <rect x="3.5" y="3.5" width="7" height="9" rx="1.5" strokeWidth={1.8} /><rect x="13.5" y="3.5" width="7" height="5" rx="1.5" strokeWidth={1.8} />
@@ -32,7 +22,6 @@ export const IKON_AKUN = {
   ),
 };
 
-/** Ikon SVG garis diperbesar seragam; ikon lain (emoji) dibungkus ukuran huruf. */
 function IkonNav({ ikon, ukuran }: { ikon: ReactNode; ukuran: number }) {
   if (isValidElement(ikon) && ikon.type === 'svg') {
     return cloneElement(ikon as ReactElement<{ className?: string; style?: CSSProperties }>, { className: '', style: { width: ukuran, height: ukuran } });
@@ -42,16 +31,14 @@ function IkonNav({ ikon, ukuran }: { ikon: ReactNode; ukuran: number }) {
 
 export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
   beranda: Omit<MenuNav, 'ikon'> & { ikon?: ReactNode };
-  /** Menu modul yang boleh dibuka akun ini. */ menu: MenuNav[];
-  /** Admin Panel, Keluar - di ujung kanan bar. */ akun: MenuNav[];
+   menu: MenuNav[];
+   akun: MenuNav[];
   aksen?: string;
 }) {
   const jalur = useRef<HTMLDivElement>(null);
   const daftar: MenuNav[] = [{ ...beranda, ikon: beranda.ikon ?? IKON_DASHBOARD }, ...urutNav(menu), ...akun];
   const kunciAktif = daftar.find(m => m.aktif)?.key;
 
-  //  Menu yang sedang dibuka selalu terlihat: bar menggeser item aktif ke tengah.
-  //  (scrollTo pada bar itu sendiri - scrollIntoView ikut menggulir halaman & terhenti di tengah oleh snap.)
   useEffect(() => {
     const bar = jalur.current, el = bar?.querySelector<HTMLElement>('[aria-current="page"]');
     if (!bar || !el) return;
@@ -73,7 +60,6 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
             <button key={m.key} type="button" onClick={m.onPilih} aria-current={m.aktif ? 'page' : undefined}
               className="relative snap-start flex-shrink-0 flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 active:scale-95 transition-transform"
               style={{ width: `${100 / TOMBOL_TERLIHAT}%`, minWidth: 64, color: warna }}>
-              {/*  Garis penanda di atas tombol aktif. */}
               {m.aktif && <span aria-hidden="true" className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-b-full" style={{ background: aksen }} />}
               <span className="relative">
                 <IkonNav ikon={m.ikon} ukuran={24} />
@@ -88,7 +74,6 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
           );
         })}
       </div>
-      {/*  Pudar di tepi kanan: petunjuk bahwa barisnya bisa digeser. */}
       {daftar.length > TOMBOL_TERLIHAT && (
         <div aria-hidden="true" className="pointer-events-none absolute top-0 right-0 bottom-0 w-6"
           style={{ background: 'linear-gradient(270deg, rgba(255,255,255,0.95), rgba(255,255,255,0))' }} />

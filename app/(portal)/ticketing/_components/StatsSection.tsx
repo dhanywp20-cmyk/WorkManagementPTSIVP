@@ -13,12 +13,6 @@ type TicketStats = {
 };
 type SebaranStats = { data: { name: string; value: number; color: string }[]; total: number };
 
-/**
- * Kartu ringkasan + donut chart (Ticketing) - dipindah dari
- * app/ticketing/page.tsx apa adanya (JSX identik, dua varian: guest &
- * admin/team). State & handler tetap di page.tsx, komponen ini murni
- * presentasional.
- */
 export function StatsSection({
   currentUser, currentUserTeamType, stats, tickets,
   filterStatus, setFilterStatus, handlerFilter, setHandlerFilter,
@@ -46,7 +40,6 @@ export function StatsSection({
 }) {
   return (
     <>
-      {/* ── GUEST SUMMARY SECTION (same style as admin) ── */}
       {currentUser?.role === "guest" && (
         <div className="mb-4 space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
@@ -97,7 +90,6 @@ export function StatsSection({
 
       {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS IVP" || currentUserTeamType === "Guest")) && (
         <div className="mb-4 space-y-4">
-          {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
             {[
               { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
@@ -109,7 +101,6 @@ export function StatsSection({
             ].map((card, i) => <StatCard key={i} {...card} />)}
           </div>
 
-          {/* ── Donut Charts ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
             <StatusDonutCard data={stats.statusData} total={stats.statusData.reduce((s, d) => s + d.value, 0)} onSliceClick={(name: string) => { const mapped = name === "Solved (Overdue)" ? "Solved Overdue" : name; setFilterStatus((prev) => prev === mapped ? "All" : mapped); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} title="Status Distribution" icon="🥧" />
             <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />

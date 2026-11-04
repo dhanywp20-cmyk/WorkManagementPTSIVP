@@ -44,32 +44,22 @@ import { useDrafLaporan } from './_components/useDrafLaporan';
 import { useDataLaporan } from './_components/useDataLaporan';
 import { useMuatLaporan } from './_components/useMuatLaporan';
 
-// MAIN
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
   const [currentUser, setCurrentUser] = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]     = useState<TeamUser[]>([]);
-  /**
-   * Judul grafik mengikuti kelompok yang benar-benar dirangkum. Menuliskan
-   * "Team PTS IVP" di sana - seperti sebelumnya - membuat grafik yang berisi
-   * dua kelompok mengaku berisi satu, dan itu jenis kekeliruan yang tidak akan
-   * pernah dilaporkan siapa pun karena tampak wajar.
-   */
   const kelompokPTS = useKelompokPTSDitugaskan();
   const judulKelompokPTS = kelompokPTS.length === 1
     ? kelompokPTS[0].nama
     : `Team PTS (${kelompokPTS.map(k => k.label).join(' & ')})`;
   const [guestUsers, setGuestUsers]   = useState<GuestUser[]>([]);
 
-  // Live data (dari reminder + ticket platform, tanpa perlu submit dulu)
   const [liveReminders, setLiveReminders] = useState<(ReminderActivity & { handler_username?: string; report_date?: string })[]>([]);
   const [liveTickets, setLiveTickets]     = useState<(TicketActivity & { handler_username?: string; report_date?: string })[]>([]);
   const [liveLoading, setLiveLoading]     = useState(false);
 
-  // Submitted reports
   const [reports, setReports]         = useState<DailyReport[]>([]);
 
-  // Filter
   const [filterDate, setFilterDate]   = useState('');
   const [filterUser, setFilterUser]   = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -80,13 +70,11 @@ export default function DailyReportPage() {
   const [filterDivision, setFilterDivision] = useState<string | null>(null);
   const [filterProduct, setFilterProduct]   = useState<string | null>(null);
 
-  // Form state
   const [formOpen, setFormOpen]       = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);
   const [formDate, setFormDate]       = useState(todayISO());
   const [formUserId, setFormUserId]   = useState('');
   const [reminderNotes, setReminderNotes] = useState('');
-  /** Draf ringkasan AI: sedang menyusun / pesan gagal. */
   const [menyusun, setMenyusun] = useState(false);
   const [galatSusun, setGalatSusun] = useState('');
   const [formReminders, setFormReminders] = useState<ReminderActivity[]>([]);
@@ -96,18 +84,12 @@ export default function DailyReportPage() {
   const [formLoading, setFormLoading]     = useState(false);
   const [saving, setSaving]               = useState(false);
 
-  // Modal detail
   const [modalRow, setModalRow]       = useState<any | null>(null);
 
   const [toast, setToast]             = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
-  /**
-   * Boleh hapus = PEMILIK laporan atau Admin/Full Access - aturan yang sama
-   * dengan policy dr_ubah di basis data, jadi tombolnya tidak pernah
-   * menjanjikan sesuatu yang nanti ditolak server.
-   */
   const bolehHapus = (row: any): boolean => {
     if (!row.report_id || row.manual_index === undefined || !currentUser) return false;
     const r = reports.find(x => x.id === row.report_id);
@@ -133,15 +115,10 @@ export default function DailyReportPage() {
     });
   };
 
-  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (lihat lib/constants.ts hasFullAccess).
   const isAdmin = hasFullAccess(currentUser);
-  //  Akun pimpinan (lib/pimpinan.ts) MELIHAT laporan seluruh tim seperti admin, tetapi tidak
-  //  menulis: tombol tambah disembunyikan dan basis data menolak tulis (migrasi 034).
   const pimpinan = isPimpinan(currentUser);
   const lihatSemua = isAdmin || pimpinan;
 
-  // Init
   useEffect(() => {
     const user = getSession<TeamUser>();
     if (!user) {
@@ -151,7 +128,6 @@ export default function DailyReportPage() {
     }
     setCurrentUser(user);
     Promise.all([loadTeamUsers(), loadGuestUsers()]).then(() => setAppReady(true));
-    // session check
     const iv = setInterval(() => {
       if (!getSession()) {
         clearSession();
@@ -162,44 +138,19 @@ export default function DailyReportPage() {
     return () => clearInterval(iv);
   }, []);
 
-  /**
-   * Anggota tim yang pekerjaannya dirangkum di layar ini.
-   *
-   * Kelompoknya diambil dari lib/kelompok.ts, BUKAN ditulis di sini.
-   * Sebelumnya baris ini berbunyi `team_type === 'Team PTS IVP'` - satu nama
-   * kelompok yang terpaku di kode - sehingga seluruh anggota Team PTS MVI
-   * tidak pernah masuk daftar. Akibatnya ticket dan reminder mereka tidak
-   * pernah terangkum di Daily Report, dan namanya juga tidak bisa dipilih.
-   * Judul halaman ini sendiri sudah lama berbunyi "PTS IVP & MVI".
-   *
-   * Kegagalannya tidak bersuara: layarnya tampil normal, hanya isinya separuh.
-   *
-   * Dengan namaKelompokPTS(), menambah kelompok PTS baru lewat Admin Panel
-   * langsung ikut terangkum tanpa menyunting berkas ini lagi.
-   */
   const { loadTeamUsers, loadGuestUsers, loadLiveData, loadReports } = useMuatLaporan({ currentUser, filterDate, filterUser, lihatSemua, setGuestUsers, setLiveLoading, setLiveReminders, setLiveTickets, setReports, setTeamUsers, teamUsers });
 
   useEffect(() => {
     if (!currentUser) return;
-    // Untuk admin: tunggu teamUsers selesai load dulu (hindari fetch dengan usernames=[])
     if (lihatSemua && teamUsers.length === 0) return;
     loadLiveData();
     loadReports();
   }, [currentUser, lihatSemua, teamUsers, filterDate, filterUser]);
 
-  // Build flat rows: gabung live data + manual dari submitted reports
-
   const { allRows, filteredRows, dataEkspor, hal, stats, belumLaporHariIni, PIE_C, catPieData, handlerPieData, divisionPieData, productPieData } = useDataLaporan({ filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, lihatSemua, liveReminders, liveTickets, reports, searchProject, teamUsers });
 
-  /*
-    Draf isian di perangkat: pernah terjadi simpan Daily Report hilang diam-diam (permintaan
-    tidak sampai server, halaman di dalam iframe termuat ulang di tengah simpan). Isian manual
-    & catatan disimpan sementara di localStorage selama form terbuka, lalu dipulihkan saat form
-    dibuka lagi (tanggal/akun/report yang sama). Dihapus setelah berhasil simpan atau Batal.
-  */
   const { kunciDraf, bacaDraf, hapusDraf, adaIsian, pulihkanDraf } = useDrafLaporan({ currentUser, editingId, formDate, formOpen, formUserId, manualActs, notify, reminderNotes, saving, setManualActs, setReminderNotes });
 
-  // Form helpers
   const { openNewForm, openEditForm, handleSave, updM, updT } = useFormLaporan({ bacaDraf, currentUser, editingId, formDate, formOpen, formReminders, formTickets, formUserId, hapusDraf, isAdmin, loadLiveData, loadReports, manualActs, notify, pulihkanDraf, reminderNotes, setEditingId, setFormDate, setFormLoading, setFormOpen, setFormReminders, setFormTickets, setFormUserId, setManualActs, setReminderNotes, setSaving, setTeamEntries, teamEntries, teamUsers });
 
   if (!appReady) return <LoadingScreen />;
@@ -234,7 +185,6 @@ export default function DailyReportPage() {
     );
   };
 
-  // DETAIL MODAL (popup persis reminder-schedule)
   const DetailModal = () => {
     if (!modalRow) return null;
     const row: FlatRow = modalRow;
@@ -250,7 +200,6 @@ export default function DailyReportPage() {
     );
   };
 
-  // MAIN LIST VIEW
   return (
     <PW>
       <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI">
@@ -267,20 +216,6 @@ export default function DailyReportPage() {
         belumLaporHariIni={belumLaporHariIni} bolehHapus={bolehHapus} catPieData={catPieData} dataEkspor={dataEkspor} divisionPieData={divisionPieData} filterCategory={filterCategory} filterDate={filterDate} filterDivision={filterDivision} filterHandler={filterHandler} filterProduct={filterProduct} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} filteredRows={filteredRows} hal={hal} handlerPieData={handlerPieData} judulKelompokPTS={judulKelompokPTS} lihatSemua={lihatSemua} liveLoading={liveLoading} loadLiveData={loadLiveData} loadReports={loadReports} mintaHapus={mintaHapus} openEditForm={openEditForm} pimpinan={pimpinan} productPieData={productPieData} reports={reports} searchProject={searchProject} setFilterCategory={setFilterCategory} setFilterDate={setFilterDate} setFilterDivision={setFilterDivision} setFilterHandler={setFilterHandler} setFilterProduct={setFilterProduct} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setModalRow={setModalRow} setSearchProject={setSearchProject} stats={stats} teamUsers={teamUsers}
       />
 
-      {/*  Dipanggil sebagai FUNGSI biasa ({FormModal()}), BUKAN elemen JSX
-          (<FormModal />) - FormModal/DetailModal didefinisikan ulang di
-          setiap render DailyReportPage (identitas fungsinya berubah tiap
-          kali), jadi <FormModal /> membuat React melihat "tipe komponen
-          baru" pada SETIAP keystroke di input mana pun di dalam modal
-          (typing memanggil setState di parent -> re-render -> FormModal
-          didefinisikan ulang). React lalu meng-unmount seluruh pohon modal
-          lama dan mount ulang yang baru - input kehilangan fokus persis
-          sebelum karakternya sempat kelihatan, terasa seperti modal
-          tertutup/mundur sendiri padahal cuma mengetik satu huruf.
-          Memanggilnya sebagai fungsi membuat JSX yang dikembalikan menyatu
-          langsung ke pohon render DailyReportPage - React membandingkan
-          elemen DOM sebenarnya (ModalPortal, div, input, ...) yang
-          tipenya stabil antar render, bukan identitas FormModal. */}
       {FormModal()}
       {DetailModal()}
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />

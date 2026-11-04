@@ -1,6 +1,5 @@
 'use client';
 
-/** IsianGenerateSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Material, MAX_PDF_BYTES, DialogState } from '../shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 

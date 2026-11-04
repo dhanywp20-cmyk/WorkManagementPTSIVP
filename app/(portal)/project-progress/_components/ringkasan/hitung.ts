@@ -1,11 +1,3 @@
-/**
- * Angka ringkasan Project Progress - murni (tanpa React), supaya bisa diuji. Dipakai:
- *  - daftar proyek (tampilan depan)          -> ringkasDaftarProyek
- *  - detail proyek & link View-Only proyek   -> ringkasDariLokasi / hitungRingkasan
- *  - checklist satu lokasi & link tim        -> ringkasChecklist
- * Prinsip: tiap fakta tampil SEKALI. Yang sudah ada di kartu/daftar halaman (progres per lokasi,
- * per bagian, jumlah per status di kartu filter) tidak diulang di sini.
- */
 import {
   hariIni, keadaanJadwal, statDari,
   type ChecklistItem, type KeadaanJadwal, type ProyekRingkas, type StatChecklist,
@@ -27,9 +19,7 @@ export interface Ringkasan extends Waktu {
   total: StatChecklist; persen: number;
   lokasi: RingkasLokasi[];
   perStatus: Record<StatusLokasi, number>;
-  /** Tenggat lokasi yang BELUM selesai (selesai sudah ada di perStatus). */
   perTenggat: Record<Exclude<KeadaanJadwal, 'selesai'>, number>;
-  /** Lokasi per handler (anggota checklist). Kosong bila data aktivitas tidak tersedia. */
   perOrang: Kontribusi[];
   laju: TitikLaju[];
 }
@@ -40,7 +30,6 @@ const persenDari = (s: StatChecklist) => (s.total ? Math.round((s.selesai / s.to
 
 export const MAKS_HARI_LAJU = 30;
 
-/** Laju harian dari peta tanggal->jumlah: maks 30 hari terakhir sejak aktivitas pertama s.d. hari ini. */
 export function lajuDariPeta(perHari: Record<string, number>, hariIniStr = hariIni()): TitikLaju[] {
   const tanggal = Object.keys(perHari);
   if (!tanggal.length) return [];
@@ -56,7 +45,6 @@ export function lajuDariPeta(perHari: Record<string, number>, hariIniStr = hariI
   return laju;
 }
 
-/** Hari berjalan, sisa hari, dan waktu terpakai (%) dari rentang start-target. */
 export function waktuDari(start: string | null, target: string | null, hariIniStr = hariIni()): Waktu {
   const kini = hari(hariIniStr);
   const hariBerjalan = start ? Math.max(0, kini - hari(start)) : null;
@@ -71,7 +59,6 @@ export function waktuDari(start: string | null, target: string | null, hariIniSt
 
 export interface LokasiMasukan { id: string; judul: string; target_date: string | null; stat: StatChecklist }
 
-/** Ringkasan proyek dari angka per lokasi + aktivitas (handler & per hari) bila ada. */
 export function ringkasDariLokasi(
   proyek: { start_date: string | null; target_date: string | null },
   masukan: LokasiMasukan[],
@@ -101,7 +88,6 @@ export function ringkasDariLokasi(
 
 export interface DaftarShare { id: string; judul: string; target_date: string | null }
 
-/** Ringkasan proyek dari seluruh item (link View-Only memuat semua item & anggota). */
 export function hitungRingkasan(
   proyek: { start_date: string | null; target_date: string | null },
   daftar: DaftarShare[], items: ChecklistItem[], anggota: AnggotaNama[], hariIniStr = hariIni(),
@@ -112,10 +98,6 @@ export function hitungRingkasan(
   return ringkasDariLokasi(proyek, daftar.map(d => ({ ...d, stat: statDari(perDaftar.get(d.id) ?? []) })),
     { kontribusi: lokasiPerHandler(anggota.filter(a => perDaftar.has(a.daftar_id))), perHari: selesaiPerHari(items) }, hariIniStr);
 }
-
-// ── Daftar proyek (tampilan depan) ──────────────────────────────────────────
-//  Jumlah per status / kendala / terlambat sudah ada di kartu filter, progres tiap proyek di
-//  daftarnya - yang ditambahkan di sini hanya yang belum tampil di mana pun.
 
 export interface RingkasanDaftar {
   item: StatChecklist;
@@ -138,9 +120,6 @@ export function ringkasDaftarProyek(proyek: ProyekRingkas[]): RingkasanDaftar {
     perSales: hitungLabel(proyek.map(p => p.sales_name), 'Tanpa Sales'),
   };
 }
-
-// ── Checklist satu lokasi ───────────────────────────────────────────────────
-//  Progres, x/y item & kendala sudah di header halaman; progres per bagian di panel bagian.
 
 export interface RingkasanChecklist extends Waktu {
   persen: number;

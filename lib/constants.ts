@@ -1,54 +1,27 @@
-// Session
-/** Durasi sesi login: 400 hari, sama dengan cookie sesi (lib/masuk-server.ts SESSION_HOURS) - praktis tanpa batas. */
 export const SESSION_DURATION_MS = 400 * 24 * 60 * 60 * 1000;
 
-// Brand Colors
-/**
- * DIPINDAH. Warna merek sekarang datang dari database lewat lib/merek.ts dan
- * bisa diganti tiap organisasi dari Admin Panel -> Dashboard Setting.
- *
- * Konstanta BRAND yang dulu di sini memakai merah rose yang dipatok, jadi ia
- * menjadi sumber warna KEDUA di samping database. Ia sudah tidak dipakai satu
- * tempat pun saat dibuang - tapi dibiarkan berdiri berarti cepat atau lambat
- * ada kode baru yang memakainya dan diam-diam mengabaikan pengaturan merek.
- *
- * Yang harus dipakai sekarang:
- *   - Warna MEREK  : useMerek() dari lib/merek.ts, atau var(--merek-utama).
- *   - Warna MAKNA  : WARNA / gayaWarna() dari lib/desain.ts. Hijau tetap
- *                    berarti berhasil dan merah tetap berarti bahaya di mana
- *                    pun platform ini dipasang, jadi keduanya sengaja TIDAK
- *                    ikut bisa diganti.
- */
-
-// Z-Index Standar
-/** Skala z-index tinggal di lib/z-index.ts - satu sumber, jangan disalin. */
 export { Z } from './z-index';
 
-// Role Helpers
 import type { CurrentUser } from './use-current-user';
 
-/** Cek apakah user adalah admin atau superadmin */
 export function isAdmin(user: CurrentUser | null): boolean {
   if (!user) return false;
   const r = (user.role ?? '').toLowerCase();
   return r === 'admin' || r === 'superadmin';
 }
 
-/** Cek apakah user adalah team PTS (semua varian) */
 export function isTeamPTS(user: CurrentUser | null): boolean {
   if (!user) return false;
   const r = (user.role ?? '').toLowerCase();
   return r === 'team' || r === 'team_pts';
 }
 
-/** Cek apakah user adalah sales / guest */
 export function isSalesGuest(user: CurrentUser | null): boolean {
   if (!user) return false;
   const r = (user.role ?? '').toLowerCase();
   return r === 'guest' || r === 'sales';
 }
 
-/** Cek apakah user memiliki jabatan level supervisor ke atas */
 export const SUPERVISOR_JABATAN = [
   'Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur',
 ] as const;
@@ -58,28 +31,13 @@ export function isSupervisorLevel(user: CurrentUser | null): boolean {
   return SUPERVISOR_JABATAN.includes((user.jabatan ?? '') as typeof SUPERVISOR_JABATAN[number]);
 }
 
-/** Cek akses admin luas: admin, superadmin, atau PTS Supervisor */
 export function isAdminOrSupervisor(user: CurrentUser | null): boolean {
   if (!user) return false;
   return isAdmin(user) || (isTeamPTS(user) && user.jabatan === 'Supervisor');
 }
 
-/**
- * Bentuk minimal yang dibutuhkan hasFullAccess(), sengaja struktural dan bukan
- * CurrentUser. Tiap modul punya tipe `User` lokalnya sendiri dengan field
- * opsional yang sedikit berbeda; bentuk longgar ini menerima semuanya.
- */
 type AccessCheckUser = { role?: string | null; team_type?: string | null; access_level?: string | null } | null | undefined;
 
-/**
- * Akses PENUH setara admin di modul DATA - BUKAN hak kelola akun, yang tetap
- * milik admin/superadmin lewat /api/admin/users.
- *
- * Sengaja tidak ditebak dari jabatan; admin men-toggle users.access_level
- * ('full'/'guest') per akun lewat Admin Panel. Toggle itu HANYA berlaku untuk
- * role='team', jadi access_level='full' pada akun non-team diabaikan. Lihat
- * sql/user-full-access-toggle.sql.
- */
 export function hasFullAccess(user: AccessCheckUser): boolean {
   if (!user) return false;
   const r = (user.role ?? '').toLowerCase();
@@ -88,10 +46,4 @@ export function hasFullAccess(user: AccessCheckUser): boolean {
   return admin || (team && user.access_level === 'full');
 }
 
-/**
- * Integrasi DIWAYPI (token asisten desktop) & verifikasi 2 langkah: HANYA admin dan akun yang
- * ditunjuk admin lewat toggle Full Access (keputusan pemilik). Guest & Team biasa tidak.
- * Dipakai profil (tampil/tidak) DAN server (/api/integrasi/token, /api/integrasi/diwaypi,
- * /api/auth/2fa) - nilai role & access_level di server dibaca ulang dari tabel users.
- */
 export const bolehDiwaypiDan2FA = (user: AccessCheckUser): boolean => hasFullAccess(user);

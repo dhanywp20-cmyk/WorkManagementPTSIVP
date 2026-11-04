@@ -1,6 +1,5 @@
 'use client';
 
-/** SeksiTelegram - dipecah dari app/(portal)/dashboard/_components/modal-integrasi.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { type StatusRahasia, type StatusKoneksi } from '../modal-integrasi';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { type PengaturanNotifikasi } from '@/lib/notifikasi/pengaturan';

@@ -3,18 +3,6 @@
 import { useState } from 'react';
 import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 
-/**
- * Baris filter yang DILIPAT di ponsel.
- *
- * Di layar lebar semua filter tampil seperti biasa. Di ponsel hanya isian
- * PERTAMA (pencarian) yang tampil; sisanya di balik tombol "Filter lainnya"
- * yang menunjukkan berapa filter sedang aktif. Dulu enam kolom filter
- * ditumpuk 2x3 di ponsel dan mendorong daftar datanya jauh ke bawah layar.
- *
- * `kelas` = kelas grid yang sama dengan sebelumnya, jadi tata letak desktop
- * tidak berubah. `aktif` = nilai-nilai filter; yang terisi & bukan 'all'
- * dihitung sebagai aktif (isian pertama/pencarian tidak ikut dihitung).
- */
 export function FilterLipat({ kelas, aktif = [], children }: {
   kelas: string;
   aktif?: unknown[];

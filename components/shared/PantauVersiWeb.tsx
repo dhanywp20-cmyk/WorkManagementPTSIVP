@@ -3,15 +3,8 @@ import { useEffect, useState } from 'react';
 import { Ikon } from './Ikon';
 import { adaVersiBaru, perluPeriksa } from '@/lib/versi-web';
 
-/** Komit web yang tertanam di kode halaman ini (next.config.js). */
 const KOMIT_HALAMAN = process.env.NEXT_PUBLIC_KOMIT_APP || '';
 
-/**
- * Ajakan "muat ulang" bila web sudah diperbarui sejak halaman ini dibuka (aturan & alasannya: lib/versi-web.ts).
- * Diperiksa saat halaman kembali dipakai setelah ditinggal >= 10 menit, atau saat aplikasi Android memberi tahu
- * dirinya dibuka kembali dari latar belakang (event `wm-kembali`, android/MainActivity.java) - WebView aplikasi
- * tidak selalu mengirim visibilitychange. Tidak ada polling.
- */
 export function PantauVersiWeb() {
   const [baru, setBaru] = useState(false);
 
@@ -26,14 +19,13 @@ export function PantauVersiWeb() {
         const r = await fetch('/api/health', { cache: 'no-store' });
         const j = r.ok ? await r.json() as { komit?: string | null } : null;
         if (adaVersiBaru(KOMIT_HALAMAN, j?.komit)) setBaru(true);
-      } catch { /* jaringan putus: coba lagi lain kali */ } finally { sibuk = false; }
+      } catch {  } finally { sibuk = false; }
     };
     const ubahTampak = () => {
       if (document.visibilityState === 'hidden') { tersembunyiSejak = Date.now(); return; }
       if (perluPeriksa(tersembunyiSejak, Date.now())) void periksa();
       tersembunyiSejak = null;
     };
-    //  Aplikasi Android sudah menimbang lamanya di latar belakang (>= 5 menit) sebelum mengirim event ini.
     const kembaliDariAplikasi = () => { void periksa(); };
     document.addEventListener('visibilitychange', ubahTampak);
     window.addEventListener('wm-kembali', kembaliDariAplikasi);

@@ -1,24 +1,3 @@
-/*
-  UJI: exportSummaryIncentive versi tema baru (mengikuti contoh
-  Summary_Incentive_PTS_IVP.xlsx yang diberikan pengguna).
-
-  Bukan sekadar cek objek di memori - berkasnya betul-betul ditulis ke disk
-  lalu DIBACA ULANG, supaya lolos-tidaknya sama seperti yang akan dilihat
-  pengguna saat membuka file .xlsx-nya di Excel/Sheets/viewer ringan.
-
-  Yang diperiksa:
-    1. Judul memuat "Tahun ..." sesuai rentang BAST proyek-proyeknya.
-    2. Tema warna kepala tabel & baris TOTAL/GRAND TOTAL/Installer sesuai contoh.
-    3. Sel SUM (TOTAL Tabel 1, GRAND TOTAL Tabel 2 & 3) BUKAN kosong - selalu
-       bawa `result` cache, bukan cuma formula.
-    4. Orang yang seluruh proyeknya "belum input" tetap muncul di Tabel 2
-       dengan total Rp 0, ditandai warna abu.
-    5. Installer TIDAK masuk hitungan GRAND TOTAL Tabel 2 (bukan Team PTS),
-       tapi baris kuningnya sendiri muncul di Tabel 3 dengan 100% di tahun
-       pertama proyeknya.
-
-    node uji/tema-summary-baru.mjs
-*/
 import ExcelJS from 'exceljs';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -34,7 +13,6 @@ const NAVY_HDR = '1F3864';
 const TOTAL_FILL = 'D9E1F2';
 const INSTALLER_FILL = 'FFF2CC';
 
-/** Meniru struktur inti exportSummaryIncentive - fokus pada bagian yang diuji. */
 async function bangunBerkas() {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Summary Incentive PTS');
@@ -42,7 +20,6 @@ async function bangunBerkas() {
   const KOL = { no: 2, project: 3, mode: 4, bast: 5, nominal: 6 };
   const KOL_TERAKHIR = 22;
 
-  // Dua proyek: satu final (BAST 2026), satu "belum input" (tanpa BAST/nominal).
   const proyek = [
     { nama: 'Project A', bastYear: 2026, hasNominal: true, pool: 10_000_000,
       pic: [{ user_name: 'Yoga KS', percentage: 40, amount: 4_000_000 }],
@@ -52,21 +29,18 @@ async function bangunBerkas() {
       installer: [] },
   ];
 
-  const tahunUrut = [2027, 2028, 2029]; // BAST 2026 + tahapan 1/2/3
+  const tahunUrut = [2027, 2028, 2029];
 
-  // Judul dengan sufiks tahun.
   const cTitle = ws.getCell(2, KOL.no);
   cTitle.value = `Summary Incentive PTS IVP — Semua Project Tahun ${tahunUrut[0]}–${tahunUrut.at(-1)}`;
   ws.mergeCells(2, KOL.no, 2, KOL_TERAKHIR);
 
-  // TOTAL Tabel 1 - hanya Project A yang punya nominal.
   const totalNominal = proyek.reduce((n, p) => n + (p.hasNominal ? p.pool : 0), 0);
   const rTot1 = 10;
   const cTot1 = ws.getCell(rTot1, KOL.nominal);
   cTot1.value = { formula: `SUM(F5:F6)`, result: totalNominal };
   cTot1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_FILL } };
 
-  // Tabel 2 - satu baris per orang (Team PTS saja, TANPA installer).
   const rowT2Start = 15;
   const orangT2 = [
     { nama: 'Yoga KS', total: 4_000_000, belumFinal: false },
@@ -85,12 +59,11 @@ async function bangunBerkas() {
   cGT2.value = { formula: `SUM(E${rowT2Start}:E${rowT2End})`, result: grandTotal2 };
   cGT2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_FILL } };
 
-  // Tabel 3 - baris Installer terpisah, kuning, 100% di tahun pertama (2027).
   const rInst = 25;
   const cInstNama = ws.getCell(rInst, KOL.no);
   cInstNama.value = 'Budi Installer (Installer — 100% pencairan tahun pertama)';
   cInstNama.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: INSTALLER_FILL } };
-  const cInstPct2027 = ws.getCell(rInst, KOL.mode); // kolom tahun pertama (%)
+  const cInstPct2027 = ws.getCell(rInst, KOL.mode);
   cInstPct2027.value = 1;
   cInstPct2027.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: INSTALLER_FILL } };
   const cInstAmt2027 = ws.getCell(rInst, KOL.mode + 1);
@@ -98,8 +71,6 @@ async function bangunBerkas() {
   cInstAmt2027.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: INSTALLER_FILL } };
 
   const rGT3 = rInst + 2;
-  // GRAND TOTAL Tabel 3 - HANYA Team PTS (installer tidak boleh ikut dobel
-  // dijumlah ke GRAND TOTAL Tabel 2 yang representasi "Team PTS").
   const cGT3 = ws.getCell(rGT3, KOL.bast);
   cGT3.value = { formula: `SUM(E${rowT2Start}:E${rInst})`, result: grandTotal2 + 1_500_000 };
   cGT3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_FILL } };

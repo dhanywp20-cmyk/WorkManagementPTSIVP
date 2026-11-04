@@ -58,7 +58,6 @@ function KartuChecklist({ c, onBuka }: { c: ChecklistRingkas; onBuka: () => void
   );
 }
 
-/** Satu proyek: info (seperti Project Progress lama) + checklist per lokasi. */
 export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, onBerubah, salesUsers, calonAnggota }: {
   proyekId: string;
   onKembali: () => void;
@@ -127,7 +126,6 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
     total: a.total + c.stat.total, selesai: a.selesai + c.stat.selesai, kendala: a.kendala + c.stat.kendala,
   }), { total: 0, selesai: 0, kendala: 0 });
   const j = keadaanJadwal(proyek.target_date, proyek.status === 'done');
-  // Yang bermasalah di depan: kendala, lalu terlambat, lalu sisanya sesuai urutan.
   const urut = [...checklist].sort((a, b) => (b.stat.kendala > 0 ? 1 : 0) - (a.stat.kendala > 0 ? 1 : 0) || a.urutan - b.urutan);
 
   return (
@@ -170,7 +168,6 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
             </div>
           )}
         </div>
-        {/* Progres & kendala proyek tampil di kartu Progres ringkasan di bawah - tidak diulang di sini. */}
         {checklist.length === 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex-1 min-w-[220px]"><BarProgres progres={progresDariStat(total)} tebal={10} /></div>
@@ -184,7 +181,6 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
         <RingkasanProyek r={ringkasDariLokasi(proyek, checklist.map(c => ({ id: c.id, judul: c.judul, target_date: c.target_date, stat: c.stat })), data.aktivitas ?? null)} />
       )}
 
-      {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek). */}
       <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-sm"
         style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: NETRAL.tinta2 }}>

@@ -4,19 +4,11 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { IncentiveSplit, IncentiveTranche, IncentiveProjectRow } from './calc';
 
-/**
- * Export personal - berbeda dari exportSummaryIncentive (exportPengajuan.ts):
- * itu rekap SELURUH tim, cuma untuk tingkat akses 'input'/'penuh'. Ini
- * cuma baris milik SATU orang, jadi aman diakses tier 'lihat' sekalipun -
- * datanya (`splits`) sudah harus difilter by user_id oleh pemanggil sebelum
- * sampai ke sini, fungsi ini tidak menyaring apa pun sendiri.
- */
 export interface DataExportInsentifSaya {
   splits: IncentiveSplit[];
   trancheById: Map<string, IncentiveTranche>;
   projectById: Map<string, IncentiveProjectRow>;
   userName: string;
-  /** Hanya untuk judul & nama berkas - penyaringan tahun dilakukan pemanggil. */
   year?: number | null;
 }
 
@@ -48,10 +40,6 @@ export async function exportInsentifSaya(data: DataExportInsentifSaya) {
   cGen.value = `Generated: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
   cGen.font = { italic: true, size: 9, name: 'Arial', color: { argb: '666666' } };
 
-  //  Cuma `key`+`width` - TANPA `header` di sini. Assign ke ws.columns dengan
-  //  properti `header` diisi otomatis MENULIS baris 1 oleh ExcelJS sendiri,
-  //  yang akan menimpa judul gabungan A1:F1 di atas. Kepala tabel sungguhan
-  //  ditulis manual di baris 4 (HEADERS di bawah), terpisah dari sini.
   ws.columns = [
     { key: 'no', width: 5 },
     { key: 'project', width: 34 },

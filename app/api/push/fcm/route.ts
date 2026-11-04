@@ -1,8 +1,3 @@
-/**
- * /api/push/fcm - aplikasi Android mendaftarkan token FCM perangkatnya untuk
- * user yang sedang login (POST), atau melepasnya (DELETE). Token pindah ke
- * user yang login terakhir di perangkat itu.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';

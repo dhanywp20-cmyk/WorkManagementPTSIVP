@@ -1,29 +1,13 @@
 'use client';
 import React from 'react';
 
-/**
- * Keping identitas build: versi & commit. Tanggal build sengaja TIDAK ditampilkan (permintaan owner:
- * jadwal rilis tidak diperlihatkan ke pengguna) - commit sudah cukup untuk memetakan layar ke kode.
- *
- * Gunanya bukan hiasan. Saat seseorang melaporkan "menu X error", pertanyaan
- * pertama selalu "Anda sedang melihat versi yang mana?" - dan selama jawabannya
- * harus ditebak, perbaikan yang sudah terkirim bisa disangka belum jalan
- * (persis yang terjadi waktu crash Incentive PTS: deploy lama dan baru terlihat
- * sama dari layar). Tujuh digit commit membuat layar mana pun bisa dipetakan
- * balik ke satu titik pasti di riwayat kode.
- *
- * Nilainya dibekukan saat build - lihat next.config.js.
- */
 const VERSI    = process.env.NEXT_PUBLIC_VERSI_APP || '';
 const KOMIT    = process.env.NEXT_PUBLIC_KOMIT_APP || '';
 
 export function ChipVersi({ gaya = 'gelap', className = '' }: {
-  /** gelap = tinta gelap di atas latar terang; terang = tinta putih di atas latar gelap/foto. */
   gaya?: 'gelap' | 'terang';
   className?: string;
 }) {
-  //  Commit kosong di luar Vercel (mis. `next dev` di laptop) - segmennya
-  //  dilewati, bukan ditampilkan sebagai strip kosong di antara dua titik.
   const bagian = [VERSI && `v${VERSI}`, KOMIT].filter(Boolean) as string[];
   if (bagian.length === 0) return null;
 
@@ -38,9 +22,6 @@ export function ChipVersi({ gaya = 'gelap', className = '' }: {
       {bagian.map((b, i) => (
         <React.Fragment key={b}>
           {i > 0 && <span aria-hidden="true" style={{ opacity: 0.45 }}>·</span>}
-          {/*  Commit ditulis monospace supaya terbaca sebagai KODE yang harus
-              disalin apa adanya, bukan sebagai kata yang boleh diketik ulang
-              sekenanya - tujuh huruf-angka acak gampang salah salin. */}
           <span className={i === 1 && KOMIT ? 'font-mono' : ''}>{b}</span>
         </React.Fragment>
       ))}

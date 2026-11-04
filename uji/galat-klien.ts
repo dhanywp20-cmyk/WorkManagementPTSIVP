@@ -1,8 +1,3 @@
-/**
- * uji/galat-klien.ts - pencatatan galat di layar pengguna (Admin Panel -> Kesehatan Sistem).
- *
- * Jalankan: npm test -- galat-klien
- */
 import { readFileSync } from 'fs';
 import { abaikanGalat, rapikanLaporan, BATAS_PESAN } from '../lib/galat-klien';
 

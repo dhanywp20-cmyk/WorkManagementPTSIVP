@@ -1,11 +1,5 @@
 'use client';
 
-/**
- * analytics-dashboard/page.tsx - thin wrapper.
- * Isi komponen dipindah ke _components/AnalyticsPlatform.tsx supaya bisa
- * dipakai ulang secara native (embedded) di Dashboard tanpa iframe.
- */
-
 import { Suspense } from 'react';
 import { AnalyticsPlatform } from './_components/AnalyticsPlatform';
 

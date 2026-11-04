@@ -1,11 +1,3 @@
-/**
- * lib/jadwal-aturan.ts - aturan & teks Reminder Schedule yang dipakai BERSAMA oleh layar
- * Reminder Schedule (peramban) dan DIWAYPI (server). Murni: tanpa klien Supabase,
- * tanpa window - aman diimpor dari sisi mana pun.
- *
- * Konstanta di sini dulu tinggal di reminder-schedule/_components/shared.ts; berkas itu
- * kini mengekspornya ulang, jadi semua impor lama tetap bekerja.
- */
 import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 
@@ -14,10 +6,8 @@ export const STATUS_JADWAL: readonly StatusJadwal[] = ['pending', 'done', 'cance
 
 export const CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Troubleshooting', 'Training', 'Maintenance', 'Standby Event', 'Internal'];
 
-// Kategori yang men-trigger auto form_review ke Guest
 export const REVIEW_TRIGGER_CATEGORIES = ['Konfigurasi', 'Demo Product', 'Konfigurasi & Training', 'Training'] as const;
 
-// Kategori yang wajib memilih Onsite/Remote saat status  Completed
 export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 export function formatDate(dateStr: string) {
@@ -25,14 +15,12 @@ export function formatDate(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-// Generate batch_id untuk 1 submission multi-tanggal (fallback kalau crypto.randomUUID tidak ada)
 export function newBatchId(): string {
   return (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** Bentuk minimal baris jadwal untuk aturan di berkas ini. */
 export interface JadwalRingkas {
   project_name: string;
   category: string;
@@ -43,12 +31,6 @@ export interface JadwalRingkas {
   created_by?: string | null;
 }
 
-/**
- * Boleh mengubah (status / detail) jadwal ini? - satu sumber untuk tombol Update Status,
- * Re-Schedule, dan Edit (useTurunanJadwal.bolehEditReminder) dan untuk DIWAYPI.
- * Pimpinan tidak pernah boleh; admin & Manager selalu; selain itu hanya pelaku
- * jadwalnya sendiri (pelaksana, Sales-nya, atau pembuatnya).
- */
 export function bolehUbahJadwal(
   u: { username?: string | null; full_name?: string | null } | null,
   r: JadwalRingkas,
@@ -61,10 +43,6 @@ export function bolehUbahJadwal(
     || (!!u?.username && r.created_by === u.username));
 }
 
-/**
- * Jadwal kategori insentif lain dengan nama proyek yang sama (yang belum dibatalkan) -
- * dasar pertanyaan "ini kelanjutan proyek yang sudah ada?" saat membuat jadwal baru.
- */
 export function proyekSerupa<T extends JadwalRingkas>(daftar: readonly T[], nama: string, kategori: string): T[] {
   if (!adalahKategoriInsentif(kategori)) return [];
   const n = normalkanNama(nama);
@@ -75,7 +53,6 @@ export function proyekSerupa<T extends JadwalRingkas>(daftar: readonly T[], nama
     && r.status !== 'cancelled');
 }
 
-/** Isian wajib sebelum jadwal disimpan. null = lengkap. */
 export function galatIsianJadwal(
   f: { project_name: string; assigned_to: string; due_date: string; address: string; sales_name?: string | null; category: string },
   perluPelaksana: boolean,
@@ -88,14 +65,12 @@ export function galatIsianJadwal(
   return null;
 }
 
-/** Baris "Jadwal" di pesan WA jadwal baru - satu atau beberapa tanggal. */
 export function barisJadwalWA(tanggal: string[], jam?: string | null): string {
   return tanggal.length > 1
     ? `🕐 *Jadwal (${tanggal.length} hari):* ${tanggal.map(d => formatDate(d)).join(', ')}${jam ? ' · ' + jam : ''}`
     : `🕐 Jadwal: *${formatDate(tanggal[0])}${jam ? ' · ' + jam : ''}*`;
 }
 
-/** Pesan WA "JADWAL BARU" untuk pelaksana - assign tunggal maupun massal. */
 export function pesanJadwalBaru(namaPenerima: string, f: {
   project_name: string; description: string; product?: string | null; category: string; address: string;
   sales_name: string; sales_division?: string | null; pic_name?: string | null; pic_phone?: string | null; notes?: string | null;

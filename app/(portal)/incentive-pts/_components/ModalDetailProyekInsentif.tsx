@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalDetailProyekInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { ModalPortal } from '@/components/shared';
 import { bisaKonfig, bisaInput, type CurrentUser } from './aturan-halaman';
 import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, type SkemaInsentif, formatRupiah, formatPct, ROLE_LABELS, TRANCHE_STATUS } from './calc';
@@ -59,16 +58,6 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                 </div>
               </div>
 
-              {/*
-                Controller Automation yang dipilih di Reminder Schedule.
-                Datanya SUDAH tersimpan sejak dulu (requires_controller_automation
-                + controller_automation_brand) dan sudah tampil sebagai lencana di
-                kartu daftar - tapi hilang begitu detailnya dibuka. Padahal justru
-                di sinilah ia dibutuhkan: brand Controller-lah yang menjelaskan
-                kenapa sebuah proyek jatuh ke skema Manager-sebagai-PIC (Extron /
-                Wyrestorm biasanya ditangani langsung Manager), jadi tanpa
-                keterangan ini pembagiannya terlihat seperti keputusan tanpa sebab.
-              */}
               <div className="rounded-xl p-3 border border-emerald-100 bg-emerald-50/60">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest"><IkonTeks nama="⚡" />Controller Automation</p>
@@ -86,23 +75,16 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                 </p>
               </div>
 
-              {/* Pembagian Incentive — auto-calculated, selalu tampil */}
               {(() => {
-                //  Skema dimuat async di loadAll() - kalau popup ini sempat terbuka
-                //  sebelum itu selesai (mis. refresh cepat), skema masih null.
-                //  Tanpa penjagaan ini seluruh popup detail proyek crash.
                 if (!skema) return <p className="text-sm text-gray-500">Memuat skema insentif...</p>;
                 const pool = detailProject.incentive_value || 0;
                 const effectiveMode = detailProject.mode_penyelesaian || 'onsite';
                 const effectivePool = pool > 0 ? pool : 1_000_000;
                 const isEstimate = pool <= 0 || !detailProject.mode_penyelesaian;
-                // Manager & Supervisor dibaca dari Struktur Organisasi (users.atasan_id + jabatan),
-                // BUKAN hardcode nama. Resolve PIC via id/nama, lalu walk-up pohon atasan.
                 const orgList = allUsers as unknown as OrgUser[];
                 const picId = resolveUserId((detailProject.pic_id || detailProject.assigned_to) as string, detailProject.assign_name, orgList);
                 const mgrUp = findUpline(picId, 'Manager', orgList);
                 const supUp = findUpline(picId, 'Supervisor', orgList);
-                // Fallback transisi (tanpa hardcode nama): pts_team_mappings utk supervisor, jabatan utk manager
                 const dbPtsMap = ptsTeamMappings.find(m => m.staff_user_id === detailProject.assigned_to);
                 const mgrUser = mgrUp
                   ? allUsers.find(u => u.id === mgrUp.id)
@@ -116,14 +98,9 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                 const supervisorId   = (supUser?.id        || '') as string;
                 const supervisorName = (supUser?.full_name || 'Supervisor') as string;
                 const displayProject: IncentiveProjectRow = { ...detailProject, incentive_value: effectivePool, mode_penyelesaian: effectiveMode };
-                //  Pratinjau memakai Support TAHUN PERTAMA - komposisinya berbeda tiap
-                //  tahun, jadi satu angka gabungan tidak akan pernah benar untuk
-                //  tahun mana pun. Rinciannya ada di daftar per tahun di bawah.
                 const supportTahun1 = detailSupports.find(x => x.tahunKe === 1)?.orang ?? [];
                 const splits = calculateIncentiveSplits(skema, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1, picId);
                 if (!splits.length) return null;
-                // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
-                // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.
                 const privileged = bisaInput(currentUser);
                 const myName = (currentUser?.full_name || '').toLowerCase().trim();
                 const visibleSplits = privileged
@@ -259,9 +236,6 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                           <span className="text-[11px] text-gray-500">{rentang}</span>
                         </div>
                         {th.orang.length === 0 ? (
-                          //  Bukan sekadar "kosong": tanpa Support di tahun itu, porsinya
-                          //  jatuh ke PIC menurut skema "tanpa support" - dan itu perlu
-                          //  terbaca supaya angkanya tidak terlihat seperti salah hitung.
                           <p className="text-[11px] text-gray-500 italic px-3 py-2">
                             Belum ada Troubleshooting yang selesai di tahun ini — porsi Support tahun ini diserap PIC.
                           </p>

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Profil -> Keamanan & Sandi -> Integrasi DIWAYPI. Token pribadi untuk asisten desktop DIWAYPI:
- * dibuat & dicabut lewat /api/integrasi/token (sesi cookie). Nilai token hanya tampil SEKALI
- * saat dibuat - setelah itu yang terlihat cuma 4 huruf terakhirnya.
- */
 import React, { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
@@ -20,14 +15,13 @@ export function ProfilIntegrasi() {
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
   const [tersalin, setTersalin] = useState(false);
-  //  Konfirmasi memakai dialog platform, bukan window.confirm bawaan peramban.
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
 
   const muat = useCallback(async () => {
     try {
       const r = await fetch('/api/integrasi/token', { cache: 'no-store' });
       if (r.ok) setDaftar(((await r.json()) as { token: Token[] }).token);
-    } catch { /* kartu tetap tampil tanpa daftar */ }
+    } catch {  }
   }, []);
   useEffect(() => {
     let batal = false;
@@ -63,7 +57,7 @@ export function ProfilIntegrasi() {
 
   const salin = async () => {
     if (!baru) return;
-    try { await navigator.clipboard.writeText(baru); setTersalin(true); setTimeout(() => setTersalin(false), 2000); } catch { /* pilih manual */ }
+    try { await navigator.clipboard.writeText(baru); setTersalin(true); setTimeout(() => setTersalin(false), 2000); } catch {  }
   };
 
   const aktif = (daftar ?? []).filter(t => !t.dicabut);

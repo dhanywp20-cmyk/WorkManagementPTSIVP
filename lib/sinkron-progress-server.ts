@@ -1,11 +1,3 @@
-/**
- * lib/sinkron-progress-server.ts - jembatan Request Schedule -> Project Progress, sisi SERVER.
- * Isi route /api/project-progress/sinkron dipindah ke sini supaya DIWAYPI (jadwal_buat)
- * menjalankan langkah yang sama persis tanpa sesi cookie. Pemetaannya dijelaskan di route.
- *
- * `db` = service role (tabel checklist_* hanya ditulis lewat server), `akun` = pelaku.
- * Yang diterima HANYA id reminder; isinya dibaca ulang di sini.
- */
 import { buatChecklist, type Akun } from '@/lib/checklist-server';
 import { triggersProjectProgress, type SyncOutcome } from '@/lib/project-progress-sync';
 import { BATAS } from '@/lib/checklist';
@@ -30,7 +22,6 @@ function normal(v: string | null | undefined): string {
   return (v ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/** Melempar hanya bila reminder tidak terbaca sama sekali (route -> 500). */
 export async function sinkronkanReminderKeProgress(db: Db, akun: Akun, ids: string[], baseUrl: string): Promise<SyncOutcome> {
   const out = { created: 0, skipped: 0, errors: [] as string[] };
   if (!ids.length) return out;
@@ -41,7 +32,6 @@ export async function sinkronkanReminderKeProgress(db: Db, akun: Akun, ids: stri
   if (error) throw new Error(error.message);
 
   const relevanSemua = ((rem ?? []) as Reminder[]).filter(r => !r.is_deleted && triggersProjectProgress(r.category));
-  // Satu jadwal multi-tanggal (batch) = SATU lokasi per penangan, bukan satu per hari.
   const dipakai = new Set<string>();
   const relevan = relevanSemua.filter(r => {
     if (!r.batch_id) return true;
@@ -98,7 +88,6 @@ export async function sinkronkanReminderKeProgress(db: Db, akun: Akun, ids: stri
       out.created++;
     } catch (e) {
       const pesan = e instanceof Error ? e.message : String(e);
-      // Index unik menolak sinkron ganda yang berjalan bersamaan - itu memang diinginkan.
       if (pesan.toLowerCase().includes('duplicate')) out.skipped++;
       else out.errors.push(`"${namaProyek}": ${pesan}`);
     }

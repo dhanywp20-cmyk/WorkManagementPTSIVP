@@ -1,15 +1,3 @@
-/**
- * uji/summary-project-linimasa.ts - Summary Project Phase 1 (quick wins), lihat docs/audit/project-summary-current-state.md.
- *
- *  1. Label status linimasa = label menu asalnya (Request Schedule STATUS_CONFIG, Design statusConfig) - dibaca dari
- *     berkas sumbernya supaya tidak bisa melenceng diam-diam.
- *  2. Terbuka / terlambat menurut aturan menu asal; tanggal Design = diajukan, Form Review = diisi (dulu "-").
- *  3. Penyaring "Belum selesai / Terlambat", penanda jadwal yang akan datang.
- *  4. Halaman: keadaan izin, galat dengan Coba Lagi (tanpa pesan teknis), kosong dengan Reset filter, konteks
- *     project di alamat (?project=), kartu mengikuti pencarian.
- *
- * Jalankan: npx tsx uji/summary-project-linimasa.ts
- */
 import { readFileSync } from 'fs';
 import type { DetailProject } from '../lib/summary-project';
 import { bangunLinimasa, diMasaDepan, LABEL_STATUS, saringLinimasa } from '../app/(portal)/summary-project/_components/linimasa';
@@ -20,7 +8,6 @@ function cek(nama: string, syarat: boolean, info = '') {
 }
 
 console.log('\n1. Label status = menu asal');
-/** Ambil `kode: { label: '...'` dari sebuah objek konfigurasi di berkas sumber (ikon/emoji dibuang). */
 const labelDari = (berkas: string, nama: string) => {
   const src = readFileSync(berkas, 'utf8');
   const blok = src.slice(src.indexOf(`export const ${nama}`), src.indexOf('};', src.indexOf(`export const ${nama}`)));

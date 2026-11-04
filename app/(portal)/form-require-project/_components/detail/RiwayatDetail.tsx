@@ -1,6 +1,5 @@
 'use client';
 
-/** RiwayatDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { AuditTrailPanel } from '@/components/shared';
 import { ProjectRequest } from '../shared';
 

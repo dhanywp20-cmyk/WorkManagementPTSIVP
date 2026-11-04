@@ -1,6 +1,5 @@
 'use client';
 
-/** useAlurPersetujuan - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { type JadwalRequest } from './RequestJadwalModal';
 import { supabase } from '@/lib/supabase';
 import { setSession } from '@/lib/auth';
@@ -72,19 +71,10 @@ export function useAlurPersetujuan(k: AlurPersetujuanKonteks) {
   const { adminRejectReason, adminRejectTarget, approveAssignTo, approveBatchSiblings, approveDate, approveStart, approveSupervisors, approveTarget, approveTarget2, approveTime, currentUser, fetchRemindersQuiet, guestUsers, internalRejectReason, internalRejectTarget, notify, proyekLamaTerpilih, resolveGrupInsentif, setAdminRejectReason, setAdminRejectSaving, setAdminRejectTarget, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveRouteSaving, setApproveSaving, setApproveSupervisors, setApproveTarget, setApproveTime, setCurrentUser, setDetailReminder, setInternalApproveSaving, setInternalApproveTarget, setInternalRejectReason, setInternalRejectSaving, setInternalRejectTarget, setProyekLamaTerpilih, setSaving, setShowRequestModal, setSupervisorAssignBatchSiblings, setSupervisorAssignSaving, setSupervisorAssignTarget, setSupervisorAssignTo, supervisorAssignBatchSiblings, supervisorAssignTarget, supervisorAssignTo, syncNewRemindersToProgress, teamUsers } = k;
   const { handleRequestJadwal } = useRequestJadwal({ currentUser, fetchRemindersQuiet, guestUsers, notify, proyekLamaTerpilih, resolveGrupInsentif, setCurrentUser, setProyekLamaTerpilih, setShowRequestModal });
 
-  // Handler: Sales Internal approve & teruskan ke Admin/Manager
   const { handleInternalApprove, handleInternalReject, handleInternalRejectConfirm, handleAdminReject, handleAdminRejectConfirm } = useTinjauInternal({ adminRejectReason, adminRejectTarget, currentUser, fetchRemindersQuiet, internalRejectReason, internalRejectTarget, notify, setAdminRejectReason, setAdminRejectSaving, setAdminRejectTarget, setInternalApproveSaving, setInternalApproveTarget, setInternalRejectReason, setInternalRejectSaving, setInternalRejectTarget, setSaving });
 
-  // Handler: Admin/Manager approve  route ke Supervisor tim (by tipe produk)
-  // Jalur UTAMA (bukan assign manual langsung). Supervisor tim yang cocok dgn
-  // product_type (product_team_map, Fase 1) yang WA dan harus assign lanjut ke
-  // anggota timnya / diri sendiri. "LED & LCD" bisa kena >1 tim -> semua di-WA,
-  // yang assign duluan yang eksekusi (1 tim, sesuai keputusan desain).
   const { handleApproveRoute, handleApproveAssign } = usePersetujuanAdmin({ approveAssignTo, approveBatchSiblings, approveDate, approveStart, approveSupervisors, approveTarget, approveTarget2, approveTime, currentUser, fetchRemindersQuiet, notify, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveRouteSaving, setApproveSaving, setApproveSupervisors, setApproveTarget, setApproveTime, setDetailReminder, syncNewRemindersToProgress, teamUsers });
 
-  // Handler: Supervisor assign ke anggota tim ATAU diri sendiri
-  // Tim penuh/sibuk = keputusan manual Supervisor (tidak ada hitungan kapasitas
-  // otomatis) - dia yang menilai, tinggal pilih "Saya kerjakan sendiri".
   const openSupervisorAssign = (r: Reminder, group: Reminder[]) => {
     setSupervisorAssignTarget(r);
     setSupervisorAssignBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to));
@@ -129,9 +119,6 @@ export function useAlurPersetujuan(k: AlurPersetujuanKonteks) {
     setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo('');
     fetchRemindersQuiet();
 
-    // Badge in-app - TETAP dikirim walau Supervisor kerjakan sendiri (isSelf),
-    // supaya ada catatan/link yang bisa dibuka lagi nanti, sama seperti assign
-    // ke anggota lain. WA ke diri sendiri tetap dilewati (tidak berguna).
     createNotification({
       user_id: assignee.id, type: 'reminder',
       title: isSelf ? '🗓️ Kamu jadi PIC jadwal ini' : '🗓️ Jadwal di-assign ke kamu',
@@ -153,7 +140,6 @@ export function useAlurPersetujuan(k: AlurPersetujuanKonteks) {
       await sendFonnteWA(assignee.phone_number, msg, undefined, 'reminder.assigned');
     }
 
-    // WA ke sales requester - kasih tau siapa yg akan menangani.
     try {
       const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
       if (salesUser?.phone_number) {

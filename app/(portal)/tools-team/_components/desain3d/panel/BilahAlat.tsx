@@ -1,9 +1,4 @@
 'use client';
-/**
- * Bilah atas Desain 3D - SATU baris (gaya aplikasi CAD): nama berkas & status · Kategori / Ruangan / Benda ·
- * Buka / Simpan / undo · sudut pandang · Ekspor (PNG, DXF, BOM, checklist, cetak, salin, .glb) · bantuan · layar
- * penuh. Dulu dua baris dengan belasan tombol sejajar; ekspor, salin, cetak & .glb kini satu menu.
- */
 import { useState } from 'react';
 import { ModalChecklistBom } from './ModalChecklistBom';
 import { IdentitasBerkas, BANTUAN_KONTROL } from './BilahBerkas';

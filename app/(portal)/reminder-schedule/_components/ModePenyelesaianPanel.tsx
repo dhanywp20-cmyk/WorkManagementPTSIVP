@@ -2,11 +2,6 @@
 import { InstallerPicker } from './InstallerPicker';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-/**
- * Panel "Mode Penyelesaian" (muncul saat klik Completed) — dipindah dari
- * app/reminder-schedule/page.tsx apa adanya (JSX identik). State & handler
- * tetap di page.tsx, komponen ini murni presentasional.
- */
 export function ModePenyelesaianPanel({
   modePenyelesaian, setModePenyelesaian,
   bastDate, setBastDate,
@@ -44,12 +39,6 @@ export function ModePenyelesaianPanel({
   setInstallerDaerah: (v: string) => void;
   savingMode: boolean;
   handleModeConfirm: () => void;
-  /**
-   * true = panel dibuka untuk MENGISI/MENGUBAH detail jadwal yang statusnya
-   * sudah Completed, bukan sebagai syarat sebelum menyelesaikan. Statusnya
-   * tidak ikut berubah, jadi judul & tombolnya tidak boleh menjanjikan
-   * "menyelesaikan" - itu yang bikin orang ragu menekannya.
-   */
   modeEditSaja?: boolean;
   setShowModeModal: (v: boolean) => void;
   setPendingStatus: (v: null) => void;
@@ -94,7 +83,6 @@ export function ModePenyelesaianPanel({
           )}
         </div>
 
-        {/* 1. Display Type — wajib pilih LED / LCD / Mix */}
         <div>
           <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🖥" />Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-500">(Mix = LED + LCD)</span></p>
           <div className="grid grid-cols-3 gap-2">
@@ -111,7 +99,6 @@ export function ModePenyelesaianPanel({
           </div>
         </div>
 
-        {/* 2. Controller Automation — Yes/No + brand */}
         <div>
           <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🎛" />Controller Automation <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">
@@ -139,7 +126,6 @@ export function ModePenyelesaianPanel({
           )}
         </div>
 
-        {/* 3. Middleware — Yes/No */}
         <div>
           <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🔌" />Middleware / System / Matrix <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">

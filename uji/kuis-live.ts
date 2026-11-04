@@ -1,8 +1,3 @@
-/**
- * uji/kuis-live.ts - aturan Kuis Live (ala Kahoot) Kelas Eksternal.
- *
- *   npx tsx uji/kuis-live.ts
- */
 import {
   HASIL_MS, HITUNG_MUNDUR_MS, PAPAN_MS, TOLERANSI_MS, anulirDari, distribusi, indeksTerhitung, jadwalLive, periksaJawab, poinKahoot,
   posisiSaya, rapikanDetik, rapikanUrlGambar, rapikanWarna, semuaMenjawab, statusLive, susunPapan, tahapEfektif, transisiLive,
@@ -22,7 +17,6 @@ const lobi: StatusLive = {
   detik_per_soal: 20, live_tahap: 'lobi', live_indeks: 0, live_urutan: [],
   live_soal_mulai: null, live_soal_tutup: null, live_sesi: 0,
 };
-/** Terapkan ubahan ke status (seperti UPDATE di basis data). */
 const terapkan = (k: StatusLive, u: UbahanLive | { galat: string }): StatusLive => {
   if ('galat' in u) throw new Error(u.galat);
   return { ...k, ...u } as StatusLive;
@@ -36,7 +30,6 @@ console.log('\n1. Peserta tidak bisa mulai sebelum admin menekan Mulai');
   cek('Mulai tanpa soal sah ditolak', 'galat' in transisiLive(lobi, 'live_mulai', T0, []));
 }
 
-//  Jadwal satu soal (20 dtk): siap 4 dtk -> soal 20 dtk (+toleransi) -> hasil -> papan -> soal berikutnya.
 const S = 20_000;
 const MULAI0 = T0 + HITUNG_MUNDUR_MS, HABIS0 = MULAI0 + S + TOLERANSI_MS;
 const AKHIR_HASIL0 = HABIS0 + HASIL_MS, AKHIR_PAPAN0 = AKHIR_HASIL0 + PAPAN_MS;
@@ -59,7 +52,6 @@ const s1 = terapkan(lobi, transisiLive(lobi, 'live_mulai', T0, ['q1', 'q2', 'q3'
   const j1 = jadwalLive(s1, MULAI1 + 1000);
   cek('soal 2 waktu penuh lagi', j1.tutupMs! - j1.mulaiMs! === S);
   cek('akhir tahap dilaporkan (untuk hitung mundur di layar)', jadwalLive(s1, HABIS0 + 10).akhirMs === AKHIR_HASIL0);
-  //  Soal ke-3 (terakhir): sesudah papan-nya -> selesai (podium).
   const satuPutaran = AKHIR_PAPAN0 - T0;
   const akhirSemua = T0 + 3 * satuPutaran;
   cek('papan soal terakhir', t(akhirSemua - 1) === 'papan:2');
@@ -111,11 +103,9 @@ console.log('\n5. Lewati: maju satu tahap sekarang juga');
   const keSoal2 = terapkan(kePapan, transisiLive(kePapan, 'live_lewati', x + 2000));
   cek('papan -> soal berikutnya (hitung mundur)', jadwalLive(keSoal2, x + 2000).tahap === 'siap' && keSoal2.live_indeks === 1);
   cek('soal berikutnya mulai 4 dtk lagi', Date.parse(keSoal2.live_soal_mulai!) === x + 2000 + HITUNG_MUNDUR_MS);
-  //  Jadwal sudah maju otomatis ke soal 2 tapi basis data masih mencatat soal 1.
   const y = MULAI1 + 1000;
   const lewat2 = terapkan(s1, transisiLive(s1, 'live_lewati', y));
   cek('Lewati memakai soal menurut jadwal (soal 2), bukan catatan lama', lewat2.live_indeks === 1 && tahapEfektif(lewat2, y) === 'hasil');
-  //  Papan soal terakhir -> selesai.
   const terakhir: StatusLive = { ...s1, live_indeks: 2, live_soal_mulai: iso(T0), live_soal_tutup: iso(T0 + S) };
   const zPapan = T0 + S + TOLERANSI_MS + HASIL_MS + 10;
   const akhir = terapkan(terakhir, transisiLive(terakhir, 'live_lewati', zPapan));
@@ -208,7 +198,6 @@ console.log('\n9. Isian admin');
 
 console.log('\n10. Jeda / Lanjutkan (momen membaca & diskusi)');
 {
-  //  Jeda di tengah soal 1: 5 dtk setelah pilihan terbuka -> sisa 15 dtk.
   const tJeda = MULAI0 + 5_000;
   const beku = terapkan(s1, transisiLive(s1, 'live_jeda', tJeda));
   cek('jeda tercatat', beku.live_jeda_pada === iso(tJeda));
@@ -232,7 +221,6 @@ console.log('\n10. Jeda / Lanjutkan (momen membaca & diskusi)');
   cek('lanjutkan tanpa jeda ditolak', 'galat' in transisiLive(jalan, 'live_lanjutkan', tLanjut + 1));
   cek('jeda di lobi ditolak', 'galat' in transisiLive(lobi, 'live_jeda', T0));
 
-  //  Jeda saat jawaban dibuka (diskusi) lalu lanjut: papan skor tampil penuh 6 dtk sesudahnya.
   const tHasil = HABIS0 + 2_000;
   const bekuHasil = terapkan(s1, transisiLive(s1, 'live_jeda', tHasil));
   cek('jeda di layar hasil tetap di hasil', jadwalLive(bekuHasil, tHasil + 900_000).tahap === 'hasil');

@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-tekstur.ts - tekstur gambar sendiri untuk lantai & dinding Desain 3D: kunci & ubin yang sah,
- * gambar mana yang ikut disimpan, dan validasi server (lib/tools-team.ts periksaDesain).
- *
- * Jalankan: npm test -- desain3d-tekstur
- */
 import {
   kunciTeksturBaru, kunciTeksturDipakai, POLA_KUNCI_TEKSTUR, teksturSah, UBIN_MAKS, UBIN_MIN, ubinSah, ulangTekstur,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';

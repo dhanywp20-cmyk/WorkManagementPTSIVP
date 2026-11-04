@@ -17,10 +17,6 @@ import { SimpanObjekSaya } from './benda/SimpanObjekSaya';
 import { DariPustaka } from './benda/DariPustaka';
 import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
 
-/**
- * Panel "Atur benda" - mengisi panel kanan di samping tampilan 3D, jadi
- * perubahan langsung terlihat tanpa menutupi kanvas. Bagian per jenis ada di panel/benda/.
- */
 export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto = false, onGambarObjek, semua, ruang }: PropsPanelBenda) {
   const c = useKonteksAtur({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto, onGambarObjek, semua, ruang });
   const { label, set } = c;
@@ -41,7 +37,6 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
 
         <DariPustaka c={c} />
 
-        {/* Bagian khusus jenis - tiap komponen hanya tampil untuk jenisnya sendiri. */}
         <AturDisplay c={c} />
         <AturRak c={c} />
         <AturLampu c={c} />

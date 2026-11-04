@@ -1,20 +1,13 @@
-/**
- * desain3d/bangun/dasar.ts - Primitif bersama (bahan, kotak, papan, pipa, batang, ekstrusi) & konteks pembangun.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import type * as T from 'three';
 import type { Benda } from '../inti';
 
-// ── Pembuat model ──────────────────────────────────────────────────────────
-
 export interface Bahan { THREE: typeof T; layar: (b: Benda) => T.Texture | null; model: (kunci: string) => T.Object3D | null }
 
-/** Yang dibutuhkan fungsi pembangun satu jenis benda (lihat bangun/index.ts). */
 export interface Konteks {
   THREE: typeof T; g: T.Group; b: Benda; bahan: Bahan;
-  /** Permukaan layar (konten / pola / gambar unggahan) seukuran w x h. */ muka: (w: number, h: number, z: number, y: number) => T.Mesh;
-  /** Warna utama pilihan engineer (#rrggbb) bila diisi. */ warnaB: string | undefined;
-  /** Warna utama atau warna bawaan model (angka / teks). */ W: (bawaan: number) => number; WS: (bawaan: string) => string;
+   muka: (w: number, h: number, z: number, y: number) => T.Mesh;
+   warnaB: string | undefined;
+   W: (bawaan: number) => number; WS: (bawaan: string) => string;
 }
 
 export function mat(THREE: typeof T, warna: number, opsi: Partial<T.MeshStandardMaterialParameters> = {}) {
@@ -25,9 +18,6 @@ export function kotak(THREE: typeof T, w: number, h: number, d: number, m: T.Mat
   const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); return o;
 }
 
-// ── Bentuk halus: sudut membulat & tepi bevel (bukan kotak tajam) ──────────
-
-/** Persegi panjang bersudut membulat di bidang XY, berpusat di (0, 0). */
 export function persegiBulat(THREE: typeof T, w: number, h: number, r: number): T.Shape {
   const a = Math.max(0.001, w / 2), b = Math.max(0.001, h / 2);
   const R = Math.max(0.0005, Math.min(r, a - 0.0002, b - 0.0002));
@@ -40,7 +30,6 @@ export function persegiBulat(THREE: typeof T, w: number, h: number, r: number): 
   return s;
 }
 
-/** Bevel yang muat: tidak lebih dari separuh ukuran terkecil. */
 export const bevelAman = (bevel: number, ...ukuran: number[]) => Math.max(0, Math.min(bevel, ...ukuran.map(u => u / 2 - 0.0006)));
 
 function ekstrusi(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, lengkung = 14, segBevel = 3) {
@@ -50,7 +39,6 @@ function ekstrusi(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, l
   });
 }
 
-/** Lempeng mendatar dari bentuk tampak atas (bentuk x -> x, bentuk y -> z); y = 0 .. tebal. */
 export function lempeng(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, m: T.Material, lengkung = 14, segBevel = 3) {
   const geo = ekstrusi(THREE, bentuk, tebal, bv, lengkung, segBevel);
   geo.rotateX(Math.PI / 2);
@@ -58,13 +46,11 @@ export function lempeng(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: num
   return new THREE.Mesh(geo, m);
 }
 
-/** Papan tampak atas bersudut membulat: w (x) x d (z), tebal ke atas dari y = 0. `halus` = segmen bevel (tepi lebih mulus). */
 export function papan(THREE: typeof T, w: number, d: number, tebal: number, r: number, m: T.Material, bevel = 0.006, halus = 3) {
   const bv = bevelAman(bevel, tebal, w, d);
   return lempeng(THREE, persegiBulat(THREE, w - 2 * bv, d - 2 * bv, r - bv), tebal, bv, m, halus > 3 ? 24 : 14, halus);
 }
 
-/** Blok tampak depan bersudut membulat: w (x) x h (y), tebal d berpusat di z = 0, alas y = 0. */
 export function blok(THREE: typeof T, w: number, h: number, d: number, r: number, m: T.Material, bevel = 0.004, halus = 3) {
   const bv = bevelAman(bevel, d, w, h);
   const geo = ekstrusi(THREE, persegiBulat(THREE, w - 2 * bv, h - 2 * bv, r - bv), d, bv, halus > 3 ? 24 : 12, halus);
@@ -72,7 +58,6 @@ export function blok(THREE: typeof T, w: number, h: number, d: number, r: number
   return new THREE.Mesh(geo, m);
 }
 
-/** Pipa melalui titik-titik dengan sudut tertekuk membulat (rangka meja, sandaran tangan). */
 export function pipa(THREE: typeof T, titik: [number, number, number][], jari: number, tekuk: number, m: T.Material, tutup = false) {
   const p = titik.map(([x, y, z]) => new THREE.Vector3(x, y, z));
   const n = p.length;
@@ -105,11 +90,6 @@ export function pipa(THREE: typeof T, titik: [number, number, number][], jari: n
   return new THREE.Mesh(new THREE.TubeGeometry(jalur, Math.max(24, n * 14), jari, 10, tutup), m);
 }
 
-/**
- * Lengkungkan geometri menjadi cekung ke +z: tiap verteks maju sebanding x^2
- * (busur berjari R). Dipakai sandaran kursi supaya memeluk punggung, bukan
- * papan datar.
- */
 export function lengkungkan(geo: T.BufferGeometry, R: number) {
   const pos = geo.attributes.position as T.BufferAttribute;
   for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) + (pos.getX(i) ** 2) / (2 * R));
@@ -117,7 +97,6 @@ export function lengkungkan(geo: T.BufferGeometry, R: number) {
   return geo;
 }
 
-/** Silinder dari titik a ke b (kaki miring, lengan kaki bintang). */
 export function tiangAntara(THREE: typeof T, a: T.Vector3, b: T.Vector3, jari: number, m: T.Material, jariUjung = jari) {
   const arah = b.clone().sub(a);
   const o = new THREE.Mesh(new THREE.CylinderGeometry(jariUjung, jari, arah.length(), 12), m);
@@ -126,10 +105,6 @@ export function tiangAntara(THREE: typeof T, a: T.Vector3, b: T.Vector3, jari: n
   return o;
 }
 
-/**
- * Batang setinggi 1 m yang alasnya di y = 0; skala-y diatur sesuaikanTinggi().
- * peran 'kaki' = dari lantai sampai `atas` (lokal); 'tiang' = dari puncak benda ke plafon.
- */
 export function batang(THREE: typeof T, w: number, d: number, m: T.Material, x: number, z: number, peran: 'kaki' | 'tiang', atas = 0, bulat = false) {
   const geo = bulat ? new THREE.CylinderGeometry(w / 2, w / 2, 1, 12) : new THREE.BoxGeometry(w, 1, d);
   geo.translate(0, 0.5, 0);
@@ -138,10 +113,8 @@ export function batang(THREE: typeof T, w: number, d: number, m: T.Material, x: 
   return o;
 }
 
-/** Bagian yang selalu di lantai (alas troli, roda). */
 export function diLantai(o: T.Object3D) { o.userData.peran = 'lantai'; return o; }
 
-/** Pelat pipih dari titik a ke b (lebar di sumbu x lokal, tebal di z lokal) - untuk lengan gunting. */
 export function pelatAntara(THREE: typeof T, a: T.Vector3, b: T.Vector3, lebar: number, tebal: number, m: T.Material) {
   const arah = b.clone().sub(a);
   const o = new THREE.Mesh(new THREE.BoxGeometry(tebal, arah.length(), lebar), m);

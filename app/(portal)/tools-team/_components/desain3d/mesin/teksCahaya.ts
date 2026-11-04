@@ -1,20 +1,8 @@
-/**
- * desain3d/mesin/teksCahaya.ts - Tulisan & pola grid yang tercetak DI CAHAYA gambar proyektor, seperti
- * simulator proyektor pabrikan: keterangan (nama, jarak lensa -> bidang, ukuran gambar, lux pusat) di
- * pojok kiri atas & lux di tiap pojok gambar. Tulisan menempel di bidang (ikut melengkung, mengecil bila
- * dilihat dari jauh) - bukan label yang melayang. Mode grid: pola garis 16 x 9 + bingkai, diagonal & lingkaran
- * pusat (test pattern) di seluruh gambar - bentuk gambar & sambungan antar proyektor langsung terlihat.
- *
- * Tiap blok tulisan = tekstur kecil (tajam, hemat memori) yang dipetakan lewat uv gambar (0..1) hanya ke
- * sel bidang gambar yang dilaluinya; di luar blok tekstur bening (uv dijepit di tepi bening).
- */
 import type * as T from 'three';
 import type { Mesin } from './tipe';
 
-/** Satu blok tulisan; x, y = pojok kiri atasnya, w, h = ukurannya - pecahan lebar / tinggi gambar (y dari atas). */
 export interface BlokTeks { x: number; y: number; w: number; h: number; baris: string[]; kanan?: boolean; tebalPertama?: boolean }
 
-/** Tinggi huruf = pecahan tinggi gambar (kecil & tidak mengganggu: terbaca bila kamera didekatkan). */
 export const TINGGI_HURUF = 0.018;
 
 function tekstur(THREE: Mesin['THREE'], b: BlokTeks): T.CanvasTexture {
@@ -30,16 +18,11 @@ function tekstur(THREE: Mesin['THREE'], b: BlokTeks): T.CanvasTexture {
   });
   const tx = new THREE.CanvasTexture(kv);
   tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
-  //  uv gambar (0..1, v ke atas) -> blok ini.
   tx.repeat.set(1 / b.w, 1 / b.h);
   tx.offset.set(-b.x / b.w, -(1 - b.y - b.h) / b.h);
   return tx;
 }
 
-/**
- * Gambar blok-blok tulisan di bidang gambar satu proyektor. `pos` & `uv` = sel bidang gambar (6 titik per
- * sel, dari mesin/sinar.ts).
- */
 export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: BlokTeks[]) {
   const { THREE, grupBantu } = m;
   for (const b of blok) {
@@ -61,18 +44,12 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(t, 2));
     const tulisan = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
       map: tekstur(THREE, b), transparent: true, depthWrite: false, toneMapped: false,
-      //  Hanya sisi depan (menghadap lensa / penonton): dari balik dinding tulisan tidak tampil terbalik.
       side: THREE.FrontSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
     }));
     tulisan.renderOrder = 3; grupBantu.add(tulisan);
   }
 }
 
-/**
- * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts), bingkai
- * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
- * tetap terlihat di permukaan putih. Hanya sisi yang menghadap lensa (ikut tembus bersama dinding yang disembunyikan).
- */
 export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color, kolom = 16, baris = 9) {
   const { THREE, grupBantu } = m;
   if (!pos.length) return;

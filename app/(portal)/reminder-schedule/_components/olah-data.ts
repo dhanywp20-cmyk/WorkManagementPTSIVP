@@ -1,15 +1,5 @@
-/**
- * Hitungan murni Reminder Schedule (dipisah dari page.tsx): pengelompokan baris daftar dan
- * data pie chart. Tanpa React / jaringan - diuji di uji/olah-reminder.ts.
- */
 import { PIE_COLORS } from './shared';
 
-/**
- * Reminder sekejadian digabung jadi satu baris tampilan:
- *  - batch_id sama (satu pengajuan multi-tanggal) selalu digabung, berapa pun tanggalnya;
- *  - selain itu, kelompok per project / kategori / tanggal / jam (bulk-assign 1 hari).
- * Urutan kelompok = urutan kemunculan pertama.
- */
 export function kelompokkanReminder<T extends { batch_id?: string | null; project_name?: string | null; title?: string | null; category?: string | null; due_date: string; due_time?: string | null }>(daftar: T[]): T[][] {
   const map = new Map<string, T[]>();
   for (const r of daftar) {
@@ -22,25 +12,18 @@ export function kelompokkanReminder<T extends { batch_id?: string | null; projec
 
 export interface IrisPie { label: string; value: number; color: string }
 
-//  Tanpa batas jumlah irisan: semua nilai tampil (legenda MiniPieChart digulir), supaya angka total
-//  di tengah donat sama dengan jumlah jadwal.
 function jadiPie(map: Record<string, number>, urut: boolean): IrisPie[] {
   let baris = Object.entries(map);
   if (urut) baris = baris.sort((a, b) => b[1] - a[1]);
   return baris.map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 }
-/** Hitung per kunci; `semua` = nilai kosong ikut dihitung (kategori), selain itu dilewati. */
 function hitung<T>(daftar: T[], kunci: (r: T) => string | null | undefined, semua = false): Record<string, number> {
   const map: Record<string, number> = {};
   daftar.forEach(r => { const k = kunci(r); if (semua || k) map[k as string] = (map[k as string] || 0) + 1; });
   return map;
 }
 
-/** Per kategori (urutan kemunculan). */
 export const pieKategori = (d: { category: string }[]) => jadiPie(hitung(d, r => r.category, true), false);
-/** Per divisi sales, terbanyak dulu. */
 export const pieDivisiSales = (d: { sales_division?: string | null }[]) => jadiPie(hitung(d, r => r.sales_division), true);
-/** Per handler yang ditugaskan (Team PTS IVP & MVI), semua. */
 export const pieTeamPts = (d: { assign_name?: string | null }[]) => jadiPie(hitung(d, r => r.assign_name), true);
-/** Per produk, terbanyak dulu. */
 export const pieProduk = (d: { product?: string | null }[]) => jadiPie(hitung(d, r => r.product), true);

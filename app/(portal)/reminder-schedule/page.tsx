@@ -38,7 +38,6 @@ import { KonteksJadwal, type NilaiKonteksJadwal } from './_components/konteks-ja
 import { useStateApproval } from './_components/useStateApproval';
 import { useStateModePenyelesaian } from './_components/useStateModePenyelesaian';
 
-
 function ReminderSchedulePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,9 +49,9 @@ function ReminderSchedulePageInner() {
   const [myReminders, setMyReminders]       = useState<Reminder[]>([]);
   const [currentUser, setCurrentUser]       = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]           = useState<TeamUser[]>([]);
-  const [managerUserId, setManagerUserId]   = useState('');  // app_settings.manager_user_id (Manager PTS yg boleh approve & assign)
-  const [myJabatan, setMyJabatan]           = useState('');  // jabatan akun login (utk deteksi Manager tanpa perlu set manager_user_id)
-  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal  boleh isi SBU (buat atas nama Sales External)
+  const [managerUserId, setManagerUserId]   = useState('');
+  const [myJabatan, setMyJabatan]           = useState('');
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false);
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
   const [listLoading, setListLoading]       = useState(false);
@@ -65,72 +64,24 @@ function ReminderSchedulePageInner() {
   const [detailReminder, setDetailReminder] = useState<Reminder | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
-  /*
-    Pertanyaan "kelanjutan proyek yang sama, atau pekerjaan terpisah?"
-
-    Satu proyek sering dikerjakan lewat beberapa jadwal - Konfigurasi Senin,
-    Training tiga hari kemudian. Tanpa ada yang menyatakan hubungannya,
-    Incentive Project membacanya sebagai DUA proyek dengan dua pool nominal.
-
-    Ditanyakan SAAT MEMBUAT, karena di situlah orangnya paling tahu jawabannya.
-    Menebaknya belakangan dari kemiripan nama adalah cara yang paling mudah
-    keliru, dan kekeliruannya tidak terlihat siapa pun.
-  */
   const [tanyaLanjutan, setTanyaLanjutan] = useState<{
     nama: string;
     sebelumnya: Reminder[];
     lanjut: (grup: string | null) => void;
   } | null>(null);
 
-  /*
-    Lapis 4 - mencari project SEBELUM form dibuka, bukan mengetiknya lalu
-    berharap platform mendeteksi kecocokan belakangan.
-
-    Pola yang sama seperti Create Ticket: pilih "Project yang sudah ada" /
-    "Project baru" lebih dulu. Kalau sudah ada, cari dan pilih - form yang
-    muncul SESUDAHNYA sudah terisi (alamat, PIC, produk, sales, brand),
-    tinggal menentukan kategori dan tanggal pekerjaan baru ini.
-
-    Karena project-nya sudah dipastikan sama lewat pencarian ini - bukan
-    ditebak dari kecocokan nama belakangan - pertanyaan "kelanjutan atau
-    terpisah?" (Lapis 1) tidak ditanyakan lagi untuk jalur ini. Menanyakannya
-    dua kali untuk jawaban yang sama hanya mengulang yang sudah dikatakan.
-  */
   const [langkahBuat, setLangkahBuat] = useState<'pilih' | 'cari' | null>(null);
-  /**
-   * Tujuan langkah 'pilih'/'cari' saat ini - form admin (ReminderFormModal)
-   * atau request Sales/Guest (RequestJadwalModal). Dua tombol pemicu ("Tambah
-   * Reminder" untuk admin/team, "Request Jadwal" untuk Sales/Guest) berbagi
-   * DUA LANGKAH YANG SAMA - hanya langkah konfirmasinya yang bercabang,
-   * supaya perbaikan pada satu jalur (mis. teks, urutan tombol) otomatis
-   * berlaku untuk keduanya.
-   */
   const [buatUntukGuest, setBuatUntukGuest] = useState(false);
   const [carianProyek, setCarianProyek] = useState('');
   const [praPilihProyek, setPraPilihProyek] = useState<Reminder | null>(null);
-  /**
-   * Seluruh jadwal lama untuk project yang dipilih lewat Lapis 4 - dipakai
-   * resolveGrupInsentif saat menyimpan, dan ditampilkan sebagai ringkasan.
-   * null berarti jadwal ini TIDAK melalui Lapis 4 (project baru, atau sunting).
-   */
   const [proyekLamaTerpilih, setProyekLamaTerpilih] = useState<Reminder[] | null>(null);
-  /** Isian awal RequestJadwalModal, hasil pilihan Lapis 4 di jalur Sales/Guest. */
   const [praFillGuest, setPraFillGuest] = useState<Partial<JadwalRequest> | null>(null);
 
-  /** Daftar project yang pernah tercatat, satu baris wakil (terbaru) per nama. */
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchProject(q);
   }, [searchParams]);
 
-  /*
-    Kategori mana yang dihitung sebagai proyek insentif kini DATA (diatur di
-    layar Skema Pembagian), bukan daftar yang dipaku di kode. Dimuat sekali
-    saat halaman dibuka; state penanda di bawah hanya untuk memicu render
-    ulang, karena adalahKategoriInsentif() membaca cache modul dan React tidak
-    tahu isinya berubah. Sebelum ini selesai, yang dipakai adalah daftar
-    bawaan - jadi tidak ada jendela waktu tanpa jawaban.
-  */
   const [, setKategoriDimuat] = useState(false);
   useEffect(() => {
     let hidup = true;
@@ -151,43 +102,29 @@ function ReminderSchedulePageInner() {
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [bulkTarget, setBulkTarget] = useState<'none' | 'ivp' | 'mvi' | 'ump'>('none');
-  const [extraDates, setExtraDates] = useState<string[]>([]); // hari tambahan (multi-tanggal sekali submit)
-  // Kalender-only selection - tidak mempengaruhi filter list/chart/summary
+  const [extraDates, setExtraDates] = useState<string[]>([]);
   const [calOnlyDay, setCalOnlyDay]         = useState<string | null>(null);
   const [sendingWA, setSendingWA]           = useState<string | null>(null);
 
-  // Delete Modal State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget]       = useState<Reminder | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
-  // Update Status with photo
   const [pendingStatus, setPendingStatus]   = useState<Status | null>(null);
   const [statusPhoto, setStatusPhoto]       = useState<File | null>(null);
   const [statusPhotoPreview, setStatusPhotoPreview] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const statusPhotoRef = useRef<HTMLInputElement>(null);
 
-  // Onsite / Remote Mode Modal
   const { showModeModal, setShowModeModal, modePenyelesaian, setModePenyelesaian, installerName, setInstallerName, installerUserId, setInstallerUserId, ptsCabangUsers, setPtsCabangUsers, installerDaerah, setInstallerDaerah, bastDate, setBastDate, displayType, setDisplayType, requiresMiddleware, setRequiresMiddleware, requiresControllerAuto, setRequiresControllerAuto, controllerBrand, setControllerBrand, pendingPhotoUrl, setPendingPhotoUrl, savingMode, setSavingMode, modeEditSaja, setModeEditSaja, resendingFormReview, setResendingFormReview } = useStateModePenyelesaian();
 
-  // Guest Request Jadwal State
   const [showRequestModal, setShowRequestModal] = useState(false);
-  /** Jawaban query review sudah tiba? Dipakai pintasan ?buat=1 di bawah. */
   const [jumlahReviewSiap, setJumlahReviewSiap] = useState(false);
-  /** Pintasan hanya boleh membuka modal sekali, bukan tiap kali render ulang. */
   const pintasanTerpakai = useRef(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
-  // Approve & Assign State (admin only)
   const { approveTarget, setApproveTarget, approveBatchSiblings, setApproveBatchSiblings, approveAssignTo, setApproveAssignTo, approveDate, setApproveDate, approveTime, setApproveTime, showRiwayat, setShowRiwayat, approveStart, setApproveStart, approveTarget2, setApproveTarget2, approveSaving, setApproveSaving, internalRejectTarget, setInternalRejectTarget, internalApproveTarget, setInternalApproveTarget, internalApproveSaving, setInternalApproveSaving, internalRejectReason, setInternalRejectReason, internalRejectSaving, setInternalRejectSaving, adminRejectTarget, setAdminRejectTarget, adminRejectReason, setAdminRejectReason, adminRejectSaving, setAdminRejectSaving, approveSupervisors, setApproveSupervisors, approveRouteSaving, setApproveRouteSaving, supervisorAssignTarget, setSupervisorAssignTarget, supervisorAssignBatchSiblings, setSupervisorAssignBatchSiblings, supervisorAssignTo, setSupervisorAssignTo, supervisorAssignSaving, setSupervisorAssignSaving } = useStateApproval();
 
-  /**
-   * Buat draft Project Progress dari reminder yang BARU dibuat. Tidak ada
-   * backfill untuk reminder lama - progres lampau tidak terekam, dan draft
-   * kosong justru menyesatkan. Sengaja tidak ditunggu dan tidak pernah
-   * melempar: kegagalannya hanya info, bukan pembatal penyimpanan reminder.
-   */
   const syncNewRemindersToProgress = async (rows: ReminderSnapshot[]) => {
     if (rows.length === 0) return;
     const hasil = await syncRemindersToProjectProgress(rows, {
@@ -202,12 +139,6 @@ function ReminderSchedulePageInner() {
     }
   };
 
-
-  /**
-   * Timeline khusus Project Progress. Dikirim hanya bila kategorinya memang
-   * pemicu; kalau user sempat memilih Konfigurasi lalu berganti kategori,
-   * tanggal yang terlanjur terisi tidak ikut tersimpan.
-   */
   const progressTimelinePayload = () =>
     triggersProjectProgress(formData.category)
       ? {
@@ -239,15 +170,10 @@ function ReminderSchedulePageInner() {
 
   const { daftarProyekLama, hasilCarianProyek, mulaiBuatReminder, mulaiRequestJadwal, konfirmasiProyekLama } = useProyekLama({ buatUntukGuest, carianProyek, emptyForm, praPilihProyek, reminders, setBuatUntukGuest, setCarianProyek, setEditingReminder, setExtraDates, setFormData, setLangkahBuat, setPraFillGuest, setPraPilihProyek, setProyekLamaTerpilih, setShowFormModal, setShowRequestModal });
 
-  // Filters - extended with team handler & category
   const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
   const [filterYear, setFilterYear]         = useState<string>('all');
   const [searchProject, setSearchProject]   = useState('');
   const [searchSales, setSearchSales]       = useState('');
-
-  // Auto-apply filter dari Global Search (?q=...)
-
-  // Init
 
   useEffect(() => {
     const user = getSession<TeamUser>();
@@ -259,15 +185,13 @@ function ReminderSchedulePageInner() {
     setCurrentUser(user);
     setLoginTime(Date.now());
 
-    // Fetch parallel - tidak tunggu satu selesai dulu
     Promise.all([
       fetchTeamUsers(),
       fetchGuestUsers(),
       fetchPTSCabangUsers(),
       fetchRemindersQuiet(user),
     ]).then(() => {
-      setAppReady(true); //  tampilkan konten setelah data siap
-      // Popup notif setelah data loaded
+      setAppReady(true);
       if (user && (user.role === 'team' || user.role === 'admin')) {
         cobaIdentitas(async pakaiUuid => await supabase
           .from('reminders')
@@ -288,7 +212,6 @@ function ReminderSchedulePageInner() {
       }
     });
 
-    // Realtime - subscribe setelah user di-set
     const ch = supabase.channel('reminders-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => {
         const u = getSession<TeamUser>() ?? user;
@@ -299,7 +222,6 @@ function ReminderSchedulePageInner() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  // Session timeout check
   useEffect(() => {
     const checkSession = () => {
       const valid = getSession();
@@ -314,15 +236,11 @@ function ReminderSchedulePageInner() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load Manager PTS (app_settings.manager_user_id) - dia berhak approve & assign
-  // di tahap admin_review walau role-nya 'team' (Manager, bukan admin).
   useEffect(() => {
     supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle()
       .then((res: { data: { value: unknown } | null }) => { const v = res.data?.value; if (v) setManagerUserId(String(v).replace(/^"|"$/g, '')); });
   }, []);
 
-  // Ambil jabatan akun login - Manager (jabatan='Manager') otomatis boleh approve
-  // & assign, tanpa admin harus set manager_user_id manual dulu.
   useEffect(() => {
     if (!currentUser?.id) return;
     supabase.from('users').select('jabatan, is_internal_sales').eq('id', currentUser.id).maybeSingle()
@@ -332,33 +250,9 @@ function ReminderSchedulePageInner() {
       });
   }, [currentUser?.id]);
 
-  // H-1 WA auto-send
-  // Ditangani oleh Supabase Edge Function: daily-reminder (pg_cron)
-  // Berjalan otomatis setiap hari tanpa perlu buka halaman
-
   const { fetchTeamUsers, fetchGuestUsers, fetchPTSCabangUsers } = useMuatPengguna({ setGuestUsers, setPtsCabangUsers, setTeamUsers });
 
   const { fetchRemindersForUser, fetchRemindersQuiet, fetchReminders } = useMuatJadwal({ currentUser, managerUserId, setFetchError, setListLoading, setReminders });
-
-  // CRUD
-
-  /*
-    Kembalikan project ke daftar Incentive PTS.
-
-    Pasangan dari tombol "Keluarkan dari Incentive" di sana. Daftar Incentive
-    diturunkan dari halaman ini - kategori Konfigurasi / Konfigurasi & Training
-    / Training yang berstatus selesai - jadi satu-satunya yang bisa menahannya
-    adalah penanda `incentive_excluded`. Tombol ini melepas penanda itu.
-
-    Sengaja HANYA muncul pada jadwal yang memang sedang dikeluarkan. Tombol
-    yang selalu terlihat tetapi tidak mengubah apa pun mengajari orang untuk
-    mengabaikannya, dan lama-lama tombol yang benar-benar penting ikut
-    diabaikan.
-  */
-  // layakIncentive/diluarIncentive: lihat _components/shared.ts - tombol Sync
-  // tampil pada SETIAP jadwal yang memenuhi syarat, bukan hanya yang sedang
-  // dikeluarkan (tombol yang tidak bisa ditemukan lebih buruk daripada
-  // tombol yang kadang kelihatan sebelum saatnya).
 
   const [syncing, setSyncing] = useState<string | null>(null);
 
@@ -369,16 +263,12 @@ function ReminderSchedulePageInner() {
       .update({ incentive_excluded: false }).eq('id', r.id);
     setSyncing(null);
     if (error) {
-      // Kolomnya belum dipasang - sebut berkas SQL-nya, jangan biarkan orang
-      // menebak dari pesan basis data yang mentah.
       notify('error', /does not exist/i.test(error.message)
         ? 'Fitur ini belum aktif — Admin perlu menjalankan sql/incentive-keluarkan-proyek.sql lebih dulu.'
         : 'Gagal sync: ' + error.message);
       return;
     }
     if (!memangDiluar) {
-      // Tidak ada yang berubah; katakan apa adanya, jangan mengaku memperbaiki
-      // sesuatu yang memang sudah benar.
       notify('success', `"${r.project_name}" memang sudah masuk daftar Incentive PTS.`);
       await fetchRemindersQuiet();
       return;
@@ -391,16 +281,6 @@ function ReminderSchedulePageInner() {
       new_value: 'ikut dihitung di Incentive',
       notes: 'Dikembalikan lewat tombol Sync ke Incentive PTS',
     });
-    /*
-      Sync TIDAK PERNAH menulis bast_date - lihat komentar di atas fungsi ini.
-      Kalau baris yang barusan disinkronkan kebetulan tidak punya BAST sama
-      sekali (proyek lama dari sebelum modal Completed mewajibkan BAST, atau
-      backup-nya kosong di semua baris batch), tombolnya akan langsung hilang
-      lagi setelah loadAll() karena layakIncentive() tidak melihat bast_date -
-      tapi Generate Tahapan di Incentive PTS tetap tidak akan pernah muncul.
-      Tanpa peringatan ini, itu terlihat seperti "sudah beres" padahal masih
-      tertahan - persis yang terjadi pada Steak 21 Gading Serpong.
-    */
     notify(r.bast_date ? 'success' : 'error',
       r.bast_date
         ? `"${r.project_name}" kembali masuk daftar Incentive PTS.`
@@ -410,65 +290,28 @@ function ReminderSchedulePageInner() {
     await fetchRemindersQuiet();
   }
 
-  /**
-   * Jadwal kategori insentif yang sudah ada untuk nama proyek ini.
-   *
-   * Dibaca dari daftar yang SUDAH termuat, bukan kueri baru - halaman ini
-   * memang sudah memegang seluruh reminder yang boleh dilihat pengguna, dan
-   * satu permintaan tambahan tiap kali orang menekan Simpan adalah pemborosan
-   * yang tidak perlu.
-   */
-  /**
-   * Pakai kelompok yang sudah ada di antara `sumber`, atau buat baru dan tandai
-   * seluruh baris `sumber` dengannya.
-   *
-   * Dipakai dua tempat: tombol "Satu proyek yang sama" di langkah 4-pertanyaan
-   * (Lapis 1), dan pemilihan project lewat pencarian saat membuat jadwal baru
-   * (Lapis 4). Satu fungsi, supaya dua jalan menuju kesimpulan yang sama tidak
-   * bisa diam-diam menghasilkan aturan yang berbeda.
-   */
   const { resolveGrupInsentif, cariProyekSerupa, handleSave } = useSimpanJadwal({ bulkTarget, currentUser, editingReminder, emptyForm, extraDates, fetchRemindersQuiet, formData, guestUsers, notify, progressTimelinePayload, proyekLamaTerpilih, reminders, setBulkTarget, setEditingReminder, setExtraDates, setFormData, setProyekLamaTerpilih, setSaving, setShowFormModal, setTanyaLanjutan, setView, syncNewRemindersToProgress, teamUsers });
 
   const { handleDelete, openDeleteModal, handleStatusChange, handleConfirmStatusUpdate, bukaEditDetailPelaksanaan, handleModeConfirm, handleResendFormReview } = useAksiStatus({ bastDate, controllerBrand, currentUser, deleteTarget, detailReminder, displayType, fetchRemindersQuiet, guestUsers, installerDaerah, installerName, installerUserId, modeEditSaja, modePenyelesaian, notify, pendingPhotoUrl, pendingStatus, reminders, requiresControllerAuto, requiresMiddleware, setBastDate, setControllerBrand, setDeleteConfirmText, setDeleteTarget, setDetailReminder, setDisplayType, setInstallerDaerah, setInstallerName, setInstallerUserId, setModeEditSaja, setModePenyelesaian, setPendingPhotoUrl, setPendingStatus, setRequiresControllerAuto, setRequiresMiddleware, setResendingFormReview, setSavingMode, setShowDeleteModal, setShowModeModal, setStatusPhoto, setStatusPhotoPreview, setUpdatingStatus, statusPhoto });
-
-  /**
-   * Label field reminder untuk catatan audit & pesan WA, supaya catatannya
-   * menyebut APA yang berubah - bukan sekadar "Detail reminder disunting".
-   */
 
   const { availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, sourceReminders, projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign, isMyReviewStage, bolehEditReminder, canInternalApprove, canAddReminder, isGuest } = useTurunanJadwal({ currentUser, filterCategory, filterStatus, filterYear, managerUserId, productFilter, reminders, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay, teamUsers });
 
   const { jalankanBulkDelete, toggleSelectId, toggleSelectAll } = useAksiMassalJadwal({ filteredReminders, notify, selectedIds, setBulkConfirm, setBulkDeleting, setReminders, setSelectMode, setSelectedIds });
 
-  //  Aturan siapa melihat jadwal apa: _components/data-reminder.ts
   const { openEdit, handleReschedule, handleSendWA, handleExportExcel } = useAksiJadwal({ currentUser, fetchRemindersQuiet, filteredReminders, notify, reminders, rescheduleTarget, setDetailReminder, setEditingReminder, setExtraDates, setFormData, setRescheduleTarget, setSendingWA, setShowFormModal });
 
-  // Filters
-
-
-  // Cek Form Review menggantung (guest/sales)
-  // Kriterianya ada di lib/form-review-gate.ts, bukan di sini, karena pintasan
-  // "buat" di dashboard menegakkan aturan yang sama.
   useEffect(() => {
     if (!isGuest || !currentUser?.full_name) return;
     hitungReviewMenggantung(currentUser.full_name)
       .then(n => { setPendingReviewCount(n); setJumlahReviewSiap(true); });
   }, [isGuest, currentUser?.full_name]);
 
-  // Pintasan "buat" dari dashboard (?buat=1)
-  // Dashboard hanya menautkan ke sini; yang memutuskan boleh atau tidaknya
-  // tetap halaman ini. Untuk Sales, keputusan itu bergantung pada jumlah form
-  // review yang menggantung - dan jumlah itu baru diketahui setelah query di
-  // atas selesai. Karena itu pintasan menunggu jawabannya dulu: membuka modal
-  // sebelum jawabannya tiba sama saja melewati penjagaan.
   useEffect(() => {
     if (!currentUser || searchParams.get('buat') !== '1' || pintasanTerpakai.current) return;
     if (isGuest) {
       if (!jumlahReviewSiap) return;
       pintasanTerpakai.current = true;
       if (pendingReviewCount === 0) { mulaiRequestJadwal(); return; }
-      // Kalau ditahan, katakan sebabnya. Tanpa ini pintasan terasa rusak:
-      // halamannya terbuka, tapi form yang dituju tidak pernah muncul.
       setToast({ type: 'error', msg: `Selesaikan dulu ${pendingReviewCount} form review Demo/BAST yang belum dinilai.` });
       setTimeout(() => setToast(null), 5000);
       return;
@@ -479,10 +322,6 @@ function ReminderSchedulePageInner() {
     }
   }, [searchParams, currentUser, isGuest, jumlahReviewSiap, pendingReviewCount, canAddReminder]);
 
-  // Deep-link dari notifikasi (?open=<id>): buka detail reminder-nya langsung,
-  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, reminders yang di-refetch
-  // berkala (realtime) akan membuka lagi detailnya tiap kali walau user
-  // sudah menutupnya.
   const sudahBukaDariNotif = useRef(false);
   useEffect(() => {
     if (sudahBukaDariNotif.current) return;
@@ -495,26 +334,16 @@ function ReminderSchedulePageInner() {
     }
   }, [searchParams, reminders]);
 
-  // Cari Supervisor tim sesuai tipe produk saat modal Approve dibuka
   useEffect(() => {
     if (!approveTarget) { setApproveSupervisors([]); return; }
-    // Isi dari usulan Sales supaya admin tinggal menyetujui atau membetulkan.
     const t = approveTarget as { progress_start_date?: string | null; progress_target_date?: string | null };
     setApproveStart(t.progress_start_date ?? '');
     setApproveTarget2(t.progress_target_date ?? '');
     resolveSupervisorsForProductType(approveTarget.product_type).then(setApproveSupervisors);
   }, [approveTarget]);
 
-  // Handler: Guest Request Jadwal
   const { handleRequestJadwal, handleInternalApprove, handleInternalReject, handleInternalRejectConfirm, handleAdminReject, handleAdminRejectConfirm, handleApproveRoute, handleApproveAssign, openSupervisorAssign, handleSupervisorAssignConfirm } = useAlurPersetujuan({ adminRejectReason, adminRejectTarget, approveAssignTo, approveBatchSiblings, approveDate, approveStart, approveSupervisors, approveTarget, approveTarget2, approveTime, currentUser, fetchRemindersQuiet, guestUsers, internalRejectReason, internalRejectTarget, notify, proyekLamaTerpilih, resolveGrupInsentif, setAdminRejectReason, setAdminRejectSaving, setAdminRejectTarget, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveRouteSaving, setApproveSaving, setApproveSupervisors, setApproveTarget, setApproveTime, setCurrentUser, setDetailReminder, setInternalApproveSaving, setInternalApproveTarget, setInternalRejectReason, setInternalRejectSaving, setInternalRejectTarget, setProyekLamaTerpilih, setSaving, setShowRequestModal, setSupervisorAssignBatchSiblings, setSupervisorAssignSaving, setSupervisorAssignTarget, setSupervisorAssignTo, supervisorAssignBatchSiblings, supervisorAssignTarget, supervisorAssignTo, syncNewRemindersToProgress, teamUsers });
 
-  /**
-   * Semua yang MENUNGGU TINDAKAN saya, bukan cuma yang saya kerjakan sendiri.
-   * Item yang menunggu saya menugaskan atau menyetujui punya assigned_to
-   * kosong, jadi menghitung `assigned_to === username` saja akan melewatkannya
-   * sama sekali. Tiap baris membawa alasannya, supaya dari lonceng sudah jelas
-   * apa yang diminta.
-   */
   const perluAksiSaya: { r: Reminder; alasan: string; warna: string }[] = (() => {
     if (!currentUser) return [];
     const hasil: { r: Reminder; alasan: string; warna: string }[] = [];
@@ -526,8 +355,6 @@ function ReminderSchedulePageInner() {
     };
     for (const r of reminders) {
       if (r.status === 'done' || r.status === 'cancelled') continue;
-      // Urutan pengecekan = urutan mendesaknya. Yang menunggu SAYA bertindak
-      // didahulukan daripada yang tinggal saya kerjakan sendiri.
       if (r.routing_status === 'supervisor_assign' && r.assigned_supervisor_id === currentUser.id) {
         tambah(r, 'Perlu kamu tugaskan ke tim', '#f59e0b');
       } else if (r.routing_status === 'admin_review' && (isAdmin || isManager)) {
@@ -543,7 +370,6 @@ function ReminderSchedulePageInner() {
 
   const myActiveReminders = perluAksiSaya.map(x => x.r);
 
-  // Login handler
   const handleLogout = () => {
     setSelectMode(false); setSelectedIds(new Set()); setFilterStatus('all'); setFilterYear('all'); setFilterCategory('all');
     setSearchProject(''); setSearchSales(''); setSearchDivisionSales('');
@@ -551,17 +377,10 @@ function ReminderSchedulePageInner() {
     setSelectedCalDay(null);
     clearSession();
     setCurrentUser(null); setLoginTime(null);
-    // Redirect ke halaman login dashboard (parent window jika di dalam iframe)
     const target = window.top !== window ? window.top : window;
     if (target) target.location.href = '/dashboard';
   };
 
-  // Not ready - tampilkan loading screen saat pertama kali fetch data
-  /*
-    Konteks halaman (_components/konteks-jadwal.tsx): satu objek berkelompok untuk seluruh komponen di bawah,
-    menggantikan ±130 props yang dulu diteruskan satu per satu. Dua setter dibungkus seperti di PopupDetailJadwal
-    lama: keduanya menjaga modeEditSaja tidak tertinggal menyala (lihat catatan di JSX bawah).
-  */
   const konteksJadwal: NilaiKonteksJadwal = {
     sesi: { currentUser, isAdmin, isGuest, isManager },
     izin: { bolehEditReminder, canApproveAssign, canInternalApprove, isMyReviewStage },
@@ -592,18 +411,10 @@ function ReminderSchedulePageInner() {
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
-      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
-          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
-          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
-          aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
-        {/* Toast */}
         <Toast notif={toast} />
 
-        {/* ── RESCHEDULE MODAL ── */}
         {rescheduleTarget && (
           <RescheduleModal
             reminder={rescheduleTarget}
@@ -612,15 +423,11 @@ function ReminderSchedulePageInner() {
           />
         )}
 
-        {/* ── REQUEST JADWAL MODAL (Guest/Sales) ── */}
         {showRequestModal && currentUser && (
           <RequestJadwalModal
             salesName={currentUser.full_name}
             salesUsername={currentUser.username}
             salesDivision={currentUser.sales_division ?? ''}
-            // Tampilkan pilih Sales External (SBU) utk Sales Internal ATAU Marketing -
-            // sama dgn siapa yg boleh lewati gerbang review (isInternalOrMarketing).
-            // Kalau tidak dipilih = request atas nama diri sendiri (tanpa CC External).
             isInternalSales={myIsInternalSales || currentUser.team_type === 'Marketing'}
             externalSalesUsers={guestUsers
               .filter(g => !g.is_internal_sales && g.id !== currentUser.id)
@@ -631,7 +438,6 @@ function ReminderSchedulePageInner() {
           />
         )}
 
-        {/* ── TOLAK MODAL (Sales Internal, tahap internal_review) ── */}
         {internalRejectTarget && (
           <RejectReasonModal
             target={internalRejectTarget}
@@ -643,8 +449,6 @@ function ReminderSchedulePageInner() {
           />
         )}
 
-        {/* M4 — TOLAK MODAL (Admin/Manager, tahap admin_review) - dulu tidak ada
-            jalur ini, hanya Approve atau Hapus permanen tanpa alasan tercatat. */}
         {adminRejectTarget && (
           <RejectReasonModal
             target={adminRejectTarget}
@@ -663,7 +467,6 @@ function ReminderSchedulePageInner() {
           handleInternalApprove={handleInternalApprove}
         />
 
-        {/* ── APPROVE & ASSIGN MODAL (Admin only) ── */}
         {approveTarget && canApproveAssign && (
           <ApproveAssignModal
             approveTarget={approveTarget}
@@ -689,7 +492,6 @@ function ReminderSchedulePageInner() {
           />
         )}
 
-        {/* ── SUPERVISOR ASSIGN MODAL ── */}
         {supervisorAssignTarget && (
           <SupervisorAssignModal
             supervisorAssignTarget={supervisorAssignTarget}
@@ -714,8 +516,6 @@ function ReminderSchedulePageInner() {
           handleDelete={handleDelete}
         />
 
-        {/* ── FORM MODAL (Tambah / Edit Reminder) ── */}
-        {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
         <BulkDeleteConfirmModal
           jumlah={selectedIds.size}
@@ -724,12 +524,6 @@ function ReminderSchedulePageInner() {
         />
       )}
 
-      {/*
-        Pertanyaan kelanjutan proyek. Bukan peringatan yang bisa diabaikan:
-        keduanya pilihan yang sah, dan platform tidak punya dasar untuk memilih
-        sendiri. Yang salah bukan "membuat dua jadwal" - itu wajar - melainkan
-        membiarkan hubungannya tidak dinyatakan.
-      */}
       {tanyaLanjutan && (
         <TanyaLanjutanModal
           tanyaLanjutan={tanyaLanjutan}
@@ -738,12 +532,6 @@ function ReminderSchedulePageInner() {
         />
       )}
 
-      {/*
-        Lapis 4, langkah 'pilih': ditanyakan sebelum form terlihat sama sekali,
-        seperti Create Ticket. Menunda pertanyaan ini sampai form terbuka
-        berarti orang sudah mulai mengetik sebelum tahu ada jalan yang lebih
-        cepat.
-      */}
       {langkahBuat === 'pilih' && (
         <PilihTipeReminderModal
           buatUntukGuest={buatUntukGuest}
@@ -757,15 +545,6 @@ function ReminderSchedulePageInner() {
         />
       )}
 
-      {/*
-        Lapis 4, langkah 'cari': tahap sendiri yang ringan, hanya kotak cari dan
-        hasilnya - bukan bagian dari form besar. Form penuh baru terbuka
-        SETELAH satu project dikonfirmasi lewat "OK, Isi Form", jadi begitu
-        form itu terlihat, ia sudah terisi. Diambil dari `reminders` yang sudah
-        termuat di halaman ini (sudah dibatasi lingkup pengguna), bukan kueri
-        baru - tidak ada permintaan tambahan ke server untuk menampilkan
-        pencarian ini.
-      */}
       {langkahBuat === 'cari' && (
         <CariProyekLamaModal
           buatUntukGuest={buatUntukGuest}
@@ -817,39 +596,12 @@ function ReminderSchedulePageInner() {
           setDetailReminder={setDetailReminder}
         />
 
-        {/* ── DETAIL POPUP ── */}
-        {/* Dicabut ke <body> lewat ModalPortal — alasan lengkapnya ada di
-            components/shared/ModalPortal.tsx. Singkatnya: `position: fixed`
-            bisa terperangkap leluhur ber-backdrop-filter, dan z-index bisa
-            terperangkap leluhur yang membentuk stacking context.
-
-            Modal ini Z.overlay (1000) — ia KANVAS DASAR. Popup yang dibuka DARI
-            dalamnya (Assign, Approve, Reject, Hapus) memakai Z.overlayTop
-            (1100) supaya selalu di atas kanvas ini. Dulu keduanya di angka yang
-            sama-sama benar (110 > 100) tapi tidak pernah dibandingkan karena
-            yang satu di-portal dan yang lain terkurung pembungkus `relative
-            z-10` — itulah sebabnya popup Assign muncul di belakang. */}
-        {/* setShowModeModal & setPendingStatus sengaja dibungkus: keduanya
-            menjaga modeEditSaja tidak tertinggal menyala. Kalau panel edit
-            ditutup/dibatalkan lalu jadwal LAIN ditandai Completed, flag yang
-            tertinggal akan membuat statusnya tidak pernah ikut tersimpan. */}
         {detailReminder && <ReminderDetailPopup detailReminder={detailReminder} />}
 
-        {/* ── HEADER ── */}
         <KepalaJadwal
           canAddReminder={canAddReminder} isGuest={isGuest} mulaiBuatReminder={mulaiBuatReminder} mulaiRequestJadwal={mulaiRequestJadwal} myActiveReminders={myActiveReminders} pendingReviewCount={pendingReviewCount} setShowBellPopup={setShowBellPopup} view={view}
         />
 
-        {/*
-          overflow-x-hidden SEMPAT dicoba di sini sebagai jaring pengaman,
-          lalu dicabut lagi: kalau masih ada elemen lain yang kebetulan lebih
-          lebar dari layar (dan ternyata masih ada - lihat perbaikan min-w-0
-          pada kolom Handler di kartu mobile di bawah), overflow-x-hidden
-          membuat kontennya terkunci TERPOTONG TANPA BISA DIGESER SAMA SEKALI
-          - lebih buruk dari sekadar halaman yang perlu digeser. Perbaikan
-          yang benar adalah membetulkan elemen yang melebar itu sendiri
-          (truncate/min-w-0 di sumbernya), bukan menyembunyikan gejalanya.
-        */}
         <IsiJadwal />
 
       </div>

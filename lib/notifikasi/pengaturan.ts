@@ -1,26 +1,3 @@
-/**
- * lib/notifikasi/pengaturan.ts - kanal mana yang aktif untuk tiap event.
- *
- * Sebelum berkas ini, jawabannya dipaku di `bawaanKanal` tiap event
- * (lib/notifikasi/katalog.ts) dan hanya bisa diubah dengan menyunting kode
- * lalu deploy ulang. Sekarang admin mengaturnya dari Admin Panel ->
- * Integrations, tersimpan di app_settings.
- *
- * ── YANG SENGAJA TIDAK DISIMPAN DI SINI ────────────────────────────────────
- *
- * TOKEN. Bukan kelalaian, melainkan aturan yang ditegakkan basis data:
- * app_settings punya trigger `tolak_rahasia_di_pengaturan()` yang MENOLAK
- * setiap kunci yang namanya mengandung token/secret/api_key/password/
- * credential (lihat sql/pengaturan-merek.sql). Trigger itu dipasang setelah
- * token gateway WhatsApp ditemukan tersimpan di sana dalam bentuk terbaca -
- * dan app_settings dibaca oleh siapa pun yang memegang anon key.
- *
- * Jadi token Fonnte & bot Telegram disimpan di tabel rahasia_integrasi
- * (Admin Panel -> Integrations, dibaca hanya oleh server lewat
- * lib/rahasia-server.ts). Yang boleh tinggal di app_settings hanyalah hal yang tidak
- * memberi akses kalau bocor: nyala/mati, chat id tujuan, dan matriks
- * event -> kanal.
- */
 
 import { supabase } from '@/lib/supabase';
 import { KATALOG_EVENT } from './katalog';
@@ -35,40 +12,23 @@ export const KANAL: { key: Kanal; label: string; warna: string }[] = [
 ];
 
 export interface PengaturanNotifikasi {
-  /** Saklar induk per kanal. Mati = event apa pun tidak lewat kanal itu. */
   aktif: Record<Kanal, boolean>;
-  /** Tujuan bawaan Telegram (id chat / grup). Bukan rahasia - hanya alamat. */
   telegramChatId: string;
-  /** event key -> daftar kanal. Yang tidak tercantum memakai bawaanKanal. */
   perEvent: Record<string, Kanal[]>;
-  /** Gateway WhatsApp yang dipakai. Lihat lib/notifikasi/penyedia-wa.ts. */
   waPenyedia: PenyediaWA;
-  /**
-   * Isian penyedia WA yang BUKAN rahasia (id nomor telepon, url webhook).
-   * Yang rahasia tidak pernah lewat sini - ia ke tabel rahasia_integrasi,
-   * karena app_settings terbaca oleh siapa pun yang memegang anon key.
-   */
   waConfig: Record<string, string>;
 }
 
 const KUNCI = 'notifikasi.kanal';
 
 export const BAWAAN: PengaturanNotifikasi = {
-  //  in_app & whatsapp menyala supaya perilaku platform TIDAK berubah saat
-  //  berkas ini pertama kali dipasang - keduanya memang sudah berjalan.
-  //  telegram mati: belum ada token, menyalakannya hanya akan menghasilkan
-  //  kegagalan diam-diam di setiap pengiriman.
   aktif: { in_app: true, whatsapp: true, telegram: false },
   telegramChatId: '',
   perEvent: {},
-  //  Fonnte sebagai bawaan bukan preferensi, melainkan keadaan hari ini:
-  //  itulah gateway yang sedang melayani produksi. Bawaan apa pun yang lain
-  //  akan membuat pemasangan berkas ini diam-diam mengubah jalur pengiriman.
   waPenyedia: 'fonnte',
   waConfig: {},
 };
 
-/** Kanal yang berlaku untuk sebuah event, sesudah saklar induk diterapkan. */
 export function kanalUntuk(eventKey: string, p: PengaturanNotifikasi): Kanal[] {
   const dari = p.perEvent[eventKey]
     ?? (KATALOG_EVENT.find(e => e.key === eventKey)?.bawaanKanal as Kanal[] | undefined)
@@ -85,10 +45,6 @@ export async function bacaPengaturan(paksa = false): Promise<PengaturanNotifikas
     if (data?.value) {
       const j = JSON.parse(data.value) as Partial<PengaturanNotifikasi>;
       cache = {
-        //  Digabung dengan BAWAAN, bukan dipakai mentah: kalau kelak ada kanal
-        //  baru, baris tersimpan yang belum mengenalnya tidak membuat
-        //  p.aktif[kanalBaru] jadi undefined - yang akan terbaca sebagai mati
-        //  di satu tempat dan meledak di tempat lain.
         aktif: { ...BAWAAN.aktif, ...(j.aktif ?? {}) },
         telegramChatId: j.telegramChatId ?? '',
         perEvent: j.perEvent ?? {},
@@ -97,7 +53,7 @@ export async function bacaPengaturan(paksa = false): Promise<PengaturanNotifikas
       };
       return cache;
     }
-  } catch { /* diam - jatuh ke bawaan */ }
+  } catch {  }
   cache = { ...BAWAAN };
   return cache;
 }

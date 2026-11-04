@@ -1,5 +1,4 @@
 'use client';
-/** Kartu hasil: susunan & pratinjau grid, ukuran, resolusi, jarak pandang, daya, panas, berat. */
 import { f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import type { AlatLED } from './alat';
 

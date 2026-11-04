@@ -1,9 +1,3 @@
-/**
- * uji/monitor.ts - /api/monitor untuk pemantau eksternal (JARVIS Sentinel): token, bentuk jawaban, dan
- * tidak ada isi baris yang bocor. Klien Supabase tiruan - tidak ada jaringan.
- *
- * Jalankan: npm test -- monitor
- */
 import { readFileSync } from 'fs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { tokenCocok, bentukCron, jawabMonitor, kumpulkanMonitor, PANJANG_TOKEN_MIN } from '../lib/monitor';
@@ -17,7 +11,6 @@ function cek(nama: string, syarat: boolean, detail = '') {
 interface Kueri { tabel: string; kolom: string; head: boolean; filter: string[]; batas?: number; sinyal: boolean; satu: boolean; upsert?: unknown }
 type Hasil = { data?: unknown; error?: unknown };
 
-/** Pembangun query tiruan: mencatat apa yang diminta, menjawab lewat `jawab`. */
 function klienTiruan(jawab: (q: Kueri) => Hasil | Promise<Hasil>) {
   const kueri: Kueri[] = [];
   const db = {
@@ -54,7 +47,6 @@ const GALAT = [
   { jumlah: 2, pesan: 'x', jalur: null },
 ];
 
-/** Jawaban normal: DB hidup, jejak cron ada, dua jenis galat. */
 const jawabSehat = (q: Kueri): Hasil => {
   if (q.tabel === 'app_settings' && q.head) return { data: null, error: null };
   if (q.tabel === 'app_settings') return { data: { value: JEJAK }, error: null };

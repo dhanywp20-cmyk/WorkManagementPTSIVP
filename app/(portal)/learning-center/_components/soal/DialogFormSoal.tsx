@@ -1,6 +1,5 @@
 'use client';
 
-/** DialogFormSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Material } from '../shared';
 import { UnggahGambarSoal } from './UnggahGambarSoal';
@@ -26,12 +25,6 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
           <p className="text-xs text-slate-500 mb-3">
             {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
           </p>
-          {/*
-            Tujuan penyimpanannya dibaca dari isian yang berlaku SEKARANG, bukan
-            dari grup yang tadi diklik. Kedua isian di bawah tetap bisa diubah,
-            dan keterangan yang membeku pada nilai awal akan menyebut grup yang
-            bukan tempat soalnya benar-benar mendarat.
-          */}
           {modeGrup && (
             <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">
               <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-widest mb-0.5">Disimpan ke</p>

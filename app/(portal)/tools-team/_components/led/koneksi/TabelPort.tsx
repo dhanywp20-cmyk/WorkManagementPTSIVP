@@ -1,5 +1,4 @@
 'use client';
-/** Tabel port LAN: jumlah receiving card, piksel, beban, urutan. */
 import { f } from '../../bersama/ui';
 import { namaCadangan, namaPort, warnaPort } from './data';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';

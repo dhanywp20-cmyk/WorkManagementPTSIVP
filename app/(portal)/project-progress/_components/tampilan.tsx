@@ -1,13 +1,5 @@
 'use client';
 
-/**
- * Potongan tampilan Project Progress (berbasis checklist) yang dipakai di
- * aplikasi (/project-progress) dan di link share (/checklist/share/<token>,
- * /project-progress/share/<token>). Satu tempat supaya baris item, bar
- * progres, kendala, dan catatan bagian tidak menyimpang antara yang dilihat
- * admin dan yang dicentang tim di lapangan.
- */
-
 import { useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, Camera, Check, ChevronDown, Loader2 } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
@@ -23,8 +15,6 @@ export const TEMA = {
   warnaTua: '#1d4ed8',
   tint: '#eff6ff',
   garisTint: '#bfdbfe',
-  // Tone 700 / slate-500: lolos kontras AA untuk teks kecil di latar putih
-  // (standar audit tampilan platform - teks abu-abu tidak di bawah slate-500).
   selesai: '#15803d',
   selesaiTint: '#f0fdf4',
   kendala: '#b45309',
@@ -40,7 +30,6 @@ export function progresDariStat(s: StatChecklist): Progres {
   return { selesai: s.selesai, total: s.total, persen: s.total ? Math.round((s.selesai / s.total) * 100) : 0 };
 }
 
-/** Bar progres. Hijau begitu 100% - satu-satunya saat warna berganti. */
 export function BarProgres({ progres, tebal = 8, label = true }: { progres: Progres; tebal?: number; label?: boolean }) {
   const penuh = progres.total > 0 && progres.selesai === progres.total;
   return (
@@ -60,7 +49,6 @@ export function BarProgres({ progres, tebal = 8, label = true }: { progres: Prog
   );
 }
 
-/** Keping jumlah kendala - hanya tampil bila ada, supaya yang bermasalah menonjol. */
 export function KepingKendala({ jumlah }: { jumlah: number }) {
   if (!jumlah) return null;
   return (
@@ -71,10 +59,7 @@ export function KepingKendala({ jumlah }: { jumlah: number }) {
   );
 }
 
-// ── Catatan bagian: paragraf, poin, dan tabel pipa Markdown ────────────────
-
 function Sebaris({ teks }: { teks: string }) {
-  // Hanya **tebal** yang dirender; penanda lain sudah dibersihkan saat impor.
   const potong = teks.split(/(\*\*[^*]+\*\*)/g);
   return (
     <>
@@ -146,16 +131,10 @@ export function CatatanTeks({ teks }: { teks: string }) {
   return <div className="space-y-2.5">{blok}</div>;
 }
 
-// ── Baris item & panel bagian ──────────────────────────────────────────────
-
 export interface AksiItem {
-  /** Centang / batal. Tanpa ini kotak centang tampil hanya-baca. */
   onToggle?: (item: ChecklistItem) => void;
-  /** Buka form kendala untuk item ini. */
   onKendala?: (item: ChecklistItem) => void;
-  /** Unggah foto bukti. */
   onFoto?: (item: ChecklistItem, file: File) => void;
-  /** Tombol tambahan di kanan (mis. ubah/hapus item). */
   aksiTambahan?: (item: ChecklistItem) => ReactNode;
 }
 
@@ -181,7 +160,6 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
       </button>
 
       <div className="flex-1 min-w-0">
-        {/* Selesai ditandai centang hijau + latar hijau muda + nama & waktu - tanpa coretan (sulit dibaca). */}
         <p className="text-[13.5px] leading-snug" style={{ color: NETRAL.tinta }}>{item.teks}</p>
         {item.tertunda && (
           <p className="text-[11px] font-bold uppercase tracking-wide mt-0.5" style={{ color: TEMA.warna }}>Belum disimpan</p>
@@ -207,7 +185,6 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
         )}
         {item.foto_url && (
           <a href={item.foto_url} target="_blank" rel="noopener noreferrer" className="inline-block mt-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.foto_thumb_url ?? item.foto_url} alt={`Foto bukti: ${item.teks}`} loading="lazy"
               className="w-16 h-16 object-cover rounded-md" style={{ border: `1px solid ${NETRAL.garis}` }} />
           </a>
@@ -323,19 +300,12 @@ export function PanelBagian({
   );
 }
 
-/** Item dikelompokkan per bagian, urut sesuai urutan bagian lalu urutan item. */
 export function itemPerBagian(bagian: ChecklistBagian[], items: ChecklistItem[]): Map<string, ChecklistItem[]> {
   const peta = new Map<string, ChecklistItem[]>(bagian.map(b => [b.id, []]));
   for (const it of [...items].sort((a, b) => a.urutan - b.urutan)) peta.get(it.bagian_id)?.push(it);
   return peta;
 }
 
-// ── Kendala & foto (dipakai aplikasi maupun link share) ────────────────────
-
-/**
- * Form kendala satu item. Menandai kendala membatalkan centang selesai;
- * "Kendala selesai" melepas tandanya tanpa menyelesaikan itemnya.
- */
 export function ModalKendala({ item, onTutup, onSimpan }: {
   item: ChecklistItem | null;
   onTutup: () => void;
@@ -385,10 +355,6 @@ export function ModalKendala({ item, onTutup, onSimpan }: {
   );
 }
 
-/**
- * Kompres foto di peramban (full 1280px + thumb 320px, pola yang sama dengan
- * Project Progress lama untuk menekan egress), lalu kirim ke route server.
- */
 export async function kirimFoto(url: string, itemId: string, file: File): Promise<ChecklistItem> {
   const [full, thumb] = await Promise.all([
     compressImage(file, { maxDim: 1280, quality: 0.7 }),

@@ -1,11 +1,5 @@
 'use client';
 
-/**
- * Analytics -> tab Pemakaian: siapa membuka menu apa (GET /api/pemakaian, admin & Full Access).
- * Satu ukuran per bar (pengguna unik, satu warna merek) - rincian per kelompok ditulis sebagai
- * angka, bukan warna, jadi identitas tidak pernah bergantung pada warna. Tabelnya sendiri adalah
- * tampilan data (tidak ada grafik tanpa angka).
- */
 import { useEffect, useState } from 'react';
 import { StatCard } from '@/components/shared';
 import { DAFTAR_MENU } from '@/app/(portal)/_kerangka/daftar-menu';
@@ -24,7 +18,6 @@ const tgl = (s: string | null) => s ? new Date(s).toLocaleDateString('id-ID', { 
 const KARTU = 'rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden';
 const JUDUL = 'text-xs font-bold text-slate-500 uppercase tracking-widest';
 
-/** Bar tipis satu warna, ujung data membulat; lebar relatif terhadap nilai terbesar. */
 function Bar({ nilai, maks, ket }: { nilai: number; maks: number; ket: string }) {
   const lebar = maks > 0 ? Math.max(nilai > 0 ? 2 : 0, (nilai / maks) * 100) : 0;
   return (
@@ -78,7 +71,6 @@ export function PanelPemakaian() {
             </div>
           )}
 
-          {/* Jangkauan: berapa akun tiap kelompok yang membuka platform dalam rentang ini. */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {URUTAN_KELOMPOK.map(k => (
               <StatCard key={k} label={LABEL_KELOMPOK[k]} value={`${data.jangkauan[k].aktif} / ${data.jangkauan[k].total}`}

@@ -1,5 +1,4 @@
 'use client';
-/** Kartu informasi project & file aktif. */
 import { Kartu } from '../../bersama/ui';
 import { Teks } from './komponen';
 import { AksiFile } from './AksiFile';

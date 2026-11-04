@@ -1,12 +1,5 @@
-/**
- * desain3d/inti/perangkat.ts - Perangkat sumber presentasi: PC (berkabel ke rack), laptop, dongle
- * WyreStorm (USB-C, share nirkabel), HP & tablet (share lewat aplikasi). Ukuran awal, siapa yang
- * nirkabel (TANPA kabel - permintaan owner), layar tujuan share, dan busur garis share di kanvas.
- * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d-perangkat.ts).
- */
 import { type Benda, DISPLAY, type Jenis, type Titik, type TipePerangkat } from './tipe';
 
-/** Ukuran awal (m) - tapak di meja; laptop terbuka ±110°, dongle/HP/tablet tergeletak di meja. */
 export const SPEK_PERANGKAT: Record<TipePerangkat, { label: string; ket: string; w: number; h: number; d: number }> = {
   pc: { label: 'PC desktop', ket: 'Monitor 24" + CPU tower + keyboard & mouse (berkabel ke rack)', w: 0.78, h: 0.46, d: 0.5 },
   laptop: { label: 'Laptop', ket: 'Laptop 14" terbuka', w: 0.313, h: 0.215, d: 0.222 },
@@ -17,18 +10,15 @@ export const SPEK_PERANGKAT: Record<TipePerangkat, { label: string; ket: string;
 
 export const tipePerangkatDari = (b: Pick<Benda, 'tipePerangkat'>): TipePerangkat => b.tipePerangkat ?? 'laptop';
 
-/** Share layar nirkabel = tidak ada kabel ke rack sama sekali (dongle, HP, tablet, laptop + dongle). */
 export function nirkabel(b: Pick<Benda, 'jenis' | 'tipePerangkat' | 'pakaiDongle'>): boolean {
   if (b.jenis !== 'perangkat') return false;
   const t = tipePerangkatDari(b);
   return t === 'dongle' || t === 'hp' || t === 'tablet' || (t === 'laptop' && !!b.pakaiDongle);
 }
 
-/** Benda yang bisa menerima share layar. */
 export const JENIS_TUJUAN: Jenis[] = [...DISPLAY, 'bidang', 'proyektor'];
 export const bisaJadiTujuan = (b: Benda) => JENIS_TUJUAN.includes(b.jenis);
 
-/** Layar tujuan share: pilihan engineer bila masih ada, selain itu tujuan terdekat. null = belum ada tujuan. */
 export function tujuanShare(b: Benda, semua: Benda[]): Benda | null {
   if (!nirkabel(b)) return null;
   const calon = semua.filter(bisaJadiTujuan);
@@ -42,17 +32,12 @@ export function tujuanShare(b: Benda, semua: Benda[]): Benda | null {
   return terbaik;
 }
 
-/** Titik pusat muka depan tujuan (display: tengah layar; proyektor: badan). */
 export function titikTujuan(t: Benda): Titik {
   const r = (t.rot * Math.PI) / 180;
   const maju = t.jenis === 'proyektor' ? 0 : t.d / 2;
   return [t.x + Math.sin(r) * maju, t.elev + t.h / 2, t.z + Math.cos(r) * maju];
 }
 
-/**
- * Busur garis share dari perangkat ke tujuan: kurva kuadrat yang melengkung ke atas (seperti sinyal
- * yang "melompat"), n + 1 titik. Puncak naik 0,3 m + 20% jarak.
- */
 export function busurShare(dari: Titik, ke: Titik, n = 24): Titik[] {
   const jarak = Math.hypot(ke[0] - dari[0], ke[1] - dari[1], ke[2] - dari[2]);
   const tengah: Titik = [(dari[0] + ke[0]) / 2, Math.max(dari[1], ke[1]) + 0.3 + jarak * 0.2, (dari[2] + ke[2]) / 2];
@@ -62,7 +47,6 @@ export function busurShare(dari: Titik, ke: Titik, n = 24): Titik[] {
   });
 }
 
-/** Semua jalur share nirkabel di desain (untuk kanvas, legend & lembar cetak). */
 export function jalurShare(semua: Benda[]): { dari: Benda; ke: Benda; titik: Titik[] }[] {
   const hasil: { dari: Benda; ke: Benda; titik: Titik[] }[] = [];
   for (const b of semua) {

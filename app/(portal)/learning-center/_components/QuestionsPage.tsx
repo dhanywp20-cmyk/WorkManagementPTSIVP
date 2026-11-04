@@ -24,7 +24,6 @@ import { IsiBankSoal } from './IsiBankSoal';
 import { KepalaTambahSoal } from './KepalaTambahSoal';
 import { PilihModelGen } from './PilihModelGen';
 
-// Folder color palette
 export const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
   { gradient: 'linear-gradient(135deg,#10b981,#0d9488)', light: '#d1fae5', icon: '#10b981' },
@@ -35,7 +34,6 @@ export const FOLDER_COLORS = [
 ];
 export const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
 
-// Difficulty helpers
 export const DIFF_BG: Record<string, string> = { easy: '#ecfdf5', medium: '#fffbeb', hard: '#fff1f2' };
 export const DIFF_BORDER: Record<string, string> = { easy: '#d1fae5', medium: '#fef3c7', hard: '#ffe4e6' };
 export const DIFF_TEXT: Record<string, string> = { easy: '#065f46', medium: '#92400e', hard: '#be123c' };
@@ -46,7 +44,6 @@ export const DIFF_NUM_BG: Record<string, string> = {
 };
 export const DIFF_LABEL: Record<string, string> = { easy: 'Mudah', medium: 'Sedang', hard: 'Sulit' };
 
-/** Satu sisi hasil banding dua model AI. */
 export interface SisiBanding { model: string; rows: Record<string, unknown>[]; galat: string }
 
 export function QuestionsPage({ user }: { user: User }) {
@@ -55,47 +52,20 @@ export function QuestionsPage({ user }: { user: User }) {
   const [selectedMat, setSelectedMat] = useState<string>('');
   const [showGenerate, setShowGenerate] = useState(false);
   const [showAddManual, setShowAddManual] = useState(false);
-  /*
-    Menambah soal LANGSUNG ke grup yang sedang dibuka, bukan lewat tombol
-    "Tambah Manual" di kepala halaman.
-
-    Keduanya menambah satu soal, tapi titik berangkatnya berbeda dan itu yang
-    menentukan bedanya. Dari kepala halaman, materi dan nama grupnya belum
-    diketahui - keduanya harus dipilih dan diketik ulang, dan salah ketik satu
-    huruf pada nama grup diam-diam melahirkan grup kedua yang tampak sama.
-    Dari dalam grupnya, keduanya sudah pasti. Karena itu tombol lama tidak
-    diubah maupun dihilangkan: ia dipakai ketika grupnya memang belum ada.
-  */
   const [modeGrup, setModeGrup] = useState(false);
   const [newQ, setNewQ] = useState({
     question: '', option_a: '', option_b: '', option_c: '', option_d: '',
     correct_answer: 'A', difficulty: 'medium' as 'easy' | 'medium' | 'hard',
     material_id: '', batch_name: '',
     question_type: 'abcd' as 'abcd' | 'essay', model_answer: '',
-    /** Hanya berarti untuk soal essay - lihat sql/learning-center-essay-gambar.sql. */
     answer_format: 'text' as 'text' | 'image',
-    /** Gambar opsional soal (migrasi 054); '' = tanpa gambar. */
     gambar_url: '',
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
-  // Tipe soal untuk panel Generate AI - soal essay tidak dicampur dengan ABCD dalam satu batch generate
   const [genType, setGenType] = useState<'abcd' | 'essay'>('abcd');
   const [batchName, setBatchName] = useState('');
 
-  /*
-    Bandingkan dua model pada materi yang sama.
-
-    Ada karena pertanyaan "model mana yang lebih baik untuk soal saya" tidak
-    bisa dijawab dari spesifikasi. Model yang unggul di tolok ukur umum belum
-    tentu unggul pada materi teknis AV berbahasa Indonesia - dan satu-satunya
-    cara tahu adalah melihat keluarannya berdampingan pada materi yang benar-
-    benar dipakai.
-
-    Pembuat soal jalan sesekali, jadi dua panggilan sekali coba tidak
-    mengganggu jatah - berbeda dengan penilaian, di mana jumlah panggilan
-    justru menjadi soal utamanya.
-  */
   const [modeBanding, setModeBanding] = useState(false);
   const [modelBandingA, setModelBandingA] = useState('');
   const [modelBandingB, setModelBandingB] = useState('');
@@ -106,12 +76,10 @@ export function QuestionsPage({ user }: { user: User }) {
     ambilDaftarModel()
       .then(m => {
         setDaftarModelGen(m);
-        // Isian awal: dua model teratas yang berbeda, supaya tombolnya langsung
-        // bisa ditekan tanpa memilih apa pun dulu.
         if (m.length > 0) { setModelBandingA(p => p || m[0].id); }
         if (m.length > 1) { setModelBandingB(p => p || m[1].id); }
       })
-      .catch(() => { /* daftar gagal - mode banding disembunyikan, lihat render */ });
+      .catch(() => {  });
   }, []);
   const [genExtraPrompt, setGenExtraPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -124,7 +92,6 @@ export function QuestionsPage({ user }: { user: User }) {
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
   const [renameFolder, setRenameFolder] = useState<{ oldName: string; newName: string } | null>(null);
-  // collapsed state: key = `${matId}__${batchKey}` - collapsed by default
   const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
   const [renameSaving, setRenameSaving] = useState(false);
 
@@ -141,7 +108,6 @@ export function QuestionsPage({ user }: { user: User }) {
       confirmLabel: 'Hapus Semua',
       onConfirm: async () => {
         if (matIds.length > 0) {
-          // Get all question IDs in this folder, delete answers first
           const qIds = questions.filter(q => matIds.includes(q.material_id)).map(q => q.id);
           if (qIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', qIds);
           const { error } = await supabase.from('lc_questions').delete().in('material_id', matIds);
@@ -178,7 +144,6 @@ export function QuestionsPage({ user }: { user: User }) {
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
 
-  // Reset material selection when navigating between folders
   useEffect(() => {
     setSelectedMat('');
     setShowGenerate(false);
@@ -217,21 +182,6 @@ export function QuestionsPage({ user }: { user: User }) {
       )
     : visibleQuestions;
 
-  /*
-    Apakah kolom `urutan` sudah ada di database.
-
-    Diintip dari baris yang sudah termuat, bukan dari kueri terpisah:
-    PostgREST menghilangkan kunci untuk kolom yang tidak ada, sementara kolom
-    yang ada tapi belum diisi tetap muncul sebagai null. Bedanya itu yang
-    dipakai - dan cara ini tidak menambah satu pun permintaan.
-
-    Yang sengaja TIDAK dilakukan: menaruh .order('urutan') pada kueri
-    pemuatannya. Kalau kolomnya belum ada, seluruh kueri ditolak dan daftarnya
-    tampil KOSONG - persis kegagalan diam-diam yang pernah membuat daftar
-    Incentive mendadak kosong sebelum SQL-nya dijalankan. Pengurutan dikerjakan
-    di sisi klien, jadi tanpa kolomnya pun daftarnya tetap utuh; yang hilang
-    hanya tombol pengaturnya.
-  */
   const kolomUrutanAda = questions.length > 0
     && Object.prototype.hasOwnProperty.call(questions[0], 'urutan');
 
@@ -240,20 +190,10 @@ export function QuestionsPage({ user }: { user: User }) {
     correct_answer: 'A', model_answer: '', gambar_url: '',
   } as const;
 
-  /**
-   * Panggil AI sekali dan kembalikan baris soal siap simpan.
-   *
-   * Dipisah dari penyimpanannya supaya bisa dipanggil DUA kali dengan model
-   * berbeda tanpa satu pun menyentuh database - itu inti fitur banding: yang
-   * kalah tidak boleh meninggalkan jejak apa pun.
-   */
   const { hasilkanSoal, simpanHasil, handleGenerate, handleBanding } = useBuatSoal({ batchName, genCount, genDiff, genExtraPrompt, genType, kolomUrutanAda, load, materials, modelBandingA, modelBandingB, pdfFile, pdfRef, questions, selectedMat, setBatchName, setDialog, setGenExtraPrompt, setGenStatus, setGenerating, setHasilBanding, setPdfFile, setShowGenerate, user });
-
 
   const { handleDelete, handleDeleteMatGroup, handleSaveEdit, handleAddManual } = useKelolaSoal({ KOSONG_SOAL, editQ, kolomUrutanAda, load, materials, modeGrup, newQ, questions, setDialog, setEditQ, setNewQ, setShowAddManual, user });
 
-
-  /** Buka form tambah soal dengan materi & grup yang sudah terkunci dari konteks. */
   const bukaTambahDiGrup = (materialId: string, batchKey: string) => {
     setNewQ({
       ...KOSONG_SOAL, difficulty: 'medium', question_type: 'abcd', answer_format: 'text',
@@ -265,33 +205,9 @@ export function QuestionsPage({ user }: { user: User }) {
 
   const tutupTambahManual = () => { setShowAddManual(false); setModeGrup(false); };
 
-
-  /*
-    Penyusunan ulang ditahan dulu di layar, tidak langsung dikirim.
-
-    Menyusun urutan itu pekerjaan yang berlangsung: soal ke-7 naik empat
-    tingkat berarti empat kali tekan, dan menyimpan tiap tekanan berarti empat
-    perjalanan ke database untuk satu keputusan yang belum selesai diambil.
-    Menahannya juga berarti salah tekan bisa dibatalkan - selama belum
-    disimpan, tidak ada apa pun di database yang berubah.
-
-    Kunci petanya sama dengan kunci buka-tutup grup, jadi tiap grup punya
-    rancangannya sendiri dan menyusun satu grup tidak mengganggu yang lain.
-    Isinya daftar id, bukan nomor - nomornya baru dihitung saat disimpan,
-    supaya rancangan yang tertinggal tidak pernah menyimpan angka basi.
-  */
   const [urutanDraf, setUrutanDraf] = useState<Record<string, string[]>>({});
   const [menyimpanUrutan, setMenyimpanUrutan] = useState<string | null>(null);
 
-  /**
-   * Susunan yang TAMPIL untuk satu grup: rancangan bila ada, kalau tidak
-   * susunan tersimpan.
-   *
-   * Soal yang belum ada di rancangan - misalnya baru ditambahkan saat
-   * rancangannya masih terbuka - diletakkan di ekor, bukan dibuang. Tanpa itu
-   * soal yang baru saja disimpan akan hilang dari layar sampai halamannya
-   * dimuat ulang.
-   */
   const { susunanTampil, geserSoal, buangDraf, simpanUrutan } = useUrutanSoal({ load, setDialog, setMenyimpanUrutan, setUrutanDraf, urutanDraf });
 
   const goBack = () => {
@@ -299,7 +215,6 @@ export function QuestionsPage({ user }: { user: User }) {
     setSelectedFolder(null); setSelectedMat('');
   };
 
-  // Rename Folder Modal
   const renameFolderModalJSX = renameFolder ? (
   <ModalPortal>
     <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
@@ -339,7 +254,6 @@ export function QuestionsPage({ user }: { user: User }) {
   </ModalPortal>
   ) : null;
 
-  // Gemini usage helper
   const getGeminiUsage = () => {
     if (typeof window === 'undefined') return { count: 0, lastUsed: null };
     const today = new Date().toISOString().slice(0, 10);
@@ -348,17 +262,15 @@ export function QuestionsPage({ user }: { user: User }) {
     return { count, lastUsed };
   };
   const geminiUsage = getGeminiUsage();
-  const geminiRemaining = Math.max(0, 50 - geminiUsage.count); // conservative daily estimate
+  const geminiRemaining = Math.max(0, 50 - geminiUsage.count);
   const geminiLastUsedStr = geminiUsage.lastUsed
     ? new Date(geminiUsage.lastUsed).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     : null;
 
-  // Generate Panel (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const generatePanelJSX = (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-bold text-violet-800 flex items-center gap-2"><IkonTeks nama="✨" />Generate Soal dengan Gemini AI</h3>
-        {/* Gemini usage badge */}
         <div className="flex items-center gap-2 text-[11px] font-semibold flex-shrink-0">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${geminiRemaining <= 5 ? 'bg-rose-50 border-rose-200 text-rose-700' : geminiRemaining <= 15 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <span>{geminiRemaining <= 5 ? '⚠️' : geminiRemaining <= 15 ? '🟡' : '🟢'}</span>
@@ -371,7 +283,6 @@ export function QuestionsPage({ user }: { user: User }) {
           )}
         </div>
       </div>
-      {/* Limit info */}
       <div className="flex items-start gap-2 text-xs bg-violet-100/60 border border-violet-200 rounded-xl px-3 py-2 mb-4">
         <span><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
@@ -388,10 +299,6 @@ export function QuestionsPage({ user }: { user: User }) {
       <IsianGenerateSoal
         batchName={batchName} genCount={genCount} genDiff={genDiff} genExtraPrompt={genExtraPrompt} materials={materials} pdfFile={pdfFile} pdfRef={pdfRef} selectedMat={selectedMat} setBatchName={setBatchName} setDialog={setDialog} setGenCount={setGenCount} setGenDiff={setGenDiff} setGenExtraPrompt={setGenExtraPrompt} setPdfFile={setPdfFile} setSelectedMat={setSelectedMat} viewMaterials={viewMaterials}
       />
-      {/* ── Mode: satu model, atau bandingkan dua ──────────────────────────
-          Saklarnya hanya muncul bila daftar model bisa dibaca. Menawarkan
-          perbandingan yang pasti gagal karena modelnya tidak bisa dipilih
-          hanya membuang waktu orang. */}
       <PilihModelGen
         daftarModelGen={daftarModelGen} modeBanding={modeBanding} modelBandingA={modelBandingA} modelBandingB={modelBandingB} setHasilBanding={setHasilBanding} setModeBanding={setModeBanding} setModelBandingA={setModelBandingA} setModelBandingB={setModelBandingB}
       />
@@ -403,7 +310,6 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
       )}
 
-      {/* ── Hasil banding: berdampingan, dan HANYA satu yang bisa disimpan ── */}
       <HasilBandingSoal
         generating={generating} hasilBanding={hasilBanding} setHasilBanding={setHasilBanding} simpanHasil={simpanHasil}
       />
@@ -421,7 +327,6 @@ export function QuestionsPage({ user }: { user: User }) {
     </div>
   );
 
-  // Manual Add Modal (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const addManualModalJSX = showAddManual ? (
   <ModalPortal>
     <DialogFormSoal
@@ -430,16 +335,13 @@ export function QuestionsPage({ user }: { user: User }) {
   </ModalPortal>
   ) : null;
 
-  // SCREEN 1 - Folder Selection
   if (selectedFolder === null) {
     return (
       <div className="flex flex-col h-full">
-        {/* ── Header ── */}
         <KepalaTambahSoal
           questions={questions} rootFolders={rootFolders} setShowAddManual={setShowAddManual} setShowGenerate={setShowGenerate}
         />
 
-        {/* ── Content ── */}
         <IsiFolderSoal
           folderTree={folderTree} generatePanelJSX={generatePanelJSX} handleDeleteFolder={handleDeleteFolder} questions={questions} rootFolders={rootFolders} rootMaterials={rootMaterials} setRenameFolder={setRenameFolder} setSelectedFolder={setSelectedFolder} setSelectedSubFolder={setSelectedSubFolder} showGenerate={showGenerate}
         />
@@ -451,23 +353,19 @@ export function QuestionsPage({ user }: { user: User }) {
     );
   }
 
-  // SCREEN 2 - Folder View with questions
   const currentFolderNode = selectedFolder === '__root__' ? null : folderTree.children[selectedFolder];
   const subFolders = currentFolderNode ? Object.keys(currentFolderNode.children).sort() : [];
 
-  // Stats for filter chips
   const easyCount = filteredQuestions.filter(q => q.difficulty === 'easy').length;
   const mediumCount = filteredQuestions.filter(q => q.difficulty === 'medium').length;
   const hardCount = filteredQuestions.filter(q => q.difficulty === 'hard').length;
 
   return (
     <div className="flex flex-col h-full">
-      {/* ── Header ── */}
       <HeaderBankSoal
         easyCount={easyCount} filteredQuestions={filteredQuestions} goBack={goBack} hardCount={hardCount} mediumCount={mediumCount} search={search} selectedFolder={selectedFolder} selectedSubFolder={selectedSubFolder} setSearch={setSearch} setShowAddManual={setShowAddManual} setShowGenerate={setShowGenerate}
       />
 
-      {/* ── Content ── */}
       <IsiBankSoal
         buangDraf={buangDraf} bukaTambahDiGrup={bukaTambahDiGrup} currentFolderNode={currentFolderNode} editQ={editQ} expandedBatches={expandedBatches} filteredQuestions={filteredQuestions} generatePanelJSX={generatePanelJSX} geserSoal={geserSoal} handleDelete={handleDelete} handleDeleteMatGroup={handleDeleteMatGroup} handleSaveEdit={handleSaveEdit} kolomUrutanAda={kolomUrutanAda} load={load} menyimpanUrutan={menyimpanUrutan} questions={questions} search={search} selectedMat={selectedMat} selectedSubFolder={selectedSubFolder} setDialog={setDialog} setEditQ={setEditQ} setExpandedBatches={setExpandedBatches} setRenameFolder={setRenameFolder} setSelectedMat={setSelectedMat} setSelectedSubFolder={setSelectedSubFolder} showGenerate={showGenerate} simpanUrutan={simpanUrutan} subFolders={subFolders} susunanTampil={susunanTampil} urutanDraf={urutanDraf} viewMaterials={viewMaterials}
       />

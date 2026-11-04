@@ -1,8 +1,4 @@
 'use client';
-/**
- * Videowall LCD & interactive flat panel (IFP): ukuran -> konfigurasi -> daftar material -> penawaran.
- * Rumus & BOM di lib/av-hitung-display.ts; tabel harga & lembar BOM dipakai bersama dengan LED Videotron.
- */
 import { useState } from 'react';
 import { Angka, Catatan, f, Kartu, kelasInput, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import { bukaCetak, diagramSusunan, type Info, type Lembar, namaBerkas, unduhLembarPNG } from '../bersama/cetak';
@@ -44,12 +40,9 @@ export function KalkulatorDisplay() {
   const [project, setProject] = useState('');
   const [customer, setCustomer] = useState('');
   const [ppn, setPpn] = useState(11);
-  //  Harga terpisah per jenis: kunci baris BOM keduanya sebagian sama ("pasang", "stop-kontak").
   const [hargaVW, setHargaVW] = useState<Record<string, number>>({});
   const [hargaIFP, setHargaIFP] = useState<Record<string, number>>({});
 
-  // ── Videowall ──
-  //  Panel dari Pustaka (display dengan bezel > 0); bawaan kode bila pustaka kosong - sama dengan Ukuran Layar.
   const { entri } = usePustaka('display');
   const panelPustaka = entri.filter(e => angkaDari(e, 'bezel') > 0).map(e => ({
     nama: [teksDari(e, 'merek'), e.nama].filter(Boolean).join(' '), diagonalInci: angkaDari(e, 'diagonal'), bezelMm: angkaDari(e, 'bezel'), watt: angkaDari(e, 'watt', WATT_PANEL_BAWAAN),
@@ -76,7 +69,6 @@ export function KalkulatorDisplay() {
   const mVW: MasukanVideowall = { namaPanel: panel.nama, kolom, baris, screen, cadanganPanel: spare, pasang, sinyal, input, panjangSinyal, wattPanel: panel.watt, mediaPlayer: player };
   const bomVW = bomVideowall(mVW), dVW = dayaVideowall(mVW);
 
-  // ── IFP ──
   const ifpPustaka = entri.filter(e => angkaDari(e, 'bezel') === 0 && angkaDari(e, 'diagonal') >= 55).map(e => ({
     nama: [teksDari(e, 'merek'), e.nama].filter(Boolean).join(' '), diagonal: angkaDari(e, 'diagonal'), watt: angkaDari(e, 'watt', 0),
   }));
@@ -84,7 +76,6 @@ export function KalkulatorDisplay() {
   const [jarak, setJarak] = useState(6);
   const [jenisPandang, setJenisPandang] = useState<JenisPandang>('analitis');
   const saran = saranIFP(jarak, jenisPandang, daftarIFP.map(x => x.diagonal));
-  //  null = ikuti saran dari jarak pandang; angka = pilihan manual.
   const [iIFP, setIIFP] = useState<number | null>(null);
   const iSaran = saran.saran === null ? daftarIFP.length - 1 : daftarIFP.findIndex(x => x.diagonal === saran.saran);
   const ifp = daftarIFP[Math.min(iIFP ?? iSaran, daftarIFP.length - 1)];
@@ -100,7 +91,6 @@ export function KalkulatorDisplay() {
   const bomI = bomIFP(mIFP), dI = dayaIFP(mIFP);
   const kurangBesar = saran.saran === null;
 
-  // ── BOM & penawaran (jenis aktif) ──
   const barisBom = jenis === 'videowall' ? bomVW : bomI;
   const harga = jenis === 'videowall' ? hargaVW : hargaIFP;
   const setHarga = jenis === 'videowall' ? setHargaVW : setHargaIFP;

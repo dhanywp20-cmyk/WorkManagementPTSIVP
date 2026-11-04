@@ -1,25 +1,13 @@
-/**
- * desain3d/mesin/cahayaBenda.ts - Cahaya proyektor yang jatuh di BENDA (objek mapping, model impor,
- * furnitur, perangkat), dihitung per titik permukaan - bukan sel grid sinar yang kasar (dulu tampak
- * seperti bercak di bola). Permukaan benda dipecah halus (sisi segitiga <= ±1/12 ukuran benda), lalu
- * tiap titik terang bila:
- *   1. masuk bingkai gambar proyektor (model lensa inti/blending.ts: keGambar),
- *   2. menghadap lensa (sisi yang membelakangi tetap gelap),
- *   3. tidak terhalang benda lain / bagian benda itu sendiri (raycast lensa -> titik).
- * Terang = sudut datang (cos) supaya bentuk benda terbaca: bola terang di sisi yang menghadap lensa,
- * meredup ke tepi. Bayangan benda di lantai/dinding dibuat grid sinar (mesin/sinar.ts).
- */
 import type * as T from 'three';
 import { keGambar, type Lensa } from '../inti';
 import type { Mesin } from './tipe';
 
 export interface SumberCahaya {
   O: T.Vector3; L: Lensa; sasaran: T.Object3D[];
-  /** pengali terang (immersive diredam) */ kuat: number;
-  /** warna sinar (rgb linear 0..1) - benda ikut berwarna sesuai proyektor yang meneranginya */ warna: [number, number, number];
+   kuat: number;
+   warna: [number, number, number];
 }
 
-/** Batas segitiga hasil pemecahan per mesh, & titik total yang diuji keterhalangannya (raycast). */
 const MAKS_SEGITIGA = 6000, MAKS_SEGITIGA_KASAR = 1200, MAKS_RAYCAST = 15000;
 
 export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Object3D[], kasar: boolean) {
@@ -28,7 +16,6 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
   const ray = new THREE.Raycaster(); ray.near = 0.03;
   const arah = new THREE.Vector3(), keLensa = new THREE.Vector3();
   let sisaRaycast = kasar ? 0 : MAKS_RAYCAST;
-  /** Keterhalangan per (sumber, posisi) - titik kembar di segitiga bersebelahan cukup diuji sekali. */
   const cacheTerlihat = new Map<string, boolean>();
 
   const terlihat = (si: number, P: T.Vector3, jarak: number) => {
@@ -49,7 +36,6 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
     cacheTerlihat.set(kunci, hasil);
     return hasil;
   };
-  /** Warna cahaya di satu titik dari semua proyektor (rgb, 0 = gelap) - tiap proyektor dengan warna sinarnya. */
   const terang = (P: T.Vector3, N: T.Vector3): [number, number, number] => {
     const t: [number, number, number] = [0, 0, 0];
     sumber.forEach((s, si) => {
@@ -65,7 +51,7 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
   };
 
   const pos: number[] = [], warna: number[] = [];
-  const OPASITAS = 0.34; // sama dengan bidang gambar di permukaan (mesin/sinar.ts)
+  const OPASITAS = 0.34;
   const nm = new THREE.Matrix3();
   for (const a of akar) {
     a.traverse(o => {
@@ -79,7 +65,6 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
       if (!g.attributes.normal) { if (g === g0) g = g0.clone(); g.computeVertexNormals(); }
       nm.getNormalMatrix(mesh.matrixWorld);
       const P = g.attributes.position, Nn = g.attributes.normal;
-      //  Segitiga dunia: pecah sisi terpanjang sampai <= maksSisi (anggaran segitiga dibatasi).
       if (!g.boundingSphere) g.computeBoundingSphere();
       const skala = mesh.matrixWorld.getMaxScaleOnAxis();
       const maksSisi = Math.min(0.3, Math.max(0.04, ((g.boundingSphere?.radius ?? 0.5) * skala * 2) / 12));
@@ -98,7 +83,6 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
         const sisi = [s[0].distanceTo(s[1]), s[1].distanceTo(s[2]), s[2].distanceTo(s[0])];
         const e = sisi.indexOf(Math.max(...sisi));
         if (sisi[e] <= maksSisi || jadi.length + antre.length >= anggaran) { jadi.push(s); continue; }
-        //  Sisi a1-b1 dibelah di tengah: (a1, tengah, c) + (tengah, b1, c) - arah putar segitiga tetap.
         const a1 = e, b1 = (e + 1) % 3;
         const tv = s[a1].clone().lerp(s[b1], 0.5), tn = s[a1 + 3].clone().add(s[b1 + 3]).normalize();
         const satu: Sg = [s[0], s[1], s[2], s[3], s[4], s[5]], dua: Sg = [s[0], s[1], s[2], s[3], s[4], s[5]];
@@ -109,7 +93,6 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
         const t = [0, 1, 2].map(k => terang(s[k], s[k + 3]));
         if (t.every(x => x[0] + x[1] + x[2] <= 0)) continue;
         for (let k = 0; k < 3; k++) {
-          //  Naik 3 mm searah normal supaya tidak berkedip bertumpuk dengan permukaan benda.
           pos.push(s[k].x + s[k + 3].x * 0.003, s[k].y + s[k + 3].y * 0.003, s[k].z + s[k + 3].z * 0.003);
           warna.push(t[k][0] * OPASITAS, t[k][1] * OPASITAS, t[k][2] * OPASITAS);
         }

@@ -1,4 +1,3 @@
-/** Yang dibutuhkan panel Kalkulator LED: keadaan + ekspor. */
 import type { KeadaanLED } from '../useKeadaanLED';
 import type { useEksporLED } from '../useEksporLED';
 

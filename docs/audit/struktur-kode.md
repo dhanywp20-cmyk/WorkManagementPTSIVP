@@ -84,7 +84,9 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 4. **Arah ketergantungan satu jalan**: `app/<modul>` → `components/shared` → `lib/`. `lib/` tidak mengimpor `app/`.
    Modul tidak mengimpor `_components` modul lain — yang dipakai bersama naik ke `lib/<domain>/` atau `components/shared/`.
 5. **Satu tipe pengguna** bersama (`lib/tipe-pengguna.ts`), modul memperluasnya bila perlu (`Pengguna & {…}`).
-6. **Ambang yang dijaga otomatis** (`uji/struktur-kode.mjs`, sistem *ratchet*):
+6. **Tanpa komentar penjelasan di kode** (`app/`, `lib/`, `components/`): kode harus terbaca dari nama & strukturnya.
+   Hanya direktif alat yang boleh (`eslint-disable…`, `@ts-expect-error`, `/// <reference>`). Dijaga `uji/struktur-kode.mjs`.
+7. **Ambang yang dijaga otomatis** (`uji/struktur-kode.mjs`, sistem *ratchet*):
    berkas ≤ 600 baris · baris ≤ 300 karakter · < 25 props di satu baris. Pelanggar lama tercatat di
    `uji/data/struktur-baseline.json` dan **tidak boleh memburuk**; berkas baru tidak boleh melewati ambang.
    Setelah sebuah berkas dirapikan, kunci perbaikannya: `node scripts/ukur-struktur.mjs --baseline`.
@@ -93,7 +95,8 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 
 | Fase | Isi | Risiko | Status |
 |---|---|---|---|
-| 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai (PR ini)** |
+| 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai** |
+| 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
 | 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule selesai** (§5); berikutnya Request Design Project |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |

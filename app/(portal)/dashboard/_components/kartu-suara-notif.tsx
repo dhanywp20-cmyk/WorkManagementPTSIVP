@@ -1,10 +1,5 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
-/**
- * Admin Panel › Kelompok & Notifikasi › Suara notifikasi: dengarkan, ganti (unggah MP3/WAV/OGG/M4A
- * ≤ 1 MB & ≤ 6 detik), atur volume, kembalikan bawaan. Berlaku untuk alarm di halaman (web &
- * aplikasi Android saat terbuka) di semua akun. Penyimpanan & batas: lib/suara-notif.ts.
- */
 import React, { useEffect, useRef, useState } from 'react';
 import { MAKS_DETIK_SUARA, simpanSuaraNotif, SUARA_BAWAAN, type SuaraNotif, sumberSuara, unggahSuaraNotif, useSuaraNotif } from '@/lib/suara-notif';
 
@@ -16,7 +11,6 @@ export function KartuSuaraNotif() {
   const masukan = useRef<HTMLInputElement>(null);
   const pemutar = useRef<HTMLAudioElement | null>(null);
 
-  //  Pengaturan termuat / disimpan di tempat lain -> draf mengikuti (bila belum diubah di sini).
   const [acuan, setAcuan] = useState(tersimpan);
   if (acuan !== tersimpan) { setAcuan(tersimpan); setDraf(tersimpan); }
   useEffect(() => () => { pemutar.current?.pause(); }, []);
@@ -24,7 +18,6 @@ export function KartuSuaraNotif() {
   const berubah = draf.url !== tersimpan.url || draf.volume !== tersimpan.volume;
   const beritahu = (jenis: 'ok' | 'gagal', teks: string) => { setKabar({ jenis, teks }); setTimeout(() => setKabar(null), 5000); };
 
-  /** Pratinjau berkas yang baru dipilih diputar dari laptop (object URL) - tidak menunggu unduhan. */
   const lokal = useRef<{ url: string; src: string } | null>(null);
   useEffect(() => () => { if (lokal.current) URL.revokeObjectURL(lokal.current.src); }, []);
   const putar = (s: SuaraNotif) => {

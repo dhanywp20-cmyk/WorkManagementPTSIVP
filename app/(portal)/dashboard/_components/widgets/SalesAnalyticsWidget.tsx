@@ -1,22 +1,5 @@
 'use client';
 
-/**
- * SalesAnalyticsWidget.tsx - "Analytics Saya" (Sales/Marketing), tema
- * analytics dengan DATA MILIK SENDIRI. Menggabung 4 platform: Request
- * Schedule, Request Design Project, Form Review BAST, Ticket Troubleshooting.
- * Tiap panel hanya muncul kalau user punya menunya.
- *
- * Dipindah dari Widgets.tsx ke file sendiri supaya bisa dipanggil LANGSUNG
- * oleh Widgets.tsx registry lagi (lihat WIDGETS) tanpa masalah - ini murni
- * pemisahan file, bukan perubahan cara pakainya.
- *
- * Quick Action (Request Schedule/Design Project/Ticket/Form Review/Project
- * Progress) dirender DI DALAM kartu ini sendiri, di bawah kartu statistik -
- * bukan di luar/mengapit kartu ini seperti percobaan sebelumnya. Learning
- * Center SENGAJA tidak ada di sini (beda dari daftar Quick Action Team) -
- * sesuai permintaan eksplisit.
- */
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { hasMenu } from './permissions';
@@ -29,12 +12,6 @@ interface SalesAnalytics {
   ticket: { total: number; open: number; solved: number };
 }
 
-/**
- * Kartu ini menampilkan satu angka utama PLUS rincian pecahannya, jadi tidak
- * bisa langsung memakai StatCard bersama (yang hanya membawa satu angka).
- * Gayanya disamakan secara manual: permukaan putih, angka gelap, dan warna
- * kategori dipakai sebagai pita tepi - persis seperti StatCard.
- */
 function AnalyticStat({ accent, label, value, subs }: {
   accent: string; label: string; value: number;
   subs: { label: string; value: number }[];
@@ -70,8 +47,6 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, op
     let alive = true;
     (async () => {
       try {
-        // Scope "data sendiri": cocokkan lewat created_by (username) ATAU nama sales
-        // (full_name) - menangkap request/tiket yg dia buat maupun yg atas namanya.
         const [remRes, prRes, rvRes, tkRes] = await Promise.all([
           showSchedule ? supabase.from('reminders').select('status').or(`sales_name.eq.${user.full_name},created_by.eq.${user.username}`) : Promise.resolve({ data: [] }),
           showProject  ? supabase.from('project_requests').select('status').or(`requester_id.eq.${user.id},ivp_assignee.eq.${user.full_name}`) : Promise.resolve({ data: [] }),
@@ -105,7 +80,7 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, op
             solved: tk.filter(t => t.status === 'Solved').length,
           },
         });
-      } catch { /* silent */ }
+      } catch {  }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
@@ -117,8 +92,6 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, op
     <WidgetCard title="Analytics Saya" icon="📊" accent="#c8861d">
       {loading || !data ? <Loading /> : (
         <>
-          {/* Dua kolom sejak layar tersempit: satu kolom membuat empat kartu
-              memakan hampir seluruh layar ponsel. */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3">
             {showSchedule && (
               <AnalyticStat accent="#0e7490" label="Request Schedule" value={data.schedule.total}
@@ -137,12 +110,6 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, op
                 subs={[{ label: 'Aktif', value: data.ticket.open }, { label: 'Solved', value: data.ticket.solved }]} />
             )}
           </div>
-          {/*
-            Quick Action DI DALAM kartu ini sendiri, bukan mengapit dari luar
-            (percobaan sebelumnya) - chip proporsional (QuickActionChip),
-            bukan tombol lebar seperti PintasanBuat yang lama. Learning
-            Center sengaja tidak ada di sini.
-          */}
           {adaQuickAction && (
             <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
               {showSchedule && (
@@ -173,7 +140,6 @@ export const SalesAnalyticsWidget: React.FC<WidgetProps> = ({ user, openMenu, op
   );
 };
 
-/** Dipakai registry Widgets.tsx untuk tahu kapan kartu ini (stat ATAU quick action-nya) relevan ditampilkan. */
 export function hasSalesAnalyticsData(user: Parameters<typeof hasMenu>[0]): boolean {
   return hasMenu(user, 'reminder-schedule') || hasMenu(user, 'request-design-project')
     || hasMenu(user, 'form-bast') || hasMenu(user, 'ticket-troubleshooting') || hasMenu(user, 'project-progress');

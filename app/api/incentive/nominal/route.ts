@@ -9,20 +9,6 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-/**
- * /api/incentive/nominal - nominal total proyek insentif.
- *
- * Nominalnya hidup di tabel `incentive_nominal` yang terkunci (RLS tanpa
- * kebijakan, hak anon/authenticated dicabut): satu-satunya jalan baca & tulis
- * adalah route ini, yang memverifikasi pemanggil dengan service role.
- *
- *   GET  -> { data: { [reminderId]: nominal }, terbuka, aturan }
- *           Hanya proyek yang BERHAK dilihat pemanggil yang ikut (lihat
- *           lib/incentive-nominal.ts). Selebihnya tidak ada - bukan 0.
- *   POST -> simpan nominal satu proyek (seluruh baris sebatch). Input/penuh.
- *   PUT  -> ubah aturan siapa yang melihat nominal. Konfigurasi penuh.
- */
-
 type Hak = { role: string; incentive_akses?: string | null; allow_incentive_input?: boolean | null; access_level?: string | null };
 
 async function pemanggil(request: NextRequest) {
@@ -50,7 +36,6 @@ export async function GET(request: NextRequest) {
 
   const petugas = bisaInputNominal(hak);
   const aturan = await bacaAturan(supabase);
-  //  Bukan petugas & aturannya "petugas saja": tidak ada yang perlu dibaca.
   if (!petugas && aturan.lihat === 'petugas') {
     return NextResponse.json({ data: {}, terbuka: false, aturan });
   }
@@ -60,7 +45,6 @@ export async function GET(request: NextRequest) {
     .select('reminder_id, nominal, reminders(brand, pic_id, assigned_to, assign_name)');
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  //  Proyek yang sudah punya baris bagian atas namanya (untuk aturan "terlibat").
   let punyaBagian = new Set<string>();
   if (!petugas) {
     const { data: bag } = await supabase.from('incentive_splits').select('project_id').eq('user_id', caller.id);
@@ -103,8 +87,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Proyek ini di luar lingkup brand Anda.' }, { status: 403 });
   }
 
-  //  Jadwal berhari-hari tersimpan sebagai beberapa baris sebatch; semuanya
-  //  menyimpan nominal yang sama, persis seperti perilaku sebelum dikunci.
   const batchId = (acuan as { batch_id?: string | null }).batch_id;
   let ids = [body.reminderId];
   if (batchId) {
@@ -112,8 +94,6 @@ export async function POST(request: NextRequest) {
     ids = [...new Set([...((sebatch ?? []) as { id: string }[]).map(r => r.id), body.reminderId])];
   }
 
-  //  Nominal terkunci begitu tahapan pencairan dibuat. Diulang di sini karena
-  //  penjagaan yang hanya ada di layar bukan penjagaan.
   const { data: adaTahapan } = await supabase
     .from('incentive_tranches').select('id').in('project_id', ids).limit(1);
   if (adaTahapan && adaTahapan.length > 0) {

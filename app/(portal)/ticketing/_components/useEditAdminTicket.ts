@@ -1,6 +1,5 @@
 'use client';
 
-/** useEditAdminTicket - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { sendWANotif, User, TeamMember, Ticket, TICKET_ADMIN_FIELDS } from './shared';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from '@/lib/admin-edit';
 import { supabase } from '@/lib/supabase';
@@ -32,13 +31,6 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
     setAdminEditTicket(t);
   };
 
-  /**
-   * Simpan perubahan admin: koreksi field dan/atau pengalihan pekerjaan.
-   *
-   * Urutannya disengaja - simpan dulu, baru beri tahu. Kalau WA dikirim
-   * duluan lalu penyimpanannya gagal, orang sudah terlanjur diberi tahu soal
-   * perubahan yang tidak pernah terjadi.
-   */
   const simpanAdminEdit = async () => {
     if (!adminEditTicket) return;
     const t = adminEditTicket;
@@ -53,7 +45,6 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
       const payload: Record<string, unknown> = {};
       for (const x of perubahan) payload[x.key] = adminEditForm[x.key] === '' ? null : adminEditForm[x.key];
 
-      // Pengalihan pekerjaan
       let penerimaBaru = '';
       let labelTujuanLama = t.assign_name || '';
       if (adaReroute) {
@@ -69,8 +60,6 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
           payload.routing_status = null;
           payload.assigned_supervisor_id = null;
           payload.assign_name = nama;
-          // Status hanya diturunkan ke Pending kalau memang belum jalan -
-          // dan bolehReroute sudah menjamin itu, jadi tidak ada progress hilang.
           payload.status = 'Pending';
           penerimaBaru = nama;
         }
@@ -83,7 +72,6 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Perubahan ditolak sistem (RLS). Hubungi admin.');
 
-      // Catat ke audit
       const catatan = [
         adaReroute ? `Re-route: ${labelTujuanLama || '(belum ada)'} → ${penerimaBaru}` : '',
         perubahan.length ? ringkasPerubahan(perubahan) : '',
@@ -95,13 +83,7 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
         notes: catatan,
       });
 
-      // Beri tahu lewat WA
-      // Dikirim ke penerima BARU kalau dialihkan, dan ke penanganya sekarang
-      // kalau cuma koreksi data. Keduanya sama-sama perlu tahu.
       const targetNama = penerimaBaru || t.assign_name || '';
-      // Admin mengalihkan ke DIRI SENDIRI: WA ke nomor sendiri tidak berguna,
-      // tapi badge in-app tetap dikirim - supaya ada catatan/link yang bisa
-      // dibuka lagi nanti, sama seperti reroute ke orang lain.
       if (adaReroute && targetNama && targetNama === currentUser?.full_name && currentUser?.id) {
         void createNotification({
           user_id: currentUser.id, type: 'ticket',
@@ -135,7 +117,7 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
               tautan: appLink('/ticketing'),
             }) });
           }
-        } catch { /* WA gagal tidak boleh membatalkan perubahan yang sudah tersimpan */ }
+        } catch {  }
       }
 
       setAdminEditTicket(null);

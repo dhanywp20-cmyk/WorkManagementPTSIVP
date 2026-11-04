@@ -6,722 +6,702 @@
   },
   "berkas": {
     "app/(portal)/_kerangka/daftar-menu.tsx": {
-      "baris": 123,
+      "baris": 117,
       "barisPanjang": 13,
       "propsMaks": 2
     },
     "app/(portal)/_kerangka/KerangkaPortal.tsx": {
-      "baris": 964,
+      "baris": 720,
       "barisPanjang": 2,
       "propsMaks": 3
     },
     "app/(portal)/_kerangka/LayarMasuk.tsx": {
-      "baris": 609,
+      "baris": 515,
       "barisPanjang": 5,
       "propsMaks": 3
     },
     "app/(portal)/_kerangka/SidebarPortal.tsx": {
-      "baris": 463,
+      "baris": 419,
       "barisPanjang": 2,
       "propsMaks": 2
     },
     "app/(portal)/daily-report/_components/DaftarLaporanHarian.tsx": {
-      "baris": 257,
+      "baris": 243,
       "barisPanjang": 7,
       "propsMaks": 2
     },
     "app/(portal)/daily-report/_components/FilterLaporanHarian.tsx": {
-      "baris": 65,
+      "baris": 64,
       "barisPanjang": 2,
       "propsMaks": 2
     },
     "app/(portal)/daily-report/_components/FormLaporan.tsx": {
-      "baris": 182,
+      "baris": 174,
       "barisPanjang": 3,
       "propsMaks": 5
     },
     "app/(portal)/daily-report/_components/IsiLaporan.tsx": {
-      "baris": 216,
+      "baris": 193,
       "barisPanjang": 4,
       "propsMaks": 21
     },
     "app/(portal)/daily-report/_components/useFormLaporan.ts": {
-      "baris": 151,
+      "baris": 140,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/daily-report/page.tsx": {
-      "baris": 290,
+      "baris": 225,
       "barisPanjang": 4,
       "propsMaks": 39
     },
     "app/(portal)/dashboard/_components/akun/FormEditAkunInline.tsx": {
-      "baris": 255,
+      "baris": 231,
       "barisPanjang": 7,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/akun/TabTambahAkun.tsx": {
-      "baris": 106,
+      "baris": 104,
       "barisPanjang": 5,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/GlobalSearch.tsx": {
-      "baris": 734,
+      "baris": 610,
       "barisPanjang": 0,
       "propsMaks": 3
     },
     "app/(portal)/dashboard/_components/modal-admin-panel.tsx": {
-      "baris": 503,
+      "baris": 437,
       "barisPanjang": 8,
       "propsMaks": 3
     },
     "app/(portal)/dashboard/_components/modal-akun.tsx": {
-      "baris": 436,
+      "baris": 372,
       "barisPanjang": 6,
       "propsMaks": 15
     },
     "app/(portal)/dashboard/_components/modal-integrasi.tsx": {
-      "baris": 725,
+      "baris": 570,
       "barisPanjang": 3,
       "propsMaks": 15
     },
     "app/(portal)/dashboard/_components/modal-keamanan.tsx": {
-      "baris": 111,
+      "baris": 106,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/modal-merek.tsx": {
-      "baris": 324,
+      "baris": 300,
       "barisPanjang": 1,
       "propsMaks": 5
     },
-    "app/(portal)/dashboard/_components/modal-profil.tsx": {
-      "baris": 675,
-      "barisPanjang": 0,
-      "propsMaks": 2
-    },
     "app/(portal)/dashboard/_components/modal-user.tsx": {
-      "baris": 795,
+      "baris": 737,
       "barisPanjang": 10,
       "propsMaks": 19
     },
     "app/(portal)/dashboard/_components/NavBawahMobile.tsx": {
-      "baris": 98,
+      "baris": 83,
       "barisPanjang": 1,
       "propsMaks": 3
     },
     "app/(portal)/dashboard/_components/pengguna/TabAtasanInline.tsx": {
-      "baris": 86,
+      "baris": 83,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/pengguna/TabIVP.tsx": {
-      "baris": 128,
+      "baris": 127,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/pengguna/TabProdukInline.tsx": {
-      "baris": 134,
+      "baris": 124,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/useMuatNotifikasi.ts": {
-      "baris": 459,
+      "baris": 393,
       "barisPanjang": 3,
       "propsMaks": 0
     },
-    "app/(portal)/dashboard/_components/widgets/Widgets.tsx": {
-      "baris": 644,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/form-require-project/_components/DaftarRequest.tsx": {
-      "baris": 279,
+      "baris": 260,
       "barisPanjang": 2,
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/HeaderDetail.tsx": {
-      "baris": 152,
+      "baris": 145,
       "barisPanjang": 7,
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/detail/KartuInfoDetail.tsx": {
-      "baris": 105,
+      "baris": 96,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/detail/KartuKategoriDetail.tsx": {
-      "baris": 31,
+      "baris": 30,
       "barisPanjang": 4,
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/KartuLayoutDetail.tsx": {
-      "baris": 30,
+      "baris": 27,
       "barisPanjang": 1,
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/KartuPeripheralDetail.tsx": {
-      "baris": 90,
+      "baris": 76,
       "barisPanjang": 1,
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/KartuRuanganDetail.tsx": {
-      "baris": 28,
+      "baris": 27,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/detail/PanelChatDetail.tsx": {
-      "baris": 154,
+      "baris": 147,
       "barisPanjang": 4,
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/detail/PanelLampiranDetail.tsx": {
-      "baris": 255,
+      "baris": 237,
       "barisPanjang": 7,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/form-baru/FormRuanganUtama.tsx": {
-      "baris": 429,
+      "baris": 410,
       "barisPanjang": 21,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/halaman/BlokFormBaru.tsx": {
-      "baris": 66,
+      "baris": 65,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/halaman/KontenHalamanRequest.tsx": {
-      "baris": 203,
+      "baris": 193,
       "barisPanjang": 4,
       "propsMaks": 31
     },
     "app/(portal)/form-require-project/_components/ModalDetailRequest.tsx": {
-      "baris": 387,
+      "baris": 326,
       "barisPanjang": 7,
       "propsMaks": 32
     },
     "app/(portal)/form-require-project/_components/ModalEditForm.tsx": {
-      "baris": 307,
+      "baris": 302,
       "barisPanjang": 3,
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/Modals-RoomSection.tsx": {
-      "baris": 346,
+      "baris": 316,
       "barisPanjang": 7,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/Modals.tsx": {
-      "baris": 213,
+      "baris": 188,
       "barisPanjang": 1,
       "propsMaks": 21
     },
     "app/(portal)/form-require-project/_components/useAksiPersetujuan.ts": {
-      "baris": 253,
+      "baris": 226,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/useEditRequest.ts": {
-      "baris": 308,
+      "baris": 273,
       "barisPanjang": 3,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/useKirimRequest.ts": {
-      "baris": 406,
+      "baris": 344,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/usePesanLampiran.ts": {
-      "baris": 167,
+      "baris": 150,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/page.tsx": {
-      "baris": 623,
+      "baris": 498,
       "barisPanjang": 11,
       "propsMaks": 72
     },
     "app/(portal)/form-review/_components/DaftarReview.tsx": {
-      "baris": 257,
+      "baris": 236,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/form-review/_components/FormReviewPageInner.tsx": {
-      "baris": 808,
+      "baris": 715,
       "barisPanjang": 12,
       "propsMaks": 28
     },
     "app/(portal)/form-review/_components/ModalFormReview.tsx": {
-      "baris": 136,
+      "baris": 133,
       "barisPanjang": 4,
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/DaftarProyekInsentifHP.tsx": {
-      "baris": 108,
+      "baris": 92,
       "barisPanjang": 2,
       "propsMaks": 2
     },
-    "app/(portal)/incentive-pts/_components/exportPengajuan.ts": {
-      "baris": 673,
-      "barisPanjang": 0,
-      "propsMaks": 0
-    },
     "app/(portal)/incentive-pts/_components/FilterProyekInsentif.tsx": {
-      "baris": 197,
+      "baris": 157,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/incentive-pts/_components/IsiInsentif.tsx": {
-      "baris": 203,
+      "baris": 195,
       "barisPanjang": 5,
       "propsMaks": 22
     },
     "app/(portal)/incentive-pts/_components/ModalGenerateTranche.tsx": {
-      "baris": 99,
+      "baris": 81,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/incentive-pts/_components/SchemeTab.tsx": {
-      "baris": 845,
+      "baris": 716,
       "barisPanjang": 0,
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/TabelProyekInsentif.tsx": {
-      "baris": 288,
+      "baris": 243,
       "barisPanjang": 4,
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/useTahapanInsentif.ts": {
-      "baris": 268,
+      "baris": 205,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/incentive-pts/page.tsx": {
-      "baris": 496,
+      "baris": 296,
       "barisPanjang": 3,
       "propsMaks": 63
     },
     "app/(portal)/kpi-team/_components/BagianPenilaianKPI.tsx": {
-      "baris": 174,
+      "baris": 166,
       "barisPanjang": 2,
       "propsMaks": 4
     },
     "app/(portal)/kpi-team/_components/useAuditKPI.ts": {
-      "baris": 74,
+      "baris": 72,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/kpi-team/page.tsx": {
-      "baris": 681,
+      "baris": 586,
       "barisPanjang": 2,
       "propsMaks": 17
     },
     "app/(portal)/learning-center/_components/AdminDashboard.tsx": {
-      "baris": 801,
+      "baris": 696,
       "barisPanjang": 0,
       "propsMaks": 4
     },
     "app/(portal)/learning-center/_components/HistoryPage.tsx": {
-      "baris": 107,
+      "baris": 104,
       "barisPanjang": 1,
       "propsMaks": 4
     },
     "app/(portal)/learning-center/_components/IsiBankSoal.tsx": {
-      "baris": 230,
+      "baris": 215,
       "barisPanjang": 2,
       "propsMaks": 17
     },
     "app/(portal)/learning-center/_components/KepalaTambahSoal.tsx": {
-      "baris": 64,
+      "baris": 62,
       "barisPanjang": 1,
       "propsMaks": 1
     },
     "app/(portal)/learning-center/_components/kuis/IsiSoalKuis.tsx": {
-      "baris": 182,
+      "baris": 141,
       "barisPanjang": 3,
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/MateriPage.tsx": {
-      "baris": 800,
+      "baris": 748,
       "barisPanjang": 0,
       "propsMaks": 6
     },
     "app/(portal)/learning-center/_components/MyQuizPage.tsx": {
-      "baris": 818,
+      "baris": 617,
       "barisPanjang": 1,
       "propsMaks": 13
     },
     "app/(portal)/learning-center/_components/QuestionsPage.tsx": {
-      "baris": 480,
+      "baris": 378,
       "barisPanjang": 5,
       "propsMaks": 30
     },
     "app/(portal)/learning-center/_components/sesi/FormSesi.tsx": {
-      "baris": 308,
+      "baris": 298,
       "barisPanjang": 2,
       "propsMaks": 3
     },
     "app/(portal)/learning-center/_components/sesi/ModalAlihkanSesi.tsx": {
-      "baris": 239,
+      "baris": 226,
       "barisPanjang": 1,
       "propsMaks": 3
     },
     "app/(portal)/learning-center/_components/SessionsPage.tsx": {
-      "baris": 401,
+      "baris": 359,
       "barisPanjang": 3,
       "propsMaks": 19
     },
     "app/(portal)/learning-center/_components/shared.tsx": {
-      "baris": 596,
+      "baris": 481,
       "barisPanjang": 1,
       "propsMaks": 4
     },
     "app/(portal)/learning-center/_components/soal/DialogFormSoal.tsx": {
-      "baris": 166,
+      "baris": 159,
       "barisPanjang": 2,
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/TeamPage.tsx": {
-      "baris": 782,
+      "baris": 641,
       "barisPanjang": 4,
       "propsMaks": 3
     },
     "app/(portal)/learning-center/_components/useBuatSoal.ts": {
-      "baris": 207,
+      "baris": 167,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/learning-center/_components/useKelolaSoal.ts": {
-      "baris": 130,
+      "baris": 101,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/picket-showroom/_components/FillDetailModal.tsx": {
-      "baris": 371,
+      "baris": 345,
       "barisPanjang": 2,
       "propsMaks": 3
     },
     "app/(portal)/picket-showroom/page.tsx": {
-      "baris": 817,
+      "baris": 696,
       "barisPanjang": 9,
       "propsMaks": 6
     },
     "app/(portal)/reminder-schedule/_components/FilterBar.tsx": {
-      "baris": 192,
+      "baris": 178,
       "barisPanjang": 9,
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/KepalaJadwal.tsx": {
-      "baris": 73,
+      "baris": 71,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/ModePenyelesaianPanel.tsx": {
-      "baris": 193,
+      "baris": 179,
       "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx": {
-      "baris": 749,
+      "baris": 641,
       "barisPanjang": 1,
       "propsMaks": 3
     },
-    "app/(portal)/reminder-schedule/_components/ReminderFormModal.tsx": {
-      "baris": 676,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/reminder-schedule/_components/ReminderListBody.tsx": {
-      "baris": 501,
+      "baris": 430,
       "barisPanjang": 4,
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/useAksiStatus.ts": {
-      "baris": 208,
+      "baris": 191,
       "barisPanjang": 3,
       "propsMaks": 0
     },
     "app/(portal)/reminder-schedule/_components/useAlurPersetujuan.ts": {
-      "baris": 167,
+      "baris": 153,
       "barisPanjang": 3,
       "propsMaks": 0
     },
     "app/(portal)/reminder-schedule/_components/useModePenyelesaian.ts": {
-      "baris": 129,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/usePersetujuanAdmin.ts": {
-      "baris": 302,
-      "barisPanjang": 2,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useSimpanJadwal.ts": {
-      "baris": 402,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useStateApproval.ts": {
-      "baris": 41,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useStateModePenyelesaian.ts": {
-      "baris": 36,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useTinjauInternal.ts": {
-      "baris": 184,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useTurunanJadwal.ts": {
-      "baris": 126,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/_components/useUbahStatus.ts": {
-      "baris": 127,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/reminder-schedule/page.tsx": {
-      "baris": 889,
-      "barisPanjang": 8,
-      "propsMaks": 8
-    },
-    "app/(portal)/tech-note/_components/bagian-tech-note.tsx": {
-      "baris": 461,
-      "barisPanjang": 2,
-      "propsMaks": 22
-    },
-    "app/(portal)/tech-note/_components/IsiTechNote.tsx": {
-      "baris": 163,
-      "barisPanjang": 1,
-      "propsMaks": 3
-    },
-    "app/(portal)/tech-note/_components/useAksiTechNote.ts": {
-      "baris": 247,
-      "barisPanjang": 1,
-      "propsMaks": 0
-    },
-    "app/(portal)/ticketing/_components/FilterBar.tsx": {
-      "baris": 253,
-      "barisPanjang": 4,
-      "propsMaks": 2
-    },
-    "app/(portal)/ticketing/_components/IsiTicketing.tsx": {
-      "baris": 185,
-      "barisPanjang": 1,
-      "propsMaks": 2
-    },
-    "app/(portal)/ticketing/_components/KepalaTicketing.tsx": {
-      "baris": 98,
-      "barisPanjang": 2,
-      "propsMaks": 1
-    },
-    "app/(portal)/ticketing/_components/NewTicketModal.tsx": {
-      "baris": 281,
-      "barisPanjang": 2,
-      "propsMaks": 14
-    },
-    "app/(portal)/ticketing/_components/StatsSection.tsx": {
-      "baris": 123,
-      "barisPanjang": 8,
-      "propsMaks": 6
-    },
-    "app/(portal)/ticketing/_components/TicketDetailPopup.tsx": {
-      "baris": 503,
-      "barisPanjang": 3,
-      "propsMaks": 2
-    },
-    "app/(portal)/ticketing/_components/TicketListBody.tsx": {
-      "baris": 429,
-      "barisPanjang": 1,
-      "propsMaks": 2
-    },
-    "app/(portal)/ticketing/_components/useBuatTicket.ts": {
-      "baris": 285,
-      "barisPanjang": 3,
-      "propsMaks": 0
-    },
-    "app/(portal)/ticketing/_components/useBukaTicket.ts": {
       "baris": 101,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/ticketing/_components/useTambahAktivitas.ts": {
-      "baris": 379,
+    "app/(portal)/reminder-schedule/_components/usePersetujuanAdmin.ts": {
+      "baris": 277,
       "barisPanjang": 2,
       "propsMaks": 0
     },
-    "app/(portal)/ticketing/_components/useTolakBukaUlang.ts": {
-      "baris": 213,
+    "app/(portal)/reminder-schedule/_components/useSimpanJadwal.ts": {
+      "baris": 300,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/ticketing/page.tsx": {
-      "baris": 928,
-      "barisPanjang": 8,
-      "propsMaks": 62
-    },
-    "app/(portal)/tools-team/_components/av/audio/AudioAkustik.tsx": {
-      "baris": 97,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
-    "app/(portal)/tools-team/_components/av/KalkulatorDaya.tsx": {
-      "baris": 79,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
-    "app/(portal)/tools-team/_components/av/KalkulatorProyektor.tsx": {
-      "baris": 296,
-      "barisPanjang": 2,
-      "propsMaks": 4
-    },
-    "app/(portal)/tools-team/_components/av/proyektor/PanelBlending.tsx": {
-      "baris": 303,
-      "barisPanjang": 2,
-      "propsMaks": 6
-    },
-    "app/(portal)/tools-team/_components/Desain3D.tsx": {
-      "baris": 164,
-      "barisPanjang": 2,
-      "propsMaks": 16
-    },
-    "app/(portal)/tools-team/_components/desain3d/aksi/useAksiDesain.ts": {
-      "baris": 223,
-      "barisPanjang": 2,
-      "propsMaks": 0
-    },
-    "app/(portal)/tools-team/_components/desain3d/bangun/konten.ts": {
-      "baris": 220,
-      "barisPanjang": 2,
-      "propsMaks": 0
-    },
-    "app/(portal)/tools-team/_components/desain3d/ekspor/useEkspor.ts": {
-      "baris": 245,
+    "app/(portal)/reminder-schedule/_components/useStateApproval.ts": {
+      "baris": 31,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/tools-team/_components/desain3d/mesin/alatBantu.ts": {
-      "baris": 195,
+    "app/(portal)/reminder-schedule/_components/useStateModePenyelesaian.ts": {
+      "baris": 23,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/tools-team/_components/desain3d/mesin/sinar.ts": {
-      "baris": 521,
-      "barisPanjang": 2,
-      "propsMaks": 0
-    },
-    "app/(portal)/tools-team/_components/desain3d/mesin/useAdegan.ts": {
-      "baris": 152,
-      "barisPanjang": 2,
-      "propsMaks": 0
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/benda/AturAudio.tsx": {
-      "baris": 100,
-      "barisPanjang": 1,
-      "propsMaks": 3
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/benda/AturProyektor.tsx": {
-      "baris": 230,
-      "barisPanjang": 3,
-      "propsMaks": 5
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/InfoProyektor.tsx": {
-      "baris": 271,
-      "barisPanjang": 4,
-      "propsMaks": 4
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/KartuKabel.tsx": {
-      "baris": 50,
-      "barisPanjang": 1,
-      "propsMaks": 2
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/KontrolKanvas.tsx": {
-      "baris": 123,
-      "barisPanjang": 1,
-      "propsMaks": 3
-    },
-    "app/(portal)/tools-team/_components/desain3d/panel/ModalSimpan.tsx": {
-      "baris": 100,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
-    "app/(portal)/tools-team/_components/desain3d/simpan/useSimpanDesain.ts": {
-      "baris": 293,
+    "app/(portal)/reminder-schedule/_components/useTinjauInternal.ts": {
+      "baris": 160,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts": {
-      "baris": 298,
+    "app/(portal)/reminder-schedule/_components/useTurunanJadwal.ts": {
+      "baris": 85,
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/tools-team/_components/led/koneksi/RuangKoneksi.tsx": {
-      "baris": 76,
-      "barisPanjang": 1,
-      "propsMaks": 3
-    },
-    "app/(portal)/tools-team/_components/led/koneksi/useRuangKoneksi.ts": {
+    "app/(portal)/reminder-schedule/_components/useUbahStatus.ts": {
       "baris": 106,
       "barisPanjang": 1,
       "propsMaks": 0
     },
+    "app/(portal)/reminder-schedule/page.tsx": {
+      "baris": 641,
+      "barisPanjang": 8,
+      "propsMaks": 8
+    },
+    "app/(portal)/tech-note/_components/bagian-tech-note.tsx": {
+      "baris": 394,
+      "barisPanjang": 2,
+      "propsMaks": 22
+    },
+    "app/(portal)/tech-note/_components/IsiTechNote.tsx": {
+      "baris": 152,
+      "barisPanjang": 1,
+      "propsMaks": 3
+    },
+    "app/(portal)/tech-note/_components/useAksiTechNote.ts": {
+      "baris": 211,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/ticketing/_components/FilterBar.tsx": {
+      "baris": 229,
+      "barisPanjang": 4,
+      "propsMaks": 2
+    },
+    "app/(portal)/ticketing/_components/IsiTicketing.tsx": {
+      "baris": 183,
+      "barisPanjang": 1,
+      "propsMaks": 2
+    },
+    "app/(portal)/ticketing/_components/KepalaTicketing.tsx": {
+      "baris": 92,
+      "barisPanjang": 2,
+      "propsMaks": 1
+    },
+    "app/(portal)/ticketing/_components/NewTicketModal.tsx": {
+      "baris": 203,
+      "barisPanjang": 2,
+      "propsMaks": 14
+    },
+    "app/(portal)/ticketing/_components/StatsSection.tsx": {
+      "baris": 114,
+      "barisPanjang": 8,
+      "propsMaks": 6
+    },
+    "app/(portal)/ticketing/_components/TicketDetailPopup.tsx": {
+      "baris": 447,
+      "barisPanjang": 3,
+      "propsMaks": 2
+    },
+    "app/(portal)/ticketing/_components/TicketListBody.tsx": {
+      "baris": 372,
+      "barisPanjang": 1,
+      "propsMaks": 2
+    },
+    "app/(portal)/ticketing/_components/useBuatTicket.ts": {
+      "baris": 248,
+      "barisPanjang": 3,
+      "propsMaks": 0
+    },
+    "app/(portal)/ticketing/_components/useBukaTicket.ts": {
+      "baris": 95,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/ticketing/_components/useTambahAktivitas.ts": {
+      "baris": 310,
+      "barisPanjang": 2,
+      "propsMaks": 0
+    },
+    "app/(portal)/ticketing/_components/useTolakBukaUlang.ts": {
+      "baris": 191,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/ticketing/page.tsx": {
+      "baris": 760,
+      "barisPanjang": 8,
+      "propsMaks": 62
+    },
+    "app/(portal)/tools-team/_components/av/audio/AudioAkustik.tsx": {
+      "baris": 90,
+      "barisPanjang": 1,
+      "propsMaks": 4
+    },
+    "app/(portal)/tools-team/_components/av/KalkulatorDaya.tsx": {
+      "baris": 77,
+      "barisPanjang": 1,
+      "propsMaks": 4
+    },
+    "app/(portal)/tools-team/_components/av/KalkulatorProyektor.tsx": {
+      "baris": 249,
+      "barisPanjang": 2,
+      "propsMaks": 4
+    },
+    "app/(portal)/tools-team/_components/av/proyektor/PanelBlending.tsx": {
+      "baris": 285,
+      "barisPanjang": 2,
+      "propsMaks": 6
+    },
+    "app/(portal)/tools-team/_components/Desain3D.tsx": {
+      "baris": 144,
+      "barisPanjang": 2,
+      "propsMaks": 16
+    },
+    "app/(portal)/tools-team/_components/desain3d/aksi/useAksiDesain.ts": {
+      "baris": 192,
+      "barisPanjang": 2,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/bangun/konten.ts": {
+      "baris": 206,
+      "barisPanjang": 2,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/ekspor/useEkspor.ts": {
+      "baris": 224,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/mesin/alatBantu.ts": {
+      "baris": 159,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/mesin/sinar.ts": {
+      "baris": 383,
+      "barisPanjang": 2,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/mesin/useAdegan.ts": {
+      "baris": 120,
+      "barisPanjang": 2,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/benda/AturAudio.tsx": {
+      "baris": 98,
+      "barisPanjang": 1,
+      "propsMaks": 3
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/benda/AturProyektor.tsx": {
+      "baris": 212,
+      "barisPanjang": 3,
+      "propsMaks": 5
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/InfoProyektor.tsx": {
+      "baris": 249,
+      "barisPanjang": 4,
+      "propsMaks": 4
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/KartuKabel.tsx": {
+      "baris": 49,
+      "barisPanjang": 1,
+      "propsMaks": 2
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/KontrolKanvas.tsx": {
+      "baris": 101,
+      "barisPanjang": 1,
+      "propsMaks": 3
+    },
+    "app/(portal)/tools-team/_components/desain3d/panel/ModalSimpan.tsx": {
+      "baris": 98,
+      "barisPanjang": 1,
+      "propsMaks": 4
+    },
+    "app/(portal)/tools-team/_components/desain3d/simpan/useSimpanDesain.ts": {
+      "baris": 256,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts": {
+      "baris": 214,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
+    "app/(portal)/tools-team/_components/led/koneksi/RuangKoneksi.tsx": {
+      "baris": 64,
+      "barisPanjang": 1,
+      "propsMaks": 3
+    },
+    "app/(portal)/tools-team/_components/led/koneksi/useRuangKoneksi.ts": {
+      "baris": 103,
+      "barisPanjang": 1,
+      "propsMaks": 0
+    },
     "app/(portal)/tools-team/_components/led/panel/KartuSpesifikasi.tsx": {
-      "baris": 105,
+      "baris": 104,
       "barisPanjang": 1,
       "propsMaks": 3
     },
     "app/(portal)/tools-team/_components/led/useEksporLED.ts": {
-      "baris": 173,
+      "baris": 170,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/led/useKeadaanLED.ts": {
-      "baris": 175,
+      "baris": 163,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/ProductComparison.tsx": {
-      "baris": 158,
+      "baris": 152,
       "barisPanjang": 1,
       "propsMaks": 4
     },
     "app/(portal)/unit-movement/page.tsx": {
-      "baris": 611,
+      "baris": 555,
       "barisPanjang": 4,
       "propsMaks": 3
     },
     "app/analytics-dashboard/_components/AnalyticsPlatform.tsx": {
-      "baris": 694,
+      "baris": 606,
       "barisPanjang": 4,
       "propsMaks": 8
     },
     "app/api/asisten/route.ts": {
-      "baris": 270,
+      "baris": 251,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "components/shared/MiniPieChart.tsx": {
-      "baris": 223,
+      "baris": 175,
       "barisPanjang": 1,
       "propsMaks": 6
     },
     "lib/integrasi-aksi.ts": {
-      "baris": 682,
+      "baris": 609,
       "barisPanjang": 0,
       "propsMaks": 0
     },
     "lib/integrasi-tulis.ts": {
-      "baris": 806,
+      "baris": 738,
       "barisPanjang": 0,
       "propsMaks": 0
     },
     "lib/perbandingan-prompt.ts": {
-      "baris": 123,
+      "baris": 111,
       "barisPanjang": 2,
       "propsMaks": 0
     }

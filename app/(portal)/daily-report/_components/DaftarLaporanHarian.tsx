@@ -1,6 +1,5 @@
 'use client';
 
-/** DaftarLaporanHarian - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { ListEmptyState } from '@/components/shared';
 import { CATEGORY_CONFIG } from '@/app/(portal)/reminder-schedule/_components/shared';
 import { TH, TD, SB, sb, avc, ini } from './bantu-halaman';
@@ -58,12 +57,6 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
         />
       ) : (
         <>
-        {/* M8 (docs/UX-WORKFLOW-AUDIT.md): dulu tabel ini (9 kolom, minWidth
-            1200px) tidak punya varian mobile sama sekali - beda dari Picket
-            Showroom & Project Progress yang sudah punya kartu md:hidden.
-            Anggota tim yang isi Daily Report dari HP harus scroll horizontal
-            pada tabel lebar untuk cek riwayat. Tap kartu membuka modal
-            detail yang sama dengan klik baris tabel (termasuk tombol Edit). */}
         <div className="md:hidden space-y-2">
           {hal.potongan.map(row => {
             const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
@@ -103,12 +96,6 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
                 </div>
                 </button>
 
-                {/*  Tombol aksi yang sama dengan kolom ACTION tabel desktop.
-                    Sebelumnya kartu HP HANYA bisa di-tap untuk membuka
-                    detail: Edit cuma ada setelah masuk modal, jadi dari HP
-                    terlihat seperti tidak ada sama sekali. Dibungkus <span>
-                    (bukan <button>) karena kartunya sendiri sudah sebuah
-                    tombol - tombol di dalam tombol bukan HTML yang sah. */}
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button type="button" aria-label="Lihat detail" onClick={() => setModalRow(row)}
                     className="inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border border-gray-200 bg-white text-gray-500 active:bg-gray-100">
@@ -208,7 +195,6 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
                       </div>
                     </td>
                     <td style={TD}>
-                      {/* Gaya highlight, bukan pil - sudut tegas & tanpa garis tepi. */}
                       <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-bold"
                         style={{ background: badge.bg, color: badge.color }}>
                         {badge.label}

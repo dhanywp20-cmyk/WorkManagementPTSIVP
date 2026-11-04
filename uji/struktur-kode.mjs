@@ -1,16 +1,5 @@
-/**
- * uji/struktur-kode.mjs - penjaga struktur kode ("ratchet"): boleh membaik, TIDAK boleh memburuk.
- *
- *  - Berkas di uji/data/struktur-baseline.json (pelanggar lama) tidak boleh menambah baris di atas ambang,
- *    menambah God line (> 300 karakter), atau menambah props di satu baris.
- *  - Berkas BARU / yang belum tercatat tidak boleh melewati ambang sama sekali.
- *  - Bila sebuah berkas membaik, uji tetap lulus dan mengingatkan untuk menurunkan baseline
- *    (node scripts/ukur-struktur.mjs --baseline) supaya perbaikannya terkunci.
- *
- * Latar & aturan: docs/audit/struktur-kode.md.  Jalankan: node uji/struktur-kode.mjs
- */
 import { readFileSync } from 'node:fs';
-import { BATAS, ukurSemua, ukurIsi } from '../scripts/ukur-struktur.mjs';
+import { BATAS, ukurSemua, ukurIsi, komentarPenjelasan, daftarBerkas } from '../scripts/ukur-struktur.mjs';
 
 let lulus = 0, gagal = 0;
 const cek = (nama, syarat) => {
@@ -47,6 +36,16 @@ console.log(`  ${dicek} berkas diperiksa, ${Object.keys(baseline).length} pelang
 if (membaik.length) {
   console.log(`  info ${membaik.length} berkas membaik - kunci dengan: node scripts/ukur-struktur.mjs --baseline`);
 }
+
+console.log('\n3. Tanpa komentar penjelasan (direktif eslint / @ts- tetap boleh)');
+cek('pendeteksi menangkap komentar baris, blok & JSX', komentarPenjelasan('const a = 1; // x\n/* y */\nconst b = <i>{/* z */}</i>;', 'a.tsx').length === 3);
+cek('pendeteksi membiarkan direktif & teks', komentarPenjelasan('// eslint-disable-next-line\nconst u = "http://a"; const j = <p>a // b</p>;', 'a.tsx').length === 0);
+let berkomentar = 0;
+for (const f of daftarBerkas()) {
+  const k = komentarPenjelasan(readFileSync(f, 'utf8'), f);
+  if (k.length) { berkomentar++; cek(`${f}: ${k.length} komentar penjelasan, mis. ${JSON.stringify(k[0].slice(0, 60))}`, false); }
+}
+if (!berkomentar) console.log('  ok   0 komentar penjelasan');
 
 console.log(`\n${gagal ? 'GAGAL' : 'LULUS'}: ${gagal ? `${gagal} pelanggaran` : 'struktur tidak memburuk'}`);
 if (gagal) process.exit(1);

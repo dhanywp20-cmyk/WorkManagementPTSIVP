@@ -15,14 +15,12 @@ import { TEMA, fontAngka } from './tampilan';
 type Jenis = 'teks' | 'excel';
 type Tab = Jenis | 'ai';
 
-// Batas body permintaan Vercel ~4,5 MB; sisakan ruang untuk kerangka multipart.
 const BATAS_AI_BYTE = 4 * 1024 * 1024;
 
 function ukuran(n: number): string {
   return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
 }
 
-/** Excel / CSV daftar perangkat -> teks CSV per sheet, supaya bisa dibaca AI. */
 function excelKeTeks(f: File): Promise<string> {
   return new Promise((resolve, reject) => {
     loadXLSX(async XLSX => {
@@ -47,16 +45,8 @@ const CONTOH_TEKS = `# Checklist Instalasi Ruang Meeting
 **Zona TABLE**
 - [ ] Pasang tabletop box di meja`;
 
-/**
- * Impor checklist - dua langkah: pilih sumber (tempel teks/Markdown atau file
- * Excel) -> pratinjau. Di pratinjau admin melihat apa yang terbaca, bisa
- * mengganti judul dan melewatkan bagian yang tidak perlu (mis. bagian
- * "Progress" dari dokumen asal) sebelum disimpan. Tidak ada item yang perlu
- * diketik satu per satu.
- */
 export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan ${n} item` }: {
   buka: boolean;
-  /** Teks tombol simpan di pratinjau, mis. "Pakai 98 item" saat membuat checklist. */
   labelSimpan?: (jumlahItem: number) => string;
   onTutup: () => void;
   onSimpan: (draft: DraftChecklist, sumber: Jenis) => Promise<void>;
@@ -120,12 +110,6 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
     }, () => { setMemuatExcel(false); setGalat('Gagal memuat pembaca Excel. Periksa koneksi internet.'); });
   };
 
-  /**
-   * Susun checklist dengan AI platform dari wiring diagram, foto/layout rak,
-   * dan daftar perangkat. Gambar dikompres dulu; Excel/CSV/teks diubah jadi
-   * teks di peramban. Hasilnya masuk ke kotak teks untuk DIPERIKSA - belum
-   * ada yang tersimpan.
-   */
   const susunDenganAI = async () => {
     if (!aiBerkas.length || aiSibuk) return;
     setAiSibuk(true);

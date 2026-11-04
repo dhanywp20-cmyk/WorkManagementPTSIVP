@@ -20,16 +20,12 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
   isAdmin: boolean;
   currentUserName: string;
   onTutup: () => void;
-  /** Data project berubah (edit/pindah/gabung) - daftar di halaman perlu dimuat ulang. */
   onBerubah: () => Promise<void> | void;
   beritahu: (type: 'success' | 'error', msg: string) => void;
 }) {
   const [detail, setDetail] = useState<DetailProject | null>(null);
-  /** Pesan galat muat riwayat (kueri gagal) - dulu tampil sebagai "belum ada aktivitas". */
   const [galat, setGalat] = useState<string | null>(null);
-  /** Kapan riwayat terakhir dimuat - angka & status di sini adalah keadaan saat itu. */
   const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
-  /** Penyaring linimasa: semua / belum selesai di menu asal / lewat tenggat. */
   const [saring, setSaring] = useState<SaringLinimasa>('semua');
   const [mode, setMode] = useState<'lihat' | 'edit' | 'gabung'>('lihat');
   const [pindahId, setPindahId] = useState<string | null>(null);
@@ -46,7 +42,6 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
       setDetail(await ambilDetailProject(project.project_id, lingkup));
       setDimuatPada(new Date());
     } catch {
-      //  Pesan teknis (kode PostgREST dsb.) tidak ditampilkan ke pengguna.
       setGalat('Riwayat project ini gagal dimuat.');
     }
   }, [project.project_id, lingkup]);
@@ -84,7 +79,6 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
       judul={<span><span className="text-indigo-600 font-black mr-2">{project.code}</span>{project.name}</span>}
       keterangan={[project.customer, project.location, project.sales_name && `Sales: ${project.sales_name}`].filter(Boolean).join(' · ') || undefined}>
       <div className="space-y-4">
-        {/* Ringkasan + aksi admin */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             {jumlah.map(([t, n]) => (
@@ -147,7 +141,6 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
           </div>
         )}
 
-        {/* Linimasa - bisa diekspor / dicetak untuk dibagikan ke Sales / pimpinan */}
         {linimasa.length > 0 && (
           <div className="flex justify-end mb-3">
             <TombolEkspor jumlah={linimasa.length} data={() => ({
@@ -160,7 +153,6 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
             })} />
           </div>
         )}
-        {/* Perlu perhatian: penyaring linimasa menurut status menu asal. */}
         {detail && linimasa.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Saring aktivitas">
             {([['semua', `Semua (${linimasa.length})`], ['terbuka', `Belum selesai (${nTerbuka})`], ['terlambat', `Terlambat (${nTerlambat})`]] as [SaringLinimasa, string][]).map(([v, l]) => (
@@ -181,7 +173,6 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
           </p>
         )}
 
-        {/* Linimasa */}
         {galat ? (
           <ErrorState message={galat} onRetry={() => { void muat(); }} />
         ) : !detail ? (

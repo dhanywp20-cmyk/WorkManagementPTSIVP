@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiJadwal - isi halaman (statistik, filter, daftar, kalender); keadaan dari konteks-jadwal.tsx. Asal: dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StatsSection } from './StatsSection';
 import { FilterBar } from './FilterBar';
 import { ReminderListBody } from './ReminderListBody';
@@ -48,21 +47,8 @@ export function IsiJadwal() {
               setProductFilter={setProductFilter}
             />
 
-            {/* Active filter chips */}
-            {/* Main area: list + calendar (di HP stack; kalender hanya di desktop).
-                items-start SEBELUMNYA berlaku di kedua mode (HP maupun desktop).
-                Di flex-col (HP), align-items mengatur SUMBU SILANG yaitu
-                LEBAR - items-start berarti kartu daftar TIDAK dipaksa selebar
-                layar, melainkan menyusut/melebar mengikuti kontennya sendiri.
-                Itu sebabnya berbagai perbaikan truncate/grid sebelumnya di
-                dalam kartu ini terlihat "hampir benar" tapi halamannya tetap
-                bisa digeser - akar soalnya di sini, bukan di kontennya.
-                items-start cuma dibutuhkan di lg: (top-align list & kalender
-                berdampingan tanpa saling menyamakan tinggi); di HP dibalik ke
-                items-stretch (bawaan) supaya kartu daftar dipatok 100% lebar. */}
             <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
 
-              {/* ── TICKET LIST ── */}
               <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
 
                 <FilterBar
@@ -104,9 +90,6 @@ export function IsiJadwal() {
                 <ReminderListBody />
               </div>
 
-              {/* ── MINI CALENDAR SIDEBAR — admin & team saja, disembunyikan utk guest/sales.
-                   Di HP juga DISEMBUNYIKAN (hidden lg:block) — sebelumnya kalender
-                   mendominasi layar & daftar terhimpit hilang. Hanya muncul di desktop. ── */}
               {!isGuest && (
                 <div className="hidden lg:block flex-shrink-0">
                   <MiniCalendar
@@ -121,8 +104,6 @@ export function IsiJadwal() {
             </div>
           </>
         )}
-
-        {/* ─── FORM VIEW ── (digantikan oleh showFormModal popup) */}
 
       </div>
     </>

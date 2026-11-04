@@ -1,30 +1,15 @@
-/**
- * Linimasa detail Summary Project - murni (tanpa React), diuji di uji/summary-project-linimasa.ts.
- *
- * Status ditampilkan dengan LABEL MENU ASALNYA (Request Schedule "Completed", Design "In Progress", ...), bukan
- * kode mentah basis data ("done", "in_progress"), dan setiap item tahu apakah ia masih terbuka / terlambat menurut
- * aturan menu asalnya - dasar penyaring "Perlu perhatian". Tanggal tiap jenis punya arti berbeda, jadi labelnya
- * ikut ditulis (Jadwal / Dilaporkan / Diajukan / Diisi).
- */
 import type { DetailProject, SourceModule } from '@/lib/summary-project';
 import type { AktivitasTipe } from './tampilan';
 
-/**
- * Label status persis seperti di menu asal (tanpa ikon). Dijaga sama oleh uji: Request Schedule =
- * reminder-schedule/_components/shared.ts STATUS_CONFIG, Design = form-require-project/_components/shared.ts
- * statusConfig. Ticket memakai teks statusnya sendiri.
- */
 export const LABEL_STATUS: Record<'schedule' | 'design', Record<string, string>> = {
   schedule: { pending: 'Pending', done: 'Completed', cancelled: 'Cancelled' },
   design: { pending: 'Pending', approved: 'Approved', in_progress: 'In Progress', completed: 'Completed', rejected: 'Rejected' },
 };
 
-/** Arti tanggal tiap jenis aktivitas - beda sumber, beda makna. */
 export const LABEL_TANGGAL: Record<AktivitasTipe, string> = {
   schedule: 'Jadwal', ticket: 'Dilaporkan', design: 'Diajukan', review: 'Diisi',
 };
 
-/** Status yang sudah SELESAI (tidak perlu tindakan lagi) per menu asal. */
 const SELESAI: Record<Exclude<AktivitasTipe, 'review'>, string[]> = {
   schedule: ['done', 'cancelled'],
   ticket: ['Solved', 'Rejected', 'Cancelled'],
@@ -33,25 +18,22 @@ const SELESAI: Record<Exclude<AktivitasTipe, 'review'>, string[]> = {
 
 export interface Aktivitas {
   id: string; tipe: AktivitasTipe;
-  /** Tanggal posisi di linimasa (lihat LABEL_TANGGAL). */ tanggal: string | null;
+   tanggal: string | null;
   judul: string; meta: string;
-  /** Kode status mentah & label menu asalnya. */ status?: string; labelStatus?: string;
-  /** Masih perlu tindakan di menu asalnya. */ terbuka: boolean;
-  /** Terbuka & lewat tenggat (jadwal / deadline sebelum hari ini, atau ticket berstatus Overdue). */ terlambat: boolean;
+   status?: string; labelStatus?: string;
+   terbuka: boolean;
+   terlambat: boolean;
   href: string;
-  /** Id baris project_source_links bila record ini dipetakan langsung (bukan ikut reminder). */ linkId?: string;
+   linkId?: string;
 }
 
-/** 'YYYY-MM-DD' hari ini (zona lokal peramban). */
 export const hariIni = (now = new Date()) =>
   `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-/** Tanggal (string ISO / 'YYYY-MM-DD') setelah hari ini - jadwal yang belum terjadi. */
 export const diMasaDepan = (tgl: string | null | undefined, now = new Date()) => !!tgl && tgl.slice(0, 10) > hariIni(now);
 
 const sebelumHariIni = (tgl: string | null | undefined, now: Date) => !!tgl && tgl.slice(0, 10) < hariIni(now);
 
-/** Gabungkan 4 sumber jadi SATU linimasa kronologis, terbaru (dan jadwal mendatang) dulu. */
 export function bangunLinimasa(detail: DetailProject, now = new Date()): Aktivitas[] {
   const list: Aktivitas[] = [];
   const link = (m: SourceModule, id: string) => detail.linkId[`${m}:${id}`];
@@ -78,7 +60,6 @@ export function bangunLinimasa(detail: DetailProject, now = new Date()): Aktivit
   detail.requests.forEach(r => {
     const terbuka = !SELESAI.design.includes(r.status);
     list.push({
-      //  Posisi = tanggal diajukan (sama dengan "aktivitas terakhir" di daftar); deadline ditulis di keterangan.
       id: `p-${r.id}`, tipe: 'design', tanggal: r.created_at ?? r.due_date,
       judul: r.requester_name,
       meta: [r.assigned_handler || 'Belum ada handler', r.due_date && `deadline ${r.due_date.slice(0, 10)}`].filter(Boolean).join(' · '),

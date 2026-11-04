@@ -1,8 +1,4 @@
 'use client';
-/**
- * Pratinjau Product Comparison (HTML, meniru template PDF) - klik teks / sel untuk mengoreksi sebelum diunduh.
- * Sel 'cek' disorot kuning: PDF baru bisa diunduh setelah semuanya diputuskan.
- */
 import { useState } from 'react';
 import { type KartuBanding, LABEL, type NilaiSpek, potongTebal, teksNilai } from '@/lib/perbandingan';
 import { EditorIsi, type Sunting } from './EditorIsi';

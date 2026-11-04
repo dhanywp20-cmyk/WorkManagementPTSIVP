@@ -1,11 +1,3 @@
-/**
- * lib/integrasi-analisa.ts - aksi `analisa` DIWAYPI: satu potret kerja lintas menu (Ticketing,
- * Reminder Schedule, Request Design Project, Project Progress, Daily Report) untuk satu periode,
- * plus daftar `temuan` yang disusun DETERMINISTIK dari angka itu - bukan tebakan model.
- *
- * Semua baca memakai `db` (RLS pemilik token), jadi cakupannya persis yang ia lihat di layar.
- * Setiap kueri dibatasi barisnya; angka yang terpotong ditandai `+` di `terpotong`.
- */
 import { BARIS, adalahAtasan, gagal, hariIniWIB, type HasilAksi, type KonteksAksi } from '@/lib/integrasi-bantu';
 import { terlihatTeamPTS } from '@/lib/integrasi-menu';
 
@@ -16,7 +8,6 @@ const HARI_MS = 86_400_000;
 const tglMs = (s: string) => Date.parse(/T/.test(s) ? s : `${s}T00:00:00+07:00`);
 const umurHari = (dari: string, ke = Date.now()) => Math.max(0, Math.floor((ke - tglMs(dari)) / HARI_MS));
 
-/** Periode: minggu | bulan (bawaan) | kuartal | tahun, atau dari/sampai (YYYY-MM-DD). */
 export function periodeAnalisa(a: Record<string, unknown>, hari = hariIniWIB()): { dari: string; sampai: string; label: string } {
   const sah = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
   const d = sah(a.dari), s = sah(a.sampai);
@@ -59,7 +50,6 @@ export async function analisa(a: Record<string, unknown>, k: KonteksAksi): Promi
   const temuan: string[] = [];
   const hasil: HasilAksi = { ok: true, periode: per, hari_ini: hari };
 
-  // ---------------------------------------------------------------- Ticketing
   if (mau('tiket')) {
     const kolom = 'id, project_name, issue_case, product, status, assign_name, created_at, updated_at';
     const [aktif, masuk, solved] = await Promise.all([
@@ -92,7 +82,6 @@ export async function analisa(a: Record<string, unknown>, k: KonteksAksi): Promi
     if (tertua && umurHari(str(tertua.created_at)) >= 14) temuan.push(`Tiket aktif tertua ${umurHari(str(tertua.created_at))} hari: ${tertua.project_name}.`);
   }
 
-  // ---------------------------------------------------------------- Reminder Schedule
   if (mau('jadwal')) {
     const kolom = 'id, project_name, category, due_date, status, assign_name';
     const [periodeQ, telatQ] = await Promise.all([
@@ -118,7 +107,6 @@ export async function analisa(a: Record<string, unknown>, k: KonteksAksi): Promi
     }
   }
 
-  // ---------------------------------------------------------------- Request Design Project
   if (mau('desain')) {
     const { data, error } = await db.from('project_requests')
       .select('id, project_name, status, assign_name, assigned_supervisor_id, routing_status, due_date, created_at, sales_name')
@@ -140,7 +128,6 @@ export async function analisa(a: Record<string, unknown>, k: KonteksAksi): Promi
     if (tanpa.length) temuan.push(`${tanpa.length} Request Design sudah diapprove tapi belum ada handler.`);
   }
 
-  // ---------------------------------------------------------------- Project Progress
   if (mau('progres')) {
     const { data: daftar, error } = await db.from('checklist_daftar').select('id, proyek_id, judul, target_date').limit(200);
     if (error) return gagal(error.message);
@@ -170,7 +157,6 @@ export async function analisa(a: Record<string, unknown>, k: KonteksAksi): Promi
     if (kendala.length) temuan.push(`${kendala.reduce((s, l) => s + l.kendala_terbuka, 0)} kendala checklist masih terbuka di ${kendala.length} lokasi.`);
   }
 
-  // ---------------------------------------------------------------- Daily Report (atasan)
   if (mau('daily_report') && adalahAtasan(u)) {
     const [{ data: tim }, { data: dr }] = await Promise.all([
       db.from('users').select('id, full_name, team_type').ilike('team_type', 'Team PTS%').limit(100),

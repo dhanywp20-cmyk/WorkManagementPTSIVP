@@ -1,17 +1,8 @@
-/**
- * lib/kelompok.ts - kelompok kerja: seluruh isi lib/kelompok-inti.ts + hook React-nya.
- *
- * Inti (data, pemuatan, penyimpanan, aturan) dipisah ke lib/kelompok-inti.ts tanpa
- * React, supaya modul server (lib/teams.ts lewat DIWAYPI) bisa memakainya - route
- * Next.js menolak modul yang mengimpor useState. Komponen tetap mengimpor dari sini.
- */
 import { useEffect, useState } from 'react';
 import { dengarKelompok, kelompokCabang, kelompokPTS, kelompokPTSDitugaskan, lingkupManager, muatKelompok,
   semuaKelompok, type Kelompok, type LingkupManager } from './kelompok-inti';
 
 export * from './kelompok-inti';
-
-// Jembatan React
 
 function usePakai<T>(ambil: () => T): T {
   const [nilai, setNilai] = useState<T>(ambil);

@@ -1,7 +1,3 @@
-/**
- * desain3d/mesin/garisUkurDisplay.ts - Garis ukuran display (centang "Ukuran" + garis ukur): lebar di atas &
- * tinggi di kanan tiap display, ujung bertanda, angka dalam mm. Dipisah dari mesin/alatBantu.ts.
- */
 import { DISPLAY, type Benda } from '../inti';
 import { mengalah, PRIORITAS_LABEL } from './label';
 import type { Mesin } from './tipe';

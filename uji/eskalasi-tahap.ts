@@ -1,8 +1,3 @@
-/**
- * uji/eskalasi-tahap.ts - request tertahan di gerbang routing untuk briefing pagi.
- *
- * Jalankan: npx tsx uji/eskalasi-tahap.ts
- */
 import { itemTahapTertahan, type BarisTahap } from '../lib/eskalasi-tahap';
 
 let lulus = 0, gagal = 0;

@@ -1,6 +1,5 @@
 'use client';
 
-/** KepalaJadwal - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { PageHeader } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { Reminder } from './shared';
@@ -41,7 +40,6 @@ export function KepalaJadwal({ canAddReminder, isGuest, mulaiBuatReminder, mulai
           </button>
         )}
 
-        {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
         {isGuest && view === 'list' && (
           <div className="flex flex-col items-end gap-1">
             <button

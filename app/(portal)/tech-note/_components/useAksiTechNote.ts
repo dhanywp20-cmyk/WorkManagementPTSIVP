@@ -1,6 +1,5 @@
 'use client';
 
-/** useAksiTechNote - dipecah dari app/(portal)/tech-note/_components/bagian-tech-note.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { TechNote, TechNoteHistory } from './shared';
 import { KATEGORI_FOLDER, linkOneDriveSah } from './aturan-tech-note';
 import { supabase } from '@/lib/supabase';
@@ -50,7 +49,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     setSaving(true);
     const dasar = {
       name: folderForm.name.trim(),
-      // Emoji mengikuti kategori, bukan diketik bebas - lihat KATEGORI_FOLDER.
       icon: KATEGORI_FOLDER.find(k => k.value === folderForm.category)?.icon ?? '📄',
       color: folderForm.color, parent_id: folderForm.parent_id || null,
       created_by: currentUser?.full_name ?? 'Admin',
@@ -58,10 +56,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     let { error } = await supabase.from('tech_note_folders')
       .insert({ ...dasar, category: folderForm.category });
     if (error) {
-      // Kolom `category` baru ada setelah sql/tech-note-folder-category.sql
-      // dijalankan. Sebelum itu PostgREST menolak SELURUH insert, bukan cuma
-      // kolom yang tak dikenal - jadi tanpa jalur mundur ini, membuat folder
-      // gagal total di lingkungan yang migrasinya belum dijalankan.
       ({ error } = await supabase.from('tech_note_folders').insert(dasar));
     }
     setSaving(false);
@@ -70,7 +64,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     setShowFolderModal(false); fetchFolders();
   };
 
-  /** Buka modal upload dalam mode sunting, terisi nilai catatan yang dipilih. */
   const bukaEditNote = (n: TechNote) => {
     const form = {
       title: n.title ?? '', description: n.description ?? '', product: n.product ?? '',
@@ -83,20 +76,13 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     setShowUploadModal(true);
   };
 
-  /** Hapus tech note beserta riwayatnya. */
   const hapusNote = (n: TechNote) => {
     setConfirmState({
       message: `Hapus tech note "${n.title}"?`,
       description: 'Riwayat review-nya ikut terhapus. Tindakan ini tidak bisa dibatalkan.',
       danger: true, confirmLabel: 'Hapus',
       onConfirm: async () => {
-        // Riwayat dihapus DULUAN: kalau induknya lebih dulu hilang, baris
-        // riwayatnya tertinggal tanpa tujuan dan tidak akan pernah terbaca lagi.
         await supabase.from('tech_note_history').delete().eq('tech_note_id', n.id);
-        //  select('id') + panjangnya diperiksa: riwayatnya sudah kadung
-        //  terhapus di atas, jadi kalau tech_notes-nya sendiri gagal
-        //  terhapus (RLS menolak diam-diam, 0 baris, tanpa galat), "berhasil
-        //  dihapus" akan menyembunyikan catatan yatim tanpa riwayat.
         const { data: terhapus, error } = await supabase.from('tech_notes').delete().eq('id', n.id).select('id');
         if (error || !terhapus || terhapus.length === 0) {
           beritahu('error', error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
@@ -118,16 +104,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     const now = new Date().toISOString();
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
 
-    // Mode sunting
-    // status & author biasanya TIDAK disentuh: menyunting isi bukan berarti
-    // catatannya jadi milik penyunting, dan bukan pula berarti hasil review-nya
-    // batal - KECUALI kasus C3 (docs/UX-WORKFLOW-AUDIT.md): penulis sendiri
-    // (bukan pengelola) menyunting catatan yang statusnya 'revision'/'rejected'.
-    // Dulu status di kasus itu TIDAK PERNAH kembali ke 'pending', jadi hasil
-    // perbaikan penulis tidak pernah masuk lagi ke antrean approval (tab
-    // Pending memfilter status==='pending') - jalan buntu permanen. Action
-    // 'resubmitted' sudah lama ada di ACTION_CONFIG (shared.ts) tapi tidak
-    // pernah dipanggil di mana pun; disambungkan di sini.
     if (editingNote) {
       const resubmit = !canManage && (editingNote.status === 'revision' || editingNote.status === 'rejected');
       const payload: Record<string, unknown> = {
@@ -185,9 +161,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
     setSaving(true);
     const now = new Date().toISOString();
     const newStatus = approvalForm.action === 'approved' ? 'approved' : approvalForm.action === 'rejected' ? 'rejected' : 'revision';
-    //  Hasilnya diperiksa: RLS yang menolak menjawab 0 baris TANPA galat, dan
-    //  approval yang gagal diam-diam berarti penulisnya menunggu keputusan
-    //  yang sebenarnya tidak pernah tersimpan.
     const { data: terubah, error: galatUbah } = await supabase.from('tech_notes')
       .update({ status:newStatus, reviewed_at:now,
         reviewed_by:currentUser.id, reviewed_by_name:currentUser.full_name,
@@ -208,15 +181,6 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
       const actionLabel = approvalForm.action === 'approved' ? '✅ Disetujui' : approvalForm.action === 'rejected' ? '❌ Ditolak' : '🔄 Perlu Revisi';
       void createNotification({ user_id: approveModal.author_id, type: 'system', title: `📄 Tech Note ${actionLabel}`, body: `"${approveModal.title}" — ${approvalForm.note || 'Tanpa catatan'}`, action_url: '/tech-note', ref_id: approveModal.id, created_by: currentUser.full_name ?? '' });
 
-      /*
-        Sebelum ini keputusan review HANYA badge in-app. Artinya penulis yang
-        catatannya ditolak atau diminta revisi baru tahu kalau kebetulan
-        membuka platform - padahal justru dialah yang harus menindaklanjuti,
-        dan revisi yang tidak pernah dikerjakan membuat catatan teknis
-        mengendap tanpa ada yang sadar.
-
-        sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus (lib/wa.ts).
-      */
       try {
         const { data: penulis } = await supabase.from('users')
           .select('full_name, phone_number').eq('id', approveModal.author_id).maybeSingle();
@@ -238,7 +202,7 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
             ].join('\n'),
           });
         }
-      } catch { /* kabar gagal tidak boleh membatalkan keputusan reviewnya */ }
+      } catch {  }
     }
     setSaving(false); setApproveModal(null); setDetailNote(null);
     setApprovalForm({ action:'approved', note:'' }); fetchNotes();

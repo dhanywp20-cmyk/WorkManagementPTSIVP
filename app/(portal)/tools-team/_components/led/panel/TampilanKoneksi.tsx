@@ -1,5 +1,4 @@
 'use client';
-/** Sub menu Screen Connection. */
 import { TombolSalin } from '../../bersama/ui';
 import { RuangKoneksi } from '../koneksi/RuangKoneksi';
 import { BarSub } from './BarSub';

@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * Shared full-screen loading overlay.
- * accentColor default merah - bisa di-override per platform.
- */
 export function LoadingScreen({
   message = 'Loading...',
   accentColor = '#dc2626',
@@ -12,10 +8,6 @@ export function LoadingScreen({
   accentColor?: string;
 }) {
   return (
-    // role="status": keadaan "sedang memuat" harus terdengar, bukan hanya
-    // terlihat berputar. aria-busy memberi tahu bahwa isinya belum final.
-    //  absolute, bukan fixed: modul kini dirender di area isi KerangkaPortal (dulu di iframe), jadi
-    //  layar memuat cukup menutupi area modul - header, sidebar & menu bawah tetap terlihat.
     <div role="status" aria-live="polite" aria-busy="true"
       className="absolute inset-0 min-h-full flex items-center justify-center z-40"
       style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -31,9 +23,6 @@ export function LoadingScreen({
   );
 }
 
-/**
- * Inline spinner (small, untuk di-embed dalam table/loading state)
- */
 export function InlineSpinner({ accentColor = '#dc2626', label = 'Memuat data...' }: { accentColor?: string; label?: string }) {
   return (
     <div role="status" aria-live="polite" aria-busy="true" className="flex justify-center py-16">

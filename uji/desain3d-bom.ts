@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-bom.ts - BOM Desain 3D (inti/bom.ts): pengelompokan perangkat, aksesori pemasangan,
- * isi rack, kabel, dan checklist instalasi dari BOM (pola Project Progress).
- *
- * Jalankan: npm test -- desain3d-bom
- */
 import { readFileSync } from 'fs';
 import {
   bomDesain, checklistDariBom, daftarBenda, jalurKabel, URUTAN_KATEGORI, type Benda, type Ruang,

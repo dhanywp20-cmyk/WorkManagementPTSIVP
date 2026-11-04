@@ -1,11 +1,9 @@
-/** Power Connection: pengaturan, data, susunan sirkuit MCB per fase (murni, tanpa React). */
 import { type HasilDayaLED, hitungDayaLED, type SudutMulai } from '@/lib/av-hitung';
 
-/** Pengaturan power connection (disimpan bersama hitungan LED, ikut undo/redo). */
 export interface PengaturanDaya {
   fase: 1 | 3; mcb: number; beban: number;
   mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z';
-  /** Panjang kabel tiap sirkuit dari panel ke layar (m). */ panjang: number;
+   panjang: number;
 }
 
 export const DAYA_AWAL: PengaturanDaya = { fase: 1, mcb: 16, beban: 80, mulai: 'kiri-bawah', arah: 'vertikal', pola: 'S', panjang: 15 };
@@ -28,10 +26,9 @@ export function bersihkanDaya(x: unknown): PengaturanDaya {
   };
 }
 
-/** Data layar dari kalkulator. */
 export interface DataDaya {
   kolom: number; baris: number; wUnit: number; hUnit: number; satuan: 'modul' | 'cabinet';
-  /** W maks per unit. */ wattUnit: number; tegangan: number; faktorDaya: number;
+   wattUnit: number; tegangan: number; faktorDaya: number;
 }
 
 export const susunDaya = (d: DataDaya, s: PengaturanDaya): HasilDayaLED => hitungDayaLED({

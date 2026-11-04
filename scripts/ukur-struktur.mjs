@@ -1,31 +1,15 @@
 #!/usr/bin/env node
-/**
- * scripts/ukur-struktur.mjs - ukur "kesehatan struktur" kode aplikasi (app/, lib/, components/).
- *
- * Tiga gejala yang diukur - lihat docs/audit/struktur-kode.md:
- *   baris      jumlah baris per berkas            (berkas "dewa" - terlalu banyak tanggung jawab)
- *   barisPanjang jumlah baris > BATAS.karakter    (God line - JSX dipadatkan, daftar props/return raksasa)
- *   propsMaks  atribut `nama={` terbanyak di SATU baris (props drilling - komponen menerima puluhan props)
- *
- * Dipakai dua cara:
- *   node scripts/ukur-struktur.mjs            -> tabel pelanggar teratas
- *   node scripts/ukur-struktur.mjs --baseline -> tulis ulang uji/data/struktur-baseline.json
- *                                               (HANYA setelah angkanya membaik - lihat uji/struktur-kode.mjs)
- */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import ts from 'typescript';
 
-/** Ambang. Berkas di atas ambang ini tercatat di baseline dan tidak boleh memburuk; berkas baru tidak boleh melewatinya. */
 export const BATAS = { baris: 600, karakter: 300, props: 25 };
 
 export function daftarBerkas() {
-  //  Bukan pola 'lib/**/*.ts': pathspec git itu melewatkan berkas yang langsung di lib/ (mis. lib/auth.ts).
   return execSync('git ls-files -- app lib components', { encoding: 'utf8' })
-    //  existsSync: berkas yang sudah dihapus tapi belum di-commit masih terdaftar di git.
     .split('\n').filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith('.d.ts') && existsSync(f));
 }
 
-/** Ukuran satu berkas dari isinya (murni - dipakai juga oleh uji). */
 export function ukurIsi(isi) {
   const baris = isi.split('\n');
   let barisPanjang = 0, propsMaks = 0;
@@ -34,9 +18,26 @@ export function ukurIsi(isi) {
     const props = (b.match(/[A-Za-z_][\w]*=\{/g) ?? []).length;
     if (props > propsMaks) propsMaks = props;
   }
-  //  Baris kosong terakhir (newline di ujung berkas) tidak dihitung.
   const n = baris.length - (baris[baris.length - 1] === '' ? 1 : 0);
   return { baris: n, barisPanjang, propsMaks };
+}
+
+const DIREKTIF = /^(\/\/\s*(eslint-|@ts-|prettier-ignore)|\/\*\s*(eslint-|eslint |global |webpack|[@#]__PURE__)|\/\/\/\s*<reference)/;
+
+export function komentarPenjelasan(isi, nama = 'x.tsx') {
+  const jenis = nama.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const sf = ts.createSourceFile(nama, isi, ts.ScriptTarget.Latest, true, jenis);
+  const temuan = new Map();
+  const ambil = (r) => { for (const k of r ?? []) { const t = isi.slice(k.pos, k.end); if (!DIREKTIF.test(t)) temuan.set(k.pos, t); } };
+  const kunjungi = (n) => {
+    if (n.kind === ts.SyntaxKind.JsxText) return;
+    if (n.kind === ts.SyntaxKind.JsxExpression && !n.expression) { temuan.set(n.getStart(sf), n.getText(sf)); return; }
+    const anak = n.getChildren(sf);
+    if (!anak.length) { ambil(ts.getLeadingCommentRanges(isi, n.pos)); ambil(ts.getTrailingCommentRanges(isi, n.end)); return; }
+    for (const c of anak) kunjungi(c);
+  };
+  kunjungi(sf);
+  return [...temuan.values()];
 }
 
 export function ukurSemua() {
@@ -45,7 +46,6 @@ export function ukurSemua() {
   return hasil;
 }
 
-/** Hanya berkas yang melewati salah satu ambang - itulah isi baseline. */
 export function pelanggar(hasil) {
   const keluar = {};
   for (const [f, u] of Object.entries(hasil)) {

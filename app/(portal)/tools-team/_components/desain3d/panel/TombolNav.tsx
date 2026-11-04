@@ -1,8 +1,6 @@
 'use client';
-/** Tombol bulat kontrol kamera di atas kanvas. */
 import type { ReactNode } from 'react';
 
-/** Tombol bulat kontrol kamera di atas kanvas. */
 export function TombolNav({ judul, onClick, aktif, children }: { judul: string; onClick: () => void; aktif?: boolean; children: ReactNode }) {
   return (
     <button type="button" title={judul} aria-label={judul} aria-pressed={aktif} onClick={onClick}

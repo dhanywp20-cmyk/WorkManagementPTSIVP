@@ -13,23 +13,6 @@ import {
   type ProyekDetail, type ProyekRingkas, type StatChecklist, type SumberChecklist,
 } from './checklist';
 
-/**
- * lib/checklist-server.ts - bagian server Project Progress (berbasis
- * checklist). JANGAN diimpor dari komponen klien (memakai service role).
- *
- * Semua TULIS lewat sini. Aturan hak:
- *   - Admin/superadmin   : buat & hapus proyek/checklist, ubah info proyek,
- *                          atur anggota, link share proyek.
- *   - Anggota checklist  : centang, kendala, foto, ubah/tambah/hapus item,
- *                          impor isi, link share checklist-nya.
- *   - Team (role team)   : melihat semua proyek (sama seperti Project Progress
- *                          lama, lihat is_progress_admin di basis data).
- *   - Sales              : melihat proyek yang mencatat namanya.
- *   - Pimpinan (users.pimpinan, lib/pimpinan.ts): MELIHAT semua proyek & checklist,
- *                          tanpa hak tulis apa pun (bukan admin, bukan anggota).
- *   - Tim lapangan tanpa akun: link share checklist (centang & kendala saja).
- */
-
 export const NO_STORE = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
   Pragma: 'no-cache',
@@ -45,7 +28,6 @@ export interface Akun {
   id: string;
   nama: string;
   role: string;
-  /** Akun pimpinan: boleh membaca semua, tidak boleh menulis. */
   pimpinan?: boolean;
 }
 
@@ -53,16 +35,10 @@ export function akunAdmin(a: Akun): boolean {
   return ['admin', 'superadmin'].includes(a.role.toLowerCase());
 }
 
-/** Melihat SEMUA proyek: admin & team - sama dengan is_progress_admin() di DB. */
 export function akunLihatSemua(a: Akun): boolean {
   return ['admin', 'superadmin', 'team'].includes(a.role.toLowerCase());
 }
 
-/**
- * Membaca semua proyek: admin, team, ATAU akun pimpinan (hanya baca - sama dengan
- * pimpinan_lihat_semua() di kebijakan pp_select / checklist DB). Fitur tim seperti AI
- * checklist tetap memakai akunLihatSemua.
- */
 export function akunBacaSemua(a: Akun): boolean {
   return akunLihatSemua(a) || a.pimpinan === true;
 }
@@ -77,8 +53,6 @@ export async function ambilAkun(request: NextRequest):
   const s = await getSessionUser(request);
   if (!s) return { galat: galat('Sesi tidak valid. Login ulang.', 401) };
   const db = getAdminClient();
-  //  Penanda pimpinan dibaca langsung dari DB (bukan dari sesi) - kueri terpisah & toleran:
-  //  bila kolom belum ada hasilnya null = bukan pimpinan.
   const { data: pim } = await db.from('users').select('pimpinan').eq('id', s.id).maybeSingle();
   return {
     akun: { id: s.id, nama: (s.full_name || s.username || '').trim(), role: s.role ?? '', pimpinan: (pim as { pimpinan?: boolean } | null)?.pimpinan === true },
@@ -86,7 +60,6 @@ export async function ambilAkun(request: NextRequest):
   };
 }
 
-/** 32 hex char, sama dengan token share Project Progress lama. */
 export function tokenBaru(): string {
   return crypto.randomBytes(16).toString('hex');
 }
@@ -95,7 +68,6 @@ export function tokenSah(token: string): boolean {
   return /^[a-f0-9]{32}$/i.test(token);
 }
 
-/** Checklist dari token link share yang AKTIF; null = salah atau dimatikan. */
 export async function cariChecklistShare(token: string): Promise<{ db: Db; id: string } | null> {
   if (!tokenSah(token)) return null;
   const db = getAdminClient();
@@ -109,7 +81,6 @@ const KOLOM_PROYEK = 'id,nama,client,deskripsi,sales_name,sales_division,status,
 const KOLOM_DAFTAR = 'id,proyek_id,judul,keterangan,sumber,share_aktif,share_token,start_date,target_date,urutan,origin,dibuat_oleh_nama,created_at,updated_at';
 export const KOLOM_ITEM = 'id,daftar_id,bagian_id,kelompok,teks,catatan,urutan,selesai,selesai_oleh,selesai_pada,selesai_lewat,kendala,kendala_catatan,kendala_oleh,kendala_pada,foto_url,foto_thumb_url';
 
-/** Baca semua baris (PostgREST membatasi 1000 per permintaan). */
 async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<T[]> {
   const hasil: T[] = [];
   for (let dari = 0; ; dari += 1000) {
@@ -122,10 +93,6 @@ async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike
   return hasil;
 }
 
-/**
- * "Support di lokasi" per checklist (migrasi 053). Kueri terpisah & toleran, seperti penanda pimpinan:
- * sebelum migrasi dijalankan kolomnya belum ada -> peta kosong, halaman tetap terbuka.
- */
 export async function supportPerDaftar(db: Db, ids: string[]): Promise<Map<string, string>> {
   if (!ids.length) return new Map();
   const { data, error } = await db.from('checklist_daftar').select('id,support_lokasi').in('id', ids);
@@ -142,10 +109,6 @@ function jumlahkan(list: StatChecklist[]): StatChecklist {
   return list.reduce((a, s) => ({ total: a.total + s.total, selesai: a.selesai + s.selesai, kendala: a.kendala + s.kendala }), STAT_KOSONG);
 }
 
-/**
- * Angka total/selesai/kendala per checklist dari view checklist_stat_daftar
- * (migrasi 026) - satu baris per checklist, bukan seluruh baris item.
- */
 export async function statPerDaftar(db: Db, ids?: string[]): Promise<Map<string, StatChecklist>> {
   if (ids && !ids.length) return new Map();
   const rows = await semuaBaris<BarisStat>((a, b) => {
@@ -156,7 +119,6 @@ export async function statPerDaftar(db: Db, ids?: string[]): Promise<Map<string,
   return new Map(rows.map(r => [r.daftar_id, { total: r.total, selesai: r.selesai, kendala: r.kendala }]));
 }
 
-/** Daftar proyek yang boleh dilihat akun ini, lengkap dengan angka ringkasnya. */
 export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingkas[]> {
   const [proyek, daftar, anggota, stat] = await Promise.all([
     semuaBaris<ChecklistProyek>((a, b) => db.from('checklist_proyek').select(KOLOM_PROYEK).order('updated_at', { ascending: false }).range(a, b)),
@@ -188,10 +150,6 @@ export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingka
   });
 }
 
-/**
- * Detail satu proyek. Akun yang hanya terhubung lewat keanggotaan melihat
- * checklist miliknya saja - sama dengan aturan baca di basis data.
- */
 export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<ProyekDetail | 'tidak-ada' | 'terlarang'> {
   const { data: p, error } = await db.from('checklist_proyek').select(KOLOM_PROYEK).eq('id', proyekId).maybeSingle();
   if (error) throw new Error(error.message);
@@ -227,8 +185,6 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   const terlihat = lihatSemua ? ringkas : ringkas.filter(c => c.saya);
   if (!terlihat.length && !lihatSemua) return 'terlarang';
 
-  //  Ringkasan "Dikerjakan Oleh" (handler saja) & laju harian. Hanya item selesai, 4 kolom kecil,
-  //  lalu diagregasi di sini - yang dikirim ke peramban cuma angka per orang & per hari.
   const idTerlihat = terlihat.map(c => c.id);
   const selesai = idTerlihat.length
     ? await semuaBaris<ItemSelesai>((a, b) => db.from('checklist_item').select('daftar_id,selesai,selesai_oleh,selesai_pada')
@@ -239,10 +195,6 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   return { proyek: { ...proyek, share_token: admin ? proyek.share_token : null }, checklist: terlihat, admin, aktivitas };
 }
 
-/**
- * Boleh melihat proyek ini? Aturan sama dengan muatProyek (baca semua / Sales proyek / anggota salah
- * satu checklist-nya), tanpa memuat isi proyek - dipakai data yang menempel ke proyek (hasil Kalkulator AV).
- */
 export async function bolehLihatProyek(db: Db, akun: Akun, proyekId: string): Promise<boolean | 'tidak-ada'> {
   const { data: p } = await db.from('checklist_proyek').select('id,sales_name').eq('id', proyekId).maybeSingle();
   if (!p) return 'tidak-ada';
@@ -254,7 +206,6 @@ export async function bolehLihatProyek(db: Db, akun: Akun, proyekId: string): Pr
   return (count ?? 0) > 0;
 }
 
-/** Hak akun terhadap satu checklist; null = tidak boleh melihat sama sekali. */
 export async function hakAtas(db: Db, akun: Akun, daftarId: string):
   Promise<{ hak: HakChecklist; proyekId: string } | null> {
   const { data: d } = await db.from('checklist_daftar').select('id,proyek_id').eq('id', daftarId).maybeSingle();
@@ -269,11 +220,6 @@ export async function hakAtas(db: Db, akun: Akun, daftarId: string):
   return null;
 }
 
-/**
- * Isi lengkap satu checklist. `publik` (link share) membuang token, id anggota,
- * dan riwayat: halaman share tidak perlu tahu token-nya sendiri, dan riwayat
- * adalah bahan pantauan di dalam aplikasi.
- */
 export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: boolean; hak?: HakChecklist }): Promise<ChecklistDetail | null> {
   const { data: daftar, error } = await db.from('checklist_daftar').select(KOLOM_DAFTAR).eq('id', daftarId).maybeSingle();
   if (error) throw new Error(error.message);
@@ -290,8 +236,6 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
           .eq('daftar_id', daftarId).order('created_at', { ascending: false }).limit(80),
     supportPerDaftar(db, [daftarId]),
   ]);
-  // Kegagalan query JANGAN ditelan jadi array kosong: checklist akan tampak
-  // kosong padahal itemnya ada.
   if (pRes.error) throw new Error(pRes.error.message);
   if (bRes.error) throw new Error(bRes.error.message);
 
@@ -299,7 +243,6 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
   return {
     proyek: pRes.data,
     daftar: { ...daftar, support_lokasi: support.get(daftarId) ?? '', share_token: tampilToken ? daftar.share_token : null },
-    //  Publik: nama handler saja (tanpa user_id) - untuk ringkasan "Dikerjakan Oleh".
     anggota: opsi.publik
       ? ((aRes.data ?? []) as ChecklistAnggota[]).map(x => ({ daftar_id: x.daftar_id, user_id: '', nama: x.nama }))
       : (aRes.data ?? []),
@@ -310,7 +253,6 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
   } as ChecklistDetail;
 }
 
-/** Perbarui updated_at checklist & proyeknya - urutan "terakhir diperbarui" ikut benar. */
 export async function sentuh(db: Db, daftarId: string, proyekId?: string) {
   const sekarang = new Date().toISOString();
   let pid = proyekId;
@@ -324,10 +266,6 @@ export async function sentuh(db: Db, daftarId: string, proyekId?: string) {
   ]);
 }
 
-/**
- * Tambahkan bagian & item dari draf impor ke checklist yang SUDAH ada, di
- * belakang isi yang sudah ada. Draf sudah divalidasi (validasiDraft).
- */
 export async function tambahIsi(db: Db, daftarId: string, draft: DraftChecklist, olehNama: string): Promise<number> {
   const [{ data: bAkhir }, { data: iAkhir }] = await Promise.all([
     db.from('checklist_bagian').select('urutan').eq('daftar_id', daftarId).order('urutan', { ascending: false }).limit(1).maybeSingle(),
@@ -349,8 +287,6 @@ export async function tambahIsi(db: Db, daftarId: string, draft: DraftChecklist,
     kelompok: it.kelompok, teks: it.teks, catatan: it.catatan,
     urutan: urutan++,
     selesai: it.selesai,
-    // Item yang sudah tercentang di sumbernya ([x] / Status Selesai) dicatat
-    // atas nama pengimpor - bukan dibiarkan tanpa nama.
     selesai_oleh: it.selesai ? olehNama : null,
     selesai_pada: it.selesai ? sekarang : null,
     selesai_lewat: it.selesai ? 'admin' : null,
@@ -358,7 +294,6 @@ export async function tambahIsi(db: Db, daftarId: string, draft: DraftChecklist,
   for (let i = 0; i < items.length; i += 500) {
     const { error } = await db.from('checklist_item').insert(items.slice(i, i + 500));
     if (error) {
-      // Jangan tinggalkan bagian setengah jadi dari impor yang gagal di tengah.
       await db.from('checklist_bagian').delete().in('id', bagian.map((b: { id: string }) => b.id));
       throw new Error(error.message);
     }
@@ -366,10 +301,6 @@ export async function tambahIsi(db: Db, daftarId: string, draft: DraftChecklist,
   return items.length;
 }
 
-/**
- * Ganti seluruh anggota checklist. Nama diambil dari akun, bukan dari klien.
- * `baru` = yang sebelumnya bukan anggota - hanya mereka yang dikabari.
- */
 export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): Promise<{ anggota: ChecklistAnggota[]; baru: string[] }> {
   const { data: lama } = await db.from('checklist_anggota').select('user_id').eq('daftar_id', daftarId);
   const sudah = new Set(((lama ?? []) as { user_id: string }[]).map(x => x.user_id));
@@ -390,13 +321,6 @@ export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): 
   return { anggota: baris, baru: baris.map(b => b.user_id).filter(id => !sudah.has(id)) };
 }
 
-/**
- * Kabari anggota yang baru di-assign lewat Telegram pribadi (chat id yang
- * dihubungkan di profil). Langsung ke Bot API dari server, pola yang sama
- * dengan digest pagi. Tunduk pada saklar induk Telegram di Admin Panel;
- * orang yang belum menghubungkan Telegram dilewati tanpa dianggap gagal.
- * TIDAK PERNAH melempar - assign tetap sah walau pesan gagal.
- */
 export async function kabariAnggotaBaru(db: Db, daftarId: string, userIds: string[], opsi: { baseUrl: string; oleh: string }):
   Promise<{ terkirim: number; tanpaTelegram: number }> {
   const hasil = { terkirim: 0, tanpaTelegram: 0 };
@@ -417,8 +341,6 @@ export async function kabariAnggotaBaru(db: Db, daftarId: string, userIds: strin
 
     for (const u of (users ?? []) as { id: string; full_name: string | null; telegram_chat_id: string | null }[]) {
       if (!u.telegram_chat_id) { hasil.tanpaTelegram++; continue; }
-      // Teks polos tanpa parse_mode: nama proyek bebas teks, karakter Markdown
-      // di dalamnya bisa membuat Telegram menolak seluruh pesan.
       const pesan = [
         `Halo ${u.full_name ?? ''}, Anda di-assign ke checklist Project Progress.`,
         '',
@@ -436,17 +358,12 @@ export async function kabariAnggotaBaru(db: Db, daftarId: string, userIds: strin
           body: JSON.stringify({ chat_id: u.telegram_chat_id, text: pesan }),
         });
         if ((await r.json().catch(() => ({})))?.ok) hasil.terkirim++;
-      } catch { /* satu penerima gagal tidak menghentikan yang lain */ }
+      } catch {  }
     }
-  } catch { /* pemberitahuan pelengkap - jangan gagalkan assign */ }
+  } catch {  }
   return hasil;
 }
 
-/**
- * Buat checklist baru di sebuah proyek. Supabase REST tidak punya transaksi
- * lintas tabel, jadi kegagalan di tengah dibereskan dengan menghapus
- * checklist-nya (cascade ke bagian, item, anggota).
- */
 export async function buatChecklist(db: Db, proyekId: string, data: {
   judul: string; keterangan: string; start_date: string | null; target_date: string | null;
   sumber: SumberChecklist; anggota: string[]; origin?: 'manual' | 'auto_reminder'; source_reminder_id?: string | null;
@@ -469,30 +386,18 @@ export async function buatChecklist(db: Db, proyekId: string, data: {
     await db.from('checklist_daftar').delete().eq('id', d.id);
     throw e;
   }
-  // Sesudah isinya lengkap, supaya pesan menyebut jumlah item yang benar.
   if (kabari) await kabariAnggotaBaru(db, d.id, baru, { baseUrl: kabari.baseUrl, oleh: oleh.nama });
   return d.id as string;
 }
 
 const RIWAYAT_KOLOM = 'id,item_id,teks_item,aksi,nama,lewat,created_at';
 
-/**
- * Waktu pengerjaan dari perangkat. Dipakai supaya "kapan dikerjakan" tetap
- * benar walau Simpan baru ditekan belakangan; ditolak (pakai waktu server)
- * bila tidak masuk akal - di masa depan atau lebih dari 14 hari lalu.
- */
 function waktuSah(v: unknown, sekarang: number): string {
   const t = typeof v === 'string' ? Date.parse(v) : NaN;
   if (Number.isNaN(t) || t > sekarang + 5 * 60_000 || t < sekarang - 14 * 86_400_000) return new Date(sekarang).toISOString();
   return new Date(t).toISOString();
 }
 
-/**
- * Simpan sekumpulan perubahan centang/kendala dari SATU kali tekan Simpan.
- * Satu baca, satu tulis item (upsert), satu tulis riwayat - berapa pun
- * jumlah perubahannya. `selesai` & `kendala` adalah NILAI TUJUAN, bukan
- * "balik": dua orang yang menyimpan item yang sama tidak saling membatalkan.
- */
 export async function simpanPerubahan(
   db: Db, daftarId: string, masuk: unknown, nama: string, lewat: LewatCentang,
 ): Promise<{ galat: string; status: number } | { items: ChecklistItem[]; riwayat: ChecklistRiwayat[] }> {
@@ -560,11 +465,6 @@ export async function simpanPerubahan(
 const BUCKET = 'project-files';
 const BATAS_FOTO = 5 * 1024 * 1024;
 
-/**
- * Simpan foto bukti satu item (full + thumb, keduanya sudah dikompres di
- * peramban). Dipakai dari aplikasi maupun link share - jalurnya sama-sama
- * lewat server, jadi tidak ada izin unggah storage yang dibuka ke anon.
- */
 export async function simpanFoto(db: Db, daftarId: string, itemId: string, form: FormData):
   Promise<{ galat: string; status: number } | { item: unknown }> {
   const full = form.get('full');
@@ -587,7 +487,6 @@ export async function simpanFoto(db: Db, daftarId: string, itemId: string, form:
   let thumbUrl = fullUrl;
   if (thumb instanceof Blob && thumb.size > 0) {
     const t = await db.storage.from(BUCKET).upload(`${base}-thumb.${ext}`, thumb, { contentType: thumb.type || full.type, cacheControl: '31536000', upsert: false });
-    // Thumbnail gagal bukan alasan membatalkan - jatuh balik ke foto penuh.
     if (!t.error) thumbUrl = db.storage.from(BUCKET).getPublicUrl(`${base}-thumb.${ext}`).data.publicUrl;
   }
 

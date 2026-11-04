@@ -21,13 +21,6 @@ function urlShare(t: TargetShare): string {
   return `${appBaseUrl()}/project-progress/share/${t.share_token}`;
 }
 
-/**
- * Link share - dua jenis:
- *   checklist : tim lapangan BISA mencentang & menandai kendala tanpa login
- *   proyek    : HANYA LIHAT seluruh checklist proyek (untuk client/atasan)
- * Mematikan link tidak mengganti token (link lama hidup lagi saat dinyalakan);
- * "Buat link baru" yang memutus link lama untuk selamanya.
- */
 export function ModalShare({ target, onTutup, onUbah, beritahu }: {
   target: TargetShare | null;
   onTutup: () => void;

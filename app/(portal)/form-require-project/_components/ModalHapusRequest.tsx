@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalHapusRequest - hapus satu request (ketik HAPUS). Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { KotakInfo, Modal, TombolModal, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
 import { ProjectRequest } from './shared';
 

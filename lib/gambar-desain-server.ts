@@ -1,36 +1,21 @@
-/**
- * lib/gambar-desain-server.ts - gambar Desain 3D (tekstur lantai/dinding & gambar konten layar) disimpan
- * SEKALI per isi di tabel tools_gambar_desain (migrasi 044).
- *
- * Saat desain / template disimpan, setiap gambar data URL di data.layar & data.tekstur diganti rujukan
- * "ref:<hash>" (SHA-256 isi, 40 hex). Gambar yang sama - di 10 versi riwayat, atau di desain lain - hanya
- * satu baris. Peramban mengambilnya lewat /api/tools-team/aset?h= dengan cache permanen, jadi tiap
- * peramban cukup mengunduh sekali (hemat egress Supabase & bandwidth Vercel paket gratis).
- * Hanya untuk server (service role).
- */
 import { createHash } from 'node:crypto';
 import type { getAdminClient } from '@/lib/supabase-admin';
 import { POLA_REF_GAMBAR } from '@/lib/tools-team';
 
 type Db = ReturnType<typeof getAdminClient>;
 const TABEL = 'tools_gambar_desain';
-/** Batas total seluruh gambar desain (byte data URL) - pengaman kuota basis data paket gratis (500 MB). */
 export const MAKS_TOTAL_GAMBAR_DESAIN = 150_000_000;
 
 export const hashGambar = (dataUrl: string) => createHash('sha256').update(dataUrl).digest('hex').slice(0, 40);
 
 type PetaGambar = Record<string, string> | undefined;
 
-/**
- * Ganti setiap gambar data URL di `layar` & `tekstur` dengan ref:<hash> (gambar baru disimpan sekali),
- * dan pastikan setiap ref yang dikirim memang ada. Data lain tidak diubah.
- */
 export async function rujukGambarDesain<T extends { layar?: PetaGambar; tekstur?: PetaGambar }>(
   db: Db, data: T, userId: string,
 ): Promise<{ ok: true; data: T } | { ok: false; alasan: string }> {
   const kelompok = (['layar', 'tekstur'] as const).filter(k => data[k] && Object.keys(data[k]!).length);
   if (!kelompok.length) return { ok: true, data };
-  const baru = new Map<string, string>();      // hash -> data URL
+  const baru = new Map<string, string>();
   const ref = new Set<string>();
   for (const k of kelompok) for (const v of Object.values(data[k]!)) {
     if (POLA_REF_GAMBAR.test(v)) ref.add(v.slice(4)); else baru.set(hashGambar(v), v);
@@ -58,7 +43,6 @@ export async function rujukGambarDesain<T extends { layar?: PetaGambar; tekstur?
   return { ok: true, data: { ...data, ...(data.layar ? { layar: ganti(data.layar) } : {}), ...(data.tekstur ? { tekstur: ganti(data.tekstur) } : {}) } };
 }
 
-/** Hapus gambar yang tidak lagi dirujuk siapa pun (masa tenggang 1 hari). Gagal = diabaikan. */
 export async function bersihkanGambarDesain(db: Db): Promise<void> {
-  try { await db.rpc('bersihkan_gambar_desain'); } catch { /* bukan bagian penting penyimpanan */ }
+  try { await db.rpc('bersihkan_gambar_desain'); } catch {  }
 }

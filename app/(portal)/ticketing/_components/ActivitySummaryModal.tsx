@@ -4,11 +4,6 @@ import type { Ticket, User } from "./shared";
 import { formatDateTime, ringkasPenanganan, statusColors } from "./shared";
 import { Ikon, IkonTeks } from "@/components/shared/Ikon";
 
-/**
- * Modal "Activity Summary" (riwayat lengkap satu ticket) - dipindah dari
- * app/ticketing/page.tsx apa adanya (JSX identik). State & handler tetap
- * di page.tsx, komponen ini murni presentasional.
- */
 export function ActivitySummaryModal({
   summaryTicket,
   users,
@@ -17,7 +12,6 @@ export function ActivitySummaryModal({
 }: {
   summaryTicket: Ticket;
   users: User[];
-  /** Wrapper page.tsx yang sudah terikat ke state projectReminders. */
   getWarrantyInfo: (projectName: string) => { isIn: boolean; diffDays: number; wy: number } | null;
   onClose: () => void;
 }) {
@@ -32,10 +26,6 @@ export function ActivitySummaryModal({
     >
       <div>
         <div className="mb-4">
-          {/* Baris pembuatan diturunkan dari ticket-nya sendiri: logAudit
-                  baru mencatat 'create' sejak perbaikan terakhir, jadi tanpa
-                  ini seluruh ticket LAMA tampak tidak punya pangkal — padahal
-                  created_by & created_at-nya tersimpan sejak awal. */}
           {(() => {
             const pembuat = users.find((u) => u.username === summaryTicket.created_by);
             const namaPembuat = pembuat?.full_name || summaryTicket.created_by || null;
@@ -56,15 +46,6 @@ export function ActivitySummaryModal({
           })()}
         </div>
 
-        {/* Alur tiket - diagram yang sama dengan Request Schedule dan
-                Request Design Project. Ticketing satu-satunya yang belum
-                memakainya, jadi pembacanya harus menyimpulkan sendiri sudah
-                sampai mana sebuah tiket, dari daftar riwayat.
-
-                Tahap "Ke Services" hanya disisipkan bila tiketnya memang
-                pernah dilimpahkan. Dasarnya ringkasPenanganan(), helper yang
-                sama yang dipakai layar View Ticket dan lembar cetak - supaya
-                ketiganya tidak pernah menjawab berbeda untuk tiket yang sama. */}
         <div className="mb-5">
           {(() => {
             const t = summaryTicket;
@@ -83,8 +64,6 @@ export function ActivitySummaryModal({
               { label: "Selesai", pelaku: ringkas.keServices ? "Services" : "Team PTS" },
             ];
 
-            //  0 diajukan · 1 menunggu assign · 2 dikerjakan · ... · terakhir selesai
-            //  tahap.length berarti seluruh alur tuntas (indeks di luar daftar)
             const aktif = selesai ? tahap.length : sudahAssign ? 2 : 1;
 
             return <FlowSteps judul="Alur Tiket" aktif={aktif} dibatalkan={batal} steps={tahap} />;
@@ -122,7 +101,6 @@ export function ActivitySummaryModal({
               </span>
             </>
           )}
-          {/* Warranty badge */}
           {(() => {
             const w = getWarrantyInfo(summaryTicket.project_name);
             if (!w) return null;

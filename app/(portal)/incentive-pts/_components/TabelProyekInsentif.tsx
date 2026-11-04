@@ -1,6 +1,5 @@
 'use client';
 
-/** TabelProyekInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { bisaKonfig, bisaInput, calcHandlerSplit, type CurrentUser } from './aturan-halaman';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';
@@ -45,17 +44,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
               <th className={`${thCls} w-[140px]`}>Kategori</th>
               <th className={`${thCls} w-[100px]`}>Mode</th>
               <th className={`${thCls} w-[110px]`}>BAST</th>
-              {/*
-                Nominal SEKARANG tampil utk semua role (dulu khusus
-                canInputNominal) - list ini sudah tersaring ke project
-                yang usernya sendiri terlibat (lihat userInProject di
-                atas), jadi menampilkan pool project di sini bukan
-                kebocoran baru: nominal & bagiannya sendiri sudah bisa
-                dilihat lewat modal detail juga. "Bagian Handler" TETAP
-                privileged-only - itu bisa jadi bagian ORANG LAIN kalau
-                yang login bukan handler-nya, beda dari Nominal (pool
-                project, bukan bagian personal siapa pun).
-              */}
               <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[150px]">Nominal</th>
               {bisaInput(currentUser) && <th className="px-3 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200 w-[145px]">Bagian Handler</th>}
               <th className={`${thCls} w-[90px] text-center`}>Tranche</th>
@@ -73,8 +61,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
               const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
               const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
               const hasNominal = (p.incentive_value || 0) > 0;
-              //  Lihat catatan di baris kartu mobile di atas - fetchTranches()
-              //  mengurutkan lewat payment_year, bukan tranche_number.
               const projTranches = tranches.filter(t => t.project_id === p.id)
                 .sort((a, b) => a.tranche_number - b.tranche_number);
               const handlerSplit = calcHandlerSplit(skema, p);
@@ -89,20 +75,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
                   <td className={cellCls}>
                     <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
                     {p.pic_type === 'manager_pic' && <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
-                    {/*
-                      Lencana brand. Dua petugas Finance memakai daftar
-                      yang sudah tersaring, jadi lencana ini bukan sekadar
-                      hiasan - ia yang menjelaskan KENAPA sebuah proyek
-                      ada di daftarnya, dan kenapa yang lain tidak.
-
-                      Utk Admin, lencana ini KLIK-ABLE - membuka picker
-                      MVI/IVP/Kedua kecil di bawahnya utk set manual.
-                      Sebelumnya satu-satunya jalan membetulkan project
-                      "tanpa brand" adalah hapus reminder lalu Sync ulang
-                      dari Reminder Schedule - berisiko ikut menghapus
-                      BAST/nominal/tahapan yang sudah terlanjur diproses,
-                      padahal yang salah cuma satu kolom.
-                    */}
                     {bisaKonfig(currentUser) ? (
                       <span className="relative inline-block mt-0.5 ml-1">
                         <button type="button"
@@ -166,8 +138,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
                       ? <p className="text-sm font-black text-emerald-700">{formatRupiah(p.incentive_value || 0)}</p>
                       : bisaInput(currentUser)
                         ? <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>
-                        //  Nominal terkunci di server: orang yang tidak berhak melihatnya tidak boleh
-                        //  dibuat mengira proyeknya "belum diisi".
                         : <span className="text-xs text-gray-400">—</span>}
                   </td>
                   {bisaInput(currentUser) && (
@@ -192,7 +162,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
                   </td>
                   <td className={`${cellCls} text-center`} onClick={e => e.stopPropagation()}>
                     <div className="flex gap-1 justify-center">
-                      {/* View — semua role bisa akses */}
                       <button aria-label="Lihat Detail" onClick={() => openProjectDetail(p)}
                         title="Lihat Detail"
                         className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-slate-200 text-blue-500 hover:bg-blue-50 hover:border-blue-300 hover:shadow-sm">
@@ -212,11 +181,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </button>
                       )}
-                      {/*
-                        Jalan kembali dari Generate Tranche. Muncul hanya
-                        bila tahapannya memang ada DAN belum ada yang Paid -
-                        tahap yang sudah dibayar tidak boleh dihapus dari layar.
-                        */}
                         {bisaKonfig(currentUser) && projTranches.length > 0
                         && !projTranches.some(t => t.status === 'paid') && (
                         <button aria-label={`Hapus tahapan ${p.project_name}`}
@@ -258,15 +222,6 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
               </tr>
             </tfoot>
           ) : (
-            /*
-              Non-privileged: total DIHITUNG DARI filteredProjects (yang
-              sudah tersaring ke project dia sendiri), BUKAN dari
-              `totalPool` (total SELURUH platform) - kalau dipakai
-              totalPool di sini, Team akan melihat total nominal
-              seluruh perusahaan, bukan cuma project miliknya sendiri.
-              Tanpa kolom Bagian Handler - itu bisa jadi bagian orang
-              lain, tidak pas dijumlah jadi satu angka utk yang login.
-            */
             <tfoot>
               <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                 <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL (project saya)</td>

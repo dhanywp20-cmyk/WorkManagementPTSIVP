@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalBatalBatch - batalkan hasil batch satu tahun. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { KotakInfo, Modal, TombolModal, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
 import { IncentiveProjectRow, IncentiveTranche } from './calc';
 

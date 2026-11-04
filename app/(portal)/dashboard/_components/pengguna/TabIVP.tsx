@@ -1,6 +1,5 @@
 'use client';
 
-/** TabIVP - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Username } from '@/components/shared';
 import { maskPhone } from '../modal-bersama';

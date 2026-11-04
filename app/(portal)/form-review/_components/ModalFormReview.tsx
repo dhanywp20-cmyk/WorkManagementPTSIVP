@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalFormReview - dipecah dari app/(portal)/form-review/_components/FormReviewPageInner.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { FormField, SectionHeader, StarRating, ModalPortal, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { ReviewForm } from './shared';
@@ -30,13 +29,11 @@ export function ModalFormReview({ editingReview, emptyReviewForm, fotoPreview, f
       {showFormModal && editingReview && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-4 overflow-y-auto" style={LATAR_MODAL}>
-          {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala ungu sendiri. */}
           <div className={`${KARTU_MODAL} w-full max-w-2xl max-h-full flex flex-col overflow-hidden`}>
             <KepalaModal judul="Isi Review" onTutup={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
               keterangan={`${editingReview.project_name} · ${editingReview.review_category === 'Demo Product' ? 'Demo Product' : 'BAST (Training)'}`} />
 
             <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
-              {/* Project Info (Read-only) */}
               <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
                 <p className="text-[11px] font-bold tracking-widest uppercase text-violet-600">Informasi Project</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">

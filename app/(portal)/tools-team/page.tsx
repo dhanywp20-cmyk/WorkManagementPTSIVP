@@ -13,13 +13,11 @@ import { ChecklistBarang } from './_components/ChecklistBarang';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
 
-//  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
   ssr: false,
   loading: () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat Desain 3D...</div>,
 });
 
-//  Desain 3D pertama = alat yang tampil saat halaman dibuka.
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
   { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
@@ -32,8 +30,6 @@ const ALAT = [
 function ToolsKerjaInner() {
   const sp = useSearchParams();
   const [siap, setSiap] = useState(false);
-  //  ?alat=koneksi (tautan lama) = LED Videotron, sub menu Screen Connection.
-  //  Pustaka hanya untuk Admin, Team, pimpinan & akun Marketing/Sales yang diberi izin (lib/pustaka.ts).
   const [alat] = useState(() => ALAT.filter(x => x.k !== 'pustaka' || bolehLihatPustaka(getSession<Parameters<typeof bolehLihatPustaka>[0]>())));
   const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : alat.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
   const subQ = sp.get('sub');
@@ -49,15 +45,14 @@ function ToolsKerjaInner() {
     setSiap(true);
     return startSessionWatcher();
   }, []);
-  //  Tab Pemakaian di Analytics: alat mana yang dibuka (KerangkaPortal sengaja melewati modul ini).
   useEffect(() => { if (siap) catatPemakaian('tools-team', aktif); }, [siap, aktif]);
 
   const pilih = (k: string) => {
     setAktif(k);
-    try { const url = new URL(window.location.href); url.searchParams.set('alat', k); url.searchParams.delete('sub'); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
+    try { const url = new URL(window.location.href); url.searchParams.set('alat', k); url.searchParams.delete('sub'); window.history.replaceState(null, '', url); } catch {  }
   };
   const pilihSub = (sub: SubLED) => {
-    try { const url = new URL(window.location.href); url.searchParams.set('alat', 'led'); if (sub === 'led') url.searchParams.delete('sub'); else url.searchParams.set('sub', sub); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
+    try { const url = new URL(window.location.href); url.searchParams.set('alat', 'led'); if (sub === 'led') url.searchParams.delete('sub'); else url.searchParams.set('sub', sub); window.history.replaceState(null, '', url); } catch {  }
   };
 
   if (!siap) return <div className="min-h-screen grid place-items-center text-sm text-slate-500">Memuat...</div>;
@@ -65,7 +60,6 @@ function ToolsKerjaInner() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
       <PageHeader icon="🧮" title="AV Solution Tools" subtitle="Kalkulator & desain untuk engineer Audio Visual">
-        {/* Pilihan alat di header (pola tombol "Mapping Center" di Summary Project): yang aktif berisi gradien, yang lain putih. */}
         {alat.map(a => {
           const on = a.k === aktif;
           return (
@@ -79,8 +73,6 @@ function ToolsKerjaInner() {
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
-          {/* LED Videotron berisi sub menu Calculator LED | Screen Connection. */}
-          {/*  Tiap alat dirender eksplisit - alat baru di ALAT WAJIB punya cabang di sini (dulu Pustaka jatuh ke Desain 3D). */}
           {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} />
             : aktif === 'av' ? <KalkulatorAV />
             : aktif === 'pustaka' ? <Pustaka />

@@ -1,6 +1,5 @@
 'use client';
 
-/** useEditRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { User, ProjectRequest, RoomDetail, sendWANotif, emptyRoom } from './shared';
 import { EDIT_ROOM_LABELS, ambilFieldRuangan, namaRuangan, type EditRoomFields } from './ruangan';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField, type Perubahan } from '@/lib/admin-edit';
@@ -48,8 +47,6 @@ export function useEditRequest(k: EditRequestKonteks) {
       project_name: selectedRequest.project_name || '', room_name: selectedRequest.room_name || '',
       project_location: selectedRequest.project_location || '',
       sales_name: selectedRequest.sales_name || '', sales_division: selectedRequest.sales_division || '',
-      // uuid ikut dibawa masuk supaya menyimpan tanpa mengganti Sales tidak
-      // menghapus identitas yang sudah tercatat.
       sales_user_id: selectedRequest.sales_user_id ?? null, kebutuhan: selectedRequest.kebutuhan || [],
       kebutuhan_other: selectedRequest.kebutuhan_other || '', solution_product: selectedRequest.solution_product || [],
       solution_other: selectedRequest.solution_other || '', layout_signage: selectedRequest.layout_signage || [],
@@ -68,12 +65,10 @@ export function useEditRequest(k: EditRequestKonteks) {
     const ruanganTersimpan = selectedRequest.rooms || [];
     setEditRooms(ruanganTersimpan.map(r => ({ ...emptyRoom(), ...r })));
     setEditNewRoomIds([]);
-    // Buka di tab ruangan yang sedang dilihat di modal Detail, bukan selalu Ruangan 1.
     setEditRoomIdx(Math.min(detailRoomIdx, ruanganTersimpan.length));
     setEditFormModal(true);
   };
 
-  // Data & pengubah untuk tab ruangan yang sedang aktif di form Edit.
   const editCur: EditRoomFields = editRoomIdx === 0 ? editFormData : (editRooms[editRoomIdx - 1] ?? emptyRoom());
   const editUpd = (patch: Partial<EditRoomFields>) => {
     if (editRoomIdx === 0) setEditFormData(p => ({ ...p, ...patch }));
@@ -87,10 +82,6 @@ export function useEditRequest(k: EditRequestKonteks) {
     setEditNewRoomIds(p => [...p, baru.id]);
     setEditRoomIdx(1 + editRooms.length);
   };
-  // Hanya ruangan yang BELUM tersimpan yang bisa dibuang. Ruangan yang sudah
-  // tersimpan tidak boleh dihapus/digeser dari sini: file lampiran terikat ke
-  // NOMOR ruangan ("[room3] ...") dan chat ke namanya, jadi menghapus satu
-  // ruangan membuat lampiran & chat pindah ke ruangan yang salah.
   const handleEditRemoveNewRoom = () => {
     const r = editRooms[editRoomIdx - 1];
     if (!r || !editNewRoomIds.includes(r.id)) return;
@@ -99,14 +90,6 @@ export function useEditRequest(k: EditRequestKonteks) {
     setEditRoomIdx(i => Math.max(0, i - 1));
   };
 
-  /**
-   * Field yang dilacak untuk audit & pesan WA.
-   *
-   * Hanya field yang berarti bagi orang yang mengerjakan. Isian teknis
-   * (checkbox perangkat, ukuran, dsb) tetap tersimpan seperti biasa - cuma
-   * tidak diuraikan satu per satu di WA, karena daftarnya bisa puluhan baris
-   * dan justru menenggelamkan yang penting.
-   */
   const REQUEST_FIELDS: AdminField[] = [
     { key: 'project_name',     label: 'Nama Project' },
     { key: 'room_name',        label: 'Nama Ruangan' },
@@ -119,7 +102,6 @@ export function useEditRequest(k: EditRequestKonteks) {
     { key: 'keterangan_lain',  label: 'Keterangan' },
   ];
 
-  /** Alihkan request ke anggota tim / supervisor lain. */
   const simpanReroute = async () => {
     if (!rerouteTarget || !rerouteTo) return;
     setRerouteSaving(true);
@@ -129,9 +111,6 @@ export function useEditRequest(k: EditRequestKonteks) {
       const dari = rerouteTarget.assign_name || '(belum ada)';
 
       const payload: Record<string, unknown> = orang.jabatan === 'Supervisor'
-        // Ke Supervisor: dikembalikan ke tahap supervisor_assign supaya
-        // Supervisor itu yang menentukan pelaksananya - sama seperti alur
-        // normal, bukan jalur pintas yang melompati tahapannya.
         ? { assign_name: null, assign_user_id: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
         : { assign_name: orang.full_name, assign_user_id: orang.id, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
 
@@ -177,14 +156,9 @@ export function useEditRequest(k: EditRequestKonteks) {
   const handleEditFormSubmit = async () => {
     if (!selectedRequest) return;
 
-    // Ruangan baru wajib punya Kebutuhan - aturan yang sama dengan form pembuatan.
     const idxKosong = editRooms.findIndex(r => editNewRoomIds.includes(r.id) && r.kebutuhan.length === 0 && !r.kebutuhan_other.trim());
     if (idxKosong >= 0) { setEditRoomIdx(idxKosong + 1); notify('error', `Pilih Kebutuhan untuk Ruangan ${idxKosong + 2}!`); return; }
 
-    // Ruangan 2+ : gabungkan ke rooms[] TERBARU di database, bukan ke salinan
-    // yang dibuka saat form dibuka. Selama form terbuka, admin bisa saja
-    // meng-approve/assign ruangan lain - menulis balik seluruh array dari
-    // salinan lama akan menimpa status & assign itu.
     const editanLama = editRooms.filter(r => !editNewRoomIds.includes(r.id));
     const ruanganBaru = editRooms.filter(r => editNewRoomIds.includes(r.id));
     let roomsPayload: RoomDetail[] | null = null;
@@ -212,9 +186,6 @@ export function useEditRequest(k: EditRequestKonteks) {
         ));
         return { ...dbR, ...baru };
       });
-      // Ruangan yang ditambah setelah request lewat tahap pending harus
-      // menunggu approve sendiri; kalau tidak diberi status, getRoomStatus()
-      // jatuh ke status request (mis. "completed") dan ruangan baru tampak selesai.
       butuhApprovalRuanganBaru = statusRequest !== 'pending';
       const tambahan: RoomDetail[] = ruanganBaru.map(r => ({
         ...r, room_name: r.room_name.trim(),
@@ -244,8 +215,6 @@ export function useEditRequest(k: EditRequestKonteks) {
       .update(pakaiUuid ? updateData : tanpaIdentitas(updateData)).eq('id', selectedRequest.id));
     if (error) { notify('error', 'Gagal menyimpan perubahan.'); return; }
 
-    // Jejak siapa mengubah apa. Tanpa ini, satu-satunya bukti perubahan adalah
-    // pesan otomatis di kolom diskusi - yang tidak menyebut nilai lamanya.
     void logAudit({
       user_id: currentUser.id, user_name: currentUser.full_name,
       action: 'update', module: 'require',
@@ -253,7 +222,6 @@ export function useEditRequest(k: EditRequestKonteks) {
       notes: semuaPerubahan.length ? ringkasPerubahan(semuaPerubahan) : 'Disimpan tanpa perubahan',
     });
 
-    // Kabari yang mengerjakan: tanpa ini orang bisa berangkat memakai data lama.
     const penangani = String(selectedRequest.assign_name ?? '');
     if (semuaPerubahan.length > 0 && penangani && penangani !== currentUser.full_name) {
       try {
@@ -270,11 +238,9 @@ export function useEditRequest(k: EditRequestKonteks) {
             tautan: appLink('/form-require-project'),
           }) });
         }
-      } catch { /* WA gagal tidak membatalkan perubahan yang sudah tersimpan */ }
+      } catch {  }
     }
 
-    // Ruangan baru yang berstatus pending butuh keputusan admin - kabari mereka,
-    // sama seperti request baru. Tanpa ini ruangannya diam menunggu tanpa ada yang tahu.
     if (namaRuanganBaru.length > 0 && butuhApprovalRuanganBaru) {
       try {
         const admins = (await penerimaAdminBernomor()) as { id?: string; phone_number?: string | null }[] | null;
@@ -289,7 +255,7 @@ export function useEditRequest(k: EditRequestKonteks) {
         await Promise.allSettled((admins ?? [])
           .filter(a => a.phone_number && a.id !== currentUser.id)
           .map(a => sendWANotif({ type: 'reminder_wa', event: 'project.approval_needed', target: a.phone_number as string, message: pesanAdmin })));
-      } catch { /* notifikasi gagal tidak membatalkan perubahan yang sudah tersimpan */ }
+      } catch {  }
     }
 
     notify('success', 'Perubahan disimpan!');
@@ -299,7 +265,6 @@ export function useEditRequest(k: EditRequestKonteks) {
     setDetailRoomIdx(editRoomIdx);
     await supabase.from('project_messages').insert([
       { request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `✏️ Kebutuhan project diperbarui oleh ${currentUser.full_name}.` },
-      // Diberi awalan [Nama Ruangan] supaya muncul di tab chat ruangan barunya.
       ...namaRuanganBaru.map(nama => ({ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `[${nama}] ➕ Ruangan ditambahkan oleh ${currentUser.full_name}.` })),
     ]);
     fetchMessages(selectedRequest.id);

@@ -1,6 +1,5 @@
 'use client';
 
-/** useTinjauInternal - dipecah dari app/(portal)/reminder-schedule/_components/useAlurPersetujuan.ts (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Reminder, TeamUser, sendFonnteWA, fetchManagerTargets } from './shared';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
@@ -33,12 +32,10 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     setSaving(true);
     setInternalApproveSaving(true);
     const now = new Date().toISOString();
-    // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
     const isSecondReviewer = !!r.internal_sales_id_2 && r.internal_sales_id_2 === currentUser?.id;
     const patch: Record<string, unknown> = {};
     if (isSecondReviewer) patch.internal_approved_at_2 = now;
     else { patch.internal_approved_by = currentUser?.id ?? null; patch.internal_approved_at = now; }
-    // Sudah lengkap kalau: bukan BOTH (1 reviewer), ATAU kedua approve sudah terisi.
     const needBoth = !!r.internal_sales_id_2;
     const otherDone = isSecondReviewer ? !!r.internal_approved_at : !!r.internal_approved_at_2;
     const allApproved = !needBoth || otherDone;
@@ -58,21 +55,6 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: r.id, target_name: r.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRemindersQuiet();
 
-    /*
-      Kabar ke Manager/Admin bahwa request sudah lolos review Sales Internal.
-
-      CATATAN RIWAYAT: tahap ini pernah SENGAJA dibuat badge in-app saja - WA
-      "REQUEST LOLOS REVIEW" dihapus atas permintaan user waktu itu, dengan
-      alasan cukup badge di sini dan WA hanya di hasil akhir. Sekarang dibalik
-      lagi, juga atas permintaan user: tahap ini adalah giliran Admin/Manager
-      bertindak, dan badge yang hanya terlihat kalau seseorang kebetulan
-      membuka platform bukan pemberitahuan - request bisa mengendap berhari-
-      hari tanpa ada yang tahu gilirannya sudah tiba.
-
-      Penerimanya fetchManagerTargets(): pemegang Full Access (Manager PTS IVP)
-      plus manager yang disetel di app_settings - BUKAN semua yang berjabatan
-      Manager, supaya Manager PTS UMP yang orang luar tidak ikut terseret.
-    */
     try {
       const managerTargets = await fetchManagerTargets();
       const targets: { id: string; phone_number: string | null; full_name: string }[] = [...managerTargets];
@@ -94,8 +76,6 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
       ].join('\n');
 
       for (const t of targets) {
-        //  sendFonnteWA mengirim ke WhatsApp DAN Telegram sekaligus
-        //  (lihat lib/wa.ts) - tidak perlu dipanggil dua kali.
         if (t.phone_number) void sendFonnteWA(t.phone_number, pesanLolos, undefined, 'reminder.new_schedule');
         createNotification({
           user_id: t.id,
@@ -111,7 +91,6 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     setSaving(false);
   };
 
-  // Handler: Sales Internal Tolak request (wajib isi alasan)
   const handleInternalReject = (r: Reminder) => { setInternalRejectReason(''); setInternalRejectTarget(r); };
 
   const handleInternalRejectConfirm = async () => {
@@ -129,7 +108,6 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     setInternalRejectTarget(null);
     fetchRemindersQuiet();
 
-    // WA ke Sales requester - kasih tau ditolak + alasannya.
     try {
       const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
       if (salesUser?.phone_number) {
@@ -165,8 +143,6 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     setAdminRejectTarget(null);
     fetchRemindersQuiet();
 
-    // WA ke Sales requester - kasih tau ditolak + alasannya (pola sama dengan
-    // penolakan tahap internal_review).
     try {
       const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', r.sales_name).eq('role', 'guest').maybeSingle();
       if (salesUser?.phone_number) {

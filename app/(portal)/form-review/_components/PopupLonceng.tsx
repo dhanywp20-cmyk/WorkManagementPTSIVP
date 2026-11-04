@@ -1,6 +1,5 @@
 'use client';
 
-/** PopupLonceng - review aktif dari ikon lonceng. Semua keadaan tetap milik induk. Wujud sama dengan PopupNotifikasiReview. */
 import { ReviewForm } from './shared';
 import { DaftarReviewTertunda } from './PopupNotifikasiReview';
 

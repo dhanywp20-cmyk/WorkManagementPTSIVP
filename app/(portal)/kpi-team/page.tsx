@@ -26,8 +26,6 @@ import { BagianRiwayatKPI } from './_components/BagianRiwayatKPI';
 import { TabelKinerjaHandler } from './_components/TabelKinerjaHandler';
 import { BagianPenilaianKPI } from './_components/BagianPenilaianKPI';
 
-// Main Page
-
 export default function KPITeamPage() {
   const [currentUser, setCurrentUser] = useState<KPIUser | null>(null);
   const [isLoggedIn,  setIsLoggedIn]  = useState(false);
@@ -47,7 +45,6 @@ export default function KPITeamPage() {
   const [drillMember, setDrillMember] = useState<KPIMember | null>(null);
   const [searchQ, setSearchQ] = useState('');
 
-  // KPI scoring - separate data + period (tidak ikut period picker atas)
   const [kpiSettings, setKpiSettings] = useState<KPISettings>(DEFAULT_KPI_SETTINGS);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedKPIMember, setSelectedKPIMember] = useState<string | null>(null);
@@ -57,14 +54,11 @@ export default function KPITeamPage() {
   const [kpiPeriodLen, setKpiPeriodLen] = useState<'6m' | '1y'>('1y');
   const [kpiStartMonth, setKpiStartMonth] = useState(1);
 
-  // Riwayat KPI snapshots
   const [kpiSnapshots, setKpiSnapshots] = useState<KPIPeriodSnapshot[]>([]);
   const [showStartKPI, setShowStartKPI] = useState(false);
   const [savingSnapshot, setSavingSnapshot] = useState(false);
   const [expandedSnapshot, setExpandedSnapshot] = useState<string | null>(null);
   const [selectedSnapMember, setSelectedSnapMember] = useState<string | null>(null);
-
-  // Auth
 
   useEffect(() => {
     const u = getSession<KPIUser>();
@@ -79,25 +73,13 @@ export default function KPITeamPage() {
     return startSessionWatcher();
   }, []);
 
-  // Scope resolution
-
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
-      /*
-        Pemetaan kelompok DIMUAT LEBIH DULU, dan itu bukan kerapian.
-        lingkupSaya() membaca keadaan di dalam lib/kelompok.ts; selama
-        muatKelompok() belum pernah dipanggil, isinya masih nilai bawaan -
-        yaitu SELURUH kelompok PTS. Penyaringan di bawah akan berjalan tanpa
-        menyaring apa pun, dan kebocorannya kembali persis seperti semula.
-      */
       await muatKelompok();
       const role    = currentUser.role?.toLowerCase() ?? '';
       const jabatan = currentUser.jabatan ?? '';
       const PTS_TYPES = namaKelompokPTS();
-      // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
-      // (lihat lib/constants.ts hasFullAccess) - lihat seluruh tim, bukan cuma
-      // KPI-nya sendiri atau tim satu jenis PTS saja seperti Supervisor.
       if (['admin', 'superadmin'].includes(role) || hasFullAccess(currentUser) || isPimpinan(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
@@ -105,7 +87,6 @@ export default function KPITeamPage() {
         setScope({ kind: 'pts_sup', ptsTeamType: currentUser.team_type ?? '' });
         setScopeReady(true); return;
       }
-      // Regular team member - can view their own KPI (read-only)
       if (role === 'team') {
         setScope({ kind: 'team' }); setScopeReady(true); return;
       }
@@ -113,31 +94,26 @@ export default function KPITeamPage() {
     })();
   }, [currentUser]);
 
-  // Load / save KPI settings
-
   useEffect(() => {
     const load = async () => {
       try {
         const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
         if (data?.settings) { setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings }); return; }
-      } catch { /* table may not exist */ }
+      } catch {  }
       try {
         const s = typeof window !== 'undefined' ? localStorage.getItem('kpi_global_settings') : null;
         if (s) setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...JSON.parse(s) });
-      } catch { /* ignore */ }
+      } catch {  }
     };
     load();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const saveKpiSettings = useCallback(async (s: KPISettings) => {
-    try { localStorage.setItem('kpi_global_settings', JSON.stringify(s)); } catch { /* ignore */ }
-    try { await supabase.from('kpi_global_settings').upsert({ id: 1, settings: s, updated_at: new Date().toISOString() }); } catch { /* ignore */ }
+    try { localStorage.setItem('kpi_global_settings', JSON.stringify(s)); } catch {  }
+    try { await supabase.from('kpi_global_settings').upsert({ id: 1, settings: s, updated_at: new Date().toISOString() }); } catch {  }
   }, []);
 
-  // Data fetching
-
-  /** 7 tabel sumber penilaian untuk anggota & rentang ini (lihat lib/kpi-sumber.ts). */
   const ambilSumber = useCallback(async (membersData: any[], start: string, end: string): Promise<SumberKPI> => {
     const endFull   = end + 'T23:59:59';
     const mNames    = membersData.map((m: any) => m.full_name as string);
@@ -174,17 +150,11 @@ export default function KPITeamPage() {
     };
   }, []);
 
-  /**
-   * `sumberGabung` = baris sumber yang sudah diambil untuk rentang lebih lebar (periode ini +
-   * sebelumnya) - dipilah ke [start, end] tanpa bertanya ke Supabase lagi.
-   */
   const buildMembers = useCallback(async (membersData: any[], start: string, end: string, sumberGabung?: SumberKPI): Promise<KPIMember[]> => {
     const todayStr  = fmt(new Date());
     const mIds      = membersData.map((m: any) => m.id as string);
     const tahun     = new Date(end).getFullYear();
 
-    // Tahun basis faktor LC = tahun akhir periode yang dilihat. Periode ini & sebelumnya sering
-    // setahun - rekapnya diingat sebentar supaya tidak diminta dua kali.
     const [sumber, rekapLC] = await Promise.all([
       sumberGabung ? saringSumberKPI(sumberGabung, start, end) : ambilSumber(membersData, start, end),
       ingat(`rekap-lc:${tahun}:${[...mIds].sort().join(',')}`, () => ambilRekapLCTahunan(mIds, tahun), 60_000),
@@ -195,7 +165,6 @@ export default function KPITeamPage() {
       const name = m.full_name as string;
       const uid  = m.id as string;
 
-      // Tickets
       const myT   = tickets.filter((t: any) => t.assign_name === name);
       const tSol  = myT.filter((t: any) => t.status === 'Solved');
       const tOver = myT.filter((t: any) =>
@@ -205,20 +174,14 @@ export default function KPITeamPage() {
         return acc + Math.max(0, d);
       }, 0);
 
-      // Reminders
       const myRem  = reminders.filter((r: any) => r.assign_name === name);
       const remDone = myRem.filter((r: any) => r.status === 'done').length;
 
-      // LC
-      // Essay yang belum dinilai dikecualikan: skornya belum ada, jadi kalau
-      // ikut dihitung, penyebut lcAttempts membesar dan skor KPI bergeser oleh
-      // pekerjaan yang belum selesai dinilai.
       const myLC     = lcAttempts.filter((a: any) => a.user_id === uid && a.grading_status !== 'pending_review');
       const lcScoreArr = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
       const lcScores = lcScoreArr;
       const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;
 
-      // Form reviews (BAST & Demo - low rating = bintang <3)
       const myReviews = formReviews.filter((r: any) => r.assign_name === name);
       const formReviewTotal = myReviews.length;
       const formReviewLowRating = myReviews.filter((r: any) => {
@@ -228,16 +191,10 @@ export default function KPITeamPage() {
         return g1 < 3 || g2 < 3 || g3 < 3;
       }).length;
 
-      // Tech Notes approved (R&D - auto from platform)
       const techNotesApproved = techNotes.filter((tn: any) => tn.author_id === uid).length;
 
-      //  Piket - dicocokkan lewat bacaPicPiket(), bukan menebak nama kolom dari
-      //  tim orangnya. Cara lama hanya mengenal tiga tim: anggota kelompok PTS
-      //  yang ditambahkan admin selalu jatuh ke kolom 'pic_mvi_name' dan
-      //  piketnya tidak pernah terhitung sama sekali.
       const piketFilled = piketRows.filter((p: any) => bacaPicPiket(p)?.name === name).length;
 
-      // Avg response time (first activity per ticket)
       const myTIds = new Set(myT.map((t: any) => t.id as string));
       const firstAct: Record<string, string> = {};
       actLogs.filter((a: any) => myTIds.has(a.ticket_id) && a.handler_name === name)
@@ -246,7 +203,6 @@ export default function KPITeamPage() {
         .map((t: any) => Math.max(0, (new Date(firstAct[t.id]).getTime() - new Date(t.created_at).getTime()) / 3600000));
       const avgRT = resTimes.length ? Math.round(resTimes.reduce((a: number, b: number) => a + b, 0) / resTimes.length) : 0;
 
-      // Monthly sparkline (12 months)
       const monthlyTickets = Array.from({ length: 12 }, (_, mi) =>
         myT.filter((t: any) => new Date(t.created_at).getMonth() === mi).length
       );
@@ -273,25 +229,18 @@ export default function KPITeamPage() {
     if (!scopeReady || scope.kind === 'none') return;
     setLoading(true);
     try {
-      // Fetch member list once
       let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role');
       if (scope.kind === 'team') {
         mQ = mQ.eq('id', currentUser!.id);
       } else if (scope.kind === 'pts_sup') {
         mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
       } else {
-        // lingkupSaya(), bukan daftar tim ditulis langsung: kalau tidak,
-        // kelompok yang sengaja tidak dibawahi Manager ini (mis. PTS UMP)
-        // ikut bocor tampil di Team Overview walau sudah dikeluarkan dari
-        // pengaturan Lingkup Manager - persis pola yang sama dengan
-        // fetchKPIMembers di bawah, cuma sempat terlewat di sini.
         mQ = mQ.in('team_type', lingkupSaya(currentUser?.id)).eq('role', 'team');
       }
       const { data: mData } = await mQ;
       if (!mData?.length) { setLoading(false); return; }
 
       const { start, end, prevStart, prevEnd } = getPeriodRange(period);
-      //  Satu pengambilan untuk kedua periode (prevStart..end), lalu dipilah per periode.
       const sumberGabung = await ambilSumber(mData, prevStart, end);
       const [cur, prev] = await Promise.all([
         buildMembers(mData, start, end, sumberGabung),
@@ -299,20 +248,17 @@ export default function KPITeamPage() {
       ]);
       setMembers(cur);
       setPrevMembers(prev);
-      // Notify members whose solve rate is critically low (< 50% of handled tickets)
       cur.forEach(m => {
         if (m.ticketsHandled >= 5 && m.id) {
           const solveRate = (m.ticketsSolved / m.ticketsHandled) * 100;
           if (solveRate < 50) void notifyKPIAlert(m.id, m.name, solveRate);
         }
       });
-    } catch { /* silent */ }
+    } catch {  }
     finally { setLoading(false); }
   }, [scopeReady, scope, period, buildMembers, ambilSumber, currentUser]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
-
-  // KPI scoring fetch (independent of period picker)
 
   const fetchKPIMembers = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') return;
@@ -327,28 +273,12 @@ export default function KPITeamPage() {
 
       let mQ = supabase.from('users').select('id,full_name,jabatan,team_type,role,kpi_enabled');
       if (scope.kind === 'team') {
-        // Self-view: only current user's own record, no kpi_enabled filter
         mQ = mQ.eq('id', currentUser!.id);
       } else {
         mQ = mQ.eq('kpi_enabled', true);
         if (scope.kind === 'pts_sup') {
           mQ = mQ.eq('role', 'team').eq('team_type', scope.ptsTeamType ?? '');
         } else {
-          /*
-            Kelompok yang boleh dilihat akun ini, BUKAN seluruh kelompok PTS.
-
-            Sebelumnya ketiga nama kelompok ditulis langsung di sini, jadi
-            siapa pun yang lolos ke cabang ini melihat semuanya - termasuk
-            Manager PTS IVP yang tidak membawahi PTS UMP sama sekali. Nilai
-            KPI seseorang adalah penilaian atas dirinya; ia tidak semestinya
-            terbaca oleh atasan dari kelompok lain.
-
-            lingkupSaya() mengembalikan SELURUH kelompok PTS bila akunnya
-            belum dipetakan - itu disengaja di lib/kelompok.ts, supaya
-            menyalakan fitur ini tidak mendadak mengosongkan layar semua
-            Manager sebelum satu pun pemetaan dibuat. Pemetaannya diatur di
-            Admin Panel -> Kelompok & Notifikasi.
-          */
           mQ = mQ.in('team_type', lingkupSaya(currentUser?.id)).eq('role', 'team');
         }
       }
@@ -357,13 +287,11 @@ export default function KPITeamPage() {
 
       const built = await buildMembers(mData, kpiStart, kpiEnd);
       setKpiMembers(built);
-    } catch { /* silent */ }
+    } catch {  }
     finally { setKpiLoading(false); }
   }, [scopeReady, scope, kpiYear, kpiPeriodLen, kpiStartMonth, buildMembers, currentUser]);
 
   useEffect(() => { fetchKPIMembers(); }, [fetchKPIMembers]);
-
-  // KPI Snapshots
 
   const fetchKPISnapshots = useCallback(async () => {
     try {
@@ -371,7 +299,7 @@ export default function KPITeamPage() {
       if (scope.kind === 'pts_sup') q = q.eq('team_type', scope.ptsTeamType ?? '');
       const { data } = await q;
       setKpiSnapshots((data ?? []) as KPIPeriodSnapshot[]);
-    } catch { /* silent */ }
+    } catch {  }
   }, [scope]);
 
   useEffect(() => {
@@ -404,7 +332,6 @@ export default function KPITeamPage() {
         team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType : 'all',
         created_by: currentUser.full_name, members_json: membersJson, settings_json: _s,
       }).select('id').single();
-      // Also write to relational table (requires migration 004_kpi_snapshot_members.sql)
       if (snapInserted?.id) {
         const memberRows = membersJson.map(m => ({
           snapshot_id: snapInserted.id,
@@ -421,11 +348,9 @@ export default function KPITeamPage() {
       void logAudit({ user_id: currentUser.id, user_name: currentUser.full_name ?? '', action: 'create', module: 'kpi-team', notes: `Snapshot KPI ${snapshotLabel}` });
       await fetchKPISnapshots();
       setShowStartKPI(false);
-    } catch { /* silent */ }
+    } catch {  }
     finally { setSavingSnapshot(false); }
   }, [currentUser, kpiSettings, kpiMembers, kpiStartMonth, kpiPeriodLen, kpiYear, scope, fetchKPISnapshots]);
-
-  // Computed values
 
   const allTeamTypes = useMemo(() => Array.from(new Set(members.map(m => m.team_type))).sort(), [members]);
 
@@ -505,12 +430,8 @@ export default function KPITeamPage() {
       ? <span className="text-sky-700 ml-0.5">{sortDir === 'asc' ? '↑' : '↓'}</span>
       : <span className="text-slate-400 ml-0.5">↕</span>;
 
-  // Period label
-
   const { start, end } = getPeriodRange(period);
   const periodLabel = `${new Date(start).toLocaleDateString('id-ID', { day:'2-digit', month:'short' })} — ${new Date(end).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}`;
-
-  // KPI period + helpers (used both in Penilaian section and Mulai KPI)
 
   const kpiEndMonth    = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
   const kpiPeriodLabel = `${MN[kpiStartMonth - 1]}–${MN[kpiEndMonth - 1]} ${kpiYear}`;
@@ -518,11 +439,9 @@ export default function KPITeamPage() {
 
   const calcKPI = (m: KPIMember) => hitungSkorKPI(m, kpiSettings).finalKPI;
   const kpiScoreColor = (score: number, noData: boolean) =>
-    noData ? '#64748b' : score >= 85 ? '#047857' : score >= 70 ? '#1d4ed8' : score >= 50 ? '#b45309' : '#dc2626'; // tone 700: dipakai sebagai warna TEKS skor, harus lolos AA
+    noData ? '#64748b' : score >= 85 ? '#047857' : score >= 70 ? '#1d4ed8' : score >= 50 ? '#b45309' : '#dc2626';
   const kpiScoreLabel = (score: number, noData: boolean) =>
     noData ? 'Belum Ada Data' : score >= 85 ? 'Excellent' : score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Needs Work';
-
-  // Guards
 
   if (!isLoggedIn || !appReady) return (
     <div className="flex items-center justify-center min-h-screen"
@@ -543,14 +462,11 @@ export default function KPITeamPage() {
     </div>
   );
 
-  // Ticket status breakdown for donut chart
   const donutSegments = [
     { value: summary.totalS,                                 color: STATUS_COLORS['Solved'] },
     { value: summary.totalOD,                                color: STATUS_COLORS['Overdue'] },
     { value: Math.max(0, summary.totalT - summary.totalS - summary.totalOD), color: STATUS_COLORS['Pending'] },
   ].filter(s => s.value > 0);
-
-  // Render
 
   return (
     <div className="h-screen overflow-hidden flex flex-col"
@@ -600,12 +516,10 @@ export default function KPITeamPage() {
       <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
 
-        {/* ── Penilaian KPI (TOP — data mandiri, tidak ikut period picker) ── */}
         <BagianPenilaianKPI
           calcKPI={calcKPI} currentUser={currentUser} fetchKPIMembers={fetchKPIMembers} filterTeam={filterTeam} kpiFiltered={kpiFiltered} kpiLoading={kpiLoading} kpiPeriodLabel={kpiPeriodLabel} kpiPeriodLen={kpiPeriodLen} kpiScoreColor={kpiScoreColor} kpiScoreLabel={kpiScoreLabel} kpiSettings={kpiSettings} kpiStartMonth={kpiStartMonth} kpiYear={kpiYear} setKpiPeriodLen={setKpiPeriodLen} setKpiStartMonth={setKpiStartMonth} setKpiYear={setKpiYear} setSelectedKPIMember={setSelectedKPIMember}
         />
 
-        {/* ── Period Selector Bar ── berpanel: latar halaman bisa foto (Admin Panel > Merek) */}
         <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-sm"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
@@ -627,7 +541,6 @@ export default function KPITeamPage() {
             <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />
           )}
 
-          {/* Team filter — admin only */}
           {scope.kind === 'admin' && allTeamTypes.length > 1 && (
             <select aria-label="Semua Tim" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}
               className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-sky-200">
@@ -637,42 +550,34 @@ export default function KPITeamPage() {
           )}
         </div>
 
-        {/* ── Handler Performance Table ── */}
         <TabelKinerjaHandler
           SortIcon={SortIcon} filterTeam={filterTeam} handleSort={handleSort} loading={loading} period={period} searchQ={searchQ} setDrillMember={setDrillMember} setFilterTeam={setFilterTeam} setSearchQ={setSearchQ} sortedMembers={sortedMembers}
         />
 
-
-        {/* ── Riwayat KPI (Snapshot History) ── */}
         <BagianRiwayatKPI
           expandedSnapshot={expandedSnapshot} kpiSnapshots={kpiSnapshots} kpiYear={kpiYear} setExpandedSnapshot={setExpandedSnapshot} setSelectedSnapMember={setSelectedSnapMember}
         />
 
       </div>
-      </div>{/* end flex-1 overflow-y-auto */}
+      </div>
 
-      {/* ── Drill-down Modal (Performance) ── */}
       {drillMember && (
         <DrillModal member={drillMember} period={period} onClose={() => setDrillMember(null)}
           onViewBreakdown={() => { const id = drillMember.id; setDrillMember(null); setSelectedKPIMember(id); }} />
       )}
 
-      {/* ── KPI Member Detail Popup ── */}
       <ModalDetailAnggotaKPI
         kpiMembers={kpiMembers} kpiSettings={kpiSettings} kpiYear={kpiYear} selectedKPIMember={selectedKPIMember} setSelectedKPIMember={setSelectedKPIMember}
       />
 
-      {/* ── Mulai KPI Confirm Modal ── */}
       <ModalMulaiKPI
         kpiMembers={kpiMembers} kpiPeriodLabel={kpiPeriodLabel} kpiSettings={kpiSettings} kpiYear={kpiYear} saveKPISnapshot={saveKPISnapshot} savingSnapshot={savingSnapshot} setShowStartKPI={setShowStartKPI} showStartKPI={showStartKPI}
       />
 
-      {/* ── Snapshot Member Detail Popup ── */}
       <ModalDetailSnapshot
         kpiSnapshots={kpiSnapshots} selectedSnapMember={selectedSnapMember} setSelectedSnapMember={setSelectedSnapMember}
       />
 
-      {/* ── KPI Settings Modal ── */}
       <ModalPengaturanKPI
         kpiSettings={kpiSettings} saveKpiSettings={saveKpiSettings} setKpiSettings={setKpiSettings} setShowSettings={setShowSettings} showSettings={showSettings}
       />

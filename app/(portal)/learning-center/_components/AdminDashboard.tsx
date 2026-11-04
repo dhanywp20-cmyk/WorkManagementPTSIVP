@@ -15,13 +15,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Main Dashboard
 export function AdminDashboard({ user }: { user: User }) {
-  // Berlangganan daftar kelompok "PTS Cabang" supaya penyaringan dihitung
-  // ulang begitu daftarnya selesai dimuat (lihat catatan di useEffect saring).
-  // Dipakai sebagai kunci string, bukan lariknya langsung: pakai() membuat
-  // larik BARU tiap pemberitahuan, jadi larik mentah akan memicu efek walau
-  // isinya sama persis.
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
   const [stats, setStats] = useState({ materials: 0, activeTeam: 0, sessions: 0, attempts: 0 });
   const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
@@ -51,57 +45,32 @@ export function AdminDashboard({ user }: { user: User }) {
 
   useEffect(() => {
     const load = async () => {
-      // Round 1: counts
       const [mat, ses, att, totalUsersRes, ringkasRes] = await Promise.all([
         supabase.from('lc_materials').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_sessions').select('id', { count: 'exact', head: true }).eq('is_active', true),
-        //  Total tetap count exact: daftar baris di bawah dibatasi max-rows PostgREST (1000).
         supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }),
         supabase.from('users').select('id', { count: 'exact', head: true }),
-        //  SATU query untuk semua hitungan attempt (dulu 3: belum submit, pemulai,
-        //  peserta selesai). Barisnya cuma dua kolom kecil; semua
-        //  hitungan diturunkan di bawah. Pemulai = siapa saja yang sudah MEMBUKA
-        //  quiz (baris dibuat begitu quiz dimulai) - yang dihitung ORANG, bukan
-        //  attempt, karena satu orang bisa punya banyak attempt.
         supabase.from('lc_quiz_attempts').select('user_id, is_submitted'),
       ]);
       const ringkas = (ringkasRes.data ?? []) as { user_id: string; is_submitted: boolean | null }[];
       const uniqueTeam = new Set(ringkas.filter(a => a.is_submitted).map(a => a.user_id)).size;
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
-      // Round 2: analytics data in parallel
       const [recentRes, allAttRes, usersRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
-          //  Tanpa embed users(...): dua relasi ke users (user_id & graded_by) membuat embed itu ditolak -
-          //  nama diambil dari peta user di bawah (lihat catatan query berikutnya).
           .select('*, lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
-        // Dua hal yang DISENGAJA di query ini:
-        //
-        // 1. '*' - bukan daftar kolom eksplisit. PostgREST menolak SELURUH
-        //    query bila satu kolom belum ada di skema, jadi menyebut
-        //    grading_status membuat tabel kosong total sebelum migrasi essay
-        //    dijalankan, tanpa pesan error apa pun.
-        //
-        // 2. TANPA embed users(...). Data user diambil terpisah lalu digabung
-        //    di JS. Embed bergantung pada relasi FK yang terbaca PostgREST;
-        //    kalau embed gagal, a.users bernilai null sehingga role ikut null
-        //    dan SELURUH tab (PTS/Sales/Marketing) kosong - tanpa error.
-        //    Query terpisah juga lebih hemat: data user tidak diulang di
-        //    setiap baris attempt.
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
-      // Peta user dipakai menggantikan embed users(...) - lihat catatan query di atas.
       const userMap: Record<string, any> = {};
       (usersRes.data ?? []).forEach((u: any) => { userMap[u.id] = u; });
       setRecentAttempts((recentRes.data ?? []).map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null })));
 
       const allAtt = (allAttRes.data ?? [])
-        .filter((a: any) => a.grading_status !== 'pending_review') // essay belum dinilai jangan masuk statistik
+        .filter((a: any) => a.grading_status !== 'pending_review')
         .map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null }));
 
-      // Overview mini pies
       const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
       const passCount    = allAtt.filter((a: any) => a.passed).length;
       const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
@@ -119,7 +88,6 @@ export function AdminDashboard({ user }: { user: User }) {
         abandoned: ringkas.filter(a => a.is_submitted === false).length,
       });
 
-      // Top performers + consistency + fast-submit
       const byUser: Record<string, {
         name: string; scores: number[]; times: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
@@ -144,12 +112,6 @@ export function AdminDashboard({ user }: { user: User }) {
         const ts = a.time_taken_sec ?? Infinity;
         if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
       });
-      //  Skor rata-rata sama TIDAK berarti urutannya bebas - sort JS di sini
-      //  cuma membandingkan avg, jadi dua peserta yang seri (mis. sama-sama
-      //  100) berakhir terurut menurut urutan baris apa adanya dari
-      //  database, bukan berdasar siapa yang lebih cepat. Sama seperti
-      //  perbaikan di ReportPage.tsx - waktu rata-rata lebih singkat menang
-      //  saat skor seri.
       const allUsers = Object.entries(byUser).map(([uid, v]) => ({
         uid, name: v.name,
         role: v.role, teamType: v.teamType, salesDivision: v.salesDivision,
@@ -158,18 +120,10 @@ export function AdminDashboard({ user }: { user: User }) {
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
         fastCount: v.fastCount,
-        //  Kunci ketiga (uid) memastikan hasilnya sama persis tiap kali
-        //  dimuat. Tanpa itu, peserta yang skor & waktunya identik terurut
-        //  mengikuti urutan Object.entries atas data dari database - yang
-        //  bisa berbeda antar permintaan, sehingga peringkat tampak bertukar
-        //  sendiri padahal tidak ada data yang berubah.
       })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime || a.uid.localeCompare(b.uid));
       setAllTopUsers(allUsers);
       setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
-      // Per division/jabatan
-      // Group key = sales_division if present, else jabatan, else 'Lainnya'
-      // Also track the source field so we can label it in the table
       const byDiv: Record<string, {
         scores: number[]; passed: number;
         source: 'division' | 'jabatan' | 'other';
@@ -195,15 +149,11 @@ export function AdminDashboard({ user }: { user: User }) {
         passed: v.passed,
       })).sort((a, b) => b.avg - a.avg));
 
-      // Nasional (semua divisi/jabatan digabung) - pembanding gap tiap kelompok
       const allScoresNational = allAtt.map((a: any) => a.score ?? 0);
       setNationalAvg(allScoresNational.length ? allScoresNational.reduce((s: number, n: number) => s + n, 0) / allScoresNational.length : null);
 
-      // Per session
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        //  Attempt terkirim SEMUA sesi sudah ada di allAttRes (query Round 2) - dikelompokkan
-        //  di sini, bukan satu query per sesi seperti dulu (N+1: 10 sesi = 10 permintaan).
         const perSesi = new Map<string, any[]>();
         for (const a of (allAttRes.data ?? []) as any[]) {
           const daftar = perSesi.get(a.quiz_session_id);
@@ -233,20 +183,12 @@ export function AdminDashboard({ user }: { user: User }) {
     load();
   }, []);
 
-  // Re-filter performers when team switch changes
   useEffect(() => {
     if (allTopUsers.length > 0) {
       setTopUsers(allTopUsers.filter(u => matchesTeamFilter(u, activeTeam)).slice(0, 20));
-    // Pindah dari Sales ke tab lain: buang sisa pilihan divisi, kalau tidak
-    // tabel PTS/Marketing ikut tersaring habis oleh divisi yang tidak berlaku.
     if (activeTeam !== 'Sales' && performerDivisionFilter) setPerformerDivisionFilter('');
       setSearchPerformer('');
     }
-    // kunciCabang ikut jadi pemicu: daftar kelompok dimuat ASINKRON, sering
-    // selesai SESUDAH data attempt. Tanpa ini, saat kelompok telat datang
-    // anggota PTS Daerah terlanjur ikut terhitung di tab PTS dan tidak pernah
-    // dihitung ulang sampai pengguna menekan tab lain - persis kelirunya
-    // yang tidak kelihatan salah di layar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTeam, allTopUsers, kunciCabang]);
 
@@ -290,22 +232,16 @@ export function AdminDashboard({ user }: { user: User }) {
 
       <div className="p-4 sm:p-8 space-y-10">
 
-        {/* ── Summary Cards ── */}
         <StatCardGrid cols={4} items={cards} />
 
-        {/* ── Analytics Overview + Top Performers (side by side) ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-          {/* Left: Analytics Overview mini pies */}
           {overviewStats.submitted > 0 && (() => {
             const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.mulai / overviewStats.totalUsers * 100) : 0;
             const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
             const compTotal = overviewStats.submitted + overviewStats.abandoned;
             const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
             const miniCards = [
-              /*  Yang diukur di sini SUDAH MENGAKSES, bukan sudah selesai.
-                  Dua-duanya disebut di sub supaya selisihnya - orang yang
-                  membuka quiz lalu berhenti di tengah - terbaca langsung.  */
               { title: 'Sudah Akses Quiz',
                 sub: `${overviewStats.mulai} mulai · ${overviewStats.participants} selesai · dari ${overviewStats.totalUsers} akun`,
                 label: `${partPct}%`,
@@ -335,15 +271,9 @@ export function AdminDashboard({ user }: { user: User }) {
             );
           })()}
 
-          {/* Right: Top Performers */}
           <div className="min-w-0">
-            {/* Semua kontrol MENYATU di dalam kartu tabel: judul + rata-rata
-                nasional di kiri, tab/filter/pencarian di kanan. Sebelumnya
-                judul, pencarian, dan rata-rata nasional melayang sebagai blok
-                terpisah di atas kartu sehingga tampak tercerai-berai. */}
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                {/* Kiri: judul + rata-rata nasional */}
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap"
                     title="Diurutkan dari skor rata-rata tertinggi. Jika skor sama, rata-rata waktu pengerjaan tercepat menang.">
@@ -366,11 +296,8 @@ export function AdminDashboard({ user }: { user: User }) {
                   )}
                 </div>
 
-                {/* Kanan: tab, filter divisi, pencarian — satu baris */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
-                  {/* Tempat dropdown tetap dipesan di tab non-Sales supaya tinggi
-                      header tidak berubah saat berpindah tab. */}
                   <select aria-label="Filter divisi" value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
                     disabled={activeTeam !== 'Sales'}
                     aria-hidden={activeTeam !== 'Sales'}
@@ -382,14 +309,6 @@ export function AdminDashboard({ user }: { user: User }) {
                 </div>
               </div>
 
-              {/*
-                max-h TETAP (bukan 100vh) - lihat catatan yang sama di
-                modal-kode-acara.tsx: tanpa batas tinggi, daftar performer
-                yang panjang (mis. "Semua Divisi") membuat KARTU INI sendiri
-                memanjang tak terbatas, dan yang ikut menggulung jadi seluruh
-                halaman dashboard, bukan cuma tabelnya. thead dibuat sticky
-                supaya label kolom tetap terlihat saat menggulung ke bawah.
-              */}
               <div className="overflow-x-auto overflow-y-auto max-h-[440px]">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
@@ -454,8 +373,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   )}
                 </tbody>
               </table>
-              </div>{/* tutup overflow-x-auto pembungkus tabel */}
-              {/* Legend — inside card as footer */}
+              </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
                 <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                   <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
@@ -474,17 +392,7 @@ export function AdminDashboard({ user }: { user: User }) {
           </div>
         </div>
 
-        {/* ── Session Statistics ── */}
         {sessionStats.length > 0 && (() => {
-          /*
-            SATU ringkasan gabungan, bukan satu kartu-berisi-3-donut PER SESI
-            seperti sebelumnya - begitu sesi quiz sudah puluhan/ratusan (wajar
-            kalau platform ini sudah jalan lama), grid kartu itu jadi sangat
-            panjang tanpa menambah informasi baru. Angka & donut di sini
-            dijumlah dari sessionStats yang sama persis (tidak query ulang),
-            lalu daftar sesinya sendiri ditaruh di TABEL ringkas di bawahnya -
-            satu baris per sesi, bukan satu kartu besar per sesi.
-          */
           const totalPeserta = sessionStats.reduce((n: number, s: any) => n + s.total, 0);
           const totalPassed  = sessionStats.reduce((n: number, s: any) => n + s.passed, 0);
           const totalFailed  = sessionStats.reduce((n: number, s: any) => n + s.failed, 0);
@@ -502,15 +410,6 @@ export function AdminDashboard({ user }: { user: User }) {
             <section>
               <SectionHeader><IkonTeks nama="📈" />Statistik Per Sesi Quiz</SectionHeader>
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
-                {/*
-                  Tanpa StatCardGrid Total Sesi/Peserta/Rata-rata/Pass Rate di
-                  sini - itu duplikat dari "Summary Cards" & "Analytics
-                  Overview" (Pass Rate Global, Distribusi Nilai) yang sudah
-                  ada di atas. Donut di bawah ini tetap ada karena scope-nya
-                  beda: overview di atas itu SELURUH attempt platform,
-                  sedangkan ini KHUSUS sesi quiz yang formal (lc_quiz_sessions),
-                  jadi angkanya bisa berbeda dan tetap relevan dilihat.
-                */}
                 <div className="flex flex-wrap items-start gap-8">
                   <div className="flex flex-col items-center gap-1.5">
                     <DonutChart size={92} strokeWidth={13}
@@ -552,7 +451,6 @@ export function AdminDashboard({ user }: { user: User }) {
                     </div>
                   )}
                 </div>
-                {/* Rincian per sesi - TABEL ringkas (satu baris per sesi), bukan kartu besar per sesi. */}
                 <div className="mt-5 pt-1 overflow-x-auto">
                   <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                     <thead className="border-b border-slate-200">
@@ -583,7 +481,6 @@ export function AdminDashboard({ user }: { user: User }) {
           );
         })()}
 
-        {/* ── Per Divisi / Jabatan Ranking ── */}
         {divisionStats.length > 0 && (
           <section>
             <SectionHeader><IkonTeks nama="🏢" />Ranking Per Divisi / Jabatan</SectionHeader>
@@ -656,7 +553,6 @@ export function AdminDashboard({ user }: { user: User }) {
           </section>
         )}
 
-        {/* ── Recent Activity ── */}
         <section>
           <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru</SectionHeader>
           <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
@@ -700,7 +596,6 @@ export function AdminDashboard({ user }: { user: User }) {
 
       </div>
 
-      {/* ── User Detail Modal ── */}
       {selectedUser && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"

@@ -1,9 +1,3 @@
-/**
- * lib/ekspor-tabel.ts - SATU cara ekspor daftar ke Excel & cetak (A4 / PNG) untuk semua menu:
- * judul, keterangan filter yang sedang aktif, kolom & baris. Bagian murni (susunAoa, lebarKolom,
- * lembarTabel) diuji di uji/ekspor-tabel.ts; Excel memakai SheetJS dari lib/xlsx-loader.ts, cetak
- * memakai lib/lembar-cetak.ts.
- */
 import { loadXLSX } from './xlsx-loader';
 import { bukaCetak, type Lembar, namaBerkas, unduhLembarPNG } from './lembar-cetak';
 
@@ -11,21 +5,16 @@ type Sel = string | number | null | undefined;
 export interface KolomEkspor<T> { judul: string; ambil: (r: T) => Sel; angka?: boolean }
 export interface Ekspor<T> {
   judul: string;
-  /** Nama menu / subjudul lembar, mis. "Daily Report". */ menu: string;
+   menu: string;
   kolom: KolomEkspor<T>[];
   baris: T[];
-  /** Filter yang sedang aktif - ikut tercetak supaya pembaca tahu isinya sebagian. Nilai kosong dilewati. */
   filter?: [string, Sel][];
-  /** Warna kepala lembar cetak. */ warna?: [string, string];
+   warna?: [string, string];
 }
 
 const teks = (v: Sel) => (v === null || v === undefined ? '' : typeof v === 'number' ? v : String(v).replace(/\s+/g, ' ').trim());
 export const filterAktif = (f: [string, Sel][] = []) => f.filter(([, v]) => v !== null && v !== undefined && String(v).trim() !== '');
 
-/**
- * Larik baris untuk SheetJS: judul, tanggal ekspor, filter aktif, baris kosong, kepala, data.
- * `kepala` = indeks baris kepala (untuk autofilter & bekukan panel).
- */
 export function susunAoa<T>(e: Ekspor<T>, tanggal: string): { aoa: (string | number)[][]; kepala: number } {
   const atas: (string | number)[][] = [[e.judul], [`${e.menu} · diekspor ${tanggal} · ${e.baris.length} baris`]];
   const f = filterAktif(e.filter);
@@ -36,7 +25,6 @@ export function susunAoa<T>(e: Ekspor<T>, tanggal: string): { aoa: (string | num
   return { aoa: [...atas, e.kolom.map(k => k.judul), ...isi], kepala };
 }
 
-/** Lebar kolom Excel (karakter) dari isi terpanjang, 8 - 60. */
 export function lebarKolom(aoa: (string | number)[][], kepala: number, jumlah: number): number[] {
   return Array.from({ length: jumlah }, (_, i) => {
     let m = 8;
@@ -48,7 +36,6 @@ export function lebarKolom(aoa: (string | number)[][], kepala: number, jumlah: n
 const kolomExcel = (n: number) => { let s = ''; for (let x = n; x >= 0; x = Math.floor(x / 26) - 1) s = String.fromCharCode(65 + (x % 26)) + s; return s; };
 
 export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
-  //  SheetJS dimuat dari CDN tanpa deklarasi tipe.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Promise((ok, gagal) => loadXLSX((XLSX: any) => {
     try {
@@ -68,7 +55,6 @@ export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
   }, () => gagal(new Error('Library Excel gagal dimuat - periksa koneksi.'))));
 }
 
-/** Lembar cetak dari tabel: kolom banyak -> kertas mendatar. */
 export function lembarTabel<T>(e: Ekspor<T>): Lembar {
   const f = filterAktif(e.filter);
   return {

@@ -1,8 +1,4 @@
 'use client';
-/**
- * "+ dari Pustaka…" - pilih entri pustaka satu jenis untuk mengisi kalkulator. Tidak tampil bila
- * pustaka jenis itu kosong / gagal dimuat (kalkulator tetap bisa diisi manual).
- */
 import type { EntriPustaka } from '@/lib/pustaka';
 import { usePustaka } from './usePustaka';
 

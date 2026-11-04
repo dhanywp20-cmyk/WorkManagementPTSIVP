@@ -1,6 +1,5 @@
 'use client';
 
-/** useDrafLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { type ManualActivity } from './shared';
 import { useEffect } from 'react';
 import { emptyManual } from './bantu-halaman';
@@ -31,15 +30,14 @@ export function useDrafLaporan(k: DrafLaporanKonteks) {
       return d && Date.now() - d.waktu < 3 * 86_400_000 ? d : null;
     } catch { return null; }
   };
-  const hapusDraf = () => { try { if (kunciDraf) localStorage.removeItem(kunciDraf); } catch { /* abaikan */ } };
+  const hapusDraf = () => { try { if (kunciDraf) localStorage.removeItem(kunciDraf); } catch {  } };
   const adaIsian = (acts: ManualActivity[], catatan: string) => !!catatan.trim() || acts.some(m => m.project_name.trim() || m.description.trim());
   useEffect(() => {
     if (!formOpen || !kunciDraf || !adaIsian(manualActs, reminderNotes)) return;
     try {
       localStorage.setItem(kunciDraf, JSON.stringify({ formDate, formUserId, editingId, reminderNotes, manualActs, waktu: Date.now() } satisfies DrafDR));
-    } catch { /* penyimpanan perangkat penuh / diblokir: abaikan */ }
+    } catch {  }
   }, [formOpen, kunciDraf, formDate, formUserId, editingId, reminderNotes, manualActs]);
-  //  Jangan biarkan halaman tertutup / dimuat ulang saat penyimpanan masih berjalan.
   useEffect(() => {
     if (!saving) return;
     const tahan = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };

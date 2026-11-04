@@ -18,19 +18,11 @@ import type { SubLED } from './led/panel/BarSub';
 
 export type { SubLED };
 
-/**
- * Kalkulator LED Videotron (Tools Team) - kerangka: keadaan + ekspor + panel. Struktur: led/README.md.
- *   led/useKeadaanLED   isian, referensi produk, hasil hitung (lib/av-hitung), hardware, BOM
- *   led/useEksporLED    ringkasan, lembar cetak & PNG
- *   led/panel/*         kartu & sub menu;  led/koneksi/*, led/daya/*  Screen & Power Connection
- *   led/banding/*       Bandingkan Pitch;  led/konten/*  spesifikasi konten & PNG pola uji
- */
 export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; onSub?: (sub: SubLED) => void }) {
   const K = useKeadaanLED({ subAwal, onSub });
   const E = useEksporLED(K);
   const a: AlatLED = { K, E };
 
-  //  ── Sub menu Power / Screen Connection, Bandingkan Pitch, Konten & Pola Uji ──
   if (K.tampilan === 'daya') return <TampilanDaya a={a} />;
   if (K.tampilan === 'koneksi') return <TampilanKoneksi a={a} />;
   if (K.tampilan === 'banding') return <TampilanBanding a={a} />;

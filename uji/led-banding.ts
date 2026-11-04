@@ -1,9 +1,3 @@
-/**
- * uji/led-banding.ts - bandingkan pitch LED (konsisten dengan hitungLED), saran pitch dari jarak
- * penonton terdekat, batas kanvas & garis cabinet pola uji.
- *
- * Jalankan: npx tsx uji/led-banding.ts
- */
 import { MODUL_LED } from '../lib/av-hitung';
 import { bandingPitch, garisCabinet, labelCabinet, polaUjiBisa, saranPitch } from '../lib/led-banding';
 

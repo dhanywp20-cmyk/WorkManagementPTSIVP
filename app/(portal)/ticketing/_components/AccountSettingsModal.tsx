@@ -2,7 +2,6 @@
 import { Modal } from "@/components/shared";
 import type { User } from "./shared";
 
-/** Bentuk state form buat-akun/ganti-password di page.tsx - dioper ke sini apa adanya. */
 export type NewUserForm = {
   username: string;
   password: string;
@@ -13,11 +12,6 @@ export type NewUserForm = {
 };
 export type ChangePasswordForm = { current: string; new: string; confirm: string };
 
-/**
- * Modal "Account Management" (buat akun, ganti password, daftar user) -
- * dipindah dari app/ticketing/page.tsx apa adanya (JSX identik). State &
- * handler tetap di page.tsx, komponen ini murni presentasional.
- */
 export function AccountSettingsModal({
   newUser,
   setNewUser,

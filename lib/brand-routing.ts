@@ -1,11 +1,3 @@
-/**
- * lib/brand-routing.ts - routing Sales External  Sales Internal per BRAND.
- *
- * Sales External bisa di-handle 2 Sales Internal: MVI (House Brand) & IVP (Global
- * Brand). Saat request, Sales External pilih brand (WAJIB). Mapping disimpan di
- * division_ivp_mappings (kolom brand_type: 'MVI' | 'IVP'; NULL = legacy, berlaku
- * utk semua brand supaya mapping lama tetap jalan).
- */
 import { supabase } from '@/lib/supabase';
 
 export type Brand = 'MVI' | 'IVP' | 'BOTH';
@@ -21,15 +13,11 @@ export const BRAND_LABEL: Record<string, string> = {
 
 export interface BrandInternal { id: string; full_name: string; phone_number: string | null; }
 export interface BrandResolution {
-  mvi: BrandInternal | null;   // Sales Internal utk House Brand
-  ivp: BrandInternal | null;   // Sales Internal utk Global Brand
-  missing: string[];           // brand yg belum ada mapping utk divisi ini (utk blok submit)
+  mvi: BrandInternal | null;
+  ivp: BrandInternal | null;
+  missing: string[];
 }
 
-/**
- * Cari Sales Internal handler utk (divisi, brand). Exact brand_type match dulu,
- * fallback ke mapping tanpa brand_type (legacy) supaya mapping lama tetap jalan.
- */
 export async function resolveBrandInternals(salesDivision: string, brand: Brand): Promise<BrandResolution> {
   const res: BrandResolution = { mvi: null, ivp: null, missing: [] };
   if (!salesDivision) return res;

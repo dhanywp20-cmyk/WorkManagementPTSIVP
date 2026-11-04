@@ -1,26 +1,7 @@
-/**
- * lib/lembar-cetak.ts - lembar cetak A4 & PNG bersama seluruh platform (asal: Tools Team,
- * kini juga Daily Report, Summary Project, Form Review). Warna kepala & teks kaki per menu.
- *
- * Mengikuti pola cetak Request Design Project (form-require-project/
- * _components/cetak-request.ts): dokumen A4 tersendiri yang ditulis ke
- * jendela baru lalu dicetak - BUKAN window.print() halaman, yang mencetak
- * tampilan web apa adanya (tombol, sidebar, latar foto, ukuran tidak
- * proporsional). window.open('') + document.write juga dijembatani oleh
- * aplikasi Android (res/raw/sisip.js -> cetakHtml), jadi berjalan di HP.
- *
- * Semua teks dari pengguna (nama project, customer, nama benda) di-escape.
- */
 
 export const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-/**
- * Salinan objek dengan SEMUA teksnya di-escape (termasuk isi array & objek di dalamnya) - untuk lembar cetak
- * yang menempelkan banyak bidang data ke HTML jendela cetak. Jendela window.open('') berasal dari origin yang
- * sama dengan aplikasi, jadi teks yang tidak di-escape (mis. deskripsi ticket berisi <img onerror=...>) akan
- * berjalan dengan hak orang yang menekan Cetak. Escape sekali di awal tidak bisa terlewat satu bidang pun.
- */
 export function escObjek<T>(o: T, dalam = 0): T {
   if (typeof o === 'string') return esc(o) as unknown as T;
   if (dalam > 4 || o === null || typeof o !== 'object') return o;
@@ -28,7 +9,6 @@ export function escObjek<T>(o: T, dalam = 0): T {
   return Object.fromEntries(Object.entries(o as Record<string, unknown>).map(([k, v]) => [k, escObjek(v, dalam + 1)])) as T;
 }
 
-/** Tautan / gambar hanya http(s) atau jalur di aplikasi ini; selain itu (javascript:, data:...) kosong. */
 export const urlAman = (u: unknown): string => {
   const s = String(u ?? '').trim();
   return /^(https?:\/\/|\/(?!\/))/i.test(s) ? s : '';
@@ -42,15 +22,15 @@ export type Seksi =
   | { judul: string; jenis: 'html'; html: string };
 
 export interface Lembar {
-  /** Judul dokumen, mis. "Kalkulator LED Videotron". */ judul: string;
-  /** Baris kecil di bawah judul, mis. nama project. */ subjudul: string;
-  /** Pasangan label-nilai di sisi kanan header. */ kepala: [string, string][];
+   judul: string;
+   subjudul: string;
+   kepala: [string, string][];
   seksi: Seksi[];
   catatan?: string;
-  /** Label kolom tanda tangan di bagian bawah, mis. ['Dibuat oleh', 'Diperiksa']. */ tandaTangan?: { label: string; nama?: string }[];
-  /** Warna kepala [awal, akhir] - bawaan biru Tools Team. */ warna?: [string, string];
-  /** Teks kaki kiri - bawaan "IndoVisual Professional Tools — Tools Team". */ kaki?: string;
-  /** Kertas mendatar untuk tabel lebar. */ mendatar?: boolean;
+   tandaTangan?: { label: string; nama?: string }[];
+   warna?: [string, string];
+   kaki?: string;
+   mendatar?: boolean;
 }
 
 const kotakInfo = (i: Info) =>
@@ -68,7 +48,6 @@ function seksiHtml(s: Seksi): string {
   return `<div class="section"><div class="section-title">${esc(s.judul)}</div>${isi}</div>`;
 }
 
-/** Dokumen HTML lengkap satu lembar (dipakai cetak & ekspor PNG). */
 export function htmlLembar(l: Lembar): string {
   const dicetak = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const html = `<!DOCTYPE html>
@@ -130,15 +109,10 @@ ${l.tandaTangan?.length ? `<div class="ttd">${l.tandaTangan.map(t => `<div><div 
   return html;
 }
 
-/**
- * Jendela utama aplikasi Android (res/raw/sisip.js) bila halaman ini berjalan di dalamnya.
- * Jembatan hanya disisipkan ke jendela UTAMA; menu Tools Team tampil di iframe dashboard,
- * jadi cetak & unduh dari iframe harus memakai jembatan di jendela atas.
- */
 type JendelaAndroid = Window & { __wmAndroid?: boolean; __unduhBlob?: (href: string, nama: string) => void };
 function jendelaAndroid(): JendelaAndroid | null {
   for (const w of [window, (() => { try { return window.top; } catch { return null; } })()] as (Window | null)[]) {
-    try { if (w && (w as JendelaAndroid).__wmAndroid) return w as JendelaAndroid; } catch { /* lintas domain */ }
+    try { if (w && (w as JendelaAndroid).__wmAndroid) return w as JendelaAndroid; } catch {  }
   }
   return null;
 }
@@ -148,14 +122,10 @@ export function bukaCetak(l: Lembar): void {
   if (w) { w.document.write(htmlLembar(l)); w.document.close(); setTimeout(() => w.print(), 400); }
 }
 
-/** Nama berkas aman dari judul/nama project. */
 export const namaBerkas = (...bagian: string[]) =>
   bagian.filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'tools-team';
 
-/** Unduh data URL / blob URL sebagai berkas. */
 export function unduhUrl(url: string, nama: string) {
-  //  Aplikasi Android: serahkan langsung ke jembatan beserta NAMA berkasnya (unduhan dari iframe
-  //  tanpa ini tersimpan sebagai "unduhan" tanpa ekstensi).
   const android = jendelaAndroid();
   if (android?.__unduhBlob) { android.__unduhBlob(url, nama); return; }
   const a = document.createElement('a');
@@ -169,22 +139,16 @@ const muatGambar = (src: string) => new Promise<HTMLImageElement>((ok, gagal) =>
   img.src = src;
 });
 
-/** Kanvas -> unduhan PNG. */
 export function unduhKanvasPNG(c: HTMLCanvasElement, nama: string): Promise<void> {
   return new Promise((ok, gagal) => c.toBlob(b => {
     if (!b) { gagal(new Error('PNG gagal dibuat')); return; }
     const url = URL.createObjectURL(b);
     unduhUrl(url, nama.endsWith('.png') ? nama : `${nama}.png`);
-    //  Jembatan Android membaca blob secara asinkron - beri waktu sebelum dilepas.
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
     ok();
   }, 'image/png'));
 }
 
-/**
- * SVG mandiri -> PNG (latar putih), `skala` x ukurannya supaya tajam saat dicetak / dipresentasikan.
- * Lebar/tinggi diambil dari atribut width/height SVG.
- */
 export async function unduhSvgPNG(svg: string, nama: string, skala = 2): Promise<void> {
   const w = Number(/\swidth="([\d.]+)"/.exec(svg)?.[1] ?? 1000), h = Number(/\sheight="([\d.]+)"/.exec(svg)?.[1] ?? 600);
   const img = await muatGambar(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
@@ -196,11 +160,6 @@ export async function unduhSvgPNG(svg: string, nama: string, skala = 2): Promise
   await unduhKanvasPNG(c, nama);
 }
 
-/**
- * Lembar cetak yang sama -> satu gambar PNG utuh (A4 memanjang). Lembar dirender dulu di
- * iframe tersembunyi (untuk tinggi & XHTML yang sah), lalu digambar lewat SVG foreignObject
- * ke kanvas 2x. Gambar di dalam lembar harus data URL (sudah begitu di semua alat).
- */
 export async function unduhLembarPNG(l: Lembar, nama: string, skala = 2): Promise<void> {
   const LEBAR = l.mendatar ? 1300 : 940;
   const ifr = document.createElement('iframe');
@@ -212,7 +171,6 @@ export async function unduhLembarPNG(l: Lembar, nama: string, skala = 2): Promis
     doc.open(); doc.write(htmlLembar(l)); doc.close();
     await Promise.all([...doc.images].map(img => (img.complete ? null : new Promise(r => { img.onload = img.onerror = r; }))));
     await new Promise(r => setTimeout(r, 30));
-    //  Gaya ikut masuk ke body supaya terbawa ke dalam SVG.
     const gaya = doc.querySelector('style');
     if (gaya) doc.body.insertBefore(gaya.cloneNode(true), doc.body.firstChild);
     const tinggi = Math.ceil(Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight));

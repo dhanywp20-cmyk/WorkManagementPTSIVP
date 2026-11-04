@@ -1,10 +1,4 @@
 'use client';
-/**
- * Daftar benda - SATU-SATUNYA daftar (tombol Benda di bilah atas, atau L), mengambang di kanan-atas kanvas: klik = pilih
- * (Shift / Ctrl = pilih banyak), klik dua kali = pilih & buka Atur. Mata per kelompok & per benda = tampil / sembunyikan,
- * "Hanya" = isolasi satu kelompok, Pusatkan isi di kaki daftar. Dulu tersebar: panel daftar samping, ikon daftar,
- * Kelompok & Pusatkan di rel kiri.
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlignCenterVertical, ChevronDown, Eye, EyeOff, Lock, Search, X } from 'lucide-react';
 import { type Golongan, golonganDari, kunciSembunyi, LABEL_GOLONGAN, togglePilih } from '../inti';
@@ -21,12 +15,10 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
     const isi = q ? benda.filter(b => b.nama.toLowerCase().includes(q)) : benda;
     return (Object.keys(LABEL_GOLONGAN) as Golongan[]).map(g => ({ g, isi: isi.filter(b => golonganDari(b.jenis) === g) })).filter(x => x.isi.length);
   }, [benda, cari]);
-  //  Benda dipilih di kanvas -> barisnya digulir ke tampilan.
   useEffect(() => {
     if (pilih) wadah.current?.querySelector(`[data-id="${CSS.escape(pilih)}"]`)?.scrollIntoView({ block: 'nearest' });
   }, [pilih]);
   if (!daftarKanvas) return null;
-  //  Kelompok yang ada di desain (tanpa saringan cari) - untuk isolasi.
   const semuaGolongan = (Object.keys(LABEL_GOLONGAN) as Golongan[]).filter(g => benda.some(b => golonganDari(b.jenis) === g));
 
   const pilihBaris = (id: string, g: Golongan, banyak: boolean) => {
@@ -72,7 +64,6 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
                 const kunci = kunciSembunyi(b.id), sendiri = sembunyiGolongan.includes(kunci);
                 const redup = sembunyi || sendiri;
                 const ubahMata = () => {
-                  //  Benda yang disembunyikan dilepas dari pilihan (gizmo tidak menempel di benda tak terlihat).
                   if (!sendiri && (aktif || ikut)) setPilihan(aktif ? null : pilih, aktif ? [] : pilihLain.filter(x => x !== b.id));
                   setSembunyiGolongan(sendiri ? sembunyiGolongan.filter(x => x !== kunci) : [...sembunyiGolongan, kunci]);
                 };

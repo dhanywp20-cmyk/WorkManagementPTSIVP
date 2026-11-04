@@ -1,6 +1,5 @@
 'use client';
 
-/** useAksiPersetujuan - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
 import { User, ProjectRequest, ProjectAttachment, sendWANotif } from './shared';
 import { logAudit } from '@/lib/audit';
@@ -65,11 +64,9 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
   );
 
   const handleApprove = async (req: ProjectRequest) => {
-    // Hanya admin/superadmin yang bisa approve, selalu via AssignPTSModal untuk pilih PTS handler
     setAssignModal({ open: true, req, roomIdx: 0 });
   };
 
-  // Handler: Sales Internal approve & teruskan ke Admin
   const handleInternalApproveProject = async (req: ProjectRequest) => {
     setInternalApproveSaving(true);
     try {
@@ -82,7 +79,6 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
 
   const jalankanInternalApprove = async (req: ProjectRequest) => {
     const now = new Date().toISOString();
-    // Brand BOTH = 2 reviewer (MVI + IVP), WAJIB keduanya approve baru lanjut ke Admin.
     const isSecondReviewer = !!req.internal_sales_id_2 && req.internal_sales_id_2 === currentUser.id;
     const patch: Record<string, unknown> = {};
     if (isSecondReviewer) patch.internal_approved_at_2 = now;
@@ -104,7 +100,6 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRequests();
     if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
-    // WA + badge in-app ke Admin - actionable, sudah lolos review Sales Internal.
     try {
       const admins = await penerimaAdminBernomor();
       const msg =
@@ -127,13 +122,6 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'resubmit', module: 'project', target_id: req.id, target_name: req.project_name }).catch(() => {});
 
-    /*
-      Pengajuan ulang MASUK LAGI ke antrean approval, tapi sebelumnya tidak
-      mengabari siapa pun - jadi request yang sudah diperbaiki Sales bisa
-      mengendap tanpa ada yang tahu gilirannya kembali. Penerimanya lewat
-      penerimaAdminBernomor() supaya pemegang Full Access ikut, bukan hanya
-      role admin.
-    */
     try {
       const penerima = await penerimaAdminBernomor();
       const pesan = [
@@ -146,10 +134,9 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
         `🔗 ${appLink()}`,
       ].join('\n');
       for (const u of penerima) {
-        //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
         if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan , event: 'project.updated' });
       }
-    } catch { /* kabar gagal tidak boleh membatalkan pengajuan ulangnya */ }
+    } catch {  }
   };
 
   const handleRejectConfirm = async () => {
@@ -167,7 +154,6 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
     const noteMsg = rejectNote.trim() ? ` Alasan: ${rejectNote.trim()}` : '';
     await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system', message: `❌ Request telah ditolak oleh ${currentUser.full_name}.${noteMsg}` }]);
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
-    // WA ke requester saat ditolak
     try {
       const { data: requesterUser } = await supabase.from('users').select('phone_number').eq('id', req.requester_id).single();
       if (requesterUser?.phone_number) {
@@ -185,8 +171,7 @@ Hubungi Admin untuk info lebih lanjut.
 🔗 ${appLink()}`,
         });
       }
-    } catch { /* ignore WA error */ }
-    // In-app notification for rejection
+    } catch {  }
     if (req.requester_id) {
       notifyProjectStatusChange(req.requester_id, req.id, req.project_name, 'rejected', currentUser.full_name).catch(() => {});
     }
@@ -206,10 +191,6 @@ Hubungi Admin untuk info lebih lanjut.
     }
     await supabase.from('project_attachments').delete().eq('request_id', req.id);
     await supabase.from('project_messages').delete().eq('request_id', req.id);
-    //  select('id') supaya RLS yang diam-diam menolak (0 baris, tanpa galat)
-    //  ikut terlihat - lampiran & pesannya sudah kadung terhapus di atas,
-    //  jadi kalau request-nya sendiri gagal terhapus, "berhasil dihapus"
-    //  akan menyembunyikan request yatim tanpa riwayat sama sekali.
     const { data: terhapus, error } = await supabase.from('project_requests').delete().eq('id', req.id).select('id');
     setDeleting(false);
     if (error || !terhapus || terhapus.length === 0) {
@@ -223,14 +204,6 @@ Hubungi Admin untuk info lebih lanjut.
     fetchRequests();
   };
 
-  /**
-   * Hapus satu file attachment - dulu tidak ada tombolnya sama sekali, jadi
-   * Admin/Full Access terpaksa hapus lewat Supabase langsung tiap ada file
-   * salah upload/salah kategori. Admin/Full Access = bisaKelolaRequest (sama
-   * dengan syarat "Re-assign Tim PTS" di panel ini), BUKAN role admin
-   * hardcode, supaya konsisten dengan Full Access yang di-toggle lewat Admin
-   * Panel per akun Team.
-   */
   const handleDeleteAttachment = (att: ProjectAttachment) => {
     setConfirmState({
       message: `Hapus file "${displayFileName(att.file_name)}"? Tindakan ini tidak dapat dibatalkan.`,

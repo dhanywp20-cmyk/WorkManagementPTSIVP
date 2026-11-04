@@ -1,8 +1,4 @@
 'use client';
-/**
- * Pad tanda tangan (mouse / jari / stylus). Hasil = PNG data URL; kosong = tanda tangan basah setelah dicetak.
- * Kanvas mengikuti lebar kotak x devicePixelRatio, isi digambar ulang saat ukuran / nilai dari luar berubah.
- */
 import { useCallback, useEffect, useRef } from 'react';
 import { Eraser } from 'lucide-react';
 
@@ -11,7 +7,6 @@ const TINTA = '#1e3a8a';
 export function PadTtd({ nilai, onUbah, label }: { nilai: string; onUbah: (v: string) => void; label: string }) {
   const kanvas = useRef<HTMLCanvasElement>(null);
   const gores = useRef<{ x: number; y: number } | null>(null);
-  //  Nilai terakhir yang berasal dari kanvas ini sendiri - tidak perlu digambar ulang.
   const milikSendiri = useRef(nilai);
 
   const gambarNilai = useCallback((src: string) => {

@@ -1,9 +1,3 @@
-/**
- * /api/pemakaian - catatan pemakaian menu (tabel pemakaian_menu, migrasi 058).
- *   POST { modul, sub? } -> catat satu kali modul dibuka oleh pemanggil (semua akun yang masuk)
- *   GET  ?hari=7|30|90   -> ringkasan (lib/pemakaian.ts ringkasPemakaian) - HANYA admin & Full Access,
- *                            karena isinya aktivitas rekan kerja. Peran dibaca ulang dari tabel users.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
@@ -25,7 +19,6 @@ export async function POST(req: NextRequest) {
   if (!modulSah(modul) || !subSah(modul, body?.sub)) return NextResponse.json({ ok: false }, { status: 400 });
   const { error } = await getAdminClient().from('pemakaian_menu')
     .insert({ user_id: jaga.user.id, modul, sub: body?.sub ? String(body.sub) : null });
-  //  Tabel belum ada / gagal tulis tidak boleh terlihat sebagai galat di layar pengguna.
   if (error) console.error('pemakaian: gagal mencatat', error.message);
   return NextResponse.json({ ok: !error }, { headers: NO_STORE });
 }
@@ -42,7 +35,6 @@ export async function GET(req: NextRequest) {
   const hari = HARI_SAH.includes(Number(req.nextUrl.searchParams.get('hari'))) ? Number(req.nextUrl.searchParams.get('hari')) : 30;
   const sejak = new Date(Date.now() - hari * 86_400_000).toISOString();
 
-  //  PostgREST membatasi 1000 baris per permintaan - diambil per halaman.
   const baris: BarisPemakaian[] = [];
   for (let dari = 0; dari < MAKS_BARIS; dari += HALAMAN) {
     const { data, error } = await db.from('pemakaian_menu').select('user_id, modul, sub, created_at')

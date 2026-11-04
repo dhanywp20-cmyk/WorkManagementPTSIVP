@@ -1,17 +1,3 @@
-/**
- * lib/integrasi-tulis.ts - aksi UBAH DATA DIWAYPI di luar tahap 1-2.
- *
- * Tiap aksi menyalin satu tombol di aplikasi web LANGKAH DEMI LANGKAH - syarat tombolnya,
- * baris yang ditulis, isi WA/Telegram (efek.wa = sendWANotif), notifikasi in-app (efek.inApp =
- * createNotification) - dan berkas sumbernya disebut di atas fungsinya. Bedanya hanya dua, dan
- * keduanya ke arah lebih ketat: setiap update memeriksa baris yang benar-benar berubah
- * (RLS yang menolak menjawab 0 baris TANPA galat), dan setiap aksi tercatat di audit trail
- * (ditandai "via DIWAYPI" oleh lib/efek-server.ts).
- *
- * SENGAJA TIDAK ADA: hapus permanen, proses/bayar insentif, pengaturan & snapshot KPI,
- * mengerjakan / mengelola kuis Learning Center, serah tiket ke Team Services, mengisi nilai
- * Form Review (itu bagian pelanggan/Sales). Semuanya tetap lewat aplikasi.
- */
 import crypto from 'crypto';
 import { hasFullAccess } from '@/lib/constants';
 import { JABATAN_CC_RULES } from '@/lib/jabatan';
@@ -43,30 +29,23 @@ interface Orang {
 }
 const KOLOM_ORANG = 'id, username, full_name, role, team_type, phone_number, sales_division, jabatan, bisa_ditugaskan';
 
-/**
- * Anggota Team PTS yang ditawarkan di dropdown assign (Ticketing, Request Design): role team /
- * team_pts, lalu bolehDitugaskanOleh(anggota, penugasAdminMurni) - Manager hanya untuk Admin murni.
- */
 async function anggotaDitawarkan(k: KonteksAksi): Promise<Orang[] | HasilAksi> {
-  try { await k.muatAturan?.(); } catch { /* pakai bawaan, sama dengan peramban yang gagal memuat */ }
+  try { await k.muatAturan?.(); } catch {  }
   const { data, error } = await k.db.from('users').select(KOLOM_ORANG).in('role', ['team_pts', 'team']).order('full_name');
   if (error) return gagal(error.message);
   const penugasAdmin = adalahAdminMurni(k.u);
   return ((data ?? []) as Orang[]).filter(x => bolehDitugaskanOleh(x, penugasAdmin));
 }
-/** Supervisor tim PTS yang bisa ditugaskan - pilihan "Route ke Supervisor". */
 async function daftarSupervisor(k: KonteksAksi): Promise<Orang[]> {
-  try { await k.muatAturan?.(); } catch { /* bawaan */ }
+  try { await k.muatAturan?.(); } catch {  }
   const { data } = await k.db.from('users').select(KOLOM_ORANG).eq('jabatan', 'Supervisor');
   return ((data ?? []) as Orang[]).filter(s => isAssignablePTSTeam(s.team_type));
 }
-/** "saya" / nama sendiri = kerjakan sendiri (opsi SELF di form); selain itu nama lengkap atau username. */
 const diriSendiri = (v: string, k: KonteksAksi) => ['saya', 'sendiri', 'aku', 'self'].includes(v.trim().toLowerCase())
   || samaNama(k.u.full_name, v) || samaNama(k.u.username, v);
 const cariOrang = (daftar: Orang[], v: string) => daftar.find(x => samaNama(x.username, v)) ?? daftar.find(x => samaNama(x.full_name, v));
 const contoh = (daftar: Orang[]) => (daftar.length ? ` Contoh: ${daftar.slice(0, 8).map(x => x.full_name).join(', ')}.` : '');
 
-/** Kirim WA tanpa pernah melempar; hasilnya dihitung untuk laporan. */
 async function kirimWA(k: KonteksAksi, nomor: string | null | undefined, pesan: string, event?: string): Promise<boolean> {
   if (!(nomor ?? '').trim()) return false;
   const r = await k.efek.wa(String(nomor), pesan, event);
@@ -79,12 +58,6 @@ async function audit(k: KonteksAksi, p: { action: AuditAction; module: string; t
     ...(old_value ? { old_value } : {}), ...(new_value ? { new_value } : {}) });
 }
 
-// ================================================================ Ticketing
-/**
- * fetchWACCTargets (ticketing/_components/shared.ts) dengan klien pemilik token: atasan sesuai
- * JABATAN_CC_RULES dari division_supervisor_mappings + user_supervisor_mappings, plus handler IVP
- * divisi itu (division_ivp_mappings).
- */
 export async function targetCC(k: KonteksAksi, userId: string, salesDiv: string): Promise<{ phone: string; name: string; relation: string }[]> {
   const targets: { phone: string; name: string; relation: string }[] = [];
   const db = k.db;
@@ -124,12 +97,6 @@ export async function targetCC(k: KonteksAksi, userId: string, salesDiv: string)
   return targets;
 }
 
-/**
- * Buat ticket - useBuatTicket.ts createTicket. Admin/superadmin & Full Access (Manager PTS):
- * langsung Pending dengan penanganan wajib (handler / "saya" / supervisor). Lainnya: Waiting
- * Approval + kabar ke approver (admin, Full Access, manager_user_id) + CC atasan & IVP divisi.
- * Foto & brand Sales External tidak didukung lewat DIWAYPI.
- */
 const tiketBuat: Aksi = async (a, k) => {
   const { db, u } = k;
   const project = teks(a.project, 150), issue = teks(a.issue, 300);
@@ -188,7 +155,7 @@ const tiketBuat: Aksi = async (a, k) => {
         const { data: m } = await db.from('users').select('id, phone_number, full_name').eq('id', managerId).maybeSingle();
         if (m) approvers.push({ id: (m as Orang).id, phone_number: (m as Orang).phone_number ?? '', full_name: (m as Orang).full_name });
       }
-    } catch { /* sama dengan aplikasi: override manager opsional */ }
+    } catch {  }
     const pesan = ['🔔 *Request Ticket Baru — Menunggu Approval*', GARIS,
       `📌 *Project  :* ${project}`, `⚠️ *Issue    :* ${issue}`,
       `👤 *Requester:* ${u.full_name || '-'} (${u.username || '-'})`, `📅 *Tanggal  :* ${tanggal || '-'}`, GARIS,
@@ -231,12 +198,6 @@ interface TiketSetuju {
   is_deleted: boolean | null;
 }
 
-/**
- * Approve ticket Waiting Approval (useApproveTicket.ts) - Admin / Full Access: assign handler
- * atau route ke Supervisor, dengan penjaga `.eq('status','Waiting Approval')` + cek baris supaya
- * dua penyetuju tidak saling menimpa. Ticket yang di-route ke pemilik token sebagai Supervisor:
- * assign lanjut ke tim / kerjakan sendiri (useTugaskanSupervisor.ts).
- */
 const tiketSetujui: Aksi = async (a, k) => {
   const { db, u } = k;
   const id = idSah(a.id);
@@ -249,7 +210,6 @@ const tiketSetujui: Aksi = async (a, k) => {
   if (!t || t.is_deleted) return gagal('Tiket tidak ditemukan atau Anda tidak punya akses.');
   const handlerArg = teks(a.handler, 80), supArg = teks(a.supervisor, 80);
 
-  // ---- Supervisor yang di-route: assign lanjut ke tim
   if (t.routing_status === 'supervisor_assign' && t.assigned_supervisor_id === u.id && !(t.assign_name ?? '').trim()) {
     if (!handlerArg) return gagal('Pilih anggota tim (handler) atau "saya" untuk kerjakan sendiri.');
     const self = diriSendiri(handlerArg, k);
@@ -280,7 +240,6 @@ const tiketSetujui: Aksi = async (a, k) => {
     return { ok: true, tiket: t.project_name, handler: nm, wa_handler: wa };
   }
 
-  // ---- Approve Waiting Approval
   const role = peranDari(u);
   if (!(role === 'admin' || role === 'superadmin' || hasFullAccess(u))) {
     return gagal('Approve ticket hanya untuk Admin atau pemegang Full Access.');
@@ -347,7 +306,6 @@ const tiketSetujui: Aksi = async (a, k) => {
     ...(hx?.phone_number && !wa ? { peringatan: 'WA ke handler gagal dikirim. Ticket berhasil di-approve.' } : {}) };
 };
 
-// ================================================================ Request Design Project
 async function requestDanRuangan(a: Record<string, unknown>, k: KonteksAksi) {
   const r = await muatRequestDesain(a.id, k);
   if (adalahGalat(r)) return r;
@@ -360,7 +318,6 @@ const pesanSistem = (k: KonteksAksi, reqId: string, message: string) =>
   k.db.from('project_messages').insert([{ request_id: reqId, sender_id: k.u.id, sender_name: 'System', sender_role: 'system', message }]);
 const pesanPelaku = (k: KonteksAksi, reqId: string, message: string) =>
   k.db.from('project_messages').insert([{ request_id: reqId, sender_id: k.u.id, sender_name: k.u.full_name, sender_role: k.u.role, message }]);
-/** notifyProjectStatusChange (lib/notifications.ts). */
 async function kabarStatusProject(k: KonteksAksi, requesterId: string | null, r: RequestDesain, status: string) {
   if (!requesterId) return;
   const label: Record<string, string> = { approved: '✅ Disetujui', rejected: '❌ Ditolak', in_progress: '🔄 Sedang Diproses', completed: '🎉 Selesai' };
@@ -368,11 +325,6 @@ async function kabarStatusProject(k: KonteksAksi, requesterId: string | null, r:
     body: `Status diperbarui oleh ${k.u.full_name}`, action_url: '/form-require-project', ref_id: r.id, created_by: k.u.full_name ?? '' });
 }
 
-/**
- * Approve & Assign / Assign ke Tim / Re-assign Tim PTS / Route ke Supervisor - AssignPTSModal
- * (Modals-AssignPTSModal.tsx handleSave & handleRouteToSupervisor), dibuka dari HeaderDetail
- * (approve awal, Supervisor yang di-route) atau KontrolAdminDetail (re-assign).
- */
 const desainAssign: Aksi = async (a, k) => {
   const x = await requestDanRuangan(a, k);
   if (adalahGalat(x)) return x;
@@ -417,7 +369,6 @@ const desainAssign: Aksi = async (a, k) => {
   let patch: Record<string, unknown>;
   if (i === 0) {
     patch = { assign_name: h.full_name, assign_user_id: h.id, status: 'approved', approved_by: u.full_name, approved_at: kini };
-    //  assigned_supervisor_id SENGAJA tidak dikosongkan (WITH CHECK RLS pr_update) - lihat handleSave.
     if (r.routing_status === 'supervisor_assign') patch.routing_status = null;
   } else {
     const rooms: RuanganDesain[] = [...(r.rooms || [])];
@@ -443,7 +394,6 @@ const desainAssign: Aksi = async (a, k) => {
   return { ok: true, request: r.project_name, ruangan: namaRuangan(r, i), handler: h.full_name, wa_handler: wa };
 };
 
-/** Update Status - useUbahStatusRequest.ts handleStatusUpdate (pilihan = ModalUpdateStatus). */
 const desainStatus: Aksi = async (a, k) => {
   const x = await requestDanRuangan(a, k);
   if (adalahGalat(x)) return x;
@@ -487,12 +437,11 @@ const desainStatus: Aksi = async (a, k) => {
           `Halo *${o.full_name}*, status request berubah menjadi *${baru}* oleh *${u.full_name}*:`, ringkas, GARIS, `🔗 ${appLink()}`].join('\n');
       if (await kirimWA(k, o.phone_number, pesan, 'project.updated')) wa++;
     }
-  } catch { /* kabar gagal tidak boleh membatalkan perubahan statusnya */ }
+  } catch {  }
   await audit(k, { action: 'status_change', module: 'project', target_id: r.id, target_name: r.project_name, old_value: lama ?? null, new_value: baru });
   return { ok: true, request: r.project_name, ruangan: namaRuangan(r, i), status_lama: lama, status_baru: baru, wa_terkirim: wa };
 };
 
-/** Tolak dengan alasan - useAksiPersetujuan.ts handleRejectConfirm. */
 const desainTolak: Aksi = async (a, k) => {
   const x = await requestDanRuangan({ ...a, ruangan: undefined }, k);
   if (adalahGalat(x)) return x;
@@ -516,13 +465,12 @@ Halo *${r.requester_name}*, request kamu ditolak:
 
 Hubungi Admin untuk info lebih lanjut.
 🔗 ${appLink()}`);
-  } catch { /* abaikan galat WA (sama dengan aplikasi) */ }
+  } catch {  }
   await kabarStatusProject(k, r.requester_id, r, 'rejected');
   await audit(k, { action: 'reject', module: 'project', target_id: r.id, target_name: r.project_name, notes: alasan });
   return { ok: true, request: r.project_name, status_baru: 'rejected', wa_requester: wa };
 };
 
-/** Sales Internal: Approve & Teruskan ke Admin - useAksiPersetujuan.ts jalankanInternalApprove. */
 const desainReviewInternal: Aksi = async (a, k) => {
   const x = await requestDanRuangan({ ...a, ruangan: undefined }, k);
   if (adalahGalat(x)) return x;
@@ -551,11 +499,10 @@ const desainReviewInternal: Aksi = async (a, k) => {
     wa = (await Promise.all(admins.filter(x => x.phone_number).map(x => kirimWA(k, x.phone_number, msg, 'project.approval_needed')))).filter(Boolean).length;
     for (const ad of admins) if (ad.id) await k.efek.inApp({ user_id: ad.id, type: 'project', title: '✅ Request lolos review Sales Internal',
       body: `${r.sales_name} — ${r.project_name}`, action_url: '/form-require-project', ref_id: r.id, created_by: u.full_name ?? '' });
-  } catch { /* abaikan */ }
+  } catch {  }
   return { ok: true, request: r.project_name, diteruskan_ke_admin: true, wa_terkirim: wa };
 };
 
-/** Ajukan ulang request yang ditolak - useAksiPersetujuan.ts handleResubmit (Sales pemiliknya). */
 const desainAjukanUlang: Aksi = async (a, k) => {
   const x = await requestDanRuangan({ ...a, ruangan: undefined }, k);
   if (adalahGalat(x)) return x;
@@ -571,11 +518,10 @@ const desainAjukanUlang: Aksi = async (a, k) => {
     const pesan = ['🔁 *REQUEST DESIGN DIAJUKAN ULANG*', GARIS, `👤 *Sales   :* ${r.sales_name || k.u.full_name}`,
       `📌 *Project :* ${r.project_name}`, GARIS, 'Sudah diperbaiki dan menunggu approval kembali.', `🔗 ${appLink()}`].join('\n');
     for (const p of await penerimaAdminServer(k.db)) if (await kirimWA(k, p.phone_number, pesan, 'project.updated')) wa++;
-  } catch { /* kabar gagal tidak boleh membatalkan pengajuan ulangnya */ }
+  } catch {  }
   return { ok: true, request: r.project_name, status_baru: 'pending', wa_terkirim: wa };
 };
 
-/** Kirim pesan di chat request - usePesanLampiran.ts handleSendMessage (tanpa lampiran). */
 const desainPesan: Aksi = async (a, k) => {
   const x = await requestDanRuangan(a, k);
   if (adalahGalat(x)) return x;
@@ -592,8 +538,6 @@ const desainPesan: Aksi = async (a, k) => {
   return { ok: true, request: r.project_name, terkirim: final };
 };
 
-// ================================================================ Tech Note
-/** Unggah tech note baru (status pending) - useAksiTechNote.ts submitTechNote (mode baru). */
 const catatanBuat: Aksi = async (a, k) => {
   const { db, u } = k;
   const judul = teks(a.judul, 200);
@@ -628,7 +572,6 @@ const PETA_REVIEW: Record<string, 'approved' | 'revision_requested' | 'rejected'
   rejected: 'rejected', reject: 'rejected', tolak: 'rejected', ditolak: 'rejected',
 };
 
-/** Review tech note (Approve / Revisi / Tolak) - useAksiTechNote.ts submitApproval; ModalDetailNote: canManage && pending. */
 const catatanReview: Aksi = async (a, k) => {
   const { db, u } = k;
   if (!hasFullAccess(u)) return gagal('Review tech note hanya untuk Admin atau pemegang Full Access.');
@@ -665,15 +608,13 @@ const catatanReview: Aksi = async (a, k) => {
           aksi === 'approved' ? 'Terima kasih sudah berbagi — catatanmu kini bisa dipakai tim. 🙌' : 'Silakan ditindaklanjuti lalu ajukan kembali.',
           `🔗 ${appLink('/tech-note')}`].join('\n'));
       }
-    } catch { /* kabar gagal tidak boleh membatalkan keputusan reviewnya */ }
+    } catch {  }
   }
   return { ok: true, judul: c.title, status_baru: statusBaru, wa_penulis: wa };
 };
 
-// ================================================================ Unit Movement
 const KONDISI = ['Baik', 'Perlu Service', 'Rusak'];
 
-/** Daftar pilihan Admin Panel (app_settings daftar_pilihan) - bawaan bila belum diatur. */
 async function daftarPilihan(k: KonteksAksi, kunci: KunciDaftar): Promise<string[]> {
   try {
     const { data } = await k.db.from('app_settings').select('value').eq('key', KUNCI_DAFTAR_PILIHAN).maybeSingle();
@@ -681,7 +622,6 @@ async function daftarPilihan(k: KonteksAksi, kunci: KunciDaftar): Promise<string
   } catch { return bacaDaftarPilihan(null)[kunci]; }
 }
 
-/** Catat barang masuk/keluar - unit-movement AddEditModal handleSave (mode baru, tanpa foto); canAddLog. */
 const unitCatat: Aksi = async (a, k) => {
   const { db, u } = k;
   const t = await akunTambahan(k);
@@ -693,7 +633,7 @@ const unitCatat: Aksi = async (a, k) => {
   if (!status) return gagal('status_barang: Masuk atau Keluar.');
   const tanggal = tglSah(a.tanggal) ?? hariIniWIB();
   const project = teks(a.project, 150);
-  try { await k.muatAturan?.(); } catch { /* bawaan */ }
+  try { await k.muatAturan?.(); } catch {  }
   const { data: tim } = await db.from('users').select('full_name').in('team_type', daftarTimDitugaskan()).order('full_name');
   const anggota = ((tim ?? []) as { full_name: string }[]).map(x => x.full_name);
   const ptsArg = teks(a.nama_pts, 100) || (anggota.includes(u.full_name ?? '') ? (u.full_name ?? '') : '');
@@ -719,7 +659,6 @@ const unitCatat: Aksi = async (a, k) => {
   return { ok: true, id, status_barang: status, project, nama_pts: pts, event, kembali: payload.expected_return_date };
 };
 
-/** Tandai barang sudah kembali - unit-movement/page.tsx handleMarkReturned (!pimpinan). */
 const unitKembali: Aksi = async (a, k) => {
   const { db, u } = k;
   const t = await akunTambahan(k);
@@ -742,13 +681,6 @@ const unitKembali: Aksi = async (a, k) => {
   return { ok: true, project: log.project_name, sudah_kembali: true };
 };
 
-// ================================================================ Piket Showroom
-/**
- * Tambah SATU kegiatan ke catatan piket sebuah hari - padanan FillDetailModal handleSave untuk
- * satu baris baru (aplikasi menulis ulang semua baris hari itu; di sini cukup menambah satu, jadi
- * catatan orang lain di hari yang sama tidak tersentuh). Ringkasan hari (tamu_instansi, kebutuhan)
- * mengikuti Demo Product PERTAMA hari itu, sama dengan aplikasi.
- */
 const piketCatat: Aksi = async (a, k) => {
   const { db, u } = k;
   const t = await akunTambahan(k);

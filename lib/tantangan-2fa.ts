@@ -1,10 +1,3 @@
-/**
- * lib/tantangan-2fa.ts - tiket sementara antara "password benar" dan "kode 2FA benar".
- *
- * Sesudah password lolos, server belum membuat sesi; ia memberi tiket bertanda tangan HMAC
- * (kunci diturunkan dari SUPABASE_JWT_SECRET) yang hanya berlaku 5 menit dan hanya bisa dipakai
- * di /api/auth/login-2fa. Tiket tidak berisi rahasia - hanya id pengguna, tahap & kedaluwarsa.
- */
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 export type Tahap2FA = 'kode_2fa' | 'daftar_2fa';
@@ -27,7 +20,6 @@ export function buatTantangan(uid: string, tahap: Tahap2FA, sekarang = Date.now(
   return `${badan}.${b64u(createHmac('sha256', kunci()).update(badan).digest())}`;
 }
 
-/** Isi tiket bila tanda tangan sah & belum kedaluwarsa, selain itu null. */
 export function bacaTantangan(tiket: string | undefined | null, sekarang = Date.now()): IsiTantangan | null {
   if (!tiket || typeof tiket !== 'string' || tiket.length > 600) return null;
   const [badan, ttd] = tiket.split('.');

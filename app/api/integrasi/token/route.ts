@@ -1,13 +1,3 @@
-/**
- * /api/integrasi/token - pemilik akun mengelola token DIWAYPI-nya sendiri (sesi cookie).
- *   GET    -> daftar token milik pemanggil (tanpa nilai token; hanya 4 huruf terakhir)
- *   POST   -> { nama, tulis } -> token baru, DITAMPILKAN SEKALI
- *   DELETE -> ?id=<uuid> -> cabut (bukan hapus: jejaknya tetap)
- *
- * Token hanya bisa dibuat untuk akun pemanggil sendiri - tidak ada parameter user_id.
- * GET & POST hanya admin & akun Full Access (bolehDiwaypiDan2FA); DELETE terbuka untuk pemilik
- * token supaya akun yang haknya dicabut tetap bisa membersihkan tokennya sendiri.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanAksesPenuh, pastikanMasuk } from '@/lib/penjaga-admin';

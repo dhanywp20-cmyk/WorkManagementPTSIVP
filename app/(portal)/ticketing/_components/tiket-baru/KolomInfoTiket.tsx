@@ -1,6 +1,5 @@
 'use client';
 
-/** KolomInfoTiket - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { type NewTicketForm, type ReminderRef } from '../NewTicketModal';
@@ -27,13 +26,11 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
   return (
     <>
       <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
-      {/* Section: Informasi Ticket */}
       <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
         <span className="text-lg"><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Ticket</span>
       </div>
 
-      {/* Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg di-CC. */}
       {isExternalGuest && (
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
@@ -56,7 +53,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         </div>
       )}
 
-      {/* Project Type Toggle */}
       <div>
         <label className="block text-[11px] font-bold mb-2 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tipe Project</label>
         <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(0,0,0,0.12)" }}>
@@ -79,7 +75,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         </div>
       </div>
 
-      {/* Project Existing: Search */}
       {projectType === 'existing' && (
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
@@ -100,20 +95,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             )}
           </div>
 
-          {/* Tidak ketemu — sebutkan kemungkinan penyebabnya.
-              Hasil kosong bisa berarti project-nya memang tidak ada, ATAU
-              ada tapi milik divisi lain sehingga di luar lingkup pencari.
-              Tanpa keterangan ini keduanya terlihat sama, dan orang akan
-              mengira sistemnya yang rusak.
-
-              Keterangannya dibedakan menurut lingkup yang BENAR-BENAR
-              dipakai. Menyebut "hanya divisi kamu" kepada akun yang justru
-              mencari tanpa batas adalah keterangan yang salah - ia
-              mengirim orang mengejar penyebab yang tidak ada, padahal
-              jawabannya cuma "nama itu memang belum tercatat". */}
-          {/* Kueri ditolak basis data - ini BUKAN "tidak ditemukan".
-              Pesannya ditampilkan apa adanya supaya penyebabnya bisa
-              dibaca, bukan ditebak dari layar yang tampak kosong. */}
           {!reminderSearching && galatCari && (
             <p className="mt-1.5 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5 leading-snug">
               Pencarian gagal dijalankan, jadi daftar di bawah belum tentu lengkap.
@@ -140,7 +121,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             </p>
           )}
 
-          {/* Search Results */}
           {reminderResults.length > 0 && (
             <div className="mt-1 rounded-xl border overflow-hidden shadow-lg z-10"
               style={{ background: "white", borderColor: "rgba(220,38,38,0.2)" }}>
@@ -165,7 +145,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             </div>
           )}
 
-          {/* Selected reminder badge */}
           {selectedReminder && (
             <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl"
               style={{ background: "rgba(220,38,38,0.07)", border: "1px solid rgba(220,38,38,0.2)" }}>
@@ -182,16 +161,11 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         </div>
       )}
 
-
-      {/* Detail Project ikut kolom KIRI sampai kontak customer — sesuai
-          urutan orang mengisinya: project apa, di mana, siapa yang dihubungi.
-          Barang & keluhannya baru urusan kolom tengah. */}
       <div className="flex items-center gap-2 pb-2 border-b pt-2" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
         <span className="text-sm"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <h3 className="text-sm font-bold tracking-wide text-slate-700">Detail Project</h3>
       </div>
 
-      {/* Row 1: Project Name | Address */}
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
@@ -226,8 +200,6 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         </div>
       </div>
 
-
-      {/* Kontak customer — penutup blok "di mana & siapa". */}
       <div>
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Customer Phone</label>

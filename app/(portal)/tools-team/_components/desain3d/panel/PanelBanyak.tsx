@@ -1,9 +1,4 @@
 'use client';
-/**
- * Panel "Atur N benda" (pilih banyak): skala ukuran, samakan ukuran dengan benda utama, isi
- * lebar / tinggi / tebal / tinggi dari lantai sekaligus, putar 90°, rata tepi, duplikat & hapus.
- * Geser / putar bersama lewat gizmo benda utama (mesin/useMesin.ts). Aturan: inti/banyak.ts.
- */
 import { useState } from 'react';
 import { AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, Copy, RotateCw, Trash2 } from 'lucide-react';
 import { Ikon } from '@/components/shared/Ikon';
@@ -11,7 +6,6 @@ import { type Benda, duplikatBanyak, ikutUtama, rataBanyak, type Rata, skalaBany
 import type { AlatDesain } from './alat';
 
 const mm = (m: number) => Math.round(m * 1000);
-/** Nilai bersama bila semua sama, selain itu kosong (campuran). */
 const bersama = (v: number[]) => (v.every(x => Math.abs(x - v[0]) < 0.0005) ? String(mm(v[0])) : '');
 
 export function PanelBanyak({ a }: { a: AlatDesain }) {
@@ -33,7 +27,6 @@ export function PanelBanyak({ a }: { a: AlatDesain }) {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {/*  Ukuran sama (mm): kosong = campuran, diketik = berlaku untuk semua. */}
         <div className="grid grid-cols-2 gap-2">
           {kolom.map(([k, l]) => (
             <label key={k} className="block">

@@ -1,15 +1,3 @@
-/**
- * uji/integrasi-diwaypi.ts - token pribadi DIWAYPI & daftar aksinya: bentuk/hash token, token
- * dicabut, token baca-saja tidak bisa menulis, aturan status tiket Team PTS, dan aksi tahap 2
- * (tiket Solved, ubah status jadwal, buat jadwal). Klien Supabase & pengirim tiruan - tidak
- * ada jaringan.
- *
- * Bukti "efek sama dengan aplikasi web": untuk tiap aksi tahap 2, modul bersama dipanggil juga
- * PERSIS seperti hook peramban memanggilnya (useSelesaiTicket / useUbahStatus / useSimpanJadwal),
- * lalu baris yang ditulis dan pesan yang dikirim kedua jalur dibandingkan.
- *
- * Jalankan: npm test -- integrasi-diwaypi
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ambilBearer, bentukSah, buatTokenMentah, hashToken, verifikasiToken } from '../lib/token-integrasi';
 import { jalankanAksi, statusResmi, type KonteksAksi } from '../lib/integrasi-aksi';
@@ -30,7 +18,6 @@ function cek(nama: string, syarat: boolean, detail = '') {
 interface Kueri { tabel: string; op: 'select' | 'insert' | 'update' | 'delete' | 'rpc'; kolom?: string; nilai?: unknown; filter: string[] }
 type Hasil = { data?: unknown; error?: unknown; count?: number };
 
-/** Pembangun query tiruan yang mencatat setiap permintaan dan menjawab lewat `jawab`. */
 function klienTiruan(jawab: (q: Kueri) => Hasil) {
   const kueri: Kueri[] = [];
   const db = {
@@ -58,7 +45,6 @@ function klienTiruan(jawab: (q: Kueri) => Hasil) {
   return { db: db as unknown as SupabaseClient, kueri };
 }
 
-/** Pengirim tiruan: mencatat WA, notifikasi in-app, dan audit. */
 function efekTiruan() {
   const wa: { target: string; pesan: string; event?: string }[] = [];
   const inApp: NotifPayload[] = [];
@@ -71,7 +57,6 @@ function efekTiruan() {
   return { efek, wa, inApp, audit };
 }
 
-/** Tulisan (bukan baca) dengan cap waktu dibuang - supaya dua jalur bisa dibandingkan. */
 function tulisanBersih(kueri: Kueri[]) {
   const buang = (v: unknown): unknown => JSON.parse(JSON.stringify(v ?? null, (k, x) => (k === 'updated_at' || k === 'batch_id' && typeof x === 'string' && x.length > 20 ? '<x>' : x)));
   return JSON.stringify(kueri.filter(q => q.op !== 'select').map(q => ({ t: q.tabel, op: q.op, f: q.filter, v: buang(q.nilai) })));
@@ -114,7 +99,6 @@ async function main() {
   const r3 = await jalankanAksi('hapus_semua', {}, ctxBaca);
   cek('aksi tak dikenal ditolak', !r3.ok && /tidak dikenal/.test(String(r3.galat)));
 
-  // tiket_aktivitas: aturan alur-status ditegakkan sebelum menulis apa pun
   const tiket = { id: '11111111-2222-3333-4444-555555555555', status: 'Pending', project_name: 'BCA', issue_case: 'LED mati',
     product: 'LED', sn_unit: null, sales_name: 'Andi', sales_division: 'A', address: 'Jl. X', customer_phone: '08', current_team: 'Team PTS IVP',
     is_deleted: false, assign_name: 'Dhany', created_by: 'admin1', assigned_supervisor_id: 'sup-1', internal_sales_id: null, internal_sales_id_2: null };
@@ -148,7 +132,6 @@ async function main() {
   cek('tercatat di audit trail', eTiket.audit.some(a => a.module === 'ticket' && a.new_value === 'Onsite'));
   cek('status selain Solved tidak mengabari siapa pun', eTiket.wa.length === 0 && eTiket.inApp.length === 0);
 
-  // update yang ditolak RLS (0 baris tanpa galat) tidak boleh dilaporkan berhasil
   const tiketTolak = { ...tiket, status: 'In Progress' };
   const { db: dbRls, kueri: kRls } = klienTiruan(q => {
     if (q.tabel === 'tickets' && q.op === 'select') return { data: tiketTolak };
@@ -167,8 +150,6 @@ async function main() {
     { ...ctxTulis, u: { ...u, team_type: 'Team Services' } });
   cek('akun Team Services diarahkan ke aplikasi', !r9.ok && /Team Services/.test(String(r9.galat)));
 
-  //  Syarat tombol Update Status (bolehUpdateTicket): RLS juga meloloskan pembuat tiket, tapi
-  //  Sales pembuat tiket tidak boleh menutupnya lewat DIWAYPI.
   const eSales = efekTiruan();
   const { db: dbSales, kueri: kSales } = klienTiruan(q => q.tabel === 'tickets' && q.op === 'select' ? { data: { ...tiket, status: 'In Progress' } } : { data: null });
   const r9b = await jalankanAksi('tiket_selesai', { id: tiket.id, catatan: 'beres' },
@@ -206,7 +187,6 @@ async function main() {
   process.exit(gagal ? 1 : 0);
 }
 
-// ---------------------------------------------------------------- tiket Solved
 const ORANG = [
   { id: 's-1', full_name: 'Andi', username: 'andi', phone_number: '0811' },
   { id: 'u-1', full_name: 'Dhany', username: 'dhany', phone_number: '0812' },
@@ -255,7 +235,6 @@ async function ujiTiketSelesai(tiketDasar: Record<string, unknown> & { id: strin
   cek('pihak lain: "diselesaikan oleh" + catatan', keSales.includes('sudah diselesaikan oleh *Dhany*') && keSales.includes('📝 *Catatan :* beres'));
   cek('jadwal tiket ikut ditutup dilaporkan', r.jadwal_ditutup === 1);
 
-  //  Sama dengan aplikasi: useSelesaiTicket memanggil modul yang sama dengan (supabase, efekPeramban, t, catatan, currentUser).
   const { db: db2 } = klienTiruan(q => jawabOrang(q) ?? { data: null });
   const e2 = efekTiruan();
   await kabarkanTicketSelesai(db2, e2.efek, tiket as never, 'beres', { id: 'u-1', full_name: 'Dhany' });
@@ -263,7 +242,6 @@ async function ujiTiketSelesai(tiketDasar: Record<string, unknown> & { id: strin
     JSON.stringify(e2.wa) === JSON.stringify(e.wa) && JSON.stringify(e2.inApp) === JSON.stringify(e.inApp));
 }
 
-// ---------------------------------------------------------------- jadwal_status
 const JADWAL: BarisJadwal & { is_deleted: boolean } = {
   id: 'aaaaaaaa-0000-0000-0000-000000000001', project_name: 'BCA Sentul', category: 'Konfigurasi', status: 'pending',
   due_date: '2026-10-20', assigned_to: 'dhany', assign_name: 'Dhany', sales_name: 'Budi Guest', sales_division: 'Div A',
@@ -313,8 +291,6 @@ async function ujiJadwalStatus() {
   cek('WA permintaan review ke guest', e.wa.some(w => w.target === '0899' && w.pesan.startsWith('⭐ *REVIEW DIMINTA') && w.event === 'reminder.form_review_sent'));
   cek('audit: status_change, 2 tanggal', e.audit.some(a => a.action === 'status_change' && a.new_value === 'done' && /2 tanggal/.test(a.notes ?? '')));
 
-  //  Sama dengan aplikasi: useUbahStatus memanggil ubahStatusJadwal dengan baris jadwal dari state,
-  //  sesudah useModePenyelesaian menulis detail - di sini cukup bagian status (detail sudah dicek di atas).
   const { db: db2, kueri: k2 } = klienJadwal(JADWAL);
   const e2 = efekTiruan();
   await ubahStatusJadwal(db2, e2.efek, { id: JADWAL.id, status: 'done', sebelum: JADWAL, pelaku: { id: 'u-1', full_name: 'Dhany' }, jumlahSebatch: 2 });
@@ -340,7 +316,6 @@ async function ujiJadwalStatus() {
     && JSON.stringify(upd5.nilai).includes('"status":"cancelled"') && e5.wa.length === 0 && !k5.some(q => q.tabel === 'form_reviews'), JSON.stringify(r5));
 }
 
-// ---------------------------------------------------------------- jadwal_buat
 const PENGGUNA = [
   { id: 'u-1', username: 'dhany', full_name: 'Dhany', role: 'team', team_type: 'Team PTS IVP', phone_number: '0812', sales_division: null, jabatan: 'Engineer', bisa_ditugaskan: true },
   { id: 'u-9', username: 'sari', full_name: 'Sari', role: 'team', team_type: 'Team PTS IVP', phone_number: '0819', sales_division: null, jabatan: 'Engineer', bisa_ditugaskan: true },
@@ -394,7 +369,6 @@ async function ujiJadwalBuat() {
   cek('WA "JADWAL BARU" ke pelaksana dengan baris 2 hari', e.wa.length === 1 && wa.target === '0812' && wa.event === 'reminder.assigned'
     && wa.pesan.startsWith('🗓️ *JADWAL BARU — PTS IVP*') && wa.pesan.includes('🕐 *Jadwal (2 hari):*') && wa.pesan.includes('· 10:00'));
 
-  //  Sama dengan aplikasi: useSimpanJadwal (jalur buat baru) memanggil buatJadwal dengan formData-nya.
   const { db: db2, kueri: k2 } = klienBuat();
   const e2 = efekTiruan();
   await buatJadwal(db2, e2.efek, {
@@ -407,7 +381,6 @@ async function ujiJadwalBuat() {
   cek('baris & WA DIWAYPI = aplikasi web (buat jadwal)', tulisanBersih([ins!]) === tulisanBersih([ins2!])
     && JSON.stringify(e.wa) === JSON.stringify(e2.wa), `${tulisanBersih([ins!])}\n         ${tulisanBersih([ins2!])}`);
 
-  // proyek insentif yang sudah ada: aplikasi bertanya - DIWAYPI wajib menjawab
   const lama = [{ id: 'old-1', project_name: 'BCA  sentul', category: 'Training', status: 'done', due_date: '2026-09-01', assign_name: 'Sari', incentive_group_id: null }];
   const { db: db3, kueri: k3 } = klienBuat(lama);
   const ctx3: KonteksAksi = { db: db3, admin: db3, u, cakupan: ['baca', 'tulis'], efek: efekTiruan().efek };
@@ -427,7 +400,6 @@ async function ujiJadwalBuat() {
     k3.some(q => q.tabel === 'reminders' && q.op === 'select' && q.filter.some(f => f.startsWith('in:id,rem-'))));
 }
 
-// ---------------------------------------------------------------- efek server
 async function ujiEfekServer() {
   console.log('efek server');
   const { db, kueri } = klienTiruan(() => ({ data: null, error: null }));

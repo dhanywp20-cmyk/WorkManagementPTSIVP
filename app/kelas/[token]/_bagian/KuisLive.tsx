@@ -1,19 +1,5 @@
 'use client';
 
-/**
- * Kuis Live (ala Kahoot) - layar PESERTA. Isi nama -> lobi (menunggu admin menekan Mulai) -> tiap
- * soal: hitung mundur, pilih satu dari 4 warna/bentuk, lihat Benar/Salah + poin + peringkat ->
- * papan skor -> podium. Semua yang menentukan (soal aktif, waktu, poin) datang dari server; jam
- * perangkat dikoreksi ke jam server supaya semua HP serentak.
- *
- * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: penyegaran terjadwal
- * tepat di akhir tiap tahap (yang membuat semua HP serentak) + penyegaran berkala untuk menangkap aksi
- * admin (Mulai, Lewati, Jeda, semua sudah menjawab): lobi 3 dtk, saat berjalan 5 dtk, selesai 15 dtk.
- * Tiap penyegaran = query Supabase = baris log (kuota Free) - jangan dirapatkan tanpa alasan. Sengaja TANPA Supabase Realtime: 100+ HP melewati batas pesan/detik paket Free dan
- * Supabase lalu memutus semua koneksi realtime proyek (lihat lib/kuis-live-server.ts).
- *
- * Dijeda presenter (live.jedaMs): jam ikut beku di titik jeda, penanda tampil, jawaban ditahan.
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, Lock, Pause, Trophy, Users, X } from 'lucide-react';
 import type { Pilihan } from '@/lib/kelas-eksternal';
@@ -25,7 +11,6 @@ import { panggilKelas, simpanTokenPeserta, type InfoLive } from './api';
 import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './IsianPeserta';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 
-/** `mulai` = waktu soal dibuka: berubah bila presenter mengulang soal yang sama, jadi peserta bisa menjawab lagi. */
 type JawabanLokal = { sesi: number; indeks: number; mulai: number | null; pilihan: Pilihan; galat?: string };
 
 export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
@@ -39,7 +24,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   const sedangMuat = useRef(false);
   const muatLagi = useRef(false);
 
-  /** Ambil status terbaru. Permintaan yang datang saat masih memuat digabung jadi satu susulan. */
   const segarkan = useCallback(async () => {
     if (sedangMuat.current) { muatLagi.current = true; return; }
     sedangMuat.current = true;
@@ -53,7 +37,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     } finally { sedangMuat.current = false; }
   }, [token, catat]);
 
-  //  Ukur jam server segera (data awal belum terkalibrasi).
   useEffect(() => { void segarkan(); }, [segarkan]);
 
   const live = info.live;
@@ -65,9 +48,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     return () => { window.clearInterval(t); document.removeEventListener('visibilitychange', kembali); };
   }, [live.tahap, segarkan]);
 
-  //  Tepat setelah waktu soal habis: ambil hasil (benar/salah, poin, peringkat).
   useEffect(() => {
-    //  Kuis berjalan sendiri: tiap tahap punya waktu akhir (soal -> hasil -> papan -> soal berikutnya).
     if (!live.akhirMs || live.tahap === 'siap') return;
     const tunggu = live.akhirMs + 200 + Math.random() * 600 - sekarang();
     const t = window.setTimeout(() => void segarkan(), Math.max(0, tunggu));
@@ -88,7 +69,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     if (pilihanku || lokalIni || waktuHabis || dijeda) return;
     const k: JawabanLokal = { sesi: live.sesi, indeks: live.indeks, mulai: live.mulaiMs, pilihan: p };
     setLokal(k); setPesan('');
-    try { navigator.vibrate?.(30); } catch { /* tidak semua perangkat */ }
+    try { navigator.vibrate?.(30); } catch {  }
     for (let coba = 0; coba < 3; coba++) {
       const r = await panggilKelas<{ pilihan: Pilihan }>(token, { aksi: 'jawab', indeks: k.indeks, pilihan: p });
       if (r.ok) { setLokal({ ...k, pilihan: r.data.pilihan }); return; }
@@ -109,7 +90,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     setSibuk(false);
   };
 
-  // ── Belum masuk ────────────────────────────────────────────────────────────
   if (!info.peserta) {
     const buka = info.status === 'buka';
     const bisaMasuk = nama.trim().length >= 2 && isianLengkap(info.kelas.isianPeserta, isian);
@@ -153,7 +133,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     );
   }
 
-  // ── Sudah masuk ────────────────────────────────────────────────────────────
   const posisi = live.posisi;
   const tampilBilah = tahap !== 'lobi';
   const kunci = live.kunci as Pilihan | null;
@@ -307,7 +286,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   );
 }
 
-/** "Peringkat 3 dari 20 · 120 poin di belakang Budi" */
 function KeteranganPosisi({ posisi }: { posisi: { peringkat: number; jumlah: number; poin: number; atas: { nama: string; selisih: number } | null } }) {
   return (
     <div className="inline-block rounded-2xl bg-black/30 px-4 py-2.5">

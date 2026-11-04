@@ -1,14 +1,8 @@
-/**
- * Tata letak Desain 3D: tapak benda (ikut rotasi), ratakan & sebar benda terpilih, magnet ke tepi benda lain,
- * larik (ulangi dalam baris x kolom), geser tepat (mm), dan kelompok benda untuk sembunyikan / isolasi.
- * Benda `terkunci` tidak ikut dipindah. Murni (diuji di uji/desain3d-tata.ts).
- */
 import { idBaru } from './katalog';
 import type { Benda, Jenis } from './tipe';
 
 export interface Tapak { x0: number; x1: number; z0: number; z1: number }
 
-/** Kotak tapak di lantai (m), memperhitungkan putaran benda. */
 export function tapak(b: Pick<Benda, 'x' | 'z' | 'w' | 'd' | 'rot'>): Tapak {
   const r = (b.rot * Math.PI) / 180, c = Math.abs(Math.cos(r)), s = Math.abs(Math.sin(r));
   const hx = (c * b.w + s * b.d) / 2, hz = (s * b.w + c * b.d) / 2;
@@ -20,7 +14,6 @@ const bisaPindah = (b: Benda, ids: Set<string>) => ids.has(b.id) && !b.terkunci;
 
 export type CaraRata = 'awal' | 'tengah' | 'akhir';
 
-/** Ratakan benda terpilih ke tepi kiri / tengah / kanan (sumbu x) atau depan / tengah / belakang (sumbu z) kelompoknya. */
 export function ratakan(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z', cara: CaraRata): Benda[] {
   const ids = new Set(idDipilih);
   const pilih = benda.filter(b => ids.has(b.id));
@@ -36,7 +29,6 @@ export function ratakan(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z', c
   });
 }
 
-/** Sebar merata: benda pertama & terakhir (urut posisi) tetap, celah antar tapak dibuat sama. Minimal 3 benda. */
 export function sebar(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z'): Benda[] {
   const ids = new Set(idDipilih);
   const pilih = benda.filter(b => ids.has(b.id)).sort((a, c) => (sumbu === 'x' ? a.x - c.x : a.z - c.z));
@@ -56,10 +48,6 @@ export function sebar(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z'): Be
   return benda.map(b => (!bisaPindah(b, ids) || !posisi.has(b.id) ? b : sumbu === 'x' ? { ...b, x: posisi.get(b.id)! } : { ...b, z: posisi.get(b.id)! }));
 }
 
-/**
- * Magnet: posisi (x, z) benda yang sedang digeser ditarik ke tepi / tengah benda lain bila jaraknya < `toleransi`.
- * Menempel (tepi ke tepi) hanya ke benda yang bersebelahan di sumbu lain; sejajar (tepi sama / tengah) ke benda mana pun.
- */
 export function magnet(b: Benda, lain: Benda[], toleransi = 0.05): { x: number; z: number; tarikX: boolean; tarikZ: boolean } {
   const t = tapak(b);
   let dx = Infinity, dz = Infinity;
@@ -83,7 +71,6 @@ export function magnet(b: Benda, lain: Benda[], toleransi = 0.05): { x: number; 
 
 export const MAKS_LARIK = 200;
 
-/** Larik: salinan benda dalam `kolom` (sumbu x) × `baris` (sumbu z) berjarak jx / jz (m). Asli di sel pertama; yang keluar batas dibuang. */
 export function larik(b: Benda, kolom: number, baris: number, jx: number, jz: number, batas: { x: number; z: number }): Benda[] {
   const k = Math.max(1, Math.min(50, Math.round(kolom))), r = Math.max(1, Math.min(50, Math.round(baris)));
   const hasil: Benda[] = [];
@@ -97,7 +84,6 @@ export function larik(b: Benda, kolom: number, baris: number, jx: number, jz: nu
   return hasil;
 }
 
-/** Geser tepat `meter` sepanjang sumbu dunia x / z (benda terkunci tidak bergerak), dijepit di dalam ruangan. */
 export function geserTepat(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z', meter: number, batas: { x: number; z: number }): Benda[] {
   const ids = new Set(idDipilih);
   return benda.map(b => {
@@ -105,8 +91,6 @@ export function geserTepat(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z'
     return sumbu === 'x' ? { ...b, x: mm(Math.min(batas.x, Math.max(0, b.x + meter))) } : { ...b, z: mm(Math.min(batas.z, Math.max(0, b.z + meter))) };
   });
 }
-
-// ── Kelompok & benda: sembunyikan / isolasi ─────────────────────────────────
 
 export type Golongan = 'display' | 'proyeksi' | 'audio' | 'konferensi' | 'furnitur' | 'lampu' | 'rak' | 'objek';
 export const LABEL_GOLONGAN: Record<Golongan, string> = {
@@ -122,10 +106,7 @@ const GOLONGAN_JENIS: Record<Jenis, Golongan> = {
   lampu: 'lampu', rak: 'rak', model: 'objek', objek: 'objek', teks: 'objek',
 };
 export const golonganDari = (j: Jenis): Golongan => GOLONGAN_JENIS[j];
-/** Kunci sembunyi satu benda di daftar sembunyi (daftar yang sama berisi nama kelompok). */
 export const kunciSembunyi = (id: string) => `#${id}`;
-/** Benda tampil bila kelompoknya maupun benda itu sendiri tidak disembunyikan. */
 export const tampilDi = (b: Pick<Benda, 'jenis' | 'id'>, sembunyi: readonly string[]) =>
   !sembunyi.includes(GOLONGAN_JENIS[b.jenis]) && !sembunyi.includes(kunciSembunyi(b.id));
-/** Jumlah benda yang disembunyikan satu per satu (bukan lewat kelompok). */
 export const jumlahSembunyiSendiri = (sembunyi: readonly string[]) => sembunyi.filter(k => k.startsWith('#')).length;

@@ -28,20 +28,13 @@ const fontMono: CSSProperties = { fontFamily: "'JetBrains Mono', ui-monospace, m
 type FilterStatus = 'semua' | RingkasanProject['status'];
 type FilterTipe = 'semua' | AktivitasTipe;
 
-/** Filter bawaan halaman - "Reset filter" mengembalikan ke sini. */
 const STATUS_AWAL: FilterStatus = 'active';
 
-/**
- * Boleh membuka menu ini: aturan yang SAMA dengan sidebar (KerangkaPortal) - admin / Full Access / akun tanpa
- * daftar menu melihat semua menu, selain itu harus punya 'summary-project' di allowed_menus. Dulu halaman tetap
- * terbuka lewat alamat langsung walau menunya tidak diberikan.
- */
 function bolehBukaMenu(u: User): boolean {
   const izin = (u as { allowed_menus?: string[] | null }).allowed_menus;
   return !izin || hasFullAccess(u) || izin.includes('summary-project');
 }
 
-/** Arti angka di kartu & kolom - ditampilkan di halaman (tooltip tidak terbaca di HP). */
 const SUB_KARTU: Record<AktivitasTipe, string> = {
   schedule: 'jadwal terhubung', ticket: 'ticket terhubung', design: 'request design terhubung', review: 'form review',
 };
@@ -67,7 +60,6 @@ export default function SummaryProjectPage() {
   const [galat, setGalat] = useState<string | null>(null);
   const [cari, setCari] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>(STATUS_AWAL);
-  /** Kapan daftar terakhir dimuat dari basis data. */
   const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [filterTipe, setFilterTipe] = useState<FilterTipe>('semua');
   const [dipilihId, setDipilihId] = useState<string | null>(null);
@@ -80,8 +72,6 @@ export default function SummaryProjectPage() {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Hanya tampilan: penulisan ke projects/project_source_links dijaga RLS
-  // (projects_write/psl_write - admin/superadmin), bukan oleh tombol ini.
   const isAdmin = ['admin', 'superadmin'].includes((currentUser?.role ?? '').toLowerCase());
 
   useEffect(() => {
@@ -105,7 +95,6 @@ export default function SummaryProjectPage() {
     setGalat(null);
     try { setDaftar(await daftarProject(lingkup)); setDimuatPada(new Date()); }
     catch (e) {
-      //  Detail teknis hanya ke konsol; pengguna mendapat pesan yang bisa ditindaklanjuti + tombol Coba Lagi.
       console.error('[summary-project] daftarProject:', e);
       setGalat('Daftar project gagal dimuat.');
     }
@@ -124,8 +113,6 @@ export default function SummaryProjectPage() {
   }, [cari]);
 
   const statistik = useMemo(() => {
-    // Mengikuti filter status DAN kata kunci yang sedang dipakai - kartu dan tabel harus menunjukkan angka yang
-    // sama (dulu kartu mengabaikan pencarian). Jenis tidak ikut: kartu jenis itulah penyaring jenisnya.
     const aktif = daftar.filter(p => (filterStatus === 'semua' || p.status === filterStatus) && cocokCari(p));
     const total = (k: keyof RingkasanProject) => aktif.reduce((n, p) => n + (p[k] as number), 0);
     return {
@@ -146,7 +133,6 @@ export default function SummaryProjectPage() {
 
   const hal = usePaginasi(tersaring);
 
-  /** Ekspor daftar project sesuai filter (Excel · Cetak · PNG). */
   const dataEkspor = (): Ekspor<RingkasanProject> => ({
     judul: 'Summary Project', menu: 'Summary Project', warna: [THEME.color, THEME.colorLight], baris: tersaring,
     filter: [['Cari', cari], ['Status', filterStatus === 'semua' ? '' : STATUS_PROJECT[filterStatus]], ['Jenis', filterTipe === 'semua' ? '' : TIPE_CFG[filterTipe].pendek]],
@@ -164,11 +150,6 @@ export default function SummaryProjectPage() {
 
   const dipilih = dipilihId ? daftar.find(p => p.project_id === dipilihId) ?? null : null;
 
-  /*
-    Konteks project di alamat halaman (?project=<id>): "Buka di Ticket/Schedule/..." pindah ke menu asal di tab yang
-    sama, dan tombol Kembali peramban membawa pengguna ke PROJECT YANG SAMA dengan detailnya terbuka - dulu kembali
-    ke daftar paling atas dan harus mencari project-nya lagi. Juga membuat detail project bisa dibagikan lewat tautan.
-  */
   const bukaProject = useCallback((id: string | null) => {
     setDipilihId(id);
     const url = new URL(window.location.href);
@@ -223,7 +204,6 @@ export default function SummaryProjectPage() {
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
 
-            {/* Ringkasan - kartu kategori sekaligus filter */}
             <StatCardGrid cols={5} items={[
               { label: 'Project', value: statistik.project, sub: filterStatus === 'semua' ? 'semua status' : STATUS_PROJECT[filterStatus], accent: THEME.color,
                 onClick: () => setFilterTipe('semua'), active: filterTipe === 'semua' },
@@ -233,7 +213,6 @@ export default function SummaryProjectPage() {
               })),
             ]} />
 
-            {/* Filter bar */}
             <div className="flex flex-wrap items-center gap-2">
               <input aria-label="Cari project" value={cari} onChange={e => setCari(e.target.value)}
                 placeholder="Cari nama project, kode PRJ, customer, lokasi, atau sales…"
@@ -258,7 +237,6 @@ export default function SummaryProjectPage() {
               )}
               <TombolEkspor jumlah={tersaring.length} data={dataEkspor} />
             </div>
-            {/* Filter aktif + cara membaca angka - jawaban "angka ini dari mana?" tanpa harus bertanya. */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600">
               <span className="font-semibold text-slate-700">{tersaring.length} dari {daftar.length} project</span>
               {filterTipe !== 'semua' && (
@@ -293,7 +271,6 @@ export default function SummaryProjectPage() {
             ) : (
               <div className="rounded-md overflow-hidden bg-white border border-slate-200">
 
-                {/* MOBILE: kartu */}
                 <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
                   {hal.potongan.map(p => {
                     const st = STATUS_PROJECT_WARNA[p.status];
@@ -315,7 +292,6 @@ export default function SummaryProjectPage() {
                   })}
                 </div>
 
-                {/* DESKTOP: tabel */}
                 <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
                   <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed' }}>
                     <colgroup>

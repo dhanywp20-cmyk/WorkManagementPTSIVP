@@ -1,6 +1,5 @@
 'use client';
 
-/** KolomPenugasanTiket - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { SalesPicker } from '@/components/shared';
 import { User, TeamMember } from '../shared';
@@ -27,8 +26,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         <h3 className="text-sm font-bold tracking-wide text-slate-700">Penugasan &amp; Lampiran</h3>
       </div>
 
-      {/* SBU — Sales Internal (guest) buat ticket ATAS NAMA Sales External.
-         Opsional; kalau kosong, ticket atas nama Sales Internal sendiri. */}
       {isInternalSalesGuest && (
         <div>
           <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
@@ -52,7 +49,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         </div>
       )}
 
-      {/* Sales — hidden for guest (auto-inserted), shown for admin/team */}
       {currentUser?.role !== "guest" && (
         <div>
           <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
@@ -70,7 +66,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         </div>
       )}
 
-      {/* Admin/Superadmin/Manager: tentukan penanganan langsung */}
       {canAssignDirect && (
         <div>
           <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
@@ -99,7 +94,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         </div>
       )}
 
-      {/* Approval notice — hanya utk yg TIDAK bisa assign langsung (guest / team biasa) */}
       {!canAssignDirect && (
         <div className="rounded-xl p-4 flex items-start gap-3"
           style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.3)" }}>
@@ -114,7 +108,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         </div>
       )}
 
-      {/* Upload Foto */}
       <div className="flex items-center gap-2 pb-2 border-b pt-2" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
         <span className="text-lg"><Ikon nama="📸" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-bold tracking-wide text-slate-700">Foto Pendukung</span>
@@ -142,7 +135,6 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         )}
       </div>
 
-      {/* Action Buttons */}
       </div>
     </>
   );

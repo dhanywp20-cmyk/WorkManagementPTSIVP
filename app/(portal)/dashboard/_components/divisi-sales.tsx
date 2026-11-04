@@ -2,19 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { divisiSales, muatMerek, simpanDivisi, divisiTerpakai, rapikanDivisi } from '@/lib/merek';
 
-/**
- * Daftar divisi sales - dipakai SELURUH dropdown divisi di platform:
- * Ticketing, Request Schedule, Request Design Project, Piket Showroom, dan
- * pendaftaran akun.
- *
- * Tempatnya di User Management, bukan di pengaturan tampilan: yang mengurus
- * divisi adalah orang yang sama dengan yang mengurus akun, dan divisi hanya
- * berarti sesuatu lewat akun yang memakainya.
- *
- * Sebelumnya daftar ini terpaku di kode - disalin PERSIS SAMA di lima berkas
- * shared.ts. Menambah satu divisi berarti menyunting kelimanya, dan satu yang
- * terlewat membuat divisi itu muncul di sebagian menu saja.
- */
 export function DivisiSalesInline() {
   const [divisi, setDivisi] = useState<string[]>([]);
   const [baru, setBaru] = useState('');
@@ -45,9 +32,6 @@ export function DivisiSalesInline() {
   };
 
   const hapus = (nama: string) => {
-    // Divisi yang masih tercatat di akun orang TIDAK dihapus diam-diam:
-    // dropdown profil mereka akan tampil kosong dan penyaringan per divisi
-    // berhenti menemukan pekerjaannya.
     const jumlah = terpakai[nama] ?? 0;
     if (jumlah > 0) {
       beritahu('gagal', `"${nama}" masih dipakai ${jumlah} akun. Pindahkan akunnya dulu.`);

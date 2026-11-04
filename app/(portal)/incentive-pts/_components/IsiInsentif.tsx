@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, type KandidatGabung, type SkemaInsentif, formatRupiah } from './calc';
 import { FilterProyekInsentif } from './FilterProyekInsentif';
@@ -89,7 +88,6 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
           </div>
         )}
 
-        {/* ─── Projects tab ─── */}
         {tab === 'projects' && !loading && (<>
           {currentUser && (
             <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
@@ -134,24 +132,20 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
             <FilterProyekInsentif
               bastYearsProjects={bastYearsProjects} bolehHapus={bolehHapus} currentUser={currentUser} exporting={exporting} filterBastYear={filterBastYear} filteredProjects={filteredProjects} handleExportSummary={handleExportSummary} kandidatBulkGenerate={kandidatBulkGenerate} kandidatGabung={kandidatGabung} mintaKonfirmasiHapus={mintaKonfirmasiHapus} pilihHapus={pilihHapus} searchProject={searchProject} setBulkGenerateConfirm={setBulkGenerateConfirm} setFilterBastYear={setFilterBastYear} setKonfirmGabung={setKonfirmGabung} setPilihHapus={setPilihHapus} setSearchProject={setSearchProject} setSummaryExportYear={setSummaryExportYear} summaryExportYear={summaryExportYear}
             />
-            {/* ── MOBILE: kartu ringkas (nama + total incentive, tap utk detail) ── */}
             <DaftarProyekInsentifHP
               currentUser={currentUser} filteredProjects={filteredProjects} hal={hal} openProjectDetail={openProjectDetail} setGenerateProject={setGenerateProject} setHapusTahapan={setHapusTahapan} setKetikHapusTahapan={setKetikHapusTahapan} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} setShowGenerateModal={setShowGenerateModal} skema={skema} tranches={tranches}
             />
 
-            {/* ── DESKTOP: tabel penuh (TIDAK diubah) ── */}
             <TabelProyekInsentif
               bolehHapus={bolehHapus} brandEditFor={brandEditFor} currentUser={currentUser} filteredProjects={filteredProjects} hal={hal} handleSetProjectBrand={handleSetProjectBrand} mintaKonfirmasiHapus={mintaKonfirmasiHapus} openProjectDetail={openProjectDetail} pilihHapus={pilihHapus} setBrandEditFor={setBrandEditFor} setGenerateProject={setGenerateProject} setHapusTahapan={setHapusTahapan} setKetikHapusTahapan={setKetikHapusTahapan} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} setShowGenerateModal={setShowGenerateModal} skema={skema} thCls={thCls} togglePilih={togglePilih} totalPool={totalPool} tranches={tranches}
             />
           </div>
         </>)}
 
-        {/* ─── Tranches tab ─── */}
         <TabJadwalTranche
           currentUser={currentUser} exporting={exporting} filteredTranches={filteredTranches} handleExportBatch={handleExportBatch} konfirmasiMarkPaid={konfirmasiMarkPaid} loading={loading} markingPaid={markingPaid} setBatalBatch={setBatalBatch} setBatchConfirm={setBatchConfirm} setBatchYear={setBatchYear} setFilterYear={setFilterYear} setKetikBatalBatch={setKetikBatalBatch} skema={skema} tab={tab} tahunAktif={tahunAktif} thCls={thCls} uniqueYears={uniqueYears}
         />
 
-        {/* ─── Late Ticket Queue tab ─── */}
         {tab === 'late' && bisaInput(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
@@ -185,7 +179,6 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
           </div>
         )}
 
-        {/* ─── Skema pembagian (admin) ─── */}
         {tab === 'skema' && bisaKonfig(currentUser) && (
           <SchemeTab
             olehNama={(currentUser?.full_name as string) || (currentUser?.username as string) || 'admin'}
@@ -193,7 +186,6 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
           />
         )}
 
-        {/* ─── Settings tab ─── */}
         <TabPengaturanAkses
           allUsers={allUsers} cariUser={cariUser} currentUser={currentUser} handleSetAkses={handleSetAkses} handleSetBrandScope={handleSetBrandScope} loading={loading} setCariUser={setCariUser} tab={tab}
         />

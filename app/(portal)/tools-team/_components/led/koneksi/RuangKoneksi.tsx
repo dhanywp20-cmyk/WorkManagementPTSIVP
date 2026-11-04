@@ -8,22 +8,11 @@ import { KanvasKoneksi } from './KanvasKoneksi';
 import { TabelPort } from './TabelPort';
 import { useRuangKoneksi, type PropsRuangKoneksi } from './useRuangKoneksi';
 
-/**
- * Screen Connection ala NovaLCT: grid receiving card, urutan kabel data per port LAN.
- * Dua cara: template cepat (pojok mulai, arah, pola S/Z, pembagian port) atau manual
- * (klik / seret receiving card berurutan per port). Ukuran receiving card bisa mengikuti
- * Kalkulator LED atau diisi bebas per kolom/baris (px); sel bisa dikosongkan untuk layar
- * yang tidak persegi.
- */
-
-/** Ruang kerja Screen Connection (menu tersendiri di Tools Team). */
-
 export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
   const a = useRuangKoneksi({ d, s, onUbah, namaFile });
   const { k, nUnit, rataBeban, resKalk, t, zona } = a;
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)] items-start">
-      {/* ── Panel pengaturan ── */}
       <div className="space-y-3 min-w-0">
         <PanelCara a={a} />
 
@@ -32,7 +21,6 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
         <PanelPort a={a} />
       </div>
 
-      {/* ── Kanvas & tabel ── */}
       <div className="space-y-3 min-w-0">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <Nilai label="Receiving card" nilai={k.sel.length + k.tanpaPort.length} ket={`${t.K} × ${t.B}${t.kosong.size ? ` · ${t.kosong.size} kosong` : ''}`} />

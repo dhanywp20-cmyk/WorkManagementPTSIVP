@@ -1,17 +1,9 @@
-/**
- * desain3d/bangun/furnitur.ts - Furnitur: meja (rapat, bundar, kelas, dosen, podium, kredensa, operator) & kursi.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import type * as T from 'three';
 import type { Finish } from '../inti';
 import { teksturMonitor } from './konten';
 import { bevelAman, blok, type Konteks, kotak, lempeng, lengkungkan, mat, papan, pipa, tiangAntara } from './dasar';
 import { teksturKain, teksturKayu } from './permukaan';
 
-/**
- * Sandaran melengkung: pita busur selebar `lebar`, cekung ke +z (ke arah
- * yang duduk), tinggi ke atas dari y = 0, bagian tengah pita di z = 0.
- */
 export function sandaran(THREE: typeof T, lebar: number, tinggi: number, tebal: number, R: number, m: T.Material) {
   const sud = Math.asin(Math.min(0.95, lebar / (2 * R)));
   const s = new THREE.Shape();
@@ -27,21 +19,17 @@ export function sandaran(THREE: typeof T, lebar: number, tinggi: number, tebal: 
   return new THREE.Mesh(geo, m);
 }
 
-/** meja */
 export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
   const bentuk = b.bentukMeja ?? 'rapat';
   const fin: Finish = b.finish ?? (bentuk === 'kelas' ? 'oak' : 'walnut');
   const panjangZ = b.d >= b.w;
   const atas = new THREE.MeshPhysicalMaterial({
-    //  Warna custom = laminasi polos: tekstur 'putih' (nyaris rata) dikalikan warna pilihan.
     map: teksturKayu(THREE, warnaB ? 'putih' : fin, panjangZ), color: warnaB ? new THREE.Color(warnaB) : 0xffffff,
     roughness: fin === 'putih' || warnaB ? 0.5 : 0.42,
     clearcoat: fin === 'putih' || warnaB ? 0.15 : 0.55, clearcoatRoughness: 0.3,
   });
   const logam = mat(THREE, 0x2a2e35, { metalness: 0.75, roughness: 0.3 });
   if (bentuk === 'bulat') {
-    //  Bundar/oval (w x d) dengan kaki tunggal: piring alas melebar,
-    //  tiang ramping, dudukan atas - satu profil putar (LatheGeometry).
     const tebal = 0.04, bv = 0.008;
     const s = new THREE.Shape(); s.absellipse(0, 0, b.w / 2 - bv, b.d / 2 - bv, 0, Math.PI * 2, false, 0);
     g.add(lempeng(THREE, s, tebal, bv, atas, 64).translateY(b.h - tebal));
@@ -50,8 +38,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
       [0.038, yAtas - 0.14], [0.06, yAtas - 0.06], [rAtas, yAtas - 0.02], [rAtas, yAtas], [0.001, yAtas]];
     g.add(new THREE.Mesh(new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y)), 48), logam));
   } else if (bentuk === 'kelas') {
-    //  Meja siswa: papan laminasi, rangka pipa ditekuk di kedua sisi,
-    //  panel penutup di depan (menghadap papan tulis) & rak buku.
     const tebal = 0.025;
     g.add(papan(THREE, b.w, b.d, tebal, 0.035, atas, 0.005).translateY(b.h - tebal));
     const rangka = mat(THREE, 0x3f454f, { metalness: 0.7, roughness: 0.35 });
@@ -62,7 +48,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
     g.add(blok(THREE, b.w - 0.16, 0.28, 0.012, 0.01, mat(THREE, 0xcbd5e1, { roughness: 0.6 }), 0.003).translateY(b.h - tebal - 0.3).translateZ(-b.d / 2 + 0.06));
     g.add(papan(THREE, b.w - 0.16, b.d * 0.62, 0.012, 0.01, mat(THREE, 0x94a3b8, { roughness: 0.6 }), 0.003).translateY(b.h - 0.15).translateZ(-b.d * 0.12));
   } else if (bentuk === 'dosen') {
-    //  Meja dosen: daun meja kayu, panel depan (menghadap mahasiswa) & panel samping, laci di kanan.
     const tebal = 0.03, panel = mat(THREE, warnaB ? 0xe5e7eb : 0xd6d9de, { roughness: 0.55 });
     g.add(papan(THREE, b.w, b.d, tebal, 0.02, atas, 0.004).translateY(b.h - tebal));
     g.add(kotak(THREE, b.w - 0.04, b.h - tebal - 0.06, 0.02, panel, 0, (b.h - tebal) / 2 + 0.03, b.d / 2 - 0.05));
@@ -71,17 +56,12 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
     g.add(kotak(THREE, laci, b.h - tebal - 0.1, b.d - 0.12, panel, b.w / 2 - 0.03 - laci / 2, (b.h - tebal) / 2 + 0.03, -0.02));
     for (let i = 0; i < 3; i++) g.add(kotak(THREE, laci * 0.4, 0.012, 0.012, logam, b.w / 2 - 0.03 - laci / 2, 0.16 + i * 0.2, -b.d / 2 + 0.04));
   } else if (bentuk === 'podium') {
-    //  Podium = smart lectern MAXHUB SL22MC (786 x 420 mm, tinggi 0,99-1,19 m): kaki busur dengan sisi cekung ke
-    //  pembicara (-z) & 3 bantalan, satu tiang miring berpenampang membulat (bawah di sisi penonton, atas di bawah
-    //  tengah meja), meja miring ke pembicara - lis abu-abu, permukaan kaca hitam, layar sentuh 21,5" & dua alur
-    //  di sisi - plus dua mic gooseneck di pojok belakang yang melengkung ke arah pembicara.
     const badan = mat(THREE, W(0x2b2e33), { metalness: 0.35, roughness: 0.42 });
     const lis = mat(THREE, W(0x4a4e55), { metalness: 0.55, roughness: 0.32 });
     const kaca = new THREE.MeshPhysicalMaterial({ color: 0x07080a, roughness: 0.08, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 });
     const layar = new THREE.MeshPhysicalMaterial({ color: 0x0b1018, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.03, emissive: 0x0a1222, emissiveIntensity: 0.4 });
     const hitam = mat(THREE, 0x0d0e10, { roughness: 0.6 });
 
-    //  Kaki busur: pita lengkung (dua kurva kuadrat), tebal 25 mm di atas 3 bantalan 12 mm.
     const tKaki = 0.025, bantal = 0.012;
     const a = b.w * 0.4, ujung = -b.d * 0.46, luar = b.d * 1.4, dalam = b.d * 0.82;
     const kaki = new THREE.Shape();
@@ -93,18 +73,15 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
       g.add(papan(THREE, 0.05, 0.05, bantal, 0.01, hitam, 0.002).translateX(x).translateZ(z));
     }
 
-    //  Meja miring 12 derajat ke arah pembicara; semua isinya di grup lokal meja (datar), lalu grupnya dimiringkan.
     const miring = 0.21, tMeja = 0.045;
     const meja = new THREE.Group();
     meja.position.set(0, b.h - tMeja - (b.d / 2) * Math.sin(miring), 0);
     meja.rotation.x = -miring;
     meja.add(papan(THREE, b.w, b.d, tMeja, 0.025, lis, 0.008, 4));
     meja.add(papan(THREE, b.w - 0.014, b.d - 0.014, 0.004, 0.02, kaca, 0.0015).translateY(tMeja));
-    //  Layar 21,5" 16:9 (476 x 268 mm) di tengah, sedikit ke arah pembicara.
     const lyr = papan(THREE, 0.476, 0.268, 0.002, 0.004, layar, 0.0008);
     lyr.position.set(0, tMeja + 0.004, -0.012); meja.add(lyr);
     for (const sx of [-1, 1]) meja.add(kotak(THREE, 0.006, 0.0015, b.d * 0.62, hitam, sx * (b.w / 2 - 0.05), tMeja + 0.0045, -0.01));
-    //  Mic gooseneck: pangkal di pojok belakang (+z), naik lalu melengkung ke pembicara (-z), kepala busa memanjang.
     const hitamMic = mat(THREE, 0x111214, { metalness: 0.5, roughness: 0.35 });
     for (const sx of [-1, 1]) {
       const x0 = sx * (b.w / 2 - 0.07), z0 = b.d / 2 - 0.06, y0 = tMeja + 0.004;
@@ -122,8 +99,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
     }
     g.add(meja);
 
-    //  Tiang miring: dari punggung kaki (sisi penonton) ke bawah tengah meja.
-    //  Seperti foto produk: tiang lebar (±24% lebar meja) & miring ±13 derajat.
     const bawah = new THREE.Vector3(0, bantal + tKaki - 0.005, puncakKaki - 0.03);
     const atasT = new THREE.Vector3(0, meja.position.y - 0.005, -0.05);
     const panjang = bawah.distanceTo(atasT);
@@ -132,7 +107,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
     tiang.position.copy(bawah);
     g.add(tiang);
   } else if (bentuk === 'kredensa') {
-    //  Kredensa: badan lemari gelap, pintu berpanel dengan handle, plint tersembunyi, daun atas.
     const badan = mat(THREE, W(0x1d2026), { roughness: 0.5 });
     const pegangan = mat(THREE, 0x9ca3af, { metalness: 0.9, roughness: 0.25 });
     const tebal = 0.025, plint = 0.06;
@@ -147,8 +121,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
       g.add(kotak(THREE, 0.012, Math.min(0.22, (b.h - plint) * 0.35), 0.02, pegangan, x + sisi * (lebarPintu / 2 - 0.04), plint + (b.h - tebal - plint) * 0.62, b.d / 2 + 0.002));
     }
   } else if (bentuk === 'operator') {
-    //  Meja operator control room: daun hitam, panel kaki putih (ujung & tengah), panel penutup
-    //  di sisi depan (-z, ke arah videowall), monitor berderet di lengan, keyboard per 2 monitor.
     const daun = mat(THREE, W(0x15171b), { roughness: 0.4 });
     const panel = mat(THREE, 0xe5e7eb, { roughness: 0.5 });
     const tebal = 0.03;
@@ -179,8 +151,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
       g.add(kotak(THREE, 0.06, 0.02, 0.1, mat(THREE, 0x2b3038, { roughness: 0.6 }), x + 0.27, b.h + 0.01, b.d / 2 - 0.25));
     }
   } else {
-    //  Meja rapat: papan sudut membulat bertepi bevel + dua kaki panel,
-    //  balok penghubung, dan kotak kabel rata permukaan.
     const tebal = 0.045;
     g.add(papan(THREE, b.w, b.d, tebal, Math.min(0.3, Math.min(b.w, b.d) * 0.3), atas, 0.008).translateY(b.h - tebal));
     const panjang = Math.max(b.w, b.d), lebar = Math.min(b.w, b.d);
@@ -201,7 +171,6 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
   }
 }
 
-/** kursi */
 export function bangunKursi({ THREE, g, b, W, WS }: Konteks) {
   const krom = mat(THREE, 0xc9ced6, { metalness: 0.95, roughness: 0.18 });
   if ((b.tipeKursi ?? 'kantor') === 'kelas') {
@@ -223,7 +192,6 @@ export function bangunKursi({ THREE, g, b, W, WS }: Konteks) {
   const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, WS('#30353d'), 0.12), roughness: 0.95 });
   const plastik = mat(THREE, 0x1b1e23, { roughness: 0.5 });
   const yDuduk = 0.48;
-  //  Kaki bintang lima beroda + tabung gas.
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2 + Math.PI / 10;
     const ujung = new THREE.Vector3(Math.cos(a) * 0.3, 0.058, Math.sin(a) * 0.3);
@@ -235,10 +203,7 @@ export function bangunKursi({ THREE, g, b, W, WS }: Konteks) {
   g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.16, 16), plastik).translateY(0.18));
   g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.2, 16), krom).translateY(0.32));
   g.add(kotak(THREE, 0.22, 0.045, 0.24, plastik, 0, yDuduk - 0.06, 0));
-  //  Dudukan empuk (bevel besar = tepi bantalan) & sandaran melengkung.
   g.add(papan(THREE, b.w * 0.9, b.d * 0.86, 0.085, 0.1, kain, 0.03).translateY(yDuduk - 0.04));
-  //  Sandaran: bantalan kain bersudut membulat (bevel besar = empuk) yang
-  //  dilengkungkan memeluk punggung, cangkang plastik di belakangnya.
   const tinggiS = Math.max(0.3, b.h - yDuduk - 0.1);
   const grupS = new THREE.Group();
   const bantal = blok(THREE, b.w * 0.84, tinggiS, 0.06, 0.11, kain, 0.022);

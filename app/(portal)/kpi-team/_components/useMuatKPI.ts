@@ -1,6 +1,5 @@
 'use client';
 
-/** useMuatKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import React, { useCallback } from 'react';
 import { CATEGORY_COLORS, PiketPic, STATUS_COLORS, computeCascadedPiketToday, getMonday, monthStart, todayStr } from './DashboardKPI-bantu';
 import { lingkupSaya, namaKelompokPTS } from '@/lib/kelompok';
@@ -26,13 +25,6 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const inOneWeek = new Date(); inOneWeek.setDate(inOneWeek.getDate()+7);
       const oneWeekStr = inOneWeek.toISOString().split('T')[0];
 
-      // Nama anggota kelompok PTS yang SENGAJA dikeluarkan dari lingkup akun
-      // ini (mis. Manager PTS IVP yang tidak membawahi PTS UMP) - dipakai
-      // untuk MENGECUALIKAN, bukan membatasi ke satu kelompok saja. Admin
-      // sungguhan (tanpa pemetaan Lingkup Manager) tetap melihat semuanya,
-      // karena lingkupSaya() bawaannya mengembalikan seluruh kelompok PTS.
-      // Beda dari 'pts_sup' yang MEMBATASI ke tim sendiri: di sini tiket
-      // Sales/Marketing/Services tanpa kelompok PTS tetap harus ikut tampil.
       let namaDikecualikan: string[] = [];
       if (scope.kind === 'admin') {
         const kelompokDikecualikan = namaKelompokPTS().filter(t => !lingkupSaya(currentUser?.id).includes(t));
@@ -43,7 +35,6 @@ export function useMuatKPI(k: MuatKPIKonteks) {
         }
       }
 
-      // Helpers to build scoped queries
       const scopeTickets = (q: any) => {
         if (scope.kind === 'pts_sup' && scope.ptsMemberNames?.length) {
           return q.in('assign_name', scope.ptsMemberNames);
@@ -59,7 +50,6 @@ export function useMuatKPI(k: MuatKPIKonteks) {
         return q;
       };
 
-      // Parallel fetches
       const [ticketsRes, actLogsRes, remindersRes, piketHolidaysRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
           scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at,product')),
@@ -88,19 +78,15 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const users      = (usersRes.data      ?? []) as any[];
       const lcAttempts = (lcSessionsRes.data ?? []) as any[];
 
-      // PTS scope: filter piket & movements to own team
       if (scope.kind === 'pts_sup') {
         const tt = scope.ptsTeamType ?? '';
         movements = movements.filter((m:any) => scope.ptsMemberNames?.includes(m.nama_pts));
-        // piket: show all, but today card highlights their team column
       }
 
-      // KPI calculations (identical to before, just on scoped data)
       const open           = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)).length;
       const solved         = tickets.filter((t:any)=>t.status==='Solved').length;
       const waitingApproval= tickets.filter((t:any)=>t.status==='Waiting Approval').length;
 
-      // Resolved today: cross-reference actLogs that belong to scoped tickets
       const scopedTicketIds = new Set(tickets.map((t:any)=>t.id as string));
       const resolvedToday = actLogs.filter((a:any)=>
         a.new_status==='Solved' && a.created_at?.startsWith(today) && scopedTicketIds.has(a.ticket_id)
@@ -142,7 +128,6 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const byCategory = Object.entries(catMap).map(([cat,count])=>({ cat,count,color:CATEGORY_COLORS[cat]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
       const dueSoon     = reminders.filter((r:any)=>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
       const overdueCount= reminders.filter((r:any)=>r.status==='pending'&&r.due_date<today).length;
-      // Reminder byProduct: per produk, group by category
       const reminderProdMap: Record<string, Record<string,number>> = {};
       reminders.forEach((r:any)=>{ 
         if(r.product) {
@@ -156,15 +141,11 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       })).sort((a,b)=>b.byCategory.reduce((s,c)=>s+c.count,0)-a.byCategory.reduce((s,c)=>s+c.count,0));
 
       const weekFilled = piketWeek.filter((p:any)=>p.pic_ivp_name||p.pic_ump_name||p.pic_mvi_name).length;
-      // weekTotal = jumlah hari kerja (Senin-Jumat) dari awal minggu ini s.d. hari ini
-      // weekTotal selalu 5 (Senin-Jumat), bukan hanya sampai hari ini
       const weekWorkDays = 5;
 
       const roleMap: Record<string,number> = {};
-      //  Role kosong / null dikelompokkan sebagai "belum diatur" - dulu kunci objeknya jadi teks "null" dan tampil "NULL" di grafik.
       users.forEach((u:any)=>{ const r = typeof u.role === 'string' && u.role.trim() ? u.role.trim() : 'belum diatur'; roleMap[r]=(roleMap[r]||0)+1; });
 
-      // Learning: dari lc_quiz_attempts (submitted)
       const lcSubmitted = lcAttempts.length;
       const lcPassed = lcAttempts.filter((a:any) => a.passed === true).length;
       const lcParticipants = new Set(lcAttempts.map((a:any) => a.user_id as string).filter(Boolean)).size;

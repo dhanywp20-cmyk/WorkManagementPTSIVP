@@ -1,8 +1,4 @@
 'use client';
-/**
- * Jaringan AV-over-IP & Dante: aliran video (NDI, H.264/265, JPEG2000, SDVoE) + kanal audio Dante →
- * total bandwidth & link yang disarankan (≤ 70% kapasitas). Rumus: lib/av-audio-jaringan.ts.
- */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { ALIRAN_IP, danteMbps, saranLink } from '@/lib/av-audio-jaringan';
@@ -10,7 +6,6 @@ import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
 
-/** Aliran diacu lewat NAMA - daftarnya dari Pustaka (aliran-ip), bawaan kode bila kosong. */
 interface Aliran { jenis: string; jumlah: number }
 const CATATAN = 'Bitrate per aliran adalah angka tipikal pabrikan (bisa berbeda per encoder & pengaturan kualitas). Dante dihitung 48 kHz dengan wadah 32-bit + ±10% overhead. Sisakan ≥ 30% kapasitas link; pakai switch managed dengan IGMP snooping (multicast) & QoS untuk Dante.';
 

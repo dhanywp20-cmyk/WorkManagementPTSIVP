@@ -29,10 +29,9 @@ export default function LearningCenterPage() {
       if (!parsed) { setLoading(false); return; }
       try {
         const { data } = await supabase.from('users').select('id,full_name,username,role,jabatan,sales_division,phone_number,allowed_menus,team_type,access_level').eq('id', parsed.id).single();
-        //  Penanda pimpinan tidak ada di select ini - ambil dari sesi (lihat lib/auth.ts setSession).
         const user = data ? { ...data, pimpinan: (parsed as { pimpinan?: unknown }).pimpinan === true } : parsed;
         setCurrentUser(user);
-        if (data) setSession(user); // refresh session dengan data terbaru
+        if (data) setSession(user);
       } catch {
         setCurrentUser(parsed);
       }
@@ -71,28 +70,12 @@ export default function LearningCenterPage() {
 }
 
 function LearningCenter({ currentUser }: { currentUser: User }) {
-  // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
-  // (lihat lib/constants.ts hasFullAccess).
-  //  Akun pimpinan (lib/pimpinan.ts) melihat Learning Center PERSIS seperti admin (Dashboard, Materi,
-  //  Bank Soal, Sesi Quiz, Team, Laporan, Analytics) tetapi hanya baca: tombol tambah/ubah/hapus/nilai
-  //  disembunyikan (atribut data-tulis + aturan di globals.css), dan basis data menolak tulisannya.
   const hanyaLihat = isPimpinan(currentUser);
   const isAdmin = hasFullAccess(currentUser) || hanyaLihat;
-  /*
-    'Nilai Saya' adalah tab pertama untuk SEMUA peserta - Team maupun
-    Guest/Sales. Pertanyaan yang dibawa orang saat membuka Learning Center
-    hampir selalu "bagaimana nilai saya sejauh ini", bukan "quiz apa yang
-    belum saya kerjakan"; yang kedua tetap sejauh satu klik. Sebelumnya
-    hanya Guest/Sales yang mendarat di sini sementara Team masih ke
-    'my-quiz' - dua perilaku berbeda untuk kebutuhan yang sama.
-  */
   const [adminView, setAdminView] = useState<AdminView>('dashboard');
   const [teamView, setTeamView] = useState<TeamView>('score');
   const [loading, setLoading] = useState(false);
   const [contentKey, setContentKey] = useState(0);
-  // Sesi yang mau langsung dibuka di tab Laporan - diisi lewat tombol "Lihat
-  // Hasil" di kartu Sesi Quiz, supaya admin tidak perlu cari sendiri sesinya
-  // lagi dari dropdown di Laporan.
   const [reportSessionId, setReportSessionId] = useState<string | null>(null);
 
   const changeAdminView = (v: AdminView) => {
@@ -139,22 +122,11 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
         backgroundAttachment: 'fixed',
       }}
     >
-      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
-          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
-          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
-          aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
         {isAdmin
           ? <AdminTopNav view={adminView} onChange={changeAdminView} />
           : <TeamTopNav view={teamView} onChange={changeTeamView} />}
 
-        {/*
-          Tanpa warna latar sendiri - latar halaman (var(--latar-halaman) di
-          pembungkus luar) diatur terpusat di Admin Panel > Merek, sama seperti
-          modul lain: polos bila "Netral", foto bila "Gambar".
-        */}
         <div className="flex-1 overflow-y-auto" {...(hanyaLihat ? { 'data-hanya-lihat': '' } : {})}>
           {loading ? LoadingView() : (
             <div key={contentKey} className="lc-page-enter">
@@ -185,7 +157,6 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   );
 }
 
-/** Judul modul - ukuran & bentuk sama dengan PageHeader modul lain (ikon 9, h1 text-base, subjudul). */
 function JudulLC() {
   return (
     <div className="flex items-center gap-2.5 sm:gap-3 px-4 sm:px-6 pt-2.5 sm:pt-3.5 pb-0">
@@ -214,12 +185,6 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
-      {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
-          tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
-          dan mana yang sedang terpilih. Sudah overflow-x-auto dari dulu, tapi
-          di ponsel tab terakhir ("Team"/"Laporan") kepotong pas di tepi layar
-          tanpa tanda apa pun kalau baris ini bisa digeser - gradasi ini
-          sekadar penanda visualnya, geser layarnya sendiri sudah jalan. */}
       <div className="relative">
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
           {items.map(i => (
@@ -244,9 +209,6 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
 }
 
 function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView) => void }) {
-  //  'Nilai Saya' sengaja PALING KIRI - urutan tab ini menentukan apa yang
-  //  dilihat orang lebih dulu, dan yang paling sering dicari saat membuka
-  //  Learning Center adalah nilainya sendiri, bukan daftar quiz.
   const items: { key: TeamView; icon: string; label: string }[] = [
     { key: 'score', icon: '🏆', label: 'Nilai Saya' },
     { key: 'my-quiz', icon: '📝', label: 'My Quiz' },
@@ -257,9 +219,6 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
-      {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
-          tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
-          dan mana yang sedang terpilih. */}
       <div className="relative">
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
           {items.map(i => (

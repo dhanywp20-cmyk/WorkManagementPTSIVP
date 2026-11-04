@@ -27,8 +27,6 @@ export interface MenuItem {
   }[];
 }
 
-// Notification Types
-
 export interface NotificationItem {
   id: string;
   type: 'ticket' | 'require' | 'reminder';
@@ -40,26 +38,9 @@ export interface NotificationItem {
   menuTitle: string;
 }
 
-/**
- * Daftar divisi sales - HANYA nilai bawaan, bukan lagi sumber kebenaran.
- *
- * Daftar yang benar-benar berlaku disimpan di database dan dibaca lewat
- * useDivisiSales() (lihat lib/merek.ts), supaya divisi baru bisa ditambahkan
- * dari Admin Panel tanpa deploy. Nama ini dipertahankan untuk pemakaian di
- * luar React dan sebagai cadangan saat pengaturannya belum termuat.
- *
- * Sebelumnya daftar yang sama disalin di lima berkas shared.ts: menambah satu
- * divisi berarti menyunting kelimanya, dan satu yang terlewat membuat divisi
- * itu muncul di sebagian menu saja.
- */
 export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 
-// Hierarki jabatan & aturan CC - satu sumber kebenaran di lib/jabatan.ts,
-// re-export agar call-site lama tetap jalan.
 export { JABATAN_LIST, JABATAN_CONFIG, JABATAN_CC_RULES, type JabatanType } from '@/lib/jabatan';
-
-
-// Account Settings Modal
 
 export const ALL_MENU_KEYS = [
   'dashboard',
@@ -99,9 +80,6 @@ export const ROLE_BADGE: Record<string, string> = {
   guest: 'bg-amber-100 text-amber-700 border-amber-200',
 };
 
-
-// Brand mappings (from BrandPicSettingModal section)
-
 export interface BrandPicMappingDB {
   id?: string;
   brand_type: 'display' | 'middleware';
@@ -110,7 +88,6 @@ export interface BrandPicMappingDB {
   pic_user_name: string | null;
 }
 
-// Notif Bell props (from NotifBell section)
 export interface NotifBellProps {
   icon: string;
   label: string;
@@ -123,8 +100,6 @@ export interface NotifBellProps {
   onItemClick: (item: NotificationItem) => void;
 }
 
-
-// Admin Panel props
 export interface AdminPanelModalProps {
   initialTab: 'settings' | 'userManagement' | 'picBrand';
   onClose: () => void;

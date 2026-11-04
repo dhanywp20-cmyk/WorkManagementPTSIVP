@@ -1,22 +1,3 @@
-/**
- * scripts/impor-vivitek-tdc.mjs - Buat katalog proyektor Vivitek (lib/data/vivitek-tdc.json) dari data Vivitek
- * Projection Simulator resmi (https://www.vivitekcorp.com/simulator/), format sama dengan katalog Panasonic
- * (desain3d/inti/katalogPanasonic.ts).
- *
- * Jalankan:
- *   node scripts/impor-vivitek-tdc.mjs arsip/tdc/vivitek-2026-11-02     dari ARSIP lokal (tanpa internet)
- *   node scripts/impor-vivitek-tdc.mjs [url simulator] [versi]           dari situs Vivitek; data mentahnya sekaligus
- *                                                                        diarsipkan ke arsip/tdc/vivitek-<versi = tanggal>/
- *
- * Data simulator tertanam di bundel JS sebagai JSON.parse('...') per modul (dataSource/vvkProjectorModels.json,
- * vvkOptionalLens.json, vvkProjectorTypes.json) - hanya teks JSON-nya yang DIBACA (dan diarsipkan sebagai berkas JSON
- * dengan nama yang sama), kode Vivitek tidak dijalankan.
- *
- * Rumus simulator Vivitek: lebar gambar = jarak / throw ratio (rasio panel native, b = 0). Model ultra short throw
- * memakai tabel TR per diagonal (ustTR) - disederhanakan ke L = TR x lebar - b (regresi; selisih < 1 mm di tabelnya).
- * Lens shift: kotak V / H (% tinggi / lebar gambar) dari model; posisi vertikal Vivitek = Offset (% setengah tinggi,
- * 100 = tepi gambar di sumbu lensa) + 2 x shift V -> pecahan tinggi gambar Desain 3D = Offset / 200 + shift / 100.
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,7 +17,6 @@ if (!lokal) {
   js = await (await fetch(new URL(app, sumberArg))).text();
 }
 
-/** Isi JSON modul dataSource/<nama>.json: arsip lokal, atau dari bundel (id modul dari peta webpack, lalu literal JSON.parse('...')). */
 function modul(nama) {
   if (lokal) return JSON.parse(fs.readFileSync(path.join(arsip, `${nama}.json`), 'utf8'));
   const id = js.match(new RegExp(`"\\./dataSource/${nama}\\.json":"([0-9a-f]+)"`))?.[1];
@@ -72,12 +52,7 @@ const KATEGORI = [{ v: 0, l: 'All' }, ...projectorTypes.map((t, i) => ({ v: i + 
 const katModel = new Map(projectorTypes.flatMap((t, i) => t.Models.map(m => [m, i + 1])));
 const lensaOpsi = new Map(optionalLens.map(l => [l['Part Name'], l]));
 
-/** Lebar gambar per inci diagonal (m) pada rasio [w, h]. */
 const lebarPerInci = ([w, h]) => (0.0254 * w) / Math.hypot(w, h);
-/**
- * Koefisien per rasio sinyal dari TR native (relatif lebar panel): sinyal lebih sempit dari panel = pillarbox (lebar
- * gambar mengecil -> TR terhadap lebar gambar membesar); lebih lebar = letterbox (lebar sama). b tidak berubah.
- */
 function koefisien(native, trW, trT, b) {
   const [pw, ph] = RASIO[native];
   const ar = {};
@@ -87,7 +62,6 @@ function koefisien(native, trW, trT, b) {
   }
   return Object.fromEntries(Object.entries(ar).sort(([a]) => (a === native ? -1 : 0)));
 }
-/** Tabel ustTR (diagonal -> TR) -> [TR, b] garis L = TR x W - b terbaik (kuadrat terkecil). */
 function dariUst(tabel, native) {
   const t = Object.entries(tabel).map(([d, tr]) => { const W = Number(d) * lebarPerInci(RASIO[native]); return [W, tr * W]; });
   if (t.length < 2) return null;
@@ -96,7 +70,6 @@ function dariUst(tabel, native) {
   const tr = (n * sxy - sx * sy) / (n * sxx - sx * sx), c = (sy - tr * sx) / n;
   return [tr, -c];
 }
-/** Daerah lens shift (poligon daerah gambar, satuan panel) atau offset tetap. */
 function shift(lensShift, offset) {
   const pusat = angka(offset) / 200;
   const v = [angka(lensShift?.Vertical?.min) / 100, angka(lensShift?.Vertical?.max) / 100];
@@ -105,7 +78,6 @@ function shift(lensShift, offset) {
   const [v0, v1] = [pusat + v[0], pusat + v[1]];
   return { pg: [h[0] - 0.5, v0 - 0.5, h[1] + 0.5, v0 - 0.5, h[1] + 0.5, v1 + 0.5, h[0] - 0.5, v1 + 0.5].map(x => bulat(x, 4)), off: 0 };
 }
-/** Rentang diagonal (inci) dari rentang jarak (m). */
 function diagonal(jarak, trW, trT, b, native) {
   if (!jarak) return [0, 0];
   const lpi = lebarPerInci(RASIO[native]);
@@ -122,7 +94,6 @@ for (const p of projectorModels) {
     if (!(trW > 0) || !(trT > 0)) return;
     const ket = `${trW}${trT !== trW ? ` - ${trT}` : ''}`;
     let b = 0, d = null;
-    //  UST: "Distance" Vivitek bukan L = TR x lebar (diukur khusus) - rentang layar dari tabel TR-nya.
     if (ust) { const f = dariUst(ust, native); if (f) { trW = trT = f[0]; b = f[1]; const k = Object.keys(ust).map(Number); d = [Math.min(...k), Math.max(...k)]; } }
     const { pg, off } = shift(p['Lens Shift'], offset);
     lensa.push({
@@ -137,7 +108,6 @@ for (const p of projectorModels) {
     const l = lensaOpsi.get(id);
     if (!l) continue;
     const ust = /ultra short/i.test(l['Lens Type'] ?? '') && p.ustTR ? p.ustTR : null;
-    //  Offset lensa (bila ada) menggantikan offset model; lens shift tetap kotak model.
     tambah(`${id.split('%%')[0]} (${l['Lens Type']})`, angka(l['Throw Ratio']?.min), angka(l['Throw Ratio']?.max), l.Distance,
       l.Offset ?? p.Offset, ust, l['Lens Type']);
   }

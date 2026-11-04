@@ -1,6 +1,5 @@
 'use client';
 
-/** usePesanLampiran - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
@@ -42,13 +41,11 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     if (!msgText.trim() || !selectedRequest) return;
     if (selectedRequest.status === 'rejected') { notify('error', 'Request ini sudah ditolak. Tidak bisa mengirim pesan.'); return; }
     if (selectedRequest.status === 'pending' && !isPTS) { notify('error', 'Request masih pending approval. Chat akan aktif setelah diapprove.'); return; }
-    // Semua pihak yang bisa lihat request bisa chat: PTS, IVP (own or linked), pemilik request
     const isOwner = selectedRequest.requester_id === currentUser.id;
     const isLinkedIVP = isIVPGuest && selectedRequest.ivp_assignee === currentUser.full_name;
     const canChat = isPTS || isOwner || isLinkedIVP;
     if (!canChat) { notify('error', 'Anda tidak memiliki akses untuk mengirim pesan.'); return; }
     setSendingMsg(true);
-    // Prefix message with room label if chatting in room context
     const roomRooms = selectedRequest.rooms || [];
     const totalDetailRooms = 1 + roomRooms.length;
     let finalMessage = msgText.trim();
@@ -65,9 +62,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     if (!selectedRequest) return;
     setUploadingFile(true);
     const toUpload = await compressImage(file);
-    // EGRESS/UX FIX: tag file dengan prefix [roomN] kalau lagi di tab ruangan tambahan
-    // (detailRoomIdx > 0), supaya konsisten dengan konvensi upload saat create dan
-    // muncul di section attachment ruangan yang benar (bukan ketuker semua jadi 1).
     const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
     const filePath = `project-files/${selectedRequest.id}/${Date.now()}-${toStorageSafeName(taggedName)}`;
     const { error: storageError } = await supabase.storage.from('project-files').upload(filePath, toUpload, { cacheControl: '31536000', upsert: false });
@@ -77,11 +71,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     setUploadingFile(false);
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
-    // Pesan chat ini WAJIB ditandai [Nama Ruangan] kalau lagi di tab ruangan
-    // tambahan (detailRoomIdx > 0) - sama seperti taggedName pada file di
-    // atas. Tanpa tanda ini, pesan jatuh ke kategori "tanpa tanda" yang oleh
-    // filter chat SELALU dianggap milik ruangan PERTAMA - jadi upload dari
-    // Meeting Room/Command Center menumpuk di tab ruangan pertama.
     const roomLabelChat = detailRoomIdx > 0 ? (selectedRequest.rooms?.[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`) : null;
     await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📎 Melampirkan file: ${file.name}` }]);
   };
@@ -102,9 +91,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     setUploadingCategory(null);
     notify('success', `${label} Rev-${revisionNum} berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
-    // Sama seperti handleFileUpload - tandai [Nama Ruangan] kalau upload
-    // terjadi di tab ruangan tambahan, supaya pesannya muncul di tab chat
-    // ruangan yang benar, bukan menumpuk di ruangan pertama.
     const roomLabelChat = detailRoomIdx > 0 ? (selectedRequest.rooms?.[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`) : null;
     await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📁 ${label} Revision ${revisionNum} diupload: ${file.name}` }]);
   };
@@ -120,7 +106,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     setChatRoomFilter('all');
     await fetchMessages(req.id);
     await fetchAttachments(req.id);
-    // Resolve nama CC (internal_sales_id / internal_sales_id_2) kalau belum ada di cache.
     const ccIds = [req.internal_sales_id, req.internal_sales_id_2].filter(
       (id): id is string => !!id && !internalSalesNames[id]
     );
@@ -140,8 +125,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     setUnreadMsgMap(prev => { const n = { ...prev }; delete n[req.id]; return n; });
   };
 
-  // Label CC Sales Internal siap-tampil, misal "Budi (MVI) & Sari (IVP)". Fallback ke
-  // kolom lama `ivp_assignee` (nama string langsung) untuk request lama sebelum migrasi brand.
   const getCCLabel = (req: ProjectRequest): string => {
     const parts: string[] = [];
     if (req.internal_sales_id) {

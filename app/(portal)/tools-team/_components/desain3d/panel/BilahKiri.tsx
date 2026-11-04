@@ -1,11 +1,4 @@
 'use client';
-/**
- * Rel alat kiri kanvas - LIMA alat dalam dua kelompok: Tambah, Teks cepat | Pilih banyak, Penggaris, Snap grid (+ magnet).
- * Daftar benda, sembunyikan / isolasi kelompok & Pusatkan isi pindah ke daftar Benda (DaftarKanvas, tombol Benda di bilah
- * atas) - dulu delapan ikon, tiga di antaranya kembar dengan daftar itu. Alat untuk benda terpilih ada di bilah benda
- * terpilih (AksiTerpilih). Pintasan: A = Tambah, M = penggaris, G = snap, R = geser/putar, L = daftar benda, panah = geser,
- * Esc = batal.
- */
 import { useEffect, useRef, useState } from 'react';
 import { BoxSelect, Grid3x3, Magnet, Plus, Ruler, Type } from 'lucide-react';
 import { KATALOG, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
@@ -24,7 +17,6 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
   const ukur = alatKanvas === 'ukur';
   const jumlahGaris = ruang.penggaris?.length ?? 0;
 
-  //  Mode penggaris: klik pertama = titik awal, klik kedua = garis jadi (mode tetap aktif untuk garis berikutnya).
   useEffect(() => {
     if (!ukur) { klikUkurRef.current = null; return; }
     klikUkurRef.current = p => {
@@ -41,7 +33,6 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
   const keluarUkur = () => { setAlatKanvas('pilih'); setTitikUkur(null); };
   const mulaiUkur = () => { setPilih(null); setPilihLain([]); setModeBanyak(false); setAlatKanvas('ukur'); };
 
-  //  Pintasan papan ketik (diabaikan saat mengetik di isian).
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -61,7 +52,6 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
   const pilihan = (aktif: boolean) => `px-2 py-1 rounded-md text-[12px] font-semibold border ${aktif ? 'bg-blue-700 border-blue-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`;
   return (
     <div className="lapis-tembus relative flex flex-col gap-1.5" role="toolbar" aria-label="Alat desain">
-      {/*  Menambah isi | alat kerja di kanvas - dua kelompok terpisah supaya mudah dibedakan. */}
       {!hanyaLihat && (
         <div className={`${grupNav} self-start`}>
           <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} title="Tambah benda (A)" aria-label="Tambah benda"

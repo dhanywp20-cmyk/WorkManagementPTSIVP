@@ -1,8 +1,3 @@
-/**
- * uji/profil-ai.mjs - pemisahan profil AI pembuat soal vs penilai.
- *
- *   node uji/profil-ai.mjs
- */
 const AI_BAWAAN      = { model: 'gemini-2.5-flash',      arahan: '', suhu: 0.7 };
 const PENILAI_BAWAAN = { model: 'gemini-2.5-flash-lite', arahan: '', suhu: 0.2, otomatis: false };
 
@@ -28,7 +23,6 @@ function rapikanPengaturanPenilai(isi) {
     otomatis: r.otomatis === true,
   };
 }
-/** Pemilihan token di server: token khusus menang, kosong jatuh ke token umum. */
 const pilihToken = (khusus, umum) => khusus || umum;
 
 let lulus = 0, gagal = 0;
@@ -43,8 +37,6 @@ console.log('\n1. Bawaan penilai TIDAK ikut bawaan pembuat soal');
   cek('otomatis MATI secara bawaan', p.otomatis === false);
 }
 {
-  // Yang berbahaya: nilai tak sah diam-diam mewarisi model pembuat soal yang
-  // jatah hariannya jauh lebih sempit.
   for (const buruk of [{ model: '' }, { model: 'a b' }, { model: null }, { model: 123 }]) {
     const p = rapikanPengaturanPenilai(buruk);
     if (p.model !== 'gemini-2.5-flash-lite') { gagal++; console.log(`  GAGAL model tak sah ${JSON.stringify(buruk)} -> ${p.model}`); }
@@ -81,8 +73,8 @@ console.log('\n3. Pemilihan token');
 console.log('\n4. Berapa panggilan untuk satu sesi');
 {
   const peserta = 30, essay = 5;
-  const lama = peserta * essay;          // satu panggilan per jawaban
-  const baru = peserta;                  // satu panggilan per peserta
+  const lama = peserta * essay;
+  const baru = peserta;
   cek('bentuk lama: 150 panggilan', lama === 150, String(lama));
   cek('bentuk baru: 30 panggilan', baru === 30, String(baru));
   cek('turun 80%', Math.round((1 - baru / lama) * 100) === 80);

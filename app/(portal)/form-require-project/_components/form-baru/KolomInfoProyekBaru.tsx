@@ -1,6 +1,5 @@
 'use client';
 
-/** KolomInfoProyekBaru - dipecah dari app/(portal)/form-require-project/_components/Modals.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { SalesPicker } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
@@ -22,7 +21,6 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
     <>
       <div className="satulayar:col-span-1 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
 
-      {/* ── Project Info ── */}
       <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
         <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
           <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -52,8 +50,6 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
               />
             </div>
           )}
-          {/* SBU — Sales Internal buat request ATAS NAMA Sales External tertentu.
-             Opsional; kalau kosong, request atas nama Sales Internal sendiri. */}
           {isInternalSalesGuest && (
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
@@ -71,7 +67,6 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
               )}
             </div>
           )}
-          {/* Marketing Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg review/approve. */}
           {currentUser?.role === 'guest' && !isInternalSalesGuest && (
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Marketing Brand * <span className="normal-case text-gray-500 font-medium tracking-normal">(Sales Internal yang handle)</span></label>
