@@ -60,6 +60,7 @@ import { BlokAssignPTS } from './_components/halaman/BlokAssignPTS';
 import { BlokFormBaru } from './_components/halaman/BlokFormBaru';
 import { useStatistikRequest } from './_components/halaman/useStatistikRequest';
 import { useEfekHalamanRequest } from './_components/halaman/useEfekHalamanRequest';
+import { KonteksRequest, type NilaiKonteksRequest } from './_components/konteks-request';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -388,7 +389,27 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const detailDueStatus = selectedRequest ? getDueStatus(selectedRequest.due_date, detailRoomStatus ?? selectedRequest.status) : null;
   const isFileType = (type: string) => type.startsWith('image/');
 
+  const konteksRequest: NilaiKonteksRequest = {
+    sesi: { currentUser, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS, pimpinan },
+    izin: { bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, canInternalApproveProject },
+    bantu: { displayFileName, formatDate, formatDueDate, formatFileSize, getCCLabel, getDueStatus, getFileRoomIdx, notify },
+    daftar: { fetchRequests, filteredRequests, hal, handleOpenDetail, loading, ptsMembersList, renderRequestActions, requests, setShowNewFormModal, stats, unreadMsgMap },
+    ringkasan: { assignedPieData, divisionPieData, kebutuhanPieData, productPieData, statusPieData },
+    filter: { availableYears, filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, searchQuery, searchSales, setFilterDivision, setFilterHandler,
+      setFilterKebutuhan, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales },
+    pilih: { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds, toggleSelectAll, toggleSelectId },
+    detail: { detailDueStatus, detailIsPending, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, handleCloseDetail, selectedRequest,
+      setDetailMobileTab, setDetailRoomIdx, setSelectedRequest, showDetailModal },
+    lampiran: { activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, downloadingPackage, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
+      handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setDownloadingPackage, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef,
+      uploadingCategory, uploadingFile },
+    pesan: { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText },
+    aksi: { handleOpenEditForm, handleReject, handleResubmit, handleStatusUpdate, setAssignModal, setDeleteConfirmText, setDeleteModal, setInternalApproveTarget, setRerouteTarget,
+      setRerouteTo, setSelectedNewStatus, setStatusUpdateModal },
+  };
+
   return (
+    <KonteksRequest.Provider value={konteksRequest}>
     <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--latar-halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {NotifToast()}
@@ -405,9 +426,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         bellDropdownOpen={bellDropdownOpen} handleOpenDetail={handleOpenDetail} pimpinan={pimpinan} requests={requests} setBellDropdownOpen={setBellDropdownOpen} setShowNewFormModal={setShowNewFormModal}
       />
 
-      <KontenHalamanRequest
-        assignedPieData={assignedPieData} availableYears={availableYears} bisaKelolaRequest={bisaKelolaRequest} bulkDeleting={bulkDeleting} currentUser={currentUser} divisionPieData={divisionPieData} fetchRequests={fetchRequests} filterDivision={filterDivision} filterHandler={filterHandler} filterKebutuhan={filterKebutuhan} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} filteredRequests={filteredRequests} formatDate={formatDate} formatDueDate={formatDueDate} getDueStatus={getDueStatus} hal={hal} handleOpenDetail={handleOpenDetail} isIVPGuest={isIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} kebutuhanPieData={kebutuhanPieData} loading={loading} pimpinan={pimpinan} productPieData={productPieData} ptsMembersList={ptsMembersList} renderRequestActions={renderRequestActions} requests={requests} searchQuery={searchQuery} searchSales={searchSales} selectMode={selectMode} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setFilterDivision={setFilterDivision} setFilterHandler={setFilterHandler} setFilterKebutuhan={setFilterKebutuhan} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds} setShowNewFormModal={setShowNewFormModal} stats={stats} statusPieData={statusPieData} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} unreadMsgMap={unreadMsgMap}
-      />
+      <KontenHalamanRequest />
 
       <ModalHapusMassal
         bulkConfirm={bulkConfirm} notify={notify} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setBulkDeleting={setBulkDeleting} setRequests={setRequests} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds}
@@ -445,9 +464,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         formatDueDate={formatDueDate} handleOpenDetail={handleOpenDetail} requests={requests} setShowTicketPopup={setShowTicketPopup} showTicketPopup={showTicketPopup}
       />
 
-      <ModalDetailRequest
-        activeAttachTab={activeAttachTab} attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} bolehEditRequest={bolehEditRequest} bolehRerouteRequest={bolehRerouteRequest} boqFileRef={boqFileRef} canInternalApproveProject={canInternalApproveProject} chatFileRef={chatFileRef} chatRoomFilter={chatRoomFilter} currentUser={currentUser} desain3d={desain3d} desain3dTools={desain3dTools} design3dFileRef={design3dFileRef} detailDueStatus={detailDueStatus} detailIsPending={detailIsPending} detailMobileTab={detailMobileTab} detailRoomAssignName={detailRoomAssignName} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} detailSc={detailSc} displayFileName={displayFileName} downloadingPackage={downloadingPackage} fetchRequests={fetchRequests} fileInputRef={fileInputRef} formatDate={formatDate} formatDueDate={formatDueDate} formatFileSize={formatFileSize} getCCLabel={getCCLabel} getFileRoomIdx={getFileRoomIdx} handleCategoryUpload={handleCategoryUpload} handleCloseDetail={handleCloseDetail} handleDeleteAttachment={handleDeleteAttachment} handleFileUpload={handleFileUpload} handleOpenEditForm={handleOpenEditForm} handleReject={handleReject} handleResubmit={handleResubmit} handleSendMessage={handleSendMessage} handleStatusUpdate={handleStatusUpdate} isIVPGuest={isIVPGuest} isNonIVPGuest={isNonIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} messages={messages} messagesEndRef={messagesEndRef} mintaPilih3D={mintaPilih3D} msgText={msgText} muatDesain3D={muatDesain3D} notify={notify} selectedRequest={selectedRequest} sendingMsg={sendingMsg} setActiveAttachTab={setActiveAttachTab} setAssignModal={setAssignModal} setChatRoomFilter={setChatRoomFilter} setDeleteConfirmText={setDeleteConfirmText} setDeleteModal={setDeleteModal} setDetailMobileTab={setDetailMobileTab} setDetailRoomIdx={setDetailRoomIdx} setDownloadingPackage={setDownloadingPackage} setInternalApproveTarget={setInternalApproveTarget} setMintaPilih3D={setMintaPilih3D} setMsgText={setMsgText} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} setSelectedNewStatus={setSelectedNewStatus} setSelectedRequest={setSelectedRequest} setShowUploadChoice={setShowUploadChoice} setStatusUpdateModal={setStatusUpdateModal} showDetailModal={showDetailModal} showUploadChoice={showUploadChoice} sldFileRef={sldFileRef} uploadingCategory={uploadingCategory} uploadingFile={uploadingFile}
-      />
+      <ModalDetailRequest />
 
       <ModalReroute
         isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} rerouteSaving={rerouteSaving} rerouteTarget={rerouteTarget} rerouteTo={rerouteTo} rosterPTS={rosterPTS} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} simpanReroute={simpanReroute}
@@ -457,6 +474,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         editCur={editCur} editDueDate={editDueDate} editFormData={editFormData} editFormModal={editFormModal} editNewRoomIds={editNewRoomIds} editRoomAktifBaru={editRoomAktifBaru} editRoomIdx={editRoomIdx} editRooms={editRooms} editUpd={editUpd} handleEditAddRoom={handleEditAddRoom} handleEditFormSubmit={handleEditFormSubmit} handleEditRemoveNewRoom={handleEditRemoveNewRoom} isPTS={isPTS} salesGuestUsers={salesGuestUsers} selectedRequest={selectedRequest} setEditDueDate={setEditDueDate} setEditFormData={setEditFormData} setEditFormModal={setEditFormModal} setEditRoomIdx={setEditRoomIdx}
       />
     </div>
+    </KonteksRequest.Provider>
   );
 }
 

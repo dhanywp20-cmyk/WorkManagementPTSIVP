@@ -1,14 +1,9 @@
 'use client';
 
-import { AuditTrailPanel, FlowSteps, ModalPortal } from '@/components/shared';
+import { ModalPortal } from '@/components/shared';
 import { Z } from '@/lib/z-index';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { unduhPaketRequest } from './paket-unduhan';
-import { cetakRequest } from './cetak-request';
-import { User, ProjectRequest, ProjectMessage, ProjectAttachment, getRoomStatus } from './shared';
-import { Desain3DTools } from './Desain3DTools';
-import { supabase } from '@/lib/supabase';
-import { type TautanDesain3D, type IzinRuang } from './desain-3d-request';
+import { getRoomStatus } from './shared';
 import { PanelChatDetail } from './detail/PanelChatDetail';
 import { RiwayatDetail } from './detail/RiwayatDetail';
 import { AlurDetail } from './detail/AlurDetail';
@@ -20,83 +15,20 @@ import { KartuLayoutDetail } from './detail/KartuLayoutDetail';
 import { KartuKategoriDetail } from './detail/KartuKategoriDetail';
 import { KartuInfoDetail } from './detail/KartuInfoDetail';
 import { HeaderDetail } from './detail/HeaderDetail';
+import { useKonteksRequest } from './konteks-request';
 
-export interface ModalDetailRequestProps {
-  activeAttachTab: "all" | "sld" | "boq" | "design3d";
-  attachments: ProjectAttachment[];
-  bisaKelolaRequest: boolean;
-  bolehEditRequest: (req: ProjectRequest) => boolean;
-  bolehRerouteRequest: (r: ProjectRequest) => boolean;
-  boqFileRef: import("react").RefObject<HTMLInputElement | null>;
-  canInternalApproveProject: (req: ProjectRequest) => boolean;
-  chatFileRef: import("react").RefObject<HTMLInputElement | null>;
-  chatRoomFilter: string;
-  currentUser: User;
-  desain3d: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string; } | null;
-  desain3dTools: TautanDesain3D[];
-  design3dFileRef: import("react").RefObject<HTMLInputElement | null>;
-  detailDueStatus: { type: string; label: string; days: number; } | null;
-  detailIsPending: boolean;
-  detailMobileTab: "info" | "chat";
-  detailRoomAssignName: string | undefined;
-  detailRoomIdx: number;
-  detailRoomStatus: "pending" | "approved" | "in_progress" | "completed" | "rejected" | undefined;
-  detailSc: { label: string; color: string; bg: string; border: string; } | null;
-  displayFileName: (fileName: string) => string;
-  downloadingPackage: boolean;
-  fetchRequests: () => Promise<void>;
-  fileInputRef: import("react").RefObject<HTMLInputElement | null>;
-  formatDate: (dt: string) => string;
-  formatDueDate: (dt: string) => string;
-  formatFileSize: (bytes: number) => string;
-  getCCLabel: (req: ProjectRequest) => string;
-  getFileRoomIdx: (fileName: string) => number;
-  handleCategoryUpload: (file: File, category: "sld" | "boq" | "design3d") => Promise<void>;
-  handleCloseDetail: () => void;
-  handleDeleteAttachment: (att: ProjectAttachment) => void;
-  handleFileUpload: (file: File) => Promise<void>;
-  handleOpenEditForm: () => void;
-  handleReject: (req: ProjectRequest) => void;
-  handleResubmit: (req: ProjectRequest) => Promise<void>;
-  handleSendMessage: () => Promise<void>;
-  handleStatusUpdate: (req: ProjectRequest, newStatus: string, roomIdx?: number) => Promise<void>;
-  isIVPGuest: boolean;
-  isNonIVPGuest: boolean;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  messages: ProjectMessage[];
-  messagesEndRef: import("react").RefObject<HTMLDivElement | null>;
-  mintaPilih3D: number;
-  msgText: string;
-  muatDesain3D: (id: string) => Promise<void>;
-  notify: (type: "success" | "error" | "info", msg: string) => void;
-  selectedRequest: ProjectRequest | null;
-  sendingMsg: boolean;
-  setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | "sld" | "boq" | "design3d">>;
-  setAssignModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
-  setChatRoomFilter: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setDeleteConfirmText: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setDeleteModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; }>>;
-  setDetailMobileTab: import("react").Dispatch<import("react").SetStateAction<"info" | "chat">>;
-  setDetailRoomIdx: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setDownloadingPackage: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setInternalApproveTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setMintaPilih3D: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setMsgText: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setRerouteTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setRerouteTo: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedNewStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedRequest: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setStatusUpdateModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
-  showDetailModal: boolean;
-  showUploadChoice: boolean;
-  sldFileRef: import("react").RefObject<HTMLInputElement | null>;
-  uploadingCategory: "sld" | "boq" | "design3d" | null;
-  uploadingFile: boolean;
-}
-
-export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, boqFileRef, canInternalApproveProject, chatFileRef, chatRoomFilter, currentUser, desain3d, desain3dTools, design3dFileRef, detailDueStatus, detailIsPending, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, displayFileName, downloadingPackage, fetchRequests, fileInputRef, formatDate, formatDueDate, formatFileSize, getCCLabel, getFileRoomIdx, handleCategoryUpload, handleCloseDetail, handleDeleteAttachment, handleFileUpload, handleOpenEditForm, handleReject, handleResubmit, handleSendMessage, handleStatusUpdate, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS, messages, messagesEndRef, mintaPilih3D, msgText, muatDesain3D, notify, selectedRequest, sendingMsg, setActiveAttachTab, setAssignModal, setChatRoomFilter, setDeleteConfirmText, setDeleteModal, setDetailMobileTab, setDetailRoomIdx, setDownloadingPackage, setInternalApproveTarget, setMintaPilih3D, setMsgText, setRerouteTarget, setRerouteTo, setSelectedNewStatus, setSelectedRequest, setShowUploadChoice, setStatusUpdateModal, showDetailModal, showUploadChoice, sldFileRef, uploadingCategory, uploadingFile }: ModalDetailRequestProps) {
+export function ModalDetailRequest() {
+  const k = useKonteksRequest();
+  const { currentUser, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS } = k.sesi;
+  const { formatDueDate, getCCLabel, notify } = k.bantu;
+  const { fetchRequests } = k.daftar;
+  const {
+    detailDueStatus, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, handleCloseDetail, selectedRequest, setDetailMobileTab,
+    setDetailRoomIdx, setSelectedRequest, showDetailModal
+  } = k.detail;
+  const { handleFileUpload, uploadingFile } = k.lampiran;
+  const { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText } = k.pesan;
+  const { handleResubmit, setAssignModal } = k.aksi;
   return (
     <>
       {showDetailModal && selectedRequest && detailSc && (
@@ -106,9 +38,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
 
-            <HeaderDetail
-              attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} bolehEditRequest={bolehEditRequest} bolehRerouteRequest={bolehRerouteRequest} canInternalApproveProject={canInternalApproveProject} currentUser={currentUser} desain3dTools={desain3dTools} detailIsPending={detailIsPending} detailRoomAssignName={detailRoomAssignName} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} detailSc={detailSc} downloadingPackage={downloadingPackage} formatDate={formatDate} getCCLabel={getCCLabel} handleCloseDetail={handleCloseDetail} handleOpenEditForm={handleOpenEditForm} handleReject={handleReject} handleStatusUpdate={handleStatusUpdate} isPTS={isPTS} isTeamPTS={isTeamPTS} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setDeleteConfirmText={setDeleteConfirmText} setDeleteModal={setDeleteModal} setDownloadingPackage={setDownloadingPackage} setInternalApproveTarget={setInternalApproveTarget} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} setSelectedNewStatus={setSelectedNewStatus} setStatusUpdateModal={setStatusUpdateModal}
-            />
+            <HeaderDetail selectedRequest={selectedRequest} detailSc={detailSc} />
 
             {isNonIVPGuest && !currentUser.sales_division && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-center gap-3 border-2 border-amber-300" style={{ background: 'rgba(254,243,199,0.9)' }}>
@@ -295,9 +225,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                   </>);
                   })()}
 
-                  <PanelLampiranDetail
-                    activeAttachTab={activeAttachTab} attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} boqFileRef={boqFileRef} desain3d={desain3d} desain3dTools={desain3dTools} design3dFileRef={design3dFileRef} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} displayFileName={displayFileName} fileInputRef={fileInputRef} formatFileSize={formatFileSize} getFileRoomIdx={getFileRoomIdx} handleCategoryUpload={handleCategoryUpload} handleDeleteAttachment={handleDeleteAttachment} handleFileUpload={handleFileUpload} isPTS={isPTS} mintaPilih3D={mintaPilih3D} muatDesain3D={muatDesain3D} notify={notify} selectedRequest={selectedRequest} setActiveAttachTab={setActiveAttachTab} setMintaPilih3D={setMintaPilih3D} setShowUploadChoice={setShowUploadChoice} showUploadChoice={showUploadChoice} sldFileRef={sldFileRef} uploadingCategory={uploadingCategory} uploadingFile={uploadingFile}
-                  />
+                  <PanelLampiranDetail selectedRequest={selectedRequest} />
 
                   <KontrolAdminDetail
                     detailDueStatus={detailDueStatus} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} fetchRequests={fetchRequests} formatDueDate={formatDueDate} isPTS={isPTS} isTeamPTS={isTeamPTS} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setSelectedRequest={setSelectedRequest}

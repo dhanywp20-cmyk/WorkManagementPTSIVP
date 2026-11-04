@@ -1,65 +1,22 @@
 'use client';
 
-import { MiniPieChart, StatCard, Paginasi } from '@/components/shared';
+import { MiniPieChart, StatCard } from '@/components/shared';
 import { FilterRequest } from '../FilterRequest';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { DaftarRequest } from '../DaftarRequest';
-import { User, ProjectRequest } from '../shared';
+import { useKonteksRequest } from '../konteks-request';
 
-export interface KontenHalamanRequestProps {
-  assignedPieData: { label: string; value: number; color: string; }[];
-  availableYears: string[];
-  bisaKelolaRequest: boolean;
-  bulkDeleting: boolean;
-  currentUser: User;
-  divisionPieData: { label: string; value: number; color: string; }[];
-  fetchRequests: () => Promise<void>;
-  filterDivision: string;
-  filterHandler: string;
-  filterKebutuhan: string;
-  filterMonth: string;
-  filterStatus: string;
-  filterYear: string;
-  filteredRequests: ProjectRequest[];
-  formatDate: (dt: string) => string;
-  formatDueDate: (dt: string) => string;
-  getDueStatus: (due: string | undefined, status: string) => { type: string; label: string; days: number; } | null;
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<ProjectRequest>;
-  handleOpenDetail: (req: ProjectRequest) => Promise<void>;
-  isIVPGuest: boolean;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  kebutuhanPieData: { label: string; value: number; color: string; }[];
-  loading: boolean;
-  pimpinan: boolean;
-  productPieData: { label: string; value: number; color: string; }[];
-  ptsMembersList: string[];
-  renderRequestActions: (req: ProjectRequest) => import("react").JSX.Element;
-  requests: ProjectRequest[];
-  searchQuery: string;
-  searchSales: string;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setBulkConfirm: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setFilterDivision: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterHandler: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterKebutuhan: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterMonth: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchQuery: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSales: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectMode: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setSelectedIds: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
-  setShowNewFormModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  stats: { total: number; pending: number; approved: number; in_progress: number; completed: number; rejected: number; };
-  statusPieData: { label: string; value: number; color: string; }[];
-  toggleSelectAll: () => void;
-  toggleSelectId: (id: string) => void;
-  unreadMsgMap: Record<string, number>;
-}
-
-export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelolaRequest, bulkDeleting, currentUser, divisionPieData, fetchRequests, filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, filteredRequests, formatDate, formatDueDate, getDueStatus, hal, handleOpenDetail, isIVPGuest, isPTS, isTeamPTS, kebutuhanPieData, loading, pimpinan, productPieData, ptsMembersList, renderRequestActions, requests, searchQuery, searchSales, selectMode, selectedIds, setBulkConfirm, setFilterDivision, setFilterHandler, setFilterKebutuhan, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales, setSelectMode, setSelectedIds, setShowNewFormModal, stats, statusPieData, toggleSelectAll, toggleSelectId, unreadMsgMap }: KontenHalamanRequestProps) {
+export function KontenHalamanRequest() {
+  const k = useKonteksRequest();
+  const { isPTS } = k.sesi;
+  const { bisaKelolaRequest } = k.izin;
+  const { fetchRequests, filteredRequests, loading, ptsMembersList, requests, stats } = k.daftar;
+  const { assignedPieData, divisionPieData, kebutuhanPieData, productPieData, statusPieData } = k.ringkasan;
+  const {
+    availableYears, filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, searchQuery, searchSales, setFilterDivision,
+    setFilterHandler, setFilterKebutuhan, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales
+  } = k.filter;
+  const { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds } = k.pilih;
   return (
     <>
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
@@ -183,9 +140,7 @@ export function KontenHalamanRequest({ assignedPieData, availableYears, bisaKelo
                 className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
             </div>
           )}
-          <DaftarRequest
-            bisaKelolaRequest={bisaKelolaRequest} currentUser={currentUser} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} filteredRequests={filteredRequests} formatDate={formatDate} formatDueDate={formatDueDate} getDueStatus={getDueStatus} hal={hal} handleOpenDetail={handleOpenDetail} isIVPGuest={isIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} loading={loading} pimpinan={pimpinan} renderRequestActions={renderRequestActions} requests={requests} searchQuery={searchQuery} searchSales={searchSales} selectMode={selectMode} selectedIds={selectedIds} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales} setShowNewFormModal={setShowNewFormModal} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} unreadMsgMap={unreadMsgMap}
-          />
+          <DaftarRequest />
         </div>
       </div>
     </>

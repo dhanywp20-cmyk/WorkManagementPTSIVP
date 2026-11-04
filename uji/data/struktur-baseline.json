@@ -126,13 +126,13 @@
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/DaftarRequest.tsx": {
-      "baris": 260,
-      "barisPanjang": 2,
+      "baris": 234,
+      "barisPanjang": 1,
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/HeaderDetail.tsx": {
-      "baris": 145,
-      "barisPanjang": 7,
+      "baris": 125,
+      "barisPanjang": 6,
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/detail/KartuInfoDetail.tsx": {
@@ -166,8 +166,8 @@
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/detail/PanelLampiranDetail.tsx": {
-      "baris": 237,
-      "barisPanjang": 7,
+      "baris": 220,
+      "barisPanjang": 6,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/form-baru/FormRuanganUtama.tsx": {
@@ -181,14 +181,14 @@
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/halaman/KontenHalamanRequest.tsx": {
-      "baris": 193,
-      "barisPanjang": 4,
-      "propsMaks": 31
+      "baris": 148,
+      "barisPanjang": 2,
+      "propsMaks": 14
     },
     "app/(portal)/form-require-project/_components/ModalDetailRequest.tsx": {
-      "baris": 326,
-      "barisPanjang": 7,
-      "propsMaks": 32
+      "baris": 254,
+      "barisPanjang": 4,
+      "propsMaks": 15
     },
     "app/(portal)/form-require-project/_components/ModalEditForm.tsx": {
       "baris": 302,
@@ -226,9 +226,9 @@
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/page.tsx": {
-      "baris": 498,
-      "barisPanjang": 11,
-      "propsMaks": 72
+      "baris": 516,
+      "barisPanjang": 9,
+      "propsMaks": 26
     },
     "app/(portal)/form-review/_components/DaftarReview.tsx": {
       "baris": 236,
