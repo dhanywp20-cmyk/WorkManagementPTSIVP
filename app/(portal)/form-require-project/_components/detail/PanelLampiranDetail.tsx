@@ -2,41 +2,24 @@
 
 import { Ikon } from '@/components/shared/Ikon';
 import { Desain3DTools } from '../Desain3DTools';
-import { ProjectRequest, ProjectAttachment } from '../shared';
-import { type TautanDesain3D, type IzinRuang } from '../desain-3d-request';
+import { ProjectRequest } from '../shared';
+import { useKonteksRequest } from '../konteks-request';
 
 export interface PanelLampiranDetailProps {
-  activeAttachTab: "all" | "sld" | "boq" | "design3d";
-  attachments: ProjectAttachment[];
-  bisaKelolaRequest: boolean;
-  boqFileRef: import("react").RefObject<HTMLInputElement | null>;
-  desain3d: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string; } | null;
-  desain3dTools: TautanDesain3D[];
-  design3dFileRef: import("react").RefObject<HTMLInputElement | null>;
-  detailRoomIdx: number;
-  detailRoomStatus: "pending" | "approved" | "in_progress" | "completed" | "rejected" | undefined;
-  displayFileName: (fileName: string) => string;
-  fileInputRef: import("react").RefObject<HTMLInputElement | null>;
-  formatFileSize: (bytes: number) => string;
-  getFileRoomIdx: (fileName: string) => number;
-  handleCategoryUpload: (file: File, category: "sld" | "boq" | "design3d") => Promise<void>;
-  handleDeleteAttachment: (att: ProjectAttachment) => void;
-  handleFileUpload: (file: File) => Promise<void>;
-  isPTS: boolean;
-  mintaPilih3D: number;
-  muatDesain3D: (id: string) => Promise<void>;
-  notify: (type: "success" | "error" | "info", msg: string) => void;
   selectedRequest: ProjectRequest;
-  setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | "sld" | "boq" | "design3d">>;
-  setMintaPilih3D: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  showUploadChoice: boolean;
-  sldFileRef: import("react").RefObject<HTMLInputElement | null>;
-  uploadingCategory: "sld" | "boq" | "design3d" | null;
-  uploadingFile: boolean;
 }
 
-export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRequest, boqFileRef, desain3d, desain3dTools, design3dFileRef, detailRoomIdx, detailRoomStatus, displayFileName, fileInputRef, formatFileSize, getFileRoomIdx, handleCategoryUpload, handleDeleteAttachment, handleFileUpload, isPTS, mintaPilih3D, muatDesain3D, notify, selectedRequest, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory, uploadingFile }: PanelLampiranDetailProps) {
+export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProps) {
+  const k = useKonteksRequest();
+  const { isPTS } = k.sesi;
+  const { bisaKelolaRequest } = k.izin;
+  const { displayFileName, formatFileSize, getFileRoomIdx, notify } = k.bantu;
+  const { detailRoomIdx, detailRoomStatus } = k.detail;
+  const {
+    activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
+    handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory,
+    uploadingFile
+  } = k.lampiran;
   return (
     <>
       <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">

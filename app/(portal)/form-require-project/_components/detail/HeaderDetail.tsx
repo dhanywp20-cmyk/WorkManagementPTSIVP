@@ -4,45 +4,25 @@ import { IkonTeks } from '@/components/shared/Ikon';
 import { TombolSetujui, TombolTolak, TombolTugaskan } from '@/components/shared';
 import { unduhPaketRequest } from '../paket-unduhan';
 import { cetakRequest } from '../cetak-request';
-import { User, ProjectRequest, ProjectAttachment } from '../shared';
-import { type TautanDesain3D } from '../desain-3d-request';
+import { ProjectRequest } from '../shared';
+import { useKonteksRequest } from '../konteks-request';
 
 export interface HeaderDetailProps {
-  attachments: ProjectAttachment[];
-  bisaKelolaRequest: boolean;
-  bolehEditRequest: (req: ProjectRequest) => boolean;
-  bolehRerouteRequest: (r: ProjectRequest) => boolean;
-  canInternalApproveProject: (req: ProjectRequest) => boolean;
-  currentUser: User;
-  desain3dTools: TautanDesain3D[];
-  detailIsPending: boolean;
-  detailRoomAssignName: string | undefined;
-  detailRoomIdx: number;
-  detailRoomStatus: "pending" | "approved" | "in_progress" | "completed" | "rejected" | undefined;
-  detailSc: { label: string; color: string; bg: string; border: string; };
-  downloadingPackage: boolean;
-  formatDate: (dt: string) => string;
-  getCCLabel: (req: ProjectRequest) => string;
-  handleCloseDetail: () => void;
-  handleOpenEditForm: () => void;
-  handleReject: (req: ProjectRequest) => void;
-  handleStatusUpdate: (req: ProjectRequest, newStatus: string, roomIdx?: number) => Promise<void>;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  notify: (type: "success" | "error" | "info", msg: string) => void;
   selectedRequest: ProjectRequest;
-  setAssignModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
-  setDeleteConfirmText: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setDeleteModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; }>>;
-  setDownloadingPackage: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setInternalApproveTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setRerouteTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setRerouteTo: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedNewStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setStatusUpdateModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
+  detailSc: { label: string; color: string; bg: string; border: string; };
 }
 
-export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, canInternalApproveProject, currentUser, desain3dTools, detailIsPending, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, downloadingPackage, formatDate, getCCLabel, handleCloseDetail, handleOpenEditForm, handleReject, handleStatusUpdate, isPTS, isTeamPTS, notify, selectedRequest, setAssignModal, setDeleteConfirmText, setDeleteModal, setDownloadingPackage, setInternalApproveTarget, setRerouteTarget, setRerouteTo, setSelectedNewStatus, setStatusUpdateModal }: HeaderDetailProps) {
+export function HeaderDetail({ selectedRequest, detailSc }: HeaderDetailProps) {
+  const k = useKonteksRequest();
+  const { currentUser, isPTS, isTeamPTS } = k.sesi;
+  const { bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, canInternalApproveProject } = k.izin;
+  const { formatDate, getCCLabel, notify } = k.bantu;
+  const { detailIsPending, detailRoomAssignName, detailRoomIdx, detailRoomStatus, handleCloseDetail } = k.detail;
+  const { attachments, desain3dTools, downloadingPackage, setDownloadingPackage } = k.lampiran;
+  const {
+    handleOpenEditForm, handleReject, handleStatusUpdate, setAssignModal, setDeleteConfirmText, setDeleteModal, setInternalApproveTarget, setRerouteTarget,
+    setRerouteTo, setSelectedNewStatus, setStatusUpdateModal
+  } = k.aksi;
   return (
     <>
       <div className="bg-white border-b border-slate-100 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-shrink-0">

@@ -97,7 +97,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 |---|---|---|---|
 | 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai** |
 | 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
-| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule selesai** (§5); berikutnya Request Design Project |
+| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule** & **Request Design Project selesai** (§5); berikutnya Ticketing |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
 | 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
@@ -128,3 +128,20 @@ Urutan Fase 2 dipilih dari ukuran props drilling (§S1) dan seberapa sering modu
 
 Verifikasi: skrip peramban yang sama dijalankan terhadap build `main` dan build refaktor (Admin, Full Access, Manager
 PTS UMP: daftar, pencarian, popup detail, tombol Setujui/Tolak/Riwayat) — hasilnya identik.
+
+### Request Design Project
+
+- `form-require-project/_components/konteks-request.tsx`: irisan `sesi`, `izin`, `bantu`, `daftar`, `ringkasan`,
+  `filter`, `pilih`, `detail`, `lampiran`, `pesan`, `aksi`.
+- `KontenHalamanRequest`, `DaftarRequest`, `ModalDetailRequest`, `HeaderDetail`, `PanelLampiranDetail` mengambil dari
+  konteks. `selectedRequest`/`detailSc` tetap dioper ke `HeaderDetail` & `PanelLampiranDetail` karena di sana sudah
+  dipersempit (tidak null).
+
+| Ukuran | Sebelum | Sesudah |
+|---|---|---|
+| Props terbanyak di satu baris (page) | 72 | 26 (`BlokFormBaru`, berikutnya) |
+| `ModalDetailRequest` | 326 baris · 32 props | 254 · 15 |
+| `KontenHalamanRequest` | 193 · 31 | 148 · 14 |
+
+Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, Sales): daftar, pencarian, popup
+detail dengan Setujui/Tolak/Edit/Hapus/Download/Chat — hasil sama persis, 0 galat halaman.

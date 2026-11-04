@@ -1,45 +1,19 @@
 'use client';
 
 import { ActionGroup, MobileListCard, MobileCardBadge, ListEmptyState, Paginasi } from '@/components/shared';
-import { User, ProjectRequest, statusConfig, hasDivergentRoomStatus } from './shared';
+import { statusConfig, hasDivergentRoomStatus } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';
+import { useKonteksRequest } from './konteks-request';
 
-export interface DaftarRequestProps {
-  bisaKelolaRequest: boolean;
-  currentUser: User;
-  filterMonth: string;
-  filterStatus: string;
-  filterYear: string;
-  filteredRequests: ProjectRequest[];
-  formatDate: (dt: string) => string;
-  formatDueDate: (dt: string) => string;
-  getDueStatus: (due: string | undefined, status: string) => { type: string; label: string; days: number; } | null;
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<ProjectRequest>;
-  handleOpenDetail: (req: ProjectRequest) => Promise<void>;
-  isIVPGuest: boolean;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  loading: boolean;
-  pimpinan: boolean;
-  renderRequestActions: (req: ProjectRequest) => import("react").JSX.Element;
-  requests: ProjectRequest[];
-  searchQuery: string;
-  searchSales: string;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setFilterMonth: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchQuery: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSales: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowNewFormModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  toggleSelectAll: () => void;
-  toggleSelectId: (id: string) => void;
-  unreadMsgMap: Record<string, number>;
-}
-
-export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, filterStatus, filterYear, filteredRequests, formatDate, formatDueDate, getDueStatus, hal, handleOpenDetail, isIVPGuest, isPTS, isTeamPTS, loading, pimpinan, renderRequestActions, requests, searchQuery, searchSales, selectMode, selectedIds, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales, setShowNewFormModal, toggleSelectAll, toggleSelectId, unreadMsgMap }: DaftarRequestProps) {
+export function DaftarRequest() {
+  const k = useKonteksRequest();
+  const { currentUser, isIVPGuest, isPTS, isTeamPTS, pimpinan } = k.sesi;
+  const { bisaKelolaRequest } = k.izin;
+  const { formatDate, formatDueDate, getDueStatus } = k.bantu;
+  const { filteredRequests, hal, handleOpenDetail, loading, renderRequestActions, requests, setShowNewFormModal, unreadMsgMap } = k.daftar;
+  const { filterMonth, filterStatus, filterYear, searchQuery, searchSales, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales } = k.filter;
+  const { selectMode, selectedIds, toggleSelectAll, toggleSelectId } = k.pilih;
   return (
     <>
       {loading ? (
