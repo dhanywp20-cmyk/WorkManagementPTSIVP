@@ -1,37 +1,19 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { ModalPortal, BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase, supabaseServices } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
-import { setSession, clearSession, getSession } from "@/lib/auth";
-import { adminCreateUser } from "@/lib/admin-users";
-import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
-import { penerimaAdmin, penerimaAdminBernomor } from "@/lib/penerima-admin";
-import { logAudit } from "@/lib/audit";
-import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from "@/lib/admin-edit";
-import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from "@/lib/teams";
+import { clearSession, getSession } from "@/lib/auth";
 import { hasFullAccess } from "@/lib/constants";
-import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
-import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
-import { compressImage } from "@/lib/image-compress";
+import type { Brand } from "@/lib/brand-routing";
 
 import {
-  sendWANotif, fetchWACCTargets,
-  JABATAN_TIER, JABATAN_CC_RULES,
-  SERVICES_STATUSES, ServicesStatus,
-  User, TeamMember, ActivityLog, Ticket, OverdueSetting,
-  SALES_DIVISIONS, formatDateTime,
-  statusColors, TICKET_ADMIN_FIELDS, adalahPending,
-  getDeadline as getDeadlineShared,
-  isTicketOverdue as isTicketOverdueShared,
-  getOverdueSetting as getOverdueSettingShared,
-  getWarrantyInfo as getWarrantyInfoShared,
-  bolehUpdateTicket as bolehUpdateTicketShared,
-  JEDA_POLLING_MS, JEDA_GABUNG_REALTIME_MS, JEDA_DATA_PENDUKUNG_MS, MAKS_SEGAR_SEBAGIAN, KOLOM_LOG_RINGKAS, TAHUN_TERBARU, rentangTiket, RENTANG_BULAN_TIKET,
+  User, TeamMember, Ticket, OverdueSetting, getDeadline as getDeadlineShared,
+  isTicketOverdue as isTicketOverdueShared, getOverdueSetting as getOverdueSettingShared,
+  getWarrantyInfo as getWarrantyInfoShared, bolehUpdateTicket as bolehUpdateTicketShared, JEDA_DATA_PENDUKUNG_MS,
+  TAHUN_TERBARU, rentangTiket,
 } from "./_components/shared";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import {
@@ -44,16 +26,10 @@ import { AccountSettingsModal } from "./_components/AccountSettingsModal";
 import { ActivitySummaryModal } from "./_components/ActivitySummaryModal";
 import { AdminEditModal } from "./_components/AdminEditModal";
 import { ApprovalModal } from "./_components/ApprovalModal";
-import { StatsSection } from "./_components/StatsSection";
-import { FilterBar } from "./_components/FilterBar";
-import { TicketListBody } from "./_components/TicketListBody";
 import { TicketDetailPopup } from "./_components/TicketDetailPopup";
-import { appLink } from "@/lib/app-url";
-import { eksporExcel } from "./_components/ekspor-excel";
 import { ambilTiketTertentu, ambilTiketUntuk } from "./_components/data-ticket";
-import { cetakTicket } from "./_components/cetak-ticket";
-import { Toast, PageHeader, ConfirmDialog, type ConfirmState } from "@/components/shared";
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Toast, ConfirmDialog, type ConfirmState } from "@/components/shared";
+import { Ikon } from '@/components/shared/Ikon';
 import { useApproveTicket } from './_components/useApproveTicket';
 import { useTugaskanSupervisor } from './_components/useTugaskanSupervisor';
 import { useEditAdminTicket } from './_components/useEditAdminTicket';
@@ -72,6 +48,7 @@ import { PopupNotifikasiBaru } from './_components/PopupNotifikasiBaru';
 import { IsiTicketing } from './_components/IsiTicketing';
 import { KepalaTicketing } from './_components/KepalaTicketing';
 import { useEfekLiveTicketing } from './_components/useEfekLiveTicketing';
+import { KonteksTicket, type NilaiKonteksTicket } from './_components/konteks-ticket';
 
 function TicketingSystemInner() {
   const router = useRouter();
@@ -495,6 +472,19 @@ function TicketingSystemInner() {
     );
   }
 
+  const konteksTicket: NilaiKonteksTicket = {
+    sesi: { currentUser, currentUserTeamType, teamMembers, users },
+    izin: { bolehUpdateTicket, canApproveAssign, canManageTickets },
+    data: { fetchData, fetchError, filteredTickets, getOverdueSetting, getWarrantyInfo, isTicketOverdue, loading, paginatedTickets, setFetchError, ticketListRef, tickets,
+      ticketsLoading, uploading },
+    ringkasan: { productStats, salesDivisionStats, stats },
+    filter: { availableYears, filterStatus, filterYear, handlerFilter, productFilter, salesDivisionFilter, searchProduct, searchProject, searchSalesName, selectedHandlerTeam,
+      setFilterStatus, setFilterYear, setHandlerFilter, setProductFilter, setSalesDivisionFilter, setSearchProduct, setSearchProject, setSearchSalesName, setSelectedHandlerTeam },
+    halaman: { ITEMS_PER_PAGE, currentPage, setCurrentPage, totalPages },
+    pilih: { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds, toggleSelectAll, toggleSelectId },
+    aksi: { bukaApprovalUntukTicket, bukaDeleteTicket, bukaDetailTicket, bukaOverdueSetting, bukaReopenTicket, bukaRingkasanAktivitas, jalankanCetakTicket, jalankanEksporExcel },
+  };
+
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{ background: 'var(--latar-halaman)', backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
@@ -532,9 +522,9 @@ function TicketingSystemInner() {
           canApproveAssign={canApproveAssign} canCreateTicket={canCreateTicket} canManageTickets={canManageTickets} currentUser={currentUser} currentUserTeamType={currentUserTeamType} fetchProjectReminders={fetchProjectReminders} notifications={notifications} pendingApprovalTickets={pendingApprovalTickets} pendingServicesApprovalTickets={pendingServicesApprovalTickets} setApprovalAssignees={setApprovalAssignees} setNewTicket={setNewTicket} setShowAccountSettings={setShowAccountSettings} setShowApprovalModal={setShowApprovalModal} setShowNewTicket={setShowNewTicket} setShowNotifications={setShowNotifications} setShowReminderSchedule={setShowReminderSchedule} setShowServicesApprovalModal={setShowServicesApprovalModal} showNewTicket={showNewTicket} showNotifications={showNotifications}
         />
 
-        <IsiTicketing
-          ITEMS_PER_PAGE={ITEMS_PER_PAGE} availableYears={availableYears} bolehUpdateTicket={bolehUpdateTicket} bukaApprovalUntukTicket={bukaApprovalUntukTicket} bukaDeleteTicket={bukaDeleteTicket} bukaDetailTicket={bukaDetailTicket} bukaOverdueSetting={bukaOverdueSetting} bukaReopenTicket={bukaReopenTicket} bukaRingkasanAktivitas={bukaRingkasanAktivitas} bulkDeleting={bulkDeleting} canApproveAssign={canApproveAssign} canManageTickets={canManageTickets} currentPage={currentPage} currentUser={currentUser} currentUserTeamType={currentUserTeamType} fetchData={fetchData} fetchError={fetchError} filterStatus={filterStatus} filterYear={filterYear} filteredTickets={filteredTickets} getOverdueSetting={getOverdueSetting} getWarrantyInfo={getWarrantyInfo} handlerFilter={handlerFilter} isTicketOverdue={isTicketOverdue} jalankanCetakTicket={jalankanCetakTicket} jalankanEksporExcel={jalankanEksporExcel} loading={loading} paginatedTickets={paginatedTickets} productFilter={productFilter} productStats={productStats} salesDivisionFilter={salesDivisionFilter} salesDivisionStats={salesDivisionStats} searchProduct={searchProduct} searchProject={searchProject} searchSalesName={searchSalesName} selectMode={selectMode} selectedHandlerTeam={selectedHandlerTeam} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setCurrentPage={setCurrentPage} setFetchError={setFetchError} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setHandlerFilter={setHandlerFilter} setProductFilter={setProductFilter} setSalesDivisionFilter={setSalesDivisionFilter} setSearchProduct={setSearchProduct} setSearchProject={setSearchProject} setSearchSalesName={setSearchSalesName} setSelectMode={setSelectMode} setSelectedHandlerTeam={setSelectedHandlerTeam} setSelectedIds={setSelectedIds} stats={stats} teamMembers={teamMembers} ticketListRef={ticketListRef} tickets={tickets} ticketsLoading={ticketsLoading} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} totalPages={totalPages} uploading={uploading} users={users}
-        />
+        <KonteksTicket.Provider value={konteksTicket}>
+          <IsiTicketing />
+        </KonteksTicket.Provider>
 
         {bulkConfirm && (
           <BulkDeleteConfirmModal
