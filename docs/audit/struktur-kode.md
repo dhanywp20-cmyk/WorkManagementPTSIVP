@@ -239,3 +239,5 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   aksi tulis tiket/daily report/checklist tetap di `integrasi-aksi.ts`.
 - `AdminDashboard.tsx` (696 → 603 baris): modal riwayat nilai per pengguna jadi `ModalNilaiPengguna.tsx`. Pengambilan
   data tetap di `AdminDashboard`; modal hanya menampilkan.
+- `MateriPage.tsx` (609 → 550 baris): modal Edit Materi jadi `ModalEditMateri.tsx`; simpan tetap lewat `handleEditMaterial`
+  di halaman.

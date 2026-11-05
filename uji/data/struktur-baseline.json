@@ -300,11 +300,6 @@
       "barisPanjang": 3,
       "propsMaks": 2
     },
-    "app/(portal)/learning-center/_components/MateriPage.tsx": {
-      "baris": 609,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/learning-center/_components/MyQuizPage.tsx": {
       "baris": 617,
       "barisPanjang": 1,
