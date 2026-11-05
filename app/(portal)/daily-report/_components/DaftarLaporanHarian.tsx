@@ -6,34 +6,18 @@ import { TH, TD, SB, sb, avc, ini } from './bantu-halaman';
 import { Ikon } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';
 import { Paginasi } from '@/components/shared';
-import { type DailyReport } from './shared';
-import type { FlatRow } from './bantu-halaman';
+import { useKonteksLaporan } from './konteks-laporan';
 
-export interface DaftarLaporanHarianProps {
-  bolehHapus: (row: any) => boolean;
-  filterCategory: string | null;
-  filterDate: string;
-  filterSource: string;
-  filterStatus: string;
-  filterUser: string;
-  filteredRows: FlatRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<FlatRow>;
-  liveLoading: boolean;
-  mintaHapus: (row: any) => void;
-  openEditForm: (report: DailyReport) => Promise<void>;
-  pimpinan: boolean;
-  reports: DailyReport[];
-  searchProject: string;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterSource: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setModalRow: import("react").Dispatch<any>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-}
-
-export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, filterSource, filterStatus, filterUser, filteredRows, hal, liveLoading, mintaHapus, openEditForm, pimpinan, reports, searchProject, setFilterCategory, setFilterDate, setFilterSource, setFilterStatus, setFilterUser, setModalRow, setSearchProject }: DaftarLaporanHarianProps) {
+export function DaftarLaporanHarian() {
+  const k = useKonteksLaporan();
+  const { pimpinan } = k.sesi;
+  const { bolehHapus } = k.izin;
+  const { filteredRows, hal, liveLoading, reports } = k.data;
+  const {
+    filterCategory, filterDate, filterSource, filterStatus, filterUser, searchProject, setFilterCategory, setFilterDate, setFilterSource, setFilterStatus,
+    setFilterUser, setSearchProject
+  } = k.filter;
+  const { mintaHapus, openEditForm, setModalRow } = k.aksi;
   return (
     <>
       {liveLoading && filteredRows.length === 0 ? (
