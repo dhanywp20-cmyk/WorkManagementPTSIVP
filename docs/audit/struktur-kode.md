@@ -270,4 +270,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 
   Urutan hook tetap sama. Diverifikasi identik dengan main: daftar/detail (admin, full, sales), update status, eskalasi
   overdue, serta simpan dan hapus overdue setting (isi request sama).
-- Setelah langkah ini tidak ada lagi berkas UI di atas 600 baris.
+- `analytics-dashboard/_components/AnalyticsPlatform.tsx` (606 → 530 baris): `Panel`, `Empty`, `Row`, `ACTION_STYLE`,
+  `MODULE_ICON` pindah ke `panel-analitik.tsx`.
+- Setelah langkah ini tidak ada lagi berkas `.ts`/`.tsx` di atas 600 baris.
