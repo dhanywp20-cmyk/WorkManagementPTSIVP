@@ -10,7 +10,6 @@ import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
 } from '@/app/(portal)/picket-showroom/_components/shared';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
-import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
@@ -23,11 +22,10 @@ import {
 } from './primitives';
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
-import WorkQueueSection from '../workcenter/WorkQueueSection';
+import PanelAgenda from '../workcenter/PanelAgenda';
+import { useDaftarTim, type Anggota } from './daftar-tim';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
-
-const todayStr = () => new Date().toISOString().split('T')[0];
 
 function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; total: number }) {
   const r = 34, k = 2 * Math.PI * r;
@@ -79,47 +77,8 @@ const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
   <AnalyticsPlatform embedded injectedUser={user} />
 );
 
-interface Anggota {
-  id: string; name: string; reported: boolean; active: number;
-  jabatan: string; atasanId: string | null;
-}
-
-const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<Anggota[]>([]);
-  const [atasan, setAtasan] = useState<Record<string, { nama: string; jabatan: string }>>({});
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const today = todayStr();
-        const [{ data: team }, { data: reports }, { data: rems }] = await Promise.all([
-          ingat('users:team-pts-atasan', () => supabase.from('users').select('id, username, full_name, team_type, jabatan, atasan_id').eq('role', 'team')
-            .in('team_type', [...ASSIGNABLE_PTS_TEAMS])),
-          supabase.from('daily_reports').select('user_id').eq('report_date', today),
-          supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'),
-        ]);
-        const reported = new Set((reports ?? []).map((r: any) => r.user_id));
-        const activeBy: Record<string, number> = {};
-        (rems ?? []).forEach((r: any) => { if (r.assigned_to) activeBy[r.assigned_to] = (activeBy[r.assigned_to] ?? 0) + 1; });
-        const list: Anggota[] = (team ?? []).map((m: any) => ({
-          id: m.id as string, name: m.full_name as string, reported: reported.has(m.id),
-          active: activeBy[m.username] ?? 0,
-          jabatan: (m.jabatan as string) ?? '', atasanId: (m.atasan_id as string) ?? null,
-        })).sort((a: Anggota, b: Anggota) => Number(a.reported) - Number(b.reported) || b.active - a.active);
-
-        const idAtasan = Array.from(new Set(list.map(m => m.atasanId).filter(Boolean))) as string[];
-        const peta: Record<string, { nama: string; jabatan: string }> = {};
-        if (idAtasan.length) {
-          const { data: bos } = await ingat(`users:atasan:${[...idAtasan].sort().join(',')}`, () => supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan));
-          (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
-        }
-        if (alive) { setRows(list); setAtasan(peta); }
-      } catch {  }
-      if (alive) setLoading(false);
-    })();
-    return () => { alive = false; };
-  }, []);
+const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
+  const { loading, rows, atasan } = useDaftarTim();
 
   if (loading) return <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
@@ -203,8 +162,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        <div className="flex flex-col gap-4 h-full">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 h-full">
+          <div className="flex items-center gap-4 lg:w-[320px] flex-shrink-0">
             <CincinProgres pct={pct} sudah={sudah} total={total} />
             <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
@@ -218,7 +177,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             ) : (
               <>
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
-                <div className="flex flex-col gap-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>
@@ -436,7 +395,7 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
 };
 
 export const WIDGETS: WidgetDef[] = [
-  { id: 'work-queue',     permission: (u) => !isPimpinan(u), priority: 0,   size: 'full', Component: WorkQueueSection },
+  { id: 'work-queue',     permission: (u) => !isPimpinan(u), priority: 0,   size: 'full', Component: PanelAgenda },
   { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
   { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },

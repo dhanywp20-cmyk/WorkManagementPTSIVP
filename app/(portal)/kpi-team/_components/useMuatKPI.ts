@@ -152,7 +152,16 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const lcScores = lcAttempts.filter((a:any) => a.score != null).map((a:any) => a.score as number);
       const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
 
+      const tglLokal = (iso: string) => {
+        const d = new Date(iso);
+        return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+
       setKpi({
+        deret:{
+          tiket:tickets.map((t:any)=>({ t:tglLokal(t.created_at), s:t.status as string })),
+          jadwal:reminders.map((r:any)=>({ t:r.due_date as string, s:r.status as string })),
+        },
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays,monthlyTickets },
         reminders:{ total:reminders.length,pending:reminders.filter((r:any)=>r.status==='pending').length,done:reminders.filter((r:any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMvi:piketToday?.pic_mvi_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },

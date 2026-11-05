@@ -1,6 +1,13 @@
 'use client';
 
+/** Baris ringkas (tanggal lokal + status) supaya beranda bisa menghitung ulang per periode tanpa kueri baru. */
+export interface DeretKPI {
+  tiket: { t: string; s: string }[];
+  jadwal: { t: string; s: string }[];
+}
+
 export interface KPIData {
+  deret?: DeretKPI;
   tickets: {
     total: number; open: number; solved: number; waitingApproval: number;
     byHandler: { name: string; count: number }[];
