@@ -195,3 +195,30 @@ Insentif Saya, pencarian, tab Tranche / Late Ticket / Skema / Pengaturan Akses �
 
 Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, Team): daftar laporan, panel
 ringkasan & grafik, pencarian — hasil sama persis, 0 galat halaman.
+
+### Sisa props drilling (satu anak)
+
+Empat komponen yang menerima puluhan props dari satu induk kini membaca konteks kecil masing-masing (irisan `nilai`,
+`ubah`, `aksi`):
+
+| Komponen | Props sebelum | Konteks |
+|---|---|---|
+| `IsiBankSoal` (Learning Center) | 30 | `konteks-bank-soal.tsx` |
+| `FormLaporan` (Daily Report) | 29 | `konteks-form-laporan.tsx` |
+| `DaftarReview` (Form Review) | 28 | `konteks-daftar-review.tsx` |
+| `BlokFormBaru` (Request Design Project) | 26 | `halaman/konteks-form-baru.tsx` |
+
+`FormReviewPageInner` juga dibersihkan dari kode mati (`handleBulkDelete`, `handleLogout`, variabel tak terpakai);
+hapus massal lewat modal kini ikut tercatat di audit trail.
+
+Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access) untuk Daily Report (termasuk form
+Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Project (form Buat Request), 0 galat.
+
+## 6. Fase 3 — batas `lib` / `app`
+
+- `lib/` dan `components/` tidak lagi mengimpor dari `app/` (sebelumnya 4 impor). Modul aturan murni dipindah:
+  `ticketing/_components/alur-status.ts` → `lib/alur-status-ticket.ts`, `tech-note/_components/aturan-tech-note.ts` →
+  `lib/aturan-tech-note.ts`, katalog perangkat rak → `lib/perangkat-rak.ts` (`inti/rak.ts` mengekspor ulang).
+- `lib/tipe-pengguna.ts` (`PenggunaDasar`): kolom bersama tipe `User` di Dashboard, Ticketing, Request Design Project dan
+  Analytics; tiap modul hanya menambah kolom khususnya.
+- Dijaga `uji/batas-lib-app.mjs`: gagal bila ada berkas `lib/` atau `components/` yang mengimpor dari `app/`.

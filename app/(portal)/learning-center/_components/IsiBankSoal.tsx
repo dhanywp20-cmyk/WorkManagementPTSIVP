@@ -3,45 +3,20 @@
 import { GridSubfolderSoal } from './soal/GridSubfolderSoal';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { supabase, Material, Question, FolderNode, DialogState } from './shared';
+import { supabase } from './shared';
 import { GrupBatchSoal } from './soal/GrupBatchSoal';
 import { UnggahGambarSoal } from './soal/UnggahGambarSoal';
 import { FOLDER_COLORS } from './QuestionsPage';
+import { useKonteksBankSoal } from './konteks-bank-soal';
 
-export interface IsiBankSoalProps {
-  buangDraf: (kunci: string) => void;
-  bukaTambahDiGrup: (materialId: string, batchKey: string) => void;
-  currentFolderNode: FolderNode | null;
-  editQ: Question | null;
-  expandedBatches: Set<string>;
-  filteredQuestions: Question[];
-  generatePanelJSX: import("react").JSX.Element;
-  geserSoal: (kunci: string, grup: Question[], idx: number, arah: -1 | 1) => void;
-  handleDelete: (id: string) => void;
-  handleDeleteMatGroup: (matId: string, matName: string) => void;
-  handleSaveEdit: () => Promise<void>;
-  kolomUrutanAda: boolean;
-  load: () => Promise<void>;
-  menyimpanUrutan: string | null;
-  questions: Question[];
-  search: string;
-  selectedMat: string;
-  selectedSubFolder: string | null;
-  setDialog: import("react").Dispatch<import("react").SetStateAction<DialogState>>;
-  setEditQ: import("react").Dispatch<import("react").SetStateAction<Question | null>>;
-  setExpandedBatches: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
-  setRenameFolder: import("react").Dispatch<import("react").SetStateAction<{ oldName: string; newName: string; } | null>>;
-  setSelectedMat: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedSubFolder: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  showGenerate: boolean;
-  simpanUrutan: (kunci: string, susunan: Question[]) => Promise<void>;
-  subFolders: string[];
-  susunanTampil: (kunci: string, grup: Question[]) => Question[];
-  urutanDraf: Record<string, string[]>;
-  viewMaterials: Material[];
-}
-
-export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, editQ, expandedBatches, filteredQuestions, generatePanelJSX, geserSoal, handleDelete, handleDeleteMatGroup, handleSaveEdit, kolomUrutanAda, load, menyimpanUrutan, questions, search, selectedMat, selectedSubFolder, setDialog, setEditQ, setExpandedBatches, setRenameFolder, setSelectedMat, setSelectedSubFolder, showGenerate, simpanUrutan, subFolders, susunanTampil, urutanDraf, viewMaterials }: IsiBankSoalProps) {
+export function IsiBankSoal() {
+  const k = useKonteksBankSoal();
+  const {
+    currentFolderNode, editQ, expandedBatches, filteredQuestions, generatePanelJSX, kolomUrutanAda, menyimpanUrutan, questions, search, selectedMat,
+    selectedSubFolder, showGenerate, subFolders, urutanDraf, viewMaterials
+  } = k.nilai;
+  const { setDialog, setEditQ, setExpandedBatches, setRenameFolder, setSelectedMat, setSelectedSubFolder } = k.ubah;
+  const { buangDraf, bukaTambahDiGrup, geserSoal, handleDelete, handleDeleteMatGroup, handleSaveEdit, load, simpanUrutan, susunanTampil } = k.aksi;
   return (
     <>
       <div className="flex-1 overflow-y-auto p-6">

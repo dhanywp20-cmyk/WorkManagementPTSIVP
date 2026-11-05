@@ -1,14 +1,8 @@
-export interface User {
-  id: string;
-  username: string;
+import type { PenggunaDasar } from '@/lib/tipe-pengguna';
+
+export interface User extends PenggunaDasar {
   password: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  phone_number?: string;
-  sales_division?: string;
   jabatan?: string;
-  allowed_menus?: string[];
 }
 
 export interface MenuItem {

@@ -7,6 +7,7 @@ import type { AdminField } from '@/lib/admin-edit';
 export { sendWANotif } from '@/lib/wa';
 
 import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
+import type { PenggunaDasar } from '@/lib/tipe-pengguna';
 const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
 export { JABATAN_TIER, JABATAN_CC_RULES };
 
@@ -91,18 +92,9 @@ export const SERVICES_STATUSES = [
 ] as const;
 export type ServicesStatus = (typeof SERVICES_STATUSES)[number];
 
-export interface User {
-  id: string;
-  username: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  sales_division?: string;
-  phone_number?: string;
-  allowed_menus?: string[];
+export interface User extends PenggunaDasar {
   jabatan?: string | null;
   is_internal_sales?: boolean;
-  access_level?: string;
 }
 
 export interface TeamMember {

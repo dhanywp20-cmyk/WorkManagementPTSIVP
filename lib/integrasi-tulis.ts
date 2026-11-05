@@ -7,7 +7,7 @@ import { adalahAdminMurni, bolehDitugaskanOleh, daftarTimDitugaskan, isAssignabl
 import { appLink } from '@/lib/app-url';
 import { bisaIsiKegiatan } from '@/lib/piket-akses';
 import { bacaDaftarPilihan, KUNCI_DAFTAR_PILIHAN, type KunciDaftar } from '@/lib/daftar-pilihan-bawaan';
-import { linkOneDriveSah } from '@/app/(portal)/tech-note/_components/aturan-tech-note';
+import { linkOneDriveSah } from '@/lib/aturan-tech-note';
 import type { NotifPayload } from '@/lib/notifications';
 import type { AuditAction } from '@/lib/audit';
 import {

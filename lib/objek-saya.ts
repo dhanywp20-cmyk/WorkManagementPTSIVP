@@ -1,4 +1,4 @@
-import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
+import { bersihkanIsiRak } from '@/lib/perangkat-rak';
 import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
 export const FORMAT_OBJEK_SAYA = 'pts-objek-saya';

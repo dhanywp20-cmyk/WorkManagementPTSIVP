@@ -1,21 +1,13 @@
 import type { ComponentType, SVGProps } from 'react';
+import type { PenggunaDasar } from '@/lib/tipe-pengguna';
 
-export interface User {
-  id: string;
-  username: string;
+export interface User extends PenggunaDasar {
   password?: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  phone_number?: string;
-  sales_division?: string;
   jabatan?: string;
   atasan_id?: string | null;
-  allowed_menus?: string[];
   kpi_enabled?: boolean;
   created_at?: string;
   is_internal_sales?: boolean;
-  access_level?: string;
   piket_akses?: string | null;
   piket_ubah?: boolean | null;
   pimpinan?: boolean | null;

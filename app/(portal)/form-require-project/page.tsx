@@ -1,42 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties } from 'react';
-import { Z } from '@/lib/z-index';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
-import { setSession, clearSession, getSession } from '@/lib/auth';
-import { notifyProjectStatusChange, createNotification } from '@/lib/notifications';
-import { logAudit } from '@/lib/audit';
-import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
-import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
-import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal, Paginasi, usePaginasi } from '@/components/shared';
+import { getSession } from '@/lib/auth';
+import { LoadingScreen, ViewIconBtn, DeleteIconBtn, ConfirmDialog, type ConfirmState, ModalPortal } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
-import { bolehDitugaskanOleh } from '@/lib/teams';
-import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField, type Perubahan } from '@/lib/admin-edit';
-import { penerimaAdminBernomor } from '@/lib/penerima-admin';
-import {
-  User, ProjectRequest, RoomDetail, BrandPicMapping,
-  ProjectMessage, ProjectAttachment,
-  statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
-  fetchWACCTargets, sendWANotif, emptyRoom,
-  SALES_DIVISIONS, PIE_COLORS, getRoomStatus, getRoomAssignName, getRoomAssignUserId, hasDivergentRoomStatus,
-} from './_components/shared';
-import {
-  AssignPTSModal, RoomSection, NewFormModal,
-  InitialFormType, NewFormModalProps,
-} from './_components/Modals';
-import { appLink } from '@/lib/app-url';
-import { cetakRequest } from './_components/cetak-request';
-import { unduhPaketRequest } from './_components/paket-unduhan';
-import { Desain3DTools } from './_components/Desain3DTools';
+import { User, ProjectRequest, RoomDetail, BrandPicMapping, ProjectMessage, ProjectAttachment, statusConfig, getRoomStatus, getRoomAssignName } from './_components/shared';
+import { InitialFormType } from './_components/Modals';
 import { muatTautanDesain3D, type TautanDesain3D, type IzinRuang } from './_components/desain-3d-request';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { FilterLipat } from '@/components/shared/FilterLipat';
+import { Ikon } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
-import { EDIT_ROOM_LABELS, ambilFieldRuangan, namaRuangan, daftarKebutuhan, type EditRoomFields } from './_components/ruangan';
-import { CheckGroup, RadioGroup } from './_components/InputPilihan';
 import { ModalEditForm } from './_components/ModalEditForm';
 import { ModalReroute } from './_components/ModalReroute';
 import { ModalDetailRequest } from './_components/ModalDetailRequest';
@@ -44,9 +19,7 @@ import { PopupTicketAktif } from './_components/PopupTicketAktif';
 import { ModalHapusRequest } from './_components/ModalHapusRequest';
 import { ModalUpdateStatus } from './_components/ModalUpdateStatus';
 import { ModalApproveInternal } from './_components/ModalApproveInternal';
-import { DaftarRequest } from './_components/DaftarRequest';
 import { HeaderFormRequire } from './_components/HeaderFormRequire';
-import { FilterRequest } from './_components/FilterRequest';
 import { useKirimRequest } from './_components/useKirimRequest';
 import { useAksiPersetujuan } from './_components/useAksiPersetujuan';
 import { useUbahStatusRequest } from './_components/useUbahStatusRequest';
@@ -61,6 +34,7 @@ import { BlokFormBaru } from './_components/halaman/BlokFormBaru';
 import { useStatistikRequest } from './_components/halaman/useStatistikRequest';
 import { useEfekHalamanRequest } from './_components/halaman/useEfekHalamanRequest';
 import { KonteksRequest, type NilaiKonteksRequest } from './_components/konteks-request';
+import { KonteksFormBaru } from './_components/halaman/konteks-form-baru';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -414,9 +388,15 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {NotifToast()}
 
-      <BlokFormBaru
-        boqFormFile={boqFormFile} boqRoomMap={boqRoomMap} brandPicMappings={brandPicMappings} currentUser={currentUser} dueDateForm={dueDateForm} form={form} handleSubmitForm={handleSubmitForm} initialForm={initialForm} myIsInternalSales={myIsInternalSales} role={role} roomPhotoMap={roomPhotoMap} rooms={rooms} salesGuestUsers={salesGuestUsers} setBoqFormFile={setBoqFormFile} setBoqRoomMap={setBoqRoomMap} setDueDateForm={setDueDateForm} setForm={setForm} setRoomPhotoMap={setRoomPhotoMap} setRooms={setRooms} setShowNewFormModal={setShowNewFormModal} setSurveyPhotos={setSurveyPhotos} setSurveyPhotosPreviews={setSurveyPhotosPreviews} showNewFormModal={showNewFormModal} submitting={submitting} surveyPhotos={surveyPhotos} surveyPhotosPreviews={surveyPhotosPreviews}
-      />
+      <KonteksFormBaru.Provider value={{
+        nilai: { boqFormFile, boqRoomMap, brandPicMappings, currentUser, dueDateForm, form, initialForm, myIsInternalSales, role, roomPhotoMap,
+          rooms, salesGuestUsers, showNewFormModal, submitting, surveyPhotos, surveyPhotosPreviews },
+        ubah: { setBoqFormFile, setBoqRoomMap, setDueDateForm, setForm, setRoomPhotoMap, setRooms, setShowNewFormModal, setSurveyPhotos,
+          setSurveyPhotosPreviews },
+        aksi: { handleSubmitForm },
+      }}>
+        <BlokFormBaru />
+      </KonteksFormBaru.Provider>
 
       <BlokAssignPTS
         assignModal={assignModal} currentUser={currentUser} fetchMessages={fetchMessages} fetchRequests={fetchRequests} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setSelectedRequest={setSelectedRequest}

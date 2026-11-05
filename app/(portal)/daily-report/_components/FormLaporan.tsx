@@ -3,42 +3,16 @@
 import { inp, inpCls, card, avc, ini, emptyManual, CatPicker, SalesDrop } from './bantu-halaman';
 import { FormField, SectionHeaderSmall } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
-import { type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry } from './shared';
+import { useKonteksFormLaporan } from './konteks-form-laporan';
 
-export interface FormLaporanProps {
-  autoCount: number;
-  currentUser: TeamUser | null;
-  editingId: string | null;
-  formDate: string;
-  formLoading: boolean;
-  formReminders: ReminderActivity[];
-  formTickets: TicketActivity[];
-  formUserId: string;
-  galatSusun: string;
-  guestUsers: GuestUser[];
-  handleSave: () => Promise<void>;
-  hapusDraf: () => void;
-  isAdmin: boolean;
-  manualActs: ManualActivity[];
-  menyusun: boolean;
-  reminderNotes: string;
-  saving: boolean;
-  setEditingId: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFormDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFormOpen: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setFormUserId: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setManualActs: import("react").Dispatch<import("react").SetStateAction<ManualActivity[]>>;
-  setReminderNotes: import("react").Dispatch<import("react").SetStateAction<string>>;
-  susunDenganAI: () => Promise<void>;
-  targetUser: TeamUser | null | undefined;
-  teamEntries: TeamEntry[];
-  teamUsers: TeamUser[];
-  updM: (key: string, p: Partial<ManualActivity>) => void;
-  updT: (key: string, p: Partial<TeamEntry>) => void;
-}
-
-export function FormLaporan({ autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, handleSave, hapusDraf, isAdmin, manualActs, menyusun, reminderNotes, saving, setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes, susunDenganAI, targetUser, teamEntries, teamUsers, updM, updT }: FormLaporanProps) {
+export function FormLaporan() {
+  const k = useKonteksFormLaporan();
+  const {
+    autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, isAdmin, manualActs, menyusun,
+    reminderNotes, saving, targetUser, teamEntries, teamUsers
+  } = k.nilai;
+  const { setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes } = k.ubah;
+  const { handleSave, hapusDraf, susunDenganAI, updM, updT } = k.aksi;
   return (
     <>
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>

@@ -1,38 +1,16 @@
 'use client';
 
-import { NewFormModal, InitialFormType } from '../Modals';
-import { User, RoomDetail, BrandPicMapping } from '../shared';
+import { NewFormModal } from '../Modals';
+import { useKonteksFormBaru } from './konteks-form-baru';
 
-export interface BlokFormBaruProps {
-  boqFormFile: File | null;
-  boqRoomMap: Record<string, File | null>;
-  brandPicMappings: BrandPicMapping[];
-  currentUser: User;
-  dueDateForm: string;
-  form: InitialFormType;
-  handleSubmitForm: () => Promise<void>;
-  initialForm: InitialFormType;
-  myIsInternalSales: boolean;
-  role: string;
-  roomPhotoMap: Record<string, File[]>;
-  rooms: RoomDetail[];
-  salesGuestUsers: { id: string; full_name: string; username: string; sales_division?: string; is_internal_sales?: boolean; }[];
-  setBoqFormFile: import("react").Dispatch<import("react").SetStateAction<File | null>>;
-  setBoqRoomMap: import("react").Dispatch<import("react").SetStateAction<Record<string, File | null>>>;
-  setDueDateForm: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setForm: import("react").Dispatch<import("react").SetStateAction<InitialFormType>>;
-  setRoomPhotoMap: import("react").Dispatch<import("react").SetStateAction<Record<string, File[]>>>;
-  setRooms: import("react").Dispatch<import("react").SetStateAction<RoomDetail[]>>;
-  setShowNewFormModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setSurveyPhotos: import("react").Dispatch<import("react").SetStateAction<File[]>>;
-  setSurveyPhotosPreviews: import("react").Dispatch<import("react").SetStateAction<string[]>>;
-  showNewFormModal: boolean;
-  submitting: boolean;
-  surveyPhotos: File[];
-  surveyPhotosPreviews: string[];
-}
-
-export function BlokFormBaru({ boqFormFile, boqRoomMap, brandPicMappings, currentUser, dueDateForm, form, handleSubmitForm, initialForm, myIsInternalSales, role, roomPhotoMap, rooms, salesGuestUsers, setBoqFormFile, setBoqRoomMap, setDueDateForm, setForm, setRoomPhotoMap, setRooms, setShowNewFormModal, setSurveyPhotos, setSurveyPhotosPreviews, showNewFormModal, submitting, surveyPhotos, surveyPhotosPreviews }: BlokFormBaruProps) {
+export function BlokFormBaru() {
+  const k = useKonteksFormBaru();
+  const {
+    boqFormFile, boqRoomMap, brandPicMappings, currentUser, dueDateForm, form, initialForm, myIsInternalSales, role, roomPhotoMap, rooms, salesGuestUsers,
+    showNewFormModal, submitting, surveyPhotos, surveyPhotosPreviews
+  } = k.nilai;
+  const { setBoqFormFile, setBoqRoomMap, setDueDateForm, setForm, setRoomPhotoMap, setRooms, setShowNewFormModal, setSurveyPhotos, setSurveyPhotosPreviews } = k.ubah;
+  const { handleSubmitForm } = k.aksi;
   return (
     <>
       {showNewFormModal && (

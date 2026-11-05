@@ -1,6 +1,6 @@
 import {
   ALUR_STATUS_PTS, alasanBelumBisa, bolehCatatanSaja, jejakProgres, statusBerikutnya, updateSah, wajibCatatan,
-} from '@/app/(portal)/ticketing/_components/alur-status';
+} from '@/lib/alur-status-ticket';
 
 let gagal = 0;
 const cek = (s: boolean, l: string) => { console.log(`${s ? 'OK  ' : 'GAGAL'}  ${l}`); if (!s) gagal++; };

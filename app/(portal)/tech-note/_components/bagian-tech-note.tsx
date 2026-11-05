@@ -20,8 +20,8 @@ import { ModalApprovalNote } from './ModalApprovalNote';
 import { ModalDetailNote } from './ModalDetailNote';
 import { ModalUnggahNote } from './ModalUnggahNote';
 import { ModalBuatFolder } from './ModalBuatFolder';
-import { IsiTechNote } from './IsiTechNote';import { linkOneDriveSah, KATEGORI_FOLDER } from './aturan-tech-note';
-export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from './aturan-tech-note';
+import { IsiTechNote } from './IsiTechNote';import { linkOneDriveSah, KATEGORI_FOLDER } from '@/lib/aturan-tech-note';
+export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from '@/lib/aturan-tech-note';
 
 
 export const hrefAman = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : undefined);

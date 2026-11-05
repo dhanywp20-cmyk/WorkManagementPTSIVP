@@ -8,7 +8,7 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
-import { jejakProgres, wajibCatatan } from './alur-status';
+import { jejakProgres, wajibCatatan } from '@/lib/alur-status-ticket';
 import { PilihStatusPTS } from './PilihStatusPTS';
 
 export type NewActivityForm = {
