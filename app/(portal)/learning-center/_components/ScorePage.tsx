@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { DonutChart } from '@/components/shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { isSalesGuest } from '@/lib/constants';
 import { Ikon } from '@/components/shared/Ikon';

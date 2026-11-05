@@ -4,7 +4,7 @@ import { Modal } from '@/components/shared';
 import type { User } from '../shared';
 
 const UserAnswerReview = dynamic(
-  () => import('@/app/(portal)/learning-center/_components/TeamPage').then(m => m.UserAnswerReview),
+  () => import('@/app/(portal)/learning-center/_components/UlasanJawaban').then(m => m.UserAnswerReview),
   {
     ssr: false,
     loading: () => (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {

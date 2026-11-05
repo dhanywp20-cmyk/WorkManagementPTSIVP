@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ListEmptyState } from '@/components/shared';
 import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { bolehSertifikat } from '@/lib/sertifikat';
 import { cetakSertifikat, unduhSertifikat } from './sertifikat';
