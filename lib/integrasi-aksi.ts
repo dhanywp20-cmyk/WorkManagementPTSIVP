@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { updateSah, wajibCatatan } from '@/app/(portal)/ticketing/_components/alur-status';
+import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
 import { hakAtas, muatChecklist, simpanPerubahan, type Akun } from '@/lib/checklist-server';
 import { KOLOM_KABAR_TIKET, kabarkanTicketSelesai, tutupJadwalTicket, type TiketUntukKabar } from '@/lib/tiket-selesai';
 import { INCENTIVE_TRIGGER_CATEGORIES, CATEGORIES, bolehUbahJadwal, galatIsianJadwal, proyekSerupa, type StatusJadwal } from '@/lib/jadwal-aturan';

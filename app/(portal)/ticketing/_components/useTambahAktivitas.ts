@@ -1,7 +1,7 @@
 'use client';
 
 import { SERVICES_STATUSES, User, TeamMember, Ticket, OverdueSetting } from './shared';
-import { updateSah, wajibCatatan } from './alur-status';
+import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 

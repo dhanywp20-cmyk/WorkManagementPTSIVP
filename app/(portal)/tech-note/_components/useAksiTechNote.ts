@@ -1,7 +1,7 @@
 'use client';
 
 import { TechNote, TechNoteHistory } from './shared';
-import { KATEGORI_FOLDER, linkOneDriveSah } from './aturan-tech-note';
+import { KATEGORI_FOLDER, linkOneDriveSah } from '@/lib/aturan-tech-note';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';

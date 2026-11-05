@@ -1,15 +1,9 @@
+import type { PenggunaDasar } from '@/lib/tipe-pengguna';
+
 import { supabase } from '@/lib/supabase';
 
-export interface User {
-  id: string;
-  username: string;
+export interface User extends PenggunaDasar {
   password: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  sales_division?: string;
-  phone_number?: string;
-  allowed_menus?: string[];
   jabatan?: string | null;
   bisa_ditugaskan?: boolean | null;
 }

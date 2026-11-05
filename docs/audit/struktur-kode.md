@@ -213,3 +213,12 @@ hapus massal lewat modal kini ikut tercatat di audit trail.
 
 Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access) untuk Daily Report (termasuk form
 Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Project (form Buat Request), 0 galat.
+
+## 6. Fase 3 — batas `lib` / `app`
+
+- `lib/` dan `components/` tidak lagi mengimpor dari `app/` (sebelumnya 4 impor). Modul aturan murni dipindah:
+  `ticketing/_components/alur-status.ts` → `lib/alur-status-ticket.ts`, `tech-note/_components/aturan-tech-note.ts` →
+  `lib/aturan-tech-note.ts`, katalog perangkat rak → `lib/perangkat-rak.ts` (`inti/rak.ts` mengekspor ulang).
+- `lib/tipe-pengguna.ts` (`PenggunaDasar`): kolom bersama tipe `User` di Dashboard, Ticketing, Request Design Project dan
+  Analytics; tiap modul hanya menambah kolom khususnya.
+- Dijaga `uji/batas-lib-app.mjs`: gagal bila ada berkas `lib/` atau `components/` yang mengimpor dari `app/`.

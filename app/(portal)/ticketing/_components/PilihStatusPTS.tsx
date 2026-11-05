@@ -1,7 +1,7 @@
 'use client';
 
 import { Ikon } from '@/components/shared/Ikon';
-import { ARTI_STATUS, alasanBelumBisa, bolehCatatanSaja, statusBerikutnya, type StatusAlurPTS } from './alur-status';
+import { ARTI_STATUS, alasanBelumBisa, bolehCatatanSaja, statusBerikutnya, type StatusAlurPTS } from '@/lib/alur-status-ticket';
 
 const GAYA: Record<StatusAlurPTS, { ikon: string; pilih: string; biasa: string; chip: string }> = {
   Pending:          { ikon: '🟡', pilih: 'bg-amber-500 text-white border-amber-500',     biasa: 'bg-white text-amber-700 border-amber-200 hover:bg-amber-50',     chip: 'bg-amber-100 text-amber-800' },
