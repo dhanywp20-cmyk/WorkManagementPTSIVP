@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ComponentProps } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
-import type { OpsiBeranda } from '@/app/(portal)/dashboard/_components/beranda/IsiBeranda';
 import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
 import { FooterPlatform, StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
@@ -143,8 +142,7 @@ export function AnalyticsPlatform({
 }: {
   embedded?: boolean; injectedUser?: User;
   controlledTab?: Tab; onTabChange?: (tab: Tab) => void;
-  onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void;
-  opsiBeranda?: OpsiBeranda;
+  onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void; opsiBeranda?: ComponentProps<typeof DashboardKPI>['opsiBeranda'];
 } = {}) {
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>(injectedUser ? 'ok' : 'checking');

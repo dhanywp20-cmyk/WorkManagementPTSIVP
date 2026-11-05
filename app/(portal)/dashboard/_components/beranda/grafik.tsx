@@ -18,7 +18,6 @@ export function IkonPanah() {
   );
 }
 
-/** Bilah rasio. `tik`: sisa yang belum terisi tampil sebagai deretan tik. */
 export function Bilah({ persen, warna, tik, label }: { persen: number; warna: string; tik?: boolean; label: string }) {
   const lebar = Math.max(0, Math.min(100, persen));
   return (
@@ -28,7 +27,6 @@ export function Bilah({ persen, warna, tik, label }: { persen: number; warna: st
   );
 }
 
-/** Satu ruas per anggota tim: yang sudah mengisi terisi warna. Nama muncul saat diarahkan. */
 export function RuasTim({ anggota, warna }: { anggota: { id: string; name: string; reported: boolean }[]; warna: string }) {
   const urut = [...anggota].sort((a, b) => Number(b.reported) - Number(a.reported));
   return (
@@ -48,7 +46,6 @@ function skalaBulat(puncak: number) {
   return Math.max(4, Math.ceil(langkah) * 4);
 }
 
-/** Kolom per periode, ditumpuk jadi selesai + belum. Satu warna data; rincian muncul saat diarahkan. */
 export function GrafikKolom({ titik, warna, kataTotal, ringkasan }: {
   titik: TitikGrafik[]; warna: string; kataTotal: string; ringkasan: string;
 }) {

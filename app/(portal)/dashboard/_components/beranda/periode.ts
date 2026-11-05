@@ -52,7 +52,6 @@ export function rentangPeriode(kunci: KunciPeriode, deret: DeretKPI | undefined,
   return { mulai: tanggalLokal(m), akhir };
 }
 
-/** Sampai 45 hari per hari, lebih panjang per minggu, lebih panjang lagi per bulan - supaya batangnya tetap terbaca. */
 function bingkaiTitik(mulai: string, akhir: string) {
   const dMulai = keTanggal(mulai), dAkhir = keTanggal(akhir);
   const hari = Math.round((dAkhir.getTime() - dMulai.getTime()) / MS_HARI) + 1;

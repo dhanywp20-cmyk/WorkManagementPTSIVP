@@ -38,7 +38,6 @@ function KepalaKartu({ judul, sisi, onBuka }: { judul: string; sisi?: React.Reac
   );
 }
 
-/** Kartu angka: satu nilai utama, keterangan di sampingnya, bentuk kecil di bawahnya. */
 function KartuAngka({ d, judul, nilai, satuan, kanan, warnaNilai, onBuka, children }: {
   d: number; judul: string; nilai: number; satuan?: string; kanan?: React.ReactNode; warnaNilai?: string; onBuka: () => void; children: React.ReactNode;
 }) {
@@ -57,7 +56,6 @@ function KartuAngka({ d, judul, nilai, satuan, kanan, warnaNilai, onBuka, childr
 
 interface BarisProyek { id: string; nama: string; target: string; kendala: number; persen: number }
 
-/** Proyek berjalan dengan target terdekat. Kosong bila akun tidak punya akses / belum ada proyek. */
 function useProyekTerdekat(): { loading: boolean; daftar: BarisProyek[] } {
   const [hasil, setHasil] = useState<{ loading: boolean; daftar: BarisProyek[] }>({ loading: true, daftar: [] });
   useEffect(() => {
@@ -84,7 +82,7 @@ function useProyekTerdekat(): { loading: boolean; daftar: BarisProyek[] } {
             };
           });
         }
-      } catch { /* kartu proyek opsional */ }
+      } catch {  }
       if (alive) setHasil({ loading: false, daftar });
     })();
     return () => { alive = false; };

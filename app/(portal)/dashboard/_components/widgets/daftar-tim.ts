@@ -18,7 +18,6 @@ export interface DaftarTim {
 
 const UMUR_HARIAN = 60_000;
 
-/** Daily Report tim hari ini. Beranda memanggilnya dari dua kartu; `ingat` membuatnya satu kali permintaan. */
 export function useDaftarTim(): DaftarTim {
   const [hasil, setHasil] = useState<DaftarTim>({ loading: true, rows: [], atasan: {} });
 

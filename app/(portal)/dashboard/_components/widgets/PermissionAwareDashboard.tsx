@@ -17,7 +17,6 @@ const SIZE_SPAN: Record<string, string> = {
   sm: '',
 };
 
-/** Tab halaman dengan pil biru yang meluncur ke tab aktif. */
 function TabHalaman({ tab, aktif, onPilih }: {
   tab: { kunci: AnalyticsTab; label: string; ikon: string; badge?: number }[];
   aktif: AnalyticsTab;

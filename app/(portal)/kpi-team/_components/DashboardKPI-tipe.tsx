@@ -1,6 +1,5 @@
 'use client';
 
-/** Baris ringkas (tanggal lokal + status) supaya beranda bisa menghitung ulang per periode tanpa kueri baru. */
 export interface DeretKPI {
   tiket: { t: string; s: string }[];
   jadwal: { t: string; s: string }[];
