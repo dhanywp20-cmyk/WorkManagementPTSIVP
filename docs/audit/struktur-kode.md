@@ -248,3 +248,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `ReminderDetailPopup.tsx` (641 → 490 baris): seksi Timeline Project Progress, Status Garansi dan Detail Pelaksanaan
   jadi `SeksiPelaksanaan.tsx`; komponen itu membaca `useKonteksJadwal()` sendiri, jadi popup hanya mengoper
   `detailReminder`.
+- `reminder-schedule/page.tsx` (641 → 591 baris): daftar "Perlu Tindakan Kamu" jadi fungsi murni `hitungPerluAksi`
+  (`_components/perlu-aksi.ts`), objek form kosong jadi `buatFormKosong()` (`_components/form-kosong.ts`, tetap dibuat
+  ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.
