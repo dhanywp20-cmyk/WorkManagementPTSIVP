@@ -222,3 +222,9 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `lib/tipe-pengguna.ts` (`PenggunaDasar`): kolom bersama tipe `User` di Dashboard, Ticketing, Request Design Project dan
   Analytics; tiap modul hanya menambah kolom khususnya.
 - Dijaga `uji/batas-lib-app.mjs`: gagal bila ada berkas `lib/` atau `components/` yang mengimpor dari `app/`.
+
+## 7. Fase 5 — berkas 600+ baris
+
+- `lib/integrasi-tulis.ts` (738 baris) dipecah per domain: `integrasi-tulis-bersama.ts` (pembantu: orang, WA, audit,
+  CC), `-tiket.ts`, `-desain.ts`, `-catatan.ts`, `-unit.ts` (unit & piket). `integrasi-tulis.ts` kini hanya peta
+  `AKSI_MENU_TULIS` (21 baris). Tiap modul hanya mengekspor aksinya; pembantu internal tetap privat.
