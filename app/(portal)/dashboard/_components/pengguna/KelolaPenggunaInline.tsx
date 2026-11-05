@@ -82,7 +82,9 @@ export function UserManagementInline() {
   const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
   const INTERNAL_GROUPS = ['PTS', 'IVP'];
-  const ccEligibleUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI').sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
+  const ccEligibleUsers = allUsers
+    .filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI')
+    .sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
 
   useEffect(() => {
     if (!selectedCCUserId) { setCcChecked(new Set()); return; }
@@ -290,7 +292,10 @@ export function UserManagementInline() {
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${
+          notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200'
+            : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
           {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'} {notification.msg}
         </div>
       )}
@@ -327,7 +332,9 @@ export function UserManagementInline() {
         ) : (
           <>
             <TabStrukturOrganisasi
-              ORG_GROUP_STYLE={ORG_GROUP_STYLE} activeTab={activeTab} allUsers={allUsers} handleSetAtasan={handleSetAtasan} jabatanBadge={jabatanBadge} orgChildren={orgChildren} orgFilter={orgFilter} orgGroupOf={orgGroupOf} orgSearch={orgSearch} orgSelectedId={orgSelectedId} orgTierOf={orgTierOf} orgVisible={orgVisible} saving={saving} setOrgFilter={setOrgFilter} setOrgSearch={setOrgSearch} setOrgSelectedId={setOrgSelectedId}
+              ORG_GROUP_STYLE={ORG_GROUP_STYLE} activeTab={activeTab} allUsers={allUsers} handleSetAtasan={handleSetAtasan} jabatanBadge={jabatanBadge}
+              orgChildren={orgChildren} orgFilter={orgFilter} orgGroupOf={orgGroupOf} orgSearch={orgSearch} orgSelectedId={orgSelectedId} orgTierOf={orgTierOf}
+              orgVisible={orgVisible} saving={saving} setOrgFilter={setOrgFilter} setOrgSearch={setOrgSearch} setOrgSelectedId={setOrgSelectedId}
             />
 
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
@@ -342,19 +349,30 @@ export function UserManagementInline() {
             )}
 
             <TabAtasanInline
-              INTERNAL_GROUPS={INTERNAL_GROUPS} activeTab={activeTab} atasanDiv={atasanDiv} atasanSupId={atasanSupId} filteredAtasanByDiv={filteredAtasanByDiv} getUserById={getUserById} handleAddAtasan={handleAddAtasan} handleDeleteAtasan={handleDeleteAtasan} jabatanBadge={jabatanBadge} nonIvpDivisions={nonIvpDivisions} saving={saving} setAtasanDiv={setAtasanDiv} setAtasanSupId={setAtasanSupId} supervisorCandidates={supervisorCandidates}
+              INTERNAL_GROUPS={INTERNAL_GROUPS} activeTab={activeTab} atasanDiv={atasanDiv} atasanSupId={atasanSupId} filteredAtasanByDiv={filteredAtasanByDiv}
+              getUserById={getUserById} handleAddAtasan={handleAddAtasan} handleDeleteAtasan={handleDeleteAtasan} jabatanBadge={jabatanBadge}
+              nonIvpDivisions={nonIvpDivisions} saving={saving} setAtasanDiv={setAtasanDiv} setAtasanSupId={setAtasanSupId}
+              supervisorCandidates={supervisorCandidates}
             />
 
             <TabIVPInline
-              activeTab={activeTab} filteredIvpByUser={filteredIvpByUser} handleAddIvp={handleAddIvp} handleDeleteIvp={handleDeleteIvp} ivpBrand={ivpBrand} ivpDiv={ivpDiv} ivpUserId={ivpUserId} ivpUsers={ivpUsers} mviUsers={mviUsers} nonIvpDivisions={nonIvpDivisions} saving={saving} setIvpBrand={setIvpBrand} setIvpDiv={setIvpDiv} setIvpUserId={setIvpUserId}
+              activeTab={activeTab} filteredIvpByUser={filteredIvpByUser} handleAddIvp={handleAddIvp} handleDeleteIvp={handleDeleteIvp} ivpBrand={ivpBrand}
+              ivpDiv={ivpDiv} ivpUserId={ivpUserId} ivpUsers={ivpUsers} mviUsers={mviUsers} nonIvpDivisions={nonIvpDivisions} saving={saving}
+              setIvpBrand={setIvpBrand} setIvpDiv={setIvpDiv} setIvpUserId={setIvpUserId}
             />
 
             <TabProdukInline
-              activeTab={activeTab} allUsers={allUsers} getSupervisorsForTeam={getSupervisorsForTeam} handleAddProdSup={handleAddProdSup} handleDeleteProdSup={handleDeleteProdSup} handleSaveManager={handleSaveManager} handleToggleInternalSales={handleToggleInternalSales} internalSearch={internalSearch} managerUserId={managerUserId} prodTeamMaps={prodTeamMaps} prodTeamTypes={prodTeamTypes} prodType={prodType} saving={saving} savingInternal={savingInternal} savingMgr={savingMgr} setInternalSearch={setInternalSearch} setManagerUserId={setManagerUserId} setProdType={setProdType} toggleProdTeamType={toggleProdTeamType}
+              activeTab={activeTab} allUsers={allUsers} getSupervisorsForTeam={getSupervisorsForTeam} handleAddProdSup={handleAddProdSup}
+              handleDeleteProdSup={handleDeleteProdSup} handleSaveManager={handleSaveManager} handleToggleInternalSales={handleToggleInternalSales}
+              internalSearch={internalSearch} managerUserId={managerUserId} prodTeamMaps={prodTeamMaps} prodTeamTypes={prodTeamTypes} prodType={prodType}
+              saving={saving} savingInternal={savingInternal} savingMgr={savingMgr} setInternalSearch={setInternalSearch} setManagerUserId={setManagerUserId}
+              setProdType={setProdType} toggleProdTeamType={toggleProdTeamType}
             />
 
             <TabUserCC
-              activeTab={activeTab} autoSuggested={autoSuggested} ccChecked={ccChecked} ccEligibleUsers={ccEligibleUsers} ccSaving={ccSaving} handleSaveUserCC={handleSaveUserCC} potentialCCTargets={potentialCCTargets} searchQuery={searchQuery} selectedCCUserId={selectedCCUserId} selectedUserObj={selectedUserObj} setCcChecked={setCcChecked} setSearchQuery={setSearchQuery} setSelectedCCUserId={setSelectedCCUserId}
+              activeTab={activeTab} autoSuggested={autoSuggested} ccChecked={ccChecked} ccEligibleUsers={ccEligibleUsers} ccSaving={ccSaving}
+              handleSaveUserCC={handleSaveUserCC} potentialCCTargets={potentialCCTargets} searchQuery={searchQuery} selectedCCUserId={selectedCCUserId}
+              selectedUserObj={selectedUserObj} setCcChecked={setCcChecked} setSearchQuery={setSearchQuery} setSelectedCCUserId={setSelectedCCUserId}
             />
 
             {activeTab === 'divisi' && (

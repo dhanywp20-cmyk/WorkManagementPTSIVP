@@ -296,9 +296,20 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
         <div className="p-4 sm:p-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
             {[
-              { label: 'Skor', value: selectedAttempt.grading_status === 'pending_review' ? '⏳' : (selectedAttempt.score?.toFixed(0) ?? '—'), color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600' : (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              {
+                label: 'Skor',
+                value: selectedAttempt.grading_status === 'pending_review' ? '⏳' : (selectedAttempt.score?.toFixed(0) ?? '—'),
+                color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600'
+                  : (selectedAttempt.score ?? 0) >= (selectedAttempt.lc_quiz_sessions?.passing_grade ?? 70) ? 'from-emerald-500 to-emerald-600'
+                  : 'from-rose-500 to-rose-600',
+              },
               { label: 'Benar', value: `${selectedAttempt.total_correct}/${selectedAttempt.total_questions}`, color: 'from-blue-500 to-blue-600' },
-              { label: 'Status', value: selectedAttempt.grading_status === 'pending_review' ? 'MENUNGGU' : (selectedAttempt.passed ? 'LULUS' : 'TIDAK LULUS'), color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600' : selectedAttempt.passed ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600' },
+              {
+                label: 'Status',
+                value: selectedAttempt.grading_status === 'pending_review' ? 'MENUNGGU' : (selectedAttempt.passed ? 'LULUS' : 'TIDAK LULUS'),
+                color: selectedAttempt.grading_status === 'pending_review' ? 'from-amber-500 to-amber-600'
+                  : selectedAttempt.passed ? 'from-emerald-500 to-emerald-600' : 'from-rose-500 to-rose-600',
+              },
               { label: 'Waktu', value: selectedAttempt.time_taken_sec ? `${Math.floor(selectedAttempt.time_taken_sec/60)}m ${selectedAttempt.time_taken_sec%60}s` : '—', color: 'from-indigo-500 to-indigo-600' },
             ].map(c => (
               <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
@@ -501,14 +512,18 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
         {attempts.map(a => (
           <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
             style={{ background: '#ffffff' }}>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600' : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${
+              a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600'
+                : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
               {a.grading_status === 'pending_review' ? '⏳' : (a.score?.toFixed(0) ?? '—')}
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
               <div className="flex gap-3 mt-1 text-xs text-slate-500">
-                {a.grading_status === 'pending_review' ? <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span> : <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>}
+                {a.grading_status === 'pending_review'
+                  ? <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span>
+                  : <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>}
                 <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                 {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>

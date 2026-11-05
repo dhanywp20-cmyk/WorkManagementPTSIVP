@@ -105,11 +105,6 @@
       "barisPanjang": 1,
       "propsMaks": 3
     },
-    "app/(portal)/dashboard/_components/pengguna/KelolaPenggunaInline.tsx": {
-      "baris": 379,
-      "barisPanjang": 7,
-      "propsMaks": 19
-    },
     "app/(portal)/dashboard/_components/pengguna/TabAtasanInline.tsx": {
       "baris": 83,
       "barisPanjang": 1,
@@ -343,11 +338,6 @@
     "app/(portal)/learning-center/_components/soal/DialogFormSoal.tsx": {
       "baris": 159,
       "barisPanjang": 2,
-      "propsMaks": 2
-    },
-    "app/(portal)/learning-center/_components/UlasanJawaban.tsx": {
-      "baris": 526,
-      "barisPanjang": 4,
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/useBuatSoal.ts": {
