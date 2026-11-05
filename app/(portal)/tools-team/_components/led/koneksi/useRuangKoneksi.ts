@@ -1,5 +1,4 @@
 'use client';
-/** Keadaan Screen Connection: susunan kabel, alat manual (klik / seret), ukuran custom, ekspor PNG / SVG. */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { namaBerkas, unduhSvgPNG, unduhUrl } from '../../bersama/cetak';
 import { type DataKoneksi, type PengaturanKoneksi, rantaiDari, susunKoneksi } from './data';
@@ -23,7 +22,6 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
   const nPortManual = (s.manual ?? []).length;
   useEffect(() => { if (s.mode === 'manual' && portAktif > Math.max(1, nPortManual)) setPortAktif(Math.max(1, nPortManual)); }, [s.mode, nPortManual, portAktif]);
 
-  //  Pengaturan terbaru untuk klik/seret beruntun (sebelum React sempat render ulang).
   const sRef = useRef(s); sRef.current = s;
   const seret = useRef(false);
   const terapkan = (baru: PengaturanKoneksi) => { sRef.current = baru; onUbah(baru); };
@@ -42,7 +40,7 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
     const m = rantaiSalin(), ai = portAktif - 1;
     while (m.length <= ai) m.push([]);
     const pos = m[ai].findIndex(x => sama(x, c, r));
-    if (pos >= 0) { m[ai] = m[ai].slice(0, pos); seret.current = false; }   // putus dari kartu ini ke belakang
+    if (pos >= 0) { m[ai] = m[ai].slice(0, pos); seret.current = false; }
     else {
       for (let i = 0; i < m.length; i++) if (i !== ai) m[i] = m[i].filter(x => !sama(x, c, r));
       m[ai].push([c, r]); seret.current = true;
@@ -72,7 +70,6 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
   };
   const gantiManual = (fn: (m: SelRC[][]) => SelRC[][]) => onUbah({ ...s, manual: fn((s.manual ?? []).map(r => [...r])) });
 
-  //  Ukuran receiving card bebas: mulai dari grid yang sedang tampil.
   const keCustom = () => onUbah({ ...s, lebarKol: [...t.lebar], tinggiBaris: [...t.tinggi] });
   const ubahJumlah = (sumbu: 'lebarKol' | 'tinggiBaris', jumlah: number) => {
     const lama = (s[sumbu] ?? (sumbu === 'lebarKol' ? t.lebar : t.tinggi));

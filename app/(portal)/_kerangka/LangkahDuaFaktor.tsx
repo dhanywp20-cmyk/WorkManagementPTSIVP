@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Langkah kedua login (2FA). Muncul di kartu login sesudah password benar bila server menjawab
- * `tahap`: 'kode_2fa' (akun ber-2FA) atau 'daftar_2fa' (admin wajib 2FA tapi belum mendaftar).
- * Tiket `tantangan` berlaku 5 menit; sesudah itu kembali ke password.
- */
 import React, { useState } from 'react';
 import { DaftarKodeCadangan, InputKode2FA, PanelDaftar2FA } from '@/components/shared/DuaFaktor';
 

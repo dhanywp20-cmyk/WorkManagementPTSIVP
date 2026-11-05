@@ -1,8 +1,4 @@
 'use client';
-/**
- * Buat PDF Product Comparison di peramban (pdfkit, dimuat saat dibutuhkan) lalu unduh langsung - tidak ada
- * yang diunggah / disimpan di server. Huruf template dari /fonts/perbandingan (Arimo ≈ Liberation Sans, ✓ DejaVu).
- */
 import { type KartuBanding, namaBerkasPdf } from '@/lib/perbandingan';
 import { type DokPenuh, gambarPerbandingan } from '@/lib/perbandingan-pdf';
 import { unduhUrl } from '@/lib/lembar-cetak';
@@ -28,7 +24,6 @@ export function siapkan() {
   return muat;
 }
 
-/** PDF sebagai Blob (dipakai juga untuk pratinjau / uji). */
 export async function buatPdf(k: KartuBanding): Promise<Blob> {
   const { Pdf, huruf } = await siapkan();
   const doc = new Pdf({ size: 'A4', margin: 0, info: { Title: `Product Comparison - ${k.judul}` } });

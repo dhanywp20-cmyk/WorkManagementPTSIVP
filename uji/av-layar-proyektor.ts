@@ -1,9 +1,3 @@
-/**
- * uji/av-layar-proyektor.ts - rumus lanjutan Kalkulator AV: ketajaman resolusi, geometri pandang,
- * videowall, proyektor. Angka pembanding dihitung manual.
- *
- * Jalankan: npx tsx uji/av-layar-proyektor.ts
- */
 import { readFileSync } from 'fs';
 import { ukuranDariDiagonal } from '../lib/av-hitung';
 import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, tinggiLensaTetap, PANEL_VIDEOWALL, rencanaBlending, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, saranSusunanBlending, sudutKeAtasDerajat, teksRasio, videowallUntuk } from '../lib/av-layar-proyektor';
@@ -29,22 +23,18 @@ cek('ukuran nyata 2×2 55" ±2,44 m lebar, resolusi 3840×2160', dekat(vw.lebarM
 
 console.log('\nProyektor');
 cek('kontras 15:1, 300 lux, 4 m² -> 16.800 lumen', dekat(lumenUntukKontras(4, 300, 15), 16800));
-//  Panasonic & Desain 3D: gain tidak mengubah kontras (dulu kalkulator membagi lumen dengan gain - beda 23% di gain 1,3).
 cek('16.800 lm di 4 m² & 300 lux -> kontras tepat 15 : 1 (balikan rumus yang sama)', dekat(kontrasDiLayar(16800, 4, 300), 15));
 cek('luminance = lux × gain / π: 4.200 lux gain 1,3 -> 1.738 cd/m²', dekat(luminanceLayar(4200, 1.3), 1738.0, 0.5));
 cek('susut 20% -> spesifikasi 21.000 lumen', dekat(lumenSpesifikasi(16800, 20), 21000));
 const lj = rentangJarakLempar(3, 1.9, 1.2);
-//  Rumus lensa dengan koreksi b (Panasonic ET-D3QW200, 100" 17:9 lebar 2,245 m): 1,189 - 1,418 m.
 const ljB = rentangJarakLempar(2.245, 0.566, 0.669, 0.082);
 if (Math.abs(ljB.dekatM - 1.189) > 0.005 || Math.abs(ljB.jauhM - 1.418) > 0.006) { console.log(`  GAGAL koreksi jarak b Panasonic: ${ljB.dekatM} - ${ljB.jauhM}`); process.exitCode = 1; }
 else console.log('  ok   koreksi jarak b: L = TR x lebar - b sama dengan kalkulator Panasonic (1,189 - 1,418 m)');
 cek('gambar 3 m, throw 1,2-1,9 -> 3,6-5,7 m (urutan masukan bebas)', dekat(lj.dekatM, 3.6) && dekat(lj.jauhM, 5.7));
-//  Shift relatif proyektor: plafon terbalik -> shift atas menaikkan LENSA relatif gambar; di meja kebalikannya.
 const lens = rentangTinggiLensa(1, 1.5, 50, 10);
 cek('plafon: pusat gambar 1,75 m, shift +50%/-10% -> lensa 1,60-2,50 m', dekat(lens.terendahM, 1.6) && dekat(lens.tertinggiM, 2.5));
 const lensMeja = rentangTinggiLensa(1, 1.5, 50, 10, 'meja');
 cek('meja: shift atas 50% = gambar bisa naik -> lensa serendah 1,00 m, setinggi 1,90 m', dekat(lensMeja.terendahM, 1.0) && dekat(lensMeja.tertinggiM, 1.9));
-//  PT-LMX460 (offset tetap 34,62%), 120" 4:3 = 2,438 × 1,829 m, tepi bawah 0,9 m: pusat 1,814 m.
 cek('offset tetap di meja: lensa 0,633 m di bawah pusat gambar (1,18 m)', dekat(tinggiLensaTetap(0.9, 1.8288, 34.62, 'meja'), 1.1813, 0.001));
 cek('offset tetap gantung plafon: lensa 0,633 m di atas pusat gambar (2,45 m)', dekat(tinggiLensaTetap(0.9, 1.8288, 34.62, 'plafon'), 2.4475, 0.001));
 const bl = hitungBlending(3, 1, 4, 15, 1920, 1200);
@@ -62,14 +52,11 @@ const rg = rencanaBlending({ ...WUXGA, kolom: 4, baris: 2, overlapH: 20, overlap
 cek('4 × 2: kanvas 4·1920 − 3·384 = 6528, 2·1200 − 180 = 2220', rg.kanvasX === 6528 && rg.kanvasY === 2220);
 cek('4 × 2: zona 6 kiri-kanan, 4 atas-bawah, 3 sudut', rg.zonaKiriKanan === 6 && rg.zonaAtasBawah === 4 && rg.zonaSudut === 3);
 cek('4 × 2: P6 = kolom 2 baris 2 di (1536, 1020)', rg.peta[5].kolom === 2 && rg.peta[5].baris === 2 && rg.peta[5].x === 1536 && rg.peta[5].y === 1020);
-//  Target lebar 12 × tinggi 3 m dengan 3 × 1: tinggi yang membatasi (5184 px menutup lebar dengan 12/5184 m/px,
-//  tetapi 1200 px tinggi butuh 3/1200 = 2,5 mm/px) -> gambar per proyektor 4,8 m, lebar konten 4800 px, mask 384 px.
 const rt = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 15, overlapV: 15, mode: 'target', targetLebarM: 12, targetTinggiM: 3 });
 cek('target 12 × 3 m, 3 × 1: menutup kedua arah', rt.lebarM >= 12 - 1e-9 && rt.tinggiM >= 3 - 1e-9);
 cek('target 12 × 3 m, 3 × 1: per proyektor 4,8 × 3 m', dekat(rt.lebarSatuM, 4.8) && dekat(rt.tinggiSatuM, 3));
 cek('target 12 × 3 m, 3 × 1: konten 4800 × 1200, mask 384 × 0', rt.kontenX === 4800 && rt.kontenY === 1200 && rt.maskX === 384 && rt.maskY === 0);
 cek('efisiensi = konten / semua piksel native (4800·1200 / 3·1920·1200 = 83,3%)', dekat(rt.efisiensiPersen, 83.33));
-//  Lensa PT-MZ882 + ET-ELS20 (rumus kalkulator Panasonic): TR 1,63911-2,78771, b 0,054882 / 0,048228.
 const ELS20 = { trMin: 1.63911, trMaks: 2.78771, bWide: 0.054882, bTele: 0.048228 };
 const rLensa = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 15, overlapV: 0, mode: 'proyektor', lebarSatuM: ukuranDariDiagonal(127.71, 16, 10).lebarM, lensa: ELS20 });
 cek('jarak lempar per proyektor = rumus Panasonic (127,71" -> 4,454 - 7,620 m)', dekat(rLensa.jarakDekatM, 4.454, 0.002) && dekat(rLensa.jarakJauhM, 7.62, 0.002));
@@ -80,10 +67,8 @@ cek('saran: jumlah proyektor naik & resolusi konten selalu naik', sr.length >= 2
 cek('saran: 4 × 1 dilewati (tertahan tinggi target, tidak lebih baik dari 3 × 1)', !sr.some(s => s.kolom === 4 && s.baris === 1));
 cek('saran: semua menutup target', sr.every(s => s.lebarM >= 12 - 1e-9 && s.tinggiM >= 3 - 1e-9));
 cek('rasio 3552 : 1200 = 2,96 : 1', teksRasio(3552, 1200) === '2,96 : 1');
-//  Overlap dalam meter: 3 × 1, 4 m per proyektor, overlap 60 cm = 15% -> sama dengan isian 15%.
 const om = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 0.6, overlapV: 0.6, overlapSatuan: 'meter', mode: 'proyektor', lebarSatuM: 4 });
 cek('overlap 60 cm pada gambar 4 m = 15% = 288 px', om.overlapHpx === 288 && dekat(om.overlapHPersen, 15) && dekat(om.overlapHM, 0.6) && om.kanvasX === 5184);
-//  Target 12 × 3 m, 3 × 1, overlap 50 cm tetap: lebar perlu (12 + 2·0,5)/3 = 4,33 m, tinggi perlu 3 m -> 4,8 m (tinggi menentukan).
 const ot = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 0.5, overlapV: 0, overlapSatuan: 'meter', mode: 'target', targetLebarM: 12, targetTinggiM: 3 });
 cek('target + overlap 50 cm: area blending tetap ±50 cm (±1 px)', dekat(ot.overlapHM, 0.5, ot.pitchMm / 1000) && ot.lebarM >= 12 - 1e-9 && ot.tinggiM >= 3 - 1e-9);
 const ol = rencanaBlending({ ...WUXGA, kolom: 4, baris: 1, overlapH: 0.5, overlapV: 0, overlapSatuan: 'meter', mode: 'target', targetLebarM: 20, targetTinggiM: 3 });

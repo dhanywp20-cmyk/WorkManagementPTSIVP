@@ -1,12 +1,3 @@
-/**
- * /api/push/subscribe - daftarkan perangkat (browser/HP) ini untuk menerima
- * push notification asli. Dipanggil PushProvider (client) sesudah pengguna
- * mengizinkan notifikasi dan berhasil pushManager.subscribe().
- *
- * Dijaga pastikanMasuk() (bukan pastikanAdmin) - siapa pun yang sudah login
- * boleh mendaftarkan perangkatnya sendiri, sama seperti pola "hubungkan"
- * Telegram di /api/notifikasi/telegram.
- */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -31,10 +22,6 @@ export async function POST(req: NextRequest) {
   }
 
   const db = getAdminClient();
-  //  onConflict endpoint: satu endpoint (satu instalasi service worker di satu
-  //  browser) cuma boleh terikat ke satu baris. Kalau orang logout lalu login
-  //  sebagai akun lain di browser yang sama, upsert ini memindahkan endpoint
-  //  itu ke akun yang baru - bukan menumpuk baris lama yang salah alamat.
   const { error } = await db.from('push_subscriptions').upsert({
     user_id: jaga.user.id,
     endpoint,

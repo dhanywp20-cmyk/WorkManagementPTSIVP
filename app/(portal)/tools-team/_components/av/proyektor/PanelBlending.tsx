@@ -1,11 +1,4 @@
 'use client';
-/**
- * Edge blending untuk proyeksi immersive: kolom × baris proyektor identik dengan overlap kiri-kanan &
- * atas-bawah sendiri. Ukuran dari lebar gambar satu proyektor ATAU dari ukuran layar target (lebar ×
- * tinggi) -> resolusi kanvas & konten, piksel ter-mask, kepadatan piksel, zona blending, peta piksel
- * per proyektor (setting media server) dan saran susunan. Jarak lempar memakai lensa Kalkulator Proyektor di atas
- * (TR terlebar-terpanjang + koreksi b, rumus kalkulator Panasonic). Rumus: lib/av-layar-proyektor.ts (rencanaBlending).
- */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av-layar-proyektor';
@@ -24,7 +17,6 @@ const RESOLUSI = [
   { v: 'xga', l: 'XGA 1024 × 768', x: 1024, y: 768 },
   { v: 'custom', l: 'Custom…', x: 0, y: 0 },
 ];
-/** Resolusi di Pustaka / katalog Panasonic -> pilihan di atas. */
 const DARI_PUSTAKA: Record<string, string> = {
   XGA: 'xga', SXGAP: 'sxga', WXGA: 'wxga', WXGAH: 'wxgah', FHD: 'fhd', WUXGA: 'wuxga', WQXGA: 'wqxga', '4K': '4k', '4KP': '4kp', '4KDCI': '4kdci',
 };
@@ -35,9 +27,7 @@ const px = (x: number, y: number) => `${x} × ${y}`;
 
 export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   lebarSatuAwal: number;
-  /** Lensa Kalkulator Proyektor: TR terlebar & terpanjang, koreksi b wide & tele (L = TR × lebar − b). */
   lensa: { trMin: number; trMaks: number; bWide: number; bTele: number };
-  /** Resolusi model Pustaka yang dipilih (WUXGA, 4K, ...); null = belum memilih model. */
   resolusiModel?: string | null;
 }) {
   const [mode, setMode] = useState<'proyektor' | 'target'>('proyektor');
@@ -47,12 +37,9 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   const [target, setTarget] = useState({ l: 8, t: 2.5 });
   const [overlapH, setOverlapH] = useState(15);
   const [overlapV, setOverlapV] = useState(15);
-  /** Overlap diisi sebagai % gambar satu proyektor atau cm area blending di layar. */
   const [satuanOverlap, setSatuanOverlap] = useState<'persen' | 'cm'>('persen');
   const [resK, setResK] = useState(() => (resolusiModel && DARI_PUSTAKA[resolusiModel]) || 'wuxga');
   const [custom, setCustom] = useState({ x: 1920, y: 1200 });
-  //  Model dipilih di kalkulator di atas -> resolusi blending ikut model itu (piksel overlap & kanvas).
-  //  (Disesuaikan saat render, bukan di efek: https://react.dev/learn/you-might-not-need-an-effect.)
   const [resModelLalu, setResModelLalu] = useState(resolusiModel);
   if (resolusiModel !== resModelLalu) {
     setResModelLalu(resolusiModel);
@@ -71,7 +58,6 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   const modeTarget = mode === 'target';
   const saran = modeTarget ? saranSusunanBlending(dasar) : [];
 
-  //  Pindah mode membawa ukuran yang sedang tampil, supaya angka tidak melompat.
   const gantiMode = (m: 'proyektor' | 'target') => {
     if (m === mode) return;
     if (m === 'target') setTarget({ l: bulat(b.lebarM), t: bulat(b.tinggiM) });
@@ -79,7 +65,6 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
     setMode(m);
   };
 
-  //  Ganti satuan overlap: isian ikut dikonversi dari ukuran gambar per proyektor saat ini.
   const gantiSatuanOverlap = (s: 'persen' | 'cm') => {
     if (s === satuanOverlap) return;
     if (s === 'cm') { setOverlapH(bulat((overlapH / 100) * b.lebarSatuM * 100, 1)); setOverlapV(bulat((overlapV / 100) * b.tinggiSatuM * 100, 1)); }
@@ -130,7 +115,6 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   return (
     <Kartu judul="Edge blending · immersive" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Edge Blending')} />}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)]">
-        {/* Masukan */}
         <div className="space-y-4 min-w-0">
           <Segmen label="Ukuran dari" nilai={mode} onUbah={gantiMode} opsi={[{ v: 'proyektor', l: 'Per proyektor' }, { v: 'target', l: 'Ukuran target' }]} />
           <div className="grid grid-cols-2 gap-3">
@@ -177,7 +161,6 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
           </div>
         </div>
 
-        {/* Hasil */}
         <div className="space-y-4 min-w-0">
           <DiagramBlending b={b} modeTarget={modeTarget} />
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
@@ -270,7 +253,6 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   );
 }
 
-/** Gambar susunan proporsional: tiap proyektor kotak tembus pandang (overlap jadi lebih gelap), area konten bergaris putus. */
 function DiagramBlending({ b, modeTarget }: { b: RencanaBlending; modeTarget: boolean }) {
   const huruf = Math.max(b.kanvasY * 0.07, b.kanvasX * 0.022);
   const kx = (b.kanvasX - b.kontenX) / 2, ky = (b.kanvasY - b.kontenY) / 2;

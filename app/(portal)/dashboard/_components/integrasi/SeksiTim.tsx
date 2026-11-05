@@ -1,6 +1,5 @@
 'use client';
 
-/** SeksiTim - dipecah dari app/(portal)/dashboard/_components/modal-integrasi.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Cek } from '../modal-integrasi';
 
 export interface SeksiTimProps {

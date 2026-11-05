@@ -1,19 +1,10 @@
 #!/usr/bin/env node
-/**
- * scripts/fungsi-ke-const.mjs - `function X() {}` / `async function X() {}` di DALAM komponen default
- * menjadi `const X = (...) => {};`, supaya bisa dipindah scripts/ekstrak-hook.mjs (yang bekerja pada const).
- *
- *   node scripts/fungsi-ke-const.mjs <berkas.tsx> [NamaKomponen]
- *
- * Beda satu-satunya: const tidak di-hoist. Pemakaian SEBELUM deklarasi saat render akan ditangkap tsc
- * (TS2448); pemakaian di dalam closure (efek, handler) tetap aman karena dijalankan sesudah render.
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 const f = process.argv[2];
 const teks = fs.readFileSync(f, 'utf8');
 const sf = ts.createSourceFile(f, teks, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-const namaKomp = process.argv[3];   // opsional: nama komponen; bawaan = export default
+const namaKomp = process.argv[3];
 const komp = sf.statements.find(s => ts.isFunctionDeclaration(s) && (namaKomp ? s.name?.text === namaKomp : s.modifiers?.some(m => m.kind === ts.SyntaxKind.DefaultKeyword)));
 if (!komp) { console.error('komponen tidak ditemukan'); process.exit(1); }
 const ubah = [];

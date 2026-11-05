@@ -31,21 +31,9 @@ interface Props {
   onExtraDatesChange: (dates: string[]) => void;
   onClose: () => void;
   onSubmit: () => void;
-  /** Supervisor yang bisa dijadikan tujuan re-route. Hanya diisi saat menyunting. */
   supervisorUsers?: TeamUser[];
-  /**
-   * Admin, atau akun Team PTS dengan toggle "Full Access" aktif (mis. Manager
-   * PTS) - boleh assign reminder ke DIRINYA SENDIRI. Manager sengaja
-   * dikecualikan dari daftar "Pilih Anggota Team" biasa (lihat komentar di
-   * bawah), jadi opsi ini satu-satunya jalan menugaskan diri sendiri.
-   */
   canAssignSelf?: boolean;
   selfUser?: { username: string; full_name: string } | null;
-  /**
-   * Jumlah jadwal lama untuk project ini, bila form dibuka lewat pencarian
-   * "Project yang sudah ada" (Lapis 4). undefined/0 = tidak lewat jalur itu -
-   * form baru biasa, atau sedang menyunting.
-   */
   jumlahJadwalLama?: number;
 }
 
@@ -71,31 +59,15 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
   return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-3 sm:p-4" style={LATAR_MODAL}>
-      {/*  Kartu & kepala baku (components/shared/Modal.tsx) - kerangkanya sendiri hanya karena tiga kolom setinggi layar. */}
       <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
         <KepalaModal judul={editingReminder ? 'Edit Reminder' : 'Tambah Reminder'} keterangan="Isi detail jadwal & informasi project" onTutup={onClose} />
 
-        {/* Tiga kolom menyamping supaya seluruh isian terlihat sekaligus.
-            Sebelumnya semuanya bertumpuk vertikal di modal selebar 2xl, jadi
-            mengisi satu form berarti menggulir berkali-kali dan kehilangan
-            gambaran utuh — bagian yang sudah diisi tidak kelihatan lagi saat
-            mengisi bagian berikutnya.
-
-            Di layar sempit (<xl) tetap satu kolom: memaksa tiga kolom di layar
-            kecil hanya memindahkan gulirnya jadi ke samping, yang lebih buruk. */}
         <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
           <div className="p-4 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
-          {/* ── Kolom 1: apa & siapa ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="📋" title="Informasi Jadwal" />
 
-          {/*
-            Ringkasan "sudah terisi dari project lama" - hanya muncul lewat
-            jalur pencarian Lapis 4. Tanpa ini, kolom-kolom yang tiba-tiba
-            terisi begitu form terbuka terlihat seperti keajaiban, bukan hasil
-            dari pilihan yang baru saja dibuat.
-          */}
           {jumlahJadwalLama > 0 && (
             <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)' }}>
               <p className="text-[12px] font-bold" style={{ color: '#0e7490' }}>
@@ -127,18 +99,8 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               rows={2} className={`${inputCls} resize-none`} style={inputStyle} placeholder="Detail pekerjaan..." />
           </FormField>
 
-          {/* Category picker */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Kategori *</label>
-            {/*
-              Kartu kategori dikecilkan dan dijadikan tiga kolom.
-
-              Delapan kartu setinggi 60px dalam dua kolom memakan sekitar 260px
-              - lebih tinggi dari seluruh kolom "Waktu & Jadwal" di sebelahnya -
-              dan itulah yang memaksa kolom kiri menggulir sendiri. Ikon dan
-              teks yang lebih kecil sudah cukup: pilihannya delapan dan
-              namanya berbeda jauh, jadi tidak ada yang perlu dibaca dua kali.
-            */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {CATEGORIES.map(cat => {
                 const c = CATEGORY_CONFIG[cat];
@@ -159,7 +121,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           </div>
 
-          {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tipe Produk *</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -178,19 +139,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           </div>
 
-          {/*
-            BRAND — sisi admin.
-
-            Kolom reminders.brand sudah lama ada dan diisi lewat Request Jadwal
-            dari sisi Sales, tapi form admin ini TIDAK PERNAH menanyakannya.
-            Akibatnya setiap jadwal yang dibuat langsung oleh admin tersimpan
-            tanpa brand - dan begitu daftar Incentive disaring per brand untuk
-            memisahkan data dua orang Finance, proyek-proyek itu tidak terbaca
-            milik siapa pun lalu hilang dari kedua daftar.
-
-            Wajib diisi, bukan opsional: brand yang kosong bukan keadaan yang
-            berarti "belum tahu" - ia berarti proyeknya tidak akan terlihat.
-          */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(menentukan Finance mana yang boleh melihat nominalnya)</span>
@@ -211,7 +159,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           </div>
 
-          {/* Assign To — single or bulk */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tugaskan ke *</label>
             {!editingReminder && (
@@ -239,15 +186,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 {canAssignSelf && selfUser && (
                   <option value={selfUser.username}>Saya kerjakan sendiri ({selfUser.full_name})</option>
                 )}
-                {/* Route ke Supervisor — tersedia saat MEMBUAT maupun menyunting,
-                    sama seperti form ticket Troubleshooting.
-
-                    Sempat dibatasi hanya saat menyunting, dengan alasan tujuan
-                    supervisor sudah ditentukan otomatis dari tipe produk. Itu
-                    keliru: penentuan otomatis itu hanya berjalan di alur approve
-                    request Sales, bukan saat admin membuat jadwal langsung — jadi
-                    pembatasan tadi justru menutup satu-satunya jalan ke Supervisor
-                    pada alur ini. */}
                 {supervisorUsers.length > 0 && (
                   <optgroup label="🎯 Route ke Supervisor">
                     {supervisorUsers.map(u => (
@@ -255,19 +193,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     ))}
                   </optgroup>
                 )}
-                {/*
-                  Satu optgroup per kelompok PTS yang BISA DITUGASKAN, dari
-                  lib/kelompok.ts - bukan dua grup PTS IVP/MVI yang dulu
-                  ditulis langsung di sini. Perilakunya untuk kelompok yang
-                  ada sekarang sama persis (UMP tetap tidak muncul karena
-                  "Bisa Ditugaskan"-nya memang mati, begitu juga kelompok
-                  Cabang), tapi kelompok baru yang ditambahkan admin lewat
-                  Admin Panel ikut muncul tanpa perlu deploy - sebelumnya
-                  anggotanya tidak pernah bisa dipilih sama sekali.
-
-                  Manager hanya muncul bila penugasnya Admin - teamUsers yang
-                  diterima di sini sudah disaring bolehDitugaskanOleh di page.tsx.
-                */}
                 {kelompokDitugaskan.map(k => {
                   const anggota = teamUsers.filter(u => u.team_type === k.nama);
                   if (anggota.length === 0) return null;
@@ -296,7 +221,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           </div>
 
-          {/* ── Kolom 2: kapan ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
@@ -307,7 +231,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </select>
           </FormField>
 
-          {/* Warranty Years — for Konfigurasi categories */}
           {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(14,165,233,0.07)', border: '1.5px solid rgba(14,165,233,0.3)' }}>
               <div className="flex items-center gap-2 mb-3">
@@ -349,11 +272,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
-          {/* ── Timeline Project Progress — khusus kategori Konfigurasi ──
-              Kategori ini otomatis membuat draft lokasi di Project Progress.
-              Tanggal di atas adalah jadwal KUNJUNGAN (sekaligus titik mulai
-              garansi), bukan rentang pengerjaan — jadi timeline pengerjaan
-              ditetapkan terpisah di sini supaya progres bisa dipantau. */}
           {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
               <div className="flex items-center gap-2 mb-3">
@@ -396,10 +314,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
-          {/* Catatan: Incentive, Controller Automation, Display, Middleware & Mode
-              diisi Handler saat klik "Completed" (lihat modal Mode Penyelesaian),
-              karena project baru masuk Incentive setelah statusnya Completed. */}
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField label="Tanggal *">
               <input type="date" value={formData.due_date} onChange={e => fd({ due_date: e.target.value })}
@@ -417,22 +331,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </FormField>
           </div>
 
-          {/*
-            Pemilih multi-tanggal berlaku saat MENYUNTING juga, bukan hanya saat
-            membuat.
-
-            Dulu ia disembunyikan di mode sunting, dan itu menutup satu-satunya
-            jalan untuk mengubah rentang hari sebuah jadwal: jadwal 5 hari yang
-            perlu digeser jadi 4 atau 6 hari hanya bisa dibereskan dengan
-            menghapus seluruhnya lalu membuat ulang - yang memutus tautan ke
-            ticket, form review, dan tahapan insentif yang menunjuk baris lama.
-
-            Tanggal yang sudah ada dimuat lebih dulu di openEdit, jadi yang
-            tampil di sini adalah rentang sebenarnya, bukan kalender kosong.
-
-            Tetap hidden di HP: kalendernya bertumpuk dan tidak terpakai di
-            lebar itu. Tanggal utama di atas tetap bisa diubah dari mana saja.
-          */}
           <div className="hidden sm:block">
             <FormField label={editingReminder ? 'Hari Lain dalam Jadwal Ini' : 'Tambah Hari Lain (Opsional)'}>
               <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
@@ -457,7 +355,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           </div>
 
-          {/* ── Kolom 3: konteks project ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🏢" title="Informasi Project" />
 
@@ -469,7 +366,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           </FormField>
 
-          {/* Pilih Sales — selalu tampil untuk semua kategori */}
           {(() => {
             const isTrigger = (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(formData.category);
             return (
@@ -636,9 +532,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
         </div>
 
-        {/* Footer dipisah dari area isian: tombol Simpan tidak boleh ikut
-            tergulir bersama kolom, kalau tidak ia bisa berada di luar layar
-            justru saat form sudah siap dikirim. */}
         <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70 space-y-3">
           {err && (
             <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
@@ -647,10 +540,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             </div>
           )}
 
-          {/* Tombol rata KANAN dan seukuran isinya, bukan melebar penuh.
-              Tombol selebar frame membuat aksi terasa seberat isinya sendiri,
-              padahal ia cuma penutup; dan dua tombol sama besar tidak
-              membedakan mana aksi utama dan mana jalan keluar. */}
           <div className="flex gap-2 justify-end">
             <BatalButton onClick={onClose} />
             <SubmitFormButton

@@ -1,10 +1,3 @@
-/**
- * /api/admin/2fa - Admin Panel -> Sistem -> Keamanan Login.
- *  GET                                   -> { wajibAdmin, aktif: user_id[] }
- *  POST { aksi:'atur', wajibAdmin }      -> wajib 2FA untuk semua admin (pemanggil harus sudah ber-2FA)
- *  POST { aksi:'reset', user_id }        -> hapus 2FA satu akun (HP hilang) - login berikutnya password saja,
- *                                           atau diminta mendaftar ulang bila admin & wajib.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanAdmin } from '@/lib/penjaga-admin';

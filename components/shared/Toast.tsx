@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleCheck, CircleX, TriangleAlert, Info } from 'lucide-react';
 
-/**
- * Shared Toast notification - pattern standar untuk semua platform.
- * Caller manages state: const [notif, setNotif] = useState<Notif|null>(null);
- *   setNotif({type, msg}); setTimeout(()=>setNotif(null), 3500);
- */
-
 export interface Notif {
   type: 'success' | 'error' | 'info' | 'warning';
   msg: string;
@@ -21,17 +15,10 @@ const GAYA_TOAST: Record<Notif['type'], { latar: string; teks: string; garis: st
   info:    { latar: '#eff6ff', teks: '#1e40af', garis: '#bfdbfe', Ikon: Info },
 };
 
-/**
- * Toast SATU-SATUNYA di platform. Dulu enam halaman merakit toast sendiri
- * (hijau pekat, merah pekat, pastel - posisi & ukuran berbeda). Di ponsel
- * tampil selebar layar di atas, bukan kotak kecil yang tertimpa di pojok.
- */
 export function Toast({ notif }: { notif: Notif | null }) {
   if (!notif) return null;
   const g = GAYA_TOAST[notif.type] ?? GAYA_TOAST.info;
   return (
-    // role="status" + aria-live: pesan ini muncul tanpa dipicu fokus, jadi
-    // tanpa penanda ini pembaca layar tidak pernah menyebutkannya sama sekali.
     <div role="status" aria-live="polite" aria-atomic="true"
       className="fixed top-3 left-3 right-3 sm:left-auto sm:top-4 sm:right-4 sm:max-w-sm z-[3000] px-4 py-3 rounded-xl text-sm font-semibold flex items-start gap-2.5 animate-slide-down"
       style={{ background: g.latar, color: g.teks, border: `1px solid ${g.garis}`, boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
@@ -41,10 +28,6 @@ export function Toast({ notif }: { notif: Notif | null }) {
   );
 }
 
-/**
- * State toast baku: `notify('success', 'Tersimpan')` -> tampil 3,5 detik lalu hilang sendiri.
- * Pasangkan dengan <Toast notif={notif} />. Pesan baru menggantikan yang lama (timer ikut diulang).
- */
 export function useNotif(ms = 3500) {
   const [notif, setNotif] = useState<Notif | null>(null);
   const timer = useRef<number | undefined>(undefined);

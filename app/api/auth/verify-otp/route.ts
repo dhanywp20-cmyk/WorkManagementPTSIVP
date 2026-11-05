@@ -10,17 +10,6 @@ function hashOTP(otp: string): string {
   return crypto.createHash('sha256').update(otp).digest('hex');
 }
 
-/**
- * OTP-nya enam angka. Tanpa pembatasan, seluruh sejuta kemungkinan bisa
- * dicoba dalam hitungan menit - dan karena tebakan yang salah tidak menemukan
- * baris apa pun di password_reset_otps, tidak ada tempat untuk menyimpan
- * hitungannya di baris OTP itu sendiri.
- *
- * Maka hitungannya disimpan di login_attempts, tabel yang sudah dipakai
- * lockout login, dengan awalan "otp:" pada kolom username supaya tidak
- * tercampur dengan percobaan login biasa. Ambangnya sengaja lebih ketat dari
- * login: OTP dikirim ke WA pemilik akun, jadi lima kali salah sudah pertanda.
- */
 const OTP_MAX_SALAH = 5;
 const OTP_JENDELA_MENIT = 15;
 
@@ -77,11 +66,6 @@ export async function POST(request: NextRequest) {
 
     const otpHash = hashOTP(String(otp).trim());
 
-    //  ilike, bukan eq: OTP yang dibuat SEBELUM penyeragaman huruf tersimpan
-    //  memakai ejaan persis dari tabel users. Mencarinya dengan eq lowercase
-    //  membuat kode yang benar pun tidak ketemu barisnya, dan orangnya
-    //  kehabisan cara untuk masuk kembali. maybeSingle supaya baris kembar
-    //  peninggalan tidak melempar galat.
     const kunci = String(username).trim().toLowerCase();
     const { data: otpRecord } = await supabase
       .from('password_reset_otps')
@@ -105,7 +89,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kode OTP sudah kedaluwarsa. Minta kode baru.' }, { status: 400 });
     }
 
-    // OTP valid - ambil user id
     const { data: user } = await supabase
       .from('users')
       .select('id')
@@ -116,13 +99,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User tidak ditemukan.' }, { status: 404 });
     }
 
-    // Update password
-    //
-    // Diperiksa: sebelumnya hasil upsert ini tidak dibaca sama sekali - kalau
-    // gagal, endpoint tetap menjawab { success: true } dan pengguna diberi
-    // tahu "Password berhasil diubah" padahal password lamanya masih yang
-    // berlaku. OTP yang sama sudah dianggap terpakai (baris di bawah), jadi
-    // orangnya bahkan tidak bisa mencoba lagi tanpa meminta kode baru.
     const hash = await bcrypt.hash(newPassword, 12);
     const { error: galatPassword } = await supabase
       .from('user_credentials')
@@ -131,21 +107,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gagal menyimpan password baru. Coba lagi.' }, { status: 500 });
     }
 
-    // Tandai OTP sudah dipakai
     await supabase.from('password_reset_otps').update({ used: true }).eq('id', otpRecord.id);
 
-    // Invalidate semua session aktif user ini - keamanan, bukan sekadar
-    // rapi-rapi: kalau reset password ini dipicu karena akun dicurigai
-    // dibobol, sesi lama (termasuk milik pembobol) harus ikut mati. Kegagalan
-    // di sini TIDAK membatalkan reset yang sudah berhasil (password barunya
-    // sudah tersimpan di atas dan sudah diperiksa) - dicatat, bukan diam.
     const { error: galatSesi } = await supabase.from('user_sessions').delete().eq('user_id', user.id);
     if (galatSesi) console.error('verify-otp: gagal mencabut sesi lama', galatSesi.message);
-    // Token integrasi (DIWAYPI) yang mungkin dibuat pembobol ikut dicabut.
     await cabutSemuaToken(supabase, user.id);
 
-    // Kode yang benar mengosongkan hitungan salah - kalau tidak, pemilik akun
-    // yang sempat salah ketik ikut terkunci saat berikutnya butuh reset.
     await supabase.from('login_attempts').delete().eq('username', penanda);
 
     return NextResponse.json({ success: true });

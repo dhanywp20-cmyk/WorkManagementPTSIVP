@@ -1,8 +1,4 @@
 'use client';
-/**
- * Posisi proyektor di panel Atur: diukur di UJUNG LENSA (bukan tengah badan) + Projection distance (L) seperti
- * kalkulator Panasonic - jarak lensa ke layar / bidang yang dituju, bisa diisi langsung. Rumus: inti/jarakProyeksi.ts.
- */
 import { useState } from 'react';
 import { Angka, Catatan, f, fTetap } from '../../../bersama/ui';
 import {
@@ -15,9 +11,7 @@ const mm = (v: number) => Math.round(v * 1000) / 1000;
 
 export function PosisiProyektor({ c }: { c: KonteksAtur }) {
   const { b, batas, plafon, label, set, semua, ruang } = c;
-  /** Pesan bila jarak / posisi yang diminta tidak tercapai karena lensa harus tetap di dalam ruang. */
   const [peringatan, setPeringatan] = useState<string | null>(null);
-  //  Yang wajib di dalam ruang hanya lensanya (badan boleh tertanam di plafon / dinding) - jepitProyektor.
   const jepit = (ubah: Pick<Benda, 'x' | 'z' | 'elev'>) => {
     const j = jepitProyektor({ ...b, ...ubah }, batas.x, batas.z, plafon);
     return { x: mm(j.x), z: mm(j.z), elev: mm(j.elev) };

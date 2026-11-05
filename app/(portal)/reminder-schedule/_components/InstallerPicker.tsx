@@ -1,23 +1,12 @@
 'use client';
 import { useState } from 'react';
 
-/**
- * Dropdown akun PTS Cabang/Perwakilan (menggantikan isian manual "Nama
- * Installer") + tetap bisa ketik manual untuk yang belum terdaftar sebagai
- * akun. Dipakai di ModePenyelesaianPanel saat jadwal Konfigurasi/Training
- * diselesaikan Remote.
- *
- * Mode manual dipilih otomatis kalau data yang sudah ada (mis. membuka
- * kembali proyek lama) berupa nama teks tanpa akun tertaut - supaya nama
- * lama tidak hilang begitu saja saat panel dibuka.
- */
 export function InstallerPicker({
   daftarCabang, installerUserId, installerName, onPilihAkun, onKetikManual,
 }: {
   daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
   installerUserId: string | null;
   installerName: string;
-  /** daerah = alamat daerah akun ini (users.pts_daerah) - dipakai auto-fill Daerah/Kota. */
   onPilihAkun: (id: string, nama: string, daerah: string | null) => void;
   onKetikManual: (nama: string) => void;
 }) {

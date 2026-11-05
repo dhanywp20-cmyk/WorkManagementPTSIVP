@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiTicketing - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StatsSection } from './StatsSection';
 import { FilterBar } from './FilterBar';
 import { TicketListBody } from './TicketListBody';
@@ -96,7 +95,6 @@ export function IsiTicketing({ ITEMS_PER_PAGE, availableYears, bolehUpdateTicket
           setProductFilter={setProductFilter}
         />
 
-        {/* ── TICKET LIST (with integrated search/filter bar like image) ── */}
         <div ref={ticketListRef} className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(200,200,200,0.6)", backdropFilter: "blur(12px)" }}>
           <FilterBar
             canManageTickets={canManageTickets}

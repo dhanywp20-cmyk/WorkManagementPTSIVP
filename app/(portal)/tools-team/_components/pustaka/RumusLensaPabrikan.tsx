@@ -1,14 +1,8 @@
 'use client';
-/**
- * Rumus lensa L = TR x lebar - b dari DUA hasil kalkulator pabrikan (mis. Panasonic: 100" & 200" di zoom yang sama) -
- * untuk proyektor yang tidak ada di katalog / Pustaka. TR brosur ("1.09-1.77:1") bukan angka rumus kalkulatornya
- * (PT-VMZ61: 1,105112 & b 0,0294) - memakai TR brosur tanpa b meleset ±2 cm. Dipakai Desain 3D & Kalkulator AV.
- */
 import { useState } from 'react';
 import { Angka, f } from '../bersama/ui';
 import { rumusLensaDariDuaTitik } from '@/lib/av-layar-proyektor';
 
-/** 6 desimal: dibulatkan 3 desimal, jarak bisa meleset beberapa mm dari kalkulator pabrikan. */
 const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
 
 export function RumusLensaPabrikan({ onPakai }: { onPakai: (ujung: 'min' | 'maks', tr: number, b: number) => void }) {

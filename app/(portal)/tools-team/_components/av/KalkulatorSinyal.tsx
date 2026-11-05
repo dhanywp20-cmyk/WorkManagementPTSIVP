@@ -1,5 +1,4 @@
 'use client';
-/** Kalkulator bandwidth sinyal video (resolusi, refresh, bit, chroma). */
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { ANTARMUKA, bandwidthGbps, type Chroma } from '@/lib/av-hitung';
@@ -61,4 +60,3 @@ export function KalkulatorSinyal() {
   );
 }
 
-/* ── Audio ───────────────────────────────────────────────────────────── */

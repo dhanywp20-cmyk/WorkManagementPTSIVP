@@ -3,13 +3,6 @@ import { Keterangan } from '@/components/shared/Keterangan';
 import { useCallback, useEffect, useState } from 'react';
 import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan';
 
-/**
- * Admin Panel -> Sistem -> Kesehatan Sistem. Satu layar untuk hal yang dulu hanya
- * kelihatan lewat SQL Editor / dashboard Vercel: apakah cron jalan, sisa kuota paket
- * Free, trigger/fungsi DB yang berisiko, pemakaian AI & WA. Hanya baca; data dari
- * /api/admin/kesehatan (admin saja).
- */
-
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
 const waktu = (iso: string | null | undefined) => (iso
   ? new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

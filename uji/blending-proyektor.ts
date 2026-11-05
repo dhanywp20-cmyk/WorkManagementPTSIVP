@@ -1,9 +1,3 @@
-/**
- * uji/blending-proyektor.ts - area blending antar proyektor (desain3d/inti/blending.ts):
- * lebar (cm) & persen tumpang tindih gambar, arah, keterhalangan, ujung garis ukur, teks label.
- *
- * Jalankan: npx tsx uji/blending-proyektor.ts
- */
 import { bendaBaru, lensaDari, arahSinar, keGambar, dalamGambar, tumpangGaris, hitungBlending, teksBlending,
   barisKeterangan, pikselBlending, jarakTitik,
   type Benda, type Titik, type Lensa } from '../app/(portal)/tools-team/_components/desain3d/inti';
@@ -16,11 +10,9 @@ function cek(nama: string, syarat: boolean, catatan = '') {
 const dekat = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol;
 const K = { x0: 0, p: 12, l: 8, t: 4 };
 
-/** Proyektor menghadap dinding depan (z = 0) dari jarak tertentu, tanpa tilt. */
 const proj = (x: number, z: number, tr = 1.5, atur: Partial<Benda> = {}): Benda =>
   ({ ...bendaBaru('proyektor', K, { pasangProyektor: 'plafon' }), x, z, rot: 180, elev: 2.5, tilt: 0, throwRatio: tr, offsetLensa: 0, ...atur });
 
-/** Titik sinar (u, v) yang jatuh di dinding z = 0. */
 const keDinding = (L: Lensa, u: number, v: number): Titik | null => {
   const d = arahSinar(L, u, v);
   if (d[2] >= 0) return null;
@@ -50,7 +42,6 @@ console.log('Dua proyektor berdampingan di dinding datar');
 {
   const A = proj(3, 6), B = proj(6.5, 6);
   const sA = sampel(A), sB = sampel(B);
-  //  Tepi gambar sebenarnya di dinding -> lebar tumpang & persen yang diharapkan.
   const xa = [keDinding(sA.L, -0.5, 0)![0], keDinding(sA.L, 0.5, 0)![0]].sort((p, q) => p - q);
   const xb = [keDinding(sB.L, -0.5, 0)![0], keDinding(sB.L, 0.5, 0)![0]].sort((p, q) => p - q);
   const harap = Math.min(xa[1], xb[1]) - Math.max(xa[0], xb[0]);
@@ -63,13 +54,11 @@ console.log('Dua proyektor berdampingan di dinding datar');
   cek('persen = lebar / lebar gambar', !!h && dekat(h.persenA, (harap / lebarA) * 100, 100 / (N - 1)), `${h?.persenA} vs ${(harap / lebarA) * 100}`);
   cek('gambar sama besar -> persen A = persen B', !!h && dekat(h.persenA, h.persenB, 0.5));
   cek('titik tengah di antara kedua tepi tumpang', !!h && h.tengah[0] > Math.max(xa[0], xb[0]) && h.tengah[0] < Math.min(xa[1], xb[1]));
-  //  Gambar A tumpah ke permukaan lain di tepi kirinya (titik melompat jauh) -> persen tetap.
   const tumpah = { ...sA, baris: sA.baris.map((x, i) => (i < 10 && x ? [x[0] - 3, x[1], 2] as Titik : x)) };
   const h2 = hitungBlending([tumpah, sB])[0];
   cek('gambar tumpah ke dinding lain: persen tidak berubah', !!h2 && !!h && dekat(h2.persenA, h.persenA, 0.01), `${h2?.persenA} vs ${h?.persenA}`);
   const teks = h ? teksBlending(h) : '';
   cek('teks label "cm · %"', /^\d+ cm · \d+%$/.test(teks), teks);
-  //  Garis ukur: ujungnya TEPAT di kedua tepi area blending (diinterpolasi di bingkai B, bukan per sampel).
   const xs = h ? h.garis.map(t => t[0]).sort((p, q) => p - q) : [];
   cek('garis ukur mulai tepat di tepi gambar B (±1 mm)', !!h && dekat(xs[0], Math.max(xa[0], xb[0]), 0.001), `${xs[0]} vs ${Math.max(xa[0], xb[0])}`);
   cek('garis ukur berakhir tepat di tepi gambar A (±1 mm)', !!h && dekat(xs[xs.length - 1], Math.min(xa[1], xb[1]), 0.001), `${xs[xs.length - 1]} vs ${Math.min(xa[1], xb[1])}`);
@@ -94,14 +83,12 @@ console.log('Keterangan detail (kartu di kanvas)');
 
 console.log('Ukuran gambar berbeda, tidak bertumpuk, terhalang, tersusun atas-bawah');
 {
-  //  B lebih dekat ke dinding -> gambar lebih kecil -> persen tumpang di B lebih besar.
   const A = proj(3, 6), B = proj(5.6, 4);
   const h = hitungBlending([sampel(A), sampel(B)])[0];
   cek('gambar beda ukuran: persen B > persen A', !!h && h.persenB > h.persenA + 2, h ? `${h.persenA} / ${h.persenB}` : 'tak ada');
   cek('teks memuat dua persen', !!h && /\d+% \/ \d+%$/.test(teksBlending(h)), h ? teksBlending(h) : '');
   cek('berjauhan: tidak ada blending', hitungBlending([sampel(proj(1.5, 3)), sampel(proj(9, 3))]).length === 0);
   cek('terhalang benda (terlihat = false): tidak ada blending', hitungBlending([sampel(proj(3, 6)), sampel(proj(6.5, 6))], () => false).length === 0);
-  //  Tersusun atas-bawah: x sama, lensa beda tinggi.
   const atas = proj(4, 6, 1.5, { elev: 3.6 }), bawah = proj(4, 6, 1.5, { elev: 2.0 });
   const v = hitungBlending([sampel(atas), sampel(bawah)])[0];
   cek('tersusun atas-bawah terdeteksi', v?.arah === 'atas-bawah', v ? `${v.arah} ${teksBlending(v)}` : 'tak ada');

@@ -1,0 +1,3 @@
+# Arsip data mentah kalkulator proyektor (arsip/tdc/README.md) - hanya untuk membuat ulang lib/data/*-tdc.json secara
+# lokal; aplikasi tidak memakainya, jadi tidak perlu diunggah saat deploy.
+arsip/

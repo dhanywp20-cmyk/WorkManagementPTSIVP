@@ -1,8 +1,3 @@
-/**
- * uji/piket-akses.ts - aturan siapa melihat & mengisi Piket Showroom.
- *
- * Jalankan: npx tsx uji/piket-akses.ts
- */
 import { bisaLihatSemuaTamu, bisaIsiKegiatan, adalahPTS } from '../lib/piket-akses';
 
 let lulus = 0, gagal = 0;

@@ -1,8 +1,3 @@
-/**
- * uji/kesehatan.ts - aturan peringatan halaman Admin Panel -> Sistem -> Kesehatan Sistem.
- *
- * Jalankan: npx tsx uji/kesehatan.ts
- */
 import { readFileSync } from 'fs';
 import { ringkasKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan';
 import { KATALOG_EVENT, eventTersambung } from '../lib/notifikasi/katalog';

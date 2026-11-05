@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * SidebarPortal - menu samping desktop/laptop (HP & APK memakai NavBawahMobile). Dipecah dari
- * KerangkaPortal; semua keadaan tetap milik induk, di sini hanya tampilan + callback.
- */
 import React from 'react';
 import type { User, MenuItem } from '../dashboard/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
@@ -46,27 +42,11 @@ export function SidebarPortal({
         WebkitBackdropFilter: 'blur(20px)',
         boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
         borderRight: '1px solid rgba(0,0,0,0.07)',
-        // Sidebar hanya untuk desktop / laptop; HP & APK memakai NavBawahMobile.
         ...(tourVisible ? { zIndex: 1505 } : {}),
       }}
     >
-      {/* Top accent line */}
       <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #c8861d 40%, #e2a84b 60%, transparent)' }} />
 
-      {/*
-        Baris kepala sidebar - tombol ciutkan tinggal DI SINI, bukan
-        melayang absolute di pojok.
-
-        Versi lamanya `absolute top-2 right-2`, sementara daftar menu di
-        bawahnya mulai pada padding 12px. Keduanya berebut titik yang sama,
-        jadi tombolnya menumpuk persis di atas tepi kanan item menu pertama
-        (Dashboard) - terbaca seperti tombol MILIK item itu, bukan milik
-        sidebar-nya. Sebagai baris sendiri, ia punya ruangnya sendiri dan
-        tidak pernah bisa menimpa apa pun, berapa pun panjang daftar menunya.
-
-        Label "Menu" bukan sekadar pengisi: tanpanya barisnya cuma tombol
-        menggantung di kanan tanpa penjelasan apa yang diciutkan.
-      */}
       {!sidebarCollapsed && (
         <div className="flex items-center justify-between gap-2 flex-shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
           <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 truncate">Menu</span>
@@ -85,15 +65,10 @@ export function SidebarPortal({
         </div>
       )}
 
-      {/* ── SIDEBAR SCROLLABLE CONTENT ── */}
-      {/*  Padding atas ikut keadaan: saat mengembang, baris kepala di atas
-           sudah memberi jarak, jadi py-3 penuh akan menggandakannya. */}
       <div className={`flex-1 overflow-y-auto px-2.5 pb-3 ${sidebarCollapsed ? 'pt-3' : 'pt-0.5'}`} style={{ scrollbarWidth: 'none' }}>
 
         {sidebarCollapsed ? (
-          /* Collapsed: icon-only */
           <div className="space-y-1">
-            {/* Expand button - top */}
             <button aria-label="Main Menu"
               onClick={() => setSidebarCollapsed(false)}
               className="w-full h-9 rounded-lg flex items-center justify-center transition-all mb-1"
@@ -137,8 +112,6 @@ export function SidebarPortal({
                       onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                     >
                       {MENU_ICONS[menu.key] ?? <span><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
-                      {/* Antrean request jadwal muncul DI SINI — di menu yang
-                          benar-benar memuatnya, bukan di ikon Admin Panel. */}
                       {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
                           {pendingRequests}
@@ -151,10 +124,8 @@ export function SidebarPortal({
             ))}
           </div>
         ) : (
-          /* Expanded: full nav */
           <div className="space-y-4">
 
-            {/* ── Dashboard/Home item (untuk SEMUA role — homepage adaptif) ── */}
             <div>
               <button
                 onClick={() => onBeranda()}
@@ -172,7 +143,6 @@ export function SidebarPortal({
               </button>
             </div>
 
-            {/* Learning Center section */}
             {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
               <div>
                 <div className="flex items-center gap-2 px-1 mb-1.5">
@@ -224,7 +194,6 @@ export function SidebarPortal({
               </div>
             )}
 
-            {/* Project section */}
             {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
               <div>
                 <div className="flex items-center gap-2 px-1 mb-1.5">
@@ -276,7 +245,6 @@ export function SidebarPortal({
               </div>
             )}
 
-            {/* Internal Daily section */}
             {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
               <div>
                 <div className="flex items-center gap-2 px-1 mb-1.5">
@@ -315,8 +283,6 @@ export function SidebarPortal({
                             {MENU_ICONS[menu.key] ?? <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
                           </span>
                           <span className="flex-1 truncate text-sm font-medium">{item.name}</span>
-                      {/* Antrean request jadwal muncul DI SINI — di menu yang
-                          benar-benar memuatnya, bukan di ikon Admin Panel. */}
                           {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
                             <span className="text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
                               {pendingRequests}
@@ -338,17 +304,13 @@ export function SidebarPortal({
               </div>
             )}
 
-
           </div>
         )}
       </div>
 
-      {/* ── SIDEBAR FOOTER: User + Admin + Sign Out ── */}
       <div className="flex-shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
         {sidebarCollapsed ? (
-          /* Collapsed footer */
           <div className="py-2 px-1.5 flex flex-col items-center gap-1.5">
-            {/* Avatar */}
             <button aria-label={currentUser?.full_name ?? ''}
               onClick={() => onProfil()}
               className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-all"
@@ -358,7 +320,6 @@ export function SidebarPortal({
               {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
             </button>
 
-            {/* Admin */}
             {isAdmin && (
               <button
                 onClick={onAdminPanel}
@@ -378,7 +339,6 @@ export function SidebarPortal({
               </button>
             )}
 
-            {/* Sign out */}
             <button aria-label="Sign Out"
               onClick={onKeluar}
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
@@ -393,10 +353,8 @@ export function SidebarPortal({
             </button>
           </div>
         ) : (
-          /* Expanded footer */
           <div className="p-3 space-y-1">
 
-            {/* User profile row */}
             <button
               onClick={() => onProfil()}
               className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left"
@@ -421,7 +379,6 @@ export function SidebarPortal({
               </div>
             </button>
 
-            {/* Admin Panel */}
             {isAdmin && (
               <button
                 onClick={onAdminPanel}
@@ -441,7 +398,6 @@ export function SidebarPortal({
               </button>
             )}
 
-            {/* Sign out */}
             <button
               onClick={onKeluar}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"

@@ -1,6 +1,5 @@
 'use client';
 
-/** HasilBandingSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import type { SisiBanding } from '../QuestionsPage';
 

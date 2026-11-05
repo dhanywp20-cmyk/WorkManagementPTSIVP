@@ -1,12 +1,3 @@
-/**
- * /api/admin/kelas-eksternal/unggah - logo event & gambar latar Kuis Live, dan gambar soal Bank Soal.
- *  POST multipart { berkas, jenis:'logo'|'latar'|'soal' } -> { url }
- *
- * Lewat server (service role), bukan unggah langsung dari peramban: kebijakan tulis bucket
- * merek-files khusus pengaturan merek, sedangkan pengelola Kelas Eksternal & Bank Soal = admin / Full Access
- * (sama dengan policy tulis lc_questions). Semua masuk folder kuis-live/, jadi lolos rapikanUrlGambar.
- * Hanya PNG/JPG/WebP - SVG ditolak karena bisa membawa skrip.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -18,7 +9,6 @@ export const dynamic = 'force-dynamic';
 
 const jawab = (b: unknown, status = 200) => NextResponse.json(b, { status, headers: { 'Cache-Control': 'no-store' } });
 const JENIS_BERKAS: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
-//  Di bawah batas badan permintaan Vercel (4,5 MB); gambar latar dikecilkan di peramban dulu.
 const BATAS = { logo: 2 * 1024 * 1024, latar: 4 * 1024 * 1024, soal: 2 * 1024 * 1024 };
 
 export async function POST(req: NextRequest) {

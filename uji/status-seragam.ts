@@ -1,13 +1,3 @@
-/**
- * uji/status-seragam.ts - status yang SAMA berwarna sama di menu mana pun.
- *
- * Aturan (lib/desain.ts STATUS_KE_WARNA): menunggu (Pending, Waiting Approval, Perlu Revisi) = amber,
- * sedang berjalan = biru, selesai (Completed/Solved/Done/Approved/Paid) = hijau, ditolak/terlambat = merah,
- * batal = abu-abu. Dulu Completed ungu di Request Design Project, Rejected abu-abu di Tech Note, dan
- * Pending ticket biru di chart KPI tapi kuning di lencana Ticketing.
- *
- * Jalankan: npm test -- status-seragam
- */
 import { readFileSync } from 'fs';
 import { warnaUntukStatus, WARNA_STATUS_TICKET } from '../lib/desain';
 
@@ -24,7 +14,6 @@ for (const [s, w] of [
 ] as const) cek(`${s} -> ${w}`, warnaUntukStatus(s) === w, warnaUntukStatus(s));
 
 console.log('\n2. Keluarga warna per menu (dibaca dari sumbernya)');
-//  Keluarga dari kelas Tailwind atau hex yang dipakai peta status tiap menu.
 const HEX: Record<string, string> = {
   '#d97706': 'amber', '#f59e0b': 'amber', '#92400e': 'amber', '#b45309': 'amber',
   '#059669': 'hijau', '#10b981': 'hijau', '#065f46': 'hijau', '#047857': 'hijau', '#15803d': 'hijau',
@@ -47,7 +36,6 @@ function baris(f: string, kunci: string): string {
 }
 const P = 'app/(portal)/';
 const HARUS: [string, string, string][] = [
-  //  [berkas, kunci status, keluarga]
   [`${P}ticketing/_components/shared.ts`, 'Pending', 'amber'],
   [`${P}ticketing/_components/shared.ts`, 'Solved', 'hijau'],
   [`${P}ticketing/_components/shared.ts`, 'Rejected', 'merah'],

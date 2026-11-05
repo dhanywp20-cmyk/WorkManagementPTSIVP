@@ -1,12 +1,3 @@
-/**
- * uji/menu-instan.ts - pindah menu terasa langsung (KerangkaPortal).
- *
- * Keluhan: tombol menu baru tersorot belakangan dan layar seperti macet. Penyebabnya: sorotan
- * dibaca dari pathname (baru berganti setelah halaman tujuan selesai dimuat), menu memakai
- * router.push tanpa prefetch, dan tidak ada tanda sedang memuat. Uji ini menjaga ketiganya.
- *
- * Jalankan: npm test -- menu-instan
- */
 import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;

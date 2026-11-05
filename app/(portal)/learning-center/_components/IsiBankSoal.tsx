@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiBankSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { GridSubfolderSoal } from './soal/GridSubfolderSoal';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -49,13 +48,6 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
         <div className="max-w-5xl mx-auto space-y-6">
         {showGenerate && generatePanelJSX}
 
-        {/*
-          Tombol pengatur urutan disembunyikan bila kolomnya belum ada, dan
-          fitur yang hilang tanpa keterangan lebih membingungkan daripada
-          fitur yang belum ada sama sekali - orang akan mencarinya, mengira
-          dirinya salah lihat. Sebutkan apa yang kurang dan di mana
-          membetulkannya.
-        */}
         {questions.length > 0 && !kolomUrutanAda && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
             <p className="text-xs text-amber-900 leading-relaxed">
@@ -66,12 +58,10 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
           </div>
         )}
 
-        {/* Subfolder grid */}
         <GridSubfolderSoal
           currentFolderNode={currentFolderNode} load={load} questions={questions} selectedSubFolder={selectedSubFolder} setDialog={setDialog} setRenameFolder={setRenameFolder} setSelectedSubFolder={setSelectedSubFolder} subFolders={subFolders}
         />
 
-        {/* Material filter chips */}
         {viewMaterials.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
@@ -100,7 +90,6 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
           </div>
         )}
 
-        {/* Edit Soal Modal */}
         {editQ && (
         <ModalPortal>
           <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
@@ -143,7 +132,6 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
         </ModalPortal>
         )}
 
-        {/* ─── Soal dikelompokkan per Materi ─── */}
         <div className="space-y-8">
           {filteredQuestions.length === 0 && (
             <div className="flex justify-center py-16">
@@ -162,10 +150,9 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
               const totalForMat = questions.filter(q => q.material_id === mat.id).length;
               const matColor = FOLDER_COLORS[matIdx % FOLDER_COLORS.length];
 
-              // Group questions by batch_name within this material
               const batchKeys = Array.from(new Set(qs.map(q => q.batch_name ?? '')))
                 .sort((a, b) => {
-                  if (a === '') return 1; // ungrouped goes last
+                  if (a === '') return 1;
                   if (b === '') return -1;
                   return a.localeCompare(b);
                 });
@@ -194,7 +181,6 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
 
               return (
                 <div key={mat.id}>
-                  {/* Material header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-bold px-3 py-1.5 rounded-full text-white" style={{ background: matColor.gradient }}>
@@ -215,7 +201,6 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
                     </button>
                   </div>
 
-                  {/* Batch sub-groups — collapsible accordion */}
                   <GrupBatchSoal
                     batchKeys={batchKeys} buangDraf={buangDraf} bukaTambahDiGrup={bukaTambahDiGrup} expandedBatches={expandedBatches} geserSoal={geserSoal} handleDelete={handleDelete} handleDeleteBatch={handleDeleteBatch} kolomUrutanAda={kolomUrutanAda} mat={mat} matColor={matColor} menyimpanUrutan={menyimpanUrutan} qs={qs} setEditQ={setEditQ} setExpandedBatches={setExpandedBatches} simpanUrutan={simpanUrutan} susunanTampil={susunanTampil} urutanDraf={urutanDraf}
                   />
@@ -223,7 +208,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
               );
             })}
         </div>
-        </div>{/* end max-w-5xl */}
+        </div>
       </div>
     </>
   );

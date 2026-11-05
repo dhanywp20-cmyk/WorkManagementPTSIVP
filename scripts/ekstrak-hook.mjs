@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/ekstrak-hook.mjs - Pindahkan serangkaian pernyataan (handler, efek, nilai turunan) dari
- * komponen raksasa ke custom hook sendiri, di POSISI YANG SAMA (urutan eksekusi & hook tidak berubah).
- *
- *   node scripts/ekstrak-hook.mjs <berkas.tsx> <awal> <akhir> <useNama> <tujuan.ts>
- *
- * <awal>/<akhir> = nomor baris ATAU nama const pertama/terakhir (disarankan: nama tidak bergeser
- * saat ekstraksi sebelumnya menambah baris impor di atas berkas).
- *
- * Pasangan scripts/ekstrak-jsx.mjs (yang memindah JSX). Compiler TypeScript yang menentukan:
- *   - variabel komponen yang dipakai blok -> jadi isi `konteks`, bertipe PERSIS (tipe deklarasi);
- *   - nama yang dideklarasikan blok -> dikembalikan hook & di-destructure di tempat asalnya;
- *   - impor yang dipakai blok -> disalin ke berkas hook.
- * DITOLAK bila: blok memakai variabel yang dideklarasikan SESUDAH blok (akan jadi galat TDZ saat
- * konteks dibentuk), blok mendeklarasikan `let` (penugasan ulang tidak bisa menembus hook), atau
- * blok memakai deklarasi tingkat modul page.tsx (tidak boleh diekspor).
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
@@ -30,7 +13,6 @@ const checker = program.getTypeChecker();
 const sf = program.getSourceFile(absBerkas);
 const teks = sf.getFullText();
 const barisDari = pos => sf.getLineAndCharacterOfPosition(pos).line + 1;
-/** Nomor baris, atau baris awal/akhir pernyataan `const <nama>` di dalam fungsi tingkat modul. */
 function baris(arg, ujung) {
   if (/^\d+$/.test(arg)) return Number(arg);
   let ketemu = null;
@@ -42,7 +24,6 @@ function baris(arg, ujung) {
 }
 const awal = baris(awalStr, false), akhir = baris(akhirStr, true);
 
-// 1. Komponen terbesar di berkas = fungsi tingkat modul yang memuat baris awal.
 let fungsi = null;
 for (const st of sf.statements) {
   const f = ts.isFunctionDeclaration(st) ? st : null;
@@ -53,15 +34,12 @@ const pernyataan = fungsi.body.statements.filter(s => barisDari(s.getStart(sf)) 
 if (!pernyataan.length) { console.error('tidak ada pernyataan di rentang itu'); process.exit(1); }
 const blokAwal = pernyataan[0].getFullStart(), blokAkhir = pernyataan[pernyataan.length - 1].end;
 for (const s of pernyataan) if (ts.isReturnStatement(s)) { console.error('rentang memuat return komponen'); process.exit(1); }
-//  Return BERSYARAT milik komponen (mis. `if (!siap) return <Loading/>`) juga harus ditolak: ia akan ikut
-//  pindah ke dalam hook dan diam-diam berhenti menjadi early return komponen.
 for (const s of pernyataan) (function cari(n) {
-  if (ts.isFunctionLike(n)) return;            // return di dalam fungsi lain (handler, callback) bukan masalah
+  if (ts.isFunctionLike(n)) return;
   if (ts.isReturnStatement(n)) { console.error('rentang memuat return bersyarat milik komponen:', s.getText(sf).slice(0, 60)); process.exit(1); }
   ts.forEachChild(n, cari);
 })(s);
 
-// 2. Nama yang dideklarasikan blok (dikembalikan hook).
 const dideklarasi = [];
 const kumpulNama = (b) => { if (ts.isIdentifier(b)) dideklarasi.push(b.text); else for (const e of b.elements ?? []) if (!ts.isOmittedExpression(e)) kumpulNama(e.name); };
 for (const s of pernyataan) {
@@ -72,10 +50,9 @@ for (const s of pernyataan) {
 }
 const namaBlok = new Set(dideklarasi);
 
-// 3. Variabel komponen yang dipakai blok (konteks) + impor yang dipakai.
 const dalam = (d, a, b) => d.pos >= a && d.end <= b;
-const konteks = new Map();   // nama -> tipe
-const impor = new Map();     // nama -> deklarasi impor
+const konteks = new Map();
+const impor = new Map();
 const terlambat = [];
 const modul = new Set();
 function catat(id, sym) {
@@ -110,7 +87,6 @@ const halamanNext = /(^|[\\/])(page|layout)\.tsx?$/.test(absBerkas);
 const modulNilai = [...modul].filter(n => sf.statements.some(s => (ts.isFunctionDeclaration(s) && s.name?.text === n) || (ts.isVariableStatement(s) && s.declarationList.declarations.some(d => ts.isIdentifier(d.name) && d.name.text === n))));
 if (modulNilai.length && halamanNext) { console.error('deklarasi tingkat modul dipakai (pindahkan dulu):', modulNilai.join(', ')); process.exit(1); }
 
-// 4. Tipe import("C:/...") -> import("@/..."), nama tipe polos yang diimpor induk ikut diimpor.
 const keAlias = t => t.replace(/import\("([^"]+)"\)/g, (_, p) => {
   const rel = path.relative(akar, p).split(path.sep).join('/');
   return rel.startsWith('node_modules/') ? `import("${rel.replace(/^node_modules\/(@types\/)?/, '').replace(/\/index$/, '')}")` : `import("@/${rel}")`;
@@ -142,11 +118,9 @@ for (const [d, nama2] of perImpor) {
   if (bagian.length) barisImpor.push(`import ${kl?.isTypeOnly ? 'type ' : ''}${bagian.join(', ')} from '${spes}';`);
 }
 
-// 5. Tulis hook & ganti blok di induk dengan pemanggilan hook di posisi yang sama.
 const isiBlok = teks.slice(pernyataan[0].getStart(sf), blokAkhir);
 const indentAsal = teks.slice(teks.lastIndexOf('\n', pernyataan[0].getStart(sf)) + 1, pernyataan[0].getStart(sf));
 const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsWith(indentAsal) ? '  ' + l.slice(indentAsal.length) : l))).join('\n')
-  //  import('./x') relatif terhadap berkas INDUK - sesuaikan dengan letak berkas hook.
   .replace(/import\((['"])(\.{1,2}\/[^'"]+)\1\)/g, (_, q, spes) => {
     let baru = path.relative(dirTujuan, path.resolve(path.dirname(absBerkas), spes)).split(path.sep).join('/');
     if (!baru.startsWith('.')) baru = './' + baru;
@@ -154,7 +128,6 @@ const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsW
   });
 const kunci = [...konteks.keys()].sort();
 const namaTipe = nama.replace(/^use/, '') + 'Konteks';
-//  Tanpa konteks (mis. kumpulan useState saja): tanpa parameter - interface kosong ditolak ESLint.
 const kepalaFungsi = kunci.length
   ? `export interface ${namaTipe} {
 ${kunci.map(k => `  ${k}: ${keAlias(konteks.get(k))};`).join('\n')}

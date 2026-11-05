@@ -1,13 +1,3 @@
-/**
- * lib/totp.ts - verifikasi dua langkah (2FA) berbasis TOTP, RFC 6238 (sama dengan Google
- * Authenticator, Microsoft Authenticator, Authy). Murni Node (crypto) - hanya dipakai di server.
- *
- * - Rahasia 20 byte acak, dikodekan Base32 (RFC 4648) untuk aplikasi authenticator.
- * - Kode 6 digit, periode 30 detik, HMAC-SHA1; toleransi ±1 periode untuk jam HP yang meleset.
- * - Rahasia DISIMPAN TERENKRIPSI (AES-256-GCM, kunci diturunkan dari SUPABASE_JWT_SECRET): isi
- *   tabel user_credentials yang bocor saja tidak cukup untuk membuat kode.
- * - Kode cadangan sekali pakai, disimpan sebagai hash SHA-256.
- */
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 const ABJAD = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -36,7 +26,6 @@ export function buatRahasia(): string {
   return base32Encode(randomBytes(20));
 }
 
-/** Kode TOTP untuk satu langkah waktu (RFC 4226 dynamic truncation). */
 export function kodeHotp(rahasia: Buffer, langkah: number, digit = 6, algo: 'sha1' | 'sha256' | 'sha512' = 'sha1'): string {
   const pesan = Buffer.alloc(8);
   pesan.writeUInt32BE(Math.floor(langkah / 2 ** 32), 0);
@@ -51,10 +40,6 @@ export function kodeTotp(rahasiaBase32: string, waktuMs = Date.now()): string {
   return kodeHotp(base32Decode(rahasiaBase32), Math.floor(waktuMs / 30_000));
 }
 
-/**
- * Cocokkan kode masukan (toleransi ±1 periode). Mengembalikan langkah waktu yang cocok, atau null.
- * Pemanggil menyimpan langkah terakhir yang dipakai agar kode yang sama tidak bisa dipakai ulang.
- */
 export function cocokTotp(rahasiaBase32: string, kode: string, waktuMs = Date.now(), langkahTerakhir = -1): number | null {
   const k = (kode || '').replace(/\D/g, '');
   if (k.length !== 6) return null;
@@ -69,13 +54,10 @@ export function cocokTotp(rahasiaBase32: string, kode: string, waktuMs = Date.no
   return null;
 }
 
-/** URL otpauth:// untuk QR yang dipindai aplikasi authenticator. */
 export function urlOtpauth(rahasiaBase32: string, akun: string, penerbit: string): string {
   const label = encodeURIComponent(`${penerbit}:${akun}`);
   return `otpauth://totp/${label}?secret=${rahasiaBase32}&issuer=${encodeURIComponent(penerbit)}&algorithm=SHA1&digits=6&period=30`;
 }
-
-// ── Penyimpanan terenkripsi ─────────────────────────────────────────────────
 
 function kunciEnkripsi(): Buffer {
   const sumber = process.env.SUPABASE_JWT_SECRET;
@@ -98,13 +80,10 @@ export function dekripsiRahasia(tersimpan: string): string {
   return Buffer.concat([d.update(Buffer.from(isi, 'base64')), d.final()]).toString('utf8');
 }
 
-// ── Kode cadangan ───────────────────────────────────────────────────────────
-
 const hashCadangan = (k: string) => createHash('sha256').update(k.replace(/[^A-Z0-9]/gi, '').toUpperCase()).digest('hex');
 
-/** 8 kode cadangan `XXXX-XXXX` (sekali pakai). Kembalikan teks untuk ditunjukkan SEKALI + hash untuk disimpan. */
 export function buatKodeCadangan(jumlah = 8): { teks: string[]; hash: string[] } {
-  const huruf = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // tanpa O/0/I/1 yang mudah tertukar
+  const huruf = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const teks = Array.from({ length: jumlah }, () => {
     const b = randomBytes(8);
     const s = Array.from(b, x => huruf[x % huruf.length]).join('');
@@ -113,7 +92,6 @@ export function buatKodeCadangan(jumlah = 8): { teks: string[]; hash: string[] }
   return { teks, hash: teks.map(hashCadangan) };
 }
 
-/** Indeks kode cadangan yang cocok (untuk dibuang setelah dipakai), atau -1. */
 export function cocokKodeCadangan(masukan: string, daftarHash: string[] | null | undefined): number {
   const h = hashCadangan(masukan || '');
   return (daftarHash ?? []).findIndex(x => x === h);

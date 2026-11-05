@@ -31,7 +31,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
       if(data&&data.length>0){
         (data as PiketRow[]).forEach(s=>{if(na[s.week_start])na[s.week_start][s.day_of_week]=s.pic_ivp_id||s.pic_ump_id||s.pic_mvi_id||'';});
       }
-      // Pre-fill hari kosong dari rolling - pola berulang selamanya sampai admin ubah
       const{data:allData}=await supabase.from('piket_schedules').select('week_start,day_of_week,pic_ivp_id,pic_ump_id,pic_mvi_id');
       if(allData&&allData.length>0){
         const allRows=allData as PiketRow[];
@@ -55,7 +54,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
     try{
       const editedByName=currentUser?.full_name||null;
 
-      // Fetch existing rows sekali untuk cek mana yang sudah ada di DB
       const{data:existingRows}=await supabase
         .from('piket_schedules')
         .select('id,week_start,day_of_week,created_at')
@@ -69,17 +67,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
           const existing=existingMap.get(`${wk}__${day}`);
 
           if(!uid){
-            /*
-              H2 (audit): dulu baris "— Belum —" SELALU dilewati (continue),
-              termasuk untuk hari yang SUDAH punya PIC tersimpan di DB - jadi
-              admin tidak pernah bisa mengosongkan PIC yang sudah di-set,
-              cuma bisa menggantinya dengan nama lain. Sekarang dibedakan:
-              kalau baris ini memang sudah tersimpan di DB, "— Belum —"
-              berarti admin sengaja mengosongkannya - hapus barisnya. Kalau
-              belum pernah tersimpan (termasuk yang cuma pre-fill rolling di
-              layar, belum disimpan), tetap dilewati seperti sebelumnya -
-              supaya hari yang belum disentuh tidak tertimpa baris kosong.
-            */
             if(existing){
               const{error:delErr}=await supabase.from('piket_schedules').delete().eq('id',existing.id);
               if(delErr){notify('error',`Gagal mengosongkan PIC ${day} ${wk}: ${delErr.message}`);setSaving(false);return;}
@@ -89,7 +76,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
 
           const u=users.find(x=>x.id===uid);
 
-          // Skip jika user tidak ditemukan - jangan simpan row rusak
           if(!u){
             console.warn(`[ScheduleModal] User not found for id: "${uid}", skipping ${day} ${wk}`);
             continue;
@@ -99,11 +85,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
             week_start:wk,
             day_of_week:day,
             day_date:toKey(getDayDate(ws,day)),
-            //  Satu pintu tulis (shared.ts): mengisi kolom `pic` sekaligus tiga
-            //  kolom lama selama masa transisi. Tim di luar ketiganya - kelompok
-            //  PTS yang ditambahkan admin - tetap tersimpan lengkap di `pic`.
             ...tulisPicPiket(u),
-            // FIX #3: Pertahankan created_at asli jika row sudah exist, baru set jika insert baru
             created_at:existing?.created_at||new Date().toISOString(),
             updated_at:new Date().toISOString(),
           };
@@ -142,7 +124,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         <div className="p-5 flex-1 min-h-0 overflow-y-auto space-y-4">
           {loading?<div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/></div>:(
             <>
-              {/* Column headers */}
               <div className="grid grid-cols-[100px_1fr_1fr] gap-2">
                 <div/>
                 {[{wk:wk1,ws:weekStart},{wk:wk2,ws:week2Start}].map(({wk,ws})=>(
@@ -155,12 +136,10 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                 const dc=DAY_COLOR[day];
                 return(
                   <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center">
-                    {/* Day label */}
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{background:dc.light}}>
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{background:dc.grad}}>{DAY_EN[day]}</div>
                       <span className="text-xs font-bold" style={{color:dc.accent}}>{day}</span>
                     </div>
-                    {/* 2 week dropdowns */}
                     {[{wk:wk1,ws:weekStart},{wk:wk2,ws:week2Start}].map(({wk,ws})=>{
                       const date=getDayDate(ws,day);
                       const u=users.find(x=>x.id===assign[wk]?.[day]);
@@ -175,9 +154,6 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                             <select aria-label="— Belum —" value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
                               className="flex-1 text-[11px] outline-none bg-transparent min-w-0 py-1">
                               <option value="">— Belum —</option>
-                              {/* Satu optgroup per kelompok PTS dari pengaturan admin -
-                                  bukan tiga nama yang dipaku. Kelompok baru langsung
-                                  bisa dijadwalkan piket tanpa deploy. */}
                               {kelompokPTSList.map(k=>{
                                 const anggota=users.filter(u=>u.team_type===k.nama);
                                 if(anggota.length===0) return null;

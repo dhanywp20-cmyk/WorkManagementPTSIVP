@@ -6,14 +6,6 @@ import { BATAS, validasiDraft, type DraftChecklist, type SumberChecklist } from 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * POST /api/project-progress/<proyekId>/checklist - admin membuat checklist
- * lokasi baru di proyek ini.
- *   { judul, keterangan?, start_date?, target_date?, anggota: userId[],
- *     isi: 'kosong' | 'impor' | 'salin',
- *     sumber?: 'teks'|'excel', draft?            (isi = impor)
- *     salinDari?: checklistId }                  (isi = salin - centang dikosongkan)
- */
 export async function POST(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
   const params = await ctx.params;
   const s = await ambilAkun(request);

@@ -1,9 +1,3 @@
-/**
- * uji/dua-faktor.ts - verifikasi dua langkah (2FA): TOTP (vektor RFC), penyimpanan terenkripsi,
- * kode cadangan, tiket login 5 menit, anti-replay, dan pemasangan di route/proxy/migrasi 049.
- *
- * Jalankan: npm test -- dua-faktor
- */
 import { readFileSync } from 'fs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -17,12 +11,10 @@ let ok = 0, salah = 0;
 const cek = (n: string, s: boolean) => { if (s) { ok++; console.log(`  ok   ${n}`); } else { salah++; console.log(`  GAGAL ${n}`); } };
 
 console.log('\n1. TOTP & penyimpanan');
-// RFC 6238 Lampiran B (SHA1, rahasia ASCII "12345678901234567890", 8 digit)
 const r = Buffer.from('12345678901234567890');
 for (const [t, kode] of [[59, '94287082'], [1111111109, '07081804'], [1111111111, '14050471'], [1234567890, '89005924'], [2000000000, '69279037'], [20000000000, '65353130']] as const) {
   cek(`RFC6238 t=${t}`, kodeHotp(r, Math.floor(t / 30), 8) === kode);
 }
-// RFC 4226 Lampiran D (HOTP 6 digit)
 const hotp = ['755224', '287082', '359152', '969429', '338314', '254676', '287922', '162583', '399871', '520489'];
 hotp.forEach((k, i) => cek(`RFC4226 c=${i}`, kodeHotp(r, i) === k));
 cek('base32 bolak-balik', base32Decode(base32Encode(r)).equals(r));
@@ -69,7 +61,6 @@ cek('objek jsonb terbaca', rapikanPengaturan2FA({ wajibAdmin: true }).wajibAdmin
 cek('nilai aneh -> tidak wajib', rapikanPengaturan2FA({ wajibAdmin: 'ya' }).wajibAdmin === false);
 
 console.log('\n4. Periksa kode (basis data tiruan)');
-// Tiruan rantai supabase .from().update().eq().lt()/.contains().select() atas satu baris.
 function dbTiruan(baris: Baris2FA) {
   return {
     from: () => ({
@@ -90,7 +81,8 @@ function dbTiruan(baris: Baris2FA) {
     }),
   } as unknown as SupabaseClient;
 }
-const rahasia2 = buatRahasia();
+let rahasia2 = buatRahasia();
+while (kodeTotp(rahasia2, t1) === kodeTotp(rahasia2, t1 + 30_000)) rahasia2 = buatRahasia();
 const cad = buatKodeCadangan();
 const baris: Baris2FA = {
   user_id: 'u1', rahasia: enkripsiRahasia(rahasia2), aktif: true, cadangan: cad.hash, langkah_terakhir: -1, diaktifkan_pada: null,

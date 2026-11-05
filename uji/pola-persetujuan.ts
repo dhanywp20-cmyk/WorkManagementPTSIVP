@@ -1,12 +1,3 @@
-/**
- * uji/pola-persetujuan.ts - SATU pola Setujui / Tolak / Tugaskan di semua menu (components/shared/Persetujuan.tsx).
- *
- * Dulu tiap menu merakit sendiri: kepala modal bergradasi beda warna, label "Approve"/"Setujui",
- * "Reject"/"Tolak", "Assign To"/"Assign ke"/"Assign ke Handler"/"Assign Tim", sebagian berawalan emoji.
- * Uji ini menjaga supaya tidak menyimpang lagi.
- *
- * Jalankan: npm test -- pola-persetujuan
- */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
@@ -55,7 +46,6 @@ const salah = berkas.filter(f => LABEL_LAMA.test(baca(f)));
 cek('tidak ada tombol berlabel Approve / Reject / Assign', salah.length === 0, salah.join(', '));
 const labelForm = berkas.filter(f => />(?:Assign To|Assign ke)\s*\*?<\/label>/.test(baca(f)));
 cek('tidak ada label isian "Assign To" / "Assign ke"', labelForm.length === 0, labelForm.join(', '));
-//  Popup detail (Ticket / Reminder) masih punya tombol aksi lain (reschedule, dst) - kerangkanya ikut langkah migrasi modal.
 const gradasi = Object.keys(MEMAKAI).filter(f => !/DetailPopup/.test(f)).filter(f => /linear-gradient\(135deg,#(?:16a34a|f59e0b|dc2626|db2777)/.test(baca(`app/(portal)/${f}`)));
 cek('popup persetujuan tidak lagi berkepala gradasi hijau/kuning/merah/merah muda sendiri', gradasi.length === 0, gradasi.join(', '));
 cek('tidak ada window.confirm di Perbandingan Produk', !/window\.confirm/.test(baca('app/(portal)/tools-team/_components/ProductComparison.tsx')));

@@ -1,8 +1,3 @@
-/**
- * /api/tiket/serupa - tiket Solved dengan kasus mirip + Tech Note terkait,
- * untuk panel "Solusi serupa" di detail tiket. Tanpa AI (lib/solusi-serupa.ts);
- * dibaca dengan hak akses si pembuka (RLS), bukan service role.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';

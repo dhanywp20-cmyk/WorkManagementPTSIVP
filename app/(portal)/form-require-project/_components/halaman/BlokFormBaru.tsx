@@ -1,6 +1,5 @@
 'use client';
 
-/** BlokFormBaru - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { NewFormModal, InitialFormType } from '../Modals';
 import { User, RoomDetail, BrandPicMapping } from '../shared';
 

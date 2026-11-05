@@ -1,23 +1,9 @@
-/**
- * lib/masuk-server.ts - bagian proses masuk yang dipakai bersama /api/auth/login (password) dan
- * /api/auth/login-2fa (kode authenticator). Hanya untuk route server.
- *
- * Satu tempat untuk: hitung percobaan gagal (lockout), muat data pengguna, dan membuat sesi +
- * cookie + token basis data - supaya kedua jalur masuk selalu menghasilkan sesi yang sama persis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { issueDbToken } from '@/lib/db-token';
 
-/**
- * Umur sesi login: 400 hari = batas umur cookie di Chrome - praktis tidak pernah habis; berakhir hanya lewat
- * Keluar. Dulu 6 jam: portal di HP / tab yang dibuka seharian tiba-tiba ditolak server (menu "macet", PWA
- * minta login lagi) padahal tetap dipakai. Token basis data tetap 6 jam & diperbarui otomatis dari cookie
- * ini (lib/supabase.ts refreshDbToken).
- */
 export const SESSION_HOURS = 400 * 24;
-/** Gagal per username (ketat) & per IP (longgar - satu kantor berbagi satu IP publik/NAT). */
 export const BATAS_GAGAL_USER = 5;
 export const BATAS_GAGAL_IP = 30;
 const JENDELA_GAGAL_MS = 15 * 60 * 1000;
@@ -34,7 +20,6 @@ export function getClientIp(req: NextRequest): string {
   );
 }
 
-/** true bila username / IP ini sedang dikunci karena terlalu banyak gagal. */
 export async function sedangTerkunci(supabase: SupabaseClient, username: string, ip: string): Promise<boolean> {
   const windowStart = new Date(Date.now() - JENDELA_GAGAL_MS).toISOString();
   const [byUser, byIp] = await Promise.all([
@@ -61,10 +46,6 @@ export interface UserMasuk {
 
 const KOLOM_USER = 'id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled';
 
-/**
- * Muat pengguna untuk login. access_level & piket_akses opsional - kolom baru, belum tentu ada di
- * database lama; bila kueri lengkap gagal, ulangi TANPA kolom itu supaya login tidak ikut gagal.
- */
 export async function muatUserMasuk(supabase: SupabaseClient, kunci: { username: string } | { id: string }): Promise<UserMasuk | null> {
   const [kol, nilai] = 'username' in kunci ? ['username', kunci.username] : ['id', kunci.id];
   let { data, error } = await supabase.from('users')
@@ -73,11 +54,9 @@ export async function muatUserMasuk(supabase: SupabaseClient, kunci: { username:
   return error || !data ? null : (data as unknown as UserMasuk);
 }
 
-/** Buat sesi (tabel user_sessions + cookie ivp_session) dan kembalikan respons login lengkap. */
 export async function selesaikanMasuk(supabase: SupabaseClient, user: UserMasuk, request: NextRequest, ip: string, tambahan?: Record<string, unknown>) {
   await catatPercobaan(supabase, user.username, ip, true);
 
-  // Bersihkan sesi kedaluwarsa (housekeeping)
   supabase.from('user_sessions').delete().lt('expires_at', new Date().toISOString()).then(() => {});
 
   const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
@@ -89,10 +68,6 @@ export async function selesaikanMasuk(supabase: SupabaseClient, user: UserMasuk,
     expires_at: new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString(),
   });
 
-  // Token PostgREST - basis data mengenali pengguna ini untuk RLS. null bila
-  // SUPABASE_JWT_SECRET belum diset; login tetap berhasil.
-  // Penanda akun pimpinan (lib/pimpinan.ts) - kueri terpisah & toleran: bila kolom
-  // belum ada (migrasi 034 belum dijalankan) hasilnya null = bukan pimpinan.
   const { data: pim } = await supabase.from('users').select('pimpinan').eq('id', user.id).maybeSingle();
   const userKeluar = { ...user, pimpinan: pim?.pimpinan === true };
   const response = NextResponse.json({

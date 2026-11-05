@@ -1,16 +1,3 @@
-/**
- * /api/tools-team/produk - katalog "Produk saya": template produk (ukuran,
- * model, warna, spesifikasi) yang dibuat engineer dan dipakai bersama tim di
- * Desain 3D Ruang.
- *
- *   GET            siapa pun yang masuk: daftar template.
- *   POST {label, ket, jenis, atur}
- *                  tambah template (bukan akun pimpinan - hanya baca).
- *   DELETE ?id=    pembuatnya atau Admin/Full Access.
- *
- * Disimpan sebagai satu baris app_settings (lihat KUNCI_PRODUK) lewat service
- * role; tiap isian divalidasi ketat di lib/tools-team.ts sebelum ditulis.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -25,7 +12,6 @@ const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, a
 type Db = ReturnType<typeof getAdminClient>;
 async function hak(db: Db, userId: string) {
   const { data } = await db.from('users').select('role, access_level').eq('id', userId).maybeSingle();
-  //  Kolom pimpinan dibaca terpisah & toleran (lihat lib/pimpinan.ts): bila belum ada = bukan pimpinan.
   const { data: pim } = await db.from('users').select('pimpinan').eq('id', userId).maybeSingle();
   return { semua: hasFullAccess(data as { role?: string; access_level?: string } | null), pimpinan: pim?.pimpinan === true };
 }

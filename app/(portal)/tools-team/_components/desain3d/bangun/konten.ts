@@ -1,4 +1,3 @@
-/** Tekstur konten layar: pola uji, CCTV, dashboard / widget, home screen, monitor operator. */
 import type { Benda } from '../inti/index';
 import { acak, kanvas, teksturPolaUji } from './tekstur';
 import type * as T from 'three';
@@ -8,7 +7,6 @@ const kotakBulat = (g: CanvasRenderingContext2D, x: number, y: number, w: number
   if (typeof g.roundRect === 'function') g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h);
 };
 
-/** Satu kamera CCTV: jalan dari sudut tinggi dengan marka & kendaraan, label kamera, REC, cap waktu. */
 function gambarCCTV(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, no: number) {
   const r = acak(no * 977 + 13);
   g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip();
@@ -17,7 +15,6 @@ function gambarCCTV(g: CanvasRenderingContext2D, x: number, y: number, w: number
     g.fillStyle = `rgba(${(35 + r() * 40) | 0},${(70 + r() * 50) | 0},${(35 + r() * 30) | 0},0.6)`;
     g.beginPath(); g.ellipse(x + r() * w, y + r() * h * 0.55, w * (0.03 + r() * 0.06), h * (0.03 + r() * 0.05), 0, 0, Math.PI * 2); g.fill();
   }
-  //  Jalan: trapesium perspektif menuju titik hilang.
   const hx = x + w * (0.3 + r() * 0.4), hy = y + h * (0.04 + r() * 0.16), la = w * (0.07 + r() * 0.08);
   const kiri = x - w * (0.05 + r() * 0.2), kanan = x + w * (1.05 + r() * 0.2), bawah = y + h;
   const titik = (f: number, t: number) => [(hx - la + f * 2 * la) * (1 - t) + (kiri + f * (kanan - kiri)) * t, hy * (1 - t) + bawah * t];
@@ -31,7 +28,6 @@ function gambarCCTV(g: CanvasRenderingContext2D, x: number, y: number, w: number
     g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
   }
   g.setLineDash([]);
-  //  Kendaraan: makin dekat makin besar.
   const warna = ['#f8fafc', '#cbd5e1', '#111827', '#b91c1c', '#1d4ed8', '#6b7280', '#e5e7eb', '#334155'];
   const mobil = 5 + Math.floor(r() * 7);
   for (let i = 0; i < mobil; i++) {
@@ -44,7 +40,6 @@ function gambarCCTV(g: CanvasRenderingContext2D, x: number, y: number, w: number
     kotakBulat(g, px - lw / 2, py - lh / 2, motor ? lw * 0.35 : lw, lh, lw * 0.2); g.fill();
     if (!motor) { g.fillStyle = 'rgba(15,23,42,0.75)'; g.fillRect(px - lw * 0.38, py - lh * 0.25, lw * 0.76, lh * 0.2); }
   }
-  //  Nuansa kamera: sedikit pudar + vignet.
   g.fillStyle = 'rgba(30,41,59,0.10)'; g.fillRect(x, y, w, h);
   const vg = g.createRadialGradient(x + w / 2, y + h / 2, Math.min(w, h) * 0.3, x + w / 2, y + h / 2, Math.max(w, h) * 0.75);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.35)');
@@ -62,7 +57,6 @@ function gambarCCTV(g: CanvasRenderingContext2D, x: number, y: number, w: number
   g.strokeStyle = '#0b0f14'; g.lineWidth = Math.max(1, w * 0.006); g.strokeRect(x, y, w, h);
 }
 
-/** Satu kartu grafik dashboard (donut, batang bertumpuk, batang mendatar, area, angka). */
 function gambarWidget(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, jenis: number, r: () => number, gelap: boolean) {
   const kartu = gelap ? '#111827' : '#ffffff', garis = gelap ? '#1f2937' : '#e2e8f0', teks = gelap ? '#e5e7eb' : '#334155';
   const biru = ['#2563eb', '#0ea5e9', '#22c55e', '#f59e0b', '#a855f7', '#ef4444'];
@@ -123,7 +117,6 @@ function gambarWidget(g: CanvasRenderingContext2D, x: number, y: number, w: numb
   }
 }
 
-/** Dashboard lengkap: kepala, 3 x 2 grafik, deret indikator. */
 function gambarDashboard(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, benih: number, gelap = false) {
   const r = acak(benih);
   g.fillStyle = gelap ? '#0b1220' : '#eef2f7'; g.fillRect(x, y, w, h);
@@ -144,7 +137,6 @@ function gambarDashboard(g: CanvasRenderingContext2D, x: number, y: number, w: n
   }
 }
 
-/** Home screen interactive display (jam, ikon aplikasi, dok). */
 function gambarDesktop(g: CanvasRenderingContext2D, W: number, H: number) {
   const gr = g.createLinearGradient(0, 0, W, H);
   gr.addColorStop(0, '#0b1d3a'); gr.addColorStop(0.55, '#1e3a8a'); gr.addColorStop(1, '#0f172a');
@@ -168,10 +160,6 @@ function gambarDesktop(g: CanvasRenderingContext2D, W: number, H: number) {
   g.fillStyle = 'rgba(255,255,255,0.15)'; kotakBulat(g, W * 0.32, H * 0.88, W * 0.52, H * 0.07, H * 0.035); g.fill();
 }
 
-/**
- * Konten layar contoh: CCTV (grid kamera), dashboard grafik, campuran (grafik + CCTV, ala
- * command center) atau home screen. Videowall: grid kamera mengikuti panel (2 x 2 per panel).
- */
 export function teksturKonten(THREE: typeof T, b: Benda): T.Texture {
   const konten = b.konten ?? 'pola';
   const rasio = b.w / Math.max(0.01, b.h);
@@ -193,7 +181,6 @@ export function teksturKonten(THREE: typeof T, b: Benda): T.Texture {
     } else if (konten === 'dashboard') {
       gambarDashboard(g, 0, 0, W, H, benih);
     } else if (konten === 'campuran') {
-      //  Kiri: dashboard; kanan: 3 x 3 kamera di atas, peta & daftar kejadian di bawah.
       const bagi = vw && vw.kol >= 2 ? Math.round(vw.kol / 2) / vw.kol : 0.5;
       gambarDashboard(g, 0, 0, W * bagi, H, benih);
       const xk = W * bagi, wk = W - xk, hk = H * 0.74;
@@ -210,7 +197,6 @@ export function teksturKonten(THREE: typeof T, b: Benda): T.Texture {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-/** Layar monitor meja operator: dashboard gelap atau 2 x 2 kamera. */
 export function teksturMonitor(THREE: typeof T, cctv: boolean, benih: number): T.Texture {
   const c = kanvas(640, 360, g => {
     if (cctv) for (let i = 0; i < 4; i++) gambarCCTV(g, (i % 2) * 320, Math.floor(i / 2) * 180, 320, 180, benih + i);

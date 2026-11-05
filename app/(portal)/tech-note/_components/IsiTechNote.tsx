@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiTechNote - dipecah dari app/(portal)/tech-note/_components/bagian-tech-note.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ListEmptyState, ErrorState } from '@/components/shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
@@ -38,21 +37,16 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
   return (
     <>
       <div className="flex flex-1 overflow-hidden">
-        {/* ── Sidebar ── */}
         <FolderSidebar folders={folders} technotes={technotes}
           selected={selectedFolder} onSelect={setSelectedFolder}
           onAdd={()=>setShowFolderModal(true)} canManage={canManage}
           mobileOpen={showFolderDrawer} onCloseMobile={()=>setShowFolderDrawer(false)} />
 
-        {/* ── Main Content ── */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-4 sm:py-5">
             {currentUser && <TechNoteKPISummary technotes={technotes} currentUser={currentUser} year={year} />}
 
-            {/* Tabs + Search */}
             <div className="flex items-center gap-2 mb-4 flex-wrap">
-              {/* Sidebar Folder disembunyikan di ponsel (lihat FolderSidebar) -
-                  tombol ini satu-satunya jalan membukanya di sana. */}
               <button onClick={()=>setShowFolderDrawer(true)}
                 className="md:hidden px-3 py-1.5 rounded-xl text-[13px] font-bold border border-gray-200 text-slate-600 flex items-center gap-1.5"
                 style={{ background: 'rgba(255,255,255,0.92)' }}>
@@ -74,9 +68,6 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
                   {t.label}
                 </button>
               ))}
-              {/* ml-auto hanya berlaku saat barisnya memang muat. Di ponsel ia
-                  mendorong kotak cari keluar layar, jadi di sana kelompok ini
-                  mengisi barisnya sendiri. */}
               <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-initial min-w-0">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -87,7 +78,6 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
                   className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
                   <option value="all">Semua Status</option>
                   <option value="approved">Approved</option>
-                  {/* Team user hanya bisa filter approved & pending (note milik sendiri) */}
                   {(canManage || true) && <option value="pending">Pending</option>}
                   <option value="revision">Perlu Revisi</option>
                   <option value="rejected">Ditolak</option>
@@ -95,7 +85,6 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
               </div>
             </div>
 
-            {/* Cards */}
             {loading ? <Spinner /> : fetchError ? (
               <ErrorState message={`Gagal memuat Tech Note: ${fetchError}`} onRetry={fetchNotes} />
             ) : filtered.length === 0 ? (

@@ -1,6 +1,5 @@
 'use client';
 
-/** KontrolAdminDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { supabase } from '@/lib/supabase';
 import { ProjectRequest } from '../shared';

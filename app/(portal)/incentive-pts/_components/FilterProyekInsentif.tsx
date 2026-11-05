@@ -1,6 +1,5 @@
 'use client';
 
-/** FilterProyekInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { bisaKonfig, bisaInput, type CurrentUser } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { IncentiveProjectRow, type KandidatGabung, formatRupiah } from './calc';
@@ -46,14 +45,6 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
               <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200"><IkonTeks nama="✏" />Kamu bisa input nominal</span>
             )}
             {bisaInput(currentUser) && (<>
-              {/*
-                Tahun export Summary TERPISAH dari filter Tahun BAST di
-                atas - filter di atas cuma mengubah tampilan tabel,
-                sedangkan orang yang lupa mengembalikannya ke "Semua"
-                sebelum export tidak boleh diam-diam mendapat file yang
-                lebih kecil dari yang dikira. Defaultnya selalu Semua
-                Tahun, harus dipilih sendiri kalau memang mau per tahun.
-              */}
               <select aria-label="Tahun Export Summary" value={summaryExportYear ?? ''}
                 onChange={e => setSummaryExportYear(e.target.value === '' ? null : Number(e.target.value))}
                 className="px-2.5 py-1.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 outline-none">
@@ -71,8 +62,6 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
                 <IkonTeks nama="🚀" />Generate Tahapan Massal {filterBastYear} ({kandidatBulkGenerate(filterBastYear).length})
               </button>
             )}
-            {/* Tombol massal hanya muncul saat ada yang dipilih - tombol
-                hapus yang selalu terlihat mengundang klik tanpa maksud. */}
             {bolehHapus && pilihHapus.size > 0 && (
               <>
                 <span className="px-2 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200">
@@ -91,15 +80,6 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
           </div>
         </div>
 
-        {/*
-          Spanduk kandidat gabung. Hanya muncul kalau ada yang terdeteksi,
-          dan hanya untuk yang boleh mengelola insentif.
-
-          Diletakkan di ATAS daftar, bukan sebagai lencana kecil di baris
-          proyeknya: yang perlu diketahui adalah bahwa dua baris berbeda
-          sebenarnya satu, dan itu tidak bisa disampaikan dari dalam salah
-          satu barisnya saja.
-        */}
         {bolehHapus && kandidatGabung.length > 0 && (
           <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-amber-200">
@@ -133,20 +113,6 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
             </div>
           </div>
         )}
-        {/*
-          SPANDUK KELENGKAPAN DATA.
-
-          Process Batch menolak proyek yang mode_penyelesaian-nya kosong -
-          dan dulu satu-satunya cara mengetahuinya adalah menekan tombolnya
-          lalu membaca daftar galat. Kelengkapan yang menentukan berhasil
-          atau tidaknya pemrosesan harus terbaca SEBELUM tombol ditekan,
-          bukan sesudah.
-
-          Brand kosong tidak menggagalkan pemrosesan, tapi membuat proyek
-          itu terlihat oleh SEMUA petugas apa pun lingkup brand-nya (lihat
-          bolehLihatBrand) - jadi tetap perlu disebut, dengan nada yang
-          lebih ringan.
-        */}
         {bisaInput(currentUser) && (() => {
           const tanpaMode  = filteredProjects.filter(p => !p.mode_penyelesaian);
           const tanpaBrand = filteredProjects.filter(p => !p.brand);
@@ -179,14 +145,8 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
             &nbsp;·&nbsp;<span className="font-bold text-emerald-700">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
             <span className="font-bold text-amber-700">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
           </>)}
-          {/*
-            Total nominal utk SEMUA role - dijumlah dari filteredProjects
-            (sudah tersaring ke project sendiri utk non-privileged),
-            BUKAN dari totalPool (total seluruh platform).
-          */}
           {(() => {
             const jumlah = filteredProjects.reduce((s, p) => s + (p.incentive_value || 0), 0);
-            //  Tanpa hak melihat nominal, jumlahnya 0 - bukan "Rp 0", jadi tidak ditampilkan.
             if (jumlah <= 0 && !bisaInput(currentUser)) return null;
             return (<>&nbsp;·&nbsp;Total:&nbsp;<span className="font-bold text-emerald-700">{formatRupiah(jumlah)}</span></>);
           })()}

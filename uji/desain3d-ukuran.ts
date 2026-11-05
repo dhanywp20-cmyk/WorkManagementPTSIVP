@@ -1,15 +1,3 @@
-/**
- * uji/desain3d-ukuran.ts - Ukuran & perhitungan Desain 3D yang dulu meleset:
- *  1. tinggi ruangan (plafon) tampil di kanvas 3D & denah;
- *  2. ubah tinggi plafon / salin ke ruang lain tidak merusak arah proyektor ke layar;
- *  3. gambar proyektor selalu 16:9 (layar 4:3 / 16:10 / 21:9 tetap tertutup, angka lux benar);
- *  4. aturan jarak pandang 4-6-8 memakai tinggi GAMBAR, bukan bodi TV / IFP;
- *  5. benda yang diturunkan karena plafon lebih rendah tidak menembus plafon;
- *  7. proyektor boleh tertanam di plafon / dinding (hanya lensa di dalam ruang);
- *  8. kartu keterangan blending bisa disembunyikan (bawaan) & dibuka per area.
- *
- * Jalankan: npm test -- desain3d-ukuran
- */
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, daftarRuang, denahDari, JARAK_LENSA_PERMUKAAN, jepitProyektor, KATEGORI_RUANG, keDunia, lensaProyektor,
@@ -84,7 +72,6 @@ console.log('\n4. Jarak pandang 4-6-8 memakai tinggi gambar');
   cek(`IFP 86": gambar ${ukuranGambarDisplay(ifp).h} m (bodi ${ifp.h} m)`, Math.abs(ukuranGambarDisplay(ifp).h - u86.tinggiM) < 0.001 && ifp.h > ukuranGambarDisplay(ifp).h);
   const layar = bendaBaru('layar', k3, { diag: 120 });
   cek('layar proyektor & videowall: seluruh permukaan', ukuranGambarDisplay(layar).h === layar.h);
-  //  Kelas 6,79 m: aturan 6x perlu 1,13 m - IFP 86" (gambar 1,07 m) KURANG, padahal bodinya 1,17 m (dulu "cukup").
   const perlu = 6.79 / 6;
   cek('IFP 86" di penonton 6,79 m (aturan 6x, perlu 1,13 m): kurang, bukan "cukup" dari tinggi bodi', ukuranGambarDisplay(ifp).h < perlu && ifp.h >= perlu);
   const keadaan = readFileSync(`${D3}/useKeadaanDesain.ts`, 'utf8');
@@ -117,11 +104,9 @@ console.log('\n7. Proyektor tertanam di plafon / dinding (hanya lensa di dalam r
   const p0 = bendaBaru('proyektor', k3, { pasangProyektor: 'plafon' });
   const lensa = (b: Benda) => keDunia(b, lensaProyektor(b));
   const m = JARAK_LENSA_PERMUKAAN;
-  //  Diangkat jauh ke atas plafon: badan menembus plafon, lensa berhenti 3 cm di bawah plafon.
   const naik = { ...p0, ...jepitProyektor({ ...p0, elev: 9 }, k3.p, k3.l, k3.t) };
   cek(`plafon 3 m: badan tertanam (puncak ${(naik.elev + naik.h).toFixed(2)} m), lensa ${lensa(naik)[1].toFixed(3)} m = 3 cm di bawah plafon`,
     naik.elev + naik.h > k3.t && Math.abs(lensa(naik)[1] - (k3.t - m)) < 1e-9);
-  //  Didorong menembus dinding belakang (menghadap layar di depan): lensa tetap 3 cm di dalam ruang.
   const mundur = { ...p0, rot: 180, z: 20 };
   const j = { ...mundur, ...jepitProyektor(mundur, k3.p, k3.l, k3.t) };
   cek(`dinding belakang: badan masuk dinding (tepi ${(j.z + j.d / 2).toFixed(2)} > ${k3.l} m), lensa ${lensa(j)[2].toFixed(3)} m`,
@@ -131,15 +116,13 @@ console.log('\n7. Proyektor tertanam di plafon / dinding (hanya lensa di dalam r
   const mesin = readFileSync(`${D3}/mesin/useMesin.ts`, 'utf8');
   cek('seret (gizmo): proyektor dijepit lewat lensanya, benda lain tetap utuh di dalam ruang',
     /jepitProyektor\(\{ \.\.\.b0, x, z, rot, elev: Math\.max\(0, o\.position\.y\) \}, bt\.x, bt\.z, plafon\)/.test(mesin) && /proyektor \? v : Math\.min\(bt\.x, Math\.max\(0, v\)\)/.test(mesin));
-  //  Input angka proyektor kini di ujung lensa + projection distance (panel/benda/PosisiProyektor.tsx) - tetap lewat jepitProyektor.
   const posisiP = readFileSync(`${D3}/panel/benda/PosisiProyektor.tsx`, 'utf8');
   cek('geser cepat & input angka (lensa X / Z / Y, projection distance) memakai aturan yang sama',
     /jepitProyektor\(/.test(readFileSync(`${D3}/panel/GeserCepat.tsx`, 'utf8')) && /jepitProyektor\(\{ \.\.\.b, \.\.\.ubah \}/.test(posisiP)
     && (posisiP.match(/set\(baru\)/g) ?? []).length === 2 && /proyektor \? <PosisiProyektor/.test(readFileSync(`${D3}/panel/benda/BagianUmum.tsx`, 'utf8')));
-  //  Ubah ukuran ruang: proyektor tertanam yang menembak layar tetap tertanam (tidak dipasang ulang ke drop pole).
   const layar = bendaBaru('layar', k3, { diag: 100 });
   const pas = proyektorKeLayar(p0, layar, k3, r3);
-  const tanam = { ...pas, elev: Math.round((k3.t - pas.h + 0.03) * 100) / 100 }; //  badan menembus 3 cm, lensa tetap di bawah plafon
+  const tanam = { ...pas, elev: Math.round((k3.t - pas.h + 0.03) * 100) / 100 };
   const r4 = { ...r3, p: 9 };
   const hasil = sesuaikanUkuranRuang([layar, tanam], r3, r4).find(b => b.jenis === 'proyektor')!;
   cek('ruang dipanjangkan: proyektor tertanam tetap tertanam & lensanya di bawah plafon', hasil.elev === tanam.elev && lensa(hasil)[1] <= r4.t - m + 1e-9, `elev ${hasil.elev}`);
@@ -180,7 +163,6 @@ console.log('\n10. LED: unit utuh & referensi menu LED Videotron');
   cek(`bawaan: ${s.kolom} x ${s.baris} cabinet 500 mm = ${led.w} x ${led.h} m (kelipatan cabinet utuh)`, led.w === s.kolom * 0.5 && led.h === s.baris * 0.5);
   const lama = rapikanLED([{ ...led, w: 4, h: 2.25 }])[0];
   cek(`desain lama 4 x 2,25 m (4,5 baris) dirapikan saat dibuka -> ${lama.w} x ${lama.h} m`, Number.isInteger(Math.round(lama.h / 0.5 * 1e6) / 1e6) && Number.isInteger(Math.round(lama.w / 0.5 * 1e6) / 1e6));
-  //  Sama persis dengan hitungLED alat LED Videotron untuk modul referensi (piksel dari datasheet, bukan ukuran/pitch).
   const m = MODUL_LED.find(x => x.kode === 'P1.86')!;
   const ref = { ...led, satuanLED: 'referensi' as const, unitLED: 'modul' as const, pitch: m.pitch, cabW: m.w, cabH: m.h, pxUnitX: m.pxW, pxUnitY: m.pxH, w: 4.5, h: 2.5 };
   const sr = susunanLED(ref);

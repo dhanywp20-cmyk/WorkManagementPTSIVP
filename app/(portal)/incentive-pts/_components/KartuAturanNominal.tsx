@@ -1,6 +1,5 @@
 'use client';
 
-/** KartuAturanNominal - siapa yang boleh melihat nominal total proyek (disimpan di app_settings lewat /api/incentive/nominal). */
 import { useEffect, useState } from 'react';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { ambilPetaNominal, simpanAturanNominal } from '@/lib/incentive-nominal-api';

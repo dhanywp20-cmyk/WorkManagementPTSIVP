@@ -1,5 +1,4 @@
 'use client';
-/** Atur display: videowall (termasuk panel custom), layar proyektor, IFP, TV / signage, LED, pilihan pemasangan. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { BISA_PASANG, CELAH_PASANG, IFP_DIAG, LABEL_PASANG, LAYAR_DIAG, type ModelVW, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, RASIO_LAYAR, type RasioLayar, spekVideowall, TV_DIAG, VIDEOWALL } from '../../inti';
 import type { KonteksAtur } from './konteks';
@@ -14,7 +13,6 @@ export function AturDisplay({ c }: { c: KonteksAtur }) {
           <Pilih label="Model panel" nilai={b.vw ?? '55BDL2105X'}
             onUbah={(v: ModelVW) => {
               if (v !== 'custom') { setUkuran({ vw: v }); return; }
-              //  Custom dimulai dari panel yang sedang dipakai, lalu diisi ulang sesuai datasheet.
               const sp = spekVideowall(b);
               setUkuran({ vw: v, panel: b.panel ?? { w: sp.w, h: sp.h, d: sp.d, bezelMm: sp.bezelMm, resX: sp.resX, resY: sp.resY, wTipikal: sp.wTipikal, wMaks: sp.wMaks } });
             }}
@@ -88,11 +86,9 @@ export function AturDisplay({ c }: { c: KonteksAtur }) {
       )}
       {BISA_PASANG.includes(b.jenis) && (() => {
         const lama = pasangDari(b);
-        //  Ganti pemasangan: display maju / mundur sejauh beda tebal pemasangan, punggung tetap di tempatnya.
         const ganti = (v: Pasang) => {
           const r = (b.rot * Math.PI) / 180, maju = CELAH_PASANG[v] - CELAH_PASANG[lama];
           set({ pasang: v, x: Math.round((b.x + Math.sin(r) * maju) * 100) / 100, z: Math.round((b.z + Math.cos(r) * maju) * 100) / 100,
-            //  Standfloor: display duduk di atas baki percabangan kaki (±0,72 m dari lantai).
             elev: v === 'standfloor' && (b.elev > 1.2 || b.elev < 0.66) ? 0.72 : b.elev });
         };
         return (

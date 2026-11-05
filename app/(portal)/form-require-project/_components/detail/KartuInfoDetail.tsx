@@ -1,6 +1,5 @@
 'use client';
 
-/** KartuInfoDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { ProjectRequest } from '../shared';
 
@@ -23,19 +22,16 @@ export function KartuInfoDetail({ detailDueStatus, detailRoomAssignName, detailS
           Informasi Project
         </h3>
         <div className="space-y-4">
-          {/* Nama Project — full width */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project</label>
             <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{selectedRequest.project_name}</p>
           </div>
-          {/* Lokasi Project — full width, tepat di bawah Nama Project */}
           {selectedRequest.project_location && (
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
               <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-words whitespace-pre-wrap">{selectedRequest.project_location}</p>
             </div>
           )}
-          {/* Row: Nama Ruangan, Sales/Account */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
             {dr.room_name && (
               <div>
@@ -55,11 +51,6 @@ export function KartuInfoDetail({ detailDueStatus, detailRoomAssignName, detailS
                 <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{selectedRequest.sales_division}</p>
               </div>
             )}
-            {/* "Sales / Account" di atas = ATAS NAMA siapa request diajukan;
-                baris ini = siapa yang benar-benar mengisi & submit. Lewat SBU,
-                Sales Internal bisa mengajukan atas nama Sales External, jadi
-                kalau keduanya beda ditandai tegas supaya Sales yang namanya
-                tercantum tidak dikira membuat request yang tak pernah ia buat. */}
             {selectedRequest.requester_name && (
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">

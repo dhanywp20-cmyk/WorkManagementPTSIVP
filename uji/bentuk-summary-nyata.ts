@@ -1,26 +1,8 @@
-/*
-  UJI: bentuk berkas Export Summary yang SUNGGUHAN.
-
-  Bukan tiruan logika seperti uji lain di folder ini - ini memanggil
-  bangunWorkbookSummary() yang dipakai tombol "Export Summary" itu sendiri,
-  menulis hasilnya ke .xlsx, lalu membacanya kembali. Jadi kalau tata letaknya
-  meleset dari contoh yang diminta, uji ini yang gagal - bukan pengguna yang
-  harus mengunduh manual lalu melapor lagi.
-
-  Data contohnya sengaja meniru berkas contoh: 5 proyek, dua di antaranya
-  ber-Installer, satu tanpa nominal ("belum input").
-
-    npx tsx uji/bentuk-summary-nyata.ts [--simpan <path>]
-
-  --simpan menuliskan berkasnya ke path itu untuk diperiksa mata sendiri.
-*/
 import ExcelJS from 'exceljs';
 import { bangunWorkbookSummary } from '../app/(portal)/incentive-pts/_components/exportPengajuan';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-// Supabase & file-saver tidak pernah tersentuh: bangunWorkbookSummary menerima
-// skema sebagai argumen dan mengembalikan workbook, tidak mengunduh apa pun.
 process.env.NEXT_PUBLIC_SUPABASE_URL ||= 'https://x.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||= 'dummy';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ||= 'https://y.supabase.co';
@@ -102,12 +84,10 @@ async function main() {
   const ws = wb2.getWorksheet('Summary Incentive PTS');
   if (!ws) throw new Error('Worksheet "Summary Incentive PTS" tidak ditemukan');
   const teks = (r: number, c: number) => String(ws.getCell(r, c).value ?? '');
-  /** Cari baris pertama yang kolom B-nya memuat potongan teks ini. */
   const cariBaris = (potongan: string) => {
     for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2).includes(potongan)) return r;
     return -1;
   };
-  /** Cari kolom pertama pada satu baris yang nilainya PERSIS teks ini - dipakai kolom per-orang yang posisinya dinamis. */
   const cariKolom = (baris: number, nilai: string) => {
     for (let c = 1; c <= ws.columnCount; c++) if (teks(baris, c) === nilai) return c;
     return -1;
@@ -118,7 +98,6 @@ async function main() {
     const judul = teks(2, 2);
     ok('Judul ada', judul.startsWith('Summary Incentive PTS IVP'), judul);
     ok('Judul memuat "Tahun"', judul.includes('Tahun'), judul);
-    //  BAST 2026 + tahapan 1/2/3 -> dibayar 2027..2029.
     ok('Rentang tahunnya 2027–2029', judul.includes('2027') && judul.includes('2029'), judul);
   }
 
@@ -134,7 +113,7 @@ async function main() {
 
   console.log('\n3. Kepala Tabel 1 - tiap ORANG (bukan tiap peran) punya kolom Posisi/%/Rp sendiri');
   {
-    const r = cariBaris('1. List Project') + 1;   // baris kepala pertama
+    const r = cariBaris('1. List Project') + 1;
     ok('Kolom dasar No/Project/Mode/BAST/Nominal',
       teks(r, 2) === 'No' && teks(r, 3) === 'Project' && teks(r, 4) === 'Mode'
       && teks(r, 5) === 'BAST' && teks(r, 6) === 'Nominal (Rp)');
@@ -170,7 +149,6 @@ async function main() {
     ok('Posisi Taufik di proyek ini = PIC', teks(awal, kolTaufik) === 'PIC');
     ok('Installer-nya Ridwan Gunawan', teks(awal, kolInst) === 'Ridwan Gunawan');
     ok('Lokasi installer Jakarta', teks(awal, kolInst + 1) === 'Jakarta');
-    //  Proyek tanpa nominal ditandai, bukan diam-diam nol.
     const rOcs = (() => { for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 3).includes('OCS')) return r; return -1; })();
     ok('Proyek tanpa nominal ditandai "belum input"', teks(rOcs, 6) === 'belum input');
   }
@@ -182,9 +160,6 @@ async function main() {
     const kolInst = cariKolom(rKepala, 'PTS Daerah');
     const awal = cariBaris('1. List Project') + 3;
     const rTotal = cariBaris('TOTAL');
-    //  Konsistensi diri: TOTAL harus sama dengan penjumlahan nyata tiap sel
-    //  Rp Taufik di baris data - bukan angka tebak-tebakan yang rapuh
-    //  terhadap perubahan skema persen.
     let jumlahNyata = 0;
     for (let r = awal; r < rTotal; r++) {
       const v = ws.getCell(r, kolTaufik + 2).value;
@@ -203,7 +178,6 @@ async function main() {
   {
     const rTotal = cariBaris('TOTAL');
     const cTotal = ws.getCell(rTotal, 6);
-    //  4 proyek bernominal: 500rb + 2jt + 2jt + 1jt = 5,5jt (OCS belum input).
     ok('TOTAL Tabel 1 = 5.500.000', cTotal.result === 5500000, String(cTotal.result));
 
     let gtCount = 0;
@@ -213,14 +187,10 @@ async function main() {
 
   console.log('\n6b. Total Nominal Tabel 2 adalah RUMUS yang MERUJUK sel Rp Tabel 1 - bukan angka mati');
   {
-    //  Bug yang baru diperbaiki: formula-nya dulu `=300000+125000+0+...`
-    //  (angka yang sudah dijumlah duluan di JavaScript, ditulis ulang sebagai
-    //  angka mati) - bukan `=G5+K12+...` yang benar-benar merujuk sel Tabel 1.
-    //  Kalau seseorang mengoreksi % di Tabel 1, versi lama TIDAK ikut berubah.
     const r2 = cariBaris('2. Summary Total per Anggota Team PTS');
     const rTaufik2 = (() => { for (let r = r2; r <= ws.rowCount; r++) if (teks(r, 2) === 'Taufik wahyudi') return r; return -1; })();
     ok('Baris Taufik ada di Tabel 2', rTaufik2 > 0);
-    const cTotal2 = ws.getCell(rTaufik2, 7); // KOL_REKAP.total = [7,9] (G:I merge) - selGabung menulis value di sel jangkar (kolom 7)
+    const cTotal2 = ws.getCell(rTaufik2, 7);
     const formula2 = String((cTotal2.value as any)?.formula ?? '');
     ok('Formula-nya memuat referensi sel (huruf+angka), bukan cuma deretan angka',
       /[A-Z]{1,2}\d+/.test(formula2), formula2);
@@ -254,12 +224,6 @@ async function main() {
 
   console.log('\n8b. Kolom Tabel 1 tidak tertimpa oleh kolom dinamis Tabel 3');
   {
-    //  Ini bug nyata yang pernah lolos: Tabel 3 menaruh kolom per-tahun mulai
-    //  dari kolom yang SAMA dengan kolom Nominal/orang pertama Tabel 1
-    //  (mereka berbagi satu grid kolom worksheet). Menimpa lebar kolom di
-    //  sana dengan `.width = angka` langsung mengecilkan kolom Tabel 1 yang
-    //  sudah lebih lebar - persis penyebab Nominal tampil "########" dan
-    //  Posisi/nama tumpang tindih. perbesarKolom cuma boleh MELEBARKAN.
     const rKepala = cariBaris('1. List Project') + 1;
     const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
     const kolInst = cariKolom(rKepala, 'PTS Daerah');
@@ -272,11 +236,7 @@ async function main() {
 
   console.log('\n8c. Tinggi baris menyesuaikan nama yang panjang - bukan angka tetap');
   {
-    //  "Taufik wahyudi" (PIC proyek pertama) pas di satu baris pada kolom
-    //  selebar 17 karakter. Baris dengan nama yang melipat ke baris kedua
-    //  harus lebih tinggi daripada baris bernama pendek, kalau tidak ia
-    //  terpotong/tumpang tindih secara visual.
-    const rSatuNama = cariBaris('1. List Project') + 3; // baris data pertama
+    const rSatuNama = cariBaris('1. List Project') + 3;
     const tinggiSatuBaris = ws.getRow(rSatuNama).height ?? 0;
     ok('Baris dengan nama pendek punya tinggi wajar (bukan nol/undefined)', tinggiSatuBaris >= 20, String(tinggiSatuBaris));
     ok('Bukan lagi angka tetap 18px yang terlalu pendek untuk teks berlipat', tinggiSatuBaris !== 18, String(tinggiSatuBaris));
@@ -284,9 +244,6 @@ async function main() {
 
   console.log('\n9. Catatan proyeksi Tahap 2 & 3 di bawah Tabel 3 (satu-satunya berkas Excel sekarang)');
   {
-    //  Bukan penanda per KOLOM (tahun kalender berbeda arti tahap-ke-berapa
-    //  untuk tiap orang, tergantung BAST proyeknya) - dicek sebagai catatan
-    //  teks di bawah GRAND TOTAL Tabel 3, lihat alasannya di kode.
     let baris = -1;
     for (let r = 1; r <= ws.rowCount; r++) {
       if (teks(r, 2).includes('masih PROYEKSI')) { baris = r; break; }
@@ -303,17 +260,13 @@ async function main() {
 
   console.log('\n9b. Lebar catatan proyeksi mengikuti Tabel 3 sendiri, bukan lebar penuh berkas (Tabel 1 sekarang jauh lebih lebar)');
   {
-    //  Bug yang baru diperbaiki: baris catatan ini dulu di-merge selebar
-    //  KOL_TERAKHIR (lebar keseluruhan berkas) - begitu Tabel 1 jadi per-orang
-    //  dan jauh lebih lebar dari Tabel 3, catatan ini melebar jauh melewati
-    //  kolom Tabel 3 sendiri dan terlihat seperti bilah kosong yang salah tempat.
     let barisCatatan = -1;
     for (let r = 1; r <= ws.rowCount; r++) if (teks(r, 2).includes('masih PROYEKSI')) { barisCatatan = r; break; }
     const rHeader3 = cariBaris('3. Nilai Pengajuan Incentive per Tahun') + 1;
     const kolTotal3 = cariKolom(rHeader3, 'Total');
     const rHeader1 = cariBaris('1. List Project') + 1;
     const kolInst = cariKolom(rHeader1, 'PTS Daerah');
-    const kolTerakhirTabel1 = kolInst + 3; // kolInst.rp - kolom paling kanan Tabel 1
+    const kolTerakhirTabel1 = kolInst + 3;
     ok('Data uji ini punya Tabel 1 lebih lebar dari Tabel 3 (memverifikasi skenario yang relevan benar-benar diuji)',
       kolTerakhirTabel1 > kolTotal3 + 2, `Tabel1=${kolTerakhirTabel1} Tabel3=${kolTotal3}`);
     ok('Kolom terakhir Tabel 3 masih bagian dari sel gabungan catatan',
@@ -327,9 +280,6 @@ async function main() {
 
   console.log('\n13. Filter Tahun BAST pada Export Summary (fitur baru)');
   {
-    //  Kelima proyek contoh semuanya BAST 2026 (p5 tanpa BAST sama sekali).
-    //  Filter ke 2026 harus tetap menampilkan seluruh proyek yang punya BAST -
-    //  filter TIDAK BOLEH diam-diam membuang data yang sebenarnya cocok.
     const wb2026 = await bangunWorkbookSummary({
       projects, allUsers: users, supportsMap: new Map(),
       managerName: 'Dhany Wahyu', managerUserId: 'u-dhany', year: 2026,
@@ -351,9 +301,6 @@ async function main() {
     ok('Keempat proyek BAST 2026 tetap muncul saat difilter ke 2026', barisProyek2026 === 4, String(barisProyek2026));
     fs.unlinkSync(target2026);
 
-    //  Filter ke tahun yang TIDAK ADA proyeknya (2099) harus menghasilkan
-    //  Tabel 1 kosong dari proyek - bukti filter benar-benar menyaring, bukan
-    //  cuma mengubah judul sambil tetap mencetak semua data.
     const wbKosong = await bangunWorkbookSummary({
       projects, allUsers: users, supportsMap: new Map(),
       managerName: 'Dhany Wahyu', managerUserId: 'u-dhany', year: 2099,
@@ -374,19 +321,12 @@ async function main() {
     ok('Tahun 2099 (tidak ada proyeknya) tidak mencetak satu pun proyek dari tahun lain', !adaProyekAsing);
     fs.unlinkSync(targetKosong);
 
-    //  Tanpa `year` sama sekali (perilaku lama) harus tetap all-years - fitur
-    //  baru tidak boleh mengubah default siapa pun yang belum pakai filternya.
-    //  `ws`/`teks` di sini masih merujuk workbook TANPA filter dari bagian
-    //  atas berkas ini (dibuat sebelum year ditambahkan ke DataSummary).
     ok('Tanpa year sama sekali, judul awal (Tabel 1 utama di atas) TIDAK menyebut "Project BAST"',
       !teks(2, 2).includes('Project BAST'), teks(2, 2));
   }
 
   console.log('\n14. Filter projectIds + batchYearLabel (tombol Export di Tranche Schedule)');
   {
-    //  Simulasi tombol Export batch tahun bayar 2027: hanya 2 dari 5 project
-    //  contoh yang "masuk batch" itu (project_id eksplisit), independen dari
-    //  BAST-nya masing-masing - beda sumbu filter dari `year` di atas.
     const wbBatch = await bangunWorkbookSummary({
       projects, allUsers: users, supportsMap: new Map(),
       managerName: 'Dhany Wahyu', managerUserId: 'u-dhany',

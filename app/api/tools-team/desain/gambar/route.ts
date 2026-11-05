@@ -1,12 +1,3 @@
-/**
- * /api/tools-team/desain/gambar?id=&v=[&hd=1] - gambar satu VERSI desain.
- *
- * Gambar sengaja tidak ikut di JSON daftar: dikirim terpisah sebagai JPEG
- * dengan Cache-Control immutable. Versi tidak pernah berubah, jadi peramban
- * cukup mengunduhnya sekali lalu memakai cache - hemat egress Supabase &
- * bandwidth Vercel (paket gratis/Hobby). hd=1 (±1400 px) hanya untuk cetak/ZIP;
- * bila tidak ada, jatuh ke pratinjau kecil.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';

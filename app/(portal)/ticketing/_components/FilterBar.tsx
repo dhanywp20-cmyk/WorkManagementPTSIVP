@@ -2,21 +2,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Ico } from './Ico';
 import type { Ticket, TeamMember, User } from './shared';
-//  Nilai (bukan tipe) - dipakai label & nilai opsi penyaring tahun.
 import { TAHUN_TERBARU, RENTANG_BULAN_TIKET } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 
-/**
- * Header "Ticket List" (Select/Refresh/Export) + baris search/filter +
- * bar bulk-delete + chip filter aktif - dipindah dari
- * app/ticketing/page.tsx apa adanya (JSX identik). State & handler tetap
- * di page.tsx, komponen ini murni presentasional.
- *
- * Dipanggil sebagai children dari <div ref={ticketListRef}> di page.tsx -
- * ref-nya sengaja tetap di page.tsx karena elemen yang sama juga
- * membungkus daftar tiket (mobile/desktop) yang belum diekstrak.
- */
 export function FilterBar({
   canManageTickets, selectMode, setSelectMode, setSelectedIds,
   fetchData, loading, onExport, uploading,
@@ -65,18 +54,12 @@ export function FilterBar({
 }) {
   return (
     <>
-      {/* Header with title and actions */}
       <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
         </div>
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
-          {/* Ketiga tombol memakai kerangka yang SAMA (tinggi, padding, radius,
-              ukuran ikon) dan hanya dibedakan oleh peran: Export adalah aksi
-              utama sehingga dibuat solid, dua lainnya sekunder sehingga bergaris.
-              Sebelumnya tiap tombol punya tinggi & gaya sendiri — Export bahkan
-              membesar saat disentuh — sehingga barisnya terlihat tidak rapi. */}
           {canManageTickets && (
             <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
               className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 ${selectMode ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
@@ -100,7 +83,6 @@ export function FilterBar({
         </div>
       </div>
 
-      {/* Integrated search filters row - like the image */}
       <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSalesName, searchProduct, handlerFilter, filterStatus, salesDivisionFilter]}>
           <div>
@@ -194,10 +176,6 @@ export function FilterBar({
                 onChange={(e) => setFilterYear(e.target.value)}
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
-                {/*  Label jujur: pilihan ini TIDAK memuat semua tahun - server
-                     membatasinya 12 bulan terakhir (lihat rentangTiket). Menyebutnya
-                     "All Years" membuat orang menyimpulkan tiket lamanya hilang,
-                     padahal ia tinggal memilih tahunnya di bawah. */}
                 <option value={TAHUN_TERBARU}>{RENTANG_BULAN_TIKET} Bulan Terakhir</option>
                 {availableYears.map((year) => (<option key={year} value={year}>{year}</option>))}
               </select>
@@ -207,7 +185,6 @@ export function FilterBar({
         </FilterLipat>
       </div>
 
-      {/* Bulk delete bar — admin only, selectMode only */}
       {selectMode && canManageTickets && selectedIds.size > 0 && (
         <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
           <span className="text-sm font-bold text-red-700">{selectedIds.size} ticket dipilih</span>
@@ -222,7 +199,6 @@ export function FilterBar({
         </div>
       )}
 
-      {/* ── Filter Aktif chips — posisi di bawah filter bar ── */}
       {(filterStatus !== "All" || handlerFilter || salesDivisionFilter || productFilter || searchProject || searchSalesName || searchProduct) && (
         <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>

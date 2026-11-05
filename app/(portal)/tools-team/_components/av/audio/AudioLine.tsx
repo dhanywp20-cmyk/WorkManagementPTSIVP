@@ -1,8 +1,4 @@
 'use client';
-/**
- * Audio · speaker line tegangan konstan 70 / 100 V: total tap → daya amplifier (cadangan 25%) &
- * impedansi beban, plus rugi kabel line. Rumus: lib/av-audio-jaringan.ts.
- */
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { amplifierLine, rugiKabel, saranKabel } from '@/lib/av-audio-jaringan';

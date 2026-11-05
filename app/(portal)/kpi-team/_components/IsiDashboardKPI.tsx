@@ -1,6 +1,5 @@
 'use client';
 
-/** IsiDashboardKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { PitaRingkas } from './DashboardKPI-pita';
 import { RelSeksi } from './DashboardKPI-ubin';
 import { BarisTicketKPI } from './dasbor/BarisTicketKPI';
@@ -28,22 +27,14 @@ export function IsiDashboardKPI({ auditFilter, auditLoading, auditSearch, filter
     <>
       <div className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
 
-        {/* ══════════ TAB ANALYTICS ══════════ */}
         {tab==='analytics' && (
           <div className="grid grid-cols-1 gap-3 lg:contents">
 
-            {/*  Jangkar halaman. Lihat PitaRingkas untuk alasannya. */}
             <PitaRingkas kpi={kpi} loading={loading}
               catatan={scope.kind==='pts_sup' ? (scope.ptsTeamType ?? 'Tim') : scope.kind==='admin' ? 'Semua Tim' : 'Tim Saya'}/>
 
             <RelSeksi judul="Operasional"/>
 
-            {/*
-              Empat ubin operasional. Anatominya SENADA (permukaan, kepala,
-              angka utama) tapi tidak identik: Ticket/Reminder/Unit memakai
-              bilah rasio, Piket memakai cincin + papan nama karena isinya
-              memang NAMA, bukan besaran yang bisa dibandingkan panjangnya.
-            */}
             <BarisTicketKPI
               kpi={kpi} loading={loading} scope={scope}
             />
@@ -63,12 +54,9 @@ export function IsiDashboardKPI({ auditFilter, auditLoading, auditSearch, filter
           </div>
         )}
 
-        {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
-
         {(tab as string)==='audit_removed'&&(
           <div className="rounded-2xl p-4 space-y-3"
             style={{ background:'rgba(255,255,255,0.92)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', border:'1px solid rgba(0,0,0,0.07)', boxShadow:'0 2px 16px rgba(0,0,0,0.08)' }}>
-            {/* Search + filter */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[180px]">
                 <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +74,6 @@ export function IsiDashboardKPI({ auditFilter, auditLoading, auditSearch, filter
               ))}
               <span className="text-sm ml-auto tracking-widest text-slate-500">{filteredAudit.length} ENTRI</span>
             </div>
-            {/* List */}
             <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
               style={{ scrollbarWidth:'thin', scrollbarColor:'rgba(0,0,0,0.1) transparent' }}>
               {auditLoading

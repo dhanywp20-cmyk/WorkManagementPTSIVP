@@ -1,13 +1,3 @@
-/**
- * uji/halus-refresh-login.ts - refresh halaman, menu, dan animasi sukses login.
- *
- * Keluhan: setelah refresh / pindah menu terasa macet; animasi sukses login terlalu berat.
- * Sebabnya (dijaga di sini supaya tidak kembali):
- *  - menu ditahan timer "memuat" 400 ms yang terulang tiap objek currentUser diganti;
- *  - portal menunggu 3 permintaan berantai sebelum tampil.
- *
- * Jalankan: npm test -- halus-refresh-login
- */
 import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;
@@ -26,7 +16,8 @@ cek('Full Access / tanpa allowed_menus -> semua menu', /!allowedMenus \|\| hasFu
 cek('urutan menu mengikuti DAFTAR_MENU', /DAFTAR_MENU\.filter\(m => izin\.includes\(m\.key\)\)/.test(portal));
 
 console.log('\n2. Refresh: tampil dulu, segarkan di latar belakang');
-const load = portal.slice(portal.indexOf('const load = async () => {'), portal.indexOf('// isAdmin TETAP admin'));
+const awalLoad = portal.indexOf('const load = async () => {');
+const load = portal.slice(awalLoad, portal.indexOf('\n    load();', awalLoad));
 const iTampil = load.search(/setLoading\(false\);\s+try \{/);
 const iProfil = load.indexOf("supabase.from('users').select('id,username");
 cek('setLoading(false) SEBELUM kueri profil', iTampil > 0 && iProfil > iTampil);

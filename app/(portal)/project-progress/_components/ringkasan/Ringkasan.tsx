@@ -1,12 +1,5 @@
 'use client';
 
-/**
- * Ringkasan & grafik Project Progress - satu tampilan untuk semua tempat: daftar proyek, detail
- * proyek, checklist lokasi, link View-Only, dan link checklist tim. Angka dari ./hitung.ts.
- *
- * Aturan: tiap fakta tampil SEKALI di halaman. Progres per lokasi / per bagian sudah ada di kartu
- * di bawahnya, jumlah per status proyek di kartu filter - tidak diulang di sini.
- */
 import { useState } from 'react';
 import { BarChart3, ChevronDown, ListChecks } from 'lucide-react';
 import { MiniPieChart } from '@/components/shared';
@@ -41,7 +34,6 @@ function Angka({ label, nilai, sub, warna }: { label: string; nilai: string; sub
   );
 }
 
-/** Waktu: hari berjalan, sisa, waktu terpakai + vonis terhadap pekerjaan (persennya sendiri tampil di tempat lain). */
 function BlokWaktu({ w, persen }: { w: Waktu; persen: number }) {
   if (w.hariBerjalan === null && w.sisaHari === null) return null;
   const lewat = w.sisaHari !== null && w.sisaHari < 0;
@@ -58,7 +50,6 @@ function BlokWaktu({ w, persen }: { w: Waktu; persen: number }) {
             <span className="uppercase tracking-wide" style={{ color: TEMA.samar }}>Waktu terpakai</span>
             <span style={{ ...fontAngka, color: NETRAL.tinta2 }}>{w.waktuPersen}%</span>
           </div>
-          {/* Penanda biru = posisi pekerjaan: di kanan batang abu-abu berarti di depan jadwal. */}
           <div className="relative h-2 rounded-full" style={{ background: NETRAL.garis }}>
             <div className="h-full rounded-full" style={{ width: `${w.waktuPersen}%`, background: '#94a3b8' }} />
             <span className="absolute -top-1 w-1 h-4 rounded-full" style={{ left: `calc(${Math.min(persen, 100)}% - 2px)`, background: persen >= 100 ? TEMA.selesai : TEMA.warna }}
@@ -75,7 +66,6 @@ function BlokWaktu({ w, persen }: { w: Waktu; persen: number }) {
   );
 }
 
-/** Progres keseluruhan + waktu - satu-satunya tempat angka progres proyek tampil. */
 function KartuProgres({ persen, stat, w }: { persen: number; stat: StatChecklist; w: Waktu }) {
   return (
     <div className="rounded-xl p-4 flex flex-col sm:flex-row lg:flex-col gap-4" style={kartu}>
@@ -95,7 +85,6 @@ function KartuProgres({ persen, stat, w }: { persen: number; stat: StatChecklist
 
 const fmtTgl = (t: string) => new Date(`${t}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
-/** Batang = centang per hari, garis = total kumulatif. SVG polos - tanpa pustaka grafik. */
 function GrafikLaju({ laju }: { laju: TitikLaju[] }) {
   const L = 600, T = 150, pad = { kiri: 6, kanan: 6, atas: 12, bawah: 4 };
   const lebar = (L - pad.kiri - pad.kanan) / laju.length;
@@ -138,14 +127,11 @@ const berwarna = (d: { label: string; value: number }[]) => d.map((x, i) => ({ .
 const pieOrang = (o: Kontribusi[]) => berwarna(o.map(x => ({ label: x.nama, value: x.jumlah })));
 const pie = (data: { label: string; value: number; color: string }[]) => data.filter(d => d.value > 0);
 
-/** Donat "Dikerjakan Oleh" - handler (anggota checklist) saja; proyek: lokasi, satu lokasi: item. */
 function DikerjakanOleh({ orang, satuan }: { orang: Kontribusi[]; satuan: 'lokasi' | 'item' }) {
   return <MiniPieChart title="Dikerjakan Oleh (Handler)" icon="👷" data={pieOrang(orang)} centerLabel={satuan} />;
 }
 
-/** Bungkus yang bisa dilipat - untuk halaman kerja (checklist) supaya ringkasan tidak menghalangi. */
 export function LipatRingkasan({ children, hpTerlipat = false }: { children: React.ReactNode; hpTerlipat?: boolean }) {
-  //  Dipasang sesudah data termuat di peramban (bukan saat render server), jadi window tersedia.
   const [buka, setBuka] = useState(() => !hpTerlipat || typeof window === 'undefined' || window.matchMedia('(min-width: 768px)').matches);
   return (
     <div className="space-y-3">
@@ -160,7 +146,6 @@ export function LipatRingkasan({ children, hpTerlipat = false }: { children: Rea
   );
 }
 
-/** Detail proyek & link View-Only. Progres per lokasi ada di kartu lokasi di bawahnya. */
 export function RingkasanProyek({ r }: { r: Ringkasan }) {
   const tenggat = pie([
     { label: 'Aman', value: r.perTenggat.aman, color: TEMA.warna },
@@ -188,7 +173,6 @@ export function RingkasanProyek({ r }: { r: Ringkasan }) {
   );
 }
 
-/** Tampilan depan: hanya yang belum tampil di kartu filter & daftar proyek. */
 export function RingkasanDaftarProyek({ r }: { r: RingkasanDaftar }) {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5">
@@ -205,12 +189,10 @@ export function RingkasanDaftarProyek({ r }: { r: RingkasanDaftar }) {
   );
 }
 
-/** Ada isi yang layak ditampilkan untuk satu checklist (progres & kendala sudah di header halaman). */
 export function adaRingkasanChecklist(r: DataChecklist): boolean {
   return r.hariBerjalan !== null || r.sisaHari !== null || r.perOrang.length > 0 || r.laju.length > 1;
 }
 
-/** Satu lokasi (detail checklist & link checklist tim): waktu, handler, laju harian. */
 export function RingkasanChecklist({ r }: { r: DataChecklist }) {
   const adaWaktu = r.hariBerjalan !== null || r.sisaHari !== null;
   return (

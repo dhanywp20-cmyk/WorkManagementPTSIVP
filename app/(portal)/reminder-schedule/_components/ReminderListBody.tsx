@@ -2,105 +2,33 @@
 import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ErrorState, ListEmptyState, MobileListCard, MobileCardBadge,
-  Paginasi, usePaginasi,
+  ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup, ErrorState, ListEmptyState, MobileListCard, MobileCardBadge, Paginasi, usePaginasi,
 } from '@/components/shared';
 import { StatusBadge } from './Badges';
 import {
-  Reminder, TeamUser, GuestUser, Status,
-  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG,
-  formatDatetime, isDueToday, layakIncentive, diluarIncentive,
+  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, formatDatetime, isDueToday, layakIncentive, diluarIncentive,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
+import { useKonteksJadwal } from './konteks-jadwal';
 
-/**
- * Error/loading/empty state + daftar reminder (kartu mobile & tabel
- * desktop) - dipindah dari app/reminder-schedule/page.tsx apa adanya
- * (JSX identik). State & handler tetap di page.tsx, komponen ini murni
- * presentasional.
- */
-export function ReminderListBody({
-  fetchError, setFetchError, fetchReminders, listLoading,
-  filteredReminders, reminders, groupedReminders,
-  filterStatus, filterYear, filterCategory, productFilter, setProductFilter,
-  searchProject, searchSales, searchDivisionSales, searchTeamHandler, searchProduct,
-  setFilterStatus, setFilterYear, setFilterCategory,
-  setSearchProject, setSearchSales, setSearchDivisionSales, setSearchTeamHandler, setSearchProduct,
-  setDetailReminder,
-  bolehEditReminder, setRescheduleTarget,
-  canInternalApprove, setInternalApproveTarget, handleInternalReject,
-  canApproveAssign, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo, setApproveDate, setApproveTime,
-  handleAdminReject,
-  currentUser, openSupervisorAssign,
-  isAdmin, isManager,
-  syncKeIncentive, syncing,
-  openDeleteModal,
-  selectMode, selectedIds, setSelectedIds, toggleSelectAll,
-  guestUsers,
-}: {
-  fetchError: string | null;
-  setFetchError: (v: string | null) => void;
-  fetchReminders: () => void;
-  listLoading: boolean;
-  filteredReminders: Reminder[];
-  reminders: Reminder[];
-  groupedReminders: Reminder[][];
-  filterStatus: Status | 'all';
-  filterYear: string;
-  filterCategory: string;
-  productFilter: string | null;
-  setProductFilter: (v: string | null) => void;
-  searchProject: string;
-  searchSales: string;
-  searchDivisionSales: string;
-  searchTeamHandler: string;
-  searchProduct: string;
-  setFilterStatus: (v: Status | 'all') => void;
-  setFilterYear: (v: string) => void;
-  setFilterCategory: (v: string) => void;
-  setSearchProject: (v: string) => void;
-  setSearchSales: (v: string) => void;
-  setSearchDivisionSales: (v: string) => void;
-  setSearchTeamHandler: (v: string) => void;
-  setSearchProduct: (v: string) => void;
-  setDetailReminder: (r: Reminder) => void;
-  bolehEditReminder: (r: Reminder) => boolean;
-  setRescheduleTarget: (r: Reminder) => void;
-  canInternalApprove: (r: Reminder) => boolean;
-  setInternalApproveTarget: (r: Reminder) => void;
-  handleInternalReject: (r: Reminder) => void;
-  canApproveAssign: boolean;
-  setApproveTarget: (r: Reminder) => void;
-  setApproveBatchSiblings: (r: Reminder[]) => void;
-  setApproveAssignTo: (v: string) => void;
-  setApproveDate: (v: string) => void;
-  setApproveTime: (v: string) => void;
-  handleAdminReject: (r: Reminder) => void;
-  currentUser: TeamUser | null;
-  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
-  isAdmin: boolean;
-  isManager: boolean;
-  syncKeIncentive: (r: Reminder) => void;
-  syncing: string | null;
-  openDeleteModal: (r: Reminder) => void;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setSelectedIds: (updater: (prev: Set<string>) => Set<string>) => void;
-  toggleSelectAll: () => void;
-  guestUsers: GuestUser[];
-}) {
-  //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
-  //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
+export function ReminderListBody() {
+  const k = useKonteksJadwal();
+  const { currentUser, isAdmin, isManager } = k.sesi;
+  const { bolehEditReminder, canInternalApprove, canApproveAssign } = k.izin;
+  const { fetchError, setFetchError, fetchReminders, listLoading, filteredReminders, reminders, groupedReminders, guestUsers } = k.data;
+  const {
+    filterStatus, filterYear, filterCategory, productFilter, setProductFilter, searchProject, searchSales, searchDivisionSales, searchTeamHandler, searchProduct,
+    setFilterStatus, setFilterYear, setFilterCategory, setSearchProject, setSearchSales, setSearchDivisionSales, setSearchTeamHandler, setSearchProduct
+  } = k.filter;
+  const { selectMode, selectedIds, setSelectedIds, toggleSelectAll } = k.pilih;
+  const {
+    setDetailReminder, setRescheduleTarget, setInternalApproveTarget, handleInternalReject, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo,
+    setApproveDate, setApproveTime, handleAdminReject, openSupervisorAssign, syncKeIncentive, syncing, openDeleteModal
+  } = k.aksi;
   const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);
   const router = useRouter();
 
-  /*
-    Dipaginasi per EVENT (groupedReminders), bukan per jadwal mentah - satu
-    event bisa memuat beberapa tanggal dan sudah dirender sebagai satu baris.
-    Memotong per jadwal akan memecah satu event ke dua halaman.
-  */
   const hal = usePaginasi(groupedReminders);
 
   return (
@@ -137,14 +65,6 @@ export function ReminderListBody({
         />
       ) : (
         <>
-        {/* ── MOBILE: Card view ── */}
-        {/* MobileListCard - komponen kartu bersama yang sama dipakai
-            Ticketing & Request Design Project. Kartu tulisan-tangan
-            sebelumnya di sini berulang kali kebobolan elemen tanpa
-            truncate/min-w-0 (grid Handler, dst) yang mendorong
-            seluruh halaman bisa digeser ke samping - field pada
-            komponen bersama ini truncate SEMUANYA secara bawaan,
-            jadi bukan lagi sesuatu yang bisa lupa ditulis. */}
         <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
           {hal.potongan.map((group) => {
             const r = group[0];
@@ -252,36 +172,20 @@ export function ReminderListBody({
           <Paginasi {...hal} satuan="event" />
         </div>
 
-        {/* ── DESKTOP: Table view ── */}
         <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
           <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed', background: 'transparent' }}>
-            {/* Sembilan kolom, dijumlahkan TEPAT 100%.
-                Sebelumnya ada 10 <col> untuk 9 kolom (sisa kolom
-                Garansi yang dibuang) dan totalnya hanya 75% —
-                browser membagikan sisa 25% sesuka hati, sehingga
-                Action melebar berisi ruang kosong sementara Handler
-                terpotong. */}
             <colgroup>
-              <col style={{ width: '4%'  }} />{/* No / pilih   */}
-              <col style={{ width: '16%' }} />{/* Project      */}
-              <col style={{ width: '13%' }} />{/* Product      */}
-              <col style={{ width: '11%' }} />{/* Kegiatan     */}
-              <col style={{ width: '12%' }} />{/* Sales        */}
-              <col style={{ width: '14%' }} />{/* Handler — nama lengkap sering panjang */}
-              <col style={{ width: '9%'  }} />{/* Status       */}
-              <col style={{ width: '8%'  }} />{/* Tanggal      */}
-              {/*  Action 7% -> 13%. Isinya BUKAN teks yang bisa dipotong,
-                  melainkan tombol berukuran tetap 32px yang jumlahnya
-                  berubah menurut status baris: baris menunggu persetujuan
-                  bisa memunculkan Detail + Re-Schedule + Approve + Tolak +
-                  Sync + Hapus sekaligus. Pada 7% (~88px di layar 1400px)
-                  tiga tombol pun sudah tidak muat. 13% memberi ruang untuk
-                  tiga tombol sebaris; selebihnya turun rapi ke baris kedua
-                  lewat wrap di ActionGroup, bukan meluber keluar tabel. */}
-              <col style={{ width: '13%' }} />{/* Action       */}
+              <col style={{ width: '4%'  }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '13%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '12%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '9%'  }} />
+              <col style={{ width: '8%'  }} />
+              <col style={{ width: '13%' }} />
             </colgroup>
             <thead>
-              {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
               <tr>
                 <th className="px-3 py-2.5 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
           {selectMode && (isAdmin || isManager)
@@ -316,7 +220,6 @@ export function ReminderListBody({
                       '--bg-baris-sorot': today ? '#fee2e2' : '#fff5f5',
                     } as CSSProperties}
                     >
-                    {/* No */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                 {selectMode && (isAdmin || isManager)
                   ? <input type="checkbox"
@@ -332,13 +235,11 @@ export function ReminderListBody({
                       className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
                   : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
               </td>
-                    {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
                       {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
                       <div className="text-[11px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
                     </td>
-                    {/* Product */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       {r.product ? (
                         <button
@@ -348,9 +249,6 @@ export function ReminderListBody({
                           {r.product}
                         </button>
                       ) : <span className="text-gray-400 text-xs">—</span>}
-                      {/* Tipe Produk (LED / LCD·Middleware / LED & LCD) — dipilih Sales saat
-                          request, dipakai utk routing tim tapi sebelumnya tidak pernah
-                          ditampilkan di mana pun (list maupun detail). */}
                       {r.product_type && (
                         <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block"
                           style={{ background: '#fef3c7', color: '#92400e' }}>
@@ -358,7 +256,6 @@ export function ReminderListBody({
                         </div>
                       )}
                     </td>
-                    {/* Kegiatan */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="flex items-center gap-1">
                         <span className="text-sm"><Ikon nama={(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
@@ -366,15 +263,10 @@ export function ReminderListBody({
                         {r.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && (
                         <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-1"
                           >
-                          <Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /> {/*r.sales_name*/}
+                          <Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" />
                         </div>
                       )}
                       </div>
-                      {/* Mode pelaksanaan (Onsite/Remote) — cuma diisi utk kategori
-                          Konfigurasi/Konfigurasi & Training/Training saat status
-                          di-update ke Completed. Di list HANYA nilai Onsite/Remote-nya
-                          saja yg tampil; detail lengkapnya (BAST, tipe display,
-                          controller automation, middleware) ada di halaman Detail. */}
                       {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && r.mode_penyelesaian && (
                         <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded"
                           style={r.mode_penyelesaian === 'onsite'
@@ -392,16 +284,10 @@ export function ReminderListBody({
                         </button>
                       )}
                     </td>
-                    {/* Sales */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-xs font-semibold text-gray-700 leading-tight truncate">{r.sales_name || '—'}</div>
                       {r.sales_division && <div className="text-[11px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
                     </td>
-                    {/* Handler */}
-                    {/* Lebar sengaja TIDAK dipatok di sini — biar
-                        mengikuti <colgroup>. Patokan 110px yang lama
-                        menimpa lebar kolom, sehingga nama handler
-                        selalu terpotong berapa pun lebar tabelnya. */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle overflow-hidden">
                       <div className="flex flex-nowrap gap-0.5">
                         {uniqueAssignNames.slice(0, 3).map(name => (
@@ -420,7 +306,6 @@ export function ReminderListBody({
                         : <span className="text-[10px] text-gray-500 mt-0.5 block">{uniqueAssignNames.length} orang</span>
                       }
                     </td>
-                    {/* Status */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       {(() => {
                         const counts: Record<string,number> = {};
@@ -454,7 +339,6 @@ export function ReminderListBody({
                             </span>
                       )}
                     </td>
-                    {/* Tanggal */}
                     <td className="px-2 py-1 border-r border-gray-200 align-middle">
                       {uniqueDates.length > 1 ? (
                         <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
@@ -481,19 +365,12 @@ export function ReminderListBody({
                         </div>
                       )}
                     </td>
-                    {/* ACT */}
-                    {/*  px-1, menyamai <th>-nya (yang memang sudah px-1).
-                        px-3 membuang 24px dari kolom yang justru paling
-                        kekurangan ruang. */}
                     <td className="px-1 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
                       <ActionGroup>
-                        {/* Detail */}
                         <ViewIconBtn onClick={() => setDetailReminder(group[0])} title="Detail" />
-                        {/* Re-Schedule — semua team PTS & admin bisa lihat */}
                         {bolehEditReminder(group[0]) && group[0].status !== 'done' && (
                           <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
                         )}
-                        {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
                         {canInternalApprove(group[0]) && (
                           <>
                             <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Setujui & Teruskan ke Admin" pulse />
@@ -503,7 +380,6 @@ export function ReminderListBody({
                             </button>
                           </>
                         )}
-                        {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
                         {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (group[0].routing_status !== 'internal_review' || bolehLewatiReview) && (
                           <>
                             <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Setujui & Tugaskan" pulse />
@@ -513,7 +389,6 @@ export function ReminderListBody({
                             </button>
                           </>
                         )}
-                        {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
                         {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
                           <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Tugaskan Tim" pulse />
                         )}
@@ -532,7 +407,6 @@ export function ReminderListBody({
                               : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
                           </button>
                         )}
-                        {/* Hapus — admin only */}
                         {(isAdmin || isManager) && (
                           <DeleteIconBtn onClick={() => openDeleteModal(group[0])} title="Hapus" />
                         )}
@@ -543,16 +417,12 @@ export function ReminderListBody({
               })}
             </tbody>
           </table>
-          {/*  Label lama menulis "1–{semua} of {total}" apa adanya - benar
-              ketika seluruh daftar dirender sekaligus, menyesatkan sekarang
-              karena yang tampil cuma satu halaman. Rentang yang sebenarnya
-              ditampilkan Paginasi di bawahnya. */}
           <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
             <span className="text-[11px] text-gray-500">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
             <span className="text-[11px] text-gray-500">dari {reminders.length} jadwal keseluruhan</span>
           </div>
           <Paginasi {...hal} satuan="event" />
-        </div>{/* end hidden md:block */}
+        </div>
         </>
       )}
     </>

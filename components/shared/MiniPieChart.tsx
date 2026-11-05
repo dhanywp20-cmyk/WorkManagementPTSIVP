@@ -4,36 +4,8 @@ import { Ikon } from './Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
 import { useAngkaNaik } from './AngkaNaik';
 
-/**
- * Shared MiniPieChart - kartu komposisi (bagian dari keseluruhan).
- *
- * Dirombak 2026-09-25 mengikuti kaidah visualisasi data, bukan selera:
- *  - Cincin tipis dengan CELAH 2px antar segmen (warna permukaan), bukan blok
- *    tebal menempel. Tanpa glow/drop-shadow.
- *  - Teks memakai warna tinta (slate), BUKAN warna seri - titik warna di
- *    sampingnya yang membawa identitas. Angka rata kanan, plus persentase,
- *    karena "41" tidak berarti apa-apa tanpa "59%".
- *  - Legenda tidak lagi dipotong max-height + scroll (segmen ke-6 dulu hilang
- *    dari pandangan). Lebih dari 7 kategori dilipat ke "Lainnya" - lebih dari
- *    itu donat tidak bisa dibaca siapa pun.
- *  - Arahkan kursor ke segmen/legenda: angka tengah menampilkan segmen itu.
- *  - Nilai persentase yang TIDAK menjumlah ke 100 (valueSuffix '%', mis.
- *    "Progres per Project") tidak digambar sebagai donat - donat menyiratkan
- *    bagian-dari-keseluruhan. Ditampilkan sebagai meter per baris.
- *
- * Props tidak berubah (kompatibel dengan seluruh pemanggil).
- */
-
 const PERMUKAAN = NETRAL.permukaan;
 
-/**
- * Legenda SELALU dibatasi tingginya dan digulir - bukan hanya ketika
- * kategorinya banyak. Tanpa batas tetap, tinggi kartu ikut jumlah datanya:
- * satu kartu memanjang, kartu di sebelahnya pendek, dan barisnya jadi tidak
- * rata. Kategori ke-8 dan seterusnya juga TIDAK dilipat ke "Lainnya" lagi -
- * keputusan pemilik platform: semua nilai harus bisa dilihat, yang tidak
- * muat dijangkau dengan menggulir.
- */
 const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
@@ -59,13 +31,8 @@ export function MiniPieChart({
   title: string; icon: string;
   activeFilter?: string | null;
   onSliceClick?: (label: string) => void;
-  /**
-   * Angka besar di tengah. Default = jumlah seluruh nilai.
-   * Diisi manual bila menjumlahkan slice TIDAK bermakna.
-   */
   centerValue?: string | number;
   centerLabel?: string;
-  /** Akhiran nilai di legenda, mis. '%'. */
   valueSuffix?: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
@@ -83,7 +50,6 @@ export function MiniPieChart({
 
   const semua: Item[] = data.map(d => ({ label: d.label ?? d.name ?? '', value: d.value, color: d.color }));
   const total = semua.reduce((s, d) => s + d.value, 0);
-  //  Angka tengah menghitung naik (hanya bila angka; teks bebas ditampilkan apa adanya).
   const tengahAngka = centerValue === undefined || typeof centerValue === 'number';
   const angkaNaik = useAngkaNaik(tengahAngka ? Number(centerValue ?? total) : 0);
 
@@ -97,7 +63,6 @@ export function MiniPieChart({
 
   const bisaKlik = typeof onSliceClick === 'function';
 
-  // ── Mode meter: nilai persentase per baris, bukan komposisi ──
   if (valueSuffix === '%') {
     return (
       <Kartu title={title} icon={icon}>
@@ -127,7 +92,6 @@ export function MiniPieChart({
     );
   }
 
-  // ── Mode donat: komposisi ──
   const items = semua;
   const cx = 60, cy = 60, r = 52, ir = 38;
   let sudut = -Math.PI / 2;
@@ -157,16 +121,6 @@ export function MiniPieChart({
 
   return (
     <Kartu title={title} icon={icon}>
-      {/* flex-wrap: di kartu sempit legenda turun ke bawah donat, bukan
-          menyusut sampai hilang (terukur dulu 0px pada kartu 78-108px). */}
-      {/*  Di HP legenda turun ke BAWAH donat dengan lebar penuh, bukan
-           berdampingan: kartu selebar ~170px hanya menyisakan ~90px untuk
-           nama, dan setiap label jadi "Konfi..." - daftar yang tidak bisa
-           dibaca sama saja dengan tidak ditampilkan. */}
-      {/*  flex-wrap + min-w-0: di kartu yang kurang lebar untuk donat DAN legenda
-           berdampingan (grid 5 kolom di layar lebar, kartu ±295px), legenda
-           turun ke bawah donat. Sebelumnya legenda dipaksa min 160px dan
-           mendorong kolom persen keluar dari kartu (terpotong "20%" / "83%"). */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
           className="flex-shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
@@ -176,8 +130,6 @@ export function MiniPieChart({
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
           ) : (
-            //  Garis pemisah putih menipis untuk irisan kecil: dengan ratusan kategori, garis 2px menutupi
-            //  seluruh warna irisan kecil sehingga sebagian cincin tampak putih kosong.
             <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={s.garis} strokeLinejoin="round"
               opacity={redup(s.i) ? 0.3 : 1}
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}

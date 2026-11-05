@@ -1,13 +1,3 @@
-/**
- * uji/pdfjs-baca-brosur.ts - pdf.js 6 di Product Comparison (Tools Team).
- *
- * pdf.js 6 menghapus PDFDocumentProxy.destroy() dan opsi isEvalSupported: kode lama memanggil
- * `dok.destroy()` di finally -> TypeError -> baca brosur gagal walau teksnya sudah terbaca. Uji ini
- * menjalankan alur yang sama dengan bacaPdf.ts (getDocument -> getTextContent -> tugas.destroy())
- * memakai pdf.js sungguhan, dan menjaga agar pola lama tidak kembali.
- *
- * Jalankan: npm test -- pdfjs-baca-brosur
- */
 import { readFileSync } from 'fs';
 import PDFDocument from 'pdfkit';
 

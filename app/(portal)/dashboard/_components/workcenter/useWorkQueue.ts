@@ -1,22 +1,5 @@
 'use client';
 
-/**
- * useWorkQueue.ts - satu titik fetch untuk seksi "My Action" / "Today" /
- * "Upcoming" di Work Center.
- *
- * SATU pemanggilan query per sumber data (reminders/tickets/daily_reports/
- * project locations), diklasifikasi client-side ke tiga ember - bukan tiga
- * fetch terpisah untuk tiga seksi yang menampilkan potongan data yang sama.
- *
- * Filter "milik saya" SENGAJA menyalin pola yang SUDAH dipakai modul
- * aslinya, bukan aturan baru:
- *   - reminders.assigned_to === username         (reminder-schedule/page.tsx)
- *   - tickets.assign_name === full_name           (ticketing/page.tsx)
- *   - checklist_anggota.user_id === user.id        (Project Progress: yang di-assign)
- *   - checklist_proyek.sales_name === full_name     (Sales proyek; RLS cp_select
- *     memakai jwt_full_name() - lihat supabase/migrations/025_project_checklist.sql)
- */
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '../shared';
@@ -33,11 +16,6 @@ interface TugasChecklist {
   kendala: number;
 }
 
-/**
- * Checklist Project Progress yang di-assign ke user ini dan perlu perhatian:
- * targetnya dekat/lewat, atau ada item berkendala. Dibaca dengan token user
- * (RLS 025), jadi hanya checklist miliknya yang bisa kembali.
- */
 async function tugasChecklist(userId: string, batasTarget: string): Promise<{ data: TugasChecklist[] }> {
   const { data: ang, error } = await supabase.from('checklist_anggota').select('daftar_id').eq('user_id', userId).limit(200);
   if (error) throw error;
@@ -77,15 +55,12 @@ export interface ActionItem {
   title: string;
   subtitle: string;
   menuKey: string;
-  /** Bagian dari agenda HARI INI - dipakai seksi Today, independen dari urgency. */
   isToday: boolean;
-  /** ISO date (YYYY-MM-DD) untuk urutan Upcoming. Null kalau tak relevan (mis. item ditolak). */
   date: string | null;
 }
 
 export interface WorkQueueResult {
   loading: boolean;
-  /** true kalau query-nya GAGAL - beda dari "berhasil dimuat dan memang kosong". */
   error: boolean;
   myAction: ActionItem[];
   today: ActionItem[];
@@ -94,7 +69,6 @@ export interface WorkQueueResult {
 
 const URGENCY_RANK: Record<Urgency, number> = { urgent: 0, pending: 1, upcoming: 2 };
 
-/** Selisih hari kalender (b - a), format YYYY-MM-DD. Aritmetika tanggal lokal - hindari toISOString(). */
 function daysBetween(a: string, b: string): number {
   const [ay, am, ad] = a.split('-').map(Number);
   const [by, bm, bd] = b.split('-').map(Number);
@@ -123,7 +97,6 @@ export function useWorkQueue(user: User): WorkQueueResult {
 
       try {
         if (isTeamMember(user) || isAdminRole(user)) {
-          // ── TEAM / TECHNICAL ──────────────────────────────────────────
           const [{ data: rem }, { data: tix }, { data: rep }, { data: locs }] = await Promise.all([
             supabase.from('reminders')
               .select('id, project_name, due_date, status')
@@ -134,7 +107,6 @@ export function useWorkQueue(user: User): WorkQueueResult {
               .eq('assign_name', user.full_name).neq('status', 'Solved')
               .order('date', { ascending: true }).limit(20),
             supabase.from('daily_reports').select('id').eq('user_id', user.id).eq('report_date', today).limit(1),
-            // Gagal membaca checklist tidak boleh mengosongkan seluruh antrean kerja.
             tugasChecklist(user.id, addDays(today, 3)).catch(() => ({ data: [] as TugasChecklist[] })),
           ]);
 
@@ -180,7 +152,6 @@ export function useWorkQueue(user: User): WorkQueueResult {
             });
           }
         } else {
-          // ── SALES / GUEST ─────────────────────────────────────────────
           const [{ data: rem }, { data: tix }, { data: projs }] = await Promise.all([
             supabase.from('reminders')
               .select('id, project_name, due_date, status, rejection_reason, sales_name, created_by')
@@ -235,9 +206,6 @@ export function useWorkQueue(user: User): WorkQueueResult {
           }
         }
       } catch {
-        //  GAGAL memuat - beda dari "berhasil, dan memang tidak ada tugas".
-        //  Tanpa pembeda ini, query yang gagal diam-diam terlihat identik
-        //  dengan "Anda bersih, tidak ada kerjaan" - pesan yang salah arah.
         if (alive) setError(true);
       }
 

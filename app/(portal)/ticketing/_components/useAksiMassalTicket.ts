@@ -1,6 +1,5 @@
 'use client';
 
-/** useAksiMassalTicket - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { ActivityLog, Ticket } from './shared';
 import { eksporExcel } from './ekspor-excel';
 import { cetakTicket } from './cetak-ticket';
@@ -35,15 +34,6 @@ export function useAksiMassalTicket(k: AksiMassalTicketKonteks) {
     prev.size === filteredTickets.length ? new Set() : new Set(filteredTickets.map(t => t.id))
   );
 
-  /*
-    Ekspor Excel memuat log PENUH dulu - sheet "Activity Log"-nya menuliskan
-    notes dan action_taken tiap langkah, dan itu justru kolom yang sengaja
-    tidak dibawa daftar. Tanpa langkah ini file ekspornya tetap jadi, tapi
-    kolom catatannya kosong semua: rusak yang tidak terlihat rusak.
-
-    Dimuat hanya untuk tiket yang benar-benar diekspor (filteredTickets), dan
-    hanya saat tombolnya ditekan.
-  */
   const jalankanEksporExcel = async () => {
     notify('success', 'Menyiapkan data ekspor...');
     let ticketsPenuh = tickets;
@@ -54,13 +44,10 @@ export function useAksiMassalTicket(k: AksiMassalTicketKonteks) {
       terfilterPenuh = filteredTickets.map(lengkapi);
       ticketsPenuh = tickets.map(lengkapi);
     } catch {
-      //  Gagal memuat log bukan alasan membatalkan ekspor - datanya masih
-      //  berguna, cuma catatan per langkahnya yang tidak selengkap biasanya.
     }
     eksporExcel({ tickets: ticketsPenuh, filteredTickets: terfilterPenuh, currentUserTeamType, stats, isTicketOverdue, notify });
   };
 
-  /** Cetak satu tiket - log penuhnya dimuat dulu, alasannya sama dgn ekspor. */
   const jalankanCetakTicket = async (ticket: Ticket) => {
     cetakTicket(await denganLogPenuh(ticket));
   };

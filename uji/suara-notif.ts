@@ -1,9 +1,3 @@
-/**
- * uji/suara-notif.ts - pengaturan suara notifikasi dari Admin Panel: bawaan saat belum diatur /
- * rusak, URL hanya https atau jalur lokal, volume dijepit, batas tipe, ukuran & durasi berkas.
- *
- * Jalankan: npx tsx uji/suara-notif.ts
- */
 import { bacaSuaraNotif, BERKAS_BAWAAN, periksaBerkasSuara, periksaDurasiSuara, SUARA_BAWAAN, sumberSuara, urlSuaraSah } from '../lib/suara-notif-bawaan';
 
 let lulus = 0, gagal = 0;

@@ -1,6 +1,5 @@
 'use client';
 
-/** useModePenyelesaian - dipecah dari app/(portal)/reminder-schedule/_components/useAksiStatus.ts (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Status, Reminder, TeamUser } from './shared';
 import { supabase } from '@/lib/supabase';
 import { galatPelaksanaan, simpanDetailPelaksanaan, type IsianPelaksanaan } from '@/lib/jadwal-status';
@@ -64,30 +63,19 @@ export function useModePenyelesaian(k: ModePenyelesaianKonteks) {
       mode: modePenyelesaian, installerName, installerUserId, installerDaerah, bastDate,
       displayType, requiresMiddleware, requiresControllerAuto, controllerBrand,
     };
-    //  Validasi dulu (panel tetap terbuka, tanpa spinner) - pesannya dari lib/jadwal-status.ts.
     const salah = galatPelaksanaan(isian);
     if (salah) { notify('error', salah); return; }
     const snap = detailReminder;
     const reminderId = snap.id;
 
     setSavingMode(true);
-    /*
-      Ditulis ke SELURUH baris sebatch, bukan hanya baris yang sedang dibuka -
-      satu pekerjaan = satu tanggal BAST. pic_type Manager otomatis, cek 0 baris
-      (RLS menolak diam-diam): semuanya di lib/jadwal-status.ts, dipakai juga DIWAYPI.
-    */
     const simpan = await simpanDetailPelaksanaan(supabase, snap, isian);
     setSavingMode(false);
-    //  Panel sengaja TIDAK ditutup saat gagal: isian yang sudah diketik tidak
-    //  boleh ikut hilang hanya karena penyimpanannya ditolak.
     if (!simpan.ok) { notify('error', simpan.galat); return; }
     const isiPenyelesaian = simpan.isi;
     setShowModeModal(false);
 
     if (modeEditSaja) {
-      //  Jadwal ini SUDAH Completed - yang diperbarui hanya detailnya, status
-      //  tidak disentuh sama sekali (kalau lewat handleStatusChange, WA
-      //  "jadwal selesai" akan terkirim ulang ke handler untuk kedua kalinya).
       setModeEditSaja(false);
       notify('success', 'Detail pelaksanaan tersimpan!');
       await fetchRemindersQuiet();
@@ -95,22 +83,6 @@ export function useModePenyelesaian(k: ModePenyelesaianKonteks) {
     } else {
       await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
     }
-
-    /*
-      Tulisan ke tabel `incentive_projects` DIHAPUS dari sini - kode zombie
-      sisa arsitektur lama sebelum Incentive PTS pindah membaca langsung dari
-      `reminders` (lihat fetchIncentiveProjects di
-      app/incentive-pts/_components/calc.ts: category+status+incentive_excluded
-      langsung dari tabel ini, TANPA pernah menyentuh `incentive_projects`).
-
-      Tabel itu ditulis di sini setiap proyek ditandai Done, tapi TIDAK ADA
-      satu query SELECT pun ke sana di seluruh kode - baris yang ditulis
-      tidak pernah dibaca siapa pun. Kalau insert-nya gagal (skema kolom
-      beda, RLS berubah, dll), muncul toast "Gagal sync ke Incentive PTS" -
-      padahal sinkronisasi Incentive PTS yang SUNGGUHAN (baca `reminders`
-      langsung) sama sekali tidak terganggu. Itu kepanikan palsu, bukan
-      peringatan yang berarti.
-    */
 
     setPendingStatus(null);
     setStatusPhoto(null);

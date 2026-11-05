@@ -1,9 +1,4 @@
 'use client';
-/**
- * Checklist Barang - berkas di peramban: baca Excel / CSV (SheetJS) & PDF (pdf.js), template Excel,
- * dan unduh PDF hasil (pdfkit). Tidak ada yang diunggah / disimpan di server.
- * Loader pdf.js & pdfkit + huruf dipakai bersama Product Comparison (../perbandingan).
- */
 import {
   bacaPdf, bacaTabel, type DokCek, type DokChecklist, gambarChecklist, type ItemBarang, namaBerkasPdf, type PotongPdf,
 } from '@/lib/checklist-barang';
@@ -17,14 +12,12 @@ const MAKS_HALAMAN = 50;
 
 async function jenisBerkas(f: File): Promise<'pdf' | 'excel'> {
   const k = new Uint8Array(await f.slice(0, 4).arrayBuffer());
-  //  Tanda tangan isi berkas, bukan ekstensi: "%PDF", ZIP (xlsx) "PK", OLE (xls lama) D0 CF.
   if (k[0] === 0x25 && k[1] === 0x50 && k[2] === 0x44 && k[3] === 0x46) return 'pdf';
   if ((k[0] === 0x50 && k[1] === 0x4b) || (k[0] === 0xd0 && k[1] === 0xcf)) return 'excel';
   if (/\.(csv|txt)$/i.test(f.name)) return 'excel';
   throw new Error(`${f.name}: format tidak dikenali. Gunakan Excel (.xlsx / .xls), CSV, atau PDF.`);
 }
 
-/** Excel / CSV / PDF -> daftar barang (lembar Excel dengan barang terbanyak yang dipakai). */
 export async function imporBerkas(f: File): Promise<ItemBarang[]> {
   if (f.size <= 0) throw new Error(`${f.name}: berkas kosong.`);
   if (f.size > MAKS_BYTE) throw new Error(`${f.name}: terlalu besar (maks ${MAKS_BYTE / 1_000_000} MB).`);
@@ -90,7 +83,6 @@ export function unduhTemplate(): Promise<void> {
   }, () => gagal(new Error('Library Excel gagal dimuat - periksa koneksi.'))));
 }
 
-/** Potong tanda tangan ke area goresan supaya tidak tampil kecil di PDF. '' bila kanvas kosong. */
 function potongTtd(src: string): Promise<string> {
   if (!src) return Promise.resolve('');
   return new Promise(ok => {

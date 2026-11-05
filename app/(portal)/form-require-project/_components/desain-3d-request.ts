@@ -1,13 +1,5 @@
 import { urlGambarDesain, type RingkasanDesain } from '@/lib/tools-team';
 
-/**
- * Design 3D dari Tools Team yang ditautkan ke Request Design Project -
- * TAMBAHAN di samping unggahan file "Design 3D" (PDF), keduanya opsional.
- *
- * Yang dimuat halaman request hanya ringkasan & pratinjau VERSI yang
- * ditautkan (tidak berubah walau desain di Tools Team diedit); data 3D penuh
- * baru dimuat saat "Buka di Tools Team".
- */
 export interface TautanDesain3D {
   id: string;
   room_idx: number;
@@ -39,11 +31,6 @@ const angka = (n: number) => (Math.round(n * 100) / 100).toLocaleString('id-ID')
 export const ukuranRuang = (rs: Partial<RingkasanDesain> | undefined) =>
   (rs?.ruang ?? []).map(r => `${angka(r.p)} × ${angka(r.l)} × ${angka(r.t)} m`).join(' + ');
 
-/**
- * Seksi "Design 3D (Tools Team)" untuk lembar cetak & paket ZIP. String kosong
- * bila tidak ada tautan - request tanpa Design 3D tetap tercetak utuh tanpa
- * seksi "kosong".
- */
 export function htmlSeksiDesain3D(tautan: TautanDesain3D[], namaRuang: (idx: number) => string, asal = ''): string {
   if (!tautan.length) return '';
   const kartu = tautan.map(t => {
@@ -65,7 +52,6 @@ export function htmlSeksiDesain3D(tautan: TautanDesain3D[], namaRuang: (idx: num
 <div style="padding:6px 14px;font-size:10px;color:#94a3b8">Daftar perangkat dari desain 3D adalah estimasi tata letak; verifikasi dengan datasheet dan kondisi lokasi sebelum penawaran/instalasi.</div></div>`;
 }
 
-/** Gambar HD versi yang ditautkan (byte JPEG) untuk ZIP; null bila tidak ada. Hanya diambil saat unduh. */
 export async function byteGambarHD(t: Pick<TautanDesain3D, 'desain_id' | 'versi'>): Promise<Uint8Array | null> {
   try {
     const r = await fetch(urlGambarDesain(t.desain_id, t.versi, true), { credentials: 'include' });

@@ -10,8 +10,6 @@ import { logAudit } from '@/lib/audit';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-// Folder Color Palette
-
 const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
   { gradient: 'linear-gradient(135deg,#10b981,#0d9488)', light: '#d1fae5', icon: '#10b981' },
@@ -22,19 +20,12 @@ const FOLDER_COLORS = [
 ];
 const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
 
-// Grid helper
-
-// Jumlah kolom hanya berlaku mulai layar sm. Di ponsel tiga sampai lima kolom
-// menyisakan lebar puluhan piksel per kartu - namanya terpotong jadi satu-dua
-// huruf dan grid-nya meluber keluar layar.
 const GRID_COLS: Record<number, string> = {
   2: 'grid-cols-2',
   3: 'grid-cols-2 sm:grid-cols-3',
   4: 'grid-cols-2 sm:grid-cols-4',
   5: 'grid-cols-2 sm:grid-cols-5',
 };
-
-// MaterialCard
 
 function MaterialCard({
   material: m, isAdmin, onDelete, onEdit, compact, colorHex,
@@ -75,8 +66,6 @@ function MaterialCard({
   );
 }
 
-// FolderTreeView (used inside right panel)
-
 function FolderTreeView({
   node, depth = 0, isAdmin, onDelete, onEdit, expandedPaths, togglePath, onAddToFolder, gridCols = 2, colorHex,
 }: {
@@ -93,7 +82,6 @@ function FolderTreeView({
 
   return (
     <div className={depth > 0 ? 'mt-1' : ''}>
-      {/* Files at this level */}
       {hasMaterials && (
         <div className="space-y-1 mb-3">
           {node.materials.map(m => (
@@ -102,7 +90,6 @@ function FolderTreeView({
         </div>
       )}
 
-      {/* Subfolder grid */}
       {hasFolders && (
         <div className={`grid ${GRID_COLS[gridCols] ?? 'grid-cols-2'} gap-2`}>
           {folderKeys.map(key => {
@@ -141,7 +128,6 @@ function FolderTreeView({
         </div>
       )}
 
-      {/* Expanded subfolder panels */}
       {folderKeys.map(key => {
         const child = node.children[key];
         if (!expandedPaths.has(child.path)) return null;
@@ -170,10 +156,7 @@ function FolderTreeView({
   );
 }
 
-// MateriPage
-
 export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; isAdmin: boolean; readOnly?: boolean }) {
-  //  tulis = kontrol tambah/ubah/hapus. Pimpinan (readOnly) melihat tampilan admin tanpa kontrol itu.
   const tulis = isAdmin && !readOnly;
   const [materials, setMaterials] = useState<Material[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -187,7 +170,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
   const [editMaterialSaving, setEditMaterialSaving] = useState(false);
 
-  // Split-view state
   const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const [rightExpandedPaths, setRightExpandedPaths] = useState<Set<string>>(new Set());
 
@@ -197,7 +179,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  // Clear right panel when search changes
   useEffect(() => {
     setSelectedFolderKey(null);
     setRightExpandedPaths(new Set());
@@ -246,7 +227,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       message: 'Materi dan semua soal yang terkait akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        // Delete linked questions first (FK constraint)
         const { error: qErr } = await supabase.from('lc_questions').delete().eq('material_id', id);
         if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         const { error } = await supabase.from('lc_materials').delete().eq('id', id);
@@ -287,14 +267,10 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       confirmLabel: 'Hapus Folder',
       onConfirm: async () => {
         const ids = affected.map(m => m.id);
-        // Delete linked questions first (FK constraint)
         if (ids.length > 0) {
           const { error: qErr } = await supabase.from('lc_questions').delete().in('material_id', ids);
           if (qErr) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Gagal hapus soal terkait: ' + qErr.message }); return; }
         }
-        //  select('id') per baris: RLS yang menolak diam-diam (0 baris, tanpa
-        //  galat) tidak muncul di r.error - tanpa memeriksa panjangnya,
-        //  sebagian materi bisa tetap ada padahal folder tampak terhapus.
         const results = await Promise.all(affected.map(m => supabase.from('lc_materials').delete().eq('id', m.id).select('id')));
         const err = results.find((r: { error: unknown }) => r.error)?.error as { message: string } | undefined;
         if (err) { setDialog({ type: 'error', title: 'Gagal Hapus Folder', message: 'Gagal hapus materi: ' + err.message }); return; }
@@ -313,8 +289,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
     setEditMaterialSaving(true);
-    //  Diperiksa: perubahan yang gagal tersimpan diam-diam tampak berhasil
-    //  (form menutup) padahal materinya masih versi lama.
     const { data, error } = await supabase.from('lc_materials').update({
       materi_name: editMaterial.materi_name.trim(),
       file_url: editMaterial.file_url?.trim() || null,
@@ -341,18 +315,13 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
   const rootHasFolders = rootFolderKeys.length > 0;
   const existingPaths = Array.from(new Set(materials.map(m => m.folder_path).filter(Boolean) as string[])).sort();
 
-  // Selected folder node (always root-level child)
   const selectedFolderNode = selectedFolderKey ? (tree.children[selectedFolderKey] ?? null) : null;
 
-  // Derived color for open panel
   const panelCol = selectedFolderKey ? getFolderColor(selectedFolderKey) : null;
   const panelOpen = !!(selectedFolderNode && panelCol);
 
-  // Tinggi dikurangi sesuai tinggi navigasi atas, yang di ponsel memakai dua
-  // baris (judul + tab) sehingga lebih tinggi daripada di layar lebar.
   return (
     <div className="flex flex-col overflow-hidden tinggi-materi-lc">
-      {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex-shrink-0"
         style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div className="min-w-0">
@@ -382,7 +351,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
         </div>
       </div>
 
-      {/* ── Stats bar ── */}
       <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0 flex-wrap"
         style={{ background: 'rgba(248,250,252,0.8)' }}>
         <span className="text-slate-500"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{materials.length}</strong> materi</span>
@@ -396,14 +364,8 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
         )}
       </div>
 
-      {/* ── Main area: left scrollable + right pane ── */}
       <div className="flex-1 relative overflow-hidden">
 
-        {/* LEFT scrollable content */}
-        {/* Ruang untuk panel kanan hanya disisihkan mulai layar sm. Di ponsel
-            panel tampil menutupi seluruh lebar, sebab menyisihkan 42% dari
-            layar 360px menyisakan 200px untuk isi — kartu foldernya meluber
-            keluar dan halaman jadi bisa digeser ke samping. */}
         <div className={`h-full overflow-y-auto transition-[padding] duration-300 ${panelOpen ? 'sm:pr-[calc(42%+1px)]' : ''}`}>
           <div className="p-4 sm:p-6">
 
@@ -427,10 +389,8 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
             {filtered.length > 0 && (
               <>
-                {/* ── FOLDER VIEW ── */}
                 {viewMode === 'folder' && (
                   <>
-                    {/* Root-level files */}
                     {tree.materials.length > 0 && (
                       <div className="mb-5">
                         {tree.materials.map(m => (
@@ -441,7 +401,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                       </div>
                     )}
 
-                    {/* Colorful folder grid */}
                     {rootHasFolders && (
                       <>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -487,7 +446,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                                     </div>
                                   </div>
                                 </button>
-                                {/* Folder action buttons */}
                                 {tulis && (
                                   <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                     <button aria-label="Ubah nama folder"
@@ -517,7 +475,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                   </>
                 )}
 
-                {/* ── LIST VIEW ── */}
                 {viewMode === 'list' && (
                   <div className="space-y-1.5">
                     {filtered.map(m => {
@@ -537,10 +494,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
           </div>
         </div>
 
-        {/* ── RIGHT PANE: Windows Explorer style, full height ── */}
-        {/* Di ponsel panel menutupi seluruh layar, jadi latarnya dibuat nyaris
-            pekat: tembus pandang 62% di atas isi halaman membuat dua lapis teks
-            saling tumpang tindih dan tidak ada yang terbaca. */}
         <div
           className="absolute top-0 right-0 bottom-0 flex flex-col w-full sm:w-[42%] bg-white/95 sm:bg-white/60"
           style={{
@@ -556,7 +509,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
           {panelOpen && panelCol && selectedFolderNode ? (
             <>
-              {/* Panel header — colored strip */}
               <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${panelCol.light}cc, rgba(255,255,255,0.55))`,
@@ -595,7 +547,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                   className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all flex-shrink-0">✕</button>
               </div>
 
-              {/* Panel content — scrollable */}
               <div className="flex-1 overflow-y-auto p-4" style={{ background: 'transparent' }}>
                 <FolderTreeView
                   node={selectedFolderNode}
@@ -616,7 +567,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
       </div>
 
-      {/* ── Modal: Add Materi ── */}
       {tulis && showForm && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -684,7 +634,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       </ModalPortal>
       )}
 
-      {/* ── Modal: Rename Folder ── */}
       {tulis && renameFolder && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
@@ -728,7 +677,6 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       </ModalPortal>
       )}
 
-      {/* ── Modal: Edit Material ── */}
       {tulis && editMaterial && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"

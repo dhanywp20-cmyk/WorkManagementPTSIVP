@@ -1,15 +1,9 @@
 'use client';
 import { useState } from 'react';
 
-/**
- * Shared 5-star rating widget - dari form-review.
- */
 export function StarRating({ value, onChange, disabled }: { value: number; onChange?: (v: number) => void; disabled?: boolean }) {
   const [hovered, setHovered] = useState(0);
   return (
-    // Kumpulan tombol yang saling meniadakan = radiogroup. Tanpa ini kelimanya
-    // terbaca sebagai lima tombol lepas dan tidak terdengar bahwa memilih satu
-    // membatalkan yang lain, apalagi nilai mana yang sedang terpilih.
     <div className="flex items-center gap-1" role="radiogroup" aria-label="Penilaian bintang">
       {[1,2,3,4,5].map(star => (
         <button

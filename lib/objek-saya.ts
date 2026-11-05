@@ -1,33 +1,19 @@
-/**
- * lib/objek-saya.ts - "Objek saya" Desain 3D: perpustakaan objek PRIBADI per akun (beda dengan "Produk saya"
- * yang dipakai bersama seluruh tim). Benda apa pun yang sudah diatur (ukuran, warna, teks, siluet objek
- * mapping, model 3D impor) bisa disimpan, dipakai lagi di desain lain, lalu diekspor ke berkas .json dan
- * diimpor oleh akun lain.
- *
- * Isi berkas impor bisa berasal dari siapa saja, jadi `atur` disaring ketat: hanya bidang Benda yang
- * dikenal, dengan tipe nilai yang benar; warna wajib #rrggbb; posisi & id dibuang. Murni - dipakai route
- * server (/api/tools-team/objek-saya) dan peramban (ekspor / impor). Diuji di uji/objek-saya.ts.
- */
 import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
 import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
 export const FORMAT_OBJEK_SAYA = 'pts-objek-saya';
 export const MAKS_OBJEK_PER_AKUN = 150;
 export const MAKS_MODEL_PER_AKUN = 5;
-/** Model 3D (GLB) sebagai data URL base64: ±1,5 MB berkas. Model lebih besar tetap bisa lewat .glb laptop. */
 export const MAKS_BYTE_MODEL = 2_000_000;
-/** Batas total model 3D di Objek saya SELURUH akun (byte data URL) - pengaman kuota basis data paket gratis. */
 export const MAKS_TOTAL_MODEL = 100_000_000;
 export const MAKS_BYTE_ATUR = 60_000;
 export const MAKS_IMPOR_SEKALI = 50;
 
-/** Jenis benda Desain 3D (sama dengan inti/tipe.ts Jenis - dijaga uji/objek-saya.ts). */
 export const JENIS_OBJEK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic', 'touchpanel',
   'kamera', 'proyektor', 'rak', 'lift', 'model', 'tribun', 'panggung', 'bidang', 'lampu', 'objek', 'perangkat', 'teks'] as const;
 export type JenisObjek = (typeof JENIS_OBJEK)[number];
 
 type Tipe = 'angka' | 'bool' | 'teks' | 'warna' | 'angka3';
-/** Bidang Benda yang boleh ikut (tanpa id, x, z, rot, modelKunci, konten gambar - semuanya milik desain, bukan objek). */
 const BIDANG: Record<string, Tipe> = {
   nama: 'teks', w: 'angka', h: 'angka', d: 'angka', elev: 'angka', diag: 'angka', rasio: 'teks', pitch: 'angka', cabW: 'angka', cabH: 'angka',
   vw: 'teks', kol: 'angka', bar: 'angka', warna: 'warna', jangkauan: 'angka', sebaran: 'angka', sebaranV: 'angka', tipeSpeaker: 'teks',
@@ -44,7 +30,6 @@ const BIDANG: Record<string, Tipe> = {
 const POLA_PILIHAN = /^[a-z0-9:.\- ]{1,40}$/i;
 const POLA_MODEL = /^data:model\/gltf-binary;base64,[A-Za-z0-9+/=]+$/;
 
-/** `atur` yang aman dari isian mana pun: bidang dikenal & tipe benar; selain itu dibuang diam-diam. */
 export function bersihkanAturObjek(x: unknown): Record<string, unknown> {
   const a = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
   const hasil: Record<string, unknown> = {};
@@ -55,12 +40,11 @@ export function bersihkanAturObjek(x: unknown): Record<string, unknown> {
     else if (tipe === 'warna' && typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) hasil[k] = v.toLowerCase();
     else if (tipe === 'angka3' && Array.isArray(v) && v.length === 3 && v.every(n => typeof n === 'number' && Number.isFinite(n))) hasil[k] = v;
     else if (tipe === 'teks' && typeof v === 'string') {
-      //  Teks bebas (nama, isi teks) dipangkas; nilai pilihan (enum) harus berbentuk kode pendek.
       if (k === 'nama') { if (v.trim()) hasil[k] = v.trim().slice(0, 80); } else if (k === 'teks') hasil[k] = v.slice(0, 300);
       else if (POLA_PILIHAN.test(v)) hasil[k] = v;
     }
   }
-  if (hasil.konten === 'gambar') delete hasil.konten;   // foto unggahan hanya ada di memori desain
+  if (hasil.konten === 'gambar') delete hasil.konten;
   const isiRak = bersihkanIsiRak(a.isiRak);
   if (isiRak) hasil.isiRak = isiRak;
   const poligon = bacaPoligonShift(a.poligonShift);
@@ -73,7 +57,6 @@ export function bersihkanAturObjek(x: unknown): Record<string, unknown> {
     for (const [k, v] of Object.entries(panel)) if (/^[a-z]{1,12}$/i.test(k) && typeof v === 'number' && Number.isFinite(v)) p[k] = v;
     if (Object.keys(p).length) hasil.panel = p;
   }
-  //  Siluet objek mapping: [{ l: number[], h?: number[][] }] dengan angka 0..1.
   if (Array.isArray(a.kontur)) {
     const n01 = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= -0.01 && v <= 1.01;
     const kontur = a.kontur.slice(0, 64).flatMap(b => {
@@ -97,7 +80,6 @@ export function bersihkanAturObjek(x: unknown): Record<string, unknown> {
 
 export interface IsiObjekSaya { nama: string; ket: string; jenis: JenisObjek; atur: Record<string, unknown>; model?: string }
 
-/** Satu objek yang sah untuk disimpan, atau alasan penolakan. */
 export function periksaObjekSaya(x: unknown): { ok: true; data: IsiObjekSaya } | { ok: false; alasan: string } {
   const d = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const nama = typeof d.nama === 'string' ? d.nama.trim().slice(0, 80) : '';
@@ -124,7 +106,6 @@ export function berkasObjekSaya(objek: IsiObjekSaya[], oleh?: string): BerkasObj
   return { format: FORMAT_OBJEK_SAYA, versi: 1, diekspor: new Date().toISOString(), ...(oleh ? { oleh } : {}), objek };
 }
 
-/** Isi berkas ekspor: objek-objek yang sah + daftar penolakan (per objek, tidak menggagalkan yang lain). */
 export function bacaBerkasObjekSaya(json: unknown): { ok: true; objek: IsiObjekSaya[]; ditolak: string[] } | { ok: false; alasan: string } {
   const b = json as Partial<BerkasObjekSaya> | null;
   if (!b || typeof b !== 'object' || b.format !== FORMAT_OBJEK_SAYA || !Array.isArray(b.objek)) {

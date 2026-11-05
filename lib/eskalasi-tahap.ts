@@ -1,14 +1,3 @@
-/**
- * lib/eskalasi-tahap.ts - request yang TERTAHAN di gerbang routing (review Sales Internal,
- * Admin, Supervisor) untuk briefing pagi pemegang gerbangnya.
- *
- * Alur routing (Request Schedule, Request Design, Troubleshooting) mengirim WA sekali saat
- * request masuk ke sebuah gerbang - bila diabaikan, tidak ada pengingat susulan dan request
- * diam di sana. Fungsi ini memilih yang sudah menunggu > 24 jam; > 48 jam dianggap terlambat
- * dan ikut WA, di bawahnya cukup push + Telegram (nomor gateway WA pernah ditandai spam).
- *
- * Murni (tanpa jaringan) - diuji di uji/eskalasi-tahap.ts.
- */
 
 export interface BarisTahap {
   sumber: 'Jadwal' | 'Design' | 'Ticket';
@@ -18,12 +7,10 @@ export interface BarisTahap {
   internal_sales_id?: string | null;
   internal_sales_id_2?: string | null;
   assigned_supervisor_id?: string | null;
-  /** Patokan lama menunggu: updated_at bila ada, else created_at. */
   sejak: string;
 }
 
 export interface ItemTahap {
-  /** id user penerima, atau 'admin' = semua admin / Full Access. */
   penerima: string[];
   label: string;
   tanggal: string;

@@ -1,23 +1,9 @@
 'use client';
 
-/**
- * Kartu ringkasan angka (Total / Pending / Selesai / dst) untuk semua modul.
- *
- * Permukaan putih dengan angka gelap; warna hanya dipakai sebagai penanda
- * kategori lewat pita tipis di tepi kiri, bukan untuk mengecat seluruh kartu.
- * Hanya kartu yang sedang dipakai sebagai filter yang ditonjolkan, supaya
- * deretannya punya hierarki dan angkanya mudah dibandingkan.
- */
-
 import { angkaAtauApaAdanya } from './AngkaNaik';
 import React from 'react';
 import { BAYANG } from '@/lib/desain';
 
-/**
- * Campur warna dengan putih dan kembalikan warna SOLID. Latar kartu aktif
- * tidak boleh rgba semi-transparan: halaman modul memakai foto sebagai latar,
- * dan foto yang menembus kartu membuat angkanya sulit dibaca.
- */
 function campurPutih(hex: string, kadar: number): string {
   const h = hex.replace('#', '');
   const utuh = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
@@ -31,13 +17,9 @@ function campurPutih(hex: string, kadar: number): string {
 export interface StatCardItem {
   label: string;
   value: React.ReactNode;
-  /** Baris keterangan kecil di bawah label. */
   sub?: string;
-  /** Warna penanda kategori - dipakai untuk pita tepi & penonjolan saat aktif. */
   accent: string;
-  /** Diisi bila kartu berfungsi sebagai tombol filter. */
   onClick?: () => void;
-  /** Kartu ini sedang dipakai sebagai filter. */
   active?: boolean;
 }
 
@@ -46,7 +28,6 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
 
   const isi = (
     <>
-      {/* Pita aksen: penanda kategori yang tetap terbaca tanpa mendominasi kartu. */}
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: active ? 1 : 0.55 }} />
       <div className="flex items-baseline justify-between gap-2">
         <span className="angka-timbul text-lg sm:text-[28px] font-bold tracking-tight leading-none tabular-nums" style={{ color: active ? accent : '#0f172a' }}>
@@ -66,7 +47,6 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
   );
 
   const gaya: React.CSSProperties = {
-    // Selalu warna PEKAT - lihat catatan di campurPutih().
     background: active ? campurPutih(accent, 0.10) : '#ffffff',
     border: `1px solid ${active ? accent : 'rgba(15,23,42,0.10)'}`,
     boxShadow: active ? `0 0 0 1px ${accent}, ${BAYANG.kartu3d}` : BAYANG.kartu3d,
@@ -74,9 +54,6 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
 
   const kelasDasar = 'relative overflow-hidden rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-4 sm:py-3.5 flex flex-col gap-0.5 sm:gap-1.5';
 
-  // Kartu yang bisa diklik HARUS berupa <button>: ini kontrol filter, jadi wajib
-  // bisa dicapai lewat keyboard dan punya cincin fokus. Kartu yang hanya
-  // menampilkan angka tetap <div> supaya tidak masuk urutan Tab tanpa guna.
   if (!bisaDiklik) {
     return <div data-kartu3d className={kelasDasar} style={gaya}>{isi}</div>;
   }
@@ -90,10 +67,8 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
   );
 }
 
-/** Pembungkus grid agar jarak & jumlah kolom seragam antar modul. */
 export function StatCardGrid({ items, cols = 4, className = '' }: {
   items: StatCardItem[];
-  /** Jumlah kolom di layar sedang ke atas. Di ponsel selalu 2 kolom. */
   cols?: 3 | 4 | 5 | 6;
   className?: string;
 }) {

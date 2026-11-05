@@ -5,30 +5,21 @@ import { RefreshCw, TriangleAlert, House } from 'lucide-react';
 import { bolehMuatUlang, galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat-berkas';
 import { laporGalat } from '@/lib/lapor-galat';
 
-/**
- * Layar galat yang dipakai app/error.tsx, app/global-error.tsx, dan app/(portal)/error.tsx.
- *
- * Sebelum ini tidak ada batas galat sama sekali: satu galat render di modul mana pun
- * menjatuhkan seluruh halaman menjadi layar putih (pernah terjadi di Incentive PTS).
- * Sekarang galat hanya menjatuhkan bagian yang rusak; menu dan header portal tetap hidup.
- */
 export function LayarGalat({ error, reset, penuh = false }: {
   error: Error & { digest?: string };
   reset: () => void;
-  /** true = menutupi seluruh layar (dipakai global-error, tanpa kerangka portal). */
   penuh?: boolean;
 }) {
   useEffect(() => {
     console.error('[galat-halaman]', error);
     laporGalat({ pesan: `${error.name && error.name !== 'Error' ? `${error.name}: ` : ''}${error.message}`, sumber: 'halaman', digest: error.digest });
-    //  Galat berkas lama sesudah deploy: muat ulang diam-diam (paling sering sekali per menit).
     if (galatBerkasTidakTermuat(error)) {
       try {
         if (bolehMuatUlang(sessionStorage.getItem(KUNCI_MUAT_ULANG), Date.now())) {
           sessionStorage.setItem(KUNCI_MUAT_ULANG, String(Date.now()));
           window.location.reload();
         }
-      } catch { /* sessionStorage ditolak - biarkan tombol manual */ }
+      } catch {  }
     }
   }, [error]);
 

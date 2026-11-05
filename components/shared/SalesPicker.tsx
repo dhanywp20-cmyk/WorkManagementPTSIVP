@@ -11,12 +11,6 @@ export interface SalesPickerUser {
 interface Props {
   value: string;
   users: SalesPickerUser[];
-  /**
-   * Argumen ketiga adalah id orang yang dipilih - itulah yang disimpan ke
-   * kolom *_user_id. Tanpa ini id-nya terbuang di sini, dan baris baru lahir
-   * hanya berbekal nama, persis seperti data lama yang sedang dibereskan.
-   * Kosong bila pilihannya dihapus.
-   */
   onChange: (name: string, division: string, userId: string | null) => void;
   placeholder?: string;
   triggerClassName?: string;
@@ -44,8 +38,6 @@ export function SalesPicker({
 
   return (
     <div className="relative">
-      {/* Pemicu daftar pilihan: tanpa aria-expanded pembaca layar tidak pernah
-          tahu daftarnya sedang terbuka atau tertutup. */}
       <button
         type="button"
         onClick={() => { setOpen(o => !o); if (!open) setQ(''); }}
@@ -122,8 +114,6 @@ export function SalesPicker({
               ))}
             </div>
           </div>
-          {/* Lapis penutup: murni penangkap klik di luar, tidak boleh ikut
-              terbaca maupun masuk urutan Tab. */}
           <div aria-hidden="true" className="fixed inset-0" style={{ zIndex: dropdownZIndex - 1 }} onClick={() => { setOpen(false); setQ(''); }} />
         </>
       )}

@@ -1,9 +1,4 @@
 'use client';
-/**
- * Pustaka Tools Team: katalog produk, data acuan & artikel panduan yang diisi tim (Admin) - dipakai
- * kalkulator lewat "dari Pustaka" dan bisa dibaca siapa pun untuk belajar mandiri.
- * Registri jenis: lib/pustaka.ts · data: /api/tools-team/pustaka (migrasi 040).
- */
 import { useState } from 'react';
 import { JENIS_PUSTAKA, type KelompokPustaka } from '@/lib/pustaka';
 import { DaftarPustaka } from './pustaka/DaftarPustaka';

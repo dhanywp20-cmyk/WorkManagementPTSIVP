@@ -1,5 +1,4 @@
 'use client';
-/** Editor kecil untuk pratinjau Product Comparison: teks bebas, atau satu nilai spesifikasi (teks, status, ✓, sumber). */
 import { useState } from 'react';
 import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan';
 

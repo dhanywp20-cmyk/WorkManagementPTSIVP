@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalHapusTahapan - hapus tahapan pencairan satu proyek. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { KotakInfo, Modal, TombolModal, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
 import { IncentiveProjectRow, IncentiveTranche } from './calc';
 

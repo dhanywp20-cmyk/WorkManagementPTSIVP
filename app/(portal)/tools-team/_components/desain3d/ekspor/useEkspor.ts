@@ -1,9 +1,4 @@
 'use client';
-/**
- * Ekspor: foto kanvas, PNG (tampak, 4 tampak, lembar), denah 2D berskala (cetak & DXF), lembar cetak A4, ringkasan teks,
- * BOM Excel (inti/bom.ts) dan draf checklist instalasi dari BOM.
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
 import { berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
@@ -17,14 +12,9 @@ import { ARAH_SUDUT, type Sudut, TAMPAK } from '../mesin/tipe';
 import { gambarLabel } from '../mesin/label';
 import { posisiPas } from '../mesin/kamera';
 
-
 export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamera>, 'fokusKotak'>) {
   const { analisis, benda, duaRuang, faktorCustom, infoBlending, jenisPandang, kabel, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, tampilBlending, targetKontras } = K;
   const { fokusKotak } = dep;
-  /**
-   * Foto kanvas 3D (resolusi `skala` x layar) tanpa gizmo & kotak sorotan, label ukuran/jarak
-   * ikut tergambar. `arah` = sudut kamera sementara; kamera dikembalikan seperti semula.
-   */
   const fotoKanvas = (arah: 'sekarang' | Sudut, skala = 2): HTMLCanvasElement | null => {
     const m = mesin.current; if (!m) return null;
     const posLama = m.kamera.position.clone(), targetLama = m.orbit.target.clone(), rasioLama = m.renderer.getPixelRatio();
@@ -57,9 +47,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   };
   const namaGambar = (bagian: string) => namaBerkas(namaDesain || 'Desain AV', bagian);
   const [menuPng, setMenuPng] = useState(false);
-  /** Denah 2D di lembar Cetak / PNG lembar: pilihan, bawaan mati (jarang dipakai) - diingat per perangkat. */
   const [denahCetak, setDenahCetakMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_denah_cetak') === '1'; } catch { return false; } });
-  const setDenahCetak = (v: boolean) => { setDenahCetakMentah(v); try { localStorage.setItem('wm_desain3d_denah_cetak', v ? '1' : '0'); } catch { /* abaikan */ } };
+  const setDenahCetak = (v: boolean) => { setDenahCetakMentah(v); try { localStorage.setItem('wm_desain3d_denah_cetak', v ? '1' : '0'); } catch {  } };
   const [sibukPng, setSibukPng] = useState(false);
   const jalankanPng = async (kerja: () => Promise<void>) => {
     setMenuPng(false); setSibukPng(true);
@@ -67,11 +56,9 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   };
   const unduhFoto = (arah: 'sekarang' | Sudut, bagian: string) => jalankanPng(async () => {
     const foto = fotoKanvas(arah, 2); if (!foto) throw new Error('foto');
-    //  Jalur kabel dicentang -> legend di panel samping (tidak menutupi ruangan); tidak dicentang -> tanpa legend.
     const c = legendaKabel ? denganLegendaSamping(foto, legendaKabel, foto.width / Math.max(1, mesin.current?.renderer.domElement.clientWidth || foto.width)) : foto;
     await unduhKanvasPNG(c, namaGambar(bagian));
   });
-  /** Empat tampak dalam satu gambar (2 x 2) dengan judul - siap dikirim ke customer. */
   const unduhEmpatTampak = () => jalankanPng(async () => {
     const foto = TAMPAK.map(t => ({ ...t, c: fotoKanvas(t.arah, 1.5) }));
     if (foto.some(x => !x.c)) throw new Error('foto');
@@ -79,7 +66,6 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     const jarak = Math.round(16 * k), kepala = Math.round(70 * k), keterangan = Math.round(34 * k);
     const c = document.createElement('canvas');
     c.width = w * 2 + jarak * 3;
-    //  Legend kabel sekali saja, sebaris di bawah keempat tampak (hanya bila jalur kabel dicentang).
     const tinggiLegenda = legendaKabel ? Math.ceil(gambarLegendaBaris(null, 0, 0, c.width - jarak * 2, legendaKabel, k * 1.3)) + jarak : 0;
     c.height = kepala + (h + keterangan) * 2 + jarak * 3 + tinggiLegenda;
     const g = c.getContext('2d'); if (!g) throw new Error('kanvas');
@@ -99,18 +85,15 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     if (legendaKabel) gambarLegendaBaris(g, jarak, c.height - tinggiLegenda, c.width - jarak * 2, legendaKabel, k * 1.3);
     await unduhKanvasPNG(c, namaGambar('4 tampak'));
   });
-  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web; juga diekspor sebagai PNG. */
   const lembar3D = (): Lembar => {
     const foto = TAMPAK.map(t => ({ ...t, url: fotoKanvas(t.arah, 1.5)?.toDataURL('image/jpeg', 0.86) ?? '' }));
     const fm = (n: number, d = 2) => f(n, d);
-    /** Line array: jangkauan nyata sumbu modul ke telinga penonton (hitungan yang sama dengan kanvas & panel). */
     const jangkauLA = (b: Benda) => {
       const k = kotakRuang[ruangDari(ruang, b.x)] ?? kotakRuang[0];
       const bs = berkasLineArray(b, { x0: k.x0, x1: k.x0 + k.p, z0: 0, z1: k.l, t: k.t, telinga: telingaPenonton(benda, b) });
       const d = bs.filter(x => x.jarak !== null && !x.dinding).map(x => x.jarak!), n = bs.filter(x => x.dinding).length;
       return (d.length ? `menjangkau ${fm(Math.min(...d), 1)}–${fm(Math.max(...d), 1)} m` : 'sumbu belum turun ke penonton') + (n ? ` · ${n} modul ke dinding/plafon` : '');
     };
-    //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah (inti/bom.ts, sama dengan BOM Excel).
     const baris = daftarBenda(benda);
     const jumlahItem = baris.reduce((n, r) => n + r.jumlah, 0);
     const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
@@ -151,7 +134,6 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           isi: analisis.map(a => [a.d.nama, ...(duaRuang ? [`Ruang ${a.ri + 1}`] : []), `${fm(a.gambar.w)} × ${fm(a.gambar.h)} m`,
             a.jumlah ? `${fm(a.terjauh, 1)} m` : '—', `${fm(a.tinggiPerlu)} m`, `${fm(a.sudutMaks, 0)}°`, a.jumlah ? (a.cukup ? 'Cukup' : 'Kurang') : 'Tanpa penonton']),
         }] : []),
-        //  Proyektor dipecah 2 tabel: 11 kolom dalam satu tabel tidak muat di lebar A4 (kolom kanan terpotong).
         ...(proyektor.length ? [{
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
@@ -202,7 +184,6 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     };
   };
   const cetak = () => bukaCetak(lembar3D());
-  /** Denah 2D untuk AutoCAD / software CAD (DXF R12, mm, lapis: dinding, bukaan, benda, plafon, teks, ukuran). */
   const unduhDxf = () => {
     setMenuPng(false);
     const url = URL.createObjectURL(new Blob([dxfDenah(denahDari(ruang, benda))], { type: 'application/dxf' }));
@@ -210,7 +191,6 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   };
   const pngLembar = () => unduhLembarPNG(lembar3D(), namaGambar('lembar'));
-  /** BOM Excel: perangkat & furnitur, aksesori pemasangan, isi rack, kabel (total meter + gulungan). */
   const unduhBomExcel = () => {
     setMenuPng(false);
     const bom = bomDesain(benda, kabel);
@@ -228,7 +208,6 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
       XLSX.writeFile(wb, `${namaGambar('BOM')}.xlsx`);
     }, () => setGalat('Excel gagal dibuat - periksa koneksi.'));
   };
-  /** Draf checklist instalasi (Project Progress) dari BOM - satu bagian per perangkat yang dipasang. */
   const draftChecklist = (judul: string) => checklistDariBom(judul, bomDesain(benda, kabel));
   const ringkasan = () => [
     `*Desain ruang: ${namaDesain}*`,

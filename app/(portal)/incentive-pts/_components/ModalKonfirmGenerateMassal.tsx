@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalKonfirmGenerateMassal - konfirmasi generate tahapan untuk banyak project. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 import { IncentiveProjectRow, formatRupiah } from './calc';
 

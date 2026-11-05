@@ -1,13 +1,7 @@
-/**
- * desain3d/bangun/teks.ts - Teks / keterangan manual (jenis 'teks'): tulisan digambar ke kanvas 2D lalu
- * dipasang sebagai bidang (berdiri / rebah di lantai) atau sprite yang selalu menghadap kamera.
- * Ukuran kotak benda sudah diturunkan dari isinya (inti/teks.ts) - di sini hanya menggambar.
- */
 import type * as T from 'three';
 import { barisTeks, tinggiHurufSah, warnaSah } from '../inti';
 import type { Konteks } from './dasar';
 
-/** Piksel per tinggi huruf: cukup tajam saat diperbesar, tetap ringan untuk tekstur. */
 const PX_HURUF = 96;
 const MAKS_PX = 2048;
 
@@ -37,30 +31,22 @@ function gambarTeks(b: Konteks['b'], w: number, h: number): HTMLCanvasElement {
 
 export function bangunTeks({ THREE, g, b }: Konteks) {
   const lantai = b.hadapTeks === 'lantai';
-  //  Rebah: tulisan selebar w, "dalam" d (kotak benda pipih); selain itu w × h tegak.
   const w = Math.max(0.02, b.w), h = Math.max(0.02, lantai ? b.d : b.h);
   const tex = new THREE.CanvasTexture(gambarTeks(b, w, h));
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  //  Tulisan tetap terbaca di ruang redup (tidak ikut gelap oleh pencahayaan) & tidak berkedip
-  //  bertumpuk dengan dinding / lantai di belakangnya (polygonOffset).
   const m = new THREE.MeshBasicMaterial({
     map: tex, transparent: true, side: THREE.DoubleSide, toneMapped: false, depthWrite: false,
     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
   });
   const o: T.Mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m);
   o.renderOrder = 2;
-  //  Bidang transparan: bayangannya akan berupa kotak penuh - jangan memberi bayangan.
   o.userData.tanpaBayangan = true;
-  //  Tulisan bukan benda fisik: tidak menghalangi sinar proyektor / cahaya (raycaster itu tanpa kamera),
-  //  tapi tetap bisa diklik untuk dipilih (raycaster klik dibuat dari kamera - setFromCamera).
   const raycastAsli = o.raycast.bind(o);
   o.raycast = (rc, hasil) => { if (rc.camera) raycastAsli(rc, hasil); };
   if (lantai) {
     o.rotation.x = -Math.PI / 2; o.position.y = 0.003;
   } else if (b.hadapTeks === 'kamera') {
-    //  Selalu menghadap kamera (billboard). Bukan THREE.Sprite: sprite melempar galat saat terkena raycast
-    //  tanpa kamera (sinar proyektor, cahaya, blending menyapu semua benda).
     o.position.y = h / 2;
     const qInduk = new THREE.Quaternion();
     o.onBeforeRender = (_r, _s, kamera) => {

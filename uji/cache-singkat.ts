@@ -1,9 +1,3 @@
-/**
- * uji/cache-singkat.ts - ingatan singkat data rujukan: satu permintaan untuk banyak pemanggil,
- * hasil gagal tidak diingat, dan lupakan() memaksa ambil ulang.
- *
- * Jalankan: npx tsx uji/cache-singkat.ts
- */
 import { ingat, lupakan } from '../lib/cache-singkat';
 
 let lulus = 0, gagal = 0;

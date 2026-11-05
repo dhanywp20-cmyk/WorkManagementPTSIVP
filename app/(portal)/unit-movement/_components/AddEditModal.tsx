@@ -11,7 +11,6 @@ import { IkonTeks } from '@/components/shared/Ikon';
 export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }: {
   log?:MovementLog|null; currentUser:User; teamMembers:string[]; onClose:()=>void; onSave:()=>void;
 }) {
-  //  Daftar event: Admin Panel › Daftar Pilihan.
   const daftarEvent = useDaftarPilihan('unit-event');
   const isEdit = !!log;
   const [form, setForm] = useState({
@@ -131,7 +130,6 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           <div><label htmlFor="f-unit-movement-components-addeditmodal-7" className={lbl}><IkonTeks nama="🔢" />Serial Number</label>
             <input id="f-unit-movement-components-addeditmodal-7" type="text" className={inp} placeholder="Serial number..." value={form.serial_number} onChange={e=>set('serial_number',e.target.value)}/></div>
 
-          {/* Kondisi Barang */}
           <div>
             <label className={lbl}><IkonTeks nama="🔍" />Kondisi Barang</label>
             <div className="flex gap-2">
@@ -149,7 +147,6 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
             </div>
           </div>
 
-          {/* Expected Return Date — only for Keluar */}
           {!isMasuk && (
             <div>
               <label htmlFor="f-unit-movement-components-addeditmodal-8" className={lbl}><IkonTeks nama="📅" />Perkiraan Tanggal Kembali</label>
@@ -165,19 +162,15 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           <div><label htmlFor="f-unit-movement-components-addeditmodal-9" className={lbl}><IkonTeks nama="📝" />Catatan</label>
             <textarea id="f-unit-movement-components-addeditmodal-9" className={inp+" resize-none"} rows={3} placeholder="Keterangan tambahan..." value={form.catatan} onChange={e=>set('catatan',e.target.value)}/></div>
 
-          {/* Foto Surat: upload file */}
           <MultiFileField label="Upload Foto Surat Jalan" icon="📄" files={suratFiles}
             onAdd={f=>setSuratFiles(p=>[...p,...f])} onRemove={i=>setSuratFiles(p=>p.filter((_,idx)=>idx!==i))}/>
 
-          {/* Foto Surat: link Google Drive */}
           <UrlListField label="Link Foto Surat Jalan (Google Drive / URL)" icon="🔗"
             value={form.foto_surat_url} onChange={v=>set('foto_surat_url',v)}/>
 
-          {/* Foto Barang: upload file */}
           <MultiFileField label="Upload Foto Barang" icon="🖼️" files={barangFiles}
             onAdd={f=>setBarangFiles(p=>[...p,...f])} onRemove={i=>setBarangFiles(p=>p.filter((_,idx)=>idx!==i))}/>
 
-          {/* Foto Barang: link Google Drive */}
           <UrlListField label="Link Foto Barang (Google Drive / URL)" icon="🔗"
             value={form.foto_barang_url} onChange={v=>set('foto_barang_url',v)}/>
 

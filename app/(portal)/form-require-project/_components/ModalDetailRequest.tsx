@@ -1,15 +1,9 @@
 'use client';
 
-/** ModalDetailRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { AuditTrailPanel, FlowSteps, ModalPortal } from '@/components/shared';
+import { ModalPortal } from '@/components/shared';
 import { Z } from '@/lib/z-index';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { unduhPaketRequest } from './paket-unduhan';
-import { cetakRequest } from './cetak-request';
-import { User, ProjectRequest, ProjectMessage, ProjectAttachment, getRoomStatus } from './shared';
-import { Desain3DTools } from './Desain3DTools';
-import { supabase } from '@/lib/supabase';
-import { type TautanDesain3D, type IzinRuang } from './desain-3d-request';
+import { getRoomStatus } from './shared';
 import { PanelChatDetail } from './detail/PanelChatDetail';
 import { RiwayatDetail } from './detail/RiwayatDetail';
 import { AlurDetail } from './detail/AlurDetail';
@@ -21,83 +15,20 @@ import { KartuLayoutDetail } from './detail/KartuLayoutDetail';
 import { KartuKategoriDetail } from './detail/KartuKategoriDetail';
 import { KartuInfoDetail } from './detail/KartuInfoDetail';
 import { HeaderDetail } from './detail/HeaderDetail';
+import { useKonteksRequest } from './konteks-request';
 
-export interface ModalDetailRequestProps {
-  activeAttachTab: "all" | "sld" | "boq" | "design3d";
-  attachments: ProjectAttachment[];
-  bisaKelolaRequest: boolean;
-  bolehEditRequest: (req: ProjectRequest) => boolean;
-  bolehRerouteRequest: (r: ProjectRequest) => boolean;
-  boqFileRef: import("react").RefObject<HTMLInputElement | null>;
-  canInternalApproveProject: (req: ProjectRequest) => boolean;
-  chatFileRef: import("react").RefObject<HTMLInputElement | null>;
-  chatRoomFilter: string;
-  currentUser: User;
-  desain3d: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string; } | null;
-  desain3dTools: TautanDesain3D[];
-  design3dFileRef: import("react").RefObject<HTMLInputElement | null>;
-  detailDueStatus: { type: string; label: string; days: number; } | null;
-  detailIsPending: boolean;
-  detailMobileTab: "info" | "chat";
-  detailRoomAssignName: string | undefined;
-  detailRoomIdx: number;
-  detailRoomStatus: "pending" | "approved" | "in_progress" | "completed" | "rejected" | undefined;
-  detailSc: { label: string; color: string; bg: string; border: string; } | null;
-  displayFileName: (fileName: string) => string;
-  downloadingPackage: boolean;
-  fetchRequests: () => Promise<void>;
-  fileInputRef: import("react").RefObject<HTMLInputElement | null>;
-  formatDate: (dt: string) => string;
-  formatDueDate: (dt: string) => string;
-  formatFileSize: (bytes: number) => string;
-  getCCLabel: (req: ProjectRequest) => string;
-  getFileRoomIdx: (fileName: string) => number;
-  handleCategoryUpload: (file: File, category: "sld" | "boq" | "design3d") => Promise<void>;
-  handleCloseDetail: () => void;
-  handleDeleteAttachment: (att: ProjectAttachment) => void;
-  handleFileUpload: (file: File) => Promise<void>;
-  handleOpenEditForm: () => void;
-  handleReject: (req: ProjectRequest) => void;
-  handleResubmit: (req: ProjectRequest) => Promise<void>;
-  handleSendMessage: () => Promise<void>;
-  handleStatusUpdate: (req: ProjectRequest, newStatus: string, roomIdx?: number) => Promise<void>;
-  isIVPGuest: boolean;
-  isNonIVPGuest: boolean;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  messages: ProjectMessage[];
-  messagesEndRef: import("react").RefObject<HTMLDivElement | null>;
-  mintaPilih3D: number;
-  msgText: string;
-  muatDesain3D: (id: string) => Promise<void>;
-  notify: (type: "success" | "error" | "info", msg: string) => void;
-  selectedRequest: ProjectRequest | null;
-  sendingMsg: boolean;
-  setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | "sld" | "boq" | "design3d">>;
-  setAssignModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
-  setChatRoomFilter: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setDeleteConfirmText: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setDeleteModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; }>>;
-  setDetailMobileTab: import("react").Dispatch<import("react").SetStateAction<"info" | "chat">>;
-  setDetailRoomIdx: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setDownloadingPackage: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setInternalApproveTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setMintaPilih3D: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setMsgText: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setRerouteTarget: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setRerouteTo: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedNewStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSelectedRequest: import("react").Dispatch<import("react").SetStateAction<ProjectRequest | null>>;
-  setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setStatusUpdateModal: import("react").Dispatch<import("react").SetStateAction<{ open: boolean; req: ProjectRequest | null; roomIdx: number; }>>;
-  showDetailModal: boolean;
-  showUploadChoice: boolean;
-  sldFileRef: import("react").RefObject<HTMLInputElement | null>;
-  uploadingCategory: "sld" | "boq" | "design3d" | null;
-  uploadingFile: boolean;
-}
-
-export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, boqFileRef, canInternalApproveProject, chatFileRef, chatRoomFilter, currentUser, desain3d, desain3dTools, design3dFileRef, detailDueStatus, detailIsPending, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, displayFileName, downloadingPackage, fetchRequests, fileInputRef, formatDate, formatDueDate, formatFileSize, getCCLabel, getFileRoomIdx, handleCategoryUpload, handleCloseDetail, handleDeleteAttachment, handleFileUpload, handleOpenEditForm, handleReject, handleResubmit, handleSendMessage, handleStatusUpdate, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS, messages, messagesEndRef, mintaPilih3D, msgText, muatDesain3D, notify, selectedRequest, sendingMsg, setActiveAttachTab, setAssignModal, setChatRoomFilter, setDeleteConfirmText, setDeleteModal, setDetailMobileTab, setDetailRoomIdx, setDownloadingPackage, setInternalApproveTarget, setMintaPilih3D, setMsgText, setRerouteTarget, setRerouteTo, setSelectedNewStatus, setSelectedRequest, setShowUploadChoice, setStatusUpdateModal, showDetailModal, showUploadChoice, sldFileRef, uploadingCategory, uploadingFile }: ModalDetailRequestProps) {
+export function ModalDetailRequest() {
+  const k = useKonteksRequest();
+  const { currentUser, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS } = k.sesi;
+  const { formatDueDate, getCCLabel, notify } = k.bantu;
+  const { fetchRequests } = k.daftar;
+  const {
+    detailDueStatus, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, handleCloseDetail, selectedRequest, setDetailMobileTab,
+    setDetailRoomIdx, setSelectedRequest, showDetailModal
+  } = k.detail;
+  const { handleFileUpload, uploadingFile } = k.lampiran;
+  const { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText } = k.pesan;
+  const { handleResubmit, setAssignModal } = k.aksi;
   return (
     <>
       {showDetailModal && selectedRequest && detailSc && (
@@ -107,21 +38,8 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
 
-            {/* Detail Modal Header */}
-            {/* flex-col sm:flex-row: sebelumnya SATU baris (flex items-center) berisi
-                tombol tutup + judul + sampai 6 tombol aksi (Update Status/Edit/
-                Hapus/Download/Print, dst). Tombol aksinya flex-shrink-0 - menolak
-                menyusut - jadi begitu semuanya tidak muat di satu baris di HP,
-                yang terjadi bukan tombolnya turun ke bawah, tapi seluruh baris
-                header memaksa lebih lebar dari layar dan tombol paling kanan
-                (mis. Download) terpotong. Sekarang tutup+judul jadi baris sendiri,
-                tombol aksi jadi baris sendiri di bawahnya (bebas melipat) - di HP;
-                di layar besar (sm:) keduanya kembali sejajar seperti semula. */}
-            <HeaderDetail
-              attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} bolehEditRequest={bolehEditRequest} bolehRerouteRequest={bolehRerouteRequest} canInternalApproveProject={canInternalApproveProject} currentUser={currentUser} desain3dTools={desain3dTools} detailIsPending={detailIsPending} detailRoomAssignName={detailRoomAssignName} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} detailSc={detailSc} downloadingPackage={downloadingPackage} formatDate={formatDate} getCCLabel={getCCLabel} handleCloseDetail={handleCloseDetail} handleOpenEditForm={handleOpenEditForm} handleReject={handleReject} handleStatusUpdate={handleStatusUpdate} isPTS={isPTS} isTeamPTS={isTeamPTS} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setDeleteConfirmText={setDeleteConfirmText} setDeleteModal={setDeleteModal} setDownloadingPackage={setDownloadingPackage} setInternalApproveTarget={setInternalApproveTarget} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} setSelectedNewStatus={setSelectedNewStatus} setStatusUpdateModal={setStatusUpdateModal}
-            />
+            <HeaderDetail selectedRequest={selectedRequest} detailSc={detailSc} />
 
-            {/* Warning: non-IVP guest has no sales_division */}
             {isNonIVPGuest && !currentUser.sales_division && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-center gap-3 border-2 border-amber-300" style={{ background: 'rgba(254,243,199,0.9)' }}>
                 <span className="text-2xl flex-shrink-0"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -132,7 +50,6 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
               </div>
             )}
 
-            {/* Rejection reason banner */}
             {selectedRequest.status === 'rejected' && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-start gap-3 border-2 border-red-300" style={{ background: 'rgba(254,226,226,0.9)' }}>
                 <span className="text-2xl flex-shrink-0 mt-0.5"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -155,7 +72,6 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
               </div>
             )}
 
-            {/* IVP Guest info banner */}
             {isIVPGuest && selectedRequest.ivp_assignee === currentUser.full_name && selectedRequest.requester_id !== currentUser.id && (
               <div className="px-5 py-2 flex items-center gap-2 text-xs flex-shrink-0"
                 style={{ background: 'rgba(99,102,241,0.10)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
@@ -167,8 +83,6 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
               </div>
             )}
 
-            {/* Detail Modal Body — 2 columns: LEFT (info + attachments) | RIGHT (chat) */}
-            {/* Mobile: tab switcher to toggle between Info and Chat panels */}
             <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
               <button onClick={() => setDetailMobileTab('info')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-500 border-transparent'}`}>
@@ -181,13 +95,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
             </div>
             <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
 
-              {/* LEFT: Detail Info + Attachments */}
               <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
-                {/* Room Tab Navigator — STICKY di atas scroll area, supaya bisa pindah
-                    section tanpa perlu scroll balik ke atas dulu. Ditaruh DI LUAR
-                    "p-5 space-y-5" (bukan ikut scroll bareng konten) tapi tetap di
-                    dalam container overflow-y-auto yang sama, supaya sticky-nya nempel
-                    relatif terhadap scroll area ini (bukan seluruh modal). */}
                 {(() => {
                   const detailRooms = selectedRequest.rooms || [];
                   const totalDetailRooms = 1 + detailRooms.length;
@@ -201,9 +109,6 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                         </button>
                         {Array.from({length: totalDetailRooms}).map((_, i) => {
                           const label = i === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : (detailRooms[i-1]?.room_name?.trim() || `Ruangan ${i+1}`);
-                          // Titik status per ruangan - supaya admin lihat sekilas Command
-                          // Center masih dikerjakan sementara Smart ClassRoom sudah selesai,
-                          // tanpa harus buka satu-satu tab-nya.
                           const roomSt = getRoomStatus(selectedRequest, i);
                           const dotColor: Record<string, string> = {
                             pending: 'bg-amber-400', approved: 'bg-teal-400', in_progress: 'bg-blue-400',
@@ -226,20 +131,8 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                     </div>
                   );
                 })()}
-                {/* Kartu detail disusun dua kolom di layar lebar, bukan satu deret
-                    memanjang ke bawah - mengikuti tata letak satu layar yang sudah
-                    dipakai form pembuatannya. Sebelumnya membaca satu request
-                    berarti menggulir melewati lima kartu penuh.
-
-                    Ambangnya `satulayar`, sama seperti form pembuatan: yang
-                    menentukan bukan lebar saja tapi juga alat penunjuknya, supaya
-                    zoom Chrome tidak menjatuhkannya jadi satu kolom.
-
-                    items-start supaya kartu pendek tidak ikut meregang mengikuti
-                    kartu Source & Peripheral yang paling tinggi. */}
                 <div className="p-5 grid grid-cols-1 satulayar:grid-cols-2 gap-5 items-start [&>*]:min-w-0">
 
-                  {/* Assigned PTS — "in_progress" nudge */}
                   {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
                     <div className="rounded-xl px-4 py-3 flex items-center gap-3 satulayar:col-span-2"
                       style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
@@ -253,10 +146,8 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                     </div>
                   )}
 
-                  {/* Compute active room data for display */}
                   {(() => {
                     const detailRooms = selectedRequest.rooms || [];
-                    // For detailRoomIdx > 0, use rooms[detailRoomIdx-1]; for 0 use selectedRequest fields
                     const activeRoom = detailRoomIdx > 0 ? detailRooms[detailRoomIdx - 1] : null;
                     const dr = activeRoom ? {
                       room_name: activeRoom.room_name,
@@ -294,11 +185,6 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                       brand_middleware: selectedRequest.brand_middleware, brand_middleware_pic_name: selectedRequest.brand_middleware_pic_name,
                     };
 
-                    // Helper renderers for detail display
-                    // Dikecilkan khusus di HP (sm: kembali ke ukuran semula) - request
-                    // dengan banyak field terisi bisa punya belasan ChipDisplay/YNDisplay
-                    // bertumpuk, dan ukuran chip sebesar form isian membuat detail
-                    // sepanjang ini di ponsel jadi scroll yang sangat panjang.
                     const ChipDisplay = ({ items }: { items: (string | undefined)[] }) => {
                       const filtered = items.filter(Boolean) as string[];
                       if (!filtered.length) return <span className="text-sm text-gray-500 italic">—</span>;
@@ -317,63 +203,44 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                     );
 
                     return (<>
-                  {/* Project Info — form style */}
                   <KartuInfoDetail
                     detailDueStatus={detailDueStatus} detailRoomAssignName={detailRoomAssignName} detailSc={detailSc} dr={dr} formatDueDate={formatDueDate} getCCLabel={getCCLabel} selectedRequest={selectedRequest}
                   />
 
-                  {/* Kategori & Solution — form style */}
                   <KartuKategoriDetail
                     ChipDisplay={ChipDisplay} dr={dr}
                   />
 
-                  {/* Layout Konten & Jaringan — form style */}
                   <KartuLayoutDetail
                     ChipDisplay={ChipDisplay} dr={dr}
                   />
 
-                  {/* Source & Peripheral — form style */}
                   <KartuPeripheralDetail
                     ChipDisplay={ChipDisplay} YNDisplay={YNDisplay} dr={dr}
                   />
 
-                  {/* Ruangan & Keterangan — form style */}
                   <KartuRuanganDetail
                     dr={dr}
                   />
                   </>);
                   })()}
 
-                  {/* Attachments Panel — prominent */}
-                  <PanelLampiranDetail
-                    activeAttachTab={activeAttachTab} attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} boqFileRef={boqFileRef} desain3d={desain3d} desain3dTools={desain3dTools} design3dFileRef={design3dFileRef} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} displayFileName={displayFileName} fileInputRef={fileInputRef} formatFileSize={formatFileSize} getFileRoomIdx={getFileRoomIdx} handleCategoryUpload={handleCategoryUpload} handleDeleteAttachment={handleDeleteAttachment} handleFileUpload={handleFileUpload} isPTS={isPTS} mintaPilih3D={mintaPilih3D} muatDesain3D={muatDesain3D} notify={notify} selectedRequest={selectedRequest} setActiveAttachTab={setActiveAttachTab} setMintaPilih3D={setMintaPilih3D} setShowUploadChoice={setShowUploadChoice} showUploadChoice={showUploadChoice} sldFileRef={sldFileRef} uploadingCategory={uploadingCategory} uploadingFile={uploadingFile}
-                  />
+                  <PanelLampiranDetail selectedRequest={selectedRequest} />
 
-                  {/* Admin controls */}
                   <KontrolAdminDetail
                     detailDueStatus={detailDueStatus} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} fetchRequests={fetchRequests} formatDueDate={formatDueDate} isPTS={isPTS} isTeamPTS={isTeamPTS} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setSelectedRequest={setSelectedRequest}
                   />
 
-                  {/* Alur request — menjawab "sudah sampai mana perkara ini",
-                      sejalan dengan Request Schedule. Riwayat di bawahnya
-                      menceritakan yang SUDAH terjadi; alur ini menunjukkan yang
-                      MASIH tersisa. */}
                   <AlurDetail
                     detailRoomAssignName={detailRoomAssignName} detailRoomStatus={detailRoomStatus} getCCLabel={getCCLabel} selectedRequest={selectedRequest}
                   />
 
-                  {/* Riwayat perubahan — approve internal, approve admin, assign,
-                      reject, ganti status. Baris pembuatan diturunkan dari request
-                      itu sendiri karena logAudit baru mencatat 'create' sejak
-                      perbaikan terakhir; tanpa itu request LAMA tampak tidak
-                      punya pangkal padahal requester_name & created_at-nya ada. */}
                   <RiwayatDetail
                     selectedRequest={selectedRequest}
                   />
                 </div>
               </div>
 
-              {/* RIGHT: Chat */}
               <PanelChatDetail
                 chatFileRef={chatFileRef} chatRoomFilter={chatRoomFilter} currentUser={currentUser} detailMobileTab={detailMobileTab} handleFileUpload={handleFileUpload} handleSendMessage={handleSendMessage} isPTS={isPTS} messages={messages} messagesEndRef={messagesEndRef} msgText={msgText} selectedRequest={selectedRequest} sendingMsg={sendingMsg} setChatRoomFilter={setChatRoomFilter} setMsgText={setMsgText} uploadingFile={uploadingFile}
               />

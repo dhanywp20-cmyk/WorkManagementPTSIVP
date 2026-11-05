@@ -1,9 +1,4 @@
 'use client';
-/**
- * Navigasi kamera - satu kelompok di kanan-bawah kanvas: mode seret, zoom, pas ruangan, menu Kamera (putar 45°, menghadap
- * dinding, fokus ruang). Sudut 3D / Atas / Dari kursi ada di bilah atas, fokus ke benda di menu Lainnya benda terpilih -
- * dulu dua-duanya kembar di sini (8 tombol).
- */
 import { Maximize2, Move, Rotate3d, RotateCcw, RotateCw, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { grupNavMendatar, tombolSudut } from './gaya';
 import { TombolNav } from './TombolNav';
@@ -21,7 +16,6 @@ export function NavKamera({ a }: { a: AlatDesain }) {
             aktif={modeSeret === 'geser'} onClick={() => setModeSeret(v => (v === 'geser' ? 'putar' : 'geser'))}>
             {modeSeret === 'geser' ? <Move size={16} /> : <Rotate3d size={16} />}
           </TombolNav>
-          {/*  Ponsel: zoom lewat pinch - tombolnya disembunyikan supaya tidak menabrak menu Tampilan. */}
           <span className="hidden sm:contents">
             <TombolNav judul="Perbesar" onClick={() => zoom(0.7)}><ZoomIn size={16} /></TombolNav>
             <TombolNav judul="Perkecil" onClick={() => zoom(1.4)}><ZoomOut size={16} /></TombolNav>

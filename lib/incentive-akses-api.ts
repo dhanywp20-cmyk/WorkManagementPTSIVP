@@ -1,10 +1,3 @@
-/**
- * lib/incentive-akses-api.ts - pemanggil /api/incentive/akses dari klien.
- *
- * Terpisah dari lib/incentive-akses.ts, yang sengaja dijaga MURNI (tanpa
- * fetch, tanpa Supabase) supaya aturannya bisa diimpor route server juga.
- * Berkas ini bagian klien-nya saja.
- */
 
 import type { TingkatAkses } from './incentive-akses';
 
@@ -25,18 +18,10 @@ async function kirim(body: Record<string, unknown>): Promise<Res> {
   }
 }
 
-/** Setel tingkat akses seseorang di modul Incentive PTS. */
 export function setAksesIncentive(userId: string, value: TingkatAkses): Promise<Res> {
   return kirim({ action: 'setAkses', userId, value });
 }
 
-/**
- * Tetapkan lingkup brand seorang petugas.
- *
- * null = tanpa batas (melihat semua brand). 'MVI' / 'IVP' = hanya brand itu;
- * proyek "Kedua Brand" tetap terlihat oleh keduanya karena memang milik
- * bersama.
- */
 export function setBrandScopeIncentive(userId: string, value: string | null): Promise<Res> {
   return kirim({ action: 'setBrandScope', userId, value });
 }

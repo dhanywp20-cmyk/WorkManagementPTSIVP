@@ -17,24 +17,16 @@ interface DataShare {
   };
   daftar: {
     id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string;
-    /** Nama orang di lokasi, diketik manual admin (migrasi 053). */
     support_lokasi?: string;
   }[];
   bagian: ChecklistBagian[];
   items: ChecklistItem[];
-  /** Handler per checklist - ringkasan "Dikerjakan Oleh" & nama Handler per lokasi. */
   anggota?: { daftar_id: string; nama: string }[];
 }
 
 const TANPA_ANGGOTA: { daftar_id: string; nama: string }[] = [];
 
-/**
- * Link View-Only satu proyek - PUBLIK, tanpa login. Seluruh checklist lokasi
- * ditampilkan hanya-baca (untuk client / atasan). Token Project Progress lama
- * tetap berlaku karena ikut disalin ke proyek baru oleh migrasi 025.
- */
 export default function ProyekSharePage() {
-  //  Next 15+: params halaman berupa Promise - di client component cukup useParams().
   const params = useParams<{ token: string }>();
   const [data, setData] = useState<DataShare | null>(null);
   const [memuat, setMemuat] = useState(true);

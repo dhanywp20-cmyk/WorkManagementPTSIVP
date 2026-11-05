@@ -1,10 +1,4 @@
 'use client';
-/**
- * Alat benda terpilih - satu kolom ikon di rel kiri, tepat di bawah alat umum (BilahKiri), berbingkai biru supaya
- * terbedakan: Atur · Geser / Putar · Geser ▾ (geser cepat & geser tepat) · Duplikat · Lainnya ▾ · Hapus. Menu terbuka ke
- * kanan. Yang jarang dipakai (larik / ratakan, salin ke ruang lain, tempel ke dinding, fokus kamera, kunci, sembunyikan)
- * ada di menu Lainnya. Dulu bilah melayang di tengah-atas yang menutupi gambar. Aturan tata letak: inti/tata.ts.
- */
 import { type ReactNode, useState } from 'react';
 import {
   AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical,
@@ -18,16 +12,13 @@ import { itemMenu, judulMenu, menuMelayang } from './gaya';
 import type { AlatDesain } from './alat';
 
 const biasa = 'text-slate-700 hover:bg-slate-100 active:bg-slate-200';
-/** Menu yang terbuka ke kanan kolom. */
 const kanan = 'absolute left-full top-0 ml-2 max-w-[calc(100vw-7rem)]';
 
 type AtributAria = { role?: string; 'aria-pressed'?: boolean; 'aria-checked'?: boolean; 'aria-expanded'?: boolean; 'aria-haspopup'?: 'menu' | 'dialog' };
-/** Tombol ikon kolom (ukuran sama dengan rel alat). */
 function Ikon({ judul, onClick, kelas, children, ...aria }: { judul: string; onClick: () => void; kelas: string; children: ReactNode } & AtributAria) {
   return <button type="button" title={judul} aria-label={judul} onClick={onClick} className={`w-9 h-9 grid place-items-center ${kelas}`} {...aria}>{children}</button>;
 }
 
-/** Baris menu Lainnya: ikon, judul & keterangan pendek. */
 function Baris({ ikon, judul, ket, onClick, aktif, bahaya }: { ikon: ReactNode; judul: string; ket?: string; onClick: () => void; aktif?: boolean; bahaya?: boolean }) {
   return (
     <button type="button" role={aktif === undefined ? 'menuitem' : 'menuitemcheckbox'} aria-checked={aktif} onClick={onClick}
@@ -101,7 +92,6 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
           onClick={() => { const s = new Set(ids); setBenda(b => b.filter(x => !s.has(x.id))); setPilih(null); }}><Trash2 size={17} /></Ikon>
       </div>
 
-      {/*  Geser cepat selalu terpasang: panah keyboard tetap jalan walau panelnya tertutup. */}
       {bisaGeser && !hanyaLihat && (
         <>
           {menu === 'geser' && tutupLatar}

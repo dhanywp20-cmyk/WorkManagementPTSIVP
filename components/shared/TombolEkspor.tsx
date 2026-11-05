@@ -1,8 +1,4 @@
 'use client';
-/**
- * Tombol ekspor daftar yang SAMA di semua menu: Excel · Cetak (A4) · PNG - isinya mengikuti filter
- * yang sedang aktif. `data` dipanggil saat tombol diklik (bukan tiap render). Lihat lib/ekspor-tabel.ts.
- */
 import { useState } from 'react';
 import { cetakTabel, type Ekspor, eksporExcel, pngTabel } from '@/lib/ekspor-tabel';
 import { Ikon } from './Ikon';

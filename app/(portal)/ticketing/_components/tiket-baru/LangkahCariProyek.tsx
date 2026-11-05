@@ -1,6 +1,5 @@
 'use client';
 
-/** LangkahCariProyek - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal, TombolModal } from '@/components/shared';
 import { type ReminderRef } from '../NewTicketModal';
@@ -76,12 +75,6 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
               </p>
             )}
 
-            {/*
-              Klik hasil hanya MENYOROTNYA (praPilih), belum mengisi form. Baru
-              tombol "OK, Isi Form" di footer yang mengonfirmasi - supaya orang
-              bisa membandingkan beberapa hasil dulu sebelum kolomnya terkunci
-              ke satu pilihan.
-            */}
             {reminderResults.length > 0 && (
               <div className="mt-2 rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(220,38,38,0.2)' }}>
                 {reminderResults.map(r => {
@@ -104,7 +97,6 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                             {r._sumber === 'ticket' ? '🎫 Ticket lama' : r.category}
                           </span>
                         )}
-                        {/* Satu project bisa punya beberapa jadwal - tanggalnya yang membedakan. */}
                         {r.due_date && <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatTanggal(r.due_date)}</span>}
                         {r.address && <span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
                         {r.sales_name && <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.sales_name}</span>}

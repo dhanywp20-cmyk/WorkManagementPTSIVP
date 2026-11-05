@@ -1,9 +1,3 @@
-/**
- * uji/template-kategori.ts - daftar kategori yang diterima server (/api/tools-team/template-kategori)
- * harus persis sama dengan kategori di panel Desain 3D, dan id asing ditolak.
- *
- * Jalankan: npx tsx uji/template-kategori.ts
- */
 import { ID_KATEGORI_RUANG, kategoriRuangSah } from '../lib/tools-team';
 import { KATEGORI_RUANG } from '../app/(portal)/tools-team/_components/desain3d/inti/template';
 

@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/cek-hook-return.mjs - pastikan hook hasil scripts/ekstrak-hook.mjs tidak memuat return milik
- * komponen (mis. `if (!siap) return <Loading/>` yang ikut terbawa). Satu-satunya return tingkat atas yang
- * sah adalah `return { ... }` terakhir.
- *
- *   node scripts/cek-hook-return.mjs <berkas.ts> [...]
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 let masalah = 0;

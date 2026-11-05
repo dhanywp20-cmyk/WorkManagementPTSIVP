@@ -60,17 +60,13 @@ import { BlokAssignPTS } from './_components/halaman/BlokAssignPTS';
 import { BlokFormBaru } from './_components/halaman/BlokFormBaru';
 import { useStatistikRequest } from './_components/halaman/useStatistikRequest';
 import { useEfekHalamanRequest } from './_components/halaman/useEfekHalamanRequest';
+import { KonteksRequest, type NilaiKonteksRequest } from './_components/konteks-request';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
   const [appReady, setAppReady] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewFormModal, setShowNewFormModal] = useState(false);
-  // M13 (docs/UX-WORKFLOW-AUDIT.md): handleStatusUpdate dipanggil dari banyak
-  // tombol berbeda tanpa guard loading sama sekali - klik ganda pada koneksi
-  // lambat bisa mengirim WA/Telegram dobel ke pihak eksternal. Ref (bukan
-  // state) supaya tidak memicu re-render tiap perubahan, cukup mencegah
-  // pemanggilan ganda untuk request yang sama sementara satu masih berjalan.
   const statusUpdatingRef = useRef<Set<string>>(new Set());
   const [requests, setRequests] = useState<ProjectRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<ProjectRequest | null>(null);
@@ -99,20 +95,15 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     try { return sessionStorage.getItem('frp_searchQuery') || ''; } catch { return ''; }
   });
 
-  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  // Pintasan "buat" dari dashboard (?buat=1)
   useEffect(() => {
     if (searchParams.get('buat') === '1') setShowNewFormModal(true);
   }, [searchParams]);
 
-  // Deep-link dari notifikasi (?open=<id>): buka detail request-nya langsung,
-  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, requests yang di-refetch
-  // berkala akan membuka lagi detailnya tiap kali walau user sudah menutupnya.
   const sudahBukaDariNotif = useRef(false);
   useEffect(() => {
     if (sudahBukaDariNotif.current) return;
@@ -134,14 +125,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     try { return sessionStorage.getItem('frp_filterKebutuhan') || 'all'; } catch { return 'all'; }
   });
   const [ptsMembersList, setPtsMembersList] = useState<string[]>([]);
-  /**
-   * Roster Team PTS sebenarnya, untuk tujuan re-route.
-   *
-   * TIDAK memakai ptsMembersList di atas: isinya cuma nama-nama yang KEBETULAN
-   * sudah pernah di-assign sesuatu - cukup untuk mengisi dropdown filter, tapi
-   * kalau dipakai untuk mengalihkan pekerjaan, anggota tim yang belum pernah
-   * dapat request sama sekali tidak akan pernah bisa dipilih.
-   */
   const [rosterPTS, setRosterPTS] = useState<{ id: string; full_name: string; jabatan: string | null; phone_number: string | null; team_type?: string | null; bisa_ditugaskan?: boolean | null }[]>([]);
   const [rerouteTarget, setRerouteTarget] = useState<ProjectRequest | null>(null);
   const [rerouteTo, setRerouteTo] = useState('');
@@ -154,7 +137,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   }, []);
   const [unreadMsgMap, setUnreadMsgMap] = useState<Record<string, number>>({});
   const [lastSeenMap, setLastSeenMap] = useState<Record<string, number>>({});
-  // Persist filters to sessionStorage
   useEffect(() => { try { sessionStorage.setItem('frp_filterStatus', filterStatus); } catch {} }, [filterStatus]);
   useEffect(() => { try { sessionStorage.setItem('frp_filterYear', filterYear); } catch {} }, [filterYear]);
   useEffect(() => { try { sessionStorage.setItem('frp_filterMonth', filterMonth); } catch {} }, [filterMonth]);
@@ -174,11 +156,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const activeRequestIdRef = useRef<string | null>(null);
   const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
   const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
-  /**
-   * Design 3D dari Tools Team (tambahan di samping file PDF). Dimuat SEKALI per
-   * request yang dibuka (ringkasan saja, tanpa gambar) dan dipakai bersama oleh
-   * panel, hitungan tab, cetak, dan ZIP - hemat egress.
-   */
   const [desain3d, setDesain3d] = useState<{ tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string } | null>(null);
   const desain3dTools = desain3d?.tautan ?? [];
   const [mintaPilih3D, setMintaPilih3D] = useState(0);
@@ -191,11 +168,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     setDesain3d(null);
     if (idRequestTerpilih) void muatDesain3D(idRequestTerpilih);
   }, [idRequestTerpilih, muatDesain3D]);
-  // Detail modal: active room tab (0 = Ruangan 1/main, 1+ = rooms[idx-1])
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
-  // Mobile: which panel is active on small screens
   const [detailMobileTab, setDetailMobileTab] = useState<'info' | 'chat'>('info');
-  // Chat: active room filter ('all' = umum, or room_name label)
   const [chatRoomFilter, setChatRoomFilter] = useState<string>('all');
   const [rejectModal, setRejectModal] = useState<{ open: boolean; req: ProjectRequest | null }>({ open: false, req: null });
   const [rejectNote, setRejectNote] = useState('');
@@ -213,19 +187,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [downloadingPackage, setDownloadingPackage] = useState(false);
   const [assignModal, setAssignModal] = useState<{ open: boolean; req: ProjectRequest | null; roomIdx: number }>({ open: false, req: null, roomIdx: 0 });
-  // Approve Sales Internal ditampilkan dulu isinya, tidak langsung jalan begitu
-  // tombolnya ditekan - mengikuti Request Schedule. Approve adalah keputusan,
-  // dan keputusan yang tidak bisa dibaca dulu gampang salah tekan.
   const [internalApproveTarget, setInternalApproveTarget] = useState<ProjectRequest | null>(null);
   const [internalApproveSaving, setInternalApproveSaving] = useState(false);
-  // Pop-up notif tiket aktif (pending/in_progress) saat masuk platform
   const [ticketPopupShown, setTicketPopupShown] = useState(false);
   const [showTicketPopup, setShowTicketPopup] = useState(false);
   const [bellDropdownOpen, setBellDropdownOpen] = useState(false);
   const [editDueDate, setEditDueDate] = useState('');
   const [editFormData, setEditFormData] = useState({
     project_name: '', room_name: '', project_location: '', sales_name: '', sales_division: '',
-    // uuid Sales, berdampingan dengan namanya - lihat lib/identitas.ts.
     sales_user_id: null as string | null,
     kebutuhan: [] as string[], kebutuhan_other: '',
     solution_product: [] as string[], solution_other: '',
@@ -240,46 +209,18 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     controller_automation: 'No', controller_type: [] as string[],
     ukuran_ruangan: '', suggest_tampilan: '', keterangan_lain: '',
   });
-  // Edit per ruangan: editFormData = Ruangan 1, editRooms = Ruangan 2+ (salinan
-  // kerja dari rooms[]). editNewRoomIds = ruangan yang baru ditambah di sesi
-  // edit ini dan belum tersimpan - hanya yang ini yang boleh dihapus lagi.
   const [editRooms, setEditRooms] = useState<RoomDetail[]>([]);
   const [editRoomIdx, setEditRoomIdx] = useState(0);
   const [editNewRoomIds, setEditNewRoomIds] = useState<string[]>([]);
 
   const role = currentUser.role?.toLowerCase().trim() ?? '';
   const isPTS = ['admin', 'superadmin', 'team_pts', 'team'].includes(role);
-  //  Akun pimpinan (lib/pimpinan.ts): melihat SEMUA request, hanya baca - bukan Sales yang dibatasi.
   const pimpinan = isPimpinan(currentUser);
   const isTeamPTS = role === 'team_pts' || role === 'team';
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
-  /**
-   * Boleh membetulkan data & mengalihkan pekerjaan: admin/superadmin, atau akun
-   * Team PTS yang diberi Full Access lewat Admin Panel.
-   */
   const bisaKelolaRequest = isAdmin || isSuperAdmin || hasFullAccess(currentUser as never);
 
-  /*
-    Boleh membuka form EDIT (isi lengkap - nama project, kebutuhan teknis,
-    catatan, dst) - kebijakan platform: setiap AKTOR yang bersinggungan
-    dengan request ini boleh membetulkan bagiannya sendiri, sama seperti
-    Reminder Schedule/Ticketing. Dua aktor:
-
-      1. Sales/pembuat request (requester_id / sales_name) - salah ketik
-         kebutuhan yang ia minta harus bisa dibetulkan sendiri.
-      2. Petugas PTS yang ditugaskan (assign_name / ivp_assignee) - dulu
-         TIDAK BISA sama sekali kecuali Full Access; sekarang bisa
-         membetulkan datanya sendiri saat mengerjakan.
-
-    Dulu tombolnya memakai (!isPTS || bisaKelolaRequest) - dua-duanya
-    salah arah: (!isPTS) bikin SEMUA Sales/Guest melihat tombol Edit di
-    request SIAPA PUN, bukan cuma miliknya; sementara petugas PTS yang
-    ditugaskan malah TIDAK dapat tombolnya sama sekali kalau bukan Full
-    Access. Disamakan dengan aturan pr_update di database (lihat
-    sql/edit-scoped-ke-assignee.sql) supaya layar & RLS tidak berbeda
-    pendapat.
-  */
   const bolehEditRequest = (req: ProjectRequest): boolean =>
     !pimpinan && (bisaKelolaRequest
     || req.requester_id === currentUser.id
@@ -287,24 +228,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     || (!!currentUser.full_name && req.assign_name === currentUser.full_name)
     || (!!currentUser.full_name && req.ivp_assignee === currentUser.full_name));
 
-  /**
-   * Re-route hanya selama pekerjaannya BELUM jalan. Begitu masuk in_progress,
-   * sudah ada yang menggarap desainnya - memindahkannya berarti membuang
-   * pekerjaan itu, bukan membetulkan salah route.
-   */
   const bolehRerouteRequest = (r: ProjectRequest) =>
     !['in_progress', 'completed', 'rejected'].includes(r.status ?? '');
-  // Guest IVP = role guest dengan sales_division IVP/MVI (Sales Internal, bisa lihat
-  // semua request divisi yang dia handle via division_ivp_mappings)
   const isIVPGuest = role === 'guest' && !pimpinan && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
-  // Guest non-IVP = role guest bukan IVP (hanya lihat request miliknya)
   const isNonIVPGuest = role === 'guest' && !pimpinan && currentUser.sales_division !== 'IVP';
-  // Bisa ubah status in_progress: hanya PTS yang di-assign ke RUANGAN itu
-  // (roomIdx, bukan selalu ruangan pertama - lihat getRoomAssignName).
   const canSetInProgress = (req: ProjectRequest, roomIdx: number) =>
     isPTS && (bisaKelolaRequest || getRoomAssignName(req, roomIdx) === currentUser.full_name);
-  // Sales Internal reviewer (utama atau kedua utk brand BOTH) - boleh approve kalau
-  // bagian-nya belum di-approve.
   const canInternalApproveProject = (req: ProjectRequest) => {
     if (req.routing_status !== 'internal_review') return false;
     if (currentUser.id === req.internal_sales_id && !req.internal_approved_at) return true;
@@ -334,12 +263,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     source_laptop_qty: '', source_pc_qty: '',
   };
 
-  // Guest/Sales users list for dropdown
   const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
-  const [myIsInternalSales, setMyIsInternalSales] = useState(false); // creator = Sales Internal  boleh isi SBU (atas nama Sales External)
-  // Cache nama Sales Internal (CC) hasil resolve dari internal_sales_id / internal_sales_id_2 -
-  // kolom lama `ivp_assignee` (nama string langsung) sudah tidak diisi lagi sejak brand-multi-internal
-  // (sql/brand-multi-internal.sql), request baru pakai internal_sales_id(_2) yang berupa UUID.
+  const [myIsInternalSales, setMyIsInternalSales] = useState(false);
   const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
   useEffect(() => {
     supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
@@ -348,8 +273,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle().then(({ data }: { data: { is_internal_sales: boolean | null } | null }) => {
       const internal = !!data?.is_internal_sales;
       setMyIsInternalSales(internal);
-      // Sales Internal: kosongkan prefill sales_name supaya field SBU mulai kosong
-      // (kalau tidak dipilih, submit fallback ke akun sendiri).
       if (internal && (currentUser.role?.toLowerCase().trim() === 'guest')) {
         setForm(prev => ({ ...prev, sales_name: '', sales_division: '' }));
       }
@@ -378,38 +301,22 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   useEfekHalamanRequest({ activeRequestIdRef, appReady, currentUser, fetchAttachments, fetchRequests, isIVPGuest, isPTS, messages, messagesEndRef, requests, selectedRequest, setMessages, setShowTicketPopup, setTicketPopupShown, setUnreadCount, setUnreadMsgMap, ticketPopupShown });
 
-
   const formatFileSize = (bytes: number) =>
     bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
   const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  // Room-scoped attachments
-  // project_attachments belum punya kolom room_index tersendiri di DB. Tapi upload
-  // foto/BOQ utk ruangan tambahan (saat create) SUDAH ditandai dengan prefix nama file
-  // "[roomN] ..." (lihat submit handler: label = `room${rIdx+2}`). detailRoomIdx di modal
-  // detail: 0 = Ruangan 1 (utama, TANPA prefix), 1+ = rooms[idx-1] (dengan prefix [room{idx+1}]).
-  // Kita pakai konvensi yang SUDAH ADA ini, bukan bikin skema baru, supaya file lama tetap
-  // konsisten dan tidak perlu migrasi DB.
   const getFileRoomIdx = (fileName: string): number => {
     const m = fileName.match(/^\[room(\d+)\]\s*/i);
     return m ? Math.max(0, parseInt(m[1], 10) - 1) : 0;
   };
   const displayFileName = (fileName: string) => fileName.replace(/^\[room\d+\]\s*/i, '');
 
-  // BUG FIX: Supabase Storage menolak key yang mengandung karakter seperti "[", "]",
-  // dan spasi ganda tertentu ("Invalid key"). Prefix "[roomN] " di atas dipakai untuk
-  // penanda TAMPILAN/DB (file_name, getFileRoomIdx) dan sengaja TIDAK diubah - supaya
-  // parsing existing di atas tetap jalan persis sama. Untuk PATH PENYIMPANAN saja,
-  // kita pakai versi yang sudah disanitasi (aman dari karakter yang ditolak Supabase).
-  // Ini kenapa upload di Ruangan 1 selalu berhasil (tidak ada prefix "[room1] " karena
-  // detailRoomIdx===0) sementara Ruangan 2+ gagal - sekarang keduanya konsisten aman.
   const toStorageSafeName = (name: string): string =>
     name
-      .replace(/^\[room(\d+)\]\s*/i, 'room$1_')   // "[room2] " -> "room2_" (aman utk storage key)
-      .replace(/[^a-zA-Z0-9._-]/g, '_');           // spasi & karakter aneh lain -> underscore
+      .replace(/^\[room(\d+)\]\s*/i, 'room$1_')
+      .replace(/[^a-zA-Z0-9._-]/g, '_');
 
-  // Tombol aksi per-baris - dipakai di tabel desktop DAN kartu mobile (anti-duplikat).
   const renderRequestActions = (req: ProjectRequest) => (
     <>
       {canInternalApproveProject(req) && (
@@ -443,11 +350,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         </button>
       )}
       <ViewIconBtn onClick={() => handleOpenDetail(req)} label="Detail" />
-      {/* Dulu (isSuperAdmin || isAdmin) saja - Full Access (mis. Manager PTS)
-          tidak pernah dapat tombol ini walau RLS-nya (setelah diperbaiki)
-          sudah mengizinkan. Disamakan dengan bisaKelolaRequest supaya
-          "boleh kelola" dan "boleh hapus" tidak jadi dua jawaban berbeda
-          untuk pertanyaan yang sama. */}
       {bisaKelolaRequest && (
         <DeleteIconBtn onClick={() => { setDeleteModal({ open: true, req }); setDeleteConfirmText(''); }} label="Hapus" />
       )}
@@ -466,10 +368,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const { availableYears, filteredRequests, hal, stats, statusPieData, divisionCounts, divisionPieData, assignedCounts, assignedPieData, productCounts, productPieData, kebutuhanCounts, kebutuhanPieData } = useStatistikRequest({ filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, requests, searchQuery, searchSales });
 
-  // Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
   const NotifToast = () => <ToastBersama notif={notification} />;
-
-  // HANDLERS
 
   const { handleSubmitForm } = useKirimRequest({ boqFormFile, boqRoomMap, currentUser, dueDateForm, fetchRequests, form, initialForm, isPTS, myIsInternalSales, notify, roomPhotoMap, rooms, salesGuestUsers, setBoqFormFile, setBoqRoomMap, setDueDateForm, setForm, setRoomPhotoMap, setRooms, setShowNewFormModal, setSubmitting, setSurveyPhotos, setSurveyPhotosPreviews, surveyPhotos, toStorageSafeName });
 
@@ -481,15 +380,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const { handleSendMessage, handleFileUpload, handleCategoryUpload, handleOpenDetail, getCCLabel, handleCloseDetail } = usePesanLampiran({ activeRequestIdRef, attachments, chatRoomFilter, currentUser, detailRoomIdx, fetchAttachments, fetchMessages, getFileRoomIdx, internalSalesNames, isIVPGuest, isPTS, msgText, notify, selectedRequest, setAttachments, setChatRoomFilter, setDetailMobileTab, setDetailRoomIdx, setInternalSalesNames, setMessages, setMsgText, setSelectedRequest, setSendingMsg, setShowDetailModal, setUnreadMsgMap, setUploadingCategory, setUploadingFile, toStorageSafeName });
 
-
-
-
   if (!appReady) return <LoadingScreen />;
 
-  // Room-aware: ruangan pertama ikut status request; ruangan lain (tab 2+)
-  // punya status sendiri (lihat getRoomStatus di _components/shared.ts) -
-  // supaya Command Center bisa "Dikerjakan" sementara Smart ClassRoom sudah
-  // "Selesai", alih-alih selalu ikut satu status yang sama untuk semuanya.
   const detailRoomStatus = selectedRequest ? getRoomStatus(selectedRequest, detailRoomIdx) : undefined;
   const detailSc = detailRoomStatus ? (statusConfig[detailRoomStatus] || statusConfig.pending) : null;
   const detailIsPending = detailRoomStatus === 'pending';
@@ -497,11 +389,30 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const detailDueStatus = selectedRequest ? getDueStatus(selectedRequest.due_date, detailRoomStatus ?? selectedRequest.status) : null;
   const isFileType = (type: string) => type.startsWith('image/');
 
+  const konteksRequest: NilaiKonteksRequest = {
+    sesi: { currentUser, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS, pimpinan },
+    izin: { bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, canInternalApproveProject },
+    bantu: { displayFileName, formatDate, formatDueDate, formatFileSize, getCCLabel, getDueStatus, getFileRoomIdx, notify },
+    daftar: { fetchRequests, filteredRequests, hal, handleOpenDetail, loading, ptsMembersList, renderRequestActions, requests, setShowNewFormModal, stats, unreadMsgMap },
+    ringkasan: { assignedPieData, divisionPieData, kebutuhanPieData, productPieData, statusPieData },
+    filter: { availableYears, filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, searchQuery, searchSales, setFilterDivision, setFilterHandler,
+      setFilterKebutuhan, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales },
+    pilih: { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds, toggleSelectAll, toggleSelectId },
+    detail: { detailDueStatus, detailIsPending, detailMobileTab, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, handleCloseDetail, selectedRequest,
+      setDetailMobileTab, setDetailRoomIdx, setSelectedRequest, showDetailModal },
+    lampiran: { activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, downloadingPackage, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
+      handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setDownloadingPackage, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef,
+      uploadingCategory, uploadingFile },
+    pesan: { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText },
+    aksi: { handleOpenEditForm, handleReject, handleResubmit, handleStatusUpdate, setAssignModal, setDeleteConfirmText, setDeleteModal, setInternalApproveTarget, setRerouteTarget,
+      setRerouteTo, setSelectedNewStatus, setStatusUpdateModal },
+  };
+
   return (
+    <KonteksRequest.Provider value={konteksRequest}>
     <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--latar-halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {NotifToast()}
-
 
       <BlokFormBaru
         boqFormFile={boqFormFile} boqRoomMap={boqRoomMap} brandPicMappings={brandPicMappings} currentUser={currentUser} dueDateForm={dueDateForm} form={form} handleSubmitForm={handleSubmitForm} initialForm={initialForm} myIsInternalSales={myIsInternalSales} role={role} roomPhotoMap={roomPhotoMap} rooms={rooms} salesGuestUsers={salesGuestUsers} setBoqFormFile={setBoqFormFile} setBoqRoomMap={setBoqRoomMap} setDueDateForm={setDueDateForm} setForm={setForm} setRoomPhotoMap={setRoomPhotoMap} setRooms={setRooms} setShowNewFormModal={setShowNewFormModal} setSurveyPhotos={setSurveyPhotos} setSurveyPhotosPreviews={setSurveyPhotosPreviews} showNewFormModal={showNewFormModal} submitting={submitting} surveyPhotos={surveyPhotos} surveyPhotosPreviews={surveyPhotosPreviews}
@@ -511,24 +422,16 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         assignModal={assignModal} currentUser={currentUser} fetchMessages={fetchMessages} fetchRequests={fetchRequests} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setSelectedRequest={setSelectedRequest}
       />
 
-      {/* STICKY HEADER */}
       <HeaderFormRequire
         bellDropdownOpen={bellDropdownOpen} handleOpenDetail={handleOpenDetail} pimpinan={pimpinan} requests={requests} setBellDropdownOpen={setBellDropdownOpen} setShowNewFormModal={setShowNewFormModal}
       />
 
-      <KontenHalamanRequest
-        assignedPieData={assignedPieData} availableYears={availableYears} bisaKelolaRequest={bisaKelolaRequest} bulkDeleting={bulkDeleting} currentUser={currentUser} divisionPieData={divisionPieData} fetchRequests={fetchRequests} filterDivision={filterDivision} filterHandler={filterHandler} filterKebutuhan={filterKebutuhan} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} filteredRequests={filteredRequests} formatDate={formatDate} formatDueDate={formatDueDate} getDueStatus={getDueStatus} hal={hal} handleOpenDetail={handleOpenDetail} isIVPGuest={isIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} kebutuhanPieData={kebutuhanPieData} loading={loading} pimpinan={pimpinan} productPieData={productPieData} ptsMembersList={ptsMembersList} renderRequestActions={renderRequestActions} requests={requests} searchQuery={searchQuery} searchSales={searchSales} selectMode={selectMode} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setFilterDivision={setFilterDivision} setFilterHandler={setFilterHandler} setFilterKebutuhan={setFilterKebutuhan} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds} setShowNewFormModal={setShowNewFormModal} stats={stats} statusPieData={statusPieData} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} unreadMsgMap={unreadMsgMap}
-      />
+      <KontenHalamanRequest />
 
-      {/* Bulk Delete Confirm Modal */}
       <ModalHapusMassal
         bulkConfirm={bulkConfirm} notify={notify} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setBulkDeleting={setBulkDeleting} setRequests={setRequests} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds}
       />
 
-      {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
-      {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ──
-          Bentuk & warnanya sengaja sama persis dengan popup senama di Request
-          Schedule: satu alur kerja, satu bahasa visual. */}
       <ModalApproveInternal
         formatDate={formatDate} handleInternalApproveProject={handleInternalApproveProject} internalApproveSaving={internalApproveSaving} internalApproveTarget={internalApproveTarget} setInternalApproveTarget={setInternalApproveTarget}
       />
@@ -537,12 +440,10 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         handleRejectConfirm={handleRejectConfirm} rejectModal={rejectModal} rejectNote={rejectNote} rejectSaving={rejectSaving} setRejectModal={setRejectModal} setRejectNote={setRejectNote}
       />
 
-      {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       <ModalUpdateStatus
         bisaKelolaRequest={bisaKelolaRequest} canSetInProgress={canSetInProgress} currentUser={currentUser} handleStatusUpdate={handleStatusUpdate} isTeamPTS={isTeamPTS} selectedNewStatus={selectedNewStatus} setSelectedNewStatus={setSelectedNewStatus} setStatusUpdateModal={setStatusUpdateModal} statusUpdateModal={statusUpdateModal}
       />
 
-      {/* Delete Confirmation Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       <ModalHapusRequest
         deleteConfirmText={deleteConfirmText} deleteModal={deleteModal} deleting={deleting} handleDeleteConfirm={handleDeleteConfirm} setDeleteConfirmText={setDeleteConfirmText} setDeleteModal={setDeleteModal}
       />
@@ -559,31 +460,23 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         ::-webkit-scrollbar-thumb { background: rgba(13,148,136,0.25); border-radius: 4px; }
       `}</style>
 
-      {/* POPUP TIKET AKTIF — muncul sekali saat masuk platform, hilang kalau semua completed */}
       <PopupTicketAktif
         formatDueDate={formatDueDate} handleOpenDetail={handleOpenDetail} requests={requests} setShowTicketPopup={setShowTicketPopup} showTicketPopup={showTicketPopup}
       />
 
-      {/* DETAIL MODAL */}
-      <ModalDetailRequest
-        activeAttachTab={activeAttachTab} attachments={attachments} bisaKelolaRequest={bisaKelolaRequest} bolehEditRequest={bolehEditRequest} bolehRerouteRequest={bolehRerouteRequest} boqFileRef={boqFileRef} canInternalApproveProject={canInternalApproveProject} chatFileRef={chatFileRef} chatRoomFilter={chatRoomFilter} currentUser={currentUser} desain3d={desain3d} desain3dTools={desain3dTools} design3dFileRef={design3dFileRef} detailDueStatus={detailDueStatus} detailIsPending={detailIsPending} detailMobileTab={detailMobileTab} detailRoomAssignName={detailRoomAssignName} detailRoomIdx={detailRoomIdx} detailRoomStatus={detailRoomStatus} detailSc={detailSc} displayFileName={displayFileName} downloadingPackage={downloadingPackage} fetchRequests={fetchRequests} fileInputRef={fileInputRef} formatDate={formatDate} formatDueDate={formatDueDate} formatFileSize={formatFileSize} getCCLabel={getCCLabel} getFileRoomIdx={getFileRoomIdx} handleCategoryUpload={handleCategoryUpload} handleCloseDetail={handleCloseDetail} handleDeleteAttachment={handleDeleteAttachment} handleFileUpload={handleFileUpload} handleOpenEditForm={handleOpenEditForm} handleReject={handleReject} handleResubmit={handleResubmit} handleSendMessage={handleSendMessage} handleStatusUpdate={handleStatusUpdate} isIVPGuest={isIVPGuest} isNonIVPGuest={isNonIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} messages={messages} messagesEndRef={messagesEndRef} mintaPilih3D={mintaPilih3D} msgText={msgText} muatDesain3D={muatDesain3D} notify={notify} selectedRequest={selectedRequest} sendingMsg={sendingMsg} setActiveAttachTab={setActiveAttachTab} setAssignModal={setAssignModal} setChatRoomFilter={setChatRoomFilter} setDeleteConfirmText={setDeleteConfirmText} setDeleteModal={setDeleteModal} setDetailMobileTab={setDetailMobileTab} setDetailRoomIdx={setDetailRoomIdx} setDownloadingPackage={setDownloadingPackage} setInternalApproveTarget={setInternalApproveTarget} setMintaPilih3D={setMintaPilih3D} setMsgText={setMsgText} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} setSelectedNewStatus={setSelectedNewStatus} setSelectedRequest={setSelectedRequest} setShowUploadChoice={setShowUploadChoice} setStatusUpdateModal={setStatusUpdateModal} showDetailModal={showDetailModal} showUploadChoice={showUploadChoice} sldFileRef={sldFileRef} uploadingCategory={uploadingCategory} uploadingFile={uploadingFile}
-      />
+      <ModalDetailRequest />
 
-      {/* ── RE-ROUTE MODAL (admin / Full Access) ── */}
-      {/* Z.overlayTop — dibuka dari dalam modal detail (Z.overlay). */}
       <ModalReroute
         isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} rerouteSaving={rerouteSaving} rerouteTarget={rerouteTarget} rerouteTo={rerouteTo} rosterPTS={rosterPTS} setRerouteTarget={setRerouteTarget} setRerouteTo={setRerouteTo} simpanReroute={simpanReroute}
       />
 
-      {/* Edit Form Modal */}
       <ModalEditForm
         editCur={editCur} editDueDate={editDueDate} editFormData={editFormData} editFormModal={editFormModal} editNewRoomIds={editNewRoomIds} editRoomAktifBaru={editRoomAktifBaru} editRoomIdx={editRoomIdx} editRooms={editRooms} editUpd={editUpd} handleEditAddRoom={handleEditAddRoom} handleEditFormSubmit={handleEditFormSubmit} handleEditRemoveNewRoom={handleEditRemoveNewRoom} isPTS={isPTS} salesGuestUsers={salesGuestUsers} selectedRequest={selectedRequest} setEditDueDate={setEditDueDate} setEditFormData={setEditFormData} setEditFormModal={setEditFormModal} setEditRoomIdx={setEditRoomIdx}
       />
     </div>
+    </KonteksRequest.Provider>
   );
 }
-
-// Page Entry
 
 export default function Page() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

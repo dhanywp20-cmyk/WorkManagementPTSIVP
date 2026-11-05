@@ -2,57 +2,22 @@
 import React, { useEffect, useState } from 'react';
 import { useMerek } from '@/lib/merek';
 
-/**
- * Kotak logo platform. Menampilkan gambar kalau merek punya logoUrl, dan
- * ikon gedung bawaan kalau belum - jadi platform tidak pernah tampil tanpa
- * logo hanya karena gambarnya belum diunggah.
- *
- * Warnanya ikut merek, bukan kelas Tailwind tetap, supaya bisa diganti dari
- * Admin Panel tanpa deploy.
- */
 export function LogoMerek({
   ukuran = 'md',
   gaya = 'penuh',
   className = '',
 }: {
-  /** sm = 36px (ponsel), md = 48px (header), lg = 40px (panel login). */
   ukuran?: 'sm' | 'md' | 'lg';
-  /** penuh = kotak berwarna; tembus = latar putih transparan (di atas gambar). */
   gaya?: 'penuh' | 'tembus';
   className?: string;
 }) {
   const merek = useMerek();
-  /*
-    Gambar yang GAGAL dimuat harus jatuh ke ikon bawaan, bukan ke gambar
-    rusak bawaan peramban.
-
-    Ini bukan penjagaan teoretis. merek.logoUrl untuk render PERTAMA diambil
-    dari sessionStorage (lihat lib/merek.ts) - salinan merek dari kunjungan
-    sebelumnya, yang bisa memuat URL Supabase Storage dari logo yang sejak itu
-    sudah diganti atau dihapus. URL itu 404, peramban menggambar ikon sobek,
-    lalu beberapa ratus milidetik kemudian muatMerek() selesai dan logo yang
-    benar muncul. Persis "sesekali error, harus di-refresh".
-
-    Kuncinya di-reset tiap kali URL-nya berubah - kalau tidak, satu kegagalan
-    akan menyembunyikan logo baru yang sebenarnya sehat.
-  */
   const [gagal, setGagal] = useState(false);
   useEffect(() => { setGagal(false); }, [merek.logoUrl]);
 
   const sisi = ukuran === 'sm' ? 36 : ukuran === 'lg' ? 40 : 48;
   const ikon = Math.round(sisi * 0.52);
 
-  /*
-    Ada logo -> kotaknya PUTIH, bukan gradasi warna merek.
-
-    Gradasi itu dulu benar karena isinya ikon garis putih. Begitu logo
-    sungguhan dipasang, gradasi jadi latar yang bertabrakan: lambang WorkFlow
-    biru di atas gradasi merah tidak pernah bisa terbaca, dan logo unggahan
-    admin mana pun punya masalah yang sama - pembuat logo merancangnya untuk
-    latar terang, bukan untuk warna apa pun yang kebetulan dipilih di Admin
-    Panel. Varian 'tembus' (di atas foto login) tetap dibedakan: di sana
-    putihnya ditipiskan supaya fotonya masih terasa.
-  */
   const adaLogo = Boolean(merek.logoUrl) && !gagal;
   const latar = gaya === 'tembus'
     ? (adaLogo
@@ -68,9 +33,6 @@ export function LogoMerek({
       style={{ width: sisi, height: sisi, ...latar }}
     >
       {adaLogo ? (
-        // Sengaja <img>, bukan next/image: sumbernya URL yang diisi pengguna
-        // saat berjalan, sementara next/image butuh domainnya terdaftar lebih
-        // dulu di next.config - logo baru akan gagal dimuat sampai deploy.
         // eslint-disable-next-line @next/next/no-img-element
         <img src={merek.logoUrl} alt={merek.namaPerusahaan} width={sisi} height={sisi}
           decoding="async" onError={() => setGagal(true)}

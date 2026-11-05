@@ -1,16 +1,10 @@
 'use client';
-/**
- * Pilih model + lensa dari katalog RESMI Panasonic (data Throw Distance Calculator) - mengisi lensa, panel, lumen &
- * lens shift dengan angka yang sama persis dengan kalkulator itu (desain3d/inti/katalogPanasonic.ts). Dipakai Desain 3D
- * (Atur proyektor) & Kalkulator AV - Proyektor. Katalog dimuat saat kotak ini dibuka saja.
- */
 import { useEffect, useMemo, useState } from 'react';
 import { Catatan } from '../bersama/ui';
 import {
   cekDataLensa, KATEGORI_TDC, type KatalogTdc, type LensaTdc, type ModelTdc, muatKatalogPanasonic, type RasioProyektor, rasioUntukLensa,
 } from '../desain3d/inti';
 
-/** `rasio` = rasio sinyal sekarang (dipakai bila lensa mendukungnya), `sumber` = sumber data lensa sekarang. */
 export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
   rasio?: RasioProyektor; sumber?: string; onPakai: (m: ModelTdc, l: LensaTdc, rasio: RasioProyektor, versi: string) => void;
 }) {
@@ -18,7 +12,6 @@ export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
   const [kat, setKat] = useState<KatalogTdc | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [cari, setCari] = useState('');
-  /** Model type seperti kalkulator Panasonic: 0 = All (semua 290 model, termasuk Previous) - dulu Previous disembunyikan. */
   const [jenis, setJenis] = useState(0);
   const [model, setModel] = useState('');
   const [lensa, setLensa] = useState('');

@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-label.ts - Penempatan label produk (mesin/labelProduk.ts pilihTempatLabel): menempel di tepi
- * benda (jarak terdekat), arah pilihan, digeser sedikit bila menumpuk label lain.
- *
- * Jalankan: npm test -- desain3d-label
- */
 import { type KotakLayar, pilihTempatLabel } from '../app/(portal)/tools-team/_components/desain3d/mesin/labelProduk';
 
 let lulus = 0, gagal = 0;

@@ -1,5 +1,4 @@
 'use client';
-/** Modals-AssignPTSModal.tsx - dipecah dari Modals.tsx (scripts/pecah-modul.mjs); Modals.tsx tetap mengekspor ulang semuanya. */
 import { KotakInfo, Modal, PilihPenugasan, TombolModal, TombolSetujui } from '@/components/shared';
 import { appLink } from '@/lib/app-url';
 import { cobaIdentitas, tanpaIdentitas } from '@/lib/identitas';
@@ -9,72 +8,39 @@ import { adalahAdminMurni, bolehDitugaskanOleh, isAssignablePTSTeam } from '@/li
 import { useEffect, useState } from 'react';
 import { getRoomAssignName, getRoomAssignUserId, ProjectRequest, sendWANotif, User } from './shared';
 
-/**
- * AssignPTSModal - popup Setujui & Tugaskan dan Tugaskan Tim untuk Request
- * Design Project.
- *
- * Tampilan dan model isian penugasannya memakai pola persetujuan bersama
- * (components/shared/Persetujuan.tsx) - sama persis dengan Ticketing dan Request
- * Schedule, bukan gaya sendiri:
- *
- *   1. Kerangka Modal bersama; aksi utama "Setujui & Tugaskan" / "Tugaskan".
- *   2. Pemilihan orang memakai <select> dengan optgroup, bukan daftar kartu
- *      avatar. Kartu avatar terlihat lebih ramai tapi memaksa admin menggulir
- *      untuk menemukan satu nama, dan tidak bisa diketik.
- *   3. Route ke Supervisor tampil sebagai kartu rekomendasi di dalam popup yang
- *      sama, bukan tab yang menyembunyikan salah satu pilihan.
- *
- * Yang juga ikut: opsi "Saya kerjakan sendiri". Tanpa itu, Supervisor yang
- * timnya penuh tidak punya jalan menyelesaikan sendiri di halaman ini,
- * sementara di dua platform lain ia punya.
- */
 export function AssignPTSModal({
   req, onClose, onAssigned, currentUser, allowSupervisorRoute = false, roomIdx = 0,
 }: {
   req: ProjectRequest; onClose: () => void; onAssigned: () => void; currentUser: User;
-  // true = dibuka oleh Admin/Manager saat approve  boleh pilih "Route ke Supervisor".
-  // false = dibuka oleh Supervisor utk assign final ke Tim PTS (tanpa opsi route).
   allowSupervisorRoute?: boolean;
-  // 0 = ruangan pertama (kolom request langsung, termasuk approve awal & route
-  // ke Supervisor - tahap itu memang milik seluruh request, bukan satu ruangan).
-  // 1+ = ruangan lain di dalam `rooms` JSONB, hanya dipakai untuk assign/re-assign
-  // handler ruangan itu sendiri - lihat handleSave.
   roomIdx?: number;
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
-  // Nilai pilihan adalah id, bukan nama. Nama bisa dimiliki dua orang di satu
-  // kantor; id tidak. Nama tetap ditulis ke assign_name untuk tampilan.
   const [selectedPTSId, setSelectedPTSId] = useState('');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
   const [saving, setSaving] = useState(false);
   const [routeSaving, setRouteSaving] = useState(false);
   const [formErr, setFormErr] = useState('');
 
-  // Request dari external (non-IVP) wajib assign IVP Sales internal
   const isExternal = !!(req.sales_division && req.sales_division.trim() && req.sales_division.trim().toUpperCase() !== 'IVP');
 
   useEffect(() => {
-    // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan - lib/teams.ts)
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division, jabatan, bisa_ditugaskan')
       .in('role', ['team_pts', 'team'])
       .then(({ data: baris }) => {
         const data = baris as unknown as User[] | null;
         if (!data) return;
-        // Manager hanya ditawarkan bila penugasnya Admin murni.
         const penugasAdmin = adalahAdminMurni(currentUser);
         const anggota = data.filter(u => bolehDitugaskanOleh(u, penugasAdmin));
         setTeamMembers(anggota);
-        // Pra-pilih handler yang sudah tercatat, kalau orangnya memang ketemu.
-        // Dicocokkan lewat uuid dulu; nama hanya cadangan untuk baris lama.
         const roomAssignUserId = getRoomAssignUserId(req, roomIdx);
         const roomAssignName = getRoomAssignName(req, roomIdx);
         const sekarang = (roomAssignUserId && anggota.find(u => u.id === roomAssignUserId))
           || (roomAssignName ? anggota.find(u => u.full_name === roomAssignName) : undefined);
         if (sekarang) setSelectedPTSId(sekarang.id);
       });
-    // Fetch Supervisor (jabatan='Supervisor') - utk opsi Route ke Supervisor
     if (allowSupervisorRoute) {
       supabase.from('users')
         .select('id, full_name, team_type, phone_number')
@@ -83,16 +49,11 @@ export function AssignPTSModal({
     }
   }, [allowSupervisorRoute, req, roomIdx, currentUser]);
 
-  // Orang yang akan dicatat sebagai handler. 'SELF' berarti yang membuka popup
-  // ini mengerjakannya sendiri - jalan keluar saat timnya penuh.
   const calonHandler: { id: string; full_name: string; phone_number?: string } | undefined =
     selectedPTSId === 'SELF' ? currentUser : teamMembers.find(m => m.id === selectedPTSId);
 
-  // Dirinya sendiri disembunyikan dari daftar anggota karena sudah diwakili
-  // opsi "Saya kerjakan sendiri" - kalau tidak, namanya muncul dua kali.
   const anggotaLain = teamMembers.filter(m => m.id !== currentUser.id);
 
-  // Route ke Supervisor: request lanjut ke Supervisor utk di-assign ke tim
   const handleRouteToSupervisor = async () => {
     if (!selectedSupervisorId) { setFormErr('Pilih Supervisor tujuan terlebih dahulu.'); return; }
     setFormErr('');
@@ -104,7 +65,7 @@ export function AssignPTSModal({
       approved_at: new Date().toISOString(),
       routing_status: 'supervisor_assign',
       assigned_supervisor_id: selectedSupervisorId,
-      assign_name: null,   // belum di-assign ke handler — Supervisor yg lanjut
+      assign_name: null,
       assign_user_id: null,
     };
     const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
@@ -146,15 +107,6 @@ export function AssignPTSModal({
     setFormErr('');
     setSaving(true);
 
-    // Nama DAN uuid ditulis bersamaan: uuid menjawab siapa orangnya, nama
-    // menjawab tercatat sebagai siapa. Menulis salah satunya saja akan
-    // melahirkan baris baru dengan cacat data lama yang sedang dibereskan.
-    //
-    // Ruangan pertama (roomIdx 0) menulis kolom request langsung seperti
-    // semula. Ruangan lain (1+) hidup di dalam array JSONB `rooms` - assign
-    // ruangan itu TIDAK menyentuh status/approved_by milik request atau
-    // ruangan lain, supaya Command Center bisa masih "in_progress" sementara
-    // Smart ClassRoom sudah "completed" - lihat getRoomStatus() di shared.ts.
     let updatePayload: Record<string, unknown>;
     if (roomIdx === 0) {
       updatePayload = {
@@ -164,15 +116,6 @@ export function AssignPTSModal({
         approved_by: currentUser.full_name,
         approved_at: new Date().toISOString(),
       };
-      // Penanda tahap Supervisor (routing_status) dibersihkan kalau request ini
-      // memang di-route ke sana - assign langsung tidak menyentuh kolom routing
-      // supaya tetap jalan walau migrasi supervisor belum dijalankan.
-      // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan: RLS pr_update
-      // mengizinkan Supervisor menulis baris ini lewat assigned_supervisor_id =
-      // dirinya sendiri - kalau kolom itu ikut di-null-kan di update yang sama,
-      // WITH CHECK dievaluasi terhadap baris BARU (bukan baris lama) dan tidak
-      // ada lagi syarat yang cocok, jadi RLS diam-diam menolak (0 baris, tanpa
-      // error) walau notifikasi WA/Telegram sudah kadung terkirim.
       if (req.routing_status === 'supervisor_assign') {
         updatePayload.routing_status = null;
       }
@@ -191,8 +134,6 @@ export function AssignPTSModal({
       }
       updatePayload = { rooms };
     }
-    //  Admin / Full Access menyetujui langsung tanpa menunggu Sales Internal: tahap review ditutup
-    //  supaya request tidak tertinggal di antrean review Sales Internal.
     const lewatiReview = req.routing_status === 'internal_review';
     if (lewatiReview) updatePayload.routing_status = null;
 
@@ -212,12 +153,6 @@ export function AssignPTSModal({
         message: `✅ Request diapprove oleh ${currentUser.full_name}${lewatiReview ? ' (langsung, melewati review Sales Internal)' : ''}. Assigned ke Tim PTS: ${calonHandler.full_name}.`,
       }]);
 
-      // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat
-      // request dibuat - lihat resolveBrandInternals/internalHandlers di page.tsx -
-      // jadi tidak perlu dikirim ulang di sini.)
-      // WA tidak dikirim ke diri sendiri: yang menekan tombolnya sudah tahu.
-      // Badge in-app TETAP dikirim walau ke diri sendiri - supaya ada
-      // catatan/link yang bisa dibuka lagi nanti, sama seperti assign ke orang lain.
       if (calonHandler.phone_number && calonHandler.id !== currentUser.id) {
         const lines = [
           '🏗️ *request design Project — Assigned ke Kamu*',
@@ -247,8 +182,6 @@ export function AssignPTSModal({
     setSaving(false);
   };
 
-  //  Kerangka & tombol: pola persetujuan bersama (components/shared/Persetujuan.tsx) - sama dengan Ticketing
-  //  & Request Schedule. Approve oleh Admin/Manager = "Setujui & Tugaskan"; Supervisor = "Tugaskan".
   const tahapSetujui = allowSupervisorRoute;
   const adaRute = allowSupervisorRoute && supervisors.length > 0;
 
@@ -271,7 +204,6 @@ export function AssignPTSModal({
           <p>Ruangan {req.room_name || '-'} · {req.requester_name}</p>
         </KotakInfo>
 
-        {/* Divisi external: IVP Sales internal sudah ter-mapping sejak request dibuat */}
         {isExternal && (
           <KotakInfo>
             Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani -
@@ -279,7 +211,6 @@ export function AssignPTSModal({
           </KotakInfo>
         )}
 
-        {/* Lewat Supervisor - jalur UTAMA saat menyetujui, sama seperti Request Schedule */}
         {adaRute && (
           <KotakInfo nada="awas" judul="Rekomendasi: lewat Supervisor">
             <p className="mb-2">Supervisor yang dipilih menerima WA untuk menugaskan anggota timnya, atau mengerjakan sendiri.</p>
@@ -293,7 +224,6 @@ export function AssignPTSModal({
           </KotakInfo>
         )}
 
-        {/* Tugaskan ke Tim PTS */}
         {teamMembers.length === 0 ? (
           <KotakInfo>Tidak ada Team PTS tersedia.</KotakInfo>
         ) : (

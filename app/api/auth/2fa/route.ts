@@ -1,12 +1,3 @@
-/**
- * /api/auth/2fa - pengguna yang sudah masuk mengatur 2FA akunnya sendiri (Profil -> Keamanan).
- *  GET                         -> { aktif, sisaCadangan, wajib }
- *  POST { aksi:'mulai' }       -> { rahasia, url } untuk QR
- *  POST { aksi:'aktifkan', kode }    -> { cadangan }  (teks kode cadangan hanya tampil sekali)
- *  POST { aksi:'cadangan', kode }    -> { cadangan }  (kode lama hangus)
- *  POST { aksi:'matikan', kode }     -> { ok }        (ditolak bila admin & wajib 2FA admin)
- * Kode salah dihitung ke lockout login (5 gagal / 15 menit per username).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
@@ -57,8 +48,6 @@ export async function POST(req: NextRequest) {
       return jawab({ error: 'Kode salah atau sudah dipakai.' }, 400);
     };
 
-    //  Mendaftar 2FA hanya untuk admin & akun Full Access. Yang sudah aktif tetap bisa
-    //  mengganti kode cadangan / mematikannya (mis. setelah Full Access dicabut).
     if ((aksi === 'mulai' || aksi === 'aktifkan') && !bolehDiwaypiDan2FA(user)) {
       return jawab({ error: '2FA hanya untuk admin & akun yang ditunjuk.' }, 403);
     }

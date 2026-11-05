@@ -1,6 +1,5 @@
 'use client';
 
-/** BilahNavigasiSoal - dipecah dari app/(portal)/learning-center/_components/MyQuizPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { type QuizQuestion } from '../MyQuizPage';
 
@@ -28,16 +27,6 @@ export function BilahNavigasiSoal({ answered, current, handleSubmit, questions, 
             </p>
           )}
 
-          {/*
-            Tombol besar muncul di soal MANA PUN begitu seluruh soal
-            terjawab, bukan cuma di soal terakhir: orang tidak selalu selesai
-            di nomor terakhir - ia melompat ke nomor yang tadi dilewati,
-            mengisinya, lalu berhenti di sana.
-
-            Tombol Sebelumnya/Berikutnya polos disembunyikan di layar lg -
-            di laptop navigasinya sudah dipegang panah di samping kartu
-            soal (lihat di atas), jadi tidak perlu dobel di sini.
-          */}
           {answered === questions.length ? (
             <div className="flex gap-2.5">
               <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
@@ -56,10 +45,6 @@ export function BilahNavigasiSoal({ answered, current, handleSubmit, questions, 
                 ←<span className="hidden formulir:inline"> Sebelumnya</span>
               </button>
               {current === questions.length - 1 ? (
-                //  Soal terakhir tapi masih ada yang kosong: Berikutnya tidak
-                //  ada gunanya lagi, jadi tempatnya dipakai Submit - dengan
-                //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
-                //  Tombol ini TETAP tampil di lg (bukan navigasi polos).
                 <button onClick={() => handleSubmit(false)}
                   className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all bg-slate-800 hover:bg-slate-900 text-white">
                   Submit ({answered}/{questions.length})

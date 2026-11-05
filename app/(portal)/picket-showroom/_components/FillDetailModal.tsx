@@ -21,7 +21,6 @@ interface KFEntry {
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],produk_lain:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
-  //  Daftar pilihan: Admin Panel › Daftar Pilihan.
   const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
   const daftarProduk = useDaftarPilihan('piket-produk');
   const daftarKebutuhan = useDaftarPilihan('piket-kebutuhan');
@@ -32,11 +31,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const [ptUsers,setPtUsers]=useState<(UserRow&{id:string;full_name:string})[]>([]);
   const [saving,setSaving]=useState(false);
   const [toast,setToast]=useState<{type:'success'|'error';msg:string}|null>(null);
-  // M10 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada peringatan sama sekali
-  // saat menutup modal ini dengan isian belum tersimpan - klik area gelap
-  // di luar modal (kebiasaan umum menutup modal) langsung membuang semua
-  // isian tanpa peringatan. dirty ditandai true oleh SEMUA fungsi yang
-  // mengubah entries setelah pemuatan awal (bukan oleh useEffect load).
   const [dirty,setDirty]=useState(false);
   const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const requestClose=()=>{
@@ -91,20 +85,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const handleSave=async()=>{
     setSaving(true);
     try{
-      /*
-        Diperiksa: baris LAMA harus benar-benar terhapus sebelum baris baru
-        disisipkan di bawah. Kalau RLS menolak diam-diam (0 baris, tanpa
-        galat) dan insert-nya tetap jalan, hasilnya BUKAN "tersimpan ulang" -
-        entri lama dan baru sama-sama ada, dobel.
-
-        H3 (audit): dulu cuma galat eksplisit yang diperiksa - delete yang
-        ditolak RLS diam-diam (0 dari N baris terhapus, tanpa galat) tetap
-        lolos ke insert di bawah, jadi baris lama tetap nyangkut jadi
-        duplikat. Dihitung dulu berapa baris yang SEHARUSNYA ada sebelum
-        delete (pola sama seperti saveTeamEntries di Daily Report), supaya
-        "terhapus kurang dari seharusnya" bisa dibedakan dari "memang belum
-        pernah ada data" dan dibatalkan sebelum sempat dobel.
-      */
       const{count:jumlahSebelum}=await supabase.from('piket_tamu_detail')
         .select('id',{count:'exact',head:true}).eq('piket_id',row.id);
       const{data:terhapus,error:delErr}=await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
@@ -114,7 +94,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       }
       const editedByName=currentUser?.full_name||null;
       const now=new Date().toISOString();
-      // id kegiatan dibuat di client agar bisa langsung dipakai sebagai kegiatan_id produk_lain
       const newId=()=>(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`kg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const withId=entries.filter(e=>e.jenis_kegiatan).map(e=>({kgId:newId(),e}));
       const ins=withId.map(({kgId,e})=>({
@@ -131,7 +110,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         edited_by_name:editedByName,
       }));
       if(ins.length>0){const{error}=await supabase.from('piket_tamu_detail').insert(ins);if(error)throw error;}
-      // Produk Lain  tabel piket_produk_lain (kegiatan_id = id kegiatan yg barusan dibuat)
       const plRows=withId.flatMap(({kgId,e})=>
         (e.produk_lain||[]).filter(x=>x.nama.trim()!==''||(x.watt||0)>0)
           .map(pl=>({kegiatan_id:kgId,piket_id:row.id,nama:pl.nama.trim(),watt:pl.watt||0}))
@@ -224,7 +202,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     </div>
                   )}
                 </div>
-                {/* Produk Lain — barang temporer di luar list + beban daya (watt) */}
                 <div>
                   <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
                   {entry.produk_lain.length===0&&(
@@ -253,7 +230,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     <p className="text-[11px] text-slate-500 mt-1.5">Total beban daya tambahan: <strong>{entry.produk_lain.reduce((s,p)=>s+(p.watt||0),0).toLocaleString('id-ID')} W</strong></p>
                   )}
                 </div>
-                {/* Demo Product fields */}
                 {entry.jenis_kegiatan==='Demo Product'&&(
                   <>
                     <div>
@@ -302,7 +278,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     </div>
                   </>
                 )}
-                {/* Non-demo */}
                 {entry.jenis_kegiatan!=='Demo Product'&&(
                   <div className="space-y-3">
                     {entry.jenis_kegiatan==='RnD'&&(
@@ -312,7 +287,6 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                           <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                             <option value="">— Pilih Team —</option>
-                            {/* Satu optgroup per kelompok PTS dari pengaturan admin. */}
                             {kelompokPTSList.map(k=>{
                               const anggota=ptUsers.filter(u=>u.team_type===k.nama);
                               if(anggota.length===0) return null;

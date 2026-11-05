@@ -1,8 +1,4 @@
 'use client';
-/**
- * Simpan & buka: laptop (.glb), server tim (versi, gambar layar), salinan lokal lama.
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useEffect } from 'react';
 import { unduhUrl } from '../../bersama/cetak';
 import { type Benda, idBaru, rapikanLED, type Ruang } from '../inti';
@@ -14,10 +10,8 @@ import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { ambilKunci, type DesainTim, KUNCI_SIMPAN, RUANG_AWAL } from '../useKeadaanDesain';
 
-
 export function useSimpanDesain(K: KeadaanDesain) {
   const { asideRef, benda, bendaRef, desainAktif, gambarLayar, impor, legendaKabel, mesin, modal, modelImpor, namaDesain, panel, pilih, riwayat, ruang, ruangRef, setAsal, setBenda, setDaftarTim, setDasar, setDesainAktif, setGalat, setKonfirmasi, setLihatVersi, setModal, setNamaDesain, setPesan, setPilih, setRuang, setSibukSimpan, setStatusSimpan, setTersimpan, setVersiGambar, sisi, tersimpan } = K;
-  /** Gambar layar unggahan -> data URL JPEG (maks 1920 px) supaya ikut tersimpan di file laptop. */
   const gambarKeDataUrl = (t: T.Texture): string | null => {
     try {
       const img = t.image as { width: number; height: number } & CanvasImageSource;
@@ -29,11 +23,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     } catch { return null; }
   };
 
-  /**
-   * Simpan ke laptop (.glb): geometri ruang & benda (bisa dibuka SketchUp /
-   * Blender) + data desain di extras supaya bisa dibuka & diedit lagi di sini.
-   * Tidak memakai storage server sama sekali.
-   */
   const simpanKeLaptop = () => {
     const m = mesin.current; if (!m) return;
     const isi = new m.THREE.Group();
@@ -41,8 +30,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     isi.add(m.grupRuang.clone(true), m.grupBenda.clone(true));
     isi.traverse(o => {
       if (o.userData.sorot) o.visible = false;
-      //  Tekstur tanpa transparansi (kayu, kain, pola layar, lantai) disimpan
-      //  sebagai JPEG, bukan PNG bawaan exporter - file jauh lebih kecil.
       const mats = (o as T.Mesh).material;
       for (const mt of Array.isArray(mats) ? mats : mats ? [mats] : []) {
         if (mt.transparent) continue;
@@ -67,7 +54,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
   };
   const unduhGLB = simpanKeLaptop;
 
-  /** Buka desain .glb dari laptop. File .glb lain (model produk) ditawarkan sebagai benda baru. */
   const bukaDariLaptop = async (file: File | null) => {
     const m = mesin.current; if (!file || !m) return;
     if (file.size > 80 * 1024 * 1024) { setGalat('File terlalu besar (maks 80 MB).'); return; }
@@ -91,7 +77,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
       setPesan(`Dibuka dari laptop: ${d.nama}`);
     };
     daftarkanTekstur(K, d.tekstur);
-    //  Gambar layar unggahan dikembalikan sebagai tekstur.
     for (const [id, url] of Object.entries(d.gambar ?? {})) {
       new m.THREE.TextureLoader().load(url, tex => {
         tex.colorSpace = m.THREE.SRGBColorSpace;
@@ -99,7 +84,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
         setVersiGambar(v => v + 1);
       });
     }
-    //  Model GLB impor: ambil kembali geometrinya dari file yang sama (node ber-id benda itu).
     const adaModel = d.benda.some(b => b.jenis === 'model');
     if (!adaModel) { pasang(d.benda); return; }
     new m.GLTFLoader().parse(buf, '', g => {
@@ -111,7 +95,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
         const src = (node as T.Object3D).clone(true);
         src.position.set(0, 0, 0); src.rotation.set(0, 0, 0); src.scale.set(1, 1, 1);
         const kunci = idBaru(); modelImpor.current.set(kunci, src);
-        //  Rotasi tegak sudah tertanam di simpul berkas: jangan diputar lagi, ukuran berkas ikut posisi tegaknya.
         const tegak = Math.abs(Math.round((b.putarModel ?? 0) / 90)) % 2 === 1;
         const uf = b.ukuranFile && tegak ? [b.ukuranFile[0], b.ukuranFile[2], b.ukuranFile[1]] as [number, number, number] : b.ukuranFile;
         return { ...b, modelKunci: kunci, putarModel: undefined, ukuranFile: uf };
@@ -121,20 +104,14 @@ export function useSimpanDesain(K: KeadaanDesain) {
   };
   const tulisSimpanan = (daftar: typeof tersimpan) => {
     setTersimpan(daftar);
-    try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(daftar)); } catch { /* abaikan */ }
+    try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(daftar)); } catch {  }
   };
-  // Gambar layar & model impor hanya ada di memori - disimpan sebagai pola uji / kotak.
   const bendaBersih = (bs: Benda[], ada: Set<string> = new Set()) => bs.map(b => ({ ...b, konten: b.konten === 'gambar' && !ada.has(b.id) ? 'pola' as const : b.konten }));
-  /**
-   * Gambar konten layar untuk server: JPEG maks 1280 px, kualitas diturunkan sampai <= 150 KB
-   * (hemat kuota Supabase); maks 6 gambar per desain. Yang tidak muat tetap jadi pola uji.
-   */
   const gambarLayarServer = (bs: Benda[]): Record<string, string> => {
     const hasil: Record<string, string> = {};
     for (const b of bs) {
       if (b.konten !== 'gambar' || Object.keys(hasil).length >= 6) continue;
       const t = gambarLayar.current.get(b.id);
-      //  Gambar yang dibuka dari server (ref) dan tidak diganti: kirim ref-nya, jangan kompres & unggah ulang.
       if (typeof t?.userData.ref === 'string') { hasil[b.id] = t.userData.ref; continue; }
       const img = t?.image as ({ width: number; height: number } & CanvasImageSource) | undefined;
       if (!img?.width) continue;
@@ -143,12 +120,11 @@ export function useSimpanDesain(K: KeadaanDesain) {
         const cv = document.createElement('canvas'); cv.width = Math.round(img.width * skala); cv.height = Math.round(img.height * skala);
         cv.getContext('2d')?.drawImage(img, 0, 0, cv.width, cv.height);
         for (const q of [0.8, 0.68, 0.55, 0.42]) { const u = cv.toDataURL('image/jpeg', q); if (u.length <= 195_000) { hasil[b.id] = u; break; } }
-      } catch { /* gambar lintas domain: lewati */ }
+      } catch {  }
     }
     return hasil;
   };
 
-  // ── Desain tim di server ──
   const API_DESAIN = '/api/tools-team/desain';
   const muatDaftarTim = async () => {
     try {
@@ -163,11 +139,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     if ((sisi || panel) && window.innerWidth < 1024) asideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [sisi, panel]);
 
-  /**
-   * Gambar desain dari sudut kamera sekarang tanpa gizmo/sorotan: pratinjau
-   * kecil (480 px) untuk daftar, dan versi tajam (±1600 px, dirender 2x) untuk
-   * cetak/ZIP Request Design. Kualitas JPEG diturunkan bila melebihi batas.
-   */
   const pratinjau = (): { kecil: string | null; hd: string | null } => {
     const m = mesin.current; if (!m) return { kecil: null, hd: null };
     const rasioLama = m.renderer.getPixelRatio();
@@ -182,12 +153,10 @@ export function useSimpanDesain(K: KeadaanDesain) {
         const c0 = document.createElement('canvas'); c0.width = w; c0.height = h;
         const g = c0.getContext('2d'); if (!g) return null;
         g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, w, h);
-        //  Gambar HD (cetak / ZIP Request Design) ikut aturan legend kabel yang sama dengan PNG.
         const c = legenda && legendaKabel ? denganLegendaSamping(c0, legendaKabel, w / Math.max(1, src.clientWidth || w)) : c0;
         for (const q of [0.86, 0.74, 0.6, 0.45]) { const u = c.toDataURL('image/jpeg', q); if (u.length <= maks) return u; }
         return null;
       };
-      //  Data URL base64 ±1,33x ukuran JPEG; batas di server 80 KB / 560 KB.
       return { kecil: jadi(400, 78_000), hd: jadi(1400, 550_000, true) };
     } catch { return { kecil: null, hd: null }; } finally {
       m.renderer.setPixelRatio(rasioLama);
@@ -196,7 +165,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     }
   };
 
-  /** Simpan ke server = versi baru. Desain milik orang lain (atau `baru`) disimpan sebagai salinan. */
   const simpanServer = async (baru: boolean, sumber?: { nama: string; ruang: Ruang; benda: Benda[] }) => {
     const nama = (sumber?.nama ?? namaDesain).trim() || 'Tanpa nama';
     const timpa = !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
@@ -229,7 +197,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); return false; } finally { setSibukSimpan(false); }
   };
 
-  /** Buka desain tim (versi terbaru, atau `versi` tertentu dari riwayat). */
   const bukaTim = async (id: string, versi?: number) => {
     setSibukSimpan(true); setStatusSimpan(null);
     try {
@@ -242,7 +209,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
       const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[]; layar?: Record<string, string>; tekstur?: Record<string, string> }; bolehUbah: boolean };
       const ruangBaru = { ...RUANG_AWAL, ...d.data.ruang };
       daftarkanTekstur(K, d.data.tekstur);
-      //  Gambar konten layar yang ikut tersimpan di server dikembalikan sebagai tekstur.
       const m = mesin.current;
       if (m) for (const [idL, url] of Object.entries(d.data.layar ?? {})) {
         muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
@@ -251,20 +217,18 @@ export function useSimpanDesain(K: KeadaanDesain) {
       setRuang(ruangBaru); setBenda(bendaBuka); setNamaDesain(d.nama);
       setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, bendaBuka, d.nama));
       riwayat.mulaiBaru({ ruang: ruangBaru, benda: bendaBuka });
-      //  Versi lama: menyimpan membuat versi baru dari isi ini (riwayat tidak diubah).
       setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah, versi: d.versiTerbaru });
       setLihatVersi(d.versi !== d.versiTerbaru ? { versi: d.versi, terbaru: d.versiTerbaru } : null);
       setPilih(null); setModal(null);
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); } finally { setSibukSimpan(false); }
   };
 
-  //  Dibuka dari Request Design: /tools-team?alat=3d&desain=<id>&versi=<n>
   useEffect(() => {
     try {
       const sp = new URLSearchParams(window.location.search);
       const id = sp.get('desain');
       if (id && /^[0-9a-f-]{36}$/i.test(id)) void bukaTim(id, Number(sp.get('versi')) || undefined);
-    } catch { /* abaikan */ }
+    } catch {  }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -281,7 +245,6 @@ export function useSimpanDesain(K: KeadaanDesain) {
     void muatDaftarTim();
   };
 
-  /** Pindahkan desain lama yang hanya ada di perangkat ini ke server. */
   const unggahLokal = async (t: { nama: string; ruang: Ruang; benda: Benda[] }) => {
     if (await simpanServer(true, t)) {
       tulisSimpanan(tersimpan.filter(x => x.nama !== t.nama));

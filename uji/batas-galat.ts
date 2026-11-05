@@ -1,12 +1,3 @@
-/**
- * uji/batas-galat.ts - batas galat (error boundary), 404, dan /api/health.
- *
- * Sebelum ini platform tidak punya error.tsx sama sekali: satu galat render menjatuhkan
- * seluruh halaman jadi layar putih. Uji ini menjaga supaya berkas-berkas itu tetap ada dan
- * /api/health tetap publik tanpa menyentuh basis data.
- *
- * Jalankan: npm test -- batas-galat
- */
 import { existsSync, readFileSync } from 'fs';
 import { bolehMuatUlang, galatBerkasTidakTermuat, JEDA_MUAT_ULANG_MS } from '../lib/galat-berkas';
 

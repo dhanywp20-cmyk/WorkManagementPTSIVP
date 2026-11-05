@@ -1,12 +1,8 @@
 import { bolehDitugaskanOleh, adalahAdminMurni } from '@/lib/teams';
 
-// Aturan: hanya Admin (role admin/superadmin murni) yang boleh meng-assign
-// Manager. Team, Supervisor, dan bawahan lain tidak boleh.
-
 let gagal = 0;
 const cek = (s: boolean, l: string) => { console.log(`${s ? 'OK  ' : 'GAGAL'}  ${l}`); if (!s) gagal++; };
 
-// Keadaan nyata di produksi: toggle bisa_ditugaskan Dhany dimatikan.
 const dhany = { team_type: 'Team PTS IVP', jabatan: 'Manager', bisa_ditugaskan: false };
 const deni = { team_type: 'Team PTS IVP', jabatan: null, bisa_ditugaskan: true };
 const nonaktif = { team_type: 'Team PTS IVP', jabatan: null, bisa_ditugaskan: false };

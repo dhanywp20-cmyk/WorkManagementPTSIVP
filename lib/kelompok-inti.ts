@@ -1,36 +1,5 @@
-/**
- * lib/kelompok-inti.ts - daftar KELOMPOK kerja beserta hak loncengnya, dan lingkup
- * kelompok yang dibawahi tiap Manager. Semuanya dari database, bukan kode.
- *
- * Yang dulu terpaku di kode dan hanya bisa diubah lewat deploy:
- *
- *   1. Nama kelompok. 'Team PTS IVP' / 'Team PTS MVI' / 'Team PTS UMP'
- *      tertulis langsung di dua puluhan berkas. Menambah satu kelompok PTS
- *      baru berarti menyunting semuanya - dan yang terlewat akan membuat
- *      kelompok itu tidak muncul di sebagian menu, tanpa pesan apa pun.
- *
- *   2. Siapa yang berhak melihat lonceng notifikasi mana. Dulu berupa deretan
- *      syarat di modal-notifikasi.tsx yang menyebut nama kelompok satu per
- *      satu. Persis itulah sebabnya Team PTS MVI tidak pernah dapat lonceng
- *      Ticket, Require, dan Review: namanya memang tidak pernah disebut.
- *
- *   3. Kelompok mana saja yang dibawahi seorang Manager. Sebelumnya tidak ada
- *      sama sekali - akun ber-Full Access melihat SELURUH pekerjaan PTS,
- *      termasuk kelompok yang bukan tanggung jawabnya.
- *
- * Ketiganya sekarang tersimpan di `app_settings` dan disunting dari Admin
- * Panel. NILAI BAWAAN DI BAWAH MENIRU PERSIS perilaku yang berlaku sekarang,
- * jadi selama pengaturannya belum ada, tidak ada satu pun akun yang berubah
- * haknya.
- *
- * Berkas ini TANPA React supaya route server (DIWAYPI) bisa memakainya; hook-nya
- * (useKelompok, dst) ada di lib/kelompok.ts, yang mengekspor ulang seluruh isi berkas ini.
- */
 import { supabase } from './supabase';
 
-// Lonceng
-
-/** Lonceng notifikasi di pojok kanan atas dashboard. */
 export const SEMUA_LONCENG = ['tiket', 'require', 'jadwal', 'review'] as const;
 export type Lonceng = typeof SEMUA_LONCENG[number];
 
@@ -41,67 +10,21 @@ export const LABEL_LONCENG: Record<Lonceng, { ikon: string; label: string }> = {
   review:  { ikon: '⭐', label: 'Review' },
 };
 
-// Kelompok
-
 export type JenisKelompok = 'pts' | 'services' | 'marketing' | 'sales';
 
 export interface Kelompok {
-  /**
-   * Nilai `users.team_type` yang menandai kelompok ini. Untuk Sales dipakai
-   * string kosong: akun Sales memang tidak punya team_type, dan memaksakan
-   * nilai palsu ke sana akan merusak penyaringan yang sudah ada.
-   */
   nama: string;
-  /** Nama yang ditampilkan, mis. 'PTS IVP'. */
   label: string;
   jenis: JenisKelompok;
-  /**
-   * Ikut daftar "assign ke tim" di Ticketing, Request Schedule, dan Request
-   * Design Project. Team PTS UMP sengaja tidak - pekerjaannya di Piket
-   * Showroom, yang punya daftar tim sendiri.
-   */
   ditugaskan: boolean;
-  /**
-   * Anggota kelompok ini muncul di dropdown "PTS Cabang / Perwakilan" saat
-   * jadwal Konfigurasi/Training diselesaikan secara Remote (menggantikan
-   * isian manual "Nama Installer") - lihat ModePenyelesaianPanel.tsx di
-   * app/reminder-schedule/. SENGAJA independen dari `ditugaskan`: PTS Cabang
-   * dipilih hanya di titik itu, bukan ikut daftar "assign ke tim" biasa.
-   */
   cabang: boolean;
-  /**
-   * Gaya dashboard yang didapat anggota kelompok ini.
-   *
-   *   'team'  - paket menu lengkap tim internal (bawaan, perilaku lama persis).
-   *   'sales' - paket menu bergaya Sales: mengajukan jadwal/request design,
-   *             ticket, form review, Learning Center. Tanpa Daily Report,
-   *             Incentive PTS, KPI Team, Unit Movement.
-   *
-   * HANYA soal MENU. Role akun TIDAK ikut berubah - anggota kelompok PTS
-   * tetap role 'team', jadi tetap bisa ditugaskan jadwal dan tetap tercatat
-   * bagiannya di Incentive PTS. Yang berubah hanya apa yang ia lihat di
-   * layarnya sendiri. Dipakai sebagai paket bawaan saat akun dibuat, dan bisa
-   * diterapkan ke akun yang sudah ada lewat tombol di Admin Panel -> Kelompok.
-   */
   dashboard: 'team' | 'sales';
-  /** Lonceng yang boleh dilihat anggota kelompok ini. */
   lonceng: Lonceng[];
   aktif: boolean;
 }
 
 const EMPAT: Lonceng[] = ['tiket', 'require', 'jadwal', 'review'];
 
-/**
- * Bawaan - MENIRU PERSIS syarat yang sebelumnya tertulis di
- * modal-notifikasi.tsx, bukan menebak apa yang "sebaiknya":
- *
- *   Ticket & Require : semua, KECUALI Team PTS UMP
- *   Reminder         : semua tanpa kecuali
- *   Review           : semua, KECUALI Team PTS UMP dan Team Services
- *
- * Menyimpangkan salah satunya di sini berarti diam-diam mengubah hak orang
- * yang sedang bekerja.
- */
 export const KELOMPOK_BAWAAN: Kelompok[] = [
   { nama: 'Team PTS IVP', label: 'PTS IVP',   jenis: 'pts',       ditugaskan: true,  cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
   { nama: 'Team PTS MVI', label: 'PTS MVI',   jenis: 'pts',       ditugaskan: true,  cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
@@ -114,17 +37,7 @@ export const KELOMPOK_BAWAAN: Kelompok[] = [
 export const KUNCI_KELOMPOK = 'kelompok';
 export const KUNCI_LINGKUP_MANAGER = 'lingkup_manager';
 
-/**
- * Kelompok mana saja yang dibawahi seorang Manager, dikunci id akun.
- *
- * Daftar KOSONG atau akun yang tidak terdaftar berarti TANPA BATAS - persis
- * seperti sekarang. Ini disengaja: memberi arti "tidak melihat apa-apa" pada
- * ketiadaan pengaturan akan mengunci semua Manager keluar pada detik fitur ini
- * menyala, sebelum satu pun pemetaan sempat dibuat.
- */
 export type LingkupManager = Record<string, string[]>;
-
-// Simpanan
 
 const SIMPAN_KELOMPOK = 'ivp_kelompok';
 const SIMPAN_LINGKUP = 'ivp_lingkup_manager';
@@ -139,106 +52,54 @@ function bacaSimpanan<T>(kunci: string): T | null {
 
 function tulisSimpanan(kunci: string, nilai: unknown): void {
   if (typeof window === 'undefined') return;
-  try { window.sessionStorage.setItem(kunci, JSON.stringify(nilai)); } catch { /* kuota penuh */ }
+  try { window.sessionStorage.setItem(kunci, JSON.stringify(nilai)); } catch {  }
 }
 
 let kelompokSekarang: Kelompok[] = bacaSimpanan<Kelompok[]>(SIMPAN_KELOMPOK) ?? KELOMPOK_BAWAAN;
 let lingkupSekarang: LingkupManager = bacaSimpanan<LingkupManager>(SIMPAN_LINGKUP) ?? {};
 
-/** Seluruh kelompok yang aktif. */
 export function semuaKelompok(): Kelompok[] { return kelompokSekarang.filter(k => k.aktif); }
 
-/** Kelompok PTS yang aktif - dipakai daftar tim, KPI, dan Piket Showroom. */
 export function kelompokPTS(): Kelompok[] { return semuaKelompok().filter(k => k.jenis === 'pts'); }
 
-/** Nama team_type kelompok PTS yang aktif. */
 export function namaKelompokPTS(): string[] { return kelompokPTS().map(k => k.nama); }
 
-/**
- * Label tampilan sebuah team_type PTS, mis. 'Team PTS IVP' -> 'PTS IVP'.
- *
- * Dipakai form buat/edit akun (modal-akun.tsx) supaya pilihannya ikut
- * daftar Kelompok yang sesungguhnya, bukan tiga pilihan tetap yang ditulis
- * di kode - kelompok PTS baru yang ditambahkan admin otomatis ikut tampil.
- * Kelompok yang tidak dikenal (team_type lama/data usang) jatuh ke nama
- * apa adanya, supaya tampilan tidak pernah kosong.
- */
 export function labelKelompokPTS(nama: string): string {
   return kelompokPTS().find(k => k.nama === nama)?.label ?? nama;
 }
 
-/** Kebalikan labelKelompokPTS: 'PTS IVP' -> 'Team PTS IVP'. */
 export function teamTypeDariLabelPTS(label: string): string | null {
   return kelompokPTS().find(k => k.label === label)?.nama ?? null;
 }
 
-/** Kelompok yang ikut daftar "assign ke tim". */
 export function kelompokDitugaskan(): Kelompok[] { return semuaKelompok().filter(k => k.ditugaskan); }
 
-/**
- * Kelompok PTS yang MENERIMA penugasan - irisan dua sifat di atas.
- *
- * Inilah kelompok yang pekerjaannya benar-benar terangkum di Daily Report dan
- * layar sejenis. Berbeda dari kelompokPTS(), yang juga memuat PTS UMP:
- * kelompok itu aktif tetapi sengaja tidak ditugaskan, jadi memasukkannya cuma
- * menambah baris kosong pada rekap harian.
- */
 export function kelompokPTSDitugaskan(): Kelompok[] {
   return kelompokPTS().filter(k => k.ditugaskan);
 }
 
-/** Nama team_type kelompok PTS yang menerima penugasan. */
 export function namaKelompokPTSDitugaskan(): string[] {
   return kelompokPTSDitugaskan().map(k => k.nama);
 }
 
-/** Kelompok bertanda PTS Cabang - lihat catatan field `cabang` di atas. */
 export function kelompokCabang(): Kelompok[] {
   return semuaKelompok().filter(k => k.cabang);
 }
 
-/**
- * Nama seluruh kelompok yang berupa TIM (punya team_type), untuk dipakai
- * sebagai daftar pilihan - mis. filter "Team Penanganan" di Ticketing.
- *
- * Kelompok Sales sengaja dilewati: nama team_type-nya memang kosong (ia
- * dibedakan lewat role, bukan tim), jadi memasukkannya hanya akan
- * menghasilkan pilihan tanpa nilai.
- */
 export function namaSemuaKelompokTim(): string[] {
   return semuaKelompok().filter(k => k.nama.trim() !== '').map(k => k.nama);
 }
 
-/** Nama team_type kelompok PTS Cabang. */
 export function namaKelompokCabang(): string[] {
   return kelompokCabang().map(k => k.nama);
 }
 
-/**
- * Gaya dashboard sebuah kelompok, dicari lewat team_type akun.
- *
- * Kelompok yang tidak dikenal (mis. akun lama dengan team_type yang sudah
- * dihapus dari daftar) dianggap 'team' - persis perilaku sebelum setelan ini
- * ada. Ketiadaan setelan tidak boleh mengubah tampilan siapa pun.
- */
 export function gayaDashboard(teamType: string | null | undefined): 'team' | 'sales' {
   const nama = (teamType ?? '').trim();
   if (!nama) return 'team';
   return semuaKelompok().find(k => k.nama === nama)?.dashboard ?? 'team';
 }
 
-/**
- * Boleh mengeluarkan / memasukkan kembali proyek ke daftar Incentive PTS.
- *
- * Admin dan superadmin, ditambah Manager kelompok PTS mana pun - IVP maupun
- * MVI. Jabatannya dibaca dari Struktur Organisasi, bukan dari daftar nama di
- * kode: kalau Manager-nya berganti, haknya ikut berpindah tanpa deploy.
- *
- * SENGAJA tidak mengunci ke satu kelompok tertentu. Mengikat hak pada nama
- * kelompok adalah pola yang sudah dua kali menimbulkan masalah di platform ini
- * - lonceng notifikasi Team PTS MVI, lalu rekap Daily Report - keduanya
- * bermula dari satu nama kelompok yang tertulis di kode lalu terlewat.
- */
 export function bolehKelolaIncentive(u: {
   role?: string | null; jabatan?: string | null; team_type?: string | null;
 } | null | undefined): boolean {
@@ -251,46 +112,27 @@ export function bolehKelolaIncentive(u: {
     && namaKelompokPTS().includes(u.team_type ?? '');
 }
 
-/** Cari kelompok dari nilai team_type. Sales dikenali lewat string kosong. */
 export function cariKelompok(teamType?: string | null): Kelompok | null {
   const t = (teamType ?? '').trim();
   return kelompokSekarang.find(k => k.nama === t) ?? null;
 }
 
-/** Lingkup kelompok yang dibawahi tiap Manager. */
 export function lingkupManager(): LingkupManager { return lingkupSekarang; }
 
-/**
- * Kelompok yang boleh dilihat satu akun.
- *
- * Akun tanpa pemetaan mendapat SELURUH kelompok PTS - keadaan sekarang. Yang
- * sudah dipetakan hanya mendapat kelompok yang benar-benar dibawahinya, supaya
- * pekerjaan kelompok lain tidak ikut terbaca.
- */
 export function lingkupSaya(userId?: string | null): string[] {
   const dipetakan = userId ? lingkupSekarang[userId] : undefined;
   if (!dipetakan || dipetakan.length === 0) return namaKelompokPTS();
-  // Kelompok yang sudah dihapus dari daftar tidak ikut dikembalikan.
   const hidup = new Set(namaKelompokPTS());
   const hasil = dipetakan.filter(n => hidup.has(n));
   return hasil.length > 0 ? hasil : namaKelompokPTS();
 }
 
-/** Apakah akun ini boleh menyentuh pekerjaan kelompok tertentu. */
 export function bolehLihatKelompok(userId: string | null | undefined, teamType?: string | null): boolean {
   const t = (teamType ?? '').trim();
   if (!t) return true;
   return lingkupSaya(userId).includes(t);
 }
 
-/**
- * Apakah lonceng ini tampil untuk akun tersebut.
- *
- * Admin melihat semuanya - hak itu memang tidak bergantung kelompok. Selain
- * itu, jawabannya diambil dari kelompok si akun; kelompok yang tidak dikenal
- * (data lama, team_type yang belum didaftarkan) mendapat semua lonceng, sama
- * seperti sebelum pengaturan ini ada.
- */
 export function loncengTampil(opts: {
   peranAdmin: boolean;
   teamType?: string | null;
@@ -301,8 +143,6 @@ export function loncengTampil(opts: {
   if (!k) return true;
   return k.lonceng.includes(opts.lonceng);
 }
-
-// Pemuatan
 
 let pemuatan: Promise<void> | null = null;
 const pendengar = new Set<() => void>();
@@ -315,7 +155,6 @@ function uraikan(nilai: unknown): unknown {
   try { return JSON.parse(nilai); } catch { return null; }
 }
 
-/** Bersihkan satu kelompok dari data yang tidak dikenal. */
 function rapikanKelompok(x: unknown): Kelompok | null {
   if (!x || typeof x !== 'object') return null;
   const o = x as Record<string, unknown>;
@@ -361,8 +200,6 @@ export function muatKelompok(): Promise<void> {
         if (isi === null) continue;
         if (baris.key === KUNCI_KELOMPOK) {
           const bersih = rapikanDaftarKelompok(isi);
-          // Daftar kosong ditolak: satu kesalahan simpan tidak boleh membuat
-          // SELURUH platform kehilangan daftar timnya.
           if (bersih.length > 0) {
             kelompokSekarang = bersih;
             tulisSimpanan(SIMPAN_KELOMPOK, bersih);
@@ -378,14 +215,12 @@ export function muatKelompok(): Promise<void> {
           beriTahu();
         }
       }
-    } catch { /* pertahankan nilai yang sedang berlaku */ }
+    } catch {  }
   })();
   return pemuatan;
 }
 
 export function muatUlangKelompok(): Promise<void> { pemuatan = null; return muatKelompok(); }
-
-// Penyimpanan
 
 export async function simpanKelompok(baru: Kelompok[]): Promise<{ error: string | null }> {
   const bersih = rapikanDaftarKelompok(baru);
@@ -400,9 +235,6 @@ export async function simpanKelompok(baru: Kelompok[]): Promise<{ error: string 
 }
 
 export async function simpanLingkupManager(baru: LingkupManager): Promise<{ error: string | null }> {
-  // Pemetaan kosong dibuang, bukan disimpan sebagai larik kosong: keduanya
-  // sama artinya (tanpa batas), dan menyimpan yang kosong hanya menumpuk
-  // baris yang tidak berarti.
   const bersih: LingkupManager = {};
   for (const [id, daftar] of Object.entries(baru)) {
     const d = (daftar ?? []).filter(Boolean);
@@ -417,7 +249,6 @@ export async function simpanLingkupManager(baru: LingkupManager): Promise<{ erro
   return { error: null };
 }
 
-/** Berapa akun yang memakai tiap team_type - dipakai sebelum menghapus kelompok. */
 export async function kelompokTerpakai(): Promise<Record<string, number>> {
   const { data } = await supabase.from('users').select('team_type');
   const hitung: Record<string, number> = {};
@@ -428,7 +259,6 @@ export async function kelompokTerpakai(): Promise<Record<string, number>> {
   return hitung;
 }
 
-/** Daftarkan pendengar perubahan kelompok; kembalikan pelepasnya. Dipakai hook di lib/kelompok.ts. */
 export function dengarKelompok(f: () => void): () => void {
   pendengar.add(f);
   return () => { pendengar.delete(f); };

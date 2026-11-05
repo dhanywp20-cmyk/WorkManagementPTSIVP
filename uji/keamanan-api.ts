@@ -1,14 +1,3 @@
-/**
- * uji/keamanan-api.ts - penjaga regresi audit keamanan 30 Okt 2026.
- *
- * 1. Setiap route di app/api WAJIB memeriksa sesi / token SENDIRI. proxy.ts hanya memeriksa ADA-nya cookie
- *    ivp_session (bukan keabsahannya), jadi route tanpa pemeriksaan sendiri terbuka bagi cookie palsu - begitulah
- *    /api/ai/generate (token Gemini perusahaan) dan pengiriman /api/notifikasi/telegram ditemukan terbuka.
- *    Route yang memang publik harus tercantum di PUBLIK beserta alasannya.
- * 2. Lembar cetak: escObjek meng-escape semua teks (XSS tersimpan di jendela cetak), urlAman hanya http(s) / jalur.
- *
- * Jalankan: npx tsx uji/keamanan-api.ts
- */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { escObjek, urlAman } from '../lib/lembar-cetak';
@@ -18,9 +7,7 @@ function cek(nama: string, syarat: boolean, info = '') {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}${info ? ` - ${info}` : ''}`); }
 }
 
-/** Pemeriksaan sesi / token yang sah di route (diverifikasi ke tabel, bukan sekadar ada-nya cookie). */
 const PENJAGA = /pastikanMasuk|pastikanAdmin|getSessionUser|ambilAkun|verifikasiToken|jawabMonitor|CRON_SECRET|cariChecklistShare|tokenSah|pesertaDari|muatKelasToken/;
-/** Route publik yang disengaja. */
 const PUBLIK: Record<string, string> = {
   'auth/login': 'masuk', 'auth/login-2fa': 'masuk tahap 2 (tantangan bertanda tangan)', 'auth/logout': 'keluar',
   'auth/forgot-password': 'minta OTP (dibatasi per username)', 'auth/verify-otp': 'ganti password dengan OTP (dibatasi)',
@@ -41,7 +28,6 @@ for (const p of rute.sort()) {
   if (PUBLIK[kunci]) { cek(`${kunci}: publik (${PUBLIK[kunci]})`, true); continue; }
   cek(`${kunci}: dijaga`, PENJAGA.test(isi), 'tidak ada pemeriksaan sesi/token - tambahkan penjaga atau daftarkan sebagai PUBLIK beserta alasannya');
 }
-//  Telegram: penjaga harus berada SEBELUM sendMessage pada jalur kirim biasa (aksi lain punya penjaga sendiri).
 const tg = readFileSync('app/api/notifikasi/telegram/route.ts', 'utf8');
 const iKirim = tg.indexOf('/sendMessage'), iJaga = tg.lastIndexOf('pastikanMasuk(req)', iKirim);
 cek('telegram: jalur kirim biasa memanggil pastikanMasuk sebelum sendMessage', iKirim > 0 && iJaga > tg.indexOf("body.aksi === 'putuskan'"));

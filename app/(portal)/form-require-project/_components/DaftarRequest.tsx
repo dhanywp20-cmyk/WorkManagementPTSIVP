@@ -1,46 +1,19 @@
 'use client';
 
-/** DaftarRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { ActionGroup, MobileListCard, MobileCardBadge, ListEmptyState, Paginasi } from '@/components/shared';
-import { User, ProjectRequest, statusConfig, hasDivergentRoomStatus } from './shared';
+import { statusConfig, hasDivergentRoomStatus } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';
+import { useKonteksRequest } from './konteks-request';
 
-export interface DaftarRequestProps {
-  bisaKelolaRequest: boolean;
-  currentUser: User;
-  filterMonth: string;
-  filterStatus: string;
-  filterYear: string;
-  filteredRequests: ProjectRequest[];
-  formatDate: (dt: string) => string;
-  formatDueDate: (dt: string) => string;
-  getDueStatus: (due: string | undefined, status: string) => { type: string; label: string; days: number; } | null;
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<ProjectRequest>;
-  handleOpenDetail: (req: ProjectRequest) => Promise<void>;
-  isIVPGuest: boolean;
-  isPTS: boolean;
-  isTeamPTS: boolean;
-  loading: boolean;
-  pimpinan: boolean;
-  renderRequestActions: (req: ProjectRequest) => import("react").JSX.Element;
-  requests: ProjectRequest[];
-  searchQuery: string;
-  searchSales: string;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setFilterMonth: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchQuery: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSales: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowNewFormModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  toggleSelectAll: () => void;
-  toggleSelectId: (id: string) => void;
-  unreadMsgMap: Record<string, number>;
-}
-
-export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, filterStatus, filterYear, filteredRequests, formatDate, formatDueDate, getDueStatus, hal, handleOpenDetail, isIVPGuest, isPTS, isTeamPTS, loading, pimpinan, renderRequestActions, requests, searchQuery, searchSales, selectMode, selectedIds, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales, setShowNewFormModal, toggleSelectAll, toggleSelectId, unreadMsgMap }: DaftarRequestProps) {
+export function DaftarRequest() {
+  const k = useKonteksRequest();
+  const { currentUser, isIVPGuest, isPTS, isTeamPTS, pimpinan } = k.sesi;
+  const { bisaKelolaRequest } = k.izin;
+  const { formatDate, formatDueDate, getDueStatus } = k.bantu;
+  const { filteredRequests, hal, handleOpenDetail, loading, renderRequestActions, requests, setShowNewFormModal, unreadMsgMap } = k.daftar;
+  const { filterMonth, filterStatus, filterYear, searchQuery, searchSales, setFilterMonth, setFilterStatus, setFilterYear, setSearchQuery, setSearchSales } = k.filter;
+  const { selectMode, selectedIds, toggleSelectAll, toggleSelectId } = k.pilih;
   return (
     <>
       {loading ? (
@@ -81,7 +54,6 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
         />
       ) : (
         <>
-        {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
         <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
           {filteredRequests.length === 0 && (
             <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada request.</div>
@@ -101,8 +73,6 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                 badges={<>
                   <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
                   {req.routing_status === 'internal_review' && <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="🔍" />Review Internal</span>}
-                  {/* Ruangan lain progresnya beda dari yang ditampilkan di sini (badge di
-                      atas cuma ruangan pertama) - buka detail utk lihat per-ruangan. */}
                   {hasDivergentRoomStatus(req) && <span className="text-[10px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</span>}
                 </>}
                 fields={[
@@ -119,7 +89,6 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
           <Paginasi {...hal} satuan="request" />
         </div>
 
-        {/* ── DESKTOP: tabel ── */}
         <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
           <table className="w-full table-fixed tabel-kartu" style={{ background: 'transparent', minWidth: '900px' }}>
             <colgroup>
@@ -129,17 +98,11 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
               <col style={{ width: '105px' }} />
               <col style={{ width: '105px' }} />
               <col style={{ width: '105px' }} />
-              <col style={{ width: '80px' }} />  {/* DueDate lebih sempit */}
-              <col style={{ width: '80px' }} />  {/* CreatedBy lebih sempit */}
-              {/*  120px, bukan 90px. Komentar lama mengklaim 90px "cukup
-                  untuk 2-3 icon button" - tidak: satu tombol 32px dengan
-                  gap 4px membuat 3 tombol butuh 104px, dan sel ini masih
-                  dipotong padding px-2 (16px). Baris pending menampilkan
-                  Approve + Tolak + Detail + Hapus sekaligus. */}
-              <col style={{ width: '120px' }} />  {/* Action */}
+              <col style={{ width: '80px' }} />
+              <col style={{ width: '80px' }} />
+              <col style={{ width: '120px' }} />
             </colgroup>
             <thead>
-              {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
               <tr>
                 <th className="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide border-r border-gray-200">
                   {selectMode && bisaKelolaRequest
@@ -237,13 +200,11 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                     </td>
                     <td className="px-3 py-3 border-r border-gray-100 align-middle">
                       <div className="text-[11px] font-semibold text-gray-800 leading-tight">{req.requester_name}</div>
-                      {/* IVP guest: badge for external requests linked by admin */}
                       {isIVPGuest && req.ivp_assignee === currentUser.full_name && req.requester_id !== currentUser.id && (
                         <div className="text-[10px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
                           <IkonTeks nama="🔗" />Ext: {req.sales_division}
                         </div>
                       )}
-                      {/* IVP guest: badge for own requests */}
                       {isIVPGuest && req.requester_id === currentUser.id && (
                         <div className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
                           <IkonTeks nama="📋" />Request Saya
@@ -251,12 +212,6 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                       )}
                     </td>
                     <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
-                      {/*  ActionGroup, bukan div flex tulisan tangan. Yang
-                          tulisan tangan di sini tidak punya flex-wrap, jadi
-                          baris "pending" (Approve + Tolak + Detail + Hapus =
-                          ~132px) meluber keluar kolom 90px alih-alih turun
-                          ke baris kedua. Sekalian ikut role="group" +
-                          aria-label yang sudah dipakai tabel lain. */}
                       <ActionGroup>
                         {renderRequestActions(req)}
                       </ActionGroup>

@@ -26,17 +26,6 @@ function terlambat(p: ProyekRingkas): boolean {
   return p.status !== 'done' && keadaanJadwal(target, false).keadaan === 'terlambat';
 }
 
-/**
- * Project Progress - proyek -> checklist per lokasi -> bagian -> item.
- *
- *   Admin    : buat & hapus proyek/checklist, atur anggota, link proyek.
- *   Anggota  : (di-assign per checklist) centang, kendala, foto, ubah item.
- *   Team     : melihat semua proyek.   Sales: melihat proyeknya sendiri.
- *   Tim lapangan tanpa akun: link checklist (/checklist/share/<token>).
- *
- * Semua aturan itu ditegakkan di server (lib/checklist-server.ts); halaman
- * ini hanya menyembunyikan tombol yang memang tidak akan diizinkan.
- */
 export default function ProjectProgressPage() {
   const [user, setUser] = useState<User | null>(null);
   const [proyek, setProyek] = useState<ProyekRingkas[]>([]);
@@ -51,11 +40,6 @@ export default function ProjectProgressPage() {
   const [salesUsers, setSalesUsers] = useState<SalesPickerUser[]>([]);
   const [calonAnggota, setCalonAnggota] = useState<CalonAnggota[]>([]);
   const [toast, setToast] = useState<Notif | null>(null);
-  /**
-   * Daftar proyek TIDAK dimuat ulang setiap ada perubahan di dalam proyek /
-   * checklist - cukup ditandai, lalu dimuat sekali saat kembali ke daftar.
-   * Menghemat permintaan & egress (Vercel/Supabase paket gratis).
-   */
   const perluMuat = useRef(false);
   const tandaiBerubah = useCallback(() => { perluMuat.current = true; }, []);
 
@@ -91,8 +75,6 @@ export default function ProjectProgressPage() {
 
   useEffect(() => { if (user) muat(); }, [user, muat]);
 
-  // Daftar akun untuk pemilih Sales & anggota - pola yang sama dengan dropdown
-  // Request Schedule: Sales = role guest; anggota = yang boleh ditugaskan.
   useEffect(() => {
     if (!admin) return;
     (async () => {
@@ -128,7 +110,6 @@ export default function ProjectProgressPage() {
         || (saring === 'terlambat' && terlambat(p))
         || (saring === 'saya' && p.saya)
         || (saring === 'selesai' && p.status === 'done'))
-      // Yang perlu perhatian di atas: kendala, terlambat, lalu yang terbaru.
       .sort((a, b) => Number(b.stat.kendala > 0) - Number(a.stat.kendala > 0)
         || Number(terlambat(b)) - Number(terlambat(a))
         || Number(a.status === 'done') - Number(b.status === 'done')

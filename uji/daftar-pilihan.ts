@@ -1,9 +1,3 @@
-/**
- * uji/daftar-pilihan.ts - daftar pilihan dropdown yang diatur Admin: bawaan = isi lama kode,
- * kerapian (kembar, kosong, panjang), nilai terkunci, simpan hanya yang berubah, data lama tetap tampil.
- *
- * Jalankan: npx tsx uji/daftar-pilihan.ts
- */
 import { bacaDaftarPilihan, bawaanSemua, DAFTAR_PILIHAN, defDaftar, denganNilai, MAKS_PANJANG, produkSpesifik, rapikanDaftar, ringkasDaftarPilihan } from '../lib/daftar-pilihan-bawaan';
 
 let lulus = 0, gagal = 0;

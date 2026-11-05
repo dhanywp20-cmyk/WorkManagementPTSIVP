@@ -1,8 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 
-// Types
-
 export interface User {
   id: string; username: string; password: string;
   full_name: string; role: string; team_type?: string;
@@ -15,22 +13,16 @@ export interface MovementLog {
   type_barang: string; serial_number: string; catatan: string;
   foto_surat_url: string; foto_barang_url: string;
   created_by: string; created_at: string;
-  // Asset tracking fields (added in migration 001)
   kondisi_barang?: 'Baik' | 'Perlu Service' | 'Rusak';
-  expected_return_date?: string;        // ISO date - when item should return (Keluar only)
-  return_confirmed?: boolean;           // True when the Masuk log confirms this Keluar is returned
-  checkout_reference_id?: string;       // On a Masuk row: references the original Keluar row id
+  expected_return_date?: string;
+  return_confirmed?: boolean;
+  checkout_reference_id?: string;
 }
 
 export const KONDISI_BARANG_LIST = ['Baik', 'Perlu Service', 'Rusak'] as const;
 export type KondisiBarang = typeof KONDISI_BARANG_LIST[number];
 
-// Constants
-
-//  Daftar event barang: Admin Panel › Daftar Pilihan (useDaftarPilihan('unit-event')).
 export const COLORS = ['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
-
-// Helpers
 
 export function splitTypeLines(raw: string | null | undefined): string[] {
   if (!raw) return [];
@@ -48,15 +40,9 @@ export function fmtDate(d: string, long = false) {
 export async function uploadFiles(files: File[], folder: string): Promise<string[]> {
   const urls: string[] = [];
   for (const file of files) {
-    // Foto dari HP biasanya 3-8MB, jadi dikompres dulu supaya storage dan
-    // egress Supabase tidak terkuras. compressImage meneruskan berkas bukan
-    // gambar (PDF, dll) apa adanya, jadi aman untuk semua jenis lampiran.
     const toUpload = await compressImage(file);
     const ext  = toUpload.name.split('.').pop() ?? 'bin';
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-    // Nama berkas di-generate (bukan nama asli) sehingga isinya tidak pernah
-    // berubah  aman di-cache lama. '3600' membuat browser mengunduh ulang
-    // tiap jam tanpa alasan.
     const { error } = await supabase.storage.from('movement-files').upload(path, toUpload, { cacheControl:'31536000', upsert:false });
     if (error) throw new Error(`Upload ${file.name}: ${error.message}`);
     const { data } = supabase.storage.from('movement-files').getPublicUrl(path);

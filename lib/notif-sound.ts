@@ -2,22 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dengarSuaraNotif, muatSuaraNotif, suaraNotif, sumberSuara } from './suara-notif';
 
-/**
- * Alarm suara notifikasi - dipakai NotificationBar (dashboard) supaya orang
- * yang membiarkan tab ini terbuka seharian tetap sadar ada ticket/notifikasi
- * baru tanpa harus melirik layar terus-menerus.
- */
-/**
- * Berkas suara & volume: pengaturan Admin (Admin Panel › Kelompok & Notifikasi, lib/suara-notif.ts),
- * bawaan /notif.wav. Berkas terpisah (bukan data URI di bundel) - diunduh sekali lalu di-cache.
- */
 const KUNCI_MUTE = 'wm_notif_sound_muted';
 
-/**
- * Bunyi SEKALI per rentetan: notifikasi yang datang berdekatan (mis. beberapa ticket
- * sekaligus) cukup satu bunyi. Dicatat juga di localStorage supaya beberapa tab yang
- * terbuka bersamaan tidak berbunyi bergantian.
- */
 const JEDA_BUNYI_MS = 10_000;
 const KUNCI_TERAKHIR = 'wm_notif_sound_terakhir';
 
@@ -25,7 +11,6 @@ export function useNotifSoundAlarm() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unlockedRef = useRef(false);
   const terakhirRef = useRef(0);
-  /** Bertambah tiap bunyi notifikasi asli - unlock yang sedang berjalan tidak boleh menghentikannya. */
   const putaranRef = useRef(0);
   const [muted, setMuted] = useState<boolean>(() => {
     try { return localStorage.getItem(KUNCI_MUTE) === '1'; } catch { return false; }
@@ -34,11 +19,8 @@ export function useNotifSoundAlarm() {
   useEffect(() => {
     const awal = suaraNotif();
     audioRef.current = new Audio(sumberSuara(awal));
-    //  Diminta diunduh lebih awal: kalau baru dimuat saat notifikasi datang,
-    //  bunyinya terlambat beberapa ratus milidetik dari munculnya baris baru.
     audioRef.current.preload = 'auto';
     audioRef.current.volume = awal.volume;
-    //  Suara / volume diganti Admin: pasang yang baru (tidak memotong bunyi yang sedang berjalan).
     const terapkan = () => {
       const a = audioRef.current, s = suaraNotif();
       if (!a) return;
@@ -48,23 +30,6 @@ export function useNotifSoundAlarm() {
     };
     const lepasPengaturan = dengarSuaraNotif(terapkan);
     void muatSuaraNotif().then(terapkan);
-    /*
-      Browser modern menolak audio.play() sebelum ada interaksi user di
-      halaman itu (autoplay policy). "Unlock"-nya dengan main sebentar lalu
-      langsung pause+reset begitu klik/keydown PERTAMA terjadi di halaman -
-      setelahnya audio yang sama boleh diputar dari kode (mis. dari event
-      realtime) tanpa interaksi baru.
-
-      DUA hal yang dulu membuat bunyi "terpotong seperti kaset macet":
-        1. Unlock dulu dibunyikan KERAS - potongan denting terdengar di klik pertama.
-           Sekarang dibisukan (muted) selama unlock.
-        2. Kalau peramban sudah mengizinkan autoplay (situs yang dipakai seharian),
-           notifikasi bisa berbunyi SEBELUM klik pertama. Klik berikutnya - sering
-           justru klik ke lonceng karena mendengar bunyinya - menjalankan unlock yang
-           pause() + currentTime = 0: dentingnya diputus di tengah. Sekarang unlock
-           tidak menyentuh audio yang sedang berbunyi, dan bunyi yang sudah pernah
-           berhasil diputar dianggap sudah membuka kunci.
-    */
     const unlock = () => {
       const a = audioRef.current;
       if (unlockedRef.current || !a) return;
@@ -72,11 +37,10 @@ export function useNotifSoundAlarm() {
       const putaranSaatUnlock = putaranRef.current;
       a.muted = true;
       a.play().then(() => {
-        //  Notifikasi asli mulai berbunyi selama unlock berjalan -> biarkan.
         if (putaranRef.current === putaranSaatUnlock) { a.pause(); a.currentTime = 0; }
         a.muted = false;
         unlockedRef.current = true;
-      }).catch(() => { a.muted = false; /* unlock dicoba lagi di interaksi berikutnya */ });
+      }).catch(() => { a.muted = false;  });
     };
     document.addEventListener('click', unlock);
     document.addEventListener('keydown', unlock);
@@ -90,7 +54,7 @@ export function useNotifSoundAlarm() {
   const toggleMuted = useCallback(() => {
     setMuted(m => {
       const next = !m;
-      try { localStorage.setItem(KUNCI_MUTE, next ? '1' : '0'); } catch { /* localStorage tidak tersedia - lanjut tanpa disimpan */ }
+      try { localStorage.setItem(KUNCI_MUTE, next ? '1' : '0'); } catch {  }
       return next;
     });
   }, []);
@@ -99,22 +63,17 @@ export function useNotifSoundAlarm() {
     if (muted || !audioRef.current) return;
     const sekarang = Date.now();
     let terakhir = terakhirRef.current;
-    try { terakhir = Math.max(terakhir, Number(localStorage.getItem(KUNCI_TERAKHIR)) || 0); } catch { /* localStorage tidak tersedia */ }
+    try { terakhir = Math.max(terakhir, Number(localStorage.getItem(KUNCI_TERAKHIR)) || 0); } catch {  }
     if (sekarang - terakhir < JEDA_BUNYI_MS) return;
     terakhirRef.current = sekarang;
-    try { localStorage.setItem(KUNCI_TERAKHIR, String(sekarang)); } catch { /* localStorage tidak tersedia */ }
-    /*
-      play() mengembalikan Promise - penolakannya (NotAllowedError saat user
-      belum berinteraksi dengan halaman) TIDAK tertangkap try/catch, jadi
-      harus ditangkap lewat .catch() supaya tidak jadi uncaught exception.
-    */
+    try { localStorage.setItem(KUNCI_TERAKHIR, String(sekarang)); } catch {  }
     const a = audioRef.current;
     putaranRef.current += 1;
     try {
       a.muted = false;
       a.currentTime = 0;
-      a.play().then(() => { unlockedRef.current = true; }).catch(() => { /* autoplay ditolak - abaikan */ });
-    } catch { /* abaikan - jangan sampai galat audio memutus alur notifikasi */ }
+      a.play().then(() => { unlockedRef.current = true; }).catch(() => {  });
+    } catch {  }
   }, [muted]);
 
   return { muted, toggleMuted, playIfAllowed };

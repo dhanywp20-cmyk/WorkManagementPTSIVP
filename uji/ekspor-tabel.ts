@@ -1,9 +1,3 @@
-/**
- * uji/ekspor-tabel.ts - ekspor daftar bersama (Excel & cetak): susunan baris Excel (judul, filter
- * aktif, kepala, data), lebar kolom, lembar cetak (rata kanan angka, kertas mendatar bila kolom banyak).
- *
- * Jalankan: npx tsx uji/ekspor-tabel.ts
- */
 import { filterAktif, lebarKolom, lembarTabel, susunAoa } from '../lib/ekspor-tabel';
 
 let lulus = 0, gagal = 0;

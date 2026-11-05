@@ -1,9 +1,3 @@
-/**
- * uji/av-hitung-display.ts - BOM videowall LCD & interactive flat panel (lib/av-hitung-display.ts).
- * Angka pembanding dihitung manual.
- *
- * Jalankan: npx tsx uji/av-hitung-display.ts
- */
 import { totalPenawaran } from '../lib/av-hitung-bom';
 import { bomIFP, bomVideowall, dayaVideowall, type MasukanIFP, type MasukanVideowall, saranIFP } from '../lib/av-hitung-display';
 
@@ -23,7 +17,6 @@ cek('1 controller 2 input × 9 output', qty(b1, 'controller') === 1 && b1.find(x
 cek('9 kabel HDMI controller ke panel', qty(b1, 'kabel-sinyal') === 9);
 cek('8 kabel kontrol daisy chain', qty(b1, 'kontrol') === 8);
 cek('spare 0% tidak muncul sebagai baris', !b1.some(x => x.kunci === 'panel-cadangan'));
-//  9 × 180 + 150 + 60 = 1830 W; / 0,9 / 220 = 9,24 A -> 1 jalur MCB 16 A (12,8 A).
 const d1 = dayaVideowall(vw);
 cek('daya 1830 W, 9,24 A, 1 jalur MCB 16 A', d1.totalW === 1830 && Math.abs(d1.arusA - 9.242) < 0.01 && d1.sirkuit === 1);
 cek('stop kontak: (9 panel + 1 player + 1 controller) / 8 = 2', qty(b1, 'stop-kontak') === 2);
@@ -34,7 +27,6 @@ const b2 = bomVideowall({ ...vw, kolom: 4, baris: 4, screen: 2, sinyal: 'loop', 
 cek('32 panel, spare ceil(1,6) = 2', qty(b2, 'panel') === 32 && qty(b2, 'panel-cadangan') === 2);
 cek('floor stand 1 set per videowall (2), bukan per panel', qty(b2, 'pasang') === 2);
 cek('tanpa controller; 2 kabel HDMI ke panel pertama; 30 kabel loop', qty(b2, 'controller') === 0 && qty(b2, 'kabel-sinyal') === 2 && qty(b2, 'loop') === 30);
-//  16 × 300 + 60 = 4860 W -> 24,5 A -> 2 jalur per videowall, 4 total.
 cek('4860 W / videowall -> 2 jalur, 4 total', qty(b2, 'sirkuit') === 4);
 cek('kunci baris unik', new Set(b2.map(x => x.kunci)).size === b2.length);
 

@@ -1,29 +1,22 @@
-/** av-hitung-bom.ts - dipecah dari av-hitung.ts (scripts/pecah-modul.mjs); av-hitung.ts tetap mengekspor ulang semuanya. */
 
-// ── Daftar material (BOM) LED ──────────────────────────────────────────────
 
 export interface MasukanBOM {
   satuan: 'modul' | 'cabinet'; namaLED: string;
-  /** Total unit semua screen. */ unit: number; screen: number;
-  /** Cadangan modul/cabinet (%). */ cadanganUnit: number;
-  /** Receiving card semua screen. */ receivingCard: number; namaRC: string; /** Cadangan receiving card & PSU (%). */ cadanganRC: number;
-  /** Controller / VP per screen, mis. [{ nama: 'VX600', qty: 1 }]. */ controller: { nama: string; qty: number }[];
-  /** Controller cadangan (hot backup). */ controllerCadangan: boolean;
-  /** Daya maksimum semua screen (W) & rating power supply modul (W). */ dayaMaksW: number; psuW: number;
-  /** Port LAN utama & cadangan (semua screen) & panjang kabel controller ke layar (m). */ port: number; portCadangan: number; panjangLAN: number;
-  /** Sirkuit power (semua screen), rating MCB & panjang kabel ke panel (m). */ sirkuit: number; mcb: number; panjangPower: number;
-  /** Ukuran satu screen (m) & baris unit. */ lebarM: number; tinggiM: number; baris: number;
+   unit: number; screen: number;
+   cadanganUnit: number;
+   receivingCard: number; namaRC: string;  cadanganRC: number;
+   controller: { nama: string; qty: number }[];
+   controllerCadangan: boolean;
+   dayaMaksW: number; psuW: number;
+   port: number; portCadangan: number; panjangLAN: number;
+   sirkuit: number; mcb: number; panjangPower: number;
+   lebarM: number; tinggiM: number; baris: number;
 }
 
 export interface BarisBOM { kunci: string; item: string; qty: number; satuan: string; ket: string }
 
-/** Persentase cadangan dibulatkan ke atas, minimal 1 bila persen > 0. */
 export const cadangan = (jumlah: number, persen: number) => (persen > 0 && jumlah > 0 ? Math.max(1, Math.ceil((jumlah * persen) / 100)) : 0);
 
-/**
- * Daftar material LED Videotron. Power supply (beban 80%) dan rangka (hollow tiap batas baris unit +
- * tiang ±0,6 m untuk modul / ±1 m untuk cabinet, sisa potong 10%) adalah perkiraan lapangan.
- */
 export function bomLED(m: MasukanBOM): BarisBOM[] {
   const n = Math.max(1, m.screen);
   const modul = m.satuan === 'modul';
@@ -56,7 +49,6 @@ export function bomLED(m: MasukanBOM): BarisBOM[] {
   return b.filter(x => x.qty > 0);
 }
 
-/** Total penawaran dari daftar barang & harga satuan (Rp). */
 export function totalPenawaran(baris: { kunci: string; qty: number }[], harga: Record<string, number>, ppnPersen: number) {
   const subtotal = baris.reduce((a, x) => a + x.qty * Math.max(0, harga[x.kunci] ?? 0), 0);
   const ppn = Math.round((subtotal * Math.max(0, ppnPersen)) / 100);

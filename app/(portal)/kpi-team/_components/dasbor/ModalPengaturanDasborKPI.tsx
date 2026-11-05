@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalPengaturanDasborKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { createPortal } from 'react-dom';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { KPISettings, DEFAULT_KPI_SETTINGS } from '@/app/(portal)/kpi-team/_components/shared';
@@ -30,7 +29,6 @@ export function ModalPengaturanDasborKPI({ kpiSettings, saveKpiSettings, setKpiS
               <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100">×</button>
             </div>
             <div className="p-6 space-y-5">
-              {/* LC Min Score */}
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="🎓" />Learning Center — Batas Nilai Minimum</label>
                 <div className="flex items-center gap-3">
@@ -41,7 +39,6 @@ export function ModalPengaturanDasborKPI({ kpiSettings, saveKpiSettings, setKpiS
                 </div>
                 <div className="text-sm text-slate-500 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
               </div>
-              {/* RnD Target */}
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="📝" />R&D Tech Note — Target per Tahun</label>
                 <div className="flex items-center gap-3">
@@ -52,7 +49,6 @@ export function ModalPengaturanDasborKPI({ kpiSettings, saveKpiSettings, setKpiS
                 </div>
                 <div className="text-sm text-slate-500 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
               </div>
-              {/* Bobot section */}
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-3 uppercase tracking-wide"><IkonTeks nama="📊" />Bobot Komponen KPI (total harus 100%)</label>
                 <div className="space-y-3">

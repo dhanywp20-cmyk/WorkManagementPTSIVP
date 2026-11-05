@@ -1,0 +1,150 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const akar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const BERKAS = ['projectorSpec', 'projectorLensSpec', 'optionLensList', 'optionLensSpec', 'brightness'];
+const [sumberArg = 'https://download.epson.com.sg/tdc/V272/', versiArg] = process.argv.slice(2);
+const lokal = fs.existsSync(sumberArg) && fs.statSync(sumberArg).isDirectory();
+const versi = versiArg ?? (lokal ? path.basename(sumberArg).replace(/^epson-/, '') : '2.7.2');
+const arsip = lokal ? sumberArg : path.join(akar, 'arsip', 'tdc', `epson-${versi}`);
+const urai = (t) => JSON.parse(t.replace(/^﻿/, ''));
+async function ambil(f) {
+  if (lokal) return urai(fs.readFileSync(path.join(arsip, `${f}.json`), 'utf8'));
+  const r = await fetch(new URL(`static/data/${f}.json`, sumberArg));
+  if (!r.ok) throw new Error(`${f}: HTTP ${r.status}`);
+  const teks = await r.text();
+  fs.mkdirSync(arsip, { recursive: true });
+  fs.writeFileSync(path.join(arsip, `${f}.json`), teks);
+  return urai(teks);
+}
+const [ps, pls, oll, ols, br] = await Promise.all(BERKAS.map(ambil));
+if (!lokal) {
+  fs.writeFileSync(path.join(arsip, 'SUMBER.md'), `# Epson Projector Throw Distance Simulator ${versi}
+
+Diunduh ${new Date().toISOString().slice(0, 10)} dari ${new URL('static/data/', sumberArg)} (${BERKAS.map(f => `${f}.json`).join(', ')}).
+Buat ulang katalog tanpa internet: \`node scripts/impor-epson-tdc.mjs ${path.relative(akar, arsip).split(path.sep).join('/')}\`
+`);
+}
+
+const RASIO = { '16:10': [16, 10], '16:9': [16, 9], '4:3': [4, 3], '17:9': [17, 9], '21:9': [64, 27] };
+const angka = (v) => { const x = Number(String(v ?? '').replace(/[, ]/g, '')); return Number.isFinite(x) ? x : 0; };
+const bulat = (v, d = 6) => Math.round(v * 10 ** d) / 10 ** d;
+const pecahan = (x) => { const v = angka(x); return Math.abs(v) < 1 ? v : v / 100; };
+const GRUP = { 0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 6: 3, 7: 3, 8: 4, 9: 5, 5: 6 };
+const KATEGORI = [
+  { v: 0, l: 'All' }, { v: 1, l: 'Standard / Classroom / Mobile' }, { v: 2, l: 'Short Throw / Ultra Short Throw' }, { v: 3, l: 'Signage / Lighting' },
+  { v: 4, l: 'High Brightness (lens fixed)' }, { v: 5, l: 'High Brightness (optional lenses)' }, { v: 6, l: 'Home Theatre' },
+];
+function resolusiDari(r) {
+  const n = String(r ?? '').replace(/\s+/g, '').toUpperCase();
+  if (n.startsWith('WUXGA')) return 'WUXGA';
+  if (n.startsWith('WXGA')) return 'WXGA';
+  if (n.startsWith('SXGA+')) return 'SXGAP';
+  if (n.startsWith('XGA')) return 'XGA';
+  if (n.startsWith('FULLHD') || n.startsWith('FHD')) return 'FHD';
+  if (n.startsWith('4K')) return '4K';
+  return null;
+}
+const RASIO_RESOLUSI = { WUXGA: '16:10', WXGA: '16:10', SXGAP: '4:3', XGA: '4:3', FHD: '16:9', '4K': '16:9' };
+
+function hull(t) {
+  const p = [...t].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const silang = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const bawah = [], atas = [];
+  for (const q of p) { while (bawah.length >= 2 && silang(bawah.at(-2), bawah.at(-1), q) <= 1e-12) bawah.pop(); bawah.push(q); }
+  for (const q of p.reverse()) { while (atas.length >= 2 && silang(atas.at(-2), atas.at(-1), q) <= 1e-12) atas.pop(); atas.push(q); }
+  return [...bawah.slice(0, -1), ...atas.slice(0, -1)];
+}
+function poligonShift(s) {
+  const vMin = pecahan(s.lensShiftVMin), vMax = pecahan(s.lensShiftVMax), hMin = pecahan(s.lensShiftHMin), hMax = pecahan(s.lensShiftHMax);
+  if (vMin === vMax && hMin === hMax) return null;
+  const hvMin = pecahan(s.lensShiftHvMin), hvMax = pecahan(s.lensShiftHvMax);
+  const I = vMin > 0 ? vMin : vMax < 0 ? vMax : 0;
+  const tengah = hMin === hMax
+    ? [[hMin, vMin], [hMin, vMax]]
+    : [[0, vMin], [hMax, hvMin + I], [hMax, hvMax + I], [0, vMax], [hMin, hvMax + I], [hMin, hvMin + I]];
+  const titik = tengah.flatMap(([h, v]) => [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]].map(([a, b]) => [h + a, v + b]));
+  return hull(titik).flatMap(([x, y]) => [bulat(x, 4), bulat(y, 4)]);
+}
+
+function koefisien(s) {
+  const ar = {};
+  let dMin = Infinity, dMaks = 0;
+  for (let i = 1; i <= 5; i++) {
+    const ra = s[`ratio${i}`];
+    if (!RASIO[ra] || ar[ra]) continue;
+    const aW = angka(s[`s2dWa${i}`]), aT = angka(s[`s2dTa${i}`]);
+    if (!(aW > 0) || !(aT > 0)) continue;
+    const [uw, uh] = RASIO[ra], diagPerLebar = Math.hypot(uw, uh) / uw;
+    const w = [bulat((aW / 100 / 0.0254) * diagPerLebar), bulat(-angka(s[`s2dWb${i}`]) / 100)];
+    const t = [bulat((aT / 100 / 0.0254) * diagPerLebar), bulat(-angka(s[`s2dTb${i}`]) / 100)];
+    const [lo, hi] = w[0] <= t[0] ? [w, t] : [t, w];
+    ar[ra] = [lo[0], hi[0], lo[1], hi[1]];
+    dMin = Math.min(dMin, angka(s[`sizeWMin${i}`]) || Infinity);
+    dMaks = Math.max(dMaks, angka(s[`sizeWMax${i}`]));
+  }
+  return { ar, d: [Number.isFinite(dMin) ? dMin : 0, dMaks] };
+}
+const tinggiPerInci = (ra) => { const [w, h] = RASIO[ra] ?? [16, 10]; return (2.54 * h) / Math.hypot(w, h); };
+
+const brLensa = new Map(br.optionLens.map(x => [`${x.code}|${x.lensId}`, x]));
+const daftarOpsi = new Map(oll.map(x => [x.code, x.lenses]));
+const specOpsi = new Map(ols.map(x => [x.id, x]));
+const specTetap = new Map(pls.map(x => [x.code, x]));
+
+const hasil = [], terlihat = new Set();
+for (const p of ps) {
+  if (terlihat.has(p.name)) continue;
+  const lensa = [];
+  const res = resolusiDari(p.resolution);
+  const tambah = (nama, s, shift, lm, tetapLensa) => {
+    const { ar, d } = koefisien(s);
+    const rasio = Object.keys(ar);
+    if (!rasio.length) return;
+    const pilihan = RASIO_RESOLUSI[res] ?? (tetapLensa && RASIO[s.aspectRatio] ? s.aspectRatio : null);
+    const native = pilihan && ar[pilihan] ? pilihan : rasio[0];
+    const pg = poligonShift(shift);
+    let off = 0, khusus = false;
+    if (!pg) {
+      off = pecahan(shift.lensShiftVMin);
+      const i1 = [1, 2, 3, 4, 5].find(i => s[`ratio${i}`] === native) ?? 1;
+      const hpi = tinggiPerInci(native);
+      if (tetapLensa && p.type === 0 && angka(s[`tv1${i1}`]) && angka(s[`tv2${i1}`]) && angka(s[`wv2${i1}`])) off = angka(s[`wv2${i1}`]) / hpi - 0.5;
+      if (p.category === 4) {
+        const D = (d[0] + d[1]) / 2, h = hpi * D;
+        off = (h / 2 + angka(s[`v1bWa${i1}`]) * D + angka(s[`v1bWb${i1}`]) - angka(s.mu) / 10) / h;
+        khusus = true;
+      }
+    }
+    if (p.category === 4) khusus = true;
+    const zoom = String(s.throwRatio ?? '').includes('-') || Object.values(ar).some(k => Math.abs(k[1] - k[0]) > 1e-6);
+    lensa.push({
+      n: nama, z: zoom ? 1 : 0, ar: Object.fromEntries(Object.entries(ar).sort(([a], [b]) => (a === native ? -1 : b === native ? 1 : 0))),
+      pg, off: bulat(off, 4), ...(khusus ? { k: 1 } : {}), d, ket: String(s.throwRatio ?? '').slice(0, 60), ...(lm ? { lm } : {}),
+    });
+  };
+  if (p.lensExchange) {
+    for (const id of daftarOpsi.get(p.code) ?? []) {
+      const s = specOpsi.get(id);
+      if (!s) continue;
+      const b = brLensa.get(`${p.code}|${id}`);
+      tambah(String(s.name ?? id).replace(/\s+V\d+H\w+$/, ''), s, b ?? s, b ? angka(b.brightness) : 0, false);
+    }
+  } else {
+    const s = specTetap.get(p.code);
+    if (s) tambah('Lensa bawaan', s, s, 0, true);
+  }
+  if (!lensa.length) continue;
+  terlihat.add(p.name);
+  const native = Object.keys(lensa[0].ar)[0];
+  const kontras = angka(String(p.contrast ?? '').split(':')[0]);
+  hasil.push({
+    n: p.name, kat: GRUP[p.category] ?? 1, a: native, r: res, lm: angka(p.whiteNormal),
+    ...(kontras > 1 ? { c: kontras } : {}), as: [...new Set(lensa.flatMap(l => Object.keys(l.ar)))], l: lensa,
+  });
+}
+hasil.sort((x, y) => x.n.localeCompare(y.n));
+const keluar = path.join(akar, 'lib', 'data', 'epson-tdc.json');
+fs.writeFileSync(keluar, JSON.stringify({ versi, sumber: 'Epson Projector Throw Distance Simulator', merek: 'Epson', kategori: KATEGORI, model: hasil }));
+console.log(`${lokal ? `arsip ${arsip}` : `situs Epson -> arsip ${arsip}`}: ${hasil.length} model, ${hasil.reduce((a, h) => a + h.l.length, 0)} lensa -> ${keluar} (${(fs.statSync(keluar).size / 1024).toFixed(0)} KB)`);

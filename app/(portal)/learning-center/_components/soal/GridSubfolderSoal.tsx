@@ -1,6 +1,5 @@
 'use client';
 
-/** GridSubfolderSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { supabase, Question, FolderNode, DialogState } from '../shared';
 import { getFolderColor } from '../QuestionsPage';
 
@@ -44,7 +43,6 @@ export function GridSubfolderSoal({ currentFolderNode, load, questions, selected
                       </svg>
                     </div>
                   </button>
-                  {/* Subfolder action buttons */}
                   <div data-tulis className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                     <button aria-label="Ubah nama subfolder"
                       onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
@@ -57,7 +55,6 @@ export function GridSubfolderSoal({ currentFolderNode, load, questions, selected
                     <button aria-label="Hapus semua soal subfolder"
                       onClick={e => {
                         e.stopPropagation();
-                        // Delete all questions in this subfolder
                         const sfQIds = sfNode.materials.map(m => m.id);
                         const sfQCount = questions.filter(q => sfQIds.includes(q.material_id)).length;
                         setDialog({

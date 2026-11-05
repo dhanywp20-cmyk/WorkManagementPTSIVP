@@ -1,4 +1,3 @@
-/** Referensi produk LED (modul, sending card, video processor, brand): bawaan, simpanan perangkat & tim. */
 import { BRAND_LED, MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR } from '@/lib/av-hitung';
 import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { useEffect, useState } from 'react';
@@ -16,7 +15,7 @@ export function useReferensiLED() {
   const [pesan, setPesan] = useState('');
 
   useEffect(() => {
-    try { const s = localStorage.getItem(KUNCI); if (s) { const j = bersihkanReferensiLED(JSON.parse(s)); if (j) setLokal(j); } } catch { /* abaikan */ }
+    try { const s = localStorage.getItem(KUNCI); if (s) { const j = bersihkanReferensiLED(JSON.parse(s)); if (j) setLokal(j); } } catch {  }
     let hidup = true;
     fetch('/api/tools-team/referensi-led', { credentials: 'include', cache: 'no-store' })
       .then(r => (r.ok ? r.json() : null))
@@ -24,7 +23,7 @@ export function useReferensiLED() {
         if (!hidup || !j?.ok) return;
         setTim(j.referensi ?? null); setBolehSimpanTim(!!j.bolehUbah); setInfoTim({ oleh: j.oleh ?? null, pada: j.diubahPada ?? null });
       })
-      .catch(() => { /* luring: lapis lokal / bawaan tetap jalan */ });
+      .catch(() => {  });
     return () => { hidup = false; };
   }, []);
 
@@ -32,10 +31,9 @@ export function useReferensiLED() {
   const sumber: 'lokal' | 'tim' | 'bawaan' = lokal ? 'lokal' : tim ? 'tim' : 'bawaan';
   const tulisLokal = (r: RefLED | null) => {
     setLokal(r);
-    try { if (r) localStorage.setItem(KUNCI, JSON.stringify(r)); else localStorage.removeItem(KUNCI); } catch { /* abaikan */ }
+    try { if (r) localStorage.setItem(KUNCI, JSON.stringify(r)); else localStorage.removeItem(KUNCI); } catch {  }
   };
   const ubah = (r: RefLED) => { tulisLokal(r); setPesan(''); };
-  /** Buang draf lokal - kembali ke referensi tim (atau bawaan bila belum ada). */
   const reset = () => { tulisLokal(null); setPesan(''); };
 
   const panggil = async (metode: 'PUT' | 'DELETE', body?: unknown) => {

@@ -5,11 +5,6 @@ import { isianProyek } from '@/lib/checklist-isian';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * /api/project-progress
- *   GET  -> proyek yang boleh dilihat akun ini + angka ringkas
- *   POST -> buat proyek baru (khusus admin)
- */
 export async function GET(request: NextRequest) {
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
@@ -31,7 +26,6 @@ export async function POST(request: NextRequest) {
   const hasil = isianProyek(body);
   if ('galat' in hasil) return galat(hasil.galat);
 
-  // Divisi selalu mengikuti akun Sales yang dipilih - tidak diketik manual.
   let sales_division: string | null = null;
   if (hasil.isian.sales_name) {
     const { data: u } = await s.db.from('users').select('sales_division')

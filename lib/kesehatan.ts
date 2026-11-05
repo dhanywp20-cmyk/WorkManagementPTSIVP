@@ -1,13 +1,7 @@
-/**
- * lib/kesehatan.ts - bentuk data & aturan peringatan halaman Kesehatan Sistem.
- * Murni (tanpa jaringan) supaya aturannya bisa diuji: uji/kesehatan.ts.
- */
 import type { JejakCron } from './cron-catat';
 
-/** Batas paket Supabase Free (byte). */
 export const BATAS_DB = 500 * 1024 * 1024;
 export const BATAS_STORAGE = 1024 * 1024 * 1024;
-/** Cron Vercel harian dianggap macet bila tidak tercatat jalan > 26 jam. */
 export const CRON_MACET_JAM = 30;
 export const CRON_VERCEL: { nama: string; label: string; jadwal: string }[] = [
   { nama: 'escalate', label: 'Eskalasi ticket idle', jadwal: '08:00 WIB' },
@@ -23,7 +17,6 @@ export interface DataKesehatan {
     pemicu_http: { trigger: string; tabel: string; fungsi: string }[];
     fungsi_berahasia: string[];
   } | null;
-  /** Fungsi kesehatan_sistem() belum ada (migrasi 036 belum dijalankan). */
   sqlBelum: boolean;
   cronVercel: JejakCron;
   ai: { jam24: number; hari7: number };
@@ -31,13 +24,11 @@ export interface DataKesehatan {
   apkTerakhir: { versi: string; diunggah_pada: string } | null;
   kanal: Record<string, boolean> | null;
   env: { serviceRole: boolean; cronSecret: boolean };
-  /** Galat di layar pengguna 7 hari terakhir (migrasi 048), terbaru dulu. null = tabel belum ada. */
   galatKlien: { pesan: string; jalur: string | null; sumber: string | null; jumlah: number; terakhir: string; hari: string }[] | null;
 }
 
 export interface Peringatan { tingkat: 'merah' | 'kuning'; teks: string }
 
-/** Daftar peringatan dari data kesehatan, paling gawat lebih dulu. */
 export function ringkasKesehatan(d: DataKesehatan, sekarang: number): Peringatan[] {
   const p: Peringatan[] = [];
   if (!d.env.serviceRole) p.push({ tingkat: 'merah', teks: 'SUPABASE_SERVICE_ROLE_KEY belum diisi di Vercel - cron & route server berjalan tanpa hak penuh.' });
@@ -47,8 +38,6 @@ export function ringkasKesehatan(d: DataKesehatan, sekarang: number): Peringatan
   if (galat24 >= 20) p.push({ tingkat: 'kuning', teks: `${galat24} galat di layar pengguna dalam 24 jam - lihat kartu "Galat di layar pengguna".` });
   const s = d.sistem;
   if (s) {
-    //  kesehatan_sistem sendiri memuat teks pencariannya ('%api.fonnte.com%') - dulu ia menandai DIRINYA SENDIRI
-    //  sebagai "fungsi berahasia", sehingga alert merah palsu terkirim ke Telegram admin setiap hari.
     const berahasia = s.fungsi_berahasia.filter(f => f !== 'kesehatan_sistem');
     if (berahasia.length) p.push({ tingkat: 'merah', teks: `Fungsi DB masih menyimpan token/kunci tertulis: ${berahasia.join(', ')}. Jalankan migrasi 035 lalu rotate token.` });
     if (s.pemicu_http.length) p.push({ tingkat: 'merah', teks: `Trigger memanggil HTTP keluar langsung dari DB (bisa WA dobel / di luar satu pintu): ${s.pemicu_http.map(t => `${t.trigger} (${t.tabel})`).join(', ')}.` });

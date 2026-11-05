@@ -1,10 +1,3 @@
-/**
- * uji/desain3d-banyak.ts - pilih banyak benda Desain 3D & perangkat share nirkabel: toggle pilihan,
- * ikut geser/putar benda utama, skala, ukuran sama, rata tepi, duplikat; nirkabel = tanpa kabel,
- * tujuan share terdekat / pilihan, busur garis share.
- *
- * Jalankan: npx tsx uji/desain3d-banyak.ts
- */
 import { bendaBaru, busurShare, duplikatBanyak, ikutUtama, jalurKabel, jalurShare, nirkabel, putarDi, rataBanyak, skalaBanyak, togglePilih, tujuanShare, ukuranBanyak, type Benda } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;

@@ -1,6 +1,5 @@
 'use client';
 
-/** useGabungHapusProyek - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { IncentiveProjectRow, satukanProyek, type KandidatGabung, setProyekDikeluarkan, tahapanSudahJalan } from './calc';
 import { logAudit } from '@/lib/audit';
 import { useState } from 'react';
@@ -48,15 +47,6 @@ export function useGabungHapusProyek(k: GabungHapusProyekKonteks) {
 
   const mintaKonfirmasiHapus = async (target: IncentiveProjectRow[]) => {
     if (!target.length) return;
-    /*
-      Tahapan yang sudah diproses / dibayar MENGUNCI proyeknya.
-
-      Rekap yang sudah diterima Finance memuat proyek ini. Kalau proyeknya
-      hilang dari platform, angka pada rekap itu tidak bisa dijelaskan lagi -
-      dan yang paling merepotkan, tidak ada yang tahu selisihnya berasal dari
-      mana. Diperiksa ke basis data, bukan ke daftar di layar, karena layar
-      bisa tertinggal dari keadaan sebenarnya.
-    */
     const { data: terkunci } = await tahapanSudahJalan(target.map(p => p.id));
     if (terkunci.length) {
       const idTerkunci = new Set(terkunci.map(t => t.project_id));
@@ -77,8 +67,6 @@ export function useGabungHapusProyek(k: GabungHapusProyekKonteks) {
     setMenghapus(false);
     if (error) { notify('error', 'Gagal mengeluarkan: ' + error.message); return; }
 
-    // Dicatat satu per satu, bukan sebagai satu baris "3 project dikeluarkan":
-    // yang perlu bisa ditelusuri kelak adalah proyek MANA, bukan berapa banyak.
     for (const p of konfirmHapus) {
       void logAudit({
         user_id: (currentUser?.id as string) ?? '', user_name: (currentUser?.full_name as string) ?? '',

@@ -15,11 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password minimal 8 karakter.' }, { status: 400 });
     }
 
-    // Otorisasi: cegah account-takeover (IDOR)
-    // userId datang dari body. Tanpa ikatan ke session, user login mana pun
-    // bisa mengubah password user lain (apalagi karena currentPassword opsional).
-    // Aturan: hanya boleh ubah password DIRI SENDIRI, kecuali admin, atau bila
-    // currentPassword yang benar disertakan (diverifikasi di bawah).
     const caller = await getSessionUser(request);
     if (!caller) {
       return NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 });
@@ -67,29 +62,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gagal menyimpan password baru.' }, { status: 500 });
     }
 
-    // Invalidate semua session user ini (force re-login)
     await supabase.from('user_sessions').delete().eq('user_id', userId);
-    // Token integrasi (DIWAYPI) ikut dicabut - sama alasannya dengan sesi.
     await cabutSemuaToken(supabase, userId);
 
-    /*
-      Bersihkan lockout brute-force (login/route.ts) UNTUK USERNAME INI.
-
-      Lockout dihitung dari baris login_attempts (success=false) 15 menit
-      terakhir, sepenuhnya lepas dari tabel user_credentials. Sebelum baris
-      ini, admin yang membantu reset password user yang lupa password (dan
-      sudah mencoba login berkali-kali sebelumnya, memicu lockout 5x gagal)
-      akan melihat notif "Password berhasil diubah" - BENAR, password memang
-      berubah - tapi user itu tetap terkunci sampai 15 menit lewat, karena
-      reset password tidak pernah menyentuh baris login_attempts lamanya.
-      Saat kondisinya mendesak (mis. di tengah acara/assessment), 15 menit
-      itu tidak ada gantinya - tidak ada tombol lain untuk membuka lockout.
-
-      Dihapus HANYA baris punya username ini (bukan per-IP) - lockout per-IP
-      sengaja dibiarkan (ambang 30, berbagi 1 kantor) karena tidak spesifik
-      ke satu akun dan mereset semuanya lewat sini akan melemahkan proteksi
-      brute-force untuk akun lain di IP yang sama.
-    */
     const { data: targetUser } = await supabase
       .from('users').select('username').eq('id', userId).maybeSingle();
     if (targetUser?.username) {

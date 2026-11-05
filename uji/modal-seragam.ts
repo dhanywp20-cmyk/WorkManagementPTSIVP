@@ -1,13 +1,3 @@
-/**
- * uji/modal-seragam.ts - semua popup memakai SATU wujud: kerangka Modal bersama, atau (untuk kerangka khusus
- * seperti form tiga kolom / detail dua panel) KepalaModal + latar & kartu yang sama nilainya.
- *
- * Dulu tiap menu punya latar (bg-black/40..70), kartu (rounded-2xl/3xl), kepala bergradasi berwarna sendiri
- * (merah Ticketing, cyan Schedule, teal Design, ungu Review, merah-ungu Incentive, dst) dan tombol kirim
- * berwarna per menu. Permintaan pemilik: tidak ada menu yang punya tema/pola sendiri.
- *
- * Jalankan: npm test -- modal-seragam
- */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
@@ -19,8 +9,6 @@ function semua(dir: string): string[] {
     return statSync(p).isDirectory() ? semua(p) : p.endsWith('.tsx') ? [p] : [];
   });
 }
-//  Pengecualian yang disengaja: layar masuk adalah halaman penuh (bukan popup), dan hero Profil memakai warna
-//  MEREK (bukan warna menu) untuk menyapa pemilik akun - tombol tutupnya putih karena duduk di atas hero itu.
 const KECUALI = ['_kerangka/LayarMasuk.tsx'];
 const KECUALI_TUTUP = ['dashboard/_components/modal-profil.tsx'];
 const ditulis = (f: string, daftar: string[]) => daftar.some(k => f.replace(/\\/g, '/').endsWith(k));
@@ -36,7 +24,6 @@ const pakaiGradien = berkas.filter(x => /<SubmitFormButton[\s\S]{0,400}?gradient
 cek('tidak ada menu yang memberi warna sendiri pada tombol kirim form', pakaiGradien.length === 0, pakaiGradien.join(', '));
 
 console.log('\n2. Popup tidak lagi merakit latar & kartu sendiri');
-//  Baris overlay dialog: role="dialog" + fixed inset-0 di satu tag pembuka.
 const latarSendiri = berkas.filter(x => /role="dialog"[^>]*className="fixed inset-0[^"]*bg-black\/\d0/.test(x.s) || /className="fixed inset-0[^"]*bg-black\/\d0[^"]*"[^>]*role="dialog"/.test(x.s)).map(x => x.f);
 cek('tidak ada latar dialog bg-black/NN sendiri', latarSendiri.length === 0, latarSendiri.join(', '));
 const kartuLama = berkas.filter(x => /role="dialog"/.test(x.s) && /bg-white(?:\/9[05])?(?: backdrop-blur-(?:md|sm))? rounded-(?:2xl|3xl) shadow-2xl/.test(x.s)).map(x => x.f);

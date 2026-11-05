@@ -1,5 +1,4 @@
 'use client';
-/** Tab sub menu LED Videotron: Calculator LED, Screen & Power Connection, Bandingkan Pitch, Konten & Pola Uji. */
 import { Cable, Calculator, GitCompareArrows, Grid3x3, Zap } from 'lucide-react';
 import type { AlatLED } from './alat';
 

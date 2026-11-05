@@ -1,21 +1,3 @@
-/*
-  UJI: sel SUM() di rekap Excel harus membawa hasilnya sendiri.
-
-  Bug nyata: baris TOTAL dan GRAND TOTAL di rekap Incentive tampil kosong.
-  Sebabnya ExcelJS menulis `{ formula: 'SUM(...)' }` TANPA nilai cache -
-  sah menurut format .xlsx (Excel/Google Sheets menghitung ulang saat file
-  dibuka), tapi banyak pembaca .xlsx ringan (pratinjau file manager, viewer
-  di aplikasi chat, sebagian aplikasi mobile) hanya menampilkan cache-nya apa
-  adanya tanpa menjalankan mesin formula - dan cache yang kosong tampil
-  sebagai sel kosong.
-
-  Uji ini membuktikan dengan file .xlsx SUNGGUHAN (ditulis lalu dibaca
-  ulang - bukan cuma memeriksa objek JS di memori) bahwa pola lama memang
-  menghasilkan cache kosong, dan pola yang dipakai sekarang (formula + result)
-  tidak.
-
-    node uji/sum-cell-xlsx.mjs
-*/
 import ExcelJS from 'exceljs';
 import fs from 'fs';
 import os from 'os';
@@ -63,8 +45,6 @@ console.log('\n3. Angka besar & nol tetap membawa cache dengan benar');
   ok('Angka besar (Rp 8.300.001) tersimpan utuh', besar.result === 8_300_001);
 
   const nol = await tulisBacaUlang(sumCell('SUM(A1:A2)', 0));
-  //  0 itu falsy - kalau kode menulis `hasil || undefined` alih-alih
-  //  `hasil` apa adanya, GRAND TOTAL yang kebetulan nol akan balik kosong lagi.
   ok('Total nol TETAP tercatat sebagai 0, bukan kosong lagi', nol.result === 0);
 }
 

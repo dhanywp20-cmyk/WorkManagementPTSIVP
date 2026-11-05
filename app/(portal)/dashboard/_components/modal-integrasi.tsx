@@ -1,29 +1,5 @@
 'use client';
 
-/**
- * Admin Panel -> Integrations. Mengatur kanal notifikasi (In-App, WhatsApp,
- * Telegram) dan event mana lewat kanal mana.
- *
- * TOKEN DIATUR DI SINI, tapi TIDAK LEWAT app_settings.
- *
- * app_settings dibaca lewat PostgREST memakai anon key, dan anon key ikut
- * ter-bundle ke setiap peramban - siapa pun bisa mengambilnya dari DevTools
- * lalu membaca tabelnya langsung, tanpa lewat halaman ini dan tanpa perlu
- * jadi admin. Menu yang disembunyikan tidak menghalangi apa pun. Persis
- * begitulah token WhatsApp sebelumnya terbaca.
- *
- * Karena itu token tinggal di tabel rahasia_integrasi, yang RLS-nya menyala
- * TANPA policy sama sekali - anon ditolak seluruhnya, hanya service_role di
- * sisi server yang bisa masuk (sql/rahasia-integrasi.sql). Halaman ini
- * menyentuhnya lewat /api/integrasi/rahasia, yang memeriksa cookie sesi
- * pemanggil ke tabel user_sessions sebelum melakukan apa pun.
- *
- * Akibatnya yang penting: nilai token TIDAK PERNAH dikirim balik ke peramban.
- * Yang tampil di layar cuma penanda seperti "…4f2a". Membuka DevTools,
- * memeriksa Network, atau membaca state React tidak akan menemukan tokennya -
- * memang tidak pernah sampai ke sana.
- */
-
 import { useEffect, useState } from 'react';
 import {
   KANAL, bacaPengaturan, simpanPengaturan, kanalUntuk,
@@ -48,18 +24,6 @@ export const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   reminder: 'Reminder', schedule: 'Jadwal', project: 'Project', system: 'Sistem',
 };
 
-/*
-  Pemilih model - daftarnya DITANYAKAN ke Google, tidak ditulis di kode.
-
-  Sebelumnya ini isian teks bebas. Nama model yang salah tidak gagal saat
-  disimpan; ia gagal nanti, saat seseorang menekan tombol AI, dengan pesan 404
-  yang tidak menyebut nama mana yang keliru. Daftar model juga berbeda antar
-  kunci dan antar wilayah, jadi daftar tertutup di kode pun akan menawarkan
-  nama yang tidak ada pada kunci ini.
-
-  Isian teks tetap ada, tapi hanya bila daftarnya tidak bisa dibaca - tanpa
-  jalan apa pun, token yang bermasalah membuat modelnya terkunci.
-*/
 export function PilihModel({ nilai, profil, onGanti, warna }: {
   nilai: string;
   profil?: 'penilai';
@@ -107,9 +71,6 @@ export function PilihModel({ nilai, profil, onGanti, warna }: {
       <select value={nilai} onChange={e => onGanti(e.target.value)}
         aria-label="Model AI"
         className={`w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none ${fokus}`}>
-        {/* Model tersimpan yang tidak ada di daftar tetap ditampilkan - kalau
-            tidak, ia diam-diam tergantikan baris pertama dan pemakainya
-            mengira itulah yang selama ini terpakai. */}
         {nilai && !daftar.some(m => m.id === nilai) && (
           <option value={nilai}>{nilai} — tidak ada di daftar</option>
         )}
@@ -135,23 +96,9 @@ export function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () =>
 
 export interface StatusRahasia {
   terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string;
-  /** true = nilainya masih berasal dari variabel lingkungan, belum dari Admin Panel. */
   dariEnv?: boolean;
 }
 
-/*
-  ── STATUS KONEKSI SEBAGAI KEADAAN YANG TERLIHAT ────────────────────────────
-
-  Sebelum ini satu-satunya cara mengetahui sebuah kanal hidup atau tidak adalah
-  menekan "Tes Koneksi" lalu membaca kalimat yang muncul di DASAR panel - jauh
-  di bawah tombolnya, sering di luar layar. Menekan tombol dan tidak melihat
-  apa pun berubah tidak bisa dibedakan dari tombol yang rusak, dan itulah yang
-  dirasakan: "klik test pun tidak ada notif apa-apa".
-
-  Sekarang keadaannya dibaca sendiri saat panel dibuka dan ditampilkan sebagai
-  lencana di kepala tiap kartu, dan hasil tiap tombol muncul DI KARTU ITU
-  JUGA - di tempat mata sedang menatap.
-*/
 export type StatusKoneksi =
   | { keadaan: 'memuat' }
   | { keadaan: 'terhubung'; info: string }
@@ -177,12 +124,6 @@ export function LencanaStatus({ status }: { status: StatusKoneksi }) {
   );
 }
 
-/**
- * Hasil sebuah tombol, ditampilkan tepat di bawah tombolnya.
- *
- * Ini yang paling menentukan: umpan balik yang benar tapi berada di luar
- * layar sama tidak bergunanya dengan tidak ada umpan balik sama sekali.
- */
 export function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
   if (!pesan) return null;
   const ok = pesan.tipe === 'ok';
@@ -201,7 +142,6 @@ export function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
   );
 }
 
-/** Penanda bisa/tidak dijangkau di tabel Jangkauan Tim. */
 export function Cek({ ya }: { ya?: boolean }) {
   return (
     <span className={`inline-grid place-items-center w-[19px] h-[19px] rounded-full text-[11px] font-black ${
@@ -211,12 +151,6 @@ export function Cek({ ya }: { ya?: boolean }) {
   );
 }
 
-/**
- * Satu blok pengaturan token. Kolom isiannya SELALU berangkat kosong - yang
- * tersimpan diwakili penanda di sebelahnya. Menampilkan nilai tersimpan di
- * kolom isian berarti mengirimkannya ke peramban, dan itu membatalkan seluruh
- * maksud tabel rahasia_integrasi.
- */
 export function BlokToken({
   judul, kunci, status, petunjuk, onSimpan, onHapus,
 }: {
@@ -230,10 +164,6 @@ export function BlokToken({
     <div className="rounded-lg border border-slate-200 p-2.5 bg-slate-50/60">
       <div className="flex items-center gap-2 mb-1.5">
         <span className="text-[11px] font-bold text-slate-600 flex-1">{judul}</span>
-        {/* Tiga keadaan, bukan dua. Token yang masih berasal dari variabel
-            lingkungan itu AKTIF - menampilkannya sebagai "belum diisi" membuat
-            admin mengira fiturnya mati, lalu mengisi ulang token baru padahal
-            yang lama masih dipakai dan sah. */}
         {status?.terisi && status.dariEnv ? (
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700"
             title="Nilai bawaan dari variabel lingkungan server. Sudah aktif — isi di sini hanya bila ingin menggantinya.">
@@ -259,10 +189,6 @@ export function BlokToken({
           className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40 flex-shrink-0">
           Simpan
         </button>
-        {/* Hapus hanya untuk nilai yang memang TERSIMPAN di basis data.
-            Token bawaan dari variabel lingkungan tidak bisa dihapus dari sini -
-            tombolnya akan tampak berhasil lalu tokennya tetap ada, dan itu
-            jenis kebohongan kecil yang membuat orang berhenti percaya layar. */}
         {status?.terisi && !status.dariEnv && (
           <button type="button" disabled={sibuk}
             onClick={async () => { setSibuk(true); await onHapus(); setSibuk(false); }}
@@ -289,34 +215,19 @@ export function IntegrasiInline() {
   const [ujiJalan, setUjiJalan] = useState<string | null>(null);
   const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
   const [waTujuan, setWaTujuan] = useState('');
-  /** Status koneksi per kanal, dibaca sendiri saat panel dibuka. */
   const [koneksi, setKoneksi] = useState<Record<'telegram' | 'whatsapp', StatusKoneksi>>({
     telegram: { keadaan: 'memuat' }, whatsapp: { keadaan: 'memuat' },
   });
-  /** Pesan hasil tombol, per kartu - supaya muncul di tempat tombolnya. */
   const [pesanKanal, setPesanKanal] = useState<Record<string, PesanKotak | null>>({});
-  /** Percakapan yang terdeteksi menyapa bot - hasil tombol "Deteksi Chat ID". */
   const [chatTerdeteksi, setChatTerdeteksi] = useState<{ id: string; nama: string; jenis: string }[] | null>(null);
   const [deteksiJalan, setDeteksiJalan] = useState(false);
-  /**
-   * Bagian yang sedang dibuka.
-   *
-   * Dulu seluruh isi layar ini satu gulungan panjang: saklar kanal, WhatsApp,
-   * Telegram, lalu pengaturan AI Learning Center yang sama sekali bukan urusan
-   * notifikasi. Akibatnya hal yang paling sering disentuh terdorong jauh ke
-   * bawah, dan tombol Simpan-nya lebih jauh lagi.
-   */
   const [seksi, setSeksi] = useState<'kanal' | 'wa' | 'tg' | 'push' | 'tim' | 'ai'>('kanal');
-  /** Push notification asli (aplikasi/PWA) - status kunci VAPID + jumlah perangkat terdaftar. */
   const [pushInfo, setPushInfo] = useState<{ aktif: boolean; jumlahPerangkat: number } | null>(null);
   const [pushMemuat, setPushMemuat] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [pushPesan, setPushPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
-  /** Siapa yang benar-benar bisa dijangkau lewat kanal apa. */
   const [tim, setTim] = useState<{ nama: string; tim: string; jabatan: string; wa: boolean; tg: boolean }[]>([]);
-  /** Penyaring matriks - 22 baris terlalu banyak untuk dipindai dengan mata. */
   const [cariEvent, setCariEvent] = useState('');
-  /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
   const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
   const [penilai, setPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
 
@@ -325,10 +236,9 @@ export function IntegrasiInline() {
       const r = await fetch('/api/push/setup', { credentials: 'include' });
       const j = await r.json() as { ok?: boolean; aktif?: boolean; jumlahPerangkat?: number };
       if (j?.ok) setPushInfo({ aktif: !!j.aktif, jumlahPerangkat: j.jumlahPerangkat ?? 0 });
-    } catch { /* diam - kartu akan tampil "belum diketahui" */ }
+    } catch {  }
   };
 
-  /** aktifkan=true untuk penyalaan pertama, false untuk "Generate Ulang Kunci" (force). */
   const aktifkanPushServer = async (paksa: boolean) => {
     setPushMemuat(true);
     setPushPesan(null);
@@ -353,16 +263,9 @@ export function IntegrasiInline() {
       const r = await fetch('/api/integrasi/rahasia', { credentials: 'include' });
       const j = await r.json() as { ok?: boolean; status?: Record<string, StatusRahasia> };
       if (j?.ok && j.status) setRahasia(j.status);
-    } catch { /* diam - blok token akan tampil "belum diisi" */ }
+    } catch {  }
   };
 
-  /**
-   * Membaca keadaan sebuah kanal tanpa mengirim pesan ke siapa pun.
-   *
-   * Dipanggil saat panel dibuka dan setiap kali tokennya berubah, supaya
-   * lencana di kepala kartu selalu menggambarkan keadaan sekarang - bukan
-   * keadaan saat terakhir kali seseorang ingat menekan Tes Koneksi.
-   */
   const cekKoneksi = async (kanal: 'telegram' | 'whatsapp') => {
     setKoneksi(s => ({ ...s, [kanal]: { keadaan: 'memuat' } }));
     try {
@@ -383,12 +286,6 @@ export function IntegrasiInline() {
     }
   };
 
-  /**
-   * Jangkauan tim: siapa punya nomor WA, siapa sudah menghubungkan Telegram.
-   *
-   * Ini yang sebelumnya tidak terjawab di mana pun - "kenapa si anu tidak
-   * dapat notifikasi" hanya bisa dijawab dengan membuka Supabase.
-   */
   const muatTim = async () => {
     const { data } = await supabase.from('users')
       .select('full_name, team_type, jabatan, phone_number, telegram_chat_id')
@@ -430,14 +327,11 @@ export function IntegrasiInline() {
                      : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menyimpan token.' });
       if (j?.ok) {
         await muatRahasia();
-        // Token baru = keadaan koneksi berubah. Tanpa ini lencananya masih
-        // menunjukkan hasil pengecekan token yang LAMA.
         await segarkanKoneksiUntuk(kunci);
       }
     } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
   };
 
-  /** Kunci rahasia mana milik kanal mana - dipakai untuk menyegarkan lencana. */
   const segarkanKoneksiUntuk = async (kunci: string) => {
     if (kunci.startsWith('telegram.')) await cekKoneksi('telegram');
     else if (kunci.startsWith('whatsapp.')) await cekKoneksi('whatsapp');
@@ -462,10 +356,6 @@ export function IntegrasiInline() {
   };
 
   const toggleEvent = (key: string, k: Kanal) => ubah(x => {
-    //  Nilai awal diambil dari kanal yang BERLAKU sekarang (termasuk bawaan),
-    //  bukan dari x.perEvent yang mungkin masih kosong. Tanpa ini, klik
-    //  pertama pada event yang belum pernah disunting akan menghapus seluruh
-    //  kanal bawaannya alih-alih mengubah satu.
     const kini = x.perEvent[key] ?? (KATALOG_EVENT.find(e => e.key === key)?.bawaanKanal as Kanal[]) ?? [];
     const baru = kini.includes(k) ? kini.filter(v => v !== k) : [...kini, k];
     return { ...x, perEvent: { ...x.perEvent, [key]: baru } };
@@ -473,8 +363,6 @@ export function IntegrasiInline() {
 
   const simpanSekarang = async () => {
     setSimpan(true);
-    // Keduanya disimpan sekaligus. Tombol Simpan yang hanya menyimpan sebagian
-    // isi layar adalah cara paling mudah kehilangan pengaturan tanpa sadar.
     const [r, rAi] = await Promise.all([simpanPengaturan(p), simpanPengaturanAI(ai), simpanPengaturanPenilai(penilai)]);
     setSimpan(false);
     const gagal = !r.ok ? r.pesan : !rAi.ok ? rAi.pesan : null;
@@ -507,12 +395,7 @@ export function IntegrasiInline() {
       const hasil: PesanKotak = j?.ok
         ? { tipe: 'ok', teks: berhasil }
         : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal, tanpa keterangan dari server.' };
-      //  Ditaruh di kartunya, BUKAN hanya di dasar panel: tombolnya ada di
-      //  tengah daftar yang panjang, jadi jawaban di dasar panel sering tidak
-      //  terlihat sama sekali dan tombolnya terasa seperti tidak berfungsi.
       setPesanKanal(s => ({ ...s, [kanal]: hasil }));
-      // 'cek' otomatis memperbarui lencana; 'kirim' yang berhasil juga
-      // membuktikan kanalnya hidup.
       if (aksi === 'cek') {
         setKoneksi(s => ({
           ...s,
@@ -529,13 +412,6 @@ export function IntegrasiInline() {
     setUjiJalan(null);
   };
 
-  /**
-   * Membacakan percakapan yang sudah menyapa bot, beserta id-nya.
-   *
-   * Menggantikan petunjuk "kirim /id ke bot": bot BotFather tidak menjawab
-   * perintah apa pun sampai ada yang menuliskan pemrosesnya, dan platform ini
-   * tidak punya. Lihat catatan panjang di app/api/notifikasi/telegram/route.ts.
-   */
   const deteksiChat = async () => {
     setDeteksiJalan(true);
     setPesanKanal(s => ({ ...s, telegram: null }));
@@ -569,22 +445,6 @@ export function IntegrasiInline() {
     const q = cariEvent.trim().toLowerCase();
     return !q || `${label} ${kunci}`.toLowerCase().includes(q);
   };
-
-  /*
-    ── SUSUNAN LAYAR ───────────────────────────────────────────────────────
-
-    Sebelumnya satu gulungan panjang: saklar kanal, kartu WhatsApp, kartu
-    Telegram, lalu dua blok pengaturan AI Learning Center - yang sama sekali
-    bukan urusan notifikasi tapi ikut menumpuk di sini. Tombol Simpan ada di
-    dasar semuanya, dan hasil tombol uji ditulis di sebelahnya, jadi menekan
-    "Tes Koneksi" di tengah layar tidak terlihat menghasilkan apa pun.
-
-    Sekarang: satu strip kesehatan di atas (menjawab "tim saya bisa dijangkau
-    tidak?" sebelum satu pun setelan dibuka), lalu rail bagian di kiri dan
-    isinya di kanan. Matriks Event -> Kanal - satu-satunya bagian yang memang
-    sudah enak dipakai - dipertahankan modelnya, hanya dikeluarkan dari panel
-    geser supaya tidak perlu dibuka dulu. Bilah Simpan menempel di bawah.
-  */
 
   const totalTim = tim.length;
   const timWA = tim.filter(t => t.wa).length;
@@ -623,7 +483,6 @@ export function IntegrasiInline() {
   return (
     <div className="space-y-4">
 
-      {/* ── Strip kesehatan ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {Ubin({ warna: "#0891b2", nama: "Dalam Aplikasi", nilai: totalTim ? `${totalTim} dari ${totalTim}` : '—', lencana: "Selalu aktif", jenis: "ok", ket: "Lonceng & banner di portal. Tidak perlu disiapkan." })}
         {Ubin({ warna: "#16a34a", nama: "WhatsApp", nilai: totalTim ? `${timWA} dari ${totalTim}` : '—', lencana: !p.aktif.whatsapp ? 'Kanal masih mati'
@@ -642,7 +501,6 @@ export function IntegrasiInline() {
 
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-3 items-start">
 
-        {/* ── Rail bagian ── */}
         <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible md:sticky md:top-0 pb-1 md:pb-0">
           {RAIL.map(r => {
             const aktif = seksi === r.key;
@@ -663,43 +521,30 @@ export function IntegrasiInline() {
 
         <div className="min-w-0">
 
-          {/* ══ KANAL & EVENT ══ */}
           <SeksiKanal
             cariEvent={cariEvent} cocokCari={cocokCari} kategori={kategori} p={p} seksi={seksi} setCariEvent={setCariEvent} spWA={spWA} timTG={timTG} timWA={timWA} toggleEvent={toggleEvent} totalTim={totalTim} ubah={ubah}
           />
 
-          {/* ══ WHATSAPP ══ */}
           <SeksiWhatsApp
             hapusRahasia={hapusRahasia} koneksi={koneksi} p={p} pesanKanal={pesanKanal} rahasia={rahasia} seksi={seksi} setWaTujuan={setWaTujuan} simpanRahasia={simpanRahasia} spWA={spWA} ubah={ubah} uji={uji} ujiJalan={ujiJalan} waTujuan={waTujuan}
           />
 
-          {/* ══ TELEGRAM ══ */}
           <SeksiTelegram
             belumTG={belumTG} chatTerdeteksi={chatTerdeteksi} deteksiChat={deteksiChat} deteksiJalan={deteksiJalan} hapusRahasia={hapusRahasia} koneksi={koneksi} p={p} pesanKanal={pesanKanal} rahasia={rahasia} seksi={seksi} setSeksi={setSeksi} simpanRahasia={simpanRahasia} ubah={ubah} uji={uji} ujiJalan={ujiJalan}
           />
 
-          {/* ══ PUSH NOTIFIKASI (APP/PWA) ══ */}
           <SeksiPush
             aktifkanPushServer={aktifkanPushServer} hapusRahasia={hapusRahasia} pushInfo={pushInfo} pushMemuat={pushMemuat} pushPesan={pushPesan} rahasia={rahasia} seksi={seksi} setConfirmState={setConfirmState} simpanRahasia={simpanRahasia}
           />
 
-          {/* ══ JANGKAUAN TIM ══ */}
           <SeksiTim
             belumTG={belumTG} seksi={seksi} tim={tim}
           />
 
-          {/* ══ AI LEARNING CENTER ══
-              Dipindah ke bagiannya sendiri. Sebelumnya menumpuk di bawah kartu
-              Telegram di halaman yang sama - padahal ia sama sekali bukan kanal
-              notifikasi, dan justru itulah yang membuat layar ini terasa penuh. */}
           <SeksiAI
             ai={ai} hapusRahasia={hapusRahasia} penilai={penilai} rahasia={rahasia} seksi={seksi} setAi={setAi} setPenilai={setPenilai} simpanRahasia={simpanRahasia}
           />
 
-          {/* ── Bilah Simpan: menempel di bawah, selalu terlihat ──
-              Dulu ia berada di dasar seluruh gulungan, jadi sesudah mengubah
-              saklar di bagian atas orang harus menggulir jauh untuk menemukannya
-              - dan sering mengira perubahannya sudah tersimpan sendiri. */}
           {seksi !== 'tim' && (
             <div className="sticky bottom-0 mt-3 px-3.5 py-2.5 rounded-xl border border-slate-200 flex items-center gap-3 flex-wrap"
               style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(8px)', boxShadow: '0 -2px 16px -8px rgba(15,23,42,0.25)' }}>

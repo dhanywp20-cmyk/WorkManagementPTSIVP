@@ -1,12 +1,3 @@
-/**
- * uji/notifikasi-seragam.ts - pemberitahuan & konfirmasi memakai SATU wujud di semua menu.
- *
- *  - Pemberitahuan singkat: <Toast> / <InlineToast> bersama (components/shared/Toast.tsx), bukan kotak sendiri.
- *  - Konfirmasi: <ConfirmDialog> bersama, bukan window.confirm / alert bawaan peramban (tampilannya beda tiap
- *    peramban, memblokir halaman, dan tidak bisa diberi keterangan).
- *
- * Jalankan: npm test -- notifikasi-seragam
- */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
@@ -19,7 +10,6 @@ function semua(dir: string): string[] {
     return statSync(p).isDirectory() ? semua(p) : /\.tsx?$/.test(p) ? [p] : [];
   });
 }
-/** Isi berkas tanpa komentar baris & blok - catatan sejarah boleh menyebut window.confirm. */
 const tanpaKomentar = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
 
 const berkas = [...semua('app/(portal)'), ...semua('components')];

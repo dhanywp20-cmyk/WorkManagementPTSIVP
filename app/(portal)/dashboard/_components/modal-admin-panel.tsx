@@ -24,32 +24,13 @@ import { BriefingPagiKartu } from './modal-briefing';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-// AdminPanelModal (unified: Settings + User Management + PIC Brand)
-
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
   const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan'>(initialTab);
 
-  /**
- * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
- * dibuat (lihat master prompt bagian 16). Enam tab sebelumnya berbaris
- * datar tanpa hierarki: "Account Settings", "User Management", "PIC
- * Brand", "KPI Roster", "Dashboard Setting", "Kelompok & Notifikasi" -
- * semuanya sama beratnya secara visual walau maknanya berbeda jauh
- * (empat yang pertama tentang ORANG, satu tentang TAMPILAN, satu
- * tentang NOTIFIKASI).
- *
- * Integrations / Security / System SENGAJA belum jadi kelompok sendiri.
- * Master prompt bagian 4 juga bilang: "JANGAN membuat menu kosong hanya
- * untuk terlihat lengkap." Hari ini tidak ada satu pun pengaturan yang
- * pantas masuk ke sana - token WhatsApp kini diatur di Integrations
- * (rahasia_integrasi). Kelompok itu
- * ditambahkan PERSIS saat isinya ada, bukan lebih dulu.
- */
 const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system'; label: string }[] = [
   { key: 'organization',  label: 'Organisasi' },
   { key: 'appearance',    label: 'Tampilan' },
   { key: 'notifications', label: 'Notifikasi' },
-  //  Kelompok Sistem ditambahkan PERSIS saat isinya ada (lihat catatan di atas): Kesehatan Sistem.
   { key: 'system',        label: 'Sistem' },
 ];
 
@@ -152,15 +133,9 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
   return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center pt-16 px-4 pb-4">
-      {/* Di ponsel panel navigasi TIDAK boleh berdiri sebagai kolom kiri: 224px
-          dari layar 360px hanya menyisakan seratusan piksel untuk isinya, dan
-          tabel di dalamnya jadi terpotong sampai hanya kolom aksi yang terlihat.
-          Di sana ia berubah jadi deretan tab mendatar di atas isi. */}
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
 
-        {/* ── LEFT SIDEBAR (ponsel: bilah tab atas) ── */}
         <div className="w-full sm:w-56 flex-shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
-          {/* Sidebar header */}
           <div className="px-4 sm:px-5 py-3 sm:py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -175,13 +150,6 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             </div>
           </div>
 
-          {/* Nav items - dikelompokkan per GRUP_NAV.
-              Ponsel (baris mendatar, ruang sempit): header kelompok dibuang,
-              hanya garis vertikal tipis di antara kelompok - menulis
-              "ORGANISASI" di atas SATU tombol yang lebarnya sudah pas-pasan
-              hanya akan memaksanya membungkus baris kedua.
-              Desktop (kolom, ruang cukup): header kelompok tampil penuh,
-              karena di sanalah hierarkinya benar-benar terlihat. */}
           <div role="tablist" aria-label="Bagian Admin Panel"
             className="flex-1 p-2 sm:p-3 flex flex-row overflow-x-auto sm:flex-col gap-1 sm:gap-0.5 sm:overflow-y-auto">
             {GRUP_NAV.map((grup, gi) => {
@@ -214,9 +182,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
           </div>
         </div>
 
-        {/* ── RIGHT CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Section header strip */}
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3 flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -249,19 +215,6 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             </button>
           </div>
 
-          {/* Embedded content — no backdrop/fixed positioning */}
-          {/*
-            overflow-y-auto DI SINI, bukan overflow-hidden seperti sebelumnya.
-
-            Dengan overflow-hidden, konten yang lebih tinggi dari ruang yang
-            tersisa (mis. tab Kode Acara begitu daftar pendaftarnya bertambah)
-            terpotong TANPA cara menggulungnya - bukan cuma tidak rapi, tapi
-            informasi di bawahnya benar-benar tidak terjangkau. Tab Integrations
-            sebelumnya diam-diam membungkus dirinya sendiri dengan
-            overflow-y-auto untuk mengakali ini; sekarang pembungkus bersama
-            di sini yang menggulung, jadi SETIAP tab ikut benar tanpa perlu
-            menambal dirinya sendiri satu per satu.
-          */}
           <div className="flex-1 overflow-y-auto">
             {activeSection === 'settings' && <AccountSettingsInline />}
             {activeSection === 'userManagement' && <UserManagementInline />}
@@ -288,9 +241,6 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
   );
 }
 
-// Palet warna berputar untuk kelompok PTS - dipakai kalau warna baku
-// (TEAM_PALETTE) tidak mengenal nama kelompoknya (kelompok baru yang
-// ditambah lewat Admin Panel -> Kelompok & Notifikasi).
 const TEAM_PALETTE: Record<string, { color: string; bg: string; border: string }> = {
   'Team PTS IVP': { color: '#0d9488', bg: '#f0fdfa', border: '#99f6e4' },
   'Team PTS MVI': { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
@@ -306,15 +256,9 @@ const FALLBACK_PALETTE = [
 export function KpiRosterInline() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<string | null>(null); // userId sedang disimpan
+  const [saving, setSaving] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [filterTeam, setFilterTeam] = useState<string>('all');
-  // Daftar kelompok PTS SELALU dari lib/kelompok.ts, bukan ['Team PTS IVP',
-  // 'Team PTS MVI'] tertulis langsung - itulah sebabnya Team PTS UMP dulu
-  // tidak pernah muncul di sini sama sekali. Akibatnya kpi_enabled anggota
-  // UMP yang kebetulan true (mis. dari data lama) tidak bisa dimatikan lewat
-  // Admin Panel - satu-satunya jalan cuma masuk langsung ke Supabase, padahal
-  // panel ini justru dibuat supaya itu tidak perlu terjadi.
   const [teamNames, setTeamNames] = useState<string[]>([]);
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -362,9 +306,6 @@ export function KpiRosterInline() {
     if (!members.length) return null;
     const aktif = members.filter(u => u.kpi_enabled !== false).length;
     return (
-      // Kartu putih di atas latar slate - bentuk yang sama dengan Kartu di
-      // halaman Profil, supaya berpindah antar bagian tidak terasa seperti
-      // berpindah aplikasi.
       <div className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100 bg-slate-50/60">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
@@ -385,19 +326,16 @@ export function KpiRosterInline() {
                   background: enabled ? bg : '#f8fafc',
                   borderColor: enabled ? border : '#e2e8f0',
                 }}>
-                {/* Avatar */}
                 <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
                   style={{ background: enabled ? color : '#94a3b8' }}>
                   {u.full_name.charAt(0).toUpperCase()}
                 </div>
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-semibold truncate ${enabled ? 'text-slate-800' : 'text-slate-500'}`}>
                     {u.full_name}
                   </p>
                   <p className="text-xs text-slate-500 truncate">{u.jabatan ?? '—'}</p>
                 </div>
-                {/* Status badge */}
                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
                   enabled
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -405,7 +343,6 @@ export function KpiRosterInline() {
                 }`}>
                   {enabled ? '✅ KPI Aktif' : '⏸ Nonaktif'}
                 </span>
-                {/* Toggle button */}
                 <button aria-label={enabled ? 'Nonaktifkan dari KPI' : 'Aktifkan ke KPI'}
                   onClick={() => toggleKpi(u)}
                   disabled={isSaving}
@@ -439,14 +376,12 @@ export function KpiRosterInline() {
         </div>
       )}
 
-      {/* Header info */}
       <div className="px-5 pt-4 pb-3 flex-shrink-0">
         <StripInfo icon="🎯" judul="KPI Roster"
           keterangan={<>Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul &amp; dinilai di halaman KPI Team.</>}
           angka={loading ? undefined : activeCount}
           satuan={`aktif dari ${users.length}`} />
 
-        {/* Filter tim */}
         <div className="flex gap-1.5 flex-wrap">
           <button
             onClick={() => setFilterTeam('all')}
@@ -472,7 +407,6 @@ export function KpiRosterInline() {
         </div>
       </div>
 
-      {/* List */}
       <div className="flex-1 overflow-y-auto px-5 pb-5">
         {loading ? (
           <div className="flex items-center justify-center py-16">

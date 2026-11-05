@@ -1,12 +1,6 @@
-/**
- * Klik di kanvas -> permukaan pertama yang benar-benar TERLIHAT: hanya mesh (bukan garis bantu / label),
- * benda & induknya tampil (kelompok yang disembunyikan tidak kena), bahan tidak tembus pandang (kaca,
- * sinar), dan bukan kotak sorotan. Dipakai untuk memilih benda & titik penggaris.
- */
 import type * as T from 'three';
 
 export function kenaPermukaan(ray: T.Raycaster, akar: T.Object3D[]): T.Intersection | undefined {
-  //  Ambang garis bawaan three.js 1 m: garis di dekat kursor "menang" dari permukaan yang diklik.
   ray.params.Line = { threshold: 0.0001 };
   ray.params.Points = { threshold: 0.0001 };
   return ray.intersectObjects(akar, true).find(h => {

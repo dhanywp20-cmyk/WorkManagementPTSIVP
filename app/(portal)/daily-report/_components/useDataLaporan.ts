@@ -1,6 +1,5 @@
 'use client';
 
-/** useDataLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { useMemo } from 'react';
 import { type FlatRow } from './bantu-halaman';
 import type { Ekspor } from '@/lib/ekspor-tabel';
@@ -30,10 +29,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
   const allRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = [];
 
-    // Build ticket key set untuk deduplication
-    // Key format: `${project_name_lower}|${handler_username_lower}|${date}`
-    // Reminder Troubleshooting yang sudah ada tiketnya di platform ticketing tidak
-    // ditampilkan duplikat - ticket lebih prioritas karena lebih lengkap (action_taken, status aktual)
     const ticketKeySet = new Set<string>(
       liveTickets.map(t => {
         const hu = ((t as any).handler_username ?? '').toLowerCase();
@@ -42,14 +37,11 @@ export function useDataLaporan(k: DataLaporanKonteks) {
       })
     );
 
-    // Reminder - langsung dari platform, tanpa perlu submit
     liveReminders.forEach(r => {
       const hr = (r as any).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hr);
       const rd = ((r as any).report_date ?? '').split('T')[0];
 
-      // Jika reminder kategori Troubleshooting DAN sudah ada ticket yang matching
-      // (project_name + handler + tanggal sama)  skip untuk hindari duplicate
       if ((r.category ?? '').toLowerCase() === 'troubleshooting') {
         const key = `${(r.project_name ?? '').trim().toLowerCase()}|${hr.toLowerCase()}|${rd}`;
         if (ticketKeySet.has(key)) return;
@@ -75,7 +67,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
       });
     });
 
-    // Ticket - langsung dari platform
     liveTickets.forEach(t => {
       const hu = (t as any).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hu);
@@ -100,7 +91,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
       });
     });
 
-    // Manual - dari submitted daily_reports saja
     reports.forEach(r => {
       r.manual_activities.forEach((m, idx) => {
         const tu = teamUsers.find(u => u.id === r.user_id);
@@ -127,12 +117,10 @@ export function useDataLaporan(k: DataLaporanKonteks) {
       });
     });
 
-    // Sort: terbaru dulu
     rows.sort((a, b) => b.report_date.localeCompare(a.report_date) || a.jam.localeCompare(b.jam));
     return rows;
   }, [liveReminders, liveTickets, reports, teamUsers]);
 
-  // Filter rows
   const filteredRows = useMemo(() => {
     return allRows.filter(row => {
       if (searchProject) {
@@ -149,7 +137,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
 
-  /** Ekspor Activity List sesuai filter yang aktif (Excel · Cetak · PNG). */
   const dataEkspor = (): Ekspor<FlatRow> => ({
     judul: `Daily Report${filterDate ? ` ${filterDate}` : ''}`, menu: 'Daily Report', warna: ['#059669', '#047857'],
     baris: filteredRows,
@@ -164,7 +151,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     ],
   });
 
-  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
   const hal = usePaginasi(filteredRows);
 
   const stats = useMemo(() => {
@@ -179,13 +165,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     return { total, pending, selesai, hariIni, fromTicket, fromReminder, fromManual };
   }, [allRows]);
 
-  /*
-    M7 (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada cara melihat siapa yang
-    BELUM mengisi report hari ini - allRows hanya merangkum aktivitas yang
-    SUDAH ADA. Supervisor harus membandingkan manual dengan daftar tim di
-    kepala. Dibandingkan di sini terhadap teamUsers (daftar anggota tim
-    sesungguhnya), bukan disimpulkan dari data yang sudah ada.
-  */
   const belumLaporHariIni = useMemo(() => {
     if (!lihatSemua || teamUsers.length === 0) return [];
     const today = todayISO();
@@ -195,7 +174,6 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     return teamUsers.filter(u => u.username && !sudahLapor.has(u.username.toLowerCase()));
   }, [teamUsers, allRows, lihatSemua]);
 
-  // Donut data
   const PIE_C = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 
   const catPieData = useMemo(() => {

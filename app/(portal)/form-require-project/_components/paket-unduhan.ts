@@ -1,19 +1,11 @@
 import { statusConfig, type ProjectRequest, type ProjectAttachment } from './shared';
 import { htmlSeksiDesain3D, byteGambarHD, type TautanDesain3D } from './desain-3d-request';
 
-/**
- * Paket unduhan satu Request Design Project: lembar detail plus seluruh
- * lampirannya, dibungkus jadi satu berkas ZIP.
- *
- * ZIP-nya disusun sendiri, tanpa pustaka luar - formatnya sederhana dan
- * menambah dependensi hanya untuk ini tidak sepadan.
- */
 export interface ArgPaket {
   selectedRequest: ProjectRequest;
   attachments: ProjectAttachment[];
   ccLabel: string;
   notify: (tipe: 'success' | 'error' | 'info', pesan: string) => void;
-  /** Design 3D dari Tools Team (opsional) - seksi & pratinjau hanya ditambahkan bila ada. */
   desain3d?: TautanDesain3D[];
 }
 
@@ -53,25 +45,23 @@ const buildZip = (files: { name: string; data: Uint8Array }[]): Blob => {
     const nameBytes = enc.encode(file.name);
     const crc = crc32(file.data);
     const size = file.data.length;
-    // Local file header
     const lh = new DataView(new ArrayBuffer(30 + nameBytes.length));
-    lh.setUint32(0, 0x04034B50, true);  // signature
-    lh.setUint16(4, 20, true);           // version needed
-    lh.setUint16(6, 0, true);            // flags
-    lh.setUint16(8, 0, true);            // compression (stored)
+    lh.setUint32(0, 0x04034B50, true);
+    lh.setUint16(4, 20, true);
+    lh.setUint16(6, 0, true);
+    lh.setUint16(8, 0, true);
     lh.setUint16(10, dosTime, true);
     lh.setUint16(12, dosDate, true);
     lh.setUint32(14, crc, true);
     lh.setUint32(18, size, true);
     lh.setUint32(22, size, true);
     lh.setUint16(26, nameBytes.length, true);
-    lh.setUint16(28, 0, true);           // extra length
+    lh.setUint16(28, 0, true);
     const lhArr = new Uint8Array(lh.buffer);
     nameBytes.forEach((b, i) => lhArr[30 + i] = b);
     parts.push(lhArr);
     parts.push(file.data);
 
-    // Central directory entry
     const cd = new DataView(new ArrayBuffer(46 + nameBytes.length));
     cd.setUint32(0, 0x02014B50, true);
     cd.setUint16(4, 20, true);
@@ -126,8 +116,6 @@ export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel,
     const folderName = `FormRequire_${projectSlug}_${dateStr}`;
     const zipFiles: { name: string; data: Uint8Array }[] = [];
 
-    // 1. Form Detail as PDF (HTML  printed to PDF via hidden iframe)
-    // We generate it as a styled HTML file the user can open & print-to-PDF
     const sc2 = statusConfig[selectedRequest.status] || statusConfig.pending;
     const formHtml = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
@@ -217,7 +205,6 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
 </body></html>`;
     zipFiles.push({ name: `${folderName}/01_Form_Detail_${projectSlug}.html`, data: enc.encode(formHtml) });
 
-    // 2-4. Download LATEST revision per structured category (SLD/BOQ/3D) + all general
     const structuredCats: { cat: 'sld' | 'boq' | 'design3d'; prefix: string }[] = [
       { cat: 'sld', prefix: '02_SLD' },
       { cat: 'boq', prefix: '03_BOQ' },
@@ -225,7 +212,6 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
     ];
 
     for (const { cat, prefix } of structuredCats) {
-      // Sort by revision_version desc, take only the latest
       const catFiles = attachments
         .filter(a => a.attachment_category === cat)
         .sort((a, b) => (b.revision_version || 0) - (a.revision_version || 0));
@@ -241,10 +227,9 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
             data: new Uint8Array(arrayBuf),
           });
         }
-      } catch { /* skip inaccessible files */ }
+      } catch {  }
     }
 
-    // Design 3D dari Tools Team: gambar HD versi yang ditautkan (ringkasannya ada di form detail).
     for (let i = 0; i < desain3d.length; i++) {
       const t = desain3d[i];
       const data = await byteGambarHD(t);
@@ -253,7 +238,6 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
       zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.jpg`, data });
     }
 
-    // General files - download all
     const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);
     for (let i = 0; i < generalFiles.length; i++) {
       const att = generalFiles[i];
@@ -266,7 +250,7 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
             data: new Uint8Array(arrayBuf),
           });
         }
-      } catch { /* skip inaccessible files */ }
+      } catch {  }
     }
 
     if (zipFiles.length === 0) {

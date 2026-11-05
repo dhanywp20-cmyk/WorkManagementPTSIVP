@@ -1,17 +1,3 @@
-/**
- * lib/efek-server.ts - EfekSamping sisi SERVER (DIWAYPI). HANYA server.
- *
- * Padanan dari efekPeramban, langkah demi langkah:
- *   wa    - batas kirim yang sama dengan /api/notifikasi/whatsapp/kirim (wa_kirim_log atas
- *           nama pelaku), saklar induk & per-event yang sama (lib/wa.ts), penyedia yang
- *           sama (kirimWA), plus salinan Telegram lewat kirimTelegramKeNomorServer.
- *   inApp - baris notifications yang sama dengan createNotification, lalu push langsung
- *           (kirimPushKeUser) - di peramban push lewat /api/push/send.
- *   audit - baris audit_trail yang sama dengan logAudit, ditandai "via DIWAYPI".
- *
- * `db` = klien SEBAGAI pelaku (RLS berlaku, sama dengan peramban); `admin` hanya untuk
- * wa_kirim_log (tabel itu memang ditulis service role oleh route kirim).
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { sendWA } from '@/lib/wa';
 import { kirimWA } from '@/lib/wa-kirim-server';
@@ -55,7 +41,7 @@ export function buatEfekServer(db: SupabaseClient, admin: SupabaseClient, pelaku
           notes: p.notes ? `${p.notes} · ${PENANDA_DIWAYPI}` : PENANDA_DIWAYPI,
           created_at: new Date().toISOString(),
         }]);
-      } catch { /* audit tidak boleh menggagalkan aksi (sama dengan logAudit) */ }
+      } catch {  }
     },
   };
 }

@@ -1,4 +1,3 @@
-/** Panggil route /api/project-progress/... dan lempar pesan galat yang bisa ditampilkan. */
 export async function panggil<T = unknown>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     cache: 'no-store', credentials: 'include', ...init,

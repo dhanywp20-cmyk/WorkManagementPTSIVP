@@ -1,4 +1,3 @@
-/** Teks ringkasan & bagian lembar cetak Screen Connection. */
 import { esc, type Seksi } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { type DataKoneksi, namaCadangan, namaPort, type PengaturanKoneksi, SUDUT, type Susunan, susunKoneksi } from './data';
@@ -13,7 +12,6 @@ const teksSudut = (s: SudutMulai) => SUDUT.find(x => x.v === s)!.l.toLowerCase()
 export const teksCara = (s: PengaturanKoneksi) => (s.mode === 'manual' ? 'kabel manual'
   : `mulai ${teksSudut(s.mulai)}, ${s.arah === 'horizontal' ? 'mendatar' : 'tegak'} pola ${s.pola}, ${s.bagi === 'baris' ? 'baris utuh' : 'isi penuh'}`);
 
-/** Ringkasan untuk Salin/WA. */
 export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
   const t = susunKoneksi(d, s), k = t.hasil;
   return [
@@ -25,7 +23,6 @@ export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
   ].filter(Boolean).join('\n');
 }
 
-/** Seksi lembar cetak: diagram + tabel port. */
 export function seksiCetakKoneksi(d: DataKoneksi, s: PengaturanKoneksi): Seksi[] {
   const t = susunKoneksi(d, s), k = t.hasil;
   const ket = `${t.K} × ${t.B} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${t.resX} × ${t.resY} px · ${teksCara(s)}${teksCadangan(t)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)${t.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}`;

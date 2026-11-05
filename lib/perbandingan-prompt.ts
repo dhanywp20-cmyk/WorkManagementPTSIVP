@@ -1,14 +1,7 @@
-/**
- * lib/perbandingan-prompt.ts - Prompt Product Comparison: dipakai server (Gemini, mode otomatis) DAN disalin
- * pengguna ke AI chat lain (Claude.ai, ChatGPT, Gemini app) - aturannya satu sumber. Isi brosur dikirim
- * sebagai teks hasil ekstraksi di peramban, bertanda halaman, supaya kutipan bisa diverifikasi
- * (lib/perbandingan.ts kutipanAda).
- */
 import { type Bahasa, LABEL, MAKS_KARAKTER_PRODUK, MAKS_KARAKTER_TOTAL, MAKS_PRODUK, MIN_KARAKTER_TEKS, MIN_PRODUK } from './perbandingan';
 
 export interface SumberProduk { nama: string; berkas: string; halaman: string[] }
 
-/** Teks brosur bertanda halaman, dipangkas ke batas per produk. */
 export function teksBertanda(s: SumberProduk): { teks: string; terpangkas: boolean } {
   let out = '', terpangkas = false;
   for (let i = 0; i < s.halaman.length; i++) {
@@ -61,19 +54,16 @@ export function promptPengguna(produk: SumberProduk[]): { teks: string; terpangk
   return { teks: `Compare these ${produk.length} products. Column order = product order below.\n\n${isi}`, terpangkas };
 }
 
-/** Prompt lengkap untuk disalin ke AI chat lain (sistem + data dalam satu pesan). */
 export const promptSalin = (bahasa: Bahasa, produk: SumberProduk[]) => `${promptSistem(bahasa)}\n\n${promptPengguna(produk).teks}`;
 
-/** Ambil objek JSON dari jawaban AI (boleh terbungkus ```json ... ``` atau berteks pengantar). */
 export function ambilJson(jawaban: string): unknown {
   const t = jawaban.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
-  try { return JSON.parse(t); } catch { /* cari objek terluar */ }
+  try { return JSON.parse(t); } catch {  }
   const a = t.indexOf('{'), b = t.lastIndexOf('}');
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
 }
 
-/** Bentuk permintaan dari peramban - semua batas diperiksa ulang di sini. */
 export function periksaKiriman(x: unknown): { ok: true; bahasa: Bahasa; produk: SumberProduk[] } | { ok: false; alasan: string } {
   const b = x as Record<string, unknown>;
   if (!b || typeof b !== 'object' || !Array.isArray(b.produk)) return { ok: false, alasan: 'Format permintaan tidak sah.' };
@@ -97,7 +87,6 @@ export function periksaKiriman(x: unknown): { ok: true; bahasa: Bahasa; produk: 
   return { ok: true, bahasa: b.bahasa === 'id' ? 'id' : 'en', produk };
 }
 
-/** responseSchema Gemini (subset OpenAPI): keluaran dijamin JSON sah berbentuk kartu template. */
 const S = (type: string, extra: Record<string, unknown> = {}) => ({ type, ...extra });
 export const SKEMA_GEMINI: Record<string, unknown> = S('OBJECT', {
   properties: {
@@ -109,7 +98,6 @@ export const SKEMA_GEMINI: Record<string, unknown> = S('OBJECT', {
         spesifikasi: S('STRING'),
         nilai: S('ARRAY', { items: S('OBJECT', { properties: {
           teks: S('STRING'), status: S('STRING', { enum: ['ada', 'tidak-disebut', 'tidak-tersedia', 'cek'] }), unggul: S('BOOLEAN'),
-          //  bukti WAJIB di skema - tanpa ini Gemini cenderung melewatkannya dan semua nilai jatuh ke 'cek'.
           bukti: S('OBJECT', { properties: { halaman: S('INTEGER'), kutipan: S('STRING') }, required: ['halaman', 'kutipan'] }), alasanCek: S('STRING'),
         }, required: ['teks', 'status', 'bukti'] }) }),
       }, required: ['spesifikasi', 'nilai'] }) }),

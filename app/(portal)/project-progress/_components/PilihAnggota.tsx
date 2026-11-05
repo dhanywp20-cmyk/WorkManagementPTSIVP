@@ -8,14 +8,9 @@ import { TEMA } from './tampilan';
 export interface CalonAnggota {
   id: string;
   full_name: string;
-  /** Keterangan kecil di bawah nama, mis. tim / jabatan. */
   sub?: string | null;
 }
 
-/**
- * Pilih banyak akun dengan pencarian - yang terpilih tampil sebagai keping di
- * atas daftar. Dipakai untuk anggota checklist (yang di-assign boleh edit).
- */
 export function PilihAnggota({ calon, terpilih, onUbah }: {
   calon: CalonAnggota[];
   terpilih: string[];

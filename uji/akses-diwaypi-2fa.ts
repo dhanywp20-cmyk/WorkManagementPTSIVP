@@ -1,10 +1,3 @@
-/**
- * uji/akses-diwaypi-2fa.ts - Integrasi DIWAYPI & 2FA hanya untuk admin dan akun yang ditunjuk lewat
- * toggle Full Access (lib/constants.ts bolehDiwaypiDan2FA). Guest - termasuk Supervisor sales - dan
- * Team biasa ditolak; access_level 'full' pada akun non-team diabaikan.
- *
- * Jalankan: npx tsx uji/akses-diwaypi-2fa.ts
- */
 import { bolehDiwaypiDan2FA } from '../lib/constants';
 
 let lulus = 0, gagal = 0;

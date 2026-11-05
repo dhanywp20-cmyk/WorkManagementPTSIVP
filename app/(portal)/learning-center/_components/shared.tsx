@@ -5,8 +5,6 @@ import { supabase } from '@/lib/supabase';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-// Types
-
 export interface User {
   id: string;
   full_name: string;
@@ -44,26 +42,10 @@ export interface Question {
   difficulty: 'easy' | 'medium' | 'hard';
   batch_name?: string | null;
   created_at: string;
-  /**
-   * Urutan tampil di dalam satu (material_id, batch_name).
-   *
-   * `undefined` berarti kolomnya belum ada di database - berbeda dengan `null`
-   * yang berarti kolomnya ada tapi baris ini belum pernah diurutkan. Bedanya
-   * dipakai: yang pertama membuat tombol pengatur urutan disembunyikan, yang
-   * kedua tidak. Lihat sql/learning-center-urutan-soal.sql.
-   */
   urutan?: number | null;
-  // Essay addition (non-breaking; defaults to 'abcd' for all existing rows)
   question_type?: 'abcd' | 'essay';
-  model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual
-  /**
-   * Bentuk jawaban yang diminta soal essay.
-   *   'text'  diketik peserta (bawaan, perilaku lama)
-   *   'image' peserta menggambar di kertas, difoto, lalu diunggah
-   * Diabaikan untuk soal abcd. Lihat sql/learning-center-essay-gambar.sql.
-   */
+  model_answer?: string | null;
   answer_format?: 'text' | 'image';
-  /** Gambar opsional soal (foto perangkat, diagram) - migrasi 054. */
   gambar_url?: string | null;
 }
 
@@ -84,14 +66,7 @@ export interface QuizSession {
   target_user_ids: string[] | null;
   open_at: string | null;
   close_at: string | null;
-  // Essay addition
   session_type?: 'abcd' | 'essay';
-  /**
-   * Urutan soal diacak per peserta (diatur admin per sesi).
-   *
-   * Opsional di tipe ini supaya sesi yang diambil sebelum migrasi kolomnya
-   * jalan tidak menjadi galat tipe; false/undefined = urutan apa adanya.
-   */
   acak_soal?: boolean;
 }
 
@@ -107,7 +82,6 @@ export interface QuizAttempt {
   passed: boolean | null;
   time_taken_sec: number | null;
   is_submitted: boolean;
-  // Essay addition: attempt tetap is_submitted=true, tapi belum final sampai admin nilai
   grading_status?: 'auto' | 'pending_review' | 'graded';
   graded_by?: string | null;
   graded_at?: string | null;
@@ -119,22 +93,16 @@ export interface AnswerRecord {
   question_id: string;
   answer: string;
   is_correct: boolean;
-  // Essay addition
   essay_text?: string | null;
-  /** Gambar jawaban ukuran penuh - hanya dimuat saat penilai membukanya. */
   answer_image_url?: string | null;
-  /** Pratinjau kecil untuk daftar penilaian. Dipisah demi menekan egress. */
   answer_thumb_url?: string | null;
-  manual_score?: number | null; // 0-100 per soal - SKOR FINAL, diisi/dikoreksi admin
-  // AI grading addition - SARAN saja, tidak pernah jadi skor final sendiri
+  manual_score?: number | null;
   ai_score?: number | null;
   ai_feedback?: string | null;
 }
 
 export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'eksternal' | 'team' | 'report' | 'analytics';
 export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
-
-// Gemini (server-side proxy - API key tidak terekspos ke browser)
 
 export const GEMINI_URL = '/api/ai/generate';
 
@@ -143,8 +111,6 @@ export const DIFF_COLOR: Record<string, string> = {
   medium: 'bg-amber-100 text-amber-700 border-amber-200',
   hard: 'bg-rose-100 text-rose-700 border-rose-200',
 };
-
-// Helpers
 
 export const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -162,7 +128,6 @@ export function ScoreBadge({ score, passing }: { score: number | null; passing: 
   );
 }
 
-// Essay grading status badge (dipakai di HistoryPage, ScorePage, ReportPage)
 export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: string | null; passed: boolean | null } }) {
   if (attempt.grading_status === 'pending_review') {
     return (
@@ -178,11 +143,6 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
   );
 }
 
-/**
- * Kotak pencarian. Mengisi baris sendiri di layar sempit dan baru memakai
- * lebar tetap saat ruangnya ada - lebar tetap di ponsel menghimpit judul di
- * sebelahnya sampai satu kata per baris.
- */
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="relative w-full sm:w-auto">
@@ -201,22 +161,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
   );
 }
 
-// Gemini helpers
-
-/**
- * Batas ukuran PDF di sisi client, sebelum sempat di-upload.
- *
- * Base64 membengkakkan file biner ~1.33x (4/3). Route /api/ai/generate
- * sendiri menolak body > 4.000.000 karakter JSON (lihat MAX_BODY_BYTES di
- * route.ts) - jadi PDF biner harus di bawah ~3MB SUDAH supaya hasil base64
- * + overhead JSON-nya tidak melewati batas itu. Platform hosting (mis.
- * limit payload Vercel ~4.5MB) juga bisa menolak duluan SEBELUM request
- * sampai ke route - dengan balasan teks polos macam "Request Entity Too
- * Large", bukan JSON. Angka di bawah sengaja dikasih jarak dari kedua
- * batas itu, supaya penolakannya terjadi di client dengan pesan yang
- * jelas, bukan JSON.parse yang pecah di tengah jalan.
- */
-export const MAX_PDF_BYTES = 2.5 * 1024 * 1024; // 2.5 MB biner (~3.4MB setelah base64)
+export const MAX_PDF_BYTES = 2.5 * 1024 * 1024;
 
 export async function fileToBase64(f: File): Promise<string> {
   return new Promise((res, rej) => {
@@ -229,13 +174,7 @@ export async function fileToBase64(f: File): Promise<string> {
 
 export async function generateWithGemini(
   prompt: string, pdfFile?: File | null,
-  /** 'penilai' memakai token & model penilai; selain itu pembuat soal. */
   profil?: 'penilai',
-  /**
-   * Paksa memakai model ini, mengabaikan yang tersimpan. Dipakai fitur
-   * "Bandingkan 2 model" - dua panggilan berbeda model tanpa satu pun mengubah
-   * pengaturan, supaya perbandingannya tidak meninggalkan jejak.
-   */
   model?: string,
 ): Promise<string> {
   if (pdfFile && pdfFile.size > MAX_PDF_BYTES) {
@@ -254,23 +193,12 @@ export async function generateWithGemini(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts }],
-      // Suhu sengaja TIDAK diisi di sini - server yang mengisinya dari
-      // pengaturan profil yang bersangkutan. Menilai butuh suhu rendah supaya
-      // taat pada kunci; membuat soal butuh sedikit variasi. Memaksakan satu
-      // angka dari sini membuat pengaturan itu tidak berlaku.
       generationConfig: { maxOutputTokens: 8192 },
       ...(profil ? { profil } : {}),
       ...(model ? { model } : {}),
     }),
   });
 
-  /*
-    Dibaca sebagai teks dulu, BUKAN langsung res.json().
-    Kalau request ditolak oleh layer di depan route.ts (mis. limit payload
-    platform hosting), balasannya teks polos ("Request Entity Too Large"),
-    bukan JSON - res.json() akan melempar "Unexpected token" yang membingungkan.
-    Dengan raw text dulu, pesan errornya bisa dibuat jelas.
-  */
   const raw = await res.text();
   let data: any;
   try {
@@ -290,14 +218,6 @@ export async function generateWithGemini(
 
 export interface ModelAI { id: string; nama: string }
 
-/**
- * Daftar model yang benar-benar tersedia untuk kunci yang terpasang.
- *
- * Ditanyakan ke Google, tidak ditulis di kode. Daftar tertutup di kode selalu
- * berakhir sama: nama yang ditebak ternyata tidak ada pada kunci ini, dan
- * kekeliruannya baru ketahuan saat seseorang menekan "Nilai" - dengan pesan
- * 404 yang tidak menyebut nama mana yang salah.
- */
 export async function ambilDaftarModel(profil?: 'penilai'): Promise<ModelAI[]> {
   const res = await fetch(`/api/ai/model${profil ? `?profil=${profil}` : ''}`);
   const data = await res.json();
@@ -312,22 +232,6 @@ export interface SoalDinilai {
   studentAnswer: string;
 }
 
-/**
- * Menilai SELURUH jawaban essay satu peserta dalam SATU panggilan.
- *
- * Sebelumnya tiap soal satu panggilan. Untuk satu peserta dengan 5 soal essay
- * itu 5 permintaan; untuk satu sesi berisi 30 peserta, 150 - sementara jatah
- * harian gratis Gemini 2.5 Flash hanya puluhan. Jadi penilaian borongan bukan
- * "lebih cepat", melainkan satu-satunya bentuk yang muat di paket gratis sama
- * sekali.
- *
- * Yang membuat penggabungan ini aman: tiap soal dinilai terhadap kunci
- * referensinya masing-masing, dan AI diminta mengembalikan satu entri per id
- * soal. Soal yang tidak terjawab AI - karena keluarannya terpotong atau
- * idnya salah - dikembalikan sebagai tidak-ada, bukan sebagai nol. Nol berarti
- * "sudah dinilai dan jawabannya salah"; itu keliru dan bisa terlanjur
- * dikonfirmasi penilai yang buru-buru.
- */
 export async function gradeEssaysBatchWithAI(
   daftar: SoalDinilai[],
 ): Promise<Record<string, { score: number; feedback: string }>> {
@@ -361,8 +265,6 @@ Balas HANYA dengan JSON array valid, tanpa markdown, tanpa teks lain. Satu entri
   const hasil: Record<string, { score: number; feedback: string }> = {};
   for (const baris of parsed as { id?: unknown; score?: unknown; feedback?: unknown }[]) {
     const id = typeof baris?.id === 'string' ? baris.id : '';
-    // Hanya id yang memang dikirim yang diterima. Tanpa saringan ini, id yang
-    // dikarang AI bisa menempelkan nilai pada soal yang tidak ikut dinilai.
     if (!sah.has(id)) continue;
     const skor = Number(baris.score);
     if (!Number.isFinite(skor)) continue;
@@ -374,12 +276,6 @@ Balas HANYA dengan JSON array valid, tanpa markdown, tanpa teks lain. Satu entri
   return hasil;
 }
 
-/**
- * Minta AI menilai SATU jawaban essay terhadap kunci referensi, dipakai
- * TeamPage sebagai saran awal. Skor final tetap manual_score yang admin simpan
- * sendiri. Melempar Error bila AI gagal; pemanggil wajib menangkapnya dan
- * tetap membiarkan admin menilai manual - AI tidak boleh memblokir penilaian.
- */
 export async function gradeEssayWithAI(
   question: string, modelAnswer: string | null | undefined, studentAnswer: string,
 ): Promise<{ score: number; feedback: string }> {
@@ -396,8 +292,6 @@ Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain
 {"score": <angka 0-100>, "feedback": "<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}`;
 
   const raw = await generateWithGemini(prompt, null, 'penilai');
-  // Gemini kadang membungkus JSON dalam code fence ```json ... ``` walau
-  // sudah diminta "tanpa markdown" - dibersihkan dulu sebelum parse.
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   let parsed: { score?: unknown; feedback?: unknown };
   try {
@@ -412,8 +306,6 @@ Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain
     feedback: typeof parsed.feedback === 'string' ? parsed.feedback : '',
   };
 }
-
-// Folder Tree
 
 export interface FolderNode {
   name: string;
@@ -447,8 +339,6 @@ export function countMaterials(node: FolderNode): number {
   for (const child of Object.values(node.children)) count += countMaterials(child);
   return count;
 }
-
-// App Dialog
 
 export type DialogState = {
   type: 'info' | 'success' | 'error' | 'warning' | 'confirm';
@@ -511,8 +401,6 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   );
 }
 
-// Icon SVGs
-
 export function IcoView({ size = 12 }: { size?: number }) {
   return (
     <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -546,9 +434,6 @@ export function IcoOpen({ size = 12 }: { size?: number }) {
     </svg>
   );
 }
-
-// Action Button Components
-// Icon-only (w-7 h-7) when no children; text+icon when children provided (e.g. "Lihat Jawaban")
 
 const iconOnlyBase = 'inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 const textBase = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed';

@@ -1,5 +1,4 @@
 'use client';
-/** Data pengajuan verifikasi Product Comparison (/api/tools-team/perbandingan/pengajuan). */
 import { useCallback, useEffect, useState } from 'react';
 import type { KartuBanding } from '@/lib/perbandingan';
 

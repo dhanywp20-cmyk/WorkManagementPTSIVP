@@ -1,6 +1,5 @@
 'use client';
 
-/** useTugaskanSupervisor - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
 import { notifyTicketAssigned } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
@@ -25,25 +24,14 @@ export function useTugaskanSupervisor(k: TugaskanSupervisorKonteks) {
     if (!supAssignTicket || !supAssignTo) { notify("error", "Pilih anggota tim atau kerjakan sendiri!"); return; }
     setSupAssignSaving(true);
     try {
-      // 'SELF' = Supervisor kerjakan sendiri
       const isSelf = supAssignTo === "SELF";
       const assigneeName = isSelf ? (currentUser?.full_name ?? "") : supAssignTo;
-      // assigned_supervisor_id SENGAJA TIDAK ikut dikosongkan di update yang
-      // sama: RLS tk_update mengizinkan Supervisor menulis baris ini lewat
-      // assigned_supervisor_id = dirinya sendiri. WITH CHECK dievaluasi
-      // terhadap baris BARU (bukan lama) - kalau kolom itu ikut di-null-kan
-      // di sini, tidak ada syarat lain yang cocok dan RLS diam-diam menolak
-      // (0 baris, tanpa error) walau WA sudah kadung terkirim.
       const { error, data } = await supabase.from("tickets").update({
         status: "Pending", assign_name: assigneeName,
         routing_status: null,
       }).eq("id", supAssignTicket.id).select("id");
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Perubahan ditolak sistem (RLS). Hubungi admin.");
-      // Badge in-app + WA ke anggota tim yg di-assign. Badge TETAP dikirim kalau
-      // Supervisor kerjakan sendiri (isSelf) - supaya ada catatan/link yang bisa
-      // dibuka lagi nanti, sama seperti assign ke anggota lain. WA ke diri
-      // sendiri tetap dilewati - tidak berguna mengirim WA ke nomor sendiri.
       if (isSelf) {
         if (currentUser?.id) notifyTicketAssigned(currentUser.id, assigneeName, supAssignTicket.id, supAssignTicket.project_name, currentUser?.full_name ?? 'Supervisor').catch(() => {});
       } else {

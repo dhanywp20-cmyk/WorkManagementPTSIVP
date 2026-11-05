@@ -1,17 +1,3 @@
-/**
- * lib/kuis-live-server.ts - bagian SERVER Kuis Live: baca/tulis basis data.
- * Dipakai /api/kelas/<token> (peserta) dan /api/admin/kelas-eksternal (layar host). Aturannya
- * sendiri ada di lib/kuis-live.ts (murni, teruji).
- *
- * Tanpa Supabase Realtime: kuis berjalan menurut jadwal (jam), HP cukup menyegarkan berkala.
- * Siaran ke 100+ HP sekaligus melewati batas 100 pesan/detik paket Free, dan Supabase lalu
- * memutus SEMUA koneksi realtime proyek - termasuk dashboard internal platform.
- *
- * Data yang sama bagi semua peserta (soal, papan skor) disimpan sebentar di memori
- * (lib/simpan-sebentar.ts): 100 HP yang menyegarkan bersamaan = satu query, bukan seratus.
- *
- * JANGAN diimpor dari komponen klien.
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
 import { hapusSimpanan, simpanSebentar } from './simpan-sebentar';
@@ -25,7 +11,6 @@ type Db = SupabaseClient;
 
 export interface SoalLive { teks: string; gambar: string | null; pilihan: Record<Pilihan, string>; kunci: Pilihan }
 
-/** Isi soal + kunci. Disimpan 30 dtk: dibaca semua HP di tiap tahap, isinya hampir tidak pernah berubah. */
 export function muatSoalLive(db: Db, id: string | undefined): Promise<SoalLive | null> {
   if (!id) return Promise.resolve(null);
   return simpanSebentar(`soal:${id}`, 30_000, async () => {
@@ -39,7 +24,6 @@ export function muatSoalLive(db: Db, id: string | undefined): Promise<SoalLive |
   });
 }
 
-/** Papan skor (rekap semua peserta). Disimpan 1 dtk - penyumbang egress terbesar bila dibaca tiap HP. */
 export function muatPapan(db: Db, kelasId: string, sesi: number, sampai: number): Promise<BarisPapan[]> {
   return simpanSebentar(`papan:${kelasId}:${sesi}:${sampai}`, 1000, async () => {
     const { data } = await db.rpc('lc_eks_live_papan', { p_kelas: kelasId, p_sesi: sesi, p_sampai: sampai });
@@ -47,7 +31,6 @@ export function muatPapan(db: Db, kelasId: string, sesi: number, sampai: number)
   });
 }
 
-/** Soal yang sah (pilihan ganda & masih ada di Bank Soal) dalam urutan sesi baru. */
 async function urutanBaru(db: Db, k: KelasLive): Promise<string[]> {
   const { data } = await db.from('lc_questions').select('id').in('id', k.question_ids).eq('question_type', 'abcd');
   const sah = new Set(((data ?? []) as { id: string }[]).map(x => x.id));
@@ -55,7 +38,6 @@ async function urutanBaru(db: Db, k: KelasLive): Promise<string[]> {
   return k.acak_soal ? acakUrutan(urut) : urut;
 }
 
-/** UPDATE bersyarat: hanya berlaku bila titik acuan di basis data masih yang tadi dibaca. */
 function updateBersyarat(db: Db, k: KelasLive, ubahan: Record<string, unknown>) {
   let q = db.from('lc_eks_kelas').update(ubahan)
     .eq('id', k.id).eq('live_tahap', k.live_tahap).eq('live_indeks', k.live_indeks).eq('live_sesi', k.live_sesi);
@@ -63,11 +45,6 @@ function updateBersyarat(db: Db, k: KelasLive, ubahan: Record<string, unknown>) 
   return q.select('id');
 }
 
-/**
- * Jalankan satu tombol admin. `dari` = tahap & soal yang terlihat di layar host saat tombol
- * ditekan: kalau sudah tidak cocok (klik ganda, dua layar host), tidak ada yang berubah - jadi
- * satu klik tidak pernah melompati dua tahap.
- */
 export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dari: { tahap?: unknown; indeks?: unknown }):
   Promise<{ ok: true; berubah: boolean } | { ok: false; galat: string }> {
   const sekarang = Date.now();
@@ -78,13 +55,9 @@ export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dar
   const ubahan = transisiLive(k, aksi, sekarang, aksi === 'live_mulai' ? await urutanBaru(db, k) : []);
   if ('galat' in ubahan) return { ok: false, galat: ubahan.galat };
   const tambahan = aksi === 'live_mulai' ? { aktif: true, dimulai_pada: new Date(sekarang).toISOString() } : {};
-  //  Bersyarat pada status yang tadi dibaca: dua permintaan bersamaan, hanya satu yang berlaku.
   const { data, error } = await updateBersyarat(db, k, { ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() });
   if (error) return { ok: false, galat: 'Gagal menyimpan. Coba lagi.' };
   const berubah = ((data ?? []) as unknown[]).length > 0;
-  //  Ulang soal / mundur: jawaban soal itu dan sesudahnya di sesi ini dianulir, supaya peserta bisa
-  //  menjawab lagi (satu jawaban per soal) dan papan skor ikut mundur. Soal baru baru membuka pilihan
-  //  sesudah hitung mundur, jadi penghapusan ini selesai sebelum jawaban baru bisa masuk.
   const anulir = anulirDari(aksi, j);
   if (berubah && anulir !== null) {
     const { error: hapus } = await db.from('lc_eks_live_jawaban').delete().eq('kelas_id', k.id).eq('sesi', k.live_sesi).gte('indeks', anulir);
@@ -93,10 +66,6 @@ export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dar
   return { ok: true, berubah };
 }
 
-/**
- * Semua peserta sudah menjawab soal yang sedang berjalan -> tutup sekarang (hasil langsung tampil,
- * jadwal sesudahnya ikut maju). Dipanggil setelah jawaban masuk.
- */
 export async function tutupBilaSemuaMenjawab(db: Db, k: KelasLive, jumlahPemain: number): Promise<void> {
   const sekarang = Date.now();
   const j = jadwalLive(k, sekarang);
@@ -111,10 +80,8 @@ export async function tutupBilaSemuaMenjawab(db: Db, k: KelasLive, jumlahPemain:
 
 const msAtauNull = (iso: string | null) => (iso ? new Date(iso).getTime() : null);
 
-/** Status lengkap untuk LAYAR HOST admin (termasuk kunci setelah waktu habis). */
 export async function keadaanHost(db: Db, k: KelasLive) {
   const sekarang = Date.now();
-  //  Rapikan titik acuan di basis data bila jadwal sudah melewati beberapa tahap (tidak terlihat bedanya).
   const rapi = wujudkanLive(k, sekarang);
   if (rapi) void updateBersyarat(db, k, rapi).then(() => {}, () => {});
   const j = jadwalLive(k, sekarang);
@@ -139,7 +106,6 @@ export async function keadaanHost(db: Db, k: KelasLive) {
     jedaMs: j.jedaMs,
     pemain: (pemain ?? []) as { id: string; nama: string }[],
     soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
-    //  Layar host biasanya diproyeksikan: kunci baru dikirim setelah waktu habis.
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,
     jumlahMenjawab: jawaban.length,
     distribusi: tahap === 'hasil' ? distribusi(jawaban) : null,
@@ -149,11 +115,6 @@ export async function keadaanHost(db: Db, k: KelasLive) {
 export type KeadaanHost = Awaited<ReturnType<typeof keadaanHost>>;
 
 type JawabanSaya = { pilihan: Pilihan; benar: boolean; poin: number };
-/**
- * Jawaban peserta untuk soal ini. Sekali terkirim tidak berubah, jadi yang SUDAH ada disimpan 10 menit per
- * peserta; kuncinya memuat waktu mulai soal, sehingga Ulang soal / Mundur (jawaban dianulir, waktu mulai
- * baru) tidak membaca jawaban lama. Belum menjawab -> tidak disimpan (dicek lagi tiap penyegaran).
- */
 async function jawabanSaya(db: Db, k: KelasLive, pesertaId: string, indeks: number): Promise<JawabanSaya | null> {
   const kunci = `jwb:${pesertaId}:${k.live_sesi}:${indeks}:${k.live_soal_mulai}`;
   const j = await simpanSebentar(kunci, 600_000, () => Promise.resolve(
@@ -163,7 +124,6 @@ async function jawabanSaya(db: Db, k: KelasLive, pesertaId: string, indeks: numb
   return j;
 }
 
-/** Status untuk LAYAR PESERTA. Soal & skor hanya untuk peserta terdaftar; kunci hanya setelah waktu habis. */
 export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | null, jumlahPemain: number) {
   const sekarang = Date.now();
   const j = jadwalLive(k, sekarang);
@@ -183,7 +143,6 @@ export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | n
     jumlahPemain,
     soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,
-    //  Benar/salah & poin soal yang sedang berjalan baru dibuka setelah waktu habis.
     jawabanSaya: milikSaya ? (terbuka ? milikSaya : { pilihan: milikSaya.pilihan }) : null,
     posisi: papan && pesertaId ? posisiSaya(papan, pesertaId) : null,
     papan: papan && (tahap === 'papan' || tahap === 'selesai')

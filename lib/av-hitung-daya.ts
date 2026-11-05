@@ -1,17 +1,14 @@
-/** av-hitung-daya.ts - dipecah dari av-hitung.ts (scripts/pecah-modul.mjs); av-hitung.ts tetap mengekspor ulang semuanya. */
 import { HasilKoneksi, SelRC, SudutMulai, hitungKoneksi } from './av-hitung-koneksi';
 import { MCB_STANDAR } from './av-hitung-led';
-
-// ── Power connection LED (sirkuit listrik per MCB & fase) ──────────────────
 
 export const FASE = ['R', 'S', 'T'] as const;
 
 export interface OpsiDayaLED {
-  /** Susunan unit (modul/cabinet). */ kolom: number; baris: number;
-  /** W maks per unit. */ wattUnit: number;
+   kolom: number; baris: number;
+   wattUnit: number;
   tegangan: number; faktorDaya: number;
-  /** Rating MCB tiap sirkuit (A). */ mcb: number;
-  /** Beban maksimal tiap sirkuit terhadap MCB (%), bawaan 80 (beban kontinu). */ beban: number;
+   mcb: number;
+   beban: number;
   fase: 1 | 3;
   mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z';
   kosong?: SelRC[];
@@ -20,19 +17,13 @@ export interface OpsiDayaLED {
 export interface SirkuitLED { no: number; unit: number; watt: number; arus: number; fase: string; mulai: { c: number; r: number } | null }
 
 export interface HasilDayaLED {
-  /** Urutan kabel power (format sama dengan screen connection: "port" = sirkuit). */ hasil: HasilKoneksi;
+   hasil: HasilKoneksi;
   sirkuit: SirkuitLED[];
   perFase: { fase: string; watt: number; arus: number; sirkuit: number; mcb: number }[];
-  /** W yang boleh per sirkuit. */ kapasitasW: number; unitPerSirkuitMaks: number;
+   kapasitasW: number; unitPerSirkuitMaks: number;
   totalW: number; galat: string | null;
 }
 
-/**
- * Pembagian kabel power LED ke sirkuit MCB. Satu sirkuit = satu rantai kabel power
- * (unit disambung berurutan seperti kabel data). Batas tiap sirkuit = MCB × V × PF × beban%.
- * Pada 3 fase, sirkuit dibagi ke R/S/T supaya beban tiap fase seimbang.
- */
-/** Satu garis (kolom/baris) lebih besar dari kapasitas sirkuit -> garis dipecah (pakai hasil zona biasa). */
 const galatGaris = (garis: unknown[][], w: number, kap: number) => garis.some(g => g.length * w > kap + 1e-6);
 
 export function hitungDayaLED(o: OpsiDayaLED): HasilDayaLED {
@@ -44,8 +35,6 @@ export function hitungDayaLED(o: OpsiDayaLED): HasilDayaLED {
   const w = Math.max(0.1, o.wattUnit);
   const dasar = { kolom: o.kolom, baris: o.baris, pxPerRC: w, kosong: o.kosong, mulai: o.mulai, arah: o.arah, pola: o.pola, bagi: 'baris' as const };
   let hasil = hitungKoneksi({ ...dasar, pxPerPort: penuhW, bebanMaks: batasPersen });
-  //  Sirkuit dibuat rata: garis (kolom/baris) dibagi seimbang ke jumlah sirkuit minimum - bukan
-  //  sirkuit penuh + sisa kecil. 3 fase: dibulatkan ke kelipatan 3 supaya R/S/T seimbang.
   const nMin = hasil.port.length;
   const urut = hitungKoneksi({ ...dasar, pola: 'Z', pxPerPort: 1e15 }).sel;
   const garis: { c: number; r: number }[][] = [];
@@ -75,7 +64,6 @@ export function hitungDayaLED(o: OpsiDayaLED): HasilDayaLED {
   const nFase = o.fase === 3 ? 3 : 1;
   const beban = Array.from({ length: nFase }, () => ({ watt: 0, sirkuit: 0 }));
   const sirkuit: SirkuitLED[] = hasil.port.map(p => {
-    //  Fase dengan beban paling kecil (seri: urutan R, S, T) supaya seimbang dan tetap berurutan.
     let fi = 0;
     for (let i = 1; i < nFase; i++) if (beban[i].watt < beban[fi].watt - 1e-6) fi = i;
     beban[fi].watt += p.px; beban[fi].sirkuit++;

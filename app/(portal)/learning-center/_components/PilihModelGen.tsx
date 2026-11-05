@@ -1,6 +1,5 @@
 'use client';
 
-/** PilihModelGen - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { type ModelAI } from './shared';
 import { type SisiBanding } from './QuestionsPage';
 

@@ -1,27 +1,10 @@
-/**
- * lib/perbandingan.ts - Product Comparison (battle card) Tools Team: bentuk data, label template (EN / ID),
- * validasi berkas brosur, dan validasi + verifikasi hasil AI. Murni - dipakai peramban & server
- * (diuji di uji/perbandingan.ts).
- *
- * Template baku: "LG 22SM3G-B vs DigiSIGN DSN-LAD-015 Comparison (EN).pdf" (owner, 2026-10-07) - header gelap,
- * kartu produk (unggulan = RECOMMENDED), bagian bernomor dengan tabel SPECIFICATION | produk..., lalu
- * "Summary & Recommendation" (ringkasan, 3 sorotan, kotak rekomendasi, catatan). Tanpa footer.
- *
- * Integritas data: setiap nilai berstatus 'ada' WAJIB membawa kutipan dari brosur; kutipan diperiksa
- * benar-benar ada di teks brosur (verifikasiBukti). Yang tidak terbukti menjadi 'cek' dan harus diputuskan
- * pengguna sebelum PDF bisa diunduh - AI tidak bisa menyelundupkan spesifikasi karangan.
- */
 
 export const MIN_PRODUK = 2, MAKS_PRODUK = 4;
-/** Batas berkas (di peramban; berkas tidak pernah diunggah ke server) & teks yang dikirim ke AI. */
 export const MAKS_BYTE_BERKAS = 25_000_000, MAKS_BYTE_TOTAL = 60_000_000;
 export const MAKS_KARAKTER_PRODUK = 45_000, MAKS_KARAKTER_TOTAL = 140_000;
-/** Teks per halaman yang terlalu sedikit untuk dianggap ber-teks (PDF hasil scan). */
 export const MIN_KARAKTER_TEKS = 80;
 
 export type Bahasa = 'en' | 'id';
-/** ada = disebut brosur; tidak-disebut = tidak ada di brosur; tidak-tersedia = brosur menyatakan tidak ada;
- *  cek = perlu ditinjau (kutipan tidak ditemukan / data bertentangan). */
 export type StatusNilai = 'ada' | 'tidak-disebut' | 'tidak-tersedia' | 'cek';
 export interface Bukti { halaman?: number; kutipan: string }
 export interface NilaiSpek { teks: string; status: StatusNilai; unggul?: boolean; bukti?: Bukti; alasanCek?: string }
@@ -31,33 +14,25 @@ export interface ProdukBanding { merek: string; nama: string; judulKartu: string
 export interface Sorotan { judul: string; teks: string }
 export interface KartuBanding {
   bahasa: Bahasa;
-  /** Eyebrow header, mis. 'PRODUCT COMPARISON — COMPACT DISPLAY 22"'. */
   kategori: string;
   judul: string;
   pengantar: string;
-  /** Urutan kolom; indeks 0 = produk unggulan (RECOMMENDED). */
   produk: ProdukBanding[];
   bagian: BagianSpek[];
-  /** Teks boleh memuat **tebal** (nama produk). */
   ringkasan: string;
   sorotan: Sorotan[];
   rekomendasi: string;
   catatan: string;
 }
 
-/** Label tetap template (tidak diisi AI). */
 export const LABEL: Record<Bahasa, { spesifikasi: string; rekomendasiPil: string; ringkasan: string; rekomendasi: string; catatan: string; tidakDisebut: string; tidakTersedia: string }> = {
   en: { spesifikasi: 'SPECIFICATION', rekomendasiPil: 'RECOMMENDED', ringkasan: 'Summary & Recommendation', rekomendasi: 'Recommendation:', catatan: 'Note:', tidakDisebut: 'Not officially published', tidakTersedia: 'Not available' },
   id: { spesifikasi: 'SPESIFIKASI', rekomendasiPil: 'DIREKOMENDASIKAN', ringkasan: 'Ringkasan & Rekomendasi', rekomendasi: 'Rekomendasi:', catatan: 'Catatan:', tidakDisebut: 'Tidak dipublikasikan resmi', tidakTersedia: 'Tidak tersedia' },
 };
 
-/** Teks yang tampil di sel untuk sebuah nilai. */
 export const teksNilai = (n: NilaiSpek, b: Bahasa) =>
   n.status === 'tidak-disebut' ? LABEL[b].tidakDisebut : n.status === 'tidak-tersedia' ? (n.teks || LABEL[b].tidakTersedia) : n.teks;
 
-// ── Akses ─────────────────────────────────────────────────────────────────────
-
-/** Siapa boleh memakai Product Comparison: Admin, Team, pimpinan, atau akun berizin menu Tools Team. */
 export function bolehPerbandingan(u: { role?: string | null; allowed_menus?: string[] | null; pimpinan?: boolean | null } | null | undefined): boolean {
   if (!u) return false;
   const r = (u.role ?? '').toLowerCase();
@@ -65,20 +40,13 @@ export function bolehPerbandingan(u: { role?: string | null; allowed_menus?: str
   return Array.isArray(u.allowed_menus) && u.allowed_menus.includes('tools-team');
 }
 
-//  Siapa mengunduh langsung / memverifikasi: lib/perbandingan-aturan.ts (diatur Admin Panel).
-
-// ── Berkas ────────────────────────────────────────────────────────────────────
-
-/** null = berkas boleh; string = alasan ditolak. `kepala` = beberapa byte pertama berkas. */
 export function periksaBerkas(nama: string, ukuran: number, kepala: Uint8Array): string | null {
   if (ukuran <= 0) return `${nama}: berkas kosong.`;
   if (ukuran > MAKS_BYTE_BERKAS) return `${nama}: terlalu besar (maks ${MAKS_BYTE_BERKAS / 1_000_000} MB).`;
-  //  Tanda tangan PDF "%PDF-" (bukan ekstensi / tipe dari nama berkas).
   const pdf = kepala.length >= 5 && kepala[0] === 0x25 && kepala[1] === 0x50 && kepala[2] === 0x44 && kepala[3] === 0x46 && kepala[4] === 0x2d;
   return pdf ? null : `${nama}: bukan PDF. Hanya brosur PDF yang didukung.`;
 }
 
-/** null = susunan berkas boleh. */
 export function periksaDaftarBerkas(berkas: { nama: string; ukuran: number }[]): string | null {
   if (berkas.length < MIN_PRODUK) return `Unggah minimal ${MIN_PRODUK} brosur produk.`;
   if (berkas.length > MAKS_PRODUK) return `Maksimal ${MAKS_PRODUK} produk dalam satu perbandingan.`;
@@ -87,36 +55,25 @@ export function periksaDaftarBerkas(berkas: { nama: string; ukuran: number }[]):
   return null;
 }
 
-/** Nama berkas aman untuk unduhan: Product-Comparison-A-vs-B.pdf. */
 export function namaBerkasPdf(produk: { nama: string }[]): string {
   const bersih = (s: string) => s.normalize('NFKD').replace(/[^\w.\- ]+/g, '').trim().replace(/\s+/g, '-').slice(0, 40) || 'Produk';
   return `Product-Comparison-${produk.map(p => bersih(p.nama)).join('-vs-')}.pdf`.slice(0, 180);
 }
 
-// ── Verifikasi bukti ──────────────────────────────────────────────────────────
-
-/** Bentuk pembanding: huruf kecil, spasi & tanda baca dirapatkan, superskrip / simbol umum disamakan. */
 export function normalTeks(s: string): string {
   return s.normalize('NFKC').toLowerCase()
     .replace(/[‐-―−]/g, '-').replace(/[“”„″]/g, '"').replace(/[‘’′]/g, "'")
     .replace(/[^\p{L}\p{N}%°"'.,:/+\-x]+/gu, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Kutipan dianggap terbukti bila (bentuk normalnya) ada di teks brosur produk itu. */
 export function kutipanAda(kutipan: string, sumber: string): boolean {
   const k = normalTeks(kutipan);
   return k.length >= 2 && normalTeks(sumber).includes(k);
 }
 
-// ── Validasi hasil AI ─────────────────────────────────────────────────────────
-
 const STATUS: StatusNilai[] = ['ada', 'tidak-disebut', 'tidak-tersedia', 'cek'];
 const teks = (v: unknown, maks: number) => (typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, maks) : '');
 
-/**
- * Periksa & rapikan JSON hasil AI. `sumber[i]` = teks brosur produk ke-i (urutan kolom). Nilai 'ada' tanpa
- * kutipan yang ditemukan di brosur -> 'cek'. `unggul` hanya untuk nilai 'ada'.
- */
 export function periksaHasil(x: unknown, sumber: string[], bahasa: Bahasa): { ok: true; data: KartuBanding; dicek: number } | { ok: false; alasan: string } {
   const d = x as Record<string, unknown>;
   if (!d || typeof d !== 'object') return { ok: false, alasan: 'Hasil AI bukan objek JSON.' };
@@ -176,18 +133,12 @@ export function periksaHasil(x: unknown, sumber: string[], bahasa: Bahasa): { ok
   return { ok: true, data, dicek };
 }
 
-/** Jumlah nilai yang masih 'cek' (PDF hanya boleh diunduh bila 0). */
 export const jumlahCek = (k: KartuBanding) => k.bagian.reduce((s, b) => s + b.baris.reduce((t, r) => t + r.nilai.filter(v => v.status === 'cek').length, 0), 0);
 
-/** Pecah teks "**tebal**" menjadi potongan biasa / tebal (untuk HTML & PDF). */
 export function potongTebal(s: string): { t: string; tebal: boolean }[] {
   return s.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map(p => (p.startsWith('**') && p.endsWith('**') ? { t: p.slice(2, -2), tebal: true } : { t: p, tebal: false }));
 }
 
-/**
- * Periksa bentuk kartu yang disimpan untuk verifikasi (dari peramban): batas ukuran & tipe, status dipertahankan
- * (nilai hasil koreksi manual boleh tanpa kutipan). Bukan pengganti verifikasi manusia.
- */
 export function periksaKartu(x: unknown): { ok: true; data: KartuBanding } | { ok: false; alasan: string } {
   const d = x as Record<string, unknown>;
   if (!d || typeof d !== 'object' || !Array.isArray(d.produk) || !Array.isArray(d.bagian)) return { ok: false, alasan: 'Data perbandingan tidak sah.' };
@@ -219,10 +170,6 @@ export function periksaKartu(x: unknown): { ok: true; data: KartuBanding } | { o
     produk, bagian, ringkasan: teks(d.ringkasan, 1400), sorotan, rekomendasi: teks(d.rekomendasi, 700), catatan: teks(d.catatan, 600) } };
 }
 
-/**
- * "Loloskan semua": setiap nilai 'cek' diterima apa adanya - berisi teks = 'ada', kosong = 'tidak-disebut'.
- * Hanya untuk verifikator / pengunduh langsung bila diizinkan Admin Panel (aturan.lolosSemua).
- */
 export function loloskanSemua(k: KartuBanding): KartuBanding {
   return { ...k, bagian: k.bagian.map(b => ({ ...b, baris: b.baris.map(r => ({ ...r, nilai: r.nilai.map(v => {
     if (v.status !== 'cek') return v;

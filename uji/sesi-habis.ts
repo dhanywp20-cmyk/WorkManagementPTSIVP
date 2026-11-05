@@ -1,15 +1,3 @@
-/**
- * uji/sesi-habis.ts - menu "macet" sesudah platform dibuka berjam-jam.
- *
- * Sebabnya: cookie sesi (httpOnly) mati 6 jam sesudah login, sementara portal tetap tampak masuk dari
- * sessionStorage. Setiap pindah menu dialihkan proxy.ts ke /dashboard?lanjut=... - sorotan menu tertahan,
- * layar diam di Dashboard, dan muat ulang jaring pengaman kembali ke Dashboard yang sama.
- *
- * Kini sesi praktis tidak habis (400 hari, permintaan pemilik: tidak perlu sesi habis, terutama di HP), dan
- * bila cookie tetap hilang portal langsung menampilkan layar masuk - tanpa permintaan berkala ke server.
- *
- * Jalankan: npm test -- sesi-habis
- */
 import { existsSync, readFileSync } from 'fs';
 import { SESSION_DURATION_MS } from '../lib/constants';
 import { SESSION_HOURS } from '../lib/masuk-server';
@@ -26,7 +14,8 @@ cek('banner "Sesi akan berakhir / Perpanjang Sesi" dihapus', !existsSync('app/_c
 
 console.log('\n2. Cookie hilang -> layar masuk, bukan menu macet');
 const portal = baca('app/(portal)/_kerangka/KerangkaPortal.tsx');
-const efek = portal.slice(portal.indexOf('COOKIE SESI HILANG'), portal.indexOf('// Auto-navigate sales/guest'));
+const awalEfek = portal.lastIndexOf('useEffect(', portal.indexOf('void cekSesiServer()'));
+const efek = portal.slice(awalEfek, portal.indexOf('}, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);', awalEfek) + 70);
 cek('server ditanya HANYA bila alamat membawa ?lanjut= (tanpa polling)',
   /const lanjut = new URLSearchParams\(window\.location\.search\)\.get\('lanjut'\);\s*if \(!lanjut\) return;/.test(efek) && /cekSesiServer\(\)/.test(efek) && !/setInterval/.test(efek));
 cek('401 -> layar masuk (sesiBerakhir)', /if \(hasil === 'habis'\) sesiBerakhir\(\);/.test(efek));

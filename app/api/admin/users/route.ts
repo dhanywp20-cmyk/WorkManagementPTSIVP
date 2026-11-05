@@ -4,44 +4,18 @@ import { getSessionUser, isAdminRole } from '@/lib/server-auth';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * /api/admin/users - operasi user yang menyentuh kolom HAK AKSES
- * (role, team_type, allow_incentive_input, allowed_menus).
- *
- * Kenapa harus di server: tabel users dipakai anon key di browser. Trigger DB
- * (lock-users-privileged-columns.sql) membekukan kolom-kolom itu untuk anon,
- * supaya tidak ada yang bisa promosikan diri jadi admin via REST. Perubahan
- * sah hanya boleh lewat route ini (pakai service-role) dan WAJIB admin.
- *
- * Kolom non-hak-akses (nama, phone, jabatan, atasan_id) tetap boleh diubah
- * langsung dari klien - trigger tidak menyentuhnya.
- */
-
-// Field yang BOLEH ditulis route ini (whitelist - cegah set kolom sembarangan).
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope', 'incentive_akses',
   'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level', 'piket_akses', 'piket_ubah',
-  //  Akun pimpinan (lihat lib/pimpinan.ts): lihat semua, hanya baca. Dibekukan trigger untuk anon.
   'pimpinan',
-  //  Toggle "boleh ditugaskan pekerjaan" - dibekukan trigger untuk anon, jadi
-  //  hanya bisa diubah lewat route ini. Lihat lib/teams.ts bolehDitugaskan().
   'bisa_ditugaskan',
-  //  Alamat daerah/kota - hanya berarti untuk akun kelompok PTS Cabang (lihat
-  //  field `cabang` di lib/kelompok.ts). Dipakai auto-fill Daerah/Kota di
-  //  dropdown Installer, Reminder Schedule mode Remote.
   'pts_daerah',
 ]);
-// 'password' sengaja TIDAK ada di daftar: kolom itu peninggalan dan tidak
-// pernah dibaca saat login. Password disimpan di user_credentials lewat
-// /api/auth/set-credential (akun baru) atau /api/auth/change-password.
 
 function pick(obj: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of Object.keys(obj || {})) if (ALLOWED_FIELDS.has(k)) out[k] = obj[k];
-  //  Pimpinan berada di luar struktur kerja: tidak di bawah atasan mana pun, tidak
-  //  masuk KPI, dan tidak ditawarkan saat menugaskan pekerjaan. Ditegakkan di sini
-  //  (bukan hanya di formulir) supaya tidak bergantung pada urutan klik admin.
   if (out.pimpinan === true) {
     out.atasan_id = null;
     out.kpi_enabled = false;
@@ -82,15 +56,6 @@ export async function POST(request: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true });
     }
-
-    /*
-      Action setIncentiveInput & setIncentiveBrandScope DIPINDAH ke
-      /api/incentive/akses. Penjaganya berbeda di sana: pemegang akses PENUH
-      modul insentif (bukan hanya role 'admin') boleh memakainya, supaya
-      Manager PTS bisa mengatur timnya sendiri. Dua route dengan syarat
-      berbeda untuk satu setelan yang sama hanya akan menghasilkan dua
-      jawaban, jadi yang di sini dihapus - bukan dibiarkan berdampingan.
-    */
 
     if (action === 'setAccessLevel') {
       const userId = body.userId as string;

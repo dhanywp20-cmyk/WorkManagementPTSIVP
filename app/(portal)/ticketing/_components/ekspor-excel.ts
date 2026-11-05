@@ -1,13 +1,6 @@
 import { Ticket, formatDateTime } from './shared';
 import { URL_XLSX } from '@/lib/xlsx-loader';
 
-/**
- * Ekspor daftar ticket ke Excel berformat, termasuk lembar ringkasan.
- *
- * Seluruh yang dibutuhkannya diterima sebagai argumen, jadi fungsi sepanjang
- * ini tidak perlu tinggal di dalam komponen halaman - dan bisa diuji tanpa
- * merender apa pun.
- */
 export interface ArgEkspor {
   tickets: Ticket[];
   filteredTickets: Ticket[];
@@ -22,13 +15,6 @@ export interface ArgEkspor {
 
 export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify }: ArgEkspor): void {
   const runExport = (XLSX: any) => {
-    /*
-      H10 (audit): dulu hanya Team Services yang diekspor dari daftar yang
-      SUDAH tersaring (filteredTickets) - tim lain selalu mengekspor SELURUH
-      ticket (tickets), tidak peduli filter/pencarian yang sedang aktif di
-      layar. Admin/Manager yang menyaring dulu lalu klik Ekspor akan
-      mendapat file berisi ticket yang tidak sesuai dengan yang mereka lihat.
-    */
     const exportTickets = filteredTickets;
     const isServicesExport = currentUserTeamType === "Team Services";
     const border = { top: { style: "thin", color: { rgb: "D1D5DB" } }, bottom: { style: "thin", color: { rgb: "D1D5DB" } }, left: { style: "thin", color: { rgb: "D1D5DB" } }, right: { style: "thin", color: { rgb: "D1D5DB" } } };
@@ -50,7 +36,6 @@ export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, sta
     const row = (cells: number) => Array(cells).fill(empty());
     const wb = XLSX.utils.book_new();
     const exportDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
-    // Dashboard sheet
     {
       const COLS = 5;
       const dashTitle = isServicesExport ? "📊 TICKET REPORT — TEAM SERVICES" : "📊 TICKET REPORT — DASHBOARD ANALYTICS";
@@ -100,7 +85,6 @@ export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, sta
       ws["!rows"] = [{ hpt: 30 }, { hpt: 18 }, { hpt: 8 }];
       XLSX.utils.book_append_sheet(wb, ws, "📊 Dashboard");
     }
-    // Tickets sheet
     {
       const headers = ["No.", "Project Name", "Alamat", "Nama & Telepon Customer", "Sales", "Issue / Masalah", "Deskripsi", "SN Unit", "Product", "Handler (Assigned To)", "Status PTS", "Status Services", "Current Team", "Tgl Ticket", "Dibuat Oleh", "Dibuat Pada", "Jumlah Activity Log"];
       const COLS = headers.length;
@@ -125,7 +109,6 @@ export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, sta
       ws["!rows"] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 32 }];
       XLSX.utils.book_append_sheet(wb, ws, "📋 Semua Ticket");
     }
-    // Activity Logs sheet
     {
       const headers = ["No.", "Project Name", "Issue", "Status Ticket", "Handler", "Team", "Action Taken", "Notes", "Status Baru", "Ke Services?", "File Lampiran", "Waktu Activity"];
       const COLS = headers.length;

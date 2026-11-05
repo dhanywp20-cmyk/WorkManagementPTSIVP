@@ -1,8 +1,4 @@
 'use client';
-/**
- * Sub menu Konten & Pola Uji: spesifikasi konten untuk tim kreatif (resolusi PERSIS layar, rasio,
- * frame rate, bagaimana materi 1080p/4K akan tampil) + unduh PNG pola uji pada resolusi asli.
- */
 import { useEffect, useRef, useState } from 'react';
 import { Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { namaBerkas, unduhKanvasPNG } from '../../bersama/cetak';
@@ -21,16 +17,11 @@ const KET_JENIS: Record<JenisPola, string> = {
   polos: 'Satu warna penuh - cek piksel mati, modul belang/berbeda kecerahan. Ulangi untuk merah, hijau, biru, putih & hitam.',
 };
 
-/** Materi sumber dipasang "fit" ke layar: ukuran tampil & sisa bar hitam. */
 function pasMateri(sx: number, sy: number, rx: number, ry: number) {
   const s = Math.min(rx / sx, ry / sy);
   const w = Math.round(sx * s), h = Math.round(sy * s);
   return { s, w, h, barX: rx - w, barY: ry - h };
 }
-/**
- * Sisa bar hitam - jumlah KEDUA sisi, ditulis rinci per sisi. Dulu "71 px kiri-kanan" terbaca 71 px di tiap sisi
- * (padahal total; tiap sisi ±35 px).
- */
 function teksSisa(p: ReturnType<typeof pasMateri>) {
   if (!p.barX && !p.barY) return 'pas penuh';
   const [n, a, b] = p.barX ? [p.barX, 'kiri', 'kanan'] : [p.barY, 'atas', 'bawah'];
@@ -46,7 +37,6 @@ export function TampilanKonten({ a }: { a: AlatLED }) {
   const bisa = polaUjiBisa(h.resX, h.resY);
   const pola: PolaUji = { resX: h.resX, resY: h.resY, kolom, baris, pxCabX: h.pxCabX, pxCabY: h.pxCabY, jenis, warna, judul: labelLED };
 
-  //  Pratinjau ± 720 px lebar, digambar ulang saat layar / jenis pola berubah.
   useEffect(() => {
     if (!pratinjau.current || !bisa) return;
     kanvasPola(pola, Math.min(1, 720 / Math.max(1, h.resX)), pratinjau.current);
@@ -55,7 +45,6 @@ export function TampilanKonten({ a }: { a: AlatLED }) {
   const unduh = async () => {
     setStatus('proses');
     try {
-      //  Beri kesempatan tombol menampilkan "..." sebelum kanvas besar digambar.
       await new Promise(r => setTimeout(r, 30));
       await unduhKanvasPNG(kanvasPola(pola), namaBerkas('Pola uji', jenis, `${h.resX}x${h.resY}`, project));
       setStatus('siap');

@@ -1,49 +1,29 @@
 'use client';
 
-/** PanelLampiranDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { Desain3DTools } from '../Desain3DTools';
-import { ProjectRequest, ProjectAttachment } from '../shared';
-import { type TautanDesain3D, type IzinRuang } from '../desain-3d-request';
+import { ProjectRequest } from '../shared';
+import { useKonteksRequest } from '../konteks-request';
 
 export interface PanelLampiranDetailProps {
-  activeAttachTab: "all" | "sld" | "boq" | "design3d";
-  attachments: ProjectAttachment[];
-  bisaKelolaRequest: boolean;
-  boqFileRef: import("react").RefObject<HTMLInputElement | null>;
-  desain3d: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string; } | null;
-  desain3dTools: TautanDesain3D[];
-  design3dFileRef: import("react").RefObject<HTMLInputElement | null>;
-  detailRoomIdx: number;
-  detailRoomStatus: "pending" | "approved" | "in_progress" | "completed" | "rejected" | undefined;
-  displayFileName: (fileName: string) => string;
-  fileInputRef: import("react").RefObject<HTMLInputElement | null>;
-  formatFileSize: (bytes: number) => string;
-  getFileRoomIdx: (fileName: string) => number;
-  handleCategoryUpload: (file: File, category: "sld" | "boq" | "design3d") => Promise<void>;
-  handleDeleteAttachment: (att: ProjectAttachment) => void;
-  handleFileUpload: (file: File) => Promise<void>;
-  isPTS: boolean;
-  mintaPilih3D: number;
-  muatDesain3D: (id: string) => Promise<void>;
-  notify: (type: "success" | "error" | "info", msg: string) => void;
   selectedRequest: ProjectRequest;
-  setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | "sld" | "boq" | "design3d">>;
-  setMintaPilih3D: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  showUploadChoice: boolean;
-  sldFileRef: import("react").RefObject<HTMLInputElement | null>;
-  uploadingCategory: "sld" | "boq" | "design3d" | null;
-  uploadingFile: boolean;
 }
 
-export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRequest, boqFileRef, desain3d, desain3dTools, design3dFileRef, detailRoomIdx, detailRoomStatus, displayFileName, fileInputRef, formatFileSize, getFileRoomIdx, handleCategoryUpload, handleDeleteAttachment, handleFileUpload, isPTS, mintaPilih3D, muatDesain3D, notify, selectedRequest, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory, uploadingFile }: PanelLampiranDetailProps) {
+export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProps) {
+  const k = useKonteksRequest();
+  const { isPTS } = k.sesi;
+  const { bisaKelolaRequest } = k.izin;
+  const { displayFileName, formatFileSize, getFileRoomIdx, notify } = k.bantu;
+  const { detailRoomIdx, detailRoomStatus } = k.detail;
+  const {
+    activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
+    handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory,
+    uploadingFile
+  } = k.lampiran;
   return (
     <>
       <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
         {(() => {
-          // Scope file ke room tab yang lagi aktif - pakai konvensi prefix
-          // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).
           const roomAttachments = attachments.filter(a => getFileRoomIdx(a.file_name) === detailRoomIdx);
           return (<>
         <div className="flex items-center justify-between mb-4">
@@ -72,14 +52,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                       <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-500">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
                     </button>
                     <p className="px-3.5 pt-2 pb-1 text-[11px] font-bold text-gray-500 uppercase tracking-widest">File PTS - pilih kategori</p>
-                    {/*
-                      Tiga pilihan eksplisit, BUKAN tebak dari ekstensi file - PDF
-                      bisa berarti SLD atau Design 3D (sldFileRef & design3dFileRef
-                      sama-sama accept=".pdf"), jadi menebak dari ekstensi akan salah
-                      tepat pada kasus yang paling sering. Memakai file input yang
-                      sama persis dengan tombol kategori di panel bawah, supaya
-                      filenya selalu masuk tab SLD(0)/BOQ(0)/3D(0) yang benar.
-                    */}
                     {[
                       { ref: sldFileRef, icon: '📐', label: 'SLD (PDF)', hint: 'Gambar teknis instalasi' },
                       { ref: boqFileRef, icon: '📊', label: 'BOQ (Excel)', hint: 'Rincian kebutuhan & harga' },
@@ -91,7 +63,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                         <span>{label}<br /><span className="font-normal text-gray-500">{hint}</span></span>
                       </button>
                     ))}
-                    {/* Tambahan: tautkan desain dari Tools Team (bukan unggah file). */}
                     <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'design3d' ? t : 'design3d')); setMintaPilih3D(n => n + 1); }}
                       className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-violet-50 flex items-start gap-2 border-t border-gray-100">
                       <span className="text-base leading-none"><Ikon nama="🧊" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
@@ -128,7 +99,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
           </div>
         )}
 
-        {/* Tabs */}
         <div className="flex border border-gray-200 rounded-xl overflow-hidden mb-4">
           {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveAttachTab(tab)}
@@ -138,7 +108,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
           ))}
         </div>
 
-        {/* File grid */}
         {(activeAttachTab === 'all' ? roomAttachments : roomAttachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <div className="text-3xl mb-2">📂</div>
@@ -146,7 +115,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
           </div>
         ) : (
           <div className="space-y-3">
-            {/* For structured categories: show LATEST prominently, history collapsed */}
             {(['sld','boq','design3d'] as const).filter(cat =>
               (activeAttachTab === 'all' || activeAttachTab === cat) &&
               roomAttachments.some(a => a.attachment_category === cat)
@@ -163,7 +131,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                     <span className={`text-[11px] font-bold text-${catColor}-700 uppercase tracking-widest`}>{catLabel} — Versi Terbaru</span>
                     {history.length > 0 && <span className={`text-[10px] font-bold text-${catColor}-500`}>{history.length} versi lama</span>}
                   </div>
-                  {/* Latest */}
                   <div className="flex items-center gap-1 border-b border-gray-100">
                   <a href={latest.file_url} target="_blank" rel="noopener noreferrer"
                     className="flex-1 min-w-0 flex items-center gap-3 p-3 hover:bg-teal-50 transition-all cursor-pointer">
@@ -188,7 +155,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                     </button>
                   )}
                   </div>
-                  {/* Version history */}
                   {history.map(att => (
                     <div key={att.id} className="flex items-center gap-1 border-b border-gray-50 opacity-60">
                     <a href={att.file_url} target="_blank" rel="noopener noreferrer"
@@ -213,7 +179,6 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                 </div>
               );
             })}
-            {/* General files */}
             {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (

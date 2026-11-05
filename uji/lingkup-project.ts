@@ -21,12 +21,6 @@ for (const k of kasus) {
   console.log(`        filter = ${f === null ? 'TIDAK ADA (lihat semua)' : f}`);
 }
 
-// Nama bertanda kutip tidak boleh MENAMBAH kondisi baru.
-//
-// Kutipnya dilucuti, jadi isian jahat tetap terkurung di dalam SATU nilai
-// berkutip - PostgREST membaca koma di dalam kutip sebagai huruf biasa.
-// Yang diuji karena itu bukan "apakah ada kata neq", melainkan "apakah
-// jumlah kondisi bertambah". Itu pertanyaan yang sebenarnya.
 function jumlahKondisi(f: string): number {
   let dalamKutip = false, n = 1;
   for (const c of f) {
@@ -45,13 +39,11 @@ if (!aman) gagal++;
 
 const jahatDivisi = filterLingkup({ semua: false, divisi: ['A","sales_division.neq."B'], namaSendiri: 'Z' })!;
 const n2 = jumlahKondisi(jahatDivisi);
-const aman2 = n2 === 2;  // nama sendiri + 1 divisi
+const aman2 = n2 === 2;
 console.log(`${aman2 ? 'OK  ' : 'GAGAL'}  Divisi berisi kutip tetap 2 kondisi (dapat ${n2})`);
 console.log(`        filter = ${jahatDivisi}`);
 if (!aman2) gagal++;
 
-// ── Lingkup yang dihitung dari PROFIL user, bukan dari objek buatan tangan ──
-// Inilah yang menentukan siapa bocor dan siapa tidak.
 type Profil = { nama: string; u: any; bolehSemua: boolean };
 const profil: Profil[] = [
   { nama: 'admin',                       u: { id: '1', full_name: 'Admin',  role: 'admin' },                              bolehSemua: true  },
@@ -72,15 +64,6 @@ async function jalankan() {
   console.log(`${ok ? 'OK  ' : 'GAGAL'}  ${p.nama.padEnd(24)} -> ${bocor ? 'CARI SEMUA' : 'dibatasi: ' + f}`);
  }
 
- /*
-   Piket Showroom - baris TANPA PEMILIK.
-
-   Catatan kegiatan yang tidak punya nama sales sama sekali (training
-   internal, maintenance, standby - hampir separuh isi tabelnya) bukan
-   kunjungan pelanggan siapa pun. Tanpa opsi ini setiap akun non-PTS
-   kehilangan separuh isi halaman, termasuk Sales yang batasannya memang
-   cuma dimaksudkan untuk menutup pelanggan divisi tetangga.
- */
  const lSales = await hitungLingkupProject({ id: 's1', full_name: 'Fajar', role: 'guest' } as never);
  const tanpaOpsi  = filterLingkup(lSales, 'nama_sales', 'sales_division');
  const denganOpsi = filterLingkup(lSales, 'nama_sales', 'sales_division', { sertakanTanpaPemilik: true });

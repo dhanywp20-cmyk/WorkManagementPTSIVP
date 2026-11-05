@@ -1,11 +1,5 @@
 import React from 'react';
 
-/**
- * Ikon garis pengganti emoji: memakai `currentColor` sehingga selaras dengan
- * warna label induknya, ukurannya diatur lewat class, dan bentuknya sama di
- * semua sistem operasi. `aria-hidden` karena labelnya sudah ditulis di
- * sebelahnya.
- */
 const ICON_SHAPES: Record<string, React.ReactNode> = {
   search:   <><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></>,
   user:     <><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,

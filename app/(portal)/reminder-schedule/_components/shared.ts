@@ -6,18 +6,12 @@ import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
 import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal-aturan';
 export { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId };
 
-// Placeholder default saat Sales request tanpa isi notes - BUKAN catatan asli,
-// jangan ditampilkan/disimpan lagi begitu request sudah di-assign ke pengerjaan.
 export const DEFAULT_REQUEST_NOTE = 'Menunggu assignment dari Admin';
 
-// Bersihkan prefix "[REQUEST SALES]" dari notes; kalau isinya cuma placeholder
-// default (bukan catatan asli dari user), kembalikan string kosong.
 export function cleanRequestNotes(notes: string | null | undefined): string {
   const stripped = (notes ?? '').replace('[REQUEST SALES] ', '').replace('[REQUEST SALES]', '').trim();
   return stripped === DEFAULT_REQUEST_NOTE ? '' : stripped;
 }
-
-// Types
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type Status = StatusJadwal;
@@ -51,15 +45,11 @@ export interface Reminder {
   product?: string;
   updated_at?: string;
   warranty_years?: 1 | 2 | 3 | null;
-  /** Timeline pengerjaan - disalin ke checklist lokasi Project Progress. Hanya kategori Konfigurasi. */
   progress_start_date?: string;
   progress_target_date?: string;
   mode_penyelesaian?: 'onsite' | 'remote' | null;
   installer_name?: string | null;
   installer_daerah?: string | null;
-  /** Akun PTS Cabang yang tertaut (kalau dipilih dari dropdown, bukan diketik
-   *  manual). Dipakai Incentive PTS untuk menaut bagian PTS Daerah ke akun
-   *  sungguhan - lihat installer_user_id di calc.ts. */
   installer_user_id?: string | null;
   display_type?: 'led' | 'lcd' | 'mix' | null;
   requires_middleware?: boolean;
@@ -69,34 +59,19 @@ export interface Reminder {
   pic_id?: string | null;
   incentive_value?: number;
   bast_date?: string | null;
-  /** true = sengaja dikeluarkan dari Incentive PTS; jadwalnya tetap di sini. */
   incentive_excluded?: boolean | null;
-  product_type?: string; // tipe produk utk routing pipeline (dipilih saat request)
-  batch_id?: string | null; // grup reminder yang dibuat sekaligus dari 1 submission multi-tanggal
-  /**
-   * Beberapa JADWAL TERPISAH yang ternyata satu proyek insentif - mis.
-   * Konfigurasi Senin dan Training tiga hari kemudian. Berbeda dari batch_id,
-   * yang hanya mengikat baris dari satu pengiriman form.
-   *
-   * NULL berarti "berdiri sendiri", bukan "belum tahu". Hanya diisi oleh
-   * keputusan manusia; lihat lib/kelompok-insentif.ts.
-   */
+  product_type?: string;
+  batch_id?: string | null;
   incentive_group_id?: string | null;
-  routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null (lama)
-  internal_sales_id?: string | null;   // Sales Internal reviewer utama / reviewer MVI saat brand BOTH
+  routing_status?: string | null;
+  internal_sales_id?: string | null;
   internal_approved_by?: string | null;
-  internal_approved_at?: string | null; // approve reviewer utama (internal_sales_id)
-  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' - brand yg dipilih Sales External
-  internal_sales_id_2?: string | null; // Sales Internal reviewer IVP saat brand BOTH
-  internal_approved_at_2?: string | null; // approve reviewer kedua (internal_sales_id_2)
-  rejection_reason?: string | null;    // alasan saat Sales Internal Tolak request
-  assigned_supervisor_id?: string | null; // Supervisor tim yang wajib assign ke anggota/diri sendiri (dari product_team_map)
-  /**
-   * Identitas berupa uuid, hidup berdampingan dengan sales_name/assigned_to.
-   * uuid menjawab SIAPA (pencocokan, assign, notifikasi); nama tetap menjawab
-   * TERCATAT SEBAGAI SIAPA. Boleh kosong: baris lama dan nama yang ambigu
-   * sengaja tidak ditebak - lihat sql/identitas-uuid.sql.
-   */
+  internal_approved_at?: string | null;
+  brand?: string | null;
+  internal_sales_id_2?: string | null;
+  internal_approved_at_2?: string | null;
+  rejection_reason?: string | null;
+  assigned_supervisor_id?: string | null;
   sales_user_id?: string | null;
   assign_user_id?: string | null;
 }
@@ -113,7 +88,6 @@ export interface TeamUser {
   jabatan?: string | null;
   access_level?: string;
   telegram_chat_id?: string | null;
-  /** Muncul di dropdown penerima tugas? Lihat bolehDitugaskan di lib/teams.ts. */
   bisa_ditugaskan?: boolean | null;
 }
 
@@ -127,10 +101,6 @@ export interface GuestUser {
   is_internal_sales?: boolean;
 }
 
-// REVIEW_TRIGGER_CATEGORIES (auto form_review ke Guest) & INCENTIVE_TRIGGER_CATEGORIES
-// (wajib Onsite/Remote saat Completed) kini di lib/jadwal-aturan.ts - diekspor ulang di atas.
-
-// Kategori yang mendukung Controller Automation (subset dari INCENTIVE_TRIGGER_CATEGORIES)
 export const CONTROLLER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 export const CONTROLLER_BRANDS: { value: ControllerBrand; label: string }[] = [
@@ -139,23 +109,6 @@ export const CONTROLLER_BRANDS: { value: ControllerBrand; label: string }[] = [
   { value: 'wyrestorm', label: 'Wyrestorm' },
 ];
 
-/*
-  DIHAPUS: CONTROLLER_AUTOMATION_ELIGIBLE = ['yoga', 'farhan']
-           MANAGER_PIC_USERNAME = 'dhany'
-
-  Dua konstanta itu memaku USERNAME ORANG di dalam kode - persis bentuk yang
-  membuat platform ini tidak bisa dijual: begitu Yoga atau Farhan pindah
-  posisi, atau perusahaan lain memakainya, keduanya menunjuk orang yang tidak
-  ada dan tidak ada cara membetulkannya selain menyunting kode.
-
-  Keduanya sudah TIDAK DIPAKAI di mana pun saat dihapus - dibiarkan berdiri
-  justru berbahaya, sebab tampak seperti sumber kebenaran yang siap dipakai
-  lagi. Bila kelak butuh "siapa yang boleh menangani X", jawabannya lewat
-  kolom yang diatur admin (pola bisa_ditugaskan / access_level), bukan daftar
-  nama di kode.
-*/
-
-// Constants
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string; dot: string }> = {
   low:    { label: 'Low',    color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)', dot: '#94a3b8' },
   medium: { label: 'Medium', color: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.4)',  dot: '#f59e0b' },
@@ -169,12 +122,8 @@ export const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: s
   cancelled:   { label: 'Cancelled', color: '#374151', bg: '#f3f4f6', border: '#6b7280', icon: '❌' },
 };
 
-
-// Tipe produk untuk routing pipeline (dipilih sales saat request). "LED & LCD"
-// = proyek punya keduanya. Satu sumber untuk form + mapping Admin Panel.
 export const PRODUCT_TYPES = ['LED', 'LCD/Middleware', 'LED & LCD'] as const;
 
-// Kategori khusus Daily Report (input manual) - superset dari CATEGORIES.
 export const DAILY_REPORT_CATEGORIES = [
   ...CATEGORIES,
   'Design Single Line Diagram',
@@ -202,25 +151,9 @@ export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
   { value: 'monthly', label: 'Setiap Bulan' },
 ];
 
-/**
- * Daftar divisi sales - HANYA nilai bawaan, bukan lagi sumber kebenaran.
- *
- * Daftar yang benar-benar berlaku disimpan di database dan dibaca lewat
- * useDivisiSales() (lihat lib/merek.ts), supaya divisi baru bisa ditambahkan
- * dari Admin Panel tanpa deploy. Nama ini dipertahankan untuk pemakaian di
- * luar React dan sebagai cadangan saat pengaturannya belum termuat.
- *
- * Sebelumnya daftar yang sama disalin di lima berkas shared.ts: menambah satu
- * divisi berarti menyunting kelimanya, dan satu yang terlewat membuat divisi
- * itu muncul di sebagian menu saja.
- */
 export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 
 export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
-
-// Helpers
-
-// formatDate & newBatchId kini di lib/jadwal-aturan.ts (dipakai juga DIWAYPI) - diekspor ulang di atas.
 
 export interface SupervisorCandidate {
   id: string;
@@ -229,13 +162,6 @@ export interface SupervisorCandidate {
   team_type: string;
 }
 
-/**
- * Cari Supervisor tim yang menangani tipe produk tertentu - TIDAK hardcode
- * nama orang. Baca product_team_map (Fase 1: product_type  team_types[])
- * lalu cari user ber-jabatan Supervisor di tim itu (Struktur Organisasi).
- * "LED & LCD" bisa punya >1 tim  kembalikan semua supervisor yang cocok
- * (dipakai utk WA notify-all; yang assign duluan yang eksekusi).
- */
 export async function resolveSupervisorsForProductType(productType: string | null | undefined): Promise<SupervisorCandidate[]> {
   if (!productType) return [];
   const { data: map } = await supabase.from('product_team_map').select('team_types').eq('product_type', productType).maybeSingle();
@@ -248,14 +174,6 @@ export async function resolveSupervisorsForProductType(productType: string | nul
   return (sups ?? []) as SupervisorCandidate[];
 }
 
-/**
- * Cari akun Manager yang berhak ke-notify actionable (WA & in-app) di luar
- * role='admin' - gabungan DUA sumber, dedup by id:
- *   1. app_settings.manager_user_id (override lama, satu akun spesifik)
- *   2. SEMUA akun role='team' dengan toggle "Full Access" aktif (lihat
- *      lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql) -
- *      cara yang disarankan sekarang, bisa lebih dari satu akun.
- */
 export async function fetchManagerTargets(): Promise<{ id: string; full_name: string; phone_number: string | null }[]> {
   const [{ data: mgrSetting }, { data: fullAccessTeam }] = await Promise.all([
     supabase.from('app_settings').select('value').eq('key', KUNCI_PENGATURAN.MANAGER).maybeSingle(),
@@ -284,27 +202,16 @@ export function isDueToday(due_date: string) {
   return due_date === new Date().toISOString().split('T')[0];
 }
 
-// Token Fonnte TIDAK boleh diambil di sisi klien. Pengiriman WA lewat route
-// server /api/notifikasi/whatsapp/kirim yang membaca token dari Admin Panel.
-//
-// WA terpusat di lib/wa.ts; wrapper menjaga signature lama (target, message, _meta).
 export async function sendFonnteWA(
   target: string,
   message: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _meta?: Record<string, unknown>,
-  /** Kunci KATALOG_EVENT - diisi = saklar per-event di Admin Panel berlaku. */
   event?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
   return sendWA(target, message, 'reminder_wa', event);
 }
 
-/**
- * Tombol "Sync ke Incentive PTS" hanya boleh muncul untuk reminder kategori
- * insentif yang sudah selesai - lihat catatan panjang di dekat pemakaiannya
- * (tombol yang tidak bisa ditemukan lebih buruk daripada tombol yang kadang
- * kelihatan sebelum saatnya).
- */
 export function layakIncentive(r: Reminder): boolean {
   return adalahKategoriInsentif(r.category) && r.status === 'done';
 }
@@ -313,7 +220,6 @@ export function diluarIncentive(r: Reminder): boolean {
   return r.incentive_excluded === true;
 }
 
-/** Kolom yang dibandingkan saat jadwal diedit (riwayat perubahan & WA ringkasan). */
 export const REMINDER_FIELDS: AdminField[] = [
   { key: 'project_name', label: 'Nama Project' },
   { key: 'description',  label: 'Deskripsi' },

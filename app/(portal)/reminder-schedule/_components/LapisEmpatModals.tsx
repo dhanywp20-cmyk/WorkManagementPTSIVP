@@ -5,19 +5,6 @@ import type { Reminder } from './shared';
 import { formatDate } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * "Lapis 4" - mencari project SEBELUM form dibuka (pola sama seperti Create
- * Ticket), plus pertanyaan kelanjutan proyek (Lapis 1). Tiga modal berurutan
- * dipindah dari app/reminder-schedule/page.tsx apa adanya (JSX identik) ke
- * satu berkas karena memang satu alur - state & handler tetap di page.tsx.
- */
-
-// ── Pertanyaan kelanjutan proyek (Lapis 1) ──
-// Bukan peringatan yang bisa diabaikan: keduanya pilihan yang sah, dan
-// platform tidak punya dasar untuk memilih sendiri. Yang salah bukan
-// "membuat dua jadwal" - itu wajar - melainkan membiarkan hubungannya
-// tidak dinyatakan.
-
 export function TanyaLanjutanModal({
   tanyaLanjutan, onCancel, resolveGrupInsentif,
 }: {
@@ -52,11 +39,6 @@ export function TanyaLanjutanModal({
   );
 }
 
-// ── Lapis 4, langkah 'pilih' ──
-// Ditanyakan sebelum form terlihat sama sekali, seperti Create Ticket.
-// Menunda pertanyaan ini sampai form terbuka berarti orang sudah mulai
-// mengetik sebelum tahu ada jalan yang lebih cepat.
-
 export function PilihTipeReminderModal({
   buatUntukGuest, onPilihLama, onPilihBaru, onCancel,
 }: {
@@ -70,16 +52,6 @@ export function PilihTipeReminderModal({
       keterangan={buatUntukGuest ? 'Project-nya sudah pernah Anda ajukan, atau baru?' : 'Project-nya sudah pernah dijadwalkan, atau baru?'}
       footer={<TombolModal onClick={onCancel}>Batal</TombolModal>}>
           <div className="space-y-2.5">
-            {/*
-              Judulnya sengaja menyebut BAST, bukan sekadar "Project yang
-              sudah ada" - itu terlalu umum untuk menjelaskan APA yang
-              sebenarnya digabungkan kalau pilihan ini diambil. Yang
-              ditanyakan bukan "apakah project ini sudah tercatat" (hampir
-              selalu ya untuk klien lama), tapi "apakah serah-terima
-              pekerjaan ini nanti SATU BAST dengan yang sudah ada" - itulah
-              yang menentukan boleh tidaknya digabung jadi satu pool
-              insentif.
-            */}
             <button type="button" onClick={onPilihLama}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
@@ -117,13 +89,6 @@ export function PilihTipeReminderModal({
     </Modal>
   );
 }
-
-// ── Lapis 4, langkah 'cari' ──
-// Tahap sendiri yang ringan, hanya kotak cari dan hasilnya - bukan bagian
-// dari form besar. Form penuh baru terbuka SETELAH satu project
-// dikonfirmasi lewat "OK, Isi Form", jadi begitu form itu terlihat, ia
-// sudah terisi. Diambil dari `reminders` yang sudah termuat di halaman ini
-// (sudah dibatasi lingkup pengguna), bukan kueri baru.
 
 export function CariProyekLamaModal({
   buatUntukGuest, carianProyek, setCarianProyek,

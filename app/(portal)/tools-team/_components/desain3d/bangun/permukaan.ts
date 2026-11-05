@@ -1,12 +1,6 @@
-/**
- * desain3d/bangun/permukaan.ts - Tekstur bahan permukaan: kayu, kain, gril speaker, logam berlubang, dinding aksen, mic boundary, lift.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import type * as T from 'three';
 import type { Finish } from '../inti';
 import { acak, kanvas } from './tekstur';
-
-// ── Tekstur material: kayu, kain, gril, layar lift ─────────────────────────
 
 const WARNA_KAYU: Record<Finish, [string, string, string]> = {
   walnut: ['#583824', '#6c452b', '#2a170b'],
@@ -14,11 +8,6 @@ const WARNA_KAYU: Record<Finish, [string, string, string]> = {
   putih: ['#f3f4f6', '#e9ebef', '#ffffff'],
 };
 
-/**
- * Serat kayu prosedural yang menyambung mulus (frekuensi gelombang = jumlah
- * siklus bulat sepanjang ubin), searah sisi panjang meja. Satu ubin = 1,6 m
- * searah serat x 0,4 m melintang; UV ekstrusi dalam meter.
- */
 export function teksturKayu(THREE: typeof T, fin: Finish, sepanjangZ: boolean): T.Texture {
   const P = 1024, L = 256;
   const c = kanvas(sepanjangZ ? L : P, sepanjangZ ? P : L, g => {
@@ -49,10 +38,6 @@ export function teksturKayu(THREE: typeof T, fin: Finish, sepanjangZ: boolean): 
   return t;
 }
 
-/**
- * Tekstur feature wall: marmer putih berurat abu (slab 1,2 × 2,4 m dengan nat tipis) atau panel
- * kayu walnut. Satu ubin tekstur = satu slab; UV bidang dinding dihitung dalam meter (repeat).
- */
 export function teksturDindingAksen(THREE: typeof T, jenis: 'marmer' | 'kayu'): { tex: T.Texture; ubinW: number; ubinH: number } {
   if (jenis === 'kayu') {
     const tex = teksturKayu(THREE, 'walnut', true);
@@ -80,7 +65,6 @@ export function teksturDindingAksen(THREE: typeof T, jenis: 'marmer' | 'kayu'): 
   return { tex, ubinW: 1.2, ubinH: 2.4 };
 }
 
-/** Anyaman kain (jok kursi, soundbar). `ubin` = ukuran satu ubin dalam meter. */
 export function teksturKain(THREE: typeof T, dasar: string, ubin: number): T.Texture {
   const c = kanvas(128, 128, g => {
     g.fillStyle = dasar; g.fillRect(0, 0, 128, 128);
@@ -93,7 +77,6 @@ export function teksturKain(THREE: typeof T, dasar: string, ubin: number): T.Tex
   return t;
 }
 
-/** Gril logam berlubang (speaker). `ulang` = jumlah ubin pada UV 0..1. */
 export function teksturGril(THREE: typeof T, dasar: string, lubang: string, ulang: number): T.Texture {
   const c = kanvas(128, 128, g => {
     g.fillStyle = dasar; g.fillRect(0, 0, 128, 128); g.fillStyle = lubang;
@@ -109,17 +92,11 @@ export function teksturGril(THREE: typeof T, dasar: string, lubang: string, ulan
   return t;
 }
 
-/**
- * Mic boundary cakram bundar (kain abu-abu berpola konsentris + cincin LED hijau + ikon mic).
- * 'kain' = tutup atas yang berkain; 'ikon' = lapisan transparan cincin & ikon yang menyala.
- * Keduanya dipetakan ke lingkaran: pusat tekstur = pusat cakram, sisi kanvas = tepi cakram.
- */
 export function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon', dasar = '#6d6e72'): T.Texture {
   const U = 512, C = U / 2;
   const c = kanvas(U, U, g => {
     if (bagian === 'kain') {
-      g.fillStyle = dasar; g.fillRect(0, 0, U, U);   // gelap sedikit: pencahayaan adegan menerangkan ~1,4x
-      //  Anyaman melingkar: ratusan lingkaran tipis berselang-seling terang/gelap -> pola moire seperti kain asli.
+      g.fillStyle = dasar; g.fillRect(0, 0, U, U);
       for (let r = 3; r < C * 1.45; r += 2.1) {
         g.strokeStyle = Math.round(r / 2.1) % 2 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.16)';
         g.lineWidth = 1; g.beginPath(); g.arc(C, C, r, 0, Math.PI * 2); g.stroke();
@@ -129,9 +106,9 @@ export function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon', das
     }
     const hijau = '#6bf2b0';
     g.shadowColor = '#2dff9a'; g.shadowBlur = 16; g.strokeStyle = hijau; g.fillStyle = hijau;
-    g.lineWidth = 13; g.beginPath(); g.arc(C, C, 88, 0, Math.PI * 2); g.stroke();   // cincin LED
+    g.lineWidth = 13; g.beginPath(); g.arc(C, C, 88, 0, Math.PI * 2); g.stroke();
     g.shadowBlur = 8; g.lineWidth = 7; g.lineCap = 'round';
-    const w = 17;                                                       // ikon mic: kapsul + busur + tiang + dasar
+    const w = 17;
     g.beginPath(); g.moveTo(C - w, C - 22); g.arc(C, C - 22, w, Math.PI, 0); g.lineTo(C + w, C + 4); g.arc(C, C + 4, w, 0, Math.PI); g.closePath(); g.fill();
     g.beginPath(); g.arc(C, C + 4, w + 13, 0.12 * Math.PI, 0.88 * Math.PI); g.stroke();
     g.beginPath(); g.moveTo(C, C + 4 + w + 13); g.lineTo(C, C + 52); g.moveTo(C - 17, C + 52); g.lineTo(C + 17, C + 52); g.stroke();
@@ -139,7 +116,6 @@ export function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon', das
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 
-/** Layar paperless display lift: halaman masuk sistem rapat. */
 export function teksturLift(THREE: typeof T): T.Texture {
   const c = kanvas(512, 300, g => {
     const gr = g.createLinearGradient(0, 0, 512, 300);
@@ -154,7 +130,6 @@ export function teksturLift(THREE: typeof T): T.Texture {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
-/** Tekstur pelat besi hitam berlubang oval (bracket videowall), satu ubin = 16 cm, 4 lubang. */
 let lubangCache: { h: T.Texture; v: T.Texture } | null = null;
 
 export function teksturBerlubang(THREE: typeof T, tegak: boolean, panjang: number): T.Texture {

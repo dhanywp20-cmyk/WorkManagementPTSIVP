@@ -1,54 +1,29 @@
-/**
- * lib/notifications.ts - notifikasi in-app.
- *
- * createNotification() untuk satu user (butuh user_id, type, title, body, dan
- * opsional action_url + ref_id); createNotificationForAdmins() menyebar ke
- * seluruh admin dengan bentuk yang sama tanpa user_id.
- */
 
 import { supabase } from '@/lib/supabase';
 import { penerimaAdmin } from '@/lib/penerima-admin';
 
-/**
- * Push notification asli (bunyi + notifikasi sistem walau app/tab tertutup) -
- * dipicu SETIAP notifikasi in-app dibuat, lewat titik ini saja, supaya
- * seluruh alur yang sudah memanggil createNotification()/
- * createNotificationForAdmins() di berbagai modul otomatis ikut, tanpa
- * menyentuh satu pun titik pemanggilan itu.
- *
- * Fire-and-forget dan gagal diam-diam: push cuma pelengkap, notifikasi
- * in-app-nya sendiri sudah tersimpan lebih dulu di pemanggil di atas.
- */
 function pushSetelahNotif(userIds: string[], title: string, body?: string, actionUrl?: string): void {
   try {
     void fetch('/api/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_ids: userIds, title, body, url: actionUrl }),
-    }).catch(() => { /* jaringan bermasalah - abaikan */ });
-  } catch { /* abaikan */ }
+    }).catch(() => {  });
+  } catch {  }
 }
-
-// Types
 
 export type NotifType = 'ticket' | 'reminder' | 'project' | 'user' | 'kpi' | 'system';
 
 export interface NotifPayload {
-  user_id: string;       // Recipient user ID
+  user_id: string;
   type: NotifType;
   title: string;
   body?: string;
-  action_url?: string;   // Which module URL to navigate to on click
-  ref_id?: string;       // ID of the referenced record
-  created_by?: string;   // Full name of who triggered this
+  action_url?: string;
+  ref_id?: string;
+  created_by?: string;
 }
 
-// Core helpers
-
-/**
- * Create a notification for a single user.
- * Fails silently - never throws. Safe to call from any event handler.
- */
 export async function createNotification(payload: NotifPayload): Promise<void> {
   try {
     const { error } = await supabase.from('notifications').insert([{
@@ -69,19 +44,10 @@ export async function createNotification(payload: NotifPayload): Promise<void> {
   }
 }
 
-/**
- * Create notifications for all users with role admin/superadmin, PLUS akun
- * Team PTS dengan toggle "Full Access" aktif (mis. Manager PTS - lihat
- * lib/constants.ts hasFullAccess & sql/user-full-access-toggle.sql). Full
- * Access dimaksudkan supaya notifikasi yang masuk ke admin juga masuk ke
- * Manager pada saat yang sama, bukan menyusul terpisah.
- * Fails silently.
- */
 export async function createNotificationForAdmins(
   payload: Omit<NotifPayload, 'user_id'>
 ): Promise<void> {
   try {
-    // Satu sumber aturan "siapa admin" - lihat lib/penerima-admin.ts.
     const targets = await penerimaAdmin();
     if (!targets.length) return;
 
@@ -105,31 +71,21 @@ export async function createNotificationForAdmins(
   }
 }
 
-/**
- * Mark a single notification as read.
- */
 export async function markNotifRead(notifId: string): Promise<void> {
   try {
     await supabase.from('notifications').update({ is_read: true }).eq('id', notifId);
-  } catch { /* silent */ }
+  } catch {  }
 }
 
-/**
- * Mark ALL notifications for a user as read.
- */
 export async function markAllNotifsRead(userId: string): Promise<void> {
   try {
     await supabase.from('notifications')
       .update({ is_read: true })
       .eq('user_id', userId)
       .eq('is_read', false);
-  } catch { /* silent */ }
+  } catch {  }
 }
 
-/**
- * Fetch unread notifications for a user.
- * Returns empty array on any error.
- */
 export async function fetchUnreadNotifs(userId: string): Promise<{
   id: string; type: NotifType; title: string; body: string | null;
   action_url: string | null; ref_id: string | null; created_by: string | null;
@@ -149,24 +105,6 @@ export async function fetchUnreadNotifs(userId: string): Promise<{
   }
 }
 
-// Preset notification factories
-// Use these instead of constructing payloads manually.
-
-/** Notify when a new user registers and waits for approval */
-/**
- * DIPINDAH ke /api/auth/register.
- *
- * Versi lamanya dipanggil dari peramban sesudah registrasi, jadi ia harus
- * membaca tabel `users` TANPA token untuk mencari siapa saja adminnya -
- * pembacaan yang justru sedang ditutup karena membuka seluruh daftar akun
- * beserta nomor teleponnya kepada siapa pun yang memegang anon key.
- *
- * Sengaja tidak disisakan sebagai pembungkus tipis: pemanggil lama
- * membungkusnya dengan catch kosong, jadi kalau ia tetap ada dan diam-diam
- * mengembalikan nol admin, tidak akan ada yang menyadarinya.
- */
-
-/** Notify when a ticket is assigned to someone */
 export async function notifyTicketAssigned(
   assigneeId: string, assigneeName: string,
   ticketId: string, projectName: string,
@@ -183,7 +121,6 @@ export async function notifyTicketAssigned(
   });
 }
 
-/** Notify when a reminder/jadwal request is approved */
 export async function notifyReminderApproved(
   requesterId: string, requesterName: string,
   reminderId: string, projectName: string,
@@ -200,7 +137,6 @@ export async function notifyReminderApproved(
   });
 }
 
-/** Notify when a design project request status changes */
 export async function notifyProjectStatusChange(
   requesterId: string,
   projectId: string, projectName: string,
@@ -223,7 +159,6 @@ export async function notifyProjectStatusChange(
   });
 }
 
-/** Notify team member about KPI concern */
 export async function notifyKPIAlert(
   userId: string, userName: string, score: number
 ): Promise<void> {

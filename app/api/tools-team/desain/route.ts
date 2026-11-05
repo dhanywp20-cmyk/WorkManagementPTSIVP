@@ -1,26 +1,3 @@
-/**
- * /api/tools-team/desain - desain ruang 3D yang dibagikan ke seluruh tim.
- *
- *   GET                 siapa pun yang masuk: daftar desain aktif (tanpa isi
- *                       benda & tanpa gambar - gambar lewat /gambar yang
- *                       di-cache peramban). ?q= cari nama.
- *   GET ?id=            satu desain lengkap (versi terbaru).
- *   GET ?id=&versi=N    isi versi N (riwayat, tidak pernah berubah).
- *   GET ?id=&riwayat=1  daftar versi (tanpa isi) untuk dibuka ulang.
- *   POST {id?, versi?, nama, data, gambar?}
- *                       simpan. Tanpa id = desain baru (v1). Dengan id = versi
- *                       baru; `versi` = versi yang sedang dibuka peramban -
- *                       bila desain sudah diubah orang lain sejak itu, 409
- *                       (tidak menimpa diam-diam). Hanya pembuat atau
- *                       Admin/Full Access; lainnya 403 -> peramban menyimpan
- *                       sebagai salinan.
- *   DELETE ?id=         pembuat atau Admin/Full Access. Desain yang masih
- *                       ditautkan ke Request Design diarsipkan, bukan dihapus,
- *                       supaya request itu tetap bisa menampilkan versinya.
- *
- * Tabel ber-RLS tanpa policy (migrasi 027/028): hanya service role di sini
- * yang menyentuhnya, sesi diperiksa di server.
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -39,7 +16,6 @@ const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, a
 
 type Db = ReturnType<typeof getAdminClient>;
 
-/** Admin / Full Access dibaca ulang dari tabel users (bukan klaim token). */
 async function kelolaSemua(db: Db, userId: string) {
   const { data } = await db.from('users').select('role, access_level').eq('id', userId).maybeSingle();
   return hasFullAccess(data as { role?: string; access_level?: string } | null);
@@ -122,7 +98,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  //  Gambar layar & tekstur: disimpan sekali per isi, data desain hanya membawa ref:<hash>.
   const rujuk = await rujukGambarDesain(db, cek.data, jaga.user.id);
   if (!rujuk.ok) return gagal(rujuk.alasan);
   const { data, error } = await db.rpc('tools_simpan_desain', {
@@ -135,17 +110,11 @@ export async function POST(req: NextRequest) {
   }
   const hasil = (Array.isArray(data) ? data[0] : data) as { id: string; versi: number; updated_at: string } | null;
   if (!hasil) return gagal('Gagal menyimpan.', 500);
-  //  Gambar cetak resolusi tinggi: ditulis sekali untuk versi ini (gagal = cetak memakai pratinjau kecil).
   if (gambarHd) await db.rpc('tools_simpan_desain_hd', { p_desain: hasil.id, p_versi: hasil.versi, p_gambar_hd: gambarHd });
   await pangkasRiwayat(db, hasil.id, hasil.versi);
   return NextResponse.json({ ok: true, desain: { id: hasil.id, nama, versi: hasil.versi, updated_at: hasil.updated_at, bolehUbah: true } });
 }
 
-/**
- * Hemat ruang basis data (paket gratis): gambar HD hanya disimpan untuk versi
- * terbaru & versi yang ditautkan ke Request Design; versi yang lebih lama dari
- * SIMPAN_VERSI terakhir dan tidak ditautkan dihapus. Gagal = diabaikan.
- */
 async function pangkasRiwayat(db: Db, id: string, versiKini: number) {
   try {
     const { data: t } = await db.from('request_desain_ruang').select('versi').eq('desain_id', id);
@@ -157,7 +126,7 @@ async function pangkasRiwayat(db: Db, id: string, versiKini: number) {
       await kecuali(db.from(VERSI).delete().eq('desain_id', id).lte('versi', versiKini - SIMPAN_VERSI));
       await bersihkanGambarDesain(db);
     }
-  } catch { /* pemangkasan bukan bagian penting penyimpanan */ }
+  } catch {  }
 }
 
 export async function DELETE(req: NextRequest) {

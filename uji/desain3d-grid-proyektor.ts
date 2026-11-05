@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-grid-proyektor.ts - grid cahaya proyektor (inti/gridProyektor.ts): jumlah kotak mengikuti
- * rasio gambar, ukuran satu kotak dalam mm, pilihan kolom yang sah, permukaan sasaran utama.
- *
- * Jalankan: npm test -- desain3d-grid-proyektor
- */
 import { gridKolomSah, KOLOM_GRID_AWAL, kotakGrid, labelKotakGrid, permukaanUtama } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;

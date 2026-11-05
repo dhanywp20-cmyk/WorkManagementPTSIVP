@@ -1,17 +1,4 @@
-/**
- * lib/project-progress-sync.ts - jembatan Request Schedule ke Project Progress.
- *
- * SATU ARAH SAJA, dan yang disalin adalah snapshot saat reminder dibuat.
- * Sesudah itu kedua sisi berdiri sendiri: progres lapangan sering menyimpang
- * dari rencana awal, dan menimpanya otomatis akan menghapus pekerjaan admin.
- *
- * Penulisan dikerjakan server (/api/project-progress/sinkron) karena tabel
- * checklist_* hanya boleh ditulis lewat route server. Berkas ini dipakai di
- * klien (Request Schedule) maupun server (route sinkron), jadi tidak boleh
- * mengimpor apa pun yang khusus salah satu sisi.
- */
 
-/** Kategori reminder yang memicu pembuatan checklist lokasi. */
 export const PROGRESS_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training'] as const;
 
 export function triggersProjectProgress(category: string | null | undefined): boolean {
@@ -43,13 +30,6 @@ export interface SyncOutcome {
   errors: string[];
 }
 
-/**
- * Buat checklist lokasi di Project Progress untuk sekumpulan reminder.
- *
- * Tahan gagal: TIDAK PERNAH melempar error. Pembuatan reminder adalah aksi
- * utama user - integrasi ini pelengkap, jadi tidak boleh menggagalkannya.
- * `actor` tidak dikirim: server memakai akun dari sesi.
- */
 export async function syncRemindersToProjectProgress(
   reminders: ReminderSnapshot[],
   _actor?: SyncActor,

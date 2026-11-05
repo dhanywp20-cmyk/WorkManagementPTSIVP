@@ -1,5 +1,4 @@
 'use client';
-/** Daftar pengajuan verifikasi: verifikator melihat semua (menunggu dulu), pengaju melihat miliknya. */
 import { CheckCircle2, Clock, Download, Eye, XCircle } from 'lucide-react';
 import type { Peran, RingkasPengajuan } from './usePengajuan';
 

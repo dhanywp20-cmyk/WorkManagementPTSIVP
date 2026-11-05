@@ -1,8 +1,3 @@
-/**
- * Sertifikat Learning Center: kanvas A4 mendatar (2480 × 1754 px) -> PNG atau dicetak.
- * Aturan berhak & nomor: lib/sertifikat.ts. Nama perusahaan dari pengaturan merek.
- * Dipakai juga peserta Kelas Eksternal yang lulus (app/kelas/[token]) - `instansi` = perusahaan peserta.
- */
 import { merek } from '@/lib/merek';
 import { nomorSertifikat, ringkasJudul, tanggalSertifikat, type AttemptSertifikat } from '@/lib/sertifikat';
 import { namaBerkas, unduhKanvasPNG } from '@/lib/lembar-cetak';
@@ -15,13 +10,11 @@ const NAVY = '#13294b', EMAS = '#b8892b';
 function gambar(d: DataSertifikat): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d')!;
-  //  Latar krem lembut + bingkai ganda navy & emas.
   const bg = g.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, '#fffdf7'); bg.addColorStop(1, '#f7f1e3');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
   g.strokeStyle = NAVY; g.lineWidth = 26; g.strokeRect(70, 70, W - 140, H - 140);
   g.strokeStyle = EMAS; g.lineWidth = 6; g.strokeRect(120, 120, W - 240, H - 240);
-  //  Ornamen sudut.
   g.fillStyle = EMAS;
   for (const [x, y] of [[120, 120], [W - 120, 120], [120, H - 120], [W - 120, H - 120]]) { g.beginPath(); g.arc(x, y, 22, 0, Math.PI * 2); g.fill(); }
 
@@ -44,7 +37,6 @@ function gambar(d: DataSertifikat): HTMLCanvasElement {
   if (d.materi) tengah(ringkasJudul(`Materi: ${d.materi}`, 80), 1250, '44px Georgia, serif', '#475569');
   tengah(`Nilai ${Math.round(d.attempt.score ?? 0)}${d.passing ? `  ·  Passing ${d.passing}%` : ''}`, 1340, 'bold 54px Georgia, serif', '#047857');
 
-  //  Kaki: tanggal (kiri), nomor (kanan), tanda tangan (tengah).
   g.textAlign = 'left'; g.fillStyle = '#334155'; g.font = '40px Georgia, serif';
   g.fillText(tanggalSertifikat(d.attempt.submitted_at), 260, 1560);
   g.textAlign = 'right'; g.fillText(`No. ${nomorSertifikat(d.attempt)}`, W - 260, 1560);

@@ -1,6 +1,5 @@
 'use client';
 
-/** usePersetujuanAdmin - dipecah dari app/(portal)/reminder-schedule/_components/useAlurPersetujuan.ts (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Reminder, TeamUser, formatDate, sendFonnteWA, type SupervisorCandidate, cleanRequestNotes } from './shared';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
@@ -72,7 +71,6 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
     notify('success', `Request diarahkan ke ${teamLabel} (Supervisor: ${approveSupervisors.map(s => s.full_name).join(', ')})!`);
     logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'reminder', target_id: approveTarget.id, target_name: approveTarget.project_name, notes: `Routed to supervisor: ${approveSupervisors.map(s => s.full_name).join(', ')}` }).catch(() => {});
 
-    // WA ke SEMUA supervisor yang cocok - actionable, wajib assign lanjut.
     const supMsg =
       `🎯 *REQUEST PERLU DI-ASSIGN — ${teamLabel}*\n\n` +
       `Request dari Sales *${approveTarget.sales_name}* sudah disetujui Admin/Manager, silakan assign ke anggota tim kamu atau kerjakan sendiri:\n\n` +
@@ -95,7 +93,6 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
       }).catch(() => {});
     }
 
-    // WA ke sales requester - kasih tau statusnya diteruskan ke tim.
     try {
       const { data: salesUser } = await supabase.from('users').select('phone_number, full_name').eq('full_name', approveTarget.sales_name).eq('role', 'guest').maybeSingle();
       if (salesUser?.phone_number) {
@@ -109,21 +106,12 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
     fetchRemindersQuiet();
   };
 
-  // Handler: Admin Approve & Assign request dari Sales
   const handleApproveAssign = async () => {
     if (!approveTarget || !approveAssignTo) return;
-    // 'SELF_MANAGER' = Admin/Manager kerjakan sendiri (mis. Supervisor & tim
-    // sama-sama penuh). Akun admin sengaja dikecualikan dari teamUsers, jadi
-    // resolve langsung dari currentUser supaya tetap bisa dipilih.
     const assignee = approveAssignTo === 'SELF_MANAGER' ? currentUser : teamUsers.find(u => u.username === approveAssignTo);
     if (!assignee) return;
     setApproveSaving(true);
 
-    // Update reminder: assign ke team, clear REQUEST SALES note prefix.
-    // Kalau ini bagian dari batch multi-tanggal (request Sales beberapa hari
-    // sekaligus), semua tanggal lain di batch ikut di-approve & di-assign ke
-    // handler yang sama - tiap tanggal tetap pakai due_date-nya sendiri
-    // (hanya due_date milik approveTarget yang bisa di-override via field Tanggal).
     const cleanNotes = cleanRequestNotes(approveTarget.notes);
     const patchApprove = {
       assigned_to: assignee.username,
@@ -147,14 +135,6 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
       return;
     }
 
-    // Draft Project Progress dibuat DI SINI, bukan saat request diajukan
-    // Request Sales berstatus pending sampai di-assign; kalau draft dibuat sejak
-    // pengajuan, request yang ditolak akan meninggalkan lokasi kosong yang harus
-    // dibersihkan manual. Saat assign, pekerjaannya sudah pasti berjalan.
-    //
-    // Sengaja HANYA approveTarget, bukan sibling-nya: satu batch multi-tanggal
-    // adalah lokasi yang SAMA dikunjungi beberapa hari, bukan beberapa lokasi.
-    // Menyertakan sibling akan melahirkan lokasi kembar sebanyak jumlah hari.
     void syncNewRemindersToProgress([{
       id:                   approveTarget.id,
       project_name:         approveTarget.project_name,
@@ -193,7 +173,6 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
 
     notify('success', `Request disetujui & di-assign ke ${assignee.full_name}${allApprovedDates.length > 1 ? ` (${allApprovedDates.length} hari)` : ''}!`);
 
-    // WA ke team yang di-assign
     if (assignee.phone_number) {
       const msg =
         `🗓️ *JADWAL BARU — PTS IVP*
@@ -223,7 +202,6 @@ jangan lupa peralatan & Semangat💪🏼
       await sendFonnteWA(assignee.phone_number, msg, undefined, 'reminder.assigned');
     }
 
-    // WA ke sales yang request - konfirmasi approved
     try {
       const { data: salesUser } = await supabase
         .from('users').select('phone_number, full_name')
@@ -257,12 +235,10 @@ jangan lupa peralatan & Semangat💪🏼
           `🔗 ${appLink()}`;
         await sendFonnteWA(salesUser.phone_number, salesMsg);
       }
-    } catch { /* ignore WA error */ }
+    } catch {  }
 
-    // In-app notification to the sales requester
     try {
       if (approveTarget.notes?.includes('[REQUEST SALES]')) {
-        // Find the sales user by name to get their id
         const { data: salesUserFull } = await supabase
           .from('users').select('id, full_name')
           .eq('full_name', approveTarget.sales_name)
@@ -276,9 +252,8 @@ jangan lupa peralatan & Semangat💪🏼
           ).catch(() => {});
         }
       }
-    } catch { /* ignore */ }
+    } catch {  }
 
-    // Audit log
     logAudit({
       user_id: currentUser?.id ?? '',
       user_name: currentUser?.full_name ?? '',

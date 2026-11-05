@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/rapikan-impor.mjs - buang impor yang tidak terpakai (TypeScript organizeImports) lalu rapikan
- * daftar impor jadi satu baris `{ a, b }`. Dipakai setelah menghapus/memindah kode.
- *
- *   node scripts/rapikan-impor.mjs <berkas> [...]
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -1,16 +1,10 @@
 'use client';
 
-/**
- * Isian tambahan saat peserta masuk, sesuai kelas.isian_peserta (lib/kelas-eksternal.ts):
- * perusahaan/instansi (wajib) dan email/HP + izin dihubungi (opsional). Dipakai halaman kuis mandiri
- * (gaya 'terang') dan Kuis Live (gaya 'kuis', isian besar di kartu putih). Server memeriksa ulang.
- */
 import { MAKS_INSTANSI, MAKS_KONTAK, type IsianPeserta } from '@/lib/kelas-eksternal';
 
 export interface NilaiIsian { instansi: string; kontak: string; izin_kontak: boolean }
 export const ISIAN_KOSONG: NilaiIsian = { instansi: '', kontak: '', izin_kontak: false };
 
-/** Isian wajib sudah terpenuhi (pemeriksaan ringan di peramban - aturan lengkapnya di server). */
 export const isianLengkap = (isian: IsianPeserta, n: NilaiIsian) => isian === 'nama' || n.instansi.trim().length >= 2;
 
 export function IsianTambahan({ isian, nilai, ubah, gaya }: {

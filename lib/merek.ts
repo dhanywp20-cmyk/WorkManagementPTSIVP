@@ -1,40 +1,8 @@
-/**
- * lib/merek.ts - identitas tampilan platform (merek) dan daftar divisi sales,
- * dibaca dari database supaya bisa diubah tanpa menyunting kode.
- *
- * Dua hal yang dulu terpaku di kode dan karenanya hanya bisa diubah lewat
- * deploy:
- *
- *   1. Nama platform, nama portal, nama perusahaan, logo, dan warna panel -
- *      tersebar di halaman login dan header dashboard.
- *   2. SALES_DIVISIONS - daftar 27 divisi yang disalin PERSIS SAMA di lima
- *      berkas shared.ts. Menambah satu divisi berarti menyunting lima berkas,
- *      dan satu saja yang terlewat membuat divisi itu muncul di sebagian menu.
- *
- * Keduanya sekarang disimpan di `app_settings` (tabel kunci-nilai yang sudah
- * dipakai untuk manager_user_id dan jadwal reminder).
- *
- * NILAI BAWAAN DI BAWAH SENGAJA PERSIS SAMA dengan yang selama ini tampil.
- * Jadi selama baris pengaturannya belum ada - atau gagal dibaca - platform
- * tampil tepat seperti sebelumnya, bukan kosong atau berubah sendiri.
- */
 import { useEffect, useState, type CSSProperties } from 'react';
 import { supabase } from './supabase';
-// Interface, nilai bawaan & kunci penyimpanan dipindah ke berkas terpisah
-// TANPA impor React - lihat catatan di lib/merek-bawaan.ts kenapa itu perlu.
-// Diekspor ulang di sini supaya seluruh impor lama `from '@/lib/merek'` tetap jalan.
 import { type Merek, MEREK_BAWAAN, FIELD_LOGIN, KUNCI_MEREK, KUNCI_DIVISI } from './merek-bawaan';
 export { type Merek, MEREK_BAWAAN, FIELD_LOGIN, KUNCI_MEREK, KUNCI_DIVISI };
 
-// Merek
-
-// Divisi sales
-
-/**
- * Daftar bawaan - salinan persis daftar yang sebelumnya ada di lima berkas
- * shared.ts. Dipakai kalau baris pengaturannya belum ada, supaya menambah
- * kemampuan ini tidak mengosongkan satu pun dropdown yang sedang dipakai.
- */
 export const DIVISI_BAWAAN: string[] = [
   'IVP', 'MVI', 'MLDS', 'HAVS', 'Enterprise', 'DEC', 'ICS', 'POJ', 'VOJ', 'LOCOS',
   'VISIONMEDIA', 'UMP', 'BISOL', 'KIMS', 'IDC', 'IOCMEDAN', 'IOCPekanbaru',
@@ -42,18 +10,6 @@ export const DIVISI_BAWAAN: string[] = [
   'IOCBali', 'SGP', 'SGP 1', 'SGP 2', 'OSS',
 ];
 
-// Simpanan sementara
-
-/**
- * Kedua nilai disimpan di module scope DAN sessionStorage.
- *
- * Module scope: puluhan berkas mengimpor daftar divisi ini: tanpa simpanan,
- * tiap dropdown akan memanggil database sendiri-sendiri.
- *
- * sessionStorage: header dan halaman login dirender sebelum panggilan pertama
- * selesai. Tanpa nilai yang sudah tersimpan, merek yang sudah diganti akan
- * berkedip memperlihatkan nilai bawaan dulu setiap kali halaman dimuat ulang.
- */
 const SIMPAN_MEREK = 'ivp_merek';
 const SIMPAN_DIVISI = 'ivp_divisi';
 
@@ -67,39 +23,22 @@ function bacaSimpanan<T>(kunci: string): T | null {
 
 function tulisSimpanan(kunci: string, nilai: unknown): void {
   if (typeof window === 'undefined') return;
-  try { window.sessionStorage.setItem(kunci, JSON.stringify(nilai)); } catch { /* kuota penuh - abaikan */ }
+  try { window.sessionStorage.setItem(kunci, JSON.stringify(nilai)); } catch {  }
 }
 
 let merekSekarang: Merek = { ...MEREK_BAWAAN, ...(bacaSimpanan<Partial<Merek>>(SIMPAN_MEREK) ?? {}) };
-// Dipasang sedini mungkin supaya CSS tidak sempat memakai warna bawaan lebih
-// dulu lalu berkedip ke warna merek saat pemuatan selesai.
 if (typeof document !== 'undefined') {
   queueMicrotask(() => tulisWarnaKeCSS());
 }
 let divisiSekarang: string[] = bacaSimpanan<string[]>(SIMPAN_DIVISI) ?? DIVISI_BAWAAN;
-// Halaman modul yang dibuka langsung (tab baru, aplikasi Android) belum punya
-// salinan merek di sessionStorage - muat sekali per tab. Yang sudah punya
-// (dibuka dari dashboard di tab yang sama) tidak menambah query sama sekali.
 if (typeof window !== 'undefined' && bacaSimpanan(SIMPAN_MEREK) === null) {
   queueMicrotask(() => { void muatMerek(); });
 }
 
-/** Merek yang sedang berlaku. Selalu lengkap - field yang tidak diatur diisi bawaan. */
 export function merek(): Merek { return merekSekarang; }
 
-/** Daftar divisi sales yang sedang berlaku. Tidak pernah kosong. */
 export function divisiSales(): string[] { return divisiSekarang; }
 
-// Pemuatan
-
-/**
- * Baca satu nilai app_settings.
- *
- * Kolom `value` menerima dua bentuk, tergantung tipe kolomnya di database:
- * teks berisi JSON (kolom text) atau nilai yang sudah terurai (kolom jsonb).
- * Keduanya diterima di sini, karena menebak salah satunya akan membuat
- * pengaturan yang sudah tersimpan tampak tidak pernah ada.
- */
 function uraikan(nilai: unknown): unknown {
   if (nilai === null || nilai === undefined || nilai === '') return null;
   if (typeof nilai === 'object') return nilai;
@@ -109,14 +48,6 @@ function uraikan(nilai: unknown): unknown {
 
 let pemuatan: Promise<void> | null = null;
 
-/**
- * Muat merek & divisi dari database. Aman dipanggil berkali-kali: panggilan
- * yang datang saat pemuatan masih berjalan ikut menunggu yang sama.
- *
- * Kegagalan apa pun - jaringan, baris belum ada, JSON rusak - dibiarkan dan
- * nilai yang sedang berlaku dipertahankan. Pengaturan tampilan tidak pantas
- * menghalangi orang bekerja.
- */
 export function muatMerek(): Promise<void> {
   if (pemuatan) return pemuatan;
   pemuatan = (async () => {
@@ -128,16 +59,12 @@ export function muatMerek(): Promise<void> {
         const isi = uraikan(baris.value);
         if (isi === null) continue;
         if (baris.key === KUNCI_MEREK) {
-          // Digabung dengan bawaan, bukan menggantikannya: field yang belum
-          // pernah diisi tetap punya nilai, tidak berubah jadi string kosong.
           merekSekarang = { ...MEREK_BAWAAN, ...bersihkanMerek(isi as Partial<Merek>) };
           tulisSimpanan(SIMPAN_MEREK, merekSekarang);
           tulisWarnaKeCSS();
           beriTahuPendengar();
         } else if (baris.key === KUNCI_DIVISI) {
           const bersih = rapikanDivisi(isi);
-          // Daftar kosong ditolak: satu kesalahan simpan tidak boleh membuat
-          // SEMUA dropdown divisi di platform jadi kosong.
           if (bersih.length > 0) {
             divisiSekarang = bersih;
             tulisSimpanan(SIMPAN_DIVISI, bersih);
@@ -145,15 +72,13 @@ export function muatMerek(): Promise<void> {
           }
         }
       }
-    } catch { /* pertahankan nilai yang sedang berlaku */ }
+    } catch {  }
   })();
   return pemuatan;
 }
 
-/** Paksa muat ulang - dipakai setelah pengaturan disimpan dari Admin Panel. */
 export function muatUlangMerek(): Promise<void> { pemuatan = null; return muatMerek(); }
 
-/** Buang field yang bukan milik Merek dan nilai non-string. */
 function bersihkanMerek(isi: Partial<Merek>): Partial<Merek> {
   const hasil: Partial<Merek> = {};
   for (const kunci of Object.keys(MEREK_BAWAAN) as (keyof Merek)[]) {
@@ -163,14 +88,6 @@ function bersihkanMerek(isi: Partial<Merek>): Partial<Merek> {
   return hasil;
 }
 
-/**
- * Ubah warna hex jadi rgba dengan tingkat tembus pandang tertentu.
- *
- * Dipakai panel kiri halaman login: gambar latar harus tetap terlihat menembus
- * warna merek, jadi warnanya tidak bisa dipakai pekat begitu saja. Nilai yang
- * bukan hex 6 digit dikembalikan apa adanya - biar warna bernama seperti
- * "tomato" tetap tampil, bukan berubah jadi hitam.
- */
 export function warnaTembus(hex: string, alfa: number): string {
   const cocok = /^#([0-9a-f]{6})$/i.exec((hex ?? '').trim());
   if (!cocok) return hex;
@@ -178,24 +95,11 @@ export function warnaTembus(hex: string, alfa: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alfa})`;
 }
 
-/**
- * Baca angka kepekatan yang disimpan sebagai teks.
- *
- * Nilainya datang dari <input>, jadi bisa berupa apa saja - termasuk kosong
- * atau salah ketik. Yang di luar 0..1 dikembalikan ke nilai bawaan, bukan
- * dipakai apa adanya: kepekatan 5 membuat panel kirinya menutup rapat dan
- * fotonya hilang sama sekali.
- */
 export function angkaTembus(nilai: string, bawaan: number): number {
   const n = Number.parseFloat(nilai);
   return Number.isFinite(n) && n >= 0 && n <= 1 ? n : bawaan;
 }
 
-/** Gradasi panel kiri halaman login, sesuai warna & kepekatan yang diatur. */
-/**
- * Latar layar dashboard sesuai pengaturan merek: bidang netral (bawaan) atau
- * gambar unggahan admin. Satu fungsi untuk semua titik yang memasangnya.
- */
 export function latarDasbor(m: Merek): CSSProperties {
   return m.latarDasbor === 'gambar'
     ? { backgroundImage: `url(${m.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }
@@ -204,12 +108,9 @@ export function latarDasbor(m: Merek): CSSProperties {
 
 export function gradasiPanelLogin(m: Merek): string {
   const a = angkaTembus(m.tembusLogin, 0.84);
-  // Ujung kedua dibuat sedikit lebih pekat, seperti aslinya - gradasi yang
-  // rata terasa datar di atas foto.
   return `linear-gradient(135deg, ${warnaTembus(m.warnaLogin, Math.min(1, a - 0.02))}, ${warnaTembus(m.warnaLogin2, Math.min(1, a + 0.02))})`;
 }
 
-/** Rapikan daftar divisi: buang yang kosong, buang kembar, pertahankan urutan. */
 export function rapikanDivisi(isi: unknown): string[] {
   if (!Array.isArray(isi)) return [];
   const terlihat = new Set<string>();
@@ -226,9 +127,6 @@ export function rapikanDivisi(isi: unknown): string[] {
   return hasil;
 }
 
-// Penyimpanan (Admin Panel)
-
-/** Simpan merek. Hanya field yang BERBEDA dari bawaan yang ditulis. */
 export async function simpanMerek(baru: Merek): Promise<{ error: string | null }> {
   const ringkas: Partial<Merek> = {};
   for (const kunci of Object.keys(MEREK_BAWAAN) as (keyof Merek)[]) {
@@ -245,7 +143,6 @@ export async function simpanMerek(baru: Merek): Promise<{ error: string | null }
   return { error: null };
 }
 
-/** Simpan daftar divisi. Menolak daftar kosong. */
 export async function simpanDivisi(baru: string[]): Promise<{ error: string | null }> {
   const bersih = rapikanDivisi(baru);
   if (bersih.length === 0) return { error: 'Daftar divisi tidak boleh kosong.' };
@@ -258,13 +155,6 @@ export async function simpanDivisi(baru: string[]): Promise<{ error: string | nu
   return { error: null };
 }
 
-/**
- * Divisi yang MASIH DIPAKAI akun, walau sudah dihapus dari daftar.
- *
- * Dipanggil sebelum menghapus: divisi yang hilang dari daftar sementara masih
- * tercatat di akun orang akan membuat dropdown profil mereka tampil kosong,
- * dan penyaringan per divisi berhenti menemukan pekerjaannya.
- */
 export async function divisiTerpakai(): Promise<Record<string, number>> {
   const { data } = await supabase.from('users').select('sales_division');
   const hitung: Record<string, number> = {};
@@ -275,32 +165,12 @@ export async function divisiTerpakai(): Promise<Record<string, number>> {
   return hitung;
 }
 
-// Unggahan berkas
-
-/**
- * Bucket tempat logo & gambar latar disimpan.
- *
- * `merek-files` dibuat oleh sql/pengaturan-merek.sql. Selama berkas SQL itu
- * belum dijalankan bucket-nya belum ada, jadi unggahan jatuh ke `project-files`
- * yang sudah dipakai platform - dengan begitu tombol Unggah tetap berfungsi
- * hari ini, bukan menunggu satu langkah SQL lebih dulu.
- */
 const BUCKET_MEREK = 'merek-files';
 const BUCKET_CADANGAN = 'project-files';
 
-/** Batas ukuran berkas yang diterima. */
 const BATAS_LOGO = 2 * 1024 * 1024;
 const BATAS_LATAR = 8 * 1024 * 1024;
 
-/**
- * Unggah logo atau gambar latar, kembalikan URL publiknya.
- *
- * Logo TIDAK dikompres. compressImage() menyandi ulang jadi JPEG, dan JPEG
- * tidak punya lapisan tembus pandang - logo dengan latar transparan akan
- * pulang membawa kotak putih di belakangnya. Gambar latar aman dikompres:
- * ia memang foto, dan ukuran aslinya dari kamera bisa berkali lipat dari yang
- * dibutuhkan layar.
- */
 export async function unggahBerkasMerek(
   berkas: File,
   jenis: 'logo' | 'latar' | 'latarDasbor',
@@ -318,13 +188,10 @@ export async function unggahBerkasMerek(
     try {
       const { compressImage } = await import('./image-compress');
       siap = await compressImage(berkas, { maxDim: 2400, quality: 0.82 });
-    } catch { /* kompresi gagal - unggah aslinya, lebih baik besar daripada tidak jadi */ }
+    } catch {  }
   }
 
   const ext = (siap.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
-  // Nama diacak, bukan nama asli: mengunggah "logo.png" dua kali tidak boleh
-  // saling menimpa, dan berkas lama harus tetap utuh selama masih dirujuk
-  // oleh peramban yang sudah menyimpannya di cache.
   const nama = `merek/${jenis}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   for (const bucket of [BUCKET_MEREK, BUCKET_CADANGAN]) {
@@ -333,8 +200,6 @@ export async function unggahBerkasMerek(
     if (!error) {
       return { url: supabase.storage.from(bucket).getPublicUrl(nama).data.publicUrl, error: null };
     }
-    // Bucket belum ada - coba yang berikutnya. Galat lain (kuota, izin) tidak
-    // akan hilang dengan pindah bucket, jadi langsung dilaporkan.
     const pesan = (error.message || '').toLowerCase();
     if (!pesan.includes('not found') && !pesan.includes('bucket')) {
       return { url: null, error: error.message };
@@ -343,18 +208,6 @@ export async function unggahBerkasMerek(
   return { url: null, error: 'Tidak ada bucket penyimpanan yang bisa dipakai. Jalankan sql/pengaturan-merek.sql.' };
 }
 
-// Jembatan ke CSS
-
-/**
- * Tuliskan warna merek sebagai CSS custom property di <html>.
- *
- * Tanpa ini, warna merek hanya bisa dipakai lewat `style={{}}` di komponen
- * React - dan itu menutup pintu bagi CSS biasa, pseudo-element, dan keadaan
- * seperti :hover / :focus-visible yang tidak punya padanan inline.
- *
- * Menggantikan --ivp-brand di app/globals.css, yang nilainya dipatok merah
- * rose dan karenanya menjadi sumber warna KEDUA di samping database.
- */
 export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   if (typeof document === 'undefined') return;
   const akar = document.documentElement;
@@ -362,9 +215,6 @@ export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   akar.style.setProperty('--merek-utama-2', m.warnaUtama2);
   akar.style.setProperty('--merek-aksen', m.warnaAksen);
   akar.style.setProperty('--merek-utama-tembus', warnaTembus(m.warnaUtama, 0.1));
-  // Latar SEMUA halaman modul (bukan hanya layar dashboard) mengikuti pilihan
-  // "Latar Dashboard" di pengaturan merek. Gambar di-cache browser 1 tahun,
-  // jadi tiap perangkat cukup mengunduhnya sekali.
   if (m.latarDasbor === 'gambar' && m.gambarLatarDasbor) {
     akar.style.setProperty('--latar-halaman',
       `var(--halaman) url("${m.gambarLatarDasbor.replace(/"/g, '%22')}") center / cover no-repeat fixed`);
@@ -373,15 +223,6 @@ export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   }
 }
 
-// Jembatan React
-
-/**
- * Pendengar yang perlu dirender ulang saat pengaturan berubah.
- *
- * Tanpa ini, dropdown yang SUDAH terpasang saat pemuatan selesai akan terus
- * menampilkan daftar bawaan sampai halamannya dibuka ulang - dan divisi yang
- * baru ditambahkan seperti tidak tersimpan.
- */
 const pendengar = new Set<() => void>();
 
 function beriTahuPendengar(): void { for (const f of pendengar) f(); }
@@ -393,15 +234,11 @@ function usePengaturan<T>(ambil: () => T): T {
     pendengar.add(segarkan);
     void muatMerek().then(segarkan);
     return () => { pendengar.delete(segarkan); };
-    // ambil() selalu membaca variabel modul yang sama, jadi tidak perlu ikut
-    // sebagai dependensi - memasukkannya justru memasang ulang tiap render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return nilai;
 }
 
-/** Merek yang sedang berlaku, ikut berubah saat pengaturan disimpan. */
 export function useMerek(): Merek { return usePengaturan(merek); }
 
-/** Daftar divisi sales yang sedang berlaku. Tidak pernah kosong. */
 export function useDivisiSales(): string[] { return usePengaturan(divisiSales); }

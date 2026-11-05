@@ -1,13 +1,3 @@
-/**
- * uji/services-putus.ts - basis data Services yang tidak terjangkau tidak boleh menahan Ticketing.
- *
- * Bug: daftar ticket menunggu log dari basis Services. Saat domain Services mati, postgrest-js
- * mengulang tiap GET (jeda 1s, 2s, 4s) sehingga halaman tertahan "Loading..." belasan detik di
- * setiap muat & polling. Pemutus di lib/supabase.ts (fetchServices) menolak kegagalan tanpa
- * pengulangan, lalu menolak langsung selama jedanya, dan mencoba lagi sesudahnya.
- *
- * Jalankan: npx tsx uji/services-putus.ts
- */
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
@@ -18,7 +8,6 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= 'dummy';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ??= 'https://y.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY ??= 'dummy';
 
-//  fetch tiruan: perilakunya diganti per langkah, jumlah panggilannya dihitung.
 let panggil = 0;
 let perilaku: (init?: RequestInit) => Promise<Response> = async () => { throw new TypeError('fetch failed'); };
 globalThis.fetch = (async (_input: unknown, init?: RequestInit) => { panggil++; return perilaku(init); }) as typeof fetch;

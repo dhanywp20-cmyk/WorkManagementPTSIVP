@@ -1,23 +1,3 @@
-/**
- * scripts/cek-anon.mjs - membuktikan apa yang benar-benar bisa diambil orang
- * dengan anon key, tanpa lewat aplikasi.
- *
- * sql/cek-jangkauan-anon.sql menjawab pertanyaan yang sama dari sisi basis
- * data. Berkas ini menjawabnya dari sisi jaringan: ia memanggil PostgREST
- * persis seperti orang luar akan memanggilnya, memakai anon key yang memang
- * sudah ikut terkirim ke setiap browser. Keduanya saling memeriksa - kalau SQL
- * bilang "tertutup" tapi skrip ini berhasil menarik baris, yang benar adalah
- * skrip ini.
- *
- * Pakai:
- *   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
- *   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ... \
- *   node scripts/cek-anon.mjs
- *
- * Bisa juga membaca .env.local sendiri bila dijalankan dari akar proyek.
- *
- * HANYA MEMBACA. Tidak ada satu pun permintaan yang menulis.
- */
 import { readFileSync } from 'node:fs';
 
 function bacaEnvLokal() {
@@ -28,7 +8,6 @@ function bacaEnvLokal() {
       if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
     }
   } catch {
-    // tidak ada .env.local - andalkan environment
   }
 }
 bacaEnvLokal();
@@ -40,12 +19,6 @@ if (!URL_DB || !ANON) {
   process.exit(1);
 }
 
-/**
- * Tabel yang dipakai platform. Yang bertanda rahasia:true tidak pernah
- * disentuh dari browser sama sekali - seluruh pemakaiannya lewat route server
- * dengan service-role key. Kalau salah satunya menjawab 200, anon key yang
- * beredar di browser bisa membacanya juga.
- */
 const TABEL = [
   { nama: 'user_credentials',    rahasia: true },
   { nama: 'user_sessions',       rahasia: true },

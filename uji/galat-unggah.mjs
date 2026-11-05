@@ -1,12 +1,3 @@
-/**
- * uji/galat-unggah.mjs - penerjemahan galat unggah jawaban bergambar.
- *
- * Yang dijaga: pesan mentah Postgres/Storage tidak sampai ke peserta apa
- * adanya, dan galat yang BUKAN soal pemasangan tidak ikut tertelan jadi
- * kalimat generik.
- *
- *   node uji/galat-unggah.mjs
- */
 function terjemahkanGalatUnggah(pesan) {
   const p = pesan ?? 'Gagal mengunggah.';
   if (/row-level security|violates row/i.test(p)) {
@@ -36,7 +27,6 @@ const cek = (nama, syarat, catatan = '') => {
 
 console.log('\n1. Galat pemasangan disebut berikut berkas SQL-nya');
 {
-  // Persis pesan yang muncul di layar peserta.
   const h = terjemahkanGalatUnggah('new row violates row-level security policy');
   cek('RLS menyebut berkas perbaikannya', h.includes('perbaikan-unggah-jawaban-gambar.sql'));
   cek('RLS tidak menyalahkan peserta', h.includes('bukan kesalahan kamu'));

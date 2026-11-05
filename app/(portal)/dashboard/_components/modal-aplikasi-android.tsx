@@ -3,14 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
 import { ambilRilisTerbaru, formatTanggal, formatUkuran, URL_UNDUH_APK, type RilisAndroid } from '@/lib/rilis-android';
 
-/**
- * Admin Panel -> Aplikasi Android. Admin mengunggah APK hasil build di laptop;
- * berkasnya masuk bucket privat Supabase dan langsung muncul di Profil semua
- * pengguna (hanya versi terbaru). Alur unggah:
- *   1. /api/android {aksi:'siapkan'}  -> signed upload URL (cek admin + kode naik)
- *   2. PUT berkas langsung ke Supabase Storage (tidak lewat Vercel)
- *   3. /api/android {aksi:'terbitkan'} -> rilis tercatat & berkas lama dibuang
- */
 const MIME_APK = 'application/vnd.android.package-archive';
 
 type Pesan = { tipe: 'ok' | 'gagal'; teks: string } | null;
@@ -93,7 +85,6 @@ export function AplikasiAndroidInline() {
     setPesan(null);
     if (f && !/\.apk$/i.test(f.name)) { setPesan({ tipe: 'gagal', teks: 'Pilih berkas .apk.' }); return; }
     setBerkas(f);
-    // Work-ManagementPTS-1.0.3.apk -> isi otomatis versinya bila masih kosong.
     const m = f?.name.match(/(\d+\.\d+(?:\.\d+)?)/);
     if (m && !versi) setVersi(m[1]);
   };

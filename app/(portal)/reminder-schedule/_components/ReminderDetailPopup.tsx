@@ -1,7 +1,6 @@
 'use client';
 import { appBaseUrl } from '@/lib/app-url';
 import { useRouter } from 'next/navigation';
-import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import {
   SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan, KepalaModal,
@@ -9,125 +8,30 @@ import {
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { ModePenyelesaianPanel } from './ModePenyelesaianPanel';
 import {
-  Reminder, TeamUser, GuestUser, Status,
-  REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, STATUS_CONFIG,
-  REPEAT_OPTIONS, formatDate, cleanRequestNotes,
+  Reminder, Status, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, STATUS_CONFIG, REPEAT_OPTIONS, formatDate, cleanRequestNotes,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { buatIcs } from '@/lib/ics';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { hasFullAccess } from '@/lib/constants';
+import { useKonteksJadwal } from './konteks-jadwal';
 
-/**
- * Popup detail reminder (header + info project + timeline + garansi +
- * detail pelaksanaan + update status + panel riwayat/mode penyelesaian
- * di samping) - dipindah dari app/reminder-schedule/page.tsx apa adanya
- * (JSX identik). State & handler tetap di page.tsx, komponen ini murni
- * presentasional.
- */
-export function ReminderDetailPopup({
-  detailReminder, setDetailReminder,
-  showModeModal, setShowModeModal,
-  pendingStatus, setPendingStatus,
-  statusPhoto, setStatusPhoto,
-  statusPhotoPreview, setStatusPhotoPreview,
-  showRiwayat, setShowRiwayat,
-  isAdmin, isManager, currentUser,
-  isMyReviewStage,
-  canInternalApprove, setInternalApproveTarget, handleInternalReject,
-  canApproveAssign, setApproveTarget, setApproveBatchSiblings, reminders,
-  setApproveAssignTo, setApproveDate, setApproveTime,
-  handleAdminReject,
-  openSupervisorAssign,
-  bolehEditReminder, setRescheduleTarget,
-  resendingFormReview, handleResendFormReview,
-  sendingWA, handleSendWA,
-  openEdit,
-  statusPhotoRef,
-  handleConfirmStatusUpdate, updatingStatus,
-  guestUsers,
-  modePenyelesaian, setModePenyelesaian,
-  installerName, setInstallerName,
-  installerUserId, setInstallerUserId,
-  daftarCabang,
-  installerDaerah, setInstallerDaerah,
-  bastDate, setBastDate,
-  displayType, setDisplayType,
-  requiresMiddleware, setRequiresMiddleware,
-  requiresControllerAuto, setRequiresControllerAuto,
-  controllerBrand, setControllerBrand,
-  setPendingPhotoUrl,
-  savingMode, handleModeConfirm,
-  modeEditSaja, bukaEditDetailPelaksanaan,
-}: {
-  detailReminder: Reminder;
-  setDetailReminder: (r: Reminder | null) => void;
-  showModeModal: boolean;
-  setShowModeModal: (v: boolean) => void;
-  pendingStatus: Status | null;
-  setPendingStatus: (v: Status | null) => void;
-  statusPhoto: File | null;
-  setStatusPhoto: (v: File | null) => void;
-  statusPhotoPreview: string | null;
-  setStatusPhotoPreview: (v: string | null) => void;
-  showRiwayat: boolean;
-  setShowRiwayat: Dispatch<SetStateAction<boolean>>;
-  isAdmin: boolean;
-  isManager: boolean;
-  currentUser: TeamUser | null;
-  isMyReviewStage: (r: Reminder) => boolean;
-  canInternalApprove: (r: Reminder) => boolean;
-  setInternalApproveTarget: (r: Reminder) => void;
-  handleInternalReject: (r: Reminder) => void;
-  canApproveAssign: boolean;
-  setApproveTarget: (r: Reminder) => void;
-  setApproveBatchSiblings: (r: Reminder[]) => void;
-  reminders: Reminder[];
-  setApproveAssignTo: (v: string) => void;
-  setApproveDate: (v: string) => void;
-  setApproveTime: (v: string) => void;
-  handleAdminReject: (r: Reminder) => void;
-  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
-  bolehEditReminder: (r: Reminder) => boolean;
-  setRescheduleTarget: (r: Reminder) => void;
-  resendingFormReview: boolean;
-  handleResendFormReview: (r: Reminder) => void;
-  sendingWA: string | null;
-  handleSendWA: (r: Reminder) => void;
-  openEdit: (r: Reminder) => void;
-  statusPhotoRef: RefObject<HTMLInputElement | null>;
-  handleConfirmStatusUpdate: () => void;
-  updatingStatus: boolean;
-  guestUsers: GuestUser[];
-  modePenyelesaian: 'onsite' | 'remote' | null;
-  setModePenyelesaian: (v: 'onsite' | 'remote' | null) => void;
-  installerName: string;
-  setInstallerName: (v: string) => void;
-  installerUserId: string | null;
-  setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
-  installerDaerah: string;
-  setInstallerDaerah: (v: string) => void;
-  bastDate: string;
-  setBastDate: (v: string) => void;
-  displayType: 'led' | 'lcd' | 'mix' | null;
-  setDisplayType: (v: 'led' | 'lcd' | 'mix' | null) => void;
-  requiresMiddleware: boolean;
-  setRequiresMiddleware: (v: boolean) => void;
-  requiresControllerAuto: boolean;
-  setRequiresControllerAuto: (v: boolean) => void;
-  controllerBrand: 'cue' | 'extron' | 'wyrestorm' | null;
-  setControllerBrand: (v: 'cue' | 'extron' | 'wyrestorm' | null) => void;
-  setPendingPhotoUrl: (v: undefined) => void;
-  savingMode: boolean;
-  handleModeConfirm: () => void;
-  /** true saat panel Mode dipakai mengisi ulang jadwal yang sudah Completed. */
-  modeEditSaja: boolean;
-  /** Buka panel Mode untuk jadwal yang sudah Completed (status tidak diubah). */
-  bukaEditDetailPelaksanaan: (r: Reminder) => void;
-}) {
-  //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
-  //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
+export function ReminderDetailPopup({ detailReminder }: { detailReminder: Reminder }) {
+  const k = useKonteksJadwal();
+  const { isAdmin, isManager, currentUser } = k.sesi;
+  const { isMyReviewStage, canInternalApprove, canApproveAssign, bolehEditReminder } = k.izin;
+  const { reminders, guestUsers } = k.data;
+  const {
+    setDetailReminder, setInternalApproveTarget, handleInternalReject, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo, setApproveDate, setApproveTime,
+    handleAdminReject, openSupervisorAssign, setRescheduleTarget, resendingFormReview, handleResendFormReview, sendingWA, handleSendWA, openEdit
+  } = k.aksi;
+  const {
+    showModeModal, setShowModeModal, pendingStatus, setPendingStatus, statusPhoto, setStatusPhoto, statusPhotoPreview, setStatusPhotoPreview, showRiwayat,
+    setShowRiwayat, statusPhotoRef, handleConfirmStatusUpdate, updatingStatus, modePenyelesaian, setModePenyelesaian, installerName, setInstallerName, installerUserId,
+    setInstallerUserId, daftarCabang, installerDaerah, setInstallerDaerah, bastDate, setBastDate, displayType, setDisplayType, requiresMiddleware, setRequiresMiddleware,
+    requiresControllerAuto, setRequiresControllerAuto, controllerBrand, setControllerBrand, setPendingPhotoUrl, savingMode, handleModeConfirm, modeEditSaja,
+    bukaEditDetailPelaksanaan
+  } = k.detail;
   const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);
   const router = useRouter();
 
@@ -137,7 +41,6 @@ export function ReminderDetailPopup({
       onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
       <div className="flex gap-3 w-full justify-center min-h-0"
         style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
-      {/*  Kartu & kepala baku (putih, sama dengan Modal bersama) - dulu kepalanya berwarna per kategori. */}
       <div className="bg-white rounded-kartu shadow-modal w-full flex-1 min-w-0 overflow-hidden flex flex-col"
         style={{ height: '100%' }}>
         <div className="px-6 py-5 flex-shrink-0 sticky top-0 z-30 relative bg-white border-b border-slate-100">
@@ -146,7 +49,6 @@ export function ReminderDetailPopup({
             className="tombol-kedua absolute top-3 right-14 h-8 px-2.5 rounded-kecil flex items-center gap-1 text-[11px] font-bold">
             <Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /> <span className="hidden sm:inline">Riwayat</span>
           </button>
-          {/* pr: ruang untuk tombol Riwayat & Tutup (absolute di kanan atas) supaya lencana tidak tertimpa. */}
           <div className="flex flex-wrap gap-2 mb-3 pr-24 sm:pr-40">
             <PriorityBadge priority={detailReminder.priority} />
             <StatusBadge status={detailReminder.status} />
@@ -174,7 +76,6 @@ export function ReminderDetailPopup({
               <p className="text-slate-600 text-xs">{detailReminder.description}</p>
             </>
           )}
-          {/* Troubleshooting link ke Ticketing — navigasi internal */}
           {detailReminder.category === 'Troubleshooting' && (
             <button
               onClick={e => { e.stopPropagation(); setDetailReminder(null); router.push('/ticketing'); }}
@@ -187,7 +88,6 @@ export function ReminderDetailPopup({
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
-          {/* Action bar — sticky di atas, menempel header detail */}
           {(isAdmin || currentUser?.role === 'team' || isMyReviewStage(detailReminder)) && (
             <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
               {canInternalApprove(detailReminder) && (
@@ -219,13 +119,6 @@ export function ReminderDetailPopup({
                   className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">
                   {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" /> : '💬'} Kirim WA</button>
               )}
-              {/*
-                Dulu (isAdmin || isManager) saja - Sales pembuat request
-                maupun Tim yang ditugaskan tidak bisa membetulkan salah
-                ketiknya sendiri, harus minta admin. Disamakan dengan
-                bolehEditReminder (lihat catatannya di atas).
-              */}
-              {/*  Tambah ke kalender (Google / Outlook / HP): berkas .ics, jam WIB -> UTC (lib/ics.ts). */}
               {detailReminder.status !== 'cancelled' && detailReminder.due_date && (
                 <button title="Tambah ke kalender (.ics)" aria-label="Tambah ke kalender"
                   onClick={() => {
@@ -326,8 +219,6 @@ export function ReminderDetailPopup({
             </div>
           </div>
 
-          {/* Placeholder default "Menunggu assignment dari Admin" disaring — bukan catatan
-              asli, jangan ditampilkan lagi (termasuk data lama yg belum sempat dibersihkan). */}
           {cleanRequestNotes(detailReminder.notes) && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
               <p className="text-[11px] font-bold tracking-widest uppercase mb-1" style={{ color: '#f59e0b' }}><IkonTeks nama="📝" />Catatan</p>
@@ -335,11 +226,6 @@ export function ReminderDetailPopup({
             </div>
           )}
 
-
-
-          {/* ── Timeline Project Progress — kategori pemicu saja ──
-              Sejajar dengan blok Masa Garansi di bawahnya: keduanya
-              informasi jadwal yang melekat pada kategori Konfigurasi. */}
           {triggersProjectProgress(detailReminder.category) && (() => {
             const t = detailReminder as { progress_start_date?: string | null; progress_target_date?: string | null };
             const ada = t.progress_start_date || t.progress_target_date;
@@ -367,7 +253,6 @@ export function ReminderDetailPopup({
             );
           })()}
 
-          {/* ── Warranty Status — hanya untuk Konfigurasi & Konfigurasi & Training ── */}
           {(detailReminder.category === 'Konfigurasi' || detailReminder.category === 'Konfigurasi & Training') && (() => {
             const wy = (detailReminder as any).warranty_years as 1 | 2 | 3 | null | undefined;
             const bastDate = detailReminder.due_date;
@@ -429,12 +314,6 @@ export function ReminderDetailPopup({
             );
           })()}
 
-          {/* ── Detail Pelaksanaan — diisi lewat modal "Mode Penyelesaian" saat
-              kategori Konfigurasi/Konfigurasi & Training/Training di-update ke
-              Completed. Sebelumnya data ini (mode_penyelesaian, BAST, tipe
-              display, controller automation, middleware) tersimpan tapi tidak
-              pernah ditampilkan di mana pun — di list HANYA nilai Onsite/Remote
-              yang tampil (di bawah Kegiatan), detail lengkapnya di sini. ── */}
           {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && detailReminder.mode_penyelesaian && (() => {
             const brandLabel: Record<string, string> = { cue: 'Cue System', extron: 'Extron', wyrestorm: 'Wyrestorm' };
             const displayLabel: Record<string, string> = { led: 'LED', lcd: 'LCD', mix: 'Mix (LED + LCD)' };
@@ -498,13 +377,6 @@ export function ReminderDetailPopup({
             );
           })()}
 
-          {/* ── Jadwal SUDAH Completed tapi detail pelaksanaannya kosong ──
-              Terjadi pada jadwal yang diselesaikan sebelum panel Mode ada, atau
-              yang penyimpanan detailnya dulu gagal diam-diam. Tanpa jalan
-              masuk di sini, jadwal seperti itu MACET selamanya: tombol status
-              sudah hilang ("tidak dapat diubah kembali"), padahal jadwalnya
-              tetap ikut ke Incentive PTS dan di sana tampil sebagai "Mode
-              belum diset". ── */}
           {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)
             && detailReminder.status === 'done'
             && !detailReminder.mode_penyelesaian
@@ -527,10 +399,6 @@ export function ReminderDetailPopup({
             </div>
           )}
 
-          {/* Update Status BARU BISA setelah request selesai di-approve & di-assign
-             ke pengerjaan (assigned_to terisi). Selama masih di alur approval
-             (internal_review / admin_review / supervisor_assign, assigned_to kosong)
-             → belum bisa update status. */}
           {(isAdmin || currentUser?.role === 'team') && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.status !== 'done' && (
             <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-1" style={{ background: 'rgba(148,163,184,0.1)', border: '1.5px solid rgba(148,163,184,0.3)' }}>
               <span className="text-lg"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -562,7 +430,6 @@ export function ReminderDetailPopup({
                       setPendingStatus(s);
                       if (s !== 'done') { setStatusPhoto(null); setStatusPhotoPreview(null); setShowModeModal(false); }
                       else if ((INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)) {
-                        // Kategori incentive  panel Mode langsung muncul di kanan (tanpa scroll)
                         setPendingPhotoUrl(undefined);
                         setModePenyelesaian(null); setInstallerName(''); setInstallerUserId(null); setInstallerDaerah('');
                         setBastDate(new Date().toISOString().split('T')[0]);
@@ -580,7 +447,6 @@ export function ReminderDetailPopup({
             </div>
             )}
 
-            {/* Photo upload - opsional untuk status Completed */}
             {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && !showModeModal && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
                 <p className="text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: '#047857' }}>
@@ -624,7 +490,6 @@ export function ReminderDetailPopup({
               </div>
             )}
 
-            {/* Tombol Update Status */}
             {pendingStatus && pendingStatus !== detailReminder.status && !showModeModal && (
               <div className="flex gap-2">
                 <button
@@ -648,7 +513,6 @@ export function ReminderDetailPopup({
           </div>
           )}
 
-          {/* Foto Bukti Selesai - tampil jika status done dan ada foto */}
           {detailReminder.status === 'done' && detailReminder.completion_photo_url && (
             <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)' }}>
               <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'rgba(16,185,129,0.12)', borderBottom: '1px solid rgba(16,185,129,0.2)' }}>
@@ -679,38 +543,14 @@ export function ReminderDetailPopup({
         </div>
       </div>
 
-      {/* RIGHT: panel Mode Penyelesaian (muncul saat klik Completed) — seperti detail Ticketing */}
-      {/* Riwayat sebagai panel samping — terbaca berdampingan dengan
-          detailnya, bukan tersembunyi di balik tombol di dalam. Mode
-          Penyelesaian punya prioritas: ia bagian dari alur menyelesaikan
-          pekerjaan, sedangkan riwayat hanya rujukan. */}
-      {/* HP: panel ini menjadi lapisan penuh di atas detail (fixed inset-3) - berdampingan di layar
-          sempit membuat popup detail terjepit menjadi garis tipis di kiri. */}
       {showRiwayat && !showModeModal && (
         <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
           style={{ maxHeight: '100%' }}>
           <KepalaModal judul="Riwayat Perubahan" keterangan={detailReminder.project_name} onTutup={() => setShowRiwayat(false)} />
           <div className="flex-1 overflow-y-auto">
-            {/* Alur ditaruh di panel ini, di bawah riwayat: keduanya
-                menjawab pertanyaan yang sama — sudah sampai mana perkara
-                ini. Riwayat menceritakan yang SUDAH terjadi, alur
-                menunjukkan yang MASIH tersisa. Dipisah ke dua tempat
-                justru memaksa mata bolak-balik. */}
-            {/* Baris pembuatan diturunkan dari reminder-nya sendiri.
-                logAudit baru mencatat 'create' sejak perbaikan terakhir,
-                jadi tanpa ini seluruh reminder LAMA tampak tidak punya
-                pangkal — padahal created_at & sales_name-nya tersimpan
-                sejak awal. Untuk request Sales dipakai nama sales-nya
-                (dialah yang mengajukan), bukan created_by yang bisa saja
-                Sales Internal yang menginput. */}
             <AuditTrailPanel targetId={detailReminder.id} modul="reminder"
               selaluTerbuka sembunyikanBilaKosong={false}
               awal={{
-                // "oleh" = PELAKU (yang menginput), sama seperti baris audit
-                // sungguhan - jadi created_by lebih diutamakan daripada
-                // sales_name. Sales Internal kadang menginput request ATAS
-                // NAMA Sales External (fitur SBU); memakai sales_name di sini
-                // akan menghapus jejak siapa yang benar-benar mengirim.
                 oleh: (detailReminder.created_by
                   ? (guestUsers.find(g => g.username === detailReminder.created_by)?.full_name ?? detailReminder.created_by)
                   : detailReminder.sales_name) || null,
@@ -724,26 +564,6 @@ export function ReminderDetailPopup({
                       ? ` · atas nama Sales ${detailReminder.sales_name}` : '';
                   })(),
               }}
-              /*
-                Peristiwa lain yang terjadi SEBELUM logAudit mencatatnya.
-
-                Waktunya TIDAK BOLEH memakai updated_at - kolom itu ikut
-                berubah oleh SUNTINGAN APA PUN pada baris ini, termasuk
-                yang tidak berhubungan sama sekali (mis. admin mengisi
-                Tipe Produk atau BAST bertahun-tahun sesudah proyek
-                selesai). Baris ini dulu memakainya, dan akibatnya sebuah
-                proyek yang sungguh selesai bulan Juni bisa tiba-tiba
-                tampil "Ditandai selesai — 2 menit lalu" hanya karena ada
-                kolom lain yang baru saja disunting - riwayat yang sudah
-                lama terlihat seolah baru saja terjadi.
-
-                due_date/bast_date dipakai sebagai gantinya - keduanya
-                TIDAK berubah akibat suntingan field lain, jadi lebih
-                dekat ke kapan pekerjaan ini sungguh terjadi. bast_date
-                diutamakan untuk "selesai" karena itu memang tanggal
-                serah-terima; due_date dipakai untuk "dikerjakan" karena
-                penugasan biasanya melekat pada jadwalnya.
-              */
               turunan={[
                 ...(detailReminder.assign_name?.trim()
                   ? [{ aksi: 'assign', oleh: detailReminder.assign_name,
@@ -757,17 +577,11 @@ export function ReminderDetailPopup({
                   : []),
               ]} />
 
-          {/* Alur request Sales — hanya untuk yang memang lewat routing.
-                Reminder yang dibuat langsung admin tidak punya tahapan ini,
-                jadi diagramnya tidak ditampilkan supaya tidak mengarang
-                tahap yang tak pernah terjadi. */}
             {(() => {
               const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; assign_name?: string | null; status?: string };
               const sudahAssign = !!((r.assigned_to && r.assigned_to.trim() !== '') || (r.assign_name && r.assign_name.trim() !== ''));
               const selesai     = r.status === 'done';
               const batal       = r.status === 'cancelled';
-              //  0 diajukan · 1 Sales Internal · 2 Admin assign · 3 dikerjakan · 4 selesai
-              //  5 = seluruh tahap tuntas (indeks di luar daftar)
               const aktif = selesai      ? 5
                 : sudahAssign            ? 3
                 : r.routing_status === 'internal_review' ? 1
@@ -779,15 +593,6 @@ export function ReminderDetailPopup({
                   dibatalkan={batal}
                   steps={[
                     { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
-                    // Sebut NAMA Sales Internal-nya, bukan label generik: siapa yang
-                    // meneruskan adalah bagian dari jejak yang dicari pembaca alur.
-                    // Dua sumber, sesuai bagaimana request itu masuk:
-                    //   1. reviewer hasil mapping brand IVP/MVI (internal_sales_id,
-                    //      + _id_2 saat brand BOTH  dua reviewer wajib approve)
-                    //   2. kalau request DIBUAT oleh Sales Internal sendiri, dialah
-                    //      yang meneruskan - tahap ini memang langsung terlewati
-                    //      (routing_status ke admin_review), jadi namanya diambil
-                    //      dari created_by.
                     { label: 'Diteruskan', pelaku: (() => {
                       const namaDari = (id?: string | null) => id ? guestUsers.find(g => g.id === id)?.full_name : undefined;
                       const r1 = namaDari(detailReminder.internal_sales_id);

@@ -1,10 +1,3 @@
-/**
- * lib/integrasi-bantu.ts - penolong bersama aksi DIWAYPI (lib/integrasi-aksi.ts dan modul
- * per menu: lib/integrasi-menu.ts, lib/integrasi-tulis.ts, lib/integrasi-analisa.ts).
- *
- * Dipisah dari integrasi-aksi.ts supaya modul per menu tidak mengimpor balik pintu utamanya
- * (impor melingkar). Isinya tetap sama persis dengan yang dulu tertulis di sana.
- */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { UserLengkap } from '@/lib/ai-server';
 import type { Cakupan } from '@/lib/token-integrasi';
@@ -12,18 +5,11 @@ import type { EfekSamping } from '@/lib/efek-samping';
 import { SARING_PENERIMA_ADMIN, type PenerimaAdmin } from '@/lib/penerima-admin';
 
 export interface KonteksAksi {
-  /** Klien Supabase SEBAGAI pemilik token (RLS berlaku). */
   db: SupabaseClient;
-  /** Service role - hanya untuk checklist (pola route checklist) & data akun. */
   admin: SupabaseClient;
   u: UserLengkap;
   cakupan: Cakupan[];
-  /** WA / in-app / audit sisi server (buatEfekServer) - pengganti fungsi peramban. */
   efek: EfekSamping;
-  /**
-   * Muat aturan yang di peramban dimuat saat halaman dibuka (daftar tim yang bisa
-   * ditugaskan, kategori insentif). Route mengisinya; uji tidak (tanpa jaringan).
-   */
   muatAturan?: () => Promise<void>;
 }
 
@@ -37,11 +23,9 @@ export function hariIniWIB(offset = 0): string {
 export function jamWIB(): string {
   return new Date(Date.now() + 7 * 3600_000).toISOString().slice(11, 16);
 }
-/** Isian bebas untuk filter PostgREST (.or / ilike): tanpa karakter sintaks. */
 export function bersih(v: unknown, maks = 60): string {
   return String(v ?? '').replace(/[%*,()\\"'`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maks);
 }
-/** Teks yang DISIMPAN: hanya dipangkas & dibatasi (boleh tanda baca). */
 export function teks(v: unknown, maks: number): string {
   return String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, maks);
 }
@@ -57,15 +41,8 @@ export function adalahAtasan(u: UserLengkap): boolean {
 }
 
 export const peranDari = (u: { role?: string | null }) => (u.role ?? '').toLowerCase().trim();
-/** admin / superadmin / team / team_pts - "orang dalam PTS" di banyak halaman. */
 export const adalahPTS = (u: { role?: string | null }) => ['admin', 'superadmin', 'team', 'team_pts'].includes(peranDari(u));
 
-/**
- * Kolom akun yang tidak dibawa UserLengkap tapi dipakai aturan halaman (pimpinan, Sales
- * Internal, akses piket/insentif, nomor WA). select('*') lewat service role, baris pemilik
- * token sendiri saja: kolom yang belum dimigrasi cukup tidak ada, bukan menggagalkan query
- * seperti select dengan nama kolom yang tak dikenal.
- */
 export interface AkunTambahan {
   pimpinan: boolean;
   is_internal_sales: boolean;
@@ -87,10 +64,6 @@ export async function akunTambahan(k: KonteksAksi): Promise<AkunTambahan> {
   };
 }
 
-/**
- * penerimaAdmin() (lib/penerima-admin.ts) dengan klien pemilik token - versi peramban memakai
- * klien bersesi. Aturan & jalur mundurnya sama: admin/superadmin ATAU Full Access.
- */
 export async function penerimaAdminServer(db: SupabaseClient): Promise<PenerimaAdmin[]> {
   const kolom = 'id, full_name, username, phone_number';
   const { data, error } = await db.from('users').select(kolom).or(SARING_PENERIMA_ADMIN);
@@ -99,6 +72,5 @@ export async function penerimaAdminServer(db: SupabaseClient): Promise<PenerimaA
   return (mundur ?? []) as PenerimaAdmin[];
 }
 
-/** Nama dibandingkan tanpa beda huruf besar & spasi tepi. */
 export const samaNama = (x: string | null | undefined, y: string | null | undefined) =>
   (x ?? '').trim().toLowerCase() === (y ?? '').trim().toLowerCase() && !!(y ?? '').trim();

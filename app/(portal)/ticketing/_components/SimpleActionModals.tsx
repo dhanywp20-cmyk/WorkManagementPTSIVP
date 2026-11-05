@@ -2,22 +2,9 @@
 import { Modal, TombolModal, ModalTolak, PilihPenugasan } from '@/components/shared';
 import type { Ticket, TeamMember } from './shared';
 
-/**
- * Modal-modal kecil & mandiri dari app/ticketing/page.tsx - masing-masing
- * cuma butuh satu ticket target + beberapa field lokal + satu handler
- * konfirmasi. Semua state & handler TETAP di page.tsx - komponen di sini
- * murni presentasional, dioper lewat props.
- *
- * Kerangka: Modal bersama (components/shared/Modal.tsx) & pola persetujuan bersama
- * (components/shared/Persetujuan.tsx) - dulu tiap popup di sini punya kepala bergradasi
- * & warna sendiri (oranye, kuning, merah muda, merah), berbeda dengan menu lain.
- */
-
 const kelasIsian = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300';
 const kotakInfo = 'rounded-kontrol border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800';
 const subjudul = (t: Ticket) => `${t.project_name} · ${t.issue_case}`;
-
-// ── OVERDUE SETTING ──
 
 export function OverdueSettingModal({
   overdueTargetTicket, overdueForm, setOverdueForm, saveOverdueSetting,
@@ -62,9 +49,6 @@ export function OverdueSettingModal({
   );
 }
 
-// ── RE-OPEN TICKET (PTS) ──
-// Lapisan atas - bisa dibuka dari daftar MAUPUN dari dalam popup detail.
-
 export function ReopenPTSModal({
   reopenTargetTicket, reopenAssignee, setReopenAssignee, reopenNotes, setReopenNotes,
   teamPTSMembers, reopenTicket, uploading, onClose,
@@ -99,9 +83,6 @@ export function ReopenPTSModal({
   );
 }
 
-// ── RE-OPEN SERVICES ──
-// Lebih sederhana dari modal PTS di atas (sisi Services tidak punya konsep petugas).
-
 export function ReopenServicesModal({
   reopenServicesTarget, reopeningServices, reopenServicesTicket, onClose,
 }: {
@@ -121,8 +102,6 @@ export function ReopenServicesModal({
   );
 }
 
-// ── TOLAK TICKET — tidak dihapus, status Rejected + alasan ──
-
 export function RejectModal({
   rejectTargetTicket, rejectReason, setRejectReason, uploading, confirmReject, onClose,
 }: {
@@ -141,8 +120,6 @@ export function RejectModal({
     </ModalTolak>
   );
 }
-
-// ── DELETE TICKET (Admin Only) ──
 
 export function DeleteModal({
   deleteTargetTicket, deleteConfirmText, setDeleteConfirmText, uploading, deleteTicket, onClose,

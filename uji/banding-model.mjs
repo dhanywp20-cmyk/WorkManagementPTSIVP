@@ -1,16 +1,9 @@
-/**
- * uji/banding-model.mjs - aturan fitur "Bandingkan 2 model".
- *
- *   node uji/banding-model.mjs
- */
-/** Validasi model yang dikirim peramban - SALINAN aturan di app/api/ai/generate. */
 const POLA = /^[A-Za-z0-9._-]{1,80}$/;
 const pilihModel = (dariPermintaan, tersimpan) => {
   const m = typeof dariPermintaan === 'string' && POLA.test(dariPermintaan.trim())
     ? dariPermintaan.trim() : '';
   return m || tersimpan;
 };
-/** Syarat tombol Bandingkan boleh ditekan. */
 const bolehBanding = (a, b) => !!a.trim() && !!b.trim() && a.trim() !== b.trim();
 
 let lulus = 0, gagal = 0;
@@ -18,7 +11,6 @@ const cek = (n, ok, c = '') => { if (ok) { lulus++; console.log(`  ok    ${n}`);
 
 console.log('\n1. Model dari peramban tidak boleh mengubah alamat yang dipanggil');
 {
-  // Nilainya masuk ke URL. Ini yang paling penting dijaga.
   const jahat = [
     '../../../v1beta/models/x',
     'gemini?key=BOCOR',
@@ -46,8 +38,6 @@ console.log('\n1. Model dari peramban tidak boleh mengubah alamat yang dipanggil
 console.log('\n2. Syarat membandingkan');
 {
   cek('dua model berbeda: boleh', bolehBanding('gemini-2.5-flash', 'gemini-3.1-flash-lite'));
-  // Membandingkan model dengan dirinya sendiri menghabiskan dua panggilan untuk
-  // tidak memberi tahu apa pun.
   cek('model yang sama: ditolak', !bolehBanding('gemini-2.5-flash', 'gemini-2.5-flash'));
   cek('sama walau beda spasi: ditolak', !bolehBanding('gemini-2.5-flash', ' gemini-2.5-flash '));
   cek('salah satu kosong: ditolak', !bolehBanding('gemini-2.5-flash', ''));
@@ -56,8 +46,6 @@ console.log('\n2. Syarat membandingkan');
 
 console.log('\n3. Satu sisi gagal, sisi lain tetap terpakai');
 {
-  // Meniru Promise.allSettled: kegagalan satu model tidak boleh membuang hasil
-  // model satunya - yang berhasil tetap bisa disimpan.
   const olah = (ra, rb) => ({
     a: { rows: ra.status === 'fulfilled' ? ra.value : [], galat: ra.status === 'rejected' ? String(ra.reason) : '' },
     b: { rows: rb.status === 'fulfilled' ? rb.value : [], galat: rb.status === 'rejected' ? String(rb.reason) : '' },

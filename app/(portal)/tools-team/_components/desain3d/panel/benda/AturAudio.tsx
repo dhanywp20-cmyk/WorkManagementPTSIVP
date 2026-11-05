@@ -1,5 +1,4 @@
 'use client';
-/** Atur audio: mic, speaker (tipe, sebaran, jangkauan), line array (modul, sudut, tilt). */
 import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
 import { bendaBaru, berkasLineArray, cakupanSpeakerPlafon, jangkauanDari, modulLA, sebaranSpeaker, sebaranVSpeaker, sudutModulLA, tiltLADari, telingaPenonton, TINGGI_DENGAR, type TipeSpeaker, tipeSpeakerDari } from '../../inti';
 import type { KonteksAtur } from './konteks';
@@ -24,7 +23,6 @@ export function AturAudio({ c }: { c: KonteksAtur }) {
       )}
       {b.jenis === 'speaker' && tipeSpeakerDari(b) === 'linearray' && (() => {
         const n = modulLA(b), hm = b.h / n;
-        //  Sama dengan kanvas: telinga ikut lantai penonton (tribun / panggung), sumbu berhenti di dinding / plafon.
         const semuaBerkas = berkasLineArray(b, { x0: 0, x1: batas.x, z0: 0, z1: batas.z, t: plafon, telinga: telingaPenonton(semua, b) });
         const berkas = semuaBerkas.filter(x => x.jarak !== null && !x.dinding), keDinding = semuaBerkas.filter(x => x.dinding).length;
         const dekat = berkas.length ? Math.min(...berkas.map(x => x.jarak!)) : null, jauh = berkas.length ? Math.max(...berkas.map(x => x.jarak!)) : null;

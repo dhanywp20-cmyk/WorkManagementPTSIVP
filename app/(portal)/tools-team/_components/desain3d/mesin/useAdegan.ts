@@ -1,8 +1,4 @@
 'use client';
-/**
- * Isi adegan: ruangan, benda (bangun ulang yang berubah), gizmo, alat bantu, cahaya & bayangan.
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { buatModel, sesuaikanTinggi } from '../bangun';
 import { aturNyalaLampu } from '../bangun/tekstur';
 import { teksturKonten } from '../bangun/konten';
@@ -18,26 +14,18 @@ import { gambarBayangan } from './bayangan';
 import { aturTeksTersembunyi } from './label';
 import { aturCahayaRuang } from './proyektorNyata';
 
-
 export function useAdegan(K: KeadaanDesain) {
   const { sinarNyata, sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
-  // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
-  //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
-  //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     bangunRuangan(m.THREE, m.grupRuang, ruang, k => gambarTekstur.current.get(k));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ruang, siap, versiTekstur]);
 
-  // ── Benda: bangun ulang hanya yang bentuknya berubah ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const { THREE, grupBenda, cache } = m;
     const ada = new Set(benda.map(b => b.id));
-    //  Model lama dibuang BESERTA geometri & materialnya - tanpa ini memori GPU
-    //  bertambah tiap kali ukuran/bentuk benda diubah (model dibangun ulang).
-    //  Gambar unggahan tidak ikut dilepas: ia dipakai ulang model berikutnya.
     const unggahan = new Set(gambarLayar.current.values());
     const buang = (o: T.Object3D) => o.traverse(x => {
       const mesh = x as T.Mesh;
@@ -49,8 +37,6 @@ export function useAdegan(K: KeadaanDesain) {
       }
     });
     for (const [id, c] of cache) if (!ada.has(id)) { grupBenda.remove(c.obj); buang(c.obj); cache.delete(id); }
-    //  Sinar nyata: layar proyektor = kain putih matte - gambarnya datang dari proyektor yang menyinarinya, bukan
-    //  layar yang menyala sendiri seperti TV (dulu pola uji tampil walau tidak ada / mati proyektornya).
     const layarPolos = sinar && sinarNyata;
     for (const b of benda) {
       const tanda = `${tandaBentuk(b)}|${versiGambar}${b.jenis === 'layar' ? `|${layarPolos}` : ''}`;
@@ -72,7 +58,6 @@ export function useAdegan(K: KeadaanDesain) {
       sesuaikanTinggi(c.obj, b, plafonDi(b.x));
       if (b.jenis === 'lampu') aturNyalaLampu(c.obj, nyalaLampu(b, ruang));
     }
-    // Sorotan benda terpilih (kotak batas tipis).
     grupBenda.children.filter(o => o.userData.sorot).forEach(o => { grupBenda.remove(o); buang(o); });
     const terpilih = pilih ? cache.get(pilih)?.obj : null;
     if (terpilih) {
@@ -85,11 +70,9 @@ export function useAdegan(K: KeadaanDesain) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [benda, pilih, pilihLain, siap, ruang, versiGambar, sembunyiGolongan, sinar, sinarNyata]);
 
-  // ── Gizmo menempel ke benda terpilih ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const o = pilih ? m.cache.get(pilih)?.obj : null;
-    //  Benda terkunci: tidak bisa digeser / diputar - gizmo tidak dipasang.
     if (o && tampilan !== 'kursi' && !benda.find(b => b.id === pilih)?.terkunci) {
       m.gizmo.attach(o);
       m.gizmo.setMode(modeGizmo);
@@ -98,7 +81,6 @@ export function useAdegan(K: KeadaanDesain) {
     aturSnapGizmo(m, snap);
   }, [pilih, modeGizmo, siap, tampilan, benda, snap]);
 
-  // ── Presisi: grid lantai saat snap aktif, garis penggaris ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     gambarGridSnap(m, kotakRuang, snap);
@@ -107,30 +89,21 @@ export function useAdegan(K: KeadaanDesain) {
     const m = mesin.current; if (!m || !siap) return;
     gambarPenggaris(m, penggarisSah(ruang.penggaris), titikUkur, id => setRuang(r => ({ ...r, penggaris: (r.penggaris ?? []).filter(g => g.id !== id) })));
   }, [ruang.penggaris, titikUkur, siap, mesin, setRuang]);
-  //  Jarak benda terpilih ke dinding (centang "Jarak ke dinding"; tidak saat memilih banyak).
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const b = jarakDinding && !pilihLain.length ? benda.find(x => x.id === pilih) ?? null : null;
     gambarJarakDinding(m, b, b ? kotakRuang[ruangDari(ruang, b.x)] ?? null : null);
   }, [pilih, pilihLain, benda, kotakRuang, ruang, jarakDinding, siap, mesin]);
-  //  "Sembunyikan teks": lapisan label CSS2D (mesin/label.ts); keterangan yang tercetak di cahaya ikut lewat
-  //  teksSinar di efek alat bantu di bawah.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     aturTeksTersembunyi(m, sembunyiTeks);
   }, [sembunyiTeks, siap, mesin]);
 
-  // ── Tingkat cahaya ruangan ──
-  //  Sebelum alat bantu: lampu proyektor mode Sinar nyata dikalibrasi terhadap cahaya ruangan yang baru.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     aturCahayaRuang(m, { f: { terang: 1, redup: 0.45, gelap: 0.12 }[ruang.cahaya ?? 'terang'] });
   }, [ruang.cahaya, siap]);
 
-  // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
-  //  Dua tahap: sinar proyektor langsung digambar KASAR (grid jarang, tanpa subdivisi tepi - beberapa ms) supaya
-  //  layar tidak membeku tiap perubahan; gambar RINCI baru dihitung sekali setelah perubahan berhenti 300 ms.
-  //  Dulu tiap ketikan / geseran / undo langsung menembak ±44 ribu raycast di ruang dengan banyak proyektor.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const gambar = () => gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan, sinarNyata, gambarLayar });
@@ -140,11 +113,6 @@ export function useAdegan(K: KeadaanDesain) {
     return () => clearTimeout(rinci);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan, sinarNyata, versiGambar]);
-  // ── Bayangan lembut & cahaya layar ──
-  //  Lampu arah adegan berada di depan-atas, jadi display yang menempel dinding hanya menjatuhkan
-  //  bayangan setebal celah bracket (beberapa cm) - nyaris tak terlihat. Di sini ditambahkan bayangan
-  //  lembut (seperti cahaya ruangan dari atas) di dinding belakang display, bayangan kontak di lantai
-  //  untuk standfloor, dan pendar cahaya layar yang menyala ke lantai di depannya.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     gambarBayangan(m, { bayangan, benda, kotakRuang, ruang, teksturBayang });

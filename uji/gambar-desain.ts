@@ -1,10 +1,3 @@
-/**
- * uji/gambar-desain.ts - gambar Desain 3D disimpan SEKALI per isi (lib/gambar-desain-server.ts, migrasi 044):
- * gambar kembar = satu baris, data desain hanya membawa ref:<hash>, ref yang hilang ditolak, kuota total dijaga.
- * Basis data diganti tiruan di memori (tanpa jaringan).
- *
- * Jalankan: npm test -- gambar-desain
- */
 import { hashGambar, MAKS_TOTAL_GAMBAR_DESAIN, rujukGambarDesain } from '../lib/gambar-desain-server';
 import { periksaDesain, POLA_REF_GAMBAR } from '../lib/tools-team';
 
@@ -13,7 +6,6 @@ function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
 }
 
-/** Tiruan tabel tools_gambar_desain: select(..).in(..), select('ukuran'), upsert(..). */
 function dbTiruan(awal: { hash: string; ukuran: number }[] = []) {
   const baris = [...awal];
   const disisip: { hash: string; data: string }[] = [];

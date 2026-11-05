@@ -1,12 +1,3 @@
-/**
- * desain3d/inti/bom.ts - Bill of Material dari desain:
- *  - perangkat & furnitur, dikelompokkan per kategori, benda bernama & berukuran sama dijumlah;
- *  - aksesori pemasangan display (wall bracket pop-up / bracket + struktur hollow / standfloor);
- *  - isi rack (tanpa blank panel), dijumlah per nama;
- *  - kabel: total meter per jenis + kebutuhan gulungan (dari rekapKabel).
- * Dipakai: tabel "Daftar perangkat" lembar cetak, Ekspor Excel BOM, dan "Jadikan checklist"
- * (satu bagian checklist per perangkat yang dipasang tim). Murni - diuji di uji/desain3d-bom.ts.
- */
 import { BISA_PASANG, DISPLAY, LABEL_PASANG, pasangDari, type Benda } from './tipe';
 import { isiRakDari } from './rak';
 import { spekVideowall, susunanLED } from './produk';
@@ -20,13 +11,11 @@ export const URUTAN_KATEGORI: KategoriBom[] = ['Display', 'Kamera & konferensi',
 
 export interface BarisBom {
   kategori: KategoriBom; item: string; ukuran: string; jumlah: number; satuan: string; catatan: string;
-  /** Dipasang & disetel tim di lokasi -> jadi satu bagian checklist (furnitur, kabel, aksesori tidak). */
   pasang: boolean;
 }
 
 const fm = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
 
-/** Kategori benda di BOM & lembar cetak. */
 export function kategoriBenda(j: Benda['jenis']): KategoriBom {
   if (j === 'lampu') return 'Interior & pencahayaan';
   if (DISPLAY.includes(j) || j === 'proyektor' || j === 'bidang') return 'Display';
@@ -36,23 +25,19 @@ export function kategoriBenda(j: Benda['jenis']): KategoriBom {
   return 'Lainnya';
 }
 
-/** Bukan barang yang dibeli / dipasang: teks keterangan di kanvas. */
 const BUKAN_BARANG: Benda['jenis'][] = ['teks'];
-/** Dipasang & disetel tim (jadi bagian checklist). Perangkat presentasi (laptop/HP/tablet) umumnya milik customer. */
 const DIPASANG: Benda['jenis'][] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor', 'speaker', 'speaker-plafon', 'mic', 'touchpanel',
   'kamera', 'lift', 'rak', 'lampu'];
 
 const urutkan = (a: BarisBom, b: BarisBom) =>
   URUTAN_KATEGORI.indexOf(a.kategori) - URUTAN_KATEGORI.indexOf(b.kategori) || a.item.localeCompare(b.item, 'id');
 
-/** Perangkat & furnitur saja (tanpa aksesori, rack, kabel) - isi tabel "Daftar perangkat" lembar cetak. */
 export function daftarBenda(benda: Benda[]): BarisBom[] {
   const grup = new Map<string, BarisBom>();
   for (const b of benda) {
     if (BUKAN_BARANG.includes(b.jenis)) continue;
-    const item = b.nama.replace(/\s+\d+\.\d+$/, '');   // "Meja kelas 2.3" -> "Meja kelas"
+    const item = b.nama.replace(/\s+\d+\.\d+$/, '');
     const kategori = kategoriBenda(b.jenis);
-    //  Videowall & LED dibeli per panel / unit, bukan "1 unit layar": videowall 2x2 = 4 panel, LED 9x5 = 45 cabinet.
     let jumlah = 1, satuan = 'unit', ukuran = `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, catatan = '';
     if (b.jenis === 'videowall') {
       const sp = spekVideowall(b), kol = Math.max(1, b.kol ?? 2), bar = Math.max(1, b.bar ?? 2);
@@ -70,7 +55,6 @@ export function daftarBenda(benda: Benda[]): BarisBom[] {
   return [...grup.values()].sort(urutkan);
 }
 
-/** BOM lengkap: perangkat & furnitur + aksesori pemasangan + isi rack + kabel. */
 export function bomDesain(benda: Benda[], kabel: JalurKabel[]): BarisBom[] {
   const baris = daftarBenda(benda);
 
@@ -105,10 +89,6 @@ export function bomDesain(benda: Benda[], kabel: JalurKabel[]): BarisBom[] {
   return [...baris, ...aksesori.values(), ...rak.values(), ...kabelBaris].sort(urutkan);
 }
 
-/**
- * Checklist instalasi dari BOM (pola checklist Project Progress: satu bagian = satu produk - pasang,
- * kabel, setting, tes). Bagian 1 Persiapan (cek material sesuai BOM), terakhir Serah Terima.
- */
 export function checklistDariBom(judul: string, bom: BarisBom[]): DraftChecklist {
   const dipasang = bom.filter(b => b.pasang);
   const material = bom.filter(b => !b.pasang && b.kategori !== 'Furnitur' && b.kategori !== 'Interior & pencahayaan');

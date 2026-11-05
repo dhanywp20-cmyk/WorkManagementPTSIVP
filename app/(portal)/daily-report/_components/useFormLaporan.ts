@@ -1,6 +1,5 @@
 'use client';
 
-/** useFormLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { todayISO, fetchReminderActivities, fetchTicketActivities, fetchExistingReport, saveReport, saveTeamEntries, type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry, type DailyReport } from './shared';
 import { newManualKey, emptyManual, emptyTeamEntry } from './bantu-halaman';
 import { useEffect } from 'react';
@@ -48,7 +47,6 @@ export function useFormLaporan(k: FormLaporanKonteks) {
     setEditingId(null); setFormReminders([]); setFormTickets([]);
     if (isAdmin) setTeamEntries(teamUsers.map(u => emptyTeamEntry(u)));
     else setTeamEntries([]);
-    //  Draf laporan baru yang belum tersimpan (tanggal & akun ikut dipulihkan).
     const draf = bacaDraf();
     if (draf && !draf.editingId && pulihkanDraf(() => true)) {
       setFormDate(draf.formDate); setFormUserId(draf.formUserId);
@@ -82,7 +80,6 @@ export function useFormLaporan(k: FormLaporanKonteks) {
     setFormOpen(true);
   };
 
-  // Auto-reload form activities when date/user changes
   useEffect(() => {
     if (!formOpen) return;
     const username = isAdmin ? (teamUsers.find(u => u.id === formUserId)?.username ?? '') : (currentUser?.username ?? '');
@@ -105,12 +102,6 @@ export function useFormLaporan(k: FormLaporanKonteks) {
       if (existing) { notify('error', `Report ${targetUser?.full_name} tgl ${formatDate(formDate)} sudah ada!`); return; }
     }
     setSaving(true);
-    /*
-      Isian tim (khusus admin) disimpan LEBIH DULU dan hasilnya DIPERIKSA. Dulu disimpan sesudah
-      report dan hasilnya diabaikan: bila gagal, layar tetap berkata "berhasil", draf sudah dihapus,
-      dan isian tim hilang diam-diam. Sekarang kegagalannya menghentikan simpan, form tetap terbuka
-      dengan isiannya, dan simpan ulang aman (saveTeamEntries menghapus-lalu-menyisip per tanggal).
-    */
     if (isAdmin && teamEntries.length) {
       const clean = teamEntries.filter(e => e.project_name.trim()).map(({ _key, ...rest }) => ({ ...rest, report_date: formDate, source: 'manual' as const }));
       if (clean.length) {
@@ -122,8 +113,6 @@ export function useFormLaporan(k: FormLaporanKonteks) {
     }
     const cleanManual = manualActs.filter(m => m.project_name.trim() || m.description.trim())
       .map(({ _key, ...rest }) => ({ ...rest, submitted_by: rest.submitted_by || currentUser?.username || 'system' }));
-    //  Koneksi putus / permintaan gagal di jalan: tampilkan galat, form tetap terbuka
-    //  (dulu tombol bisa macet "menyimpan" tanpa pesan apa pun).
     let result: { ok: boolean; error?: string };
     try {
       result = await saveReport({

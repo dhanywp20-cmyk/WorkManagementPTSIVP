@@ -4,11 +4,6 @@ import type { Status } from './shared';
 
 type PieDatum = { label?: string; name?: string; value: number; color: string };
 
-/**
- * Kartu ringkasan (clickable filter) + 4 pie chart - dipindah dari
- * app/reminder-schedule/page.tsx apa adanya (JSX identik). State & handler
- * tetap di page.tsx, komponen ini murni presentasional.
- */
 export function StatsSection({
   totalCount, pendingCount, doneCount, todayCount,
   filterStatus, setFilterStatus, selectedCalDay, setSelectedCalDay,
@@ -41,7 +36,6 @@ export function StatsSection({
 }) {
   return (
     <>
-      {/* ── Stat cards (clickable filter) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder', accent: '#4f46e5',
@@ -59,20 +53,6 @@ export function StatsSection({
         ].map((card, i) => <StatCard key={i} {...card} />)}
       </div>
 
-      {/* ── Pie Charts — klick untuk filter ── */}
-      {/*
-        2 kolom di ponsel, menyusul 9 modul lain yang sudah begini
-        (lihat commit "Grafik lingkaran: dua kolom di ponsel"). Sempat
-        DIKUNCI ke 1 kolom di sini secara khusus karena saat itu isi kartu
-        (donat + legenda) masih ~171px sementara kolom di HP 360px cuma
-        menyediakan ~167px - meleset tipis, dan grid tidak bisa menyusutkan
-        kartu di bawah lebar isinya sehingga baris ini saja yang mendorong
-        SELURUH halaman melebar ke samping.
-
-        MiniPieChart sendiri sudah diperketat lagi sejak itu (lihat
-        catatan di dalamnya) sampai ~148px - sekarang 2 kolom aman dengan
-        selisih yang cukup, bukan cuma pas-pasan seperti modul lain.
-      */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
         <MiniPieChart
           data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"

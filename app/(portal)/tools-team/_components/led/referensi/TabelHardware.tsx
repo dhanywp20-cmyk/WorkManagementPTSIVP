@@ -1,5 +1,4 @@
 'use client';
-/** Tabel sending card / video processor yang bisa diedit. */
 import { Hapus, SelAngka, SelTeks, Tambah, td, th } from './komponen';
 import type { Hardware } from '@/lib/av-hitung';
 

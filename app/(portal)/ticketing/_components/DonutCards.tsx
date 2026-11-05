@@ -5,12 +5,6 @@ import { Ikon } from '@/components/shared/Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
 import { useAngkaNaik } from '@/components/shared/AngkaNaik';
 
-/**
- * 3 generic donut cards = thin wrappers di atas shared MiniPieChart.
- * HandlerDonutCard tetap unik karena ada teamToggle PTS/Services.
- * InfoLine direxport dari shared FormParts.
- */
-
 export { InfoLine } from '@/components/shared';
 
 export function StatusDonutCard({
@@ -70,7 +64,6 @@ export function ProductDonutCard({
   );
 }
 
-// Handler Donut Card (UNIK - ada teamToggle PTS/Services)
 export function HandlerDonutCard({
   data,
   total,
@@ -103,7 +96,6 @@ export function HandlerDonutCard({
     const large = angle > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1} Z`;
     cumAngle += angle;
-    //  Irisan 100% (satu handler): busur awal = busur akhir, path-nya kosong - gambar sebagai cincin utuh.
     return { ...d, path, isFullCircle: d.value >= total, i };
   }) : [];
   return (
@@ -120,12 +112,6 @@ export function HandlerDonutCard({
         <p className="text-gray-500 text-sm text-center py-4">Belum ada data handler</p>
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3">
-          {/*  Ukuran donat MENGECIL di layar sempit - sama seperti MiniPieChart
-              bersama. Sebelumnya dipaku 120px + flex-shrink-0, jadi di grid 2
-              kolom pada ponsel isinya lebih lebar dari kolomnya; kolom grid
-              (1fr = minmax(auto,1fr)) tidak bisa menyusut di bawah lebar
-              isinya, sehingga SELURUH halaman ikut melebar dan bisa digeser
-              ke samping. */}
           <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
             {slices.map((s) =>
               s.isFullCircle ? (
@@ -146,13 +132,6 @@ export function HandlerDonutCard({
             <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{totalNaik}</text>
             <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
           </svg>
-          {/*  max-h + overflow-y-auto - HandlerDonutCard dulu satu-satunya
-              donut di platform ini yang legendanya TIDAK dibatasi (beda dari
-              MiniPieChart bersama yang sudah punya max-h-[120px]). Begitu
-              jumlah handler bertambah (staf baru direkrut), legendanya
-              memanjang ke bawah tanpa batas dan kartu ini jadi lebih TINGGI
-              dari 3 donut lain di baris grid yang sama - baris donut jadi
-              tidak rata, persis kebalikan dari kartu sebelahnya. */}
           <div className="flex flex-col gap-0.5 sm:gap-1.5 flex-1 basis-[95px] min-w-[95px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[68px] sm:max-h-[120px] overflow-y-auto">
             {slices.map((s) => (
               <div key={s.i} className="flex items-center gap-1.5 cursor-pointer rounded-lg px-1.5 py-0.5 transition-all"

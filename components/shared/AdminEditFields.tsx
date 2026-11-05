@@ -1,14 +1,6 @@
 'use client';
 import type { AdminField } from '@/lib/admin-edit';
 
-/**
- * Grid isian untuk panel "Edit Detail" milik admin.
- *
- * Digerakkan skema (lihat AdminField), bukan JSX per field, karena tiga modul
- * memakainya dengan 20–40 field masing-masing. Ditulis manual, itu berarti
- * ratusan baris yang nyaris sama - dan tiap penambahan kolom di database harus
- * disisipkan di tiga tempat berbeda dengan gaya yang pelan-pelan menyimpang.
- */
 export function AdminEditFields({
   fields, value, onChange, disabled,
 }: {
@@ -24,9 +16,6 @@ export function AdminEditFields({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       {fields.map(f => {
-        // Nilai SELALU dijadikan string terkendali. Kalau null dibiarkan lewat,
-        // React memperlakukan isiannya sebagai uncontrolled dan memunculkan
-        // peringatan begitu user mulai mengetik.
         const v = value[f.key];
         const teks = v === null || v === undefined ? '' : String(v);
         const span = f.span === 3 ? 'lg:col-span-3 sm:col-span-2' : f.span === 2 ? 'sm:col-span-2' : '';
