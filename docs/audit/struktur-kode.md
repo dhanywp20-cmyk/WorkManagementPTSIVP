@@ -245,3 +245,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   `QuizQuestion` pindah ke `kuis/bantu-kuis.ts`. Komponen `kuis/*` kini mengimpor dari sana, bukan dari `MyQuizPage`
   (impor melingkar hilang).
 - `GlobalSearch.tsx` (610 → 577 baris): tipe hasil, `TYPE_CONFIG` dan `ALL_TYPES` pindah ke `cari-global-tipe.ts`.
+- `ReminderDetailPopup.tsx` (641 → 490 baris): seksi Timeline Project Progress, Status Garansi dan Detail Pelaksanaan
+  jadi `SeksiPelaksanaan.tsx`; komponen itu membaca `useKonteksJadwal()` sendiri, jadi popup hanya mengoper
+  `detailReminder`.
