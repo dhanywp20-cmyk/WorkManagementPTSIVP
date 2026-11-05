@@ -65,11 +65,6 @@
       "barisPanjang": 5,
       "propsMaks": 2
     },
-    "app/(portal)/dashboard/_components/GlobalSearch.tsx": {
-      "baris": 610,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/dashboard/_components/modal-admin-panel.tsx": {
       "baris": 437,
       "barisPanjang": 8,

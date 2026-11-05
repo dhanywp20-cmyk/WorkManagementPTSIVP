@@ -244,3 +244,4 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `MyQuizPage.tsx` (617 → 554 baris): fungsi murni `terjemahkanGalatUnggah`, `acakDenganBenih`, `tenggatQuiz` dan tipe
   `QuizQuestion` pindah ke `kuis/bantu-kuis.ts`. Komponen `kuis/*` kini mengimpor dari sana, bukan dari `MyQuizPage`
   (impor melingkar hilang).
+- `GlobalSearch.tsx` (610 → 577 baris): tipe hasil, `TYPE_CONFIG` dan `ALL_TYPES` pindah ke `cari-global-tipe.ts`.
