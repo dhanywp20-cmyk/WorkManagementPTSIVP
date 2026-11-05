@@ -253,3 +253,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.
 - `picket-showroom/page.tsx` (696 → 594 baris): daftar versi HP jadi `DaftarPiketHp.tsx`, spanduk "Hari ini" jadi
   `SpandukHariIni.tsx`, lapisan memuat + navigasi minggu + chip filter aktif jadi `bilah-piket.tsx`.
+- `FormReviewPageInner.tsx` (698 → 591 baris): data diagram jadi `hitungPieReview` (`hitung-pie-review.ts`), kepala
+  halaman jadi `KepalaReview.tsx`, modal hapus massal jadi `ModalHapusMassalReview.tsx` (tetap mencatat `logAudit`),
+  CSS halaman jadi `GayaReview.tsx`.
