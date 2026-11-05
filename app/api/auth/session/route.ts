@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { issueDbToken } from '@/lib/db-token';
+import { akunTertunda } from '@/lib/akun-tertunda';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,8 @@ export async function GET(request: NextRequest) {
       .single());
   }
 
-  if (!user) {
+  if (!user || akunTertunda(user)) {
+    if (user) await supabase.from('user_sessions').delete().eq('token_hash', tokenHash);
     return NextResponse.json({ user: null }, { status: 401 });
   }
 

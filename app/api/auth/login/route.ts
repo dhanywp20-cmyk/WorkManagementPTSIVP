@@ -6,6 +6,7 @@ import {
 } from '@/lib/masuk-server';
 import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/dua-faktor-server';
 import { buatTantangan } from '@/lib/tantangan-2fa';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
     if (!valid) {
       await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
+    }
+
+    if (akunTertunda(user)) {
+      return NextResponse.json({ error: PESAN_TERTUNDA }, { status: 403 });
     }
 
     if (process.env.SUPABASE_JWT_SECRET) {

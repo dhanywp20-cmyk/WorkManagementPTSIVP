@@ -8,6 +8,7 @@ import { useKelompokPTS } from '@/lib/kelompok';
 import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { LangkahDuaFaktor, type HasilMasuk } from './LangkahDuaFaktor';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
 
 export function LayarMasuk({ onMasuk, onSelesai }: {
   onMasuk: (pengguna: User, dbToken: string | null) => void;
@@ -104,8 +105,8 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   const lanjutMasuk = (result: HasilMasuk) => {
     setLangkah2fa(null);
     const data = result.user as unknown as User;
-    if (data.team_type === 'Pending Approval') {
-      setLoginErr('Akun kamu masih menunggu persetujuan admin. Kamu akan dihubungi setelah akun diaktifkan.');
+    if (akunTertunda(data)) {
+      setLoginErr(PESAN_TERTUNDA);
       return;
     }
     onMasuk(data, result.db_token ?? null);
