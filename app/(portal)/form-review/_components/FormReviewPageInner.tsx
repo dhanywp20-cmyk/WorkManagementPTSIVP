@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react';
-import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { clearSession, getSession } from '@/lib/auth';
@@ -13,8 +12,8 @@ import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';
-import { ReviewForm, Reminder, GuestUser, PIE_COLORS, formatDatetime } from './shared';
-import { FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Paginasi, usePaginasi, ConfirmDialog, type ConfirmState, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal, KepalaModal } from '@/components/shared';
+import { ReviewForm, GuestUser, PIE_COLORS } from './shared';
+import { LoadingScreen, MiniPieChart, usePaginasi, ConfirmDialog, type ConfirmState, StatCard, ModalPortal, KepalaModal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
 import { PopupLonceng } from './PopupLonceng';
@@ -23,9 +22,9 @@ import { ModalDetailReview } from './ModalDetailReview';
 import { ModalFormReview } from './ModalFormReview';
 import { ModalHapusReview } from './ModalHapusReview';
 import { DaftarReview } from './DaftarReview';
+import { KonteksDaftarReview } from './konteks-daftar-review';
 
 export function FormReviewPageInner() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [currentUser, setCurrentUser] = useState<GuestUser | null>(null);
@@ -88,7 +87,6 @@ export function FormReviewPageInner() {
     setReviewFormData(prev => ({ ...prev, ...patch }));
 
   const isAdmin = hasFullAccess(currentUser);
-  const isGuest = currentUser?.role === 'guest' && !isPimpinan(currentUser);
   const isTeam = currentUser?.role === 'team';
 
   const bolehEditReview = (r: ReviewForm): boolean =>
@@ -330,19 +328,6 @@ export function FormReviewPageInner() {
     setShowFormModal(true);
   };
 
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    if (!isAdmin) { notify('error', 'Hanya admin yang bisa menghapus data.'); return; }
-    setConfirmState({ message: `Hapus ${selectedIds.size} review terpilih?`, danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
-      setBulkDeleting(true);
-      const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-      if (!error) {
-        void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', notes: `Bulk delete ${selectedIds.size} reviews` });
-        setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set());
-      } else notify('error', 'Gagal hapus: ' + error.message);
-      setBulkDeleting(false);
-    }});
-  };
   const toggleSelectId = (id: string) => setSelectedIds(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
   });
@@ -356,15 +341,6 @@ export function FormReviewPageInner() {
     setShowDeleteModal(true);
   };
 
-  const handleLogout = () => {
-    setSelectMode(false); setSelectedIds(new Set()); setFilterCategory('all'); setFilterReviewCat('all');
-    setSearchProject(''); setSearchHandler(''); setSearchSalesName('');
-    setHandlerFilter(null); setProductFilterChart(null); setSalesDivisionFilter(null);
-    clearSession();
-    setCurrentUser(null);
-    const target = window.top !== window ? window.top : window;
-    if (target) target.location.href = '/dashboard';
-  };
 
   const filteredReviews = reviews.filter(r => {
     if (filterReviewCat !== 'all' && r.review_category !== filterReviewCat) return false;
@@ -388,7 +364,6 @@ export function FormReviewPageInner() {
   const hal = usePaginasi(tableReviews);
 
   const totalDemo = reviews.filter(r => r.review_category === 'Demo Product').length;
-  const totalTraining = reviews.filter(r => r.review_category === 'BAST').length;
 
   const categoryPieData = (() => {
     const map: Record<string, number> = {};
@@ -657,9 +632,14 @@ export function FormReviewPageInner() {
               </div>
             )}
 
-            <DaftarReview
-              bolehEditReview={bolehEditReview} fetchError={fetchError} fetchReviews={fetchReviews} filterCategory={filterCategory} filterReviewCat={filterReviewCat} filteredReviews={filteredReviews} hal={hal} isAdmin={isAdmin} listLoading={listLoading} openDeleteModal={openDeleteModal} openEdit={openEdit} reviews={reviews} searchHandler={searchHandler} searchProject={searchProject} searchSalesName={searchSalesName} selectMode={selectMode} selectedIds={selectedIds} setDetailReview={setDetailReview} setFetchError={setFetchError} setFilterCategory={setFilterCategory} setFilterReviewCat={setFilterReviewCat} setSearchHandler={setSearchHandler} setSearchProject={setSearchProject} setSearchSalesName={setSearchSalesName} switchTab={switchTab} tableReviews={tableReviews} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId}
-            />
+            <KonteksDaftarReview.Provider value={{
+              nilai: { fetchError, filterCategory, filterReviewCat, filteredReviews, hal, isAdmin, listLoading, reviews, searchHandler,
+                searchProject, searchSalesName, selectMode, selectedIds, switchTab, tableReviews },
+              ubah: { setDetailReview, setFetchError, setFilterCategory, setFilterReviewCat, setSearchHandler, setSearchProject, setSearchSalesName },
+              aksi: { bolehEditReview, fetchReviews, openDeleteModal, openEdit, toggleSelectAll, toggleSelectId },
+            }}>
+              <DaftarReview />
+            </KonteksDaftarReview.Provider>
           </div>
         </div>
 
@@ -698,7 +678,10 @@ export function FormReviewPageInner() {
                 <button onClick={async () => {
                   setBulkConfirm(false); setBulkDeleting(true);
                   const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-                  if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
+                  if (!error) {
+                    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', notes: `Bulk delete ${selectedIds.size} review` });
+                    setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false);
+                  }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
                 }} className="tombol-bahaya flex-[2] py-2.5 rounded-kontrol font-bold text-sm">

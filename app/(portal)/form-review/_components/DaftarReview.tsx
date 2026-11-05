@@ -6,39 +6,16 @@ import { StarRating, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Pagin
 import { Ikon } from '@/components/shared/Ikon';
 import { ReviewForm, formatDatetime } from './shared';
 import { type CSSProperties } from 'react';
+import { useKonteksDaftarReview } from './konteks-daftar-review';
 
-export interface DaftarReviewProps {
-  bolehEditReview: (r: ReviewForm) => boolean;
-  fetchError: string | null;
-  fetchReviews: () => Promise<void>;
-  filterCategory: "Demo Product" | "BAST" | "all";
-  filterReviewCat: "Demo Product" | "BAST" | "all";
-  filteredReviews: ReviewForm[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<ReviewForm>;
-  isAdmin: boolean;
-  listLoading: boolean;
-  openDeleteModal: (r: ReviewForm) => void;
-  openEdit: (r: ReviewForm) => void;
-  reviews: ReviewForm[];
-  searchHandler: string;
-  searchProject: string;
-  searchSalesName: string;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setDetailReview: import("react").Dispatch<import("react").SetStateAction<ReviewForm | null>>;
-  setFetchError: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<"Demo Product" | "BAST" | "all">>;
-  setFilterReviewCat: import("react").Dispatch<import("react").SetStateAction<"Demo Product" | "BAST" | "all">>;
-  setSearchHandler: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSalesName: import("react").Dispatch<import("react").SetStateAction<string>>;
-  switchTab: "Demo Product" | "BAST";
-  tableReviews: ReviewForm[];
-  toggleSelectAll: () => void;
-  toggleSelectId: (id: string) => void;
-}
-
-export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filterCategory, filterReviewCat, filteredReviews, hal, isAdmin, listLoading, openDeleteModal, openEdit, reviews, searchHandler, searchProject, searchSalesName, selectMode, selectedIds, setDetailReview, setFetchError, setFilterCategory, setFilterReviewCat, setSearchHandler, setSearchProject, setSearchSalesName, switchTab, tableReviews, toggleSelectAll, toggleSelectId }: DaftarReviewProps) {
+export function DaftarReview() {
+  const k = useKonteksDaftarReview();
+  const {
+    fetchError, filterCategory, filterReviewCat, filteredReviews, hal, isAdmin, listLoading, reviews, searchHandler, searchProject, searchSalesName,
+    selectMode, selectedIds, switchTab, tableReviews
+  } = k.nilai;
+  const { setDetailReview, setFetchError, setFilterCategory, setFilterReviewCat, setSearchHandler, setSearchProject, setSearchSalesName } = k.ubah;
+  const { bolehEditReview, fetchReviews, openDeleteModal, openEdit, toggleSelectAll, toggleSelectId } = k.aksi;
   return (
     <>
       {listLoading ? (

@@ -2,16 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModalPortal } from '@/components/shared';
-import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya } from '@/lib/urutan-soal';
-import {
-  supabase, User, Material, Question, FolderNode,
-  buildFolderTree, DIFF_COLOR, SearchInput,
-  generateWithGemini, fileToBase64, MAX_PDF_BYTES, AppDialog, DialogState,
-  BtnEdit, BtnDelete, ambilDaftarModel, type ModelAI,
-} from './shared';
+import { supabase, User, Material, Question, FolderNode, buildFolderTree, AppDialog, DialogState, ambilDaftarModel, type ModelAI } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { GrupBatchSoal } from './soal/GrupBatchSoal';
-import { GridSubfolderSoal } from './soal/GridSubfolderSoal';
 import { HeaderBankSoal } from './soal/HeaderBankSoal';
 import { IsiFolderSoal } from './soal/IsiFolderSoal';
 import { DialogFormSoal } from './soal/DialogFormSoal';
@@ -23,6 +15,7 @@ import { useBuatSoal } from './useBuatSoal';
 import { IsiBankSoal } from './IsiBankSoal';
 import { KepalaTambahSoal } from './KepalaTambahSoal';
 import { PilihModelGen } from './PilihModelGen';
+import { KonteksBankSoal } from './konteks-bank-soal';
 
 export const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#3b82f6,#4f46e5)', light: '#dbeafe', icon: '#3b82f6' },
@@ -366,9 +359,14 @@ export function QuestionsPage({ user }: { user: User }) {
         easyCount={easyCount} filteredQuestions={filteredQuestions} goBack={goBack} hardCount={hardCount} mediumCount={mediumCount} search={search} selectedFolder={selectedFolder} selectedSubFolder={selectedSubFolder} setSearch={setSearch} setShowAddManual={setShowAddManual} setShowGenerate={setShowGenerate}
       />
 
-      <IsiBankSoal
-        buangDraf={buangDraf} bukaTambahDiGrup={bukaTambahDiGrup} currentFolderNode={currentFolderNode} editQ={editQ} expandedBatches={expandedBatches} filteredQuestions={filteredQuestions} generatePanelJSX={generatePanelJSX} geserSoal={geserSoal} handleDelete={handleDelete} handleDeleteMatGroup={handleDeleteMatGroup} handleSaveEdit={handleSaveEdit} kolomUrutanAda={kolomUrutanAda} load={load} menyimpanUrutan={menyimpanUrutan} questions={questions} search={search} selectedMat={selectedMat} selectedSubFolder={selectedSubFolder} setDialog={setDialog} setEditQ={setEditQ} setExpandedBatches={setExpandedBatches} setRenameFolder={setRenameFolder} setSelectedMat={setSelectedMat} setSelectedSubFolder={setSelectedSubFolder} showGenerate={showGenerate} simpanUrutan={simpanUrutan} subFolders={subFolders} susunanTampil={susunanTampil} urutanDraf={urutanDraf} viewMaterials={viewMaterials}
-      />
+      <KonteksBankSoal.Provider value={{
+        nilai: { currentFolderNode, editQ, expandedBatches, filteredQuestions, generatePanelJSX, kolomUrutanAda, menyimpanUrutan, questions, search,
+          selectedMat, selectedSubFolder, showGenerate, subFolders, urutanDraf, viewMaterials },
+        ubah: { setDialog, setEditQ, setExpandedBatches, setRenameFolder, setSelectedMat, setSelectedSubFolder },
+        aksi: { buangDraf, bukaTambahDiGrup, geserSoal, handleDelete, handleDeleteMatGroup, handleSaveEdit, load, simpanUrutan, susunanTampil },
+      }}>
+        <IsiBankSoal />
+      </KonteksBankSoal.Provider>
 
       {addManualModalJSX}
       {renameFolderModalJSX}
