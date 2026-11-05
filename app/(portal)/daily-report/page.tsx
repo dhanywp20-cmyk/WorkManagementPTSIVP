@@ -1,41 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
-import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 import { clearSession, getSession } from '@/lib/auth';
 
-import {
-  DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG,
-  formatDate,
-  type TeamUser, type GuestUser,
-} from '@/app/(portal)/reminder-schedule/_components/shared';
+import { CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
 
-import {
-  todayISO, formatLogTime,
-  fetchAllReminders, fetchAllTickets,
-  fetchReminderActivities, fetchTicketActivities,
-  fetchExistingReport, fetchReports,
-  saveReport, saveTeamEntries,
-  type ReminderActivity, type TicketActivity,
-  type ManualActivity, type TeamEntry,
-  type DailyReport,
-  hapusAktivitasManual, RENTANG_HARI } from './_components/shared';
+import { todayISO, type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry, type DailyReport, hapusAktivitasManual } from './_components/shared';
 
-import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelompok';
+import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
 
-import {
-  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
-import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi, TombolEkspor } from '@/components/shared';
-import type { Ekspor } from '@/lib/ekspor-tabel';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { Toast as ToastBersama } from '@/components/shared/Toast';
-import { inp, inpCls, card, cardHdr, TH, TD, SB, sb, AVC, avc, ini, newManualKey, newTeamKey, emptyManual, emptyTeamEntry, PW, CatPicker, SalesDrop, Toast, type FlatRow } from './_components/bantu-halaman';
-import { DaftarLaporanHarian } from './_components/DaftarLaporanHarian';
-import { FilterLaporanHarian } from './_components/FilterLaporanHarian';
+import { LoadingScreen, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { PageHeader } from '@/components/shared';
+import { sb, PW, Toast, type FlatRow } from './_components/bantu-halaman';
 import { IsiLaporan } from './_components/IsiLaporan';
 import { DetailLaporan } from './_components/DetailLaporan';
 import { FormLaporan } from './_components/FormLaporan';
@@ -43,6 +21,7 @@ import { useFormLaporan } from './_components/useFormLaporan';
 import { useDrafLaporan } from './_components/useDrafLaporan';
 import { useDataLaporan } from './_components/useDataLaporan';
 import { useMuatLaporan } from './_components/useMuatLaporan';
+import { KonteksLaporan, type NilaiKonteksLaporan } from './_components/konteks-laporan';
 
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
@@ -200,6 +179,15 @@ export default function DailyReportPage() {
     );
   };
 
+  const konteksLaporan: NilaiKonteksLaporan = {
+    sesi: { judulKelompokPTS, lihatSemua, pimpinan, teamUsers },
+    izin: { bolehHapus },
+    data: { belumLaporHariIni, dataEkspor, filteredRows, hal, liveLoading, loadLiveData, loadReports, reports },
+    ringkasan: { catPieData, divisionPieData, handlerPieData, productPieData, stats },
+    filter: { filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, searchProject, setFilterCategory, setFilterDate,
+      setFilterDivision, setFilterHandler, setFilterProduct, setFilterSource, setFilterStatus, setFilterUser, setSearchProject },
+    aksi: { mintaHapus, openEditForm, setModalRow },
+  };
   return (
     <PW>
       <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI">
@@ -212,9 +200,11 @@ export default function DailyReportPage() {
         )}
       </PageHeader>
 
-      <IsiLaporan
-        belumLaporHariIni={belumLaporHariIni} bolehHapus={bolehHapus} catPieData={catPieData} dataEkspor={dataEkspor} divisionPieData={divisionPieData} filterCategory={filterCategory} filterDate={filterDate} filterDivision={filterDivision} filterHandler={filterHandler} filterProduct={filterProduct} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} filteredRows={filteredRows} hal={hal} handlerPieData={handlerPieData} judulKelompokPTS={judulKelompokPTS} lihatSemua={lihatSemua} liveLoading={liveLoading} loadLiveData={loadLiveData} loadReports={loadReports} mintaHapus={mintaHapus} openEditForm={openEditForm} pimpinan={pimpinan} productPieData={productPieData} reports={reports} searchProject={searchProject} setFilterCategory={setFilterCategory} setFilterDate={setFilterDate} setFilterDivision={setFilterDivision} setFilterHandler={setFilterHandler} setFilterProduct={setFilterProduct} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setModalRow={setModalRow} setSearchProject={setSearchProject} stats={stats} teamUsers={teamUsers}
-      />
+      <KonteksLaporan.Provider value={konteksLaporan}>
+
+        <IsiLaporan />
+
+      </KonteksLaporan.Provider>
 
       {FormModal()}
       {DetailModal()}

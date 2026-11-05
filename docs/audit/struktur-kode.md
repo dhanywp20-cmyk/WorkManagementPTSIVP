@@ -97,7 +97,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 |---|---|---|---|
 | 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai** |
 | 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
-| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing** & **Incentive selesai** (§5); berikutnya Daily Report |
+| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing**, **Incentive** & **Daily Report selesai** (§5) |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
 | 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
@@ -180,3 +180,18 @@ statistik, saring lewat kartu In Progress, pencarian, tombol daftar, popup detai
 
 Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, akses lihat): daftar proyek,
 Insentif Saya, pencarian, tab Tranche / Late Ticket / Skema / Pengaturan Akses — hasil sama persis, 0 galat halaman.
+
+### Daily Report
+
+- `daily-report/_components/konteks-laporan.tsx`: irisan `sesi`, `izin`, `data`, `ringkasan`, `filter`, `aksi`.
+- `IsiLaporan`, `FilterLaporanHarian`, `DaftarLaporanHarian` mengambil dari konteks; dua interface props anak dihapus.
+- Sisa terbesar di page kini `FormLaporan` (29 props) — kandidat berikutnya.
+
+| Ukuran | Sebelum | Sesudah |
+|---|---|---|
+| Props `IsiLaporan` (page) | 39 | 0 |
+| `page.tsx` | 225 baris | 215 |
+| `IsiLaporan` | 193 | 154 |
+
+Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, Team): daftar laporan, panel
+ringkasan & grafik, pencarian — hasil sama persis, 0 galat halaman.

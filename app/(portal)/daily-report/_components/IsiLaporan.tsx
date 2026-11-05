@@ -1,57 +1,22 @@
 'use client';
 
-import { MiniPieChart, StatCardGrid, Paginasi, TombolEkspor } from '@/components/shared';
-import { todayISO, type DailyReport, RENTANG_HARI } from './shared';
+import { MiniPieChart, StatCardGrid, TombolEkspor } from '@/components/shared';
+import { todayISO, RENTANG_HARI } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
-import { card, cardHdr, type FlatRow } from './bantu-halaman';
+import { card, cardHdr } from './bantu-halaman';
 import { FilterLaporanHarian } from './FilterLaporanHarian';
 import { DaftarLaporanHarian } from './DaftarLaporanHarian';
-import { type TeamUser } from '@/app/(portal)/reminder-schedule/_components/shared';
-import type { Ekspor } from '@/lib/ekspor-tabel';
+import { useKonteksLaporan } from './konteks-laporan';
 
-export interface IsiLaporanProps {
-  belumLaporHariIni: TeamUser[];
-  bolehHapus: (row: any) => boolean;
-  catPieData: { label: string; value: number; color: string; }[];
-  dataEkspor: () => Ekspor<FlatRow>;
-  divisionPieData: { label: string; value: number; color: string; }[];
-  filterCategory: string | null;
-  filterDate: string;
-  filterDivision: string | null;
-  filterHandler: string | null;
-  filterProduct: string | null;
-  filterSource: string;
-  filterStatus: string;
-  filterUser: string;
-  filteredRows: FlatRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<FlatRow>;
-  handlerPieData: { label: string; value: number; color: string; }[];
-  judulKelompokPTS: string;
-  lihatSemua: boolean;
-  liveLoading: boolean;
-  loadLiveData: () => Promise<void>;
-  loadReports: () => Promise<void>;
-  mintaHapus: (row: any) => void;
-  openEditForm: (report: DailyReport) => Promise<void>;
-  pimpinan: boolean;
-  productPieData: { label: string; value: number; color: string; }[];
-  reports: DailyReport[];
-  searchProject: string;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterDivision: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterHandler: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterProduct: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterSource: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setModalRow: import("react").Dispatch<any>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  stats: { total: number; pending: number; selesai: number; hariIni: number; fromTicket: number; fromReminder: number; fromManual: number; };
-  teamUsers: TeamUser[];
-}
-
-export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEkspor, divisionPieData, filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, filteredRows, hal, handlerPieData, judulKelompokPTS, lihatSemua, liveLoading, loadLiveData, loadReports, mintaHapus, openEditForm, pimpinan, productPieData, reports, searchProject, setFilterCategory, setFilterDate, setFilterDivision, setFilterHandler, setFilterProduct, setFilterSource, setFilterStatus, setFilterUser, setModalRow, setSearchProject, stats, teamUsers }: IsiLaporanProps) {
+export function IsiLaporan() {
+  const k = useKonteksLaporan();
+  const { judulKelompokPTS } = k.sesi;
+  const { belumLaporHariIni, dataEkspor, filteredRows, liveLoading, loadLiveData, loadReports } = k.data;
+  const { catPieData, divisionPieData, handlerPieData, productPieData, stats } = k.ringkasan;
+  const {
+    filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, setFilterCategory, setFilterDivision, setFilterHandler,
+    setFilterProduct, setFilterSource
+  } = k.filter;
   return (
     <>
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
@@ -174,18 +139,14 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
             </div>
           )}
 
-          <FilterLaporanHarian
-            filterDate={filterDate} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} lihatSemua={lihatSemua} searchProject={searchProject} setFilterDate={setFilterDate} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setSearchProject={setSearchProject} teamUsers={teamUsers}
-          />
+          <FilterLaporanHarian />
           {!filterDate && (
             <p className="text-[11.5px] text-slate-500 -mt-1 mb-2">
               Menampilkan {RENTANG_HARI} hari terakhir. Pilih tanggal untuk melihat hari yang lebih lama.
             </p>
           )}
 
-          <DaftarLaporanHarian
-            bolehHapus={bolehHapus} filterCategory={filterCategory} filterDate={filterDate} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} filteredRows={filteredRows} hal={hal} liveLoading={liveLoading} mintaHapus={mintaHapus} openEditForm={openEditForm} pimpinan={pimpinan} reports={reports} searchProject={searchProject} setFilterCategory={setFilterCategory} setFilterDate={setFilterDate} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setModalRow={setModalRow} setSearchProject={setSearchProject}
-          />
+          <DaftarLaporanHarian />
         </div>
       </div>
     </>
