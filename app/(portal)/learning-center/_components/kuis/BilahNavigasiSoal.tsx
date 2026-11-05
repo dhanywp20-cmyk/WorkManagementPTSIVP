@@ -1,7 +1,7 @@
 'use client';
 
 import { IkonTeks } from '@/components/shared/Ikon';
-import { type QuizQuestion } from '../MyQuizPage';
+import { type QuizQuestion } from './bantu-kuis';
 
 export interface BilahNavigasiSoalProps {
   answered: number;

@@ -1,7 +1,7 @@
 'use client';
 
 import { Ikon } from '@/components/shared/Ikon';
-import { type QuizQuestion } from '../MyQuizPage';
+import { type QuizQuestion } from './bantu-kuis';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 
 export interface IsiSoalKuisProps {

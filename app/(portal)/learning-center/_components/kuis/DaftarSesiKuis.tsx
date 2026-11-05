@@ -2,7 +2,7 @@
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { QuizSession, QuizAttempt } from '../shared';
-import { tenggatQuiz } from '../MyQuizPage';
+import { tenggatQuiz } from './bantu-kuis';
 
 export interface DaftarSesiKuisProps {
   activeAttempts: Record<string, QuizAttempt>;

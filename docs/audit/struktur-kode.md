@@ -237,3 +237,17 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `lib/integrasi-aksi.ts` (609 → 231 baris): aksi baca DIWAYPI ke `integrasi-aksi-baca.ts`, aksi jadwal ke
   `integrasi-aksi-jadwal.ts`, konstanta & `akunChecklist` ke `integrasi-aksi-dasar.ts`. Dispatcher `jalankanAksi` dan
   aksi tulis tiket/daily report/checklist tetap di `integrasi-aksi.ts`.
+- `AdminDashboard.tsx` (696 → 603 baris): modal riwayat nilai per pengguna jadi `ModalNilaiPengguna.tsx`. Pengambilan
+  data tetap di `AdminDashboard`; modal hanya menampilkan.
+- `MateriPage.tsx` (609 → 550 baris): modal Edit Materi jadi `ModalEditMateri.tsx`; simpan tetap lewat `handleEditMaterial`
+  di halaman.
+- `MyQuizPage.tsx` (617 → 554 baris): fungsi murni `terjemahkanGalatUnggah`, `acakDenganBenih`, `tenggatQuiz` dan tipe
+  `QuizQuestion` pindah ke `kuis/bantu-kuis.ts`. Komponen `kuis/*` kini mengimpor dari sana, bukan dari `MyQuizPage`
+  (impor melingkar hilang).
+- `GlobalSearch.tsx` (610 → 577 baris): tipe hasil, `TYPE_CONFIG` dan `ALL_TYPES` pindah ke `cari-global-tipe.ts`.
+- `ReminderDetailPopup.tsx` (641 → 490 baris): seksi Timeline Project Progress, Status Garansi dan Detail Pelaksanaan
+  jadi `SeksiPelaksanaan.tsx`; komponen itu membaca `useKonteksJadwal()` sendiri, jadi popup hanya mengoper
+  `detailReminder`.
+- `reminder-schedule/page.tsx` (641 → 591 baris): daftar "Perlu Tindakan Kamu" jadi fungsi murni `hitungPerluAksi`
+  (`_components/perlu-aksi.ts`), objek form kosong jadi `buatFormKosong()` (`_components/form-kosong.ts`, tetap dibuat
+  ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.

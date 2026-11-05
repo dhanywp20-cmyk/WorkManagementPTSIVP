@@ -65,11 +65,6 @@
       "barisPanjang": 5,
       "propsMaks": 2
     },
-    "app/(portal)/dashboard/_components/GlobalSearch.tsx": {
-      "baris": 610,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/dashboard/_components/modal-admin-panel.tsx": {
       "baris": 437,
       "barisPanjang": 8,
@@ -276,7 +271,7 @@
       "propsMaks": 17
     },
     "app/(portal)/learning-center/_components/AdminDashboard.tsx": {
-      "baris": 696,
+      "baris": 603,
       "barisPanjang": 0,
       "propsMaks": 4
     },
@@ -300,13 +295,8 @@
       "barisPanjang": 3,
       "propsMaks": 2
     },
-    "app/(portal)/learning-center/_components/MateriPage.tsx": {
-      "baris": 609,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/learning-center/_components/MyQuizPage.tsx": {
-      "baris": 617,
+      "baris": 554,
       "barisPanjang": 1,
       "propsMaks": 13
     },
@@ -376,7 +366,7 @@
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx": {
-      "baris": 641,
+      "baris": 490,
       "barisPanjang": 1,
       "propsMaks": 3
     },
@@ -436,7 +426,7 @@
       "propsMaks": 0
     },
     "app/(portal)/reminder-schedule/page.tsx": {
-      "baris": 641,
+      "baris": 591,
       "barisPanjang": 8,
       "propsMaks": 8
     },
