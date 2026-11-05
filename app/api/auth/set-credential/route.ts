@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { akunTertunda } from '@/lib/akun-tertunda';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getSessionUser, isAdminRole } from '@/lib/server-auth';
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       const u = user as { role?: string | null; team_type?: string | null; created_at?: string | null };
       const bentukPendaftaran =
         (u.role ?? '').toLowerCase() === 'guest' &&
-        (u.team_type ?? '') === 'Pending Approval';
+        akunTertunda(u);
       const masihBaru =
         !u.created_at ||
         Date.now() - new Date(u.created_at).getTime() < UMUR_PENDAFTARAN_MENIT * 60 * 1000;

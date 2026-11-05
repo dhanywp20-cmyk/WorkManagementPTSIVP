@@ -486,13 +486,8 @@
       "propsMaks": 0
     },
     "app/(portal)/ticketing/_components/FilterBar.tsx": {
-      "baris": 229,
+      "baris": 193,
       "barisPanjang": 4,
-      "propsMaks": 2
-    },
-    "app/(portal)/ticketing/_components/IsiTicketing.tsx": {
-      "baris": 183,
-      "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/ticketing/_components/KepalaTicketing.tsx": {
@@ -506,7 +501,7 @@
       "propsMaks": 14
     },
     "app/(portal)/ticketing/_components/StatsSection.tsx": {
-      "baris": 114,
+      "baris": 90,
       "barisPanjang": 8,
       "propsMaks": 6
     },
@@ -516,7 +511,7 @@
       "propsMaks": 2
     },
     "app/(portal)/ticketing/_components/TicketListBody.tsx": {
-      "baris": 372,
+      "baris": 334,
       "barisPanjang": 1,
       "propsMaks": 2
     },
@@ -541,9 +536,9 @@
       "propsMaks": 0
     },
     "app/(portal)/ticketing/page.tsx": {
-      "baris": 760,
-      "barisPanjang": 8,
-      "propsMaks": 62
+      "baris": 750,
+      "barisPanjang": 7,
+      "propsMaks": 19
     },
     "app/(portal)/tools-team/_components/av/audio/AudioAkustik.tsx": {
       "baris": 90,

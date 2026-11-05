@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from './supabase-admin';
+import { akunTertunda } from './akun-tertunda';
 
 export interface SessionUser {
   id: string;
@@ -28,11 +29,12 @@ export async function getSessionUser(request: NextRequest): Promise<SessionUser 
 
   const { data: user } = await supabase
     .from('users')
-    .select('id, username, role, full_name, sales_division')
+    .select('id, username, role, full_name, sales_division, team_type')
     .eq('id', session.user_id)
     .single();
 
-  return (user as SessionUser) ?? null;
+  if (!user || akunTertunda(user)) return null;
+  return user as SessionUser;
 }
 
 export function isAdminRole(role: string | null | undefined): boolean {

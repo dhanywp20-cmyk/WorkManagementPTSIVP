@@ -1,43 +1,19 @@
 'use client';
-import type { Dispatch, SetStateAction, RefObject } from 'react';
 import { StatCard } from '@/components/shared';
 import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard, ProductDonutCard,
 } from './DonutCards';
-import type { Ticket, User } from './shared';
+import { useKonteksTicket } from './konteks-ticket';
 
-type TicketStats = {
-  total: number; pending: number; processing: number; solved: number; overdue: number; solvedOverdue: number;
-  statusData: { name: string; value: number; color: string }[];
-  handlerData: { name: string; tickets: number; team: string }[];
-};
-type SebaranStats = { data: { name: string; value: number; color: string }[]; total: number };
-
-export function StatsSection({
-  currentUser, currentUserTeamType, stats, tickets,
-  filterStatus, setFilterStatus, handlerFilter, setHandlerFilter,
-  ticketListRef, selectedHandlerTeam, setSelectedHandlerTeam,
-  salesDivisionStats, salesDivisionFilter, setSalesDivisionFilter,
-  productStats, productFilter, setProductFilter,
-}: {
-  currentUser: User | null;
-  currentUserTeamType: string;
-  stats: TicketStats;
-  tickets: Ticket[];
-  filterStatus: string;
-  setFilterStatus: Dispatch<SetStateAction<string>>;
-  handlerFilter: string | null;
-  setHandlerFilter: Dispatch<SetStateAction<string | null>>;
-  ticketListRef: RefObject<HTMLDivElement | null>;
-  selectedHandlerTeam: "PTS" | "Services";
-  setSelectedHandlerTeam: Dispatch<SetStateAction<"PTS" | "Services">>;
-  salesDivisionStats: SebaranStats;
-  salesDivisionFilter: string | null;
-  setSalesDivisionFilter: Dispatch<SetStateAction<string | null>>;
-  productStats: SebaranStats;
-  productFilter: string | null;
-  setProductFilter: Dispatch<SetStateAction<string | null>>;
-}) {
+export function StatsSection() {
+  const k = useKonteksTicket();
+  const { currentUser, currentUserTeamType } = k.sesi;
+  const { tickets, ticketListRef } = k.data;
+  const { stats, salesDivisionStats, productStats } = k.ringkasan;
+  const {
+    filterStatus, setFilterStatus, handlerFilter, setHandlerFilter, selectedHandlerTeam, setSelectedHandlerTeam, salesDivisionFilter, setSalesDivisionFilter,
+    productFilter, setProductFilter
+  } = k.filter;
   return (
     <>
       {currentUser?.role === "guest" && (

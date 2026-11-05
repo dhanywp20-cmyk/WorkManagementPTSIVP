@@ -1,57 +1,21 @@
 'use client';
-import type { Dispatch, SetStateAction } from 'react';
 import { Ico } from './Ico';
-import type { Ticket, TeamMember, User } from './shared';
 import { TAHUN_TERBARU, RENTANG_BULAN_TIKET } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
+import { useKonteksTicket } from './konteks-ticket';
 
-export function FilterBar({
-  canManageTickets, selectMode, setSelectMode, setSelectedIds,
-  fetchData, loading, onExport, uploading,
-  ticketsLoading, filteredTickets,
-  searchProject, setSearchProject, searchSalesName, setSearchSalesName,
-  searchProduct, setSearchProduct, setProductFilter,
-  handlerFilter, setHandlerFilter, teamMembers, selectedHandlerTeam,
-  filterStatus, setFilterStatus, currentUser,
-  filterYear, setFilterYear, availableYears,
-  selectedIds, bulkDeleting, setBulkConfirm,
-  salesDivisionFilter, setSalesDivisionFilter, productFilter,
-}: {
-  canManageTickets: boolean;
-  selectMode: boolean;
-  setSelectMode: Dispatch<SetStateAction<boolean>>;
-  setSelectedIds: Dispatch<SetStateAction<Set<string>>>;
-  fetchData: () => void;
-  loading: boolean;
-  onExport: () => void;
-  uploading: boolean;
-  ticketsLoading: boolean;
-  filteredTickets: Ticket[];
-  searchProject: string;
-  setSearchProject: Dispatch<SetStateAction<string>>;
-  searchSalesName: string;
-  setSearchSalesName: Dispatch<SetStateAction<string>>;
-  searchProduct: string;
-  setSearchProduct: Dispatch<SetStateAction<string>>;
-  setProductFilter: Dispatch<SetStateAction<string | null>>;
-  handlerFilter: string | null;
-  setHandlerFilter: Dispatch<SetStateAction<string | null>>;
-  teamMembers: TeamMember[];
-  selectedHandlerTeam: "PTS" | "Services";
-  filterStatus: string;
-  setFilterStatus: Dispatch<SetStateAction<string>>;
-  currentUser: User | null;
-  filterYear: string;
-  setFilterYear: Dispatch<SetStateAction<string>>;
-  availableYears: string[];
-  selectedIds: Set<string>;
-  bulkDeleting: boolean;
-  setBulkConfirm: Dispatch<SetStateAction<boolean>>;
-  salesDivisionFilter: string | null;
-  setSalesDivisionFilter: Dispatch<SetStateAction<string | null>>;
-  productFilter: string | null;
-}) {
+export function FilterBar() {
+  const k = useKonteksTicket();
+  const { teamMembers, currentUser } = k.sesi;
+  const { canManageTickets } = k.izin;
+  const { fetchData, loading, uploading, ticketsLoading, filteredTickets } = k.data;
+  const {
+    searchProject, setSearchProject, searchSalesName, setSearchSalesName, searchProduct, setSearchProduct, setProductFilter, handlerFilter, setHandlerFilter,
+    selectedHandlerTeam, filterStatus, setFilterStatus, filterYear, setFilterYear, availableYears, salesDivisionFilter, setSalesDivisionFilter, productFilter
+  } = k.filter;
+  const { selectMode, setSelectMode, setSelectedIds, selectedIds, bulkDeleting, setBulkConfirm } = k.pilih;
+  const { jalankanEksporExcel: onExport } = k.aksi;
   return (
     <>
       <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>

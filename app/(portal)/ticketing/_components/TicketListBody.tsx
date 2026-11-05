@@ -1,71 +1,33 @@
 'use client';
-import type { Dispatch, SetStateAction, RefObject, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ListEmptyState, ErrorState, MobileListCard, MobileCardBadge,
   ViewIconBtn, DeleteIconBtn, FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from '@/components/shared';
 import { Ico } from './Ico';
-import type { Ticket, TeamMember, User, OverdueSetting } from './shared';
 import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { useKonteksTicket } from './konteks-ticket';
 
-export function TicketListBody({
-  fetchError, setFetchError, fetchData, ticketsLoading,
-  searchProject, setSearchProject, searchSalesName, setSearchSalesName,
-  filterStatus, setFilterStatus, filterYear, setFilterYear,
-  filteredTickets, paginatedTickets, tickets, users, teamMembers,
-  isTicketOverdue, getOverdueSetting, getWarrantyInfo, bolehUpdateTicket,
-  canApproveAssign, canManageTickets, currentUserTeamType,
-  bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, cetakTicket,
-  bukaReopenTicket, bukaDeleteTicket, bukaOverdueSetting,
-  currentPage, setCurrentPage, totalPages, ITEMS_PER_PAGE,
-  selectMode, selectedIds, toggleSelectId, toggleSelectAll,
-  productFilter, setProductFilter, ticketListRef,
-}: {
-  fetchError: string | null;
-  setFetchError: Dispatch<SetStateAction<string | null>>;
-  fetchData: () => void;
-  ticketsLoading: boolean;
-  searchProject: string;
-  setSearchProject: Dispatch<SetStateAction<string>>;
-  searchSalesName: string;
-  setSearchSalesName: Dispatch<SetStateAction<string>>;
-  filterStatus: string;
-  setFilterStatus: Dispatch<SetStateAction<string>>;
-  filterYear: string;
-  setFilterYear: Dispatch<SetStateAction<string>>;
-  filteredTickets: Ticket[];
-  paginatedTickets: Ticket[];
-  tickets: Ticket[];
-  users: User[];
-  teamMembers: TeamMember[];
-  cetakTicket: (t: Ticket) => void;
-  isTicketOverdue: (t: Ticket) => boolean;
-  getOverdueSetting: (id: string) => OverdueSetting | undefined;
-  getWarrantyInfo: (projectName: string) => { isIn: boolean; diffDays: number; wy: number; expiryStr: string } | null;
-  bolehUpdateTicket: (t: Ticket) => boolean;
-  canApproveAssign: boolean;
-  canManageTickets: boolean;
-  currentUserTeamType: string;
-  bukaDetailTicket: (t: Ticket) => void;
-  bukaRingkasanAktivitas: (t: Ticket) => void;
-  bukaApprovalUntukTicket: (t: Ticket) => void;
-  bukaReopenTicket: (t: Ticket) => void;
-  bukaDeleteTicket: (t: Ticket) => void;
-  bukaOverdueSetting: (t: Ticket) => void;
-  currentPage: number;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  totalPages: number;
-  ITEMS_PER_PAGE: number;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  toggleSelectId: (id: string) => void;
-  toggleSelectAll: () => void;
-  productFilter: string | null;
-  setProductFilter: Dispatch<SetStateAction<string | null>>;
-  ticketListRef: RefObject<HTMLDivElement | null>;
-}) {
+export function TicketListBody() {
+  const k = useKonteksTicket();
+  const { teamMembers, currentUserTeamType } = k.sesi;
+  const { bolehUpdateTicket, canApproveAssign, canManageTickets } = k.izin;
+  const {
+    fetchError, setFetchError, fetchData, ticketsLoading, filteredTickets, paginatedTickets, tickets, isTicketOverdue, getOverdueSetting, getWarrantyInfo,
+    ticketListRef
+  } = k.data;
+  const {
+    searchProject, setSearchProject, searchSalesName, setSearchSalesName, filterStatus, setFilterStatus, filterYear, setFilterYear, productFilter,
+    setProductFilter
+  } = k.filter;
+  const { currentPage, setCurrentPage, totalPages, ITEMS_PER_PAGE } = k.halaman;
+  const { selectMode, selectedIds, toggleSelectId, toggleSelectAll } = k.pilih;
+  const {
+    bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, jalankanCetakTicket: cetakTicket, bukaReopenTicket, bukaDeleteTicket,
+    bukaOverdueSetting
+  } = k.aksi;
   const router = useRouter();
 
   if (fetchError) return <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchData(); }} />;

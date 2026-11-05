@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { TIM_TERTUNDA } from '@/lib/akun-tertunda';
 import { SARING_PENERIMA_ADMIN } from '@/lib/penerima-admin';
 import {
   TABEL_KODE_ACARA, dariBaris, periksaKodeAcara,
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
         full_name,
         username,
         role: 'guest',
-        team_type: bypass ? await teamTypeDariPilihan(supabase, divisi, pts_type) : 'Pending Approval',
+        team_type: bypass ? await teamTypeDariPilihan(supabase, divisi, pts_type) : TIM_TERTUNDA,
         daftar_via_event: bypass,
         ...(bypass ? barisSetara(divisi, sales_division) : { sales_division }),
         jabatan,

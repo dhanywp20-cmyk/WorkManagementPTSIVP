@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { bolehDiwaypiDan2FA } from '@/lib/constants';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
 
 export interface Pemanggil {
   id: string;
@@ -38,11 +39,12 @@ export async function pastikanMasuk(req: NextRequest): Promise<HasilPenjaga> {
 
   const { data: user } = await db
     .from('users')
-    .select('id, username, full_name, role, access_level')
+    .select('id, username, full_name, role, access_level, team_type')
     .eq('id', sesi.user_id)
     .single();
 
   if (!user) return { ok: false, status: 401, alasan: 'Akun tidak ditemukan.' };
+  if (akunTertunda(user)) return { ok: false, status: 403, alasan: PESAN_TERTUNDA };
   return { ok: true, user: user as Pemanggil };
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { issueDbToken } from '@/lib/db-token';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
 
 export const SESSION_HOURS = 400 * 24;
 export const BATAS_GAGAL_USER = 5;
@@ -55,6 +56,8 @@ export async function muatUserMasuk(supabase: SupabaseClient, kunci: { username:
 }
 
 export async function selesaikanMasuk(supabase: SupabaseClient, user: UserMasuk, request: NextRequest, ip: string, tambahan?: Record<string, unknown>) {
+  if (akunTertunda(user)) return NextResponse.json({ error: PESAN_TERTUNDA }, { status: 403 });
+
   await catatPercobaan(supabase, user.username, ip, true);
 
   supabase.from('user_sessions').delete().lt('expires_at', new Date().toISOString()).then(() => {});
