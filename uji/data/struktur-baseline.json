@@ -265,11 +265,6 @@
       "barisPanjang": 2,
       "propsMaks": 17
     },
-    "app/(portal)/learning-center/_components/AdminDashboard.tsx": {
-      "baris": 603,
-      "barisPanjang": 0,
-      "propsMaks": 4
-    },
     "app/(portal)/learning-center/_components/HistoryPage.tsx": {
       "baris": 104,
       "barisPanjang": 1,

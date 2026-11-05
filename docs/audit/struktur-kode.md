@@ -260,3 +260,4 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   menu jadi `GridMenuPortal` (keduanya di `KartuMenuPortal.tsx`), dan `AnalyticsIframe` pindah ke berkasnya sendiri.
   Markup dicek sama persis dengan aslinya (dinormalisasi spasi); jalur portal biasa (sidebar, dashboard, pindah menu)
   untuk admin dan guest identik sampai piksel.
+- `AdminDashboard.tsx` (603 → 563 baris): kartu "Analytics Overview" dan `SectionHeader` pindah ke `RingkasanKuis.tsx`.
