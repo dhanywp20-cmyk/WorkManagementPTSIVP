@@ -11,7 +11,7 @@ import { muatKelompok, namaKelompokPTS, cariKelompok } from '@/lib/kelompok';
 
 import { StripInfo } from './modal-bersama';
 import { AccountSettingsInline } from './modal-akun';
-import { UserManagementInline } from './modal-user';
+import { UserManagementInline } from './pengguna/KelolaPenggunaInline';
 import { BrandPicSettingInline } from './modal-brand-pic';
 import { MerekSettingInline } from './modal-merek';
 import { KelompokSettingInline } from './modal-kelompok';

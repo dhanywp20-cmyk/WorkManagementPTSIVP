@@ -96,9 +96,9 @@
       "propsMaks": 5
     },
     "app/(portal)/dashboard/_components/modal-user.tsx": {
-      "baris": 737,
-      "barisPanjang": 10,
-      "propsMaks": 19
+      "baris": 366,
+      "barisPanjang": 3,
+      "propsMaks": 16
     },
     "app/(portal)/dashboard/_components/NavBawahMobile.tsx": {
       "baris": 83,
@@ -245,11 +245,6 @@
       "barisPanjang": 1,
       "propsMaks": 2
     },
-    "app/(portal)/incentive-pts/_components/SchemeTab.tsx": {
-      "baris": 716,
-      "barisPanjang": 0,
-      "propsMaks": 3
-    },
     "app/(portal)/incentive-pts/_components/TabelProyekInsentif.tsx": {
       "baris": 228,
       "barisPanjang": 3,
@@ -306,9 +301,9 @@
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/MateriPage.tsx": {
-      "baris": 748,
+      "baris": 609,
       "barisPanjang": 0,
-      "propsMaks": 6
+      "propsMaks": 3
     },
     "app/(portal)/learning-center/_components/MyQuizPage.tsx": {
       "baris": 617,
@@ -344,11 +339,6 @@
       "baris": 159,
       "barisPanjang": 2,
       "propsMaks": 2
-    },
-    "app/(portal)/learning-center/_components/TeamPage.tsx": {
-      "baris": 641,
-      "barisPanjang": 4,
-      "propsMaks": 3
     },
     "app/(portal)/learning-center/_components/useBuatSoal.ts": {
       "baris": 167,

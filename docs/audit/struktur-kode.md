@@ -228,3 +228,9 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `lib/integrasi-tulis.ts` (738 baris) dipecah per domain: `integrasi-tulis-bersama.ts` (pembantu: orang, WA, audit,
   CC), `-tiket.ts`, `-desain.ts`, `-catatan.ts`, `-unit.ts` (unit & piket). `integrasi-tulis.ts` kini hanya peta
   `AKSI_MENU_TULIS` (21 baris). Tiap modul hanya mengekspor aksinya; pembantu internal tetap privat.
+- Komponen yang menumpang di satu berkas dipindah ke berkasnya sendiri (isi tidak diubah):
+  `UserManagementInline` → `dashboard/_components/pengguna/KelolaPenggunaInline.tsx` (`modal-user.tsx` 737 → 366 baris),
+  `UserAnswerReview` → `learning-center/_components/UlasanJawaban.tsx` (`TeamPage.tsx` 641 → 119),
+  `MaterialCard` + `FolderTreeView` → `learning-center/_components/KartuMateri.tsx` (`MateriPage.tsx` 748 → 609).
+- `SchemeTab.tsx` (716 → 345 baris): seksi 3 (PTS Daerah & Remote) dan 4 (Aturan Khusus & Pencairan) jadi komponen
+  `SeksiDaerahRemote` / `SeksiAturanPencairan` di `seksi-skema.tsx`, bersama pembantu `Seksi`, `TotalPersen`, `rp`.

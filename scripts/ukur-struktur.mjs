@@ -6,7 +6,7 @@ import ts from 'typescript';
 export const BATAS = { baris: 600, karakter: 300, props: 25 };
 
 export function daftarBerkas() {
-  return execSync('git ls-files -- app lib components', { encoding: 'utf8' })
+  return execSync('git ls-files --cached --others --exclude-standard -- app lib components', { encoding: 'utf8' })
     .split('\n').filter(f => /\.(ts|tsx)$/.test(f) && !f.endsWith('.d.ts') && existsSync(f));
 }
 
