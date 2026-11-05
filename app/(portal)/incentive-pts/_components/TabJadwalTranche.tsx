@@ -1,30 +1,17 @@
 'use client';
 
-import { bisaKonfig, bisaInput, type CurrentUser, type TabKey } from './aturan-halaman';
+import { bisaKonfig, bisaInput } from './aturan-halaman';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { IncentiveProjectRow, IncentiveTranche, type SkemaInsentif, TRANCHE_STATUS } from './calc';
+import { TRANCHE_STATUS } from './calc';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface TabJadwalTrancheProps {
-  currentUser: CurrentUser | null;
-  exporting: boolean;
-  filteredTranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-  handleExportBatch: () => Promise<void>;
-  konfirmasiMarkPaid: (trancheId: string, projectName: string, trancheNumber: number) => void;
-  loading: boolean;
-  markingPaid: string | null;
-  setBatalBatch: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  setBatchConfirm: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setBatchYear: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setKetikBatalBatch: import("react").Dispatch<import("react").SetStateAction<string>>;
-  skema: SkemaInsentif | null;
-  tab: TabKey;
-  tahunAktif: number;
-  thCls: "px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200";
-  uniqueYears: number[];
-}
-
-export function TabJadwalTranche({ currentUser, exporting, filteredTranches, handleExportBatch, konfirmasiMarkPaid, loading, markingPaid, setBatalBatch, setBatchConfirm, setBatchYear, setFilterYear, setKetikBatalBatch, skema, tab, tahunAktif, thCls, uniqueYears }: TabJadwalTrancheProps) {
+export function TabJadwalTranche() {
+  const k = useKonteksInsentif();
+  const { currentUser, loading, tab, tahunAktif, thCls } = k.sesi;
+  const {
+    filteredTranches, konfirmasiMarkPaid, markingPaid, setBatalBatch, setBatchConfirm, setBatchYear, setFilterYear, setKetikBatalBatch, skema, uniqueYears
+  } = k.tahapan;
+  const { exporting, handleExportBatch } = k.ekspor;
   return (
     <>
       {tab === 'tranches' && bisaInput(currentUser) && !loading && (

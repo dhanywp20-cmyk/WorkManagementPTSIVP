@@ -97,7 +97,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 |---|---|---|---|
 | 1 | Penjaga ratchet + alat ukur; format ulang JSX dipadatkan (S3) | rendah (tanpa perubahan perilaku) | **selesai** |
 | 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
-| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project** & **Ticketing selesai** (§5); berikutnya Incentive |
+| 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing** & **Incentive selesai** (§5); berikutnya Daily Report |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
 | 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
@@ -164,3 +164,19 @@ detail dengan Setujui/Tolak/Edit/Hapus/Download/Chat — hasil sama persis, 0 ga
 
 Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, Sales): daftar, kartu & donat
 statistik, saring lewat kartu In Progress, pencarian, tombol daftar, popup detail — hasil sama persis, 0 galat halaman.
+
+### Incentive PTS
+
+- `incentive-pts/_components/konteks-insentif.tsx`: irisan `sesi`, `izin`, `saya`, `proyek`, `tahapan`, `akses`, `ekspor`,
+  `aksi`.
+- `IsiInsentif`, `FilterProyekInsentif`, `DaftarProyekInsentifHP`, `TabelProyekInsentif`, `TabJadwalTranche`,
+  `TabPengaturanAkses` mengambil dari konteks; lima interface props anak dihapus.
+
+| Ukuran | Sebelum | Sesudah |
+|---|---|---|
+| Props terbanyak di satu baris (page) | 63 | 11 |
+| `page.tsx` | 296 baris | 283 |
+| `IsiInsentif` | 195 | 123 |
+
+Verifikasi: skrip peramban identik pada build `main` & refaktor (Admin, Full Access, akses lihat): daftar proyek,
+Insentif Saya, pencarian, tab Tranche / Late Ticket / Skema / Pengaturan Akses — hasil sama persis, 0 galat halaman.

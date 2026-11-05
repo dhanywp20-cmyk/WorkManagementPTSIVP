@@ -16,7 +16,7 @@
       "propsMaks": 3
     },
     "app/(portal)/_kerangka/LayarMasuk.tsx": {
-      "baris": 515,
+      "baris": 516,
       "barisPanjang": 5,
       "propsMaks": 3
     },
@@ -246,19 +246,9 @@
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/DaftarProyekInsentifHP.tsx": {
-      "baris": 92,
+      "baris": 84,
       "barisPanjang": 2,
       "propsMaks": 2
-    },
-    "app/(portal)/incentive-pts/_components/FilterProyekInsentif.tsx": {
-      "baris": 157,
-      "barisPanjang": 1,
-      "propsMaks": 2
-    },
-    "app/(portal)/incentive-pts/_components/IsiInsentif.tsx": {
-      "baris": 195,
-      "barisPanjang": 5,
-      "propsMaks": 22
     },
     "app/(portal)/incentive-pts/_components/ModalGenerateTranche.tsx": {
       "baris": 81,
@@ -271,8 +261,8 @@
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/TabelProyekInsentif.tsx": {
-      "baris": 243,
-      "barisPanjang": 4,
+      "baris": 228,
+      "barisPanjang": 3,
       "propsMaks": 3
     },
     "app/(portal)/incentive-pts/_components/useTahapanInsentif.ts": {
@@ -281,9 +271,9 @@
       "propsMaks": 0
     },
     "app/(portal)/incentive-pts/page.tsx": {
-      "baris": 296,
-      "barisPanjang": 3,
-      "propsMaks": 63
+      "baris": 283,
+      "barisPanjang": 2,
+      "propsMaks": 11
     },
     "app/(portal)/kpi-team/_components/BagianPenilaianKPI.tsx": {
       "baris": 166,
