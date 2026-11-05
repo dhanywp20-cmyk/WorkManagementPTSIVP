@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { User, Ticket, OverdueSetting, JEDA_POLLING_MS, JEDA_GABUNG_REALTIME_MS, MAKS_SEGAR_SEBAGIAN } from './shared';
+import { User, Ticket, OverdueSetting, perluDieskalasi, JEDA_POLLING_MS, JEDA_GABUNG_REALTIME_MS, MAKS_SEGAR_SEBAGIAN } from './shared';
 import { ambilTiketTertentu } from './data-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 
 export interface EfekLiveTicketingKonteks {
   currentUser: User | null;
   fetchData: (userOverride?: User | null, silent?: boolean) => Promise<void>;
-  isTicketOverdue: (ticket: Ticket) => boolean;
   overdueSettings: OverdueSetting[];
   setSelectedTicket: import("react").Dispatch<import("react").SetStateAction<Ticket | null>>;
   setTickets: import("react").Dispatch<import("react").SetStateAction<Ticket[]>>;
@@ -17,7 +16,7 @@ export interface EfekLiveTicketingKonteks {
 }
 
 export function useEfekLiveTicketing(k: EfekLiveTicketingKonteks) {
-  const { currentUser, fetchData, isTicketOverdue, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef } = k;
+  const { currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef } = k;
   useEffect(() => {
     if (!currentUser) return;
     const antre = { ids: new Set<string>(), penuh: false, timer: null as ReturnType<typeof setTimeout> | null };
@@ -81,12 +80,7 @@ export function useEfekLiveTicketing(k: EfekLiveTicketingKonteks) {
   useEffect(() => {
     const isAdminUser = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
     if (!isAdminUser || !tickets.length) return;
-    const toEscalate = tickets.filter(t =>
-      isTicketOverdue(t)
-      && t.status !== 'Solved'
-      && t.status !== 'Overdue'
-      && t.status !== 'Waiting Approval'
-    );
+    const toEscalate = tickets.filter(t => perluDieskalasi(t, overdueSettings));
     if (!toEscalate.length) return;
     const ids = toEscalate.map(t => t.id);
     Promise.resolve(supabase.from('tickets').update({ status: 'Overdue' }).in('id', ids))

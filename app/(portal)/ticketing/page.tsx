@@ -451,7 +451,7 @@ function TicketingSystemInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterYear]);
 
-  useEfekLiveTicketing({ currentUser, fetchData, isTicketOverdue, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef });
+  useEfekLiveTicketing({ currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef });
 
   const canCreateTicket = !isPimpinan(currentUser);
   const bolehUpdateTicket = (t: Ticket): boolean => bolehUpdateTicketShared(t, currentUser);

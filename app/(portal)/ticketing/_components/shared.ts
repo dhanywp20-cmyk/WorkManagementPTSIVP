@@ -312,6 +312,15 @@ export function isTicketOverdue(ticket: Ticket, overdueSettings: OverdueSetting[
   return new Date() > deadline;
 }
 
+const TIDAK_DIESKALASI = ['Solved', 'Overdue', 'Waiting Approval', 'Rejected', 'Cancelled'];
+
+export function perluDieskalasi(ticket: Ticket, overdueSettings: OverdueSetting[]): boolean {
+  if (TIDAK_DIESKALASI.includes(ticket.status) || !isTicketOverdue(ticket, overdueSettings)) return false;
+  const deadline = getDeadline(ticket, overdueSettings);
+  if (!deadline) return false;
+  return !(ticket.activity_logs ?? []).some(l => new Date(l.created_at) > deadline);
+}
+
 export function getOverdueSetting(ticketId: string, overdueSettings: OverdueSetting[]) {
   return overdueSettings.find((o) => o.ticket_id === ticketId);
 }

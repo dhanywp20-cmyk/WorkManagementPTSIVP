@@ -46,7 +46,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
     if (isServicesTeam) {
       if (!(SERVICES_STATUSES as readonly string[]).includes(newActivity.new_status)) { notify("error", "Status tidak valid untuk Team Services!"); return; }
     } else {
-      if (!validStatusesPTS.includes(newActivity.new_status)) { notify("error", "Invalid status!"); return; }
+      if (!catatanSaja && !validStatusesPTS.includes(newActivity.new_status)) { notify("error", "Invalid status!"); return; }
     }
     try {
       setUploading(true);
