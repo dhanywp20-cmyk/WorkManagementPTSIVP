@@ -9,11 +9,16 @@ const popup = readFileSync(D + 'ReminderDetailPopup.tsx', 'utf8');
 const mode = readFileSync(D + 'ModePenyelesaianPanel.tsx', 'utf8');
 const state = readFileSync(D + 'useStateApproval.ts', 'utf8');
 const alur = readFileSync('components/shared/FlowSteps.tsx', 'utf8');
-const PANEL_HP = /fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm/;
+const PANEL_HP = /fixed inset-3 z-(\d+) md:static md:inset-auto md:z-auto md:max-w-sm/;
+const zHeader = Number((popup.match(/sticky top-0 z-(\d+) relative bg-white/) ?? [])[1] ?? 0);
+const zPanel = (isi: string) => Number((isi.match(PANEL_HP) ?? [])[1] ?? 0);
 
 console.log('\n1. Panel samping jadi lapisan penuh di HP');
 cek('panel Riwayat', PANEL_HP.test(popup));
 cek('panel Mode Penyelesaian', PANEL_HP.test(mode));
+cek('header detail terbaca', zHeader > 0);
+cek('panel Riwayat di atas header detail (tidak tertindih)', zPanel(popup) > zHeader);
+cek('panel Mode Penyelesaian di atas header detail (ONSITE/REMOTE terlihat)', zPanel(mode) > zHeader);
 cek('Riwayat tertutup bawaan di layar < 768px', /matchMedia\('\(min-width: 768px\)'\)/.test(state));
 
 console.log('\n2. Label alur tidak terpotong di tengah kata');
