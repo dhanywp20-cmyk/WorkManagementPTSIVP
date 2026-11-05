@@ -261,3 +261,13 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   Markup dicek sama persis dengan aslinya (dinormalisasi spasi); jalur portal biasa (sidebar, dashboard, pindah menu)
   untuk admin dan guest identik sampai piksel.
 - `AdminDashboard.tsx` (603 → 563 baris): kartu "Analytics Overview" dan `SectionHeader` pindah ke `RingkasanKuis.tsx`.
+- `ticketing/page.tsx` (750 → 592 baris), dipindah ke `_components/`:
+  - nilai awal form → `form-awal-tiket.ts`
+  - simpan/hapus overdue setting → hook `usePengaturanOverdue`
+  - notifikasi tiket saya dan tiga memo tiket menunggu → `tiket-saya.ts`
+  - popup memuat → `LapisanMemuatTicket.tsx`
+  - CSS → `GayaTicketing.tsx`
+
+  Urutan hook tetap sama. Diverifikasi identik dengan main: daftar/detail (admin, full, sales), update status, eskalasi
+  overdue, serta simpan dan hapus overdue setting (isi request sama).
+- Setelah langkah ini tidak ada lagi berkas UI di atas 600 baris.
