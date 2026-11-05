@@ -544,7 +544,7 @@ export function ReminderDetailPopup({ detailReminder }: { detailReminder: Remind
       </div>
 
       {showRiwayat && !showModeModal && (
-        <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
+        <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-40 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
           style={{ maxHeight: '100%' }}>
           <KepalaModal judul="Riwayat Perubahan" keterangan={detailReminder.project_name} onTutup={() => setShowRiwayat(false)} />
           <div className="flex-1 overflow-y-auto">
