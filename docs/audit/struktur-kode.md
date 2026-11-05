@@ -251,3 +251,5 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `reminder-schedule/page.tsx` (641 → 591 baris): daftar "Perlu Tindakan Kamu" jadi fungsi murni `hitungPerluAksi`
   (`_components/perlu-aksi.ts`), objek form kosong jadi `buatFormKosong()` (`_components/form-kosong.ts`, tetap dibuat
   ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.
+- `picket-showroom/page.tsx` (696 → 594 baris): daftar versi HP jadi `DaftarPiketHp.tsx`, spanduk "Hari ini" jadi
+  `SpandukHariIni.tsx`, lapisan memuat + navigasi minggu + chip filter aktif jadi `bilah-piket.tsx`.

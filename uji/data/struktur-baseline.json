@@ -346,8 +346,8 @@
       "propsMaks": 3
     },
     "app/(portal)/picket-showroom/page.tsx": {
-      "baris": 696,
-      "barisPanjang": 9,
+      "baris": 594,
+      "barisPanjang": 5,
       "propsMaks": 6
     },
     "app/(portal)/reminder-schedule/_components/FilterBar.tsx": {
