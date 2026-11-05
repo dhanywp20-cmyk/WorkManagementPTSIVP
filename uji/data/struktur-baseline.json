@@ -10,11 +10,6 @@
       "barisPanjang": 13,
       "propsMaks": 2
     },
-    "app/(portal)/_kerangka/KerangkaPortal.tsx": {
-      "baris": 720,
-      "barisPanjang": 2,
-      "propsMaks": 3
-    },
     "app/(portal)/_kerangka/LayarMasuk.tsx": {
       "baris": 516,
       "barisPanjang": 5,
@@ -221,7 +216,7 @@
       "propsMaks": 19
     },
     "app/(portal)/form-review/_components/FormReviewPageInner.tsx": {
-      "baris": 698,
+      "baris": 591,
       "barisPanjang": 10,
       "propsMaks": 16
     },
@@ -269,11 +264,6 @@
       "baris": 586,
       "barisPanjang": 2,
       "propsMaks": 17
-    },
-    "app/(portal)/learning-center/_components/AdminDashboard.tsx": {
-      "baris": 603,
-      "barisPanjang": 0,
-      "propsMaks": 4
     },
     "app/(portal)/learning-center/_components/HistoryPage.tsx": {
       "baris": 104,
@@ -346,8 +336,8 @@
       "propsMaks": 3
     },
     "app/(portal)/picket-showroom/page.tsx": {
-      "baris": 696,
-      "barisPanjang": 9,
+      "baris": 594,
+      "barisPanjang": 5,
       "propsMaks": 6
     },
     "app/(portal)/reminder-schedule/_components/FilterBar.tsx": {
@@ -496,7 +486,7 @@
       "propsMaks": 0
     },
     "app/(portal)/ticketing/page.tsx": {
-      "baris": 750,
+      "baris": 592,
       "barisPanjang": 7,
       "propsMaks": 19
     },
@@ -631,7 +621,7 @@
       "propsMaks": 3
     },
     "app/analytics-dashboard/_components/AnalyticsPlatform.tsx": {
-      "baris": 606,
+      "baris": 530,
       "barisPanjang": 4,
       "propsMaks": 8
     },

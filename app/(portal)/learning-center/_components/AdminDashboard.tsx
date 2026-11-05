@@ -7,14 +7,7 @@ import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ModalNilaiPengguna } from './ModalNilaiPengguna';
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-      {children}
-    </h3>
-  );
-}
+import { RingkasanKuis, SectionHeader } from './RingkasanKuis';
 
 export function AdminDashboard({ user }: { user: User }) {
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
@@ -237,40 +230,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-          {overviewStats.submitted > 0 && (() => {
-            const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.mulai / overviewStats.totalUsers * 100) : 0;
-            const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
-            const compTotal = overviewStats.submitted + overviewStats.abandoned;
-            const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
-            const miniCards = [
-              { title: 'Sudah Akses Quiz',
-                sub: `${overviewStats.mulai} mulai · ${overviewStats.participants} selesai · dari ${overviewStats.totalUsers} akun`,
-                label: `${partPct}%`,
-                segments: [{ value: overviewStats.mulai, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.mulai, 0), color: '#e0e7ff' }] },
-              { title: 'Pass Rate Global', sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
-                segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
-              { title: 'Distribusi Nilai', sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,
-                segments: [{ value: overviewStats.scoreGood, color: '#3b82f6' }, { value: overviewStats.scoreMid, color: '#f59e0b' }, { value: overviewStats.scoreLow, color: '#ef4444' }] },
-              { title: 'Completion Rate',  sub: `${overviewStats.abandoned} tidak selesai`, label: `${compPct}%`,
-                segments: [{ value: overviewStats.submitted, color: '#10b981' }, { value: overviewStats.abandoned, color: '#cbd5e1' }] },
-            ];
-            return (
-              <div>
-                <SectionHeader><IkonTeks nama="🥧" />Analytics Overview</SectionHeader>
-                <div className="grid grid-cols-2 gap-3">
-                  {miniCards.map(c => (
-                    <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
-                      <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
-                      <div className="text-center">
-                        <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
+          <RingkasanKuis o={overviewStats} />
 
           <div className="min-w-0">
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { ModalPortal, BARIS_PER_HALAMAN } from '@/components/shared';
+import { useState, useEffect, useRef, Suspense } from "react";
+import { BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
 import { clearSession, getSession } from "@/lib/auth";
 import { hasFullAccess } from "@/lib/constants";
-import type { Brand } from "@/lib/brand-routing";
 
 import {
   User, TeamMember, Ticket, OverdueSetting, getDeadline as getDeadlineShared,
@@ -16,6 +15,11 @@ import {
   TAHUN_TERBARU, rentangTiket,
 } from "./_components/shared";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
+import { getJakartaDateString, formTiketAwal, formAktivitasAwal, formPenggunaAwal, formSandiAwal } from "./_components/form-awal-tiket";
+import { LapisanMemuatTicket } from "./_components/LapisanMemuatTicket";
+import { GayaTicketing } from "./_components/GayaTicketing";
+import { usePengaturanOverdue } from "./_components/usePengaturanOverdue";
+import { tiketNotifikasiSaya, useTiketMenunggu } from "./_components/tiket-saya";
 import {
   OverdueSettingModal, ReopenPTSModal, ReopenServicesModal, RejectModal, DeleteModal,
 } from "./_components/SimpleActionModals";
@@ -29,7 +33,6 @@ import { ApprovalModal } from "./_components/ApprovalModal";
 import { TicketDetailPopup } from "./_components/TicketDetailPopup";
 import { ambilTiketTertentu, ambilTiketUntuk } from "./_components/data-ticket";
 import { Toast, ConfirmDialog, type ConfirmState } from "@/components/shared";
-import { Ikon } from '@/components/shared/Ikon';
 import { useApproveTicket } from './_components/useApproveTicket';
 import { useTugaskanSupervisor } from './_components/useTugaskanSupervisor';
 import { useEditAdminTicket } from './_components/useEditAdminTicket';
@@ -159,65 +162,13 @@ function TicketingSystemInner() {
   const ITEMS_PER_PAGE = BARIS_PER_HALAMAN;
   const [currentPage, setCurrentPage] = useState(1);
 
-  const getJakartaDateString = () => {
-    const now = new Date();
-    const jakartaDate = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
-    const y = jakartaDate.getFullYear();
-    const m = String(jakartaDate.getMonth() + 1).padStart(2, "0");
-    const d = String(jakartaDate.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
+  const [newTicket, setNewTicket] = useState<NewTicketForm>(formTiketAwal());
 
-  const [newTicket, setNewTicket] = useState<NewTicketForm>({
-    project_name: "",
-    address: "",
-    customer_phone: "",
-    sales_name: "",
-    sales_division: "",
-    sn_unit: "",
-    product: "",
-    issue_case: "",
-    description: "",
-    assign_name: "",
-    date: getJakartaDateString(),
-    status: "Pending",
-    current_team: "Team PTS IVP",
-    photo: null as File | null,
-    reminder_id: null as string | null,
-    brand: undefined as Brand | undefined,
-  });
+  const [newActivity, setNewActivity] = useState(formAktivitasAwal());
 
-  const [newActivity, setNewActivity] = useState({
-    handler_name: "",
-    action_taken: "",
-    notes: "",
-    new_status: "",
-    sn_unit: "",
-    file: null as File | null,
-    photo: null as File | null,
-    assign_to_services: false,
-    services_assignee: "",
-    onsite_use_schedule: false,
-    onsite_schedule_date: "",
-    onsite_schedule_hour: "08",
-    onsite_schedule_minute: "00",
-    extend_days: "",
-  });
+  const [newUser, setNewUser] = useState(formPenggunaAwal());
 
-  const [newUser, setNewUser] = useState({
-    username: "",
-    password: "",
-    full_name: "",
-    team_member: "",
-    role: "team",
-    team_type: "Team PTS IVP",
-  });
-
-  const [changePassword, setChangePassword] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  });
+  const [changePassword, setChangePassword] = useState(formSandiAwal());
 
   const checkSessionTimeout = () => {
     if (!getSession()) {
@@ -231,52 +182,10 @@ function TicketingSystemInner() {
   const isTicketOverdue = (ticket: Ticket) => isTicketOverdueShared(ticket, overdueSettings);
   const getOverdueSetting = (ticketId: string) => getOverdueSettingShared(ticketId, overdueSettings);
 
-  const fetchOverdueSettings = async () => {
-    try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data); } catch { }
-  };
+  const { fetchOverdueSettings, saveOverdueSetting, deleteOverdueSetting } = usePengaturanOverdue({ currentUser, getOverdueSetting, notify, overdueForm,
+    overdueTargetTicket, setOverdueForm, setOverdueSettings, setOverdueTargetTicket, setShowOverdueSetting });
 
-  const saveOverdueSetting = async () => {
-    if (!overdueTargetTicket) return;
-    if (!overdueForm.due_hours || parseInt(overdueForm.due_hours) < 1) { notify("error", "Isi jumlah jam overdue (minimal 1 jam)!"); return; }
-    try {
-      const existing = getOverdueSetting(overdueTargetTicket.id);
-      const payload: any = { ticket_id: overdueTargetTicket.id, set_by: currentUser?.username || "", due_date: null, due_hours: parseInt(overdueForm.due_hours) };
-      let mutErr;
-      if (existing) { const r = await supabase.from("overdue_settings").update(payload).eq("id", existing.id); mutErr = r.error; }
-      else { const r = await supabase.from("overdue_settings").insert([payload]); mutErr = r.error; }
-      if (mutErr) { notify("error", "Gagal simpan overdue setting: " + mutErr.message); return; }
-      await fetchOverdueSettings();
-      setShowOverdueSetting(false);
-      setOverdueForm({ due_hours: "48" });
-      setOverdueTargetTicket(null);
-    } catch (e: any) { notify("error", "Error: " + e.message); }
-  };
-
-  const deleteOverdueSetting = async (ticketId: string) => {
-    const existing = getOverdueSetting(ticketId);
-    if (!existing) return;
-    const { error } = await supabase.from("overdue_settings").delete().eq("id", existing.id);
-    if (error) { notify("error", "Gagal hapus overdue setting: " + error.message); return; }
-    await fetchOverdueSettings();
-  };
-
-  const getNotifications = () => {
-    if (!currentUser) return [];
-    const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser.username || "").toLowerCase());
-    const assignedName = member ? member.name : currentUser.full_name;
-    const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))]
-      .map(n => n.toLowerCase().trim());
-    return tickets.filter((t) => {
-      const routedToMe = t.routing_status === "supervisor_assign" && t.assigned_supervisor_id === currentUser.id;
-      if (routedToMe) return true;
-      if (!namesToCheck.includes((t.assign_name ?? "").toLowerCase().trim())) return false;
-      const overdue = isTicketOverdue(t) && t.status !== "Solved";
-      const isActive = t.status !== "Solved";
-      const isServicesActive = t.services_status && t.services_status !== "Solved";
-      if (member?.team_type === "Team Services") return isServicesActive || overdue;
-      else return isActive || overdue;
-    });
-  };
+  const getNotifications = () => tiketNotifikasiSaya(currentUser, teamMembers, tickets, isTicketOverdue);
 
   const handleLogout = () => {
     setCurrentUser(null); setLoginTime(null); setSelectedTicket(null);
@@ -368,21 +277,7 @@ function TicketingSystemInner() {
 
   const { approveTicket, jalankanApproveTicket } = useApproveTicket({ approvalAssignee, approvalAssignees, approvalTicket, currentUser, fetchData, notify, selesaikanSatuApproval, setApprovingId, setUploading, teamMembers, users });
 
-  const currentUserTeamType = useMemo(() => {
-    if (!currentUser) return "Team PTS IVP";
-    const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser.username || "").toLowerCase());
-    return member?.team_type || "Team PTS IVP";
-  }, [currentUser, teamMembers]);
-
-  const pendingApprovalTickets = useMemo(() => {
-    if (currentUser?.role !== "admin" && currentUser?.role !== "superadmin" && !isManagerPTS) return [];
-    return tickets.filter((t) => t.status === "Waiting Approval");
-  }, [tickets, currentUser, isManagerPTS]);
-
-  const pendingServicesApprovalTickets = useMemo(() => {
-    if (currentUserTeamType !== "Team Services") return [];
-    return tickets.filter((t) => t.services_status === "Waiting Approval" && t.current_team === "Team Services");
-  }, [tickets, currentUserTeamType]);
+  const { currentUserTeamType, pendingApprovalTickets, pendingServicesApprovalTickets } = useTiketMenunggu({ currentUser, isManagerPTS, teamMembers, tickets });
 
   const { muatLogPenuh, denganLogPenuh, bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, bukaReopenTicket, bukaDeleteTicket, bukaOverdueSetting } = useBukaTicket({ fetchProjectReminders, getOverdueSetting, pendingApprovalTickets, setApprovalAssignee, setApprovalAssignees, setApprovalTicket, setDeleteConfirmText, setDeleteTargetTicket, setOverdueForm, setOverdueTargetTicket, setReopenAssignee, setReopenNotes, setReopenTargetTicket, setSelectedTicket, setShowActivitySummary, setShowApprovalModal, setShowDeleteModal, setShowOverdueSetting, setShowReopenModal, setShowTicketDetailPopup, setSummaryTicket });
 
@@ -492,31 +387,7 @@ function TicketingSystemInner() {
       {toast && <Toast notif={toast} />}
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
-        {showLoadingPopup && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-[1100]" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-            <div className="bg-white rounded-kartu shadow-modal p-8 max-w-sm w-full mx-4">
-              <div className="flex flex-col items-center">
-                {loadingMessage.includes("✅") ? (
-                  <div className="text-6xl mb-4 animate-bounce"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                ) : (
-                  <div className="relative w-16 h-16 mb-4">
-                    <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-merek border-t-transparent animate-spin"></div>
-                  </div>
-                )}
-                <p className="text-base font-bold text-slate-800 text-center">{loadingMessage}</p>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
-        )}
-
-        {uploading && !showLoadingPopup && (
-          <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gray-200">
-            <div className="h-full bg-merek animate-pulse" style={{ width: "100%", transition: "width 0.3s" }}></div>
-          </div>
-        )}
+        <LapisanMemuatTicket showLoadingPopup={showLoadingPopup} loadingMessage={loadingMessage} uploading={uploading} />
 
         <KepalaTicketing
           canApproveAssign={canApproveAssign} canCreateTicket={canCreateTicket} canManageTickets={canManageTickets} currentUser={currentUser} currentUserTeamType={currentUserTeamType} fetchProjectReminders={fetchProjectReminders} notifications={notifications} pendingApprovalTickets={pendingApprovalTickets} pendingServicesApprovalTickets={pendingServicesApprovalTickets} setApprovalAssignees={setApprovalAssignees} setNewTicket={setNewTicket} setShowAccountSettings={setShowAccountSettings} setShowApprovalModal={setShowApprovalModal} setShowNewTicket={setShowNewTicket} setShowNotifications={setShowNotifications} setShowReminderSchedule={setShowReminderSchedule} setShowServicesApprovalModal={setShowServicesApprovalModal} showNewTicket={showNewTicket} showNotifications={showNotifications}
@@ -544,30 +415,13 @@ function TicketingSystemInner() {
 
         {showTicketDetailPopup && selectedTicket && (
           <TicketDetailPopup
-            selectedTicket={selectedTicket}
-            currentUser={currentUser}
-            currentUserTeamType={currentUserTeamType}
-            canManageTickets={canManageTickets}
-            users={users}
-            showUpdateForm={showUpdateForm}
-            setShowUpdateForm={setShowUpdateForm}
-            onClose={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); }}
-            bukaAdminEdit={bukaAdminEdit}
-            getDeadline={getDeadline}
-            getWarrantyInfo={getWarrantyInfo}
-            bolehUpdateTicket={bolehUpdateTicket}
-            setSupAssignTicket={setSupAssignTicket}
-            setSupAssignTo={setSupAssignTo}
-            setReopenTargetTicket={setReopenTargetTicket}
-            setReopenAssignee={setReopenAssignee}
-            setReopenNotes={setReopenNotes}
-            setShowReopenModal={setShowReopenModal}
-            setReopenServicesTarget={setReopenServicesTarget}
-            setShowServicesApprovalModal={setShowServicesApprovalModal}
-            newActivity={newActivity}
-            setNewActivity={setNewActivity}
-            addActivity={addActivity}
-            uploading={uploading}
+            selectedTicket={selectedTicket} currentUser={currentUser} currentUserTeamType={currentUserTeamType} canManageTickets={canManageTickets} users={users}
+            showUpdateForm={showUpdateForm} setShowUpdateForm={setShowUpdateForm} onClose={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); }}
+            bukaAdminEdit={bukaAdminEdit} getDeadline={getDeadline} getWarrantyInfo={getWarrantyInfo} bolehUpdateTicket={bolehUpdateTicket}
+            setSupAssignTicket={setSupAssignTicket} setSupAssignTo={setSupAssignTo} setReopenTargetTicket={setReopenTargetTicket}
+            setReopenAssignee={setReopenAssignee} setReopenNotes={setReopenNotes} setShowReopenModal={setShowReopenModal}
+            setReopenServicesTarget={setReopenServicesTarget} setShowServicesApprovalModal={setShowServicesApprovalModal} newActivity={newActivity}
+            setNewActivity={setNewActivity} addActivity={addActivity} uploading={uploading}
           />
         )}
 
@@ -724,19 +578,7 @@ function TicketingSystemInner() {
         )}
 
       </div>
-      <style>{`
-        @keyframes scale-in {
-          from { opacity: 0; transform: scale(0.92); }
-          to { opacity: 1; transform: none; }
-        }
-        @keyframes bounce {
-          0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-        .animate-scale-in { animation: scale-in 0.25s ease-out; }
-        .animate-bounce { animation: bounce 0.6s ease-out; }
-        input:focus, select:focus, textarea:focus { outline: none; }
-      `}</style>
+      <GayaTicketing />
     </div>
   );
 }

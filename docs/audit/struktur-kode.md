@@ -251,3 +251,25 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `reminder-schedule/page.tsx` (641 → 591 baris): daftar "Perlu Tindakan Kamu" jadi fungsi murni `hitungPerluAksi`
   (`_components/perlu-aksi.ts`), objek form kosong jadi `buatFormKosong()` (`_components/form-kosong.ts`, tetap dibuat
   ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.
+- `picket-showroom/page.tsx` (696 → 594 baris): daftar versi HP jadi `DaftarPiketHp.tsx`, spanduk "Hari ini" jadi
+  `SpandukHariIni.tsx`, lapisan memuat + navigasi minggu + chip filter aktif jadi `bilah-piket.tsx`.
+- `FormReviewPageInner.tsx` (698 → 591 baris): data diagram jadi `hitungPieReview` (`hitung-pie-review.ts`), kepala
+  halaman jadi `KepalaReview.tsx`, modal hapus massal jadi `ModalHapusMassalReview.tsx` (tetap mencatat `logAudit`),
+  CSS halaman jadi `GayaReview.tsx`.
+- `_kerangka/KerangkaPortal.tsx` (720 → 597 baris): `renderMenuCard` jadi komponen `KartuMenuPortal`, tiga grup kartu
+  menu jadi `GridMenuPortal` (keduanya di `KartuMenuPortal.tsx`), dan `AnalyticsIframe` pindah ke berkasnya sendiri.
+  Markup dicek sama persis dengan aslinya (dinormalisasi spasi); jalur portal biasa (sidebar, dashboard, pindah menu)
+  untuk admin dan guest identik sampai piksel.
+- `AdminDashboard.tsx` (603 → 563 baris): kartu "Analytics Overview" dan `SectionHeader` pindah ke `RingkasanKuis.tsx`.
+- `ticketing/page.tsx` (750 → 592 baris), dipindah ke `_components/`:
+  - nilai awal form → `form-awal-tiket.ts`
+  - simpan/hapus overdue setting → hook `usePengaturanOverdue`
+  - notifikasi tiket saya dan tiga memo tiket menunggu → `tiket-saya.ts`
+  - popup memuat → `LapisanMemuatTicket.tsx`
+  - CSS → `GayaTicketing.tsx`
+
+  Urutan hook tetap sama. Diverifikasi identik dengan main: daftar/detail (admin, full, sales), update status, eskalasi
+  overdue, serta simpan dan hapus overdue setting (isi request sama).
+- `analytics-dashboard/_components/AnalyticsPlatform.tsx` (606 → 530 baris): `Panel`, `Empty`, `Row`, `ACTION_STYLE`,
+  `MODULE_ICON` pindah ke `panel-analitik.tsx`.
+- Setelah langkah ini tidak ada lagi berkas `.ts`/`.tsx` di atas 600 baris.
