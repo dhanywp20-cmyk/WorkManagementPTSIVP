@@ -49,7 +49,7 @@ export function ModePenyelesaianPanel({
   const batalkan = () => { setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); setPendingPhotoUrl(undefined); };
 
   return (
-    <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
+    <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-40 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
       <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex-shrink-0 relative">
         <h3 className="text-slate-800 font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
@@ -163,6 +163,11 @@ export function ModePenyelesaianPanel({
           </div>
         )}
 
+        {!modePenyelesaian && (
+          <p role="status" className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            Pilih mode pelaksanaan (ONSITE / REMOTE) di bagian atas dulu.
+          </p>
+        )}
         <div className="flex gap-3 pt-1">
           <button onClick={batalkan}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">

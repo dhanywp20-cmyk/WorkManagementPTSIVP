@@ -36,8 +36,8 @@
       "propsMaks": 2
     },
     "app/(portal)/daily-report/_components/FormLaporan.tsx": {
-      "baris": 174,
-      "barisPanjang": 3,
+      "baris": 148,
+      "barisPanjang": 2,
       "propsMaks": 5
     },
     "app/(portal)/daily-report/_components/IsiLaporan.tsx": {
@@ -51,9 +51,9 @@
       "propsMaks": 0
     },
     "app/(portal)/daily-report/page.tsx": {
-      "baris": 215,
-      "barisPanjang": 3,
-      "propsMaks": 29
+      "baris": 221,
+      "barisPanjang": 2,
+      "propsMaks": 9
     },
     "app/(portal)/dashboard/_components/akun/FormEditAkunInline.tsx": {
       "baris": 231,
@@ -175,11 +175,6 @@
       "barisPanjang": 21,
       "propsMaks": 3
     },
-    "app/(portal)/form-require-project/_components/halaman/BlokFormBaru.tsx": {
-      "baris": 65,
-      "barisPanjang": 1,
-      "propsMaks": 2
-    },
     "app/(portal)/form-require-project/_components/halaman/KontenHalamanRequest.tsx": {
       "baris": 148,
       "barisPanjang": 2,
@@ -226,19 +221,14 @@
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/page.tsx": {
-      "baris": 516,
-      "barisPanjang": 9,
-      "propsMaks": 26
-    },
-    "app/(portal)/form-review/_components/DaftarReview.tsx": {
-      "baris": 236,
-      "barisPanjang": 1,
-      "propsMaks": 2
+      "baris": 496,
+      "barisPanjang": 8,
+      "propsMaks": 19
     },
     "app/(portal)/form-review/_components/FormReviewPageInner.tsx": {
-      "baris": 715,
-      "barisPanjang": 12,
-      "propsMaks": 28
+      "baris": 698,
+      "barisPanjang": 10,
+      "propsMaks": 16
     },
     "app/(portal)/form-review/_components/ModalFormReview.tsx": {
       "baris": 133,
@@ -301,8 +291,8 @@
       "propsMaks": 4
     },
     "app/(portal)/learning-center/_components/IsiBankSoal.tsx": {
-      "baris": 215,
-      "barisPanjang": 2,
+      "baris": 190,
+      "barisPanjang": 1,
       "propsMaks": 17
     },
     "app/(portal)/learning-center/_components/KepalaTambahSoal.tsx": {
@@ -326,9 +316,9 @@
       "propsMaks": 13
     },
     "app/(portal)/learning-center/_components/QuestionsPage.tsx": {
-      "baris": 378,
-      "barisPanjang": 5,
-      "propsMaks": 30
+      "baris": 376,
+      "barisPanjang": 4,
+      "propsMaks": 16
     },
     "app/(portal)/learning-center/_components/sesi/FormSesi.tsx": {
       "baris": 298,
@@ -391,7 +381,7 @@
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/ModePenyelesaianPanel.tsx": {
-      "baris": 179,
+      "baris": 184,
       "barisPanjang": 1,
       "propsMaks": 2
     },

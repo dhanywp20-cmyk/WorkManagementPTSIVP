@@ -22,6 +22,7 @@ import { useDrafLaporan } from './_components/useDrafLaporan';
 import { useDataLaporan } from './_components/useDataLaporan';
 import { useMuatLaporan } from './_components/useMuatLaporan';
 import { KonteksLaporan, type NilaiKonteksLaporan } from './_components/konteks-laporan';
+import { KonteksFormLaporan } from './_components/konteks-form-laporan';
 
 export default function DailyReportPage() {
   const [appReady, setAppReady]       = useState(false);
@@ -157,9 +158,14 @@ export default function DailyReportPage() {
     const autoCount = formReminders.length + formTickets.length;
     return (
     <ModalPortal>
-      <FormLaporan
-        autoCount={autoCount} currentUser={currentUser} editingId={editingId} formDate={formDate} formLoading={formLoading} formReminders={formReminders} formTickets={formTickets} formUserId={formUserId} galatSusun={galatSusun} guestUsers={guestUsers} handleSave={handleSave} hapusDraf={hapusDraf} isAdmin={isAdmin} manualActs={manualActs} menyusun={menyusun} reminderNotes={reminderNotes} saving={saving} setEditingId={setEditingId} setFormDate={setFormDate} setFormOpen={setFormOpen} setFormUserId={setFormUserId} setManualActs={setManualActs} setReminderNotes={setReminderNotes} susunDenganAI={susunDenganAI} targetUser={targetUser} teamEntries={teamEntries} teamUsers={teamUsers} updM={updM} updT={updT}
-      />
+      <KonteksFormLaporan.Provider value={{
+        nilai: { autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, isAdmin,
+          manualActs, menyusun, reminderNotes, saving, targetUser, teamEntries, teamUsers },
+        ubah: { setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes },
+        aksi: { handleSave, hapusDraf, susunDenganAI, updM, updT },
+      }}>
+        <FormLaporan />
+      </KonteksFormLaporan.Provider>
     </ModalPortal>
     );
   };
