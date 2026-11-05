@@ -1,37 +1,22 @@
 'use client';
 
-import { bisaKonfig, bisaInput, calcHandlerSplit, type CurrentUser } from './aturan-halaman';
+import { bisaKonfig, bisaInput, calcHandlerSplit } from './aturan-halaman';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';
-import { IncentiveProjectRow, IncentiveTranche, type SkemaInsentif, formatRupiah, TRANCHE_STATUS } from './calc';
+import { formatRupiah, TRANCHE_STATUS } from './calc';
 import { Paginasi } from '@/components/shared';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface TabelProyekInsentifProps {
-  bolehHapus: boolean;
-  brandEditFor: string | null;
-  currentUser: CurrentUser | null;
-  filteredProjects: IncentiveProjectRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<IncentiveProjectRow>;
-  handleSetProjectBrand: (projectId: string, brand: "MVI" | "IVP" | "BOTH") => Promise<void>;
-  mintaKonfirmasiHapus: (target: IncentiveProjectRow[]) => Promise<void>;
-  openProjectDetail: (p: IncentiveProjectRow) => Promise<void>;
-  pilihHapus: Set<string>;
-  setBrandEditFor: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setGenerateProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setHapusTahapan: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setKetikHapusTahapan: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalBast: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setNominalValue: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowGenerateModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  skema: SkemaInsentif | null;
-  thCls: "px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200";
-  togglePilih: (id: string) => void;
-  totalPool: number;
-  tranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-}
-
-export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, filteredProjects, hal, handleSetProjectBrand, mintaKonfirmasiHapus, openProjectDetail, pilihHapus, setBrandEditFor, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject, setNominalValue, setShowGenerateModal, skema, thCls, togglePilih, totalPool, tranches }: TabelProyekInsentifProps) {
+export function TabelProyekInsentif() {
+  const k = useKonteksInsentif();
+  const { currentUser, thCls } = k.sesi;
+  const { bolehHapus } = k.izin;
+  const { brandEditFor, filteredProjects, hal, pilihHapus, setBrandEditFor, togglePilih } = k.proyek;
+  const { skema, totalPool, tranches } = k.tahapan;
+  const {
+    handleSetProjectBrand, mintaKonfirmasiHapus, openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast,
+    setNominalProject, setNominalValue, setShowGenerateModal
+  } = k.aksi;
   return (
     <>
       <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">

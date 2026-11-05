@@ -1,22 +1,15 @@
 'use client';
 
-import { bisaKonfig, type CurrentUser, type TabKey } from './aturan-halaman';
+import { bisaKonfig } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { KartuAturanNominal } from './KartuAturanNominal';
-import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses } from '@/lib/incentive-akses';
+import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES } from '@/lib/incentive-akses';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface TabPengaturanAksesProps {
-  allUsers: CurrentUser[];
-  cariUser: string;
-  currentUser: CurrentUser | null;
-  handleSetAkses: (userId: string, nilai: TingkatAkses) => Promise<void>;
-  handleSetBrandScope: (userId: string, scope: string | null) => Promise<void>;
-  loading: boolean;
-  setCariUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  tab: TabKey;
-}
-
-export function TabPengaturanAkses({ allUsers, cariUser, currentUser, handleSetAkses, handleSetBrandScope, loading, setCariUser, tab }: TabPengaturanAksesProps) {
+export function TabPengaturanAkses() {
+  const k = useKonteksInsentif();
+  const { allUsers, currentUser, loading, tab } = k.sesi;
+  const { cariUser, handleSetAkses, handleSetBrandScope, setCariUser } = k.akses;
   return (
     <>
       {tab === 'settings' && bisaKonfig(currentUser) && !loading && (

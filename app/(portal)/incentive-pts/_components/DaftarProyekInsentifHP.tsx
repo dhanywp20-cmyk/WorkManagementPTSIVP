@@ -1,27 +1,19 @@
 'use client';
 
-import { bisaKonfig, bisaInput, calcHandlerSplit, type CurrentUser } from './aturan-halaman';
+import { bisaKonfig, bisaInput, calcHandlerSplit } from './aturan-halaman';
 import { MobileListCard, MobileCardBadge, Paginasi } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { IncentiveProjectRow, IncentiveTranche, type SkemaInsentif, formatRupiah } from './calc';
+import { formatRupiah } from './calc';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface DaftarProyekInsentifHPProps {
-  currentUser: CurrentUser | null;
-  filteredProjects: IncentiveProjectRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<IncentiveProjectRow>;
-  openProjectDetail: (p: IncentiveProjectRow) => Promise<void>;
-  setGenerateProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setHapusTahapan: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setKetikHapusTahapan: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalBast: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setNominalValue: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowGenerateModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  skema: SkemaInsentif | null;
-  tranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-}
-
-export function DaftarProyekInsentifHP({ currentUser, filteredProjects, hal, openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject, setNominalValue, setShowGenerateModal, skema, tranches }: DaftarProyekInsentifHPProps) {
+export function DaftarProyekInsentifHP() {
+  const k = useKonteksInsentif();
+  const { currentUser } = k.sesi;
+  const { filteredProjects, hal } = k.proyek;
+  const { skema, tranches } = k.tahapan;
+  const {
+    openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject, setNominalValue, setShowGenerateModal
+  } = k.aksi;
   return (
     <>
       <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">

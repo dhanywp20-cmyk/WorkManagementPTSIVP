@@ -1,34 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo, type CSSProperties } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import {
-  IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink,
-  fetchIncentiveProjects, fetchTranches, fetchVisibleSplits, fetchSupportFromTickets, jendelaSupportTahap, fetchLateTickets,
-  ambilSumberSupport, supportUntukProyek,
-  deteksiKandidatGabung, satukanProyek, type KandidatGabung,
-  setProyekDikeluarkan, tahapanSudahJalan,
-  insertTranches, insertSplits, processYearlyBatch,
-  batalkanBatchTahun, hapusTahapanProyek,
-  calculateIncentiveSplits, validateSplitTotal, generateTranches, findUpline, resolveUserId, OrgUser,
-  fetchOrgUsers,
-  ambilSkema, persenInstaller, persenPicBerlaku, petaPorsiBerlaku, type SkemaInsentif,
-  formatRupiah, formatPct,
-  ROLE_LABELS, TRANCHE_STATUS,
-} from './_components/calc';
-import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
-import { simpanNominal } from '@/lib/incentive-nominal-api';
-import {
-  bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
-  LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
-} from '@/lib/incentive-akses';
-import { PageHeader, MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState, Paginasi, usePaginasi } from '@/components/shared';
-import { logAudit } from '@/lib/audit';
-import { createNotification } from '@/lib/notifications';
-import { managerUtama } from '@/lib/penerima-admin';
-import { SchemeTab } from './_components/SchemeTab';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, deteksiKandidatGabung, type KandidatGabung, insertSplits, validateSplitTotal, findUpline, resolveUserId, OrgUser, type SkemaInsentif, formatRupiah } from './_components/calc';
+import { PageHeader, ConfirmDialog, type ConfirmState, usePaginasi } from '@/components/shared';
 import { Toast } from '@/components/shared/Toast';
 import { ModalKonfirmHapus } from './_components/ModalKonfirmHapus';
 import { ModalKonfirmGabung } from './_components/ModalKonfirmGabung';
@@ -41,20 +17,16 @@ import { ModalGenerateTranche } from './_components/ModalGenerateTranche';
 
 void insertSplits; void validateSplitTotal;
 
-import { bolehLihatBrand, bisaKonfig, bisaInput, calcHandlerSplit, type CurrentUser, type TabKey } from './_components/aturan-halaman';
+import { bolehLihatBrand, bisaKonfig, bisaInput, type CurrentUser, type TabKey } from './_components/aturan-halaman';
 import { ModalDetailProyekInsentif } from './_components/ModalDetailProyekInsentif';
 import { ModalNominalProyek } from './_components/ModalNominalProyek';
-import { TabPengaturanAkses } from './_components/TabPengaturanAkses';
-import { TabJadwalTranche } from './_components/TabJadwalTranche';
-import { TabelProyekInsentif } from './_components/TabelProyekInsentif';
-import { DaftarProyekInsentifHP } from './_components/DaftarProyekInsentifHP';
-import { FilterProyekInsentif } from './_components/FilterProyekInsentif';
 import { usePengaturanInsentif } from './_components/usePengaturanInsentif';
 import { useGabungHapusProyek } from './_components/useGabungHapusProyek';
 import { useMuatInsentif } from './_components/useMuatInsentif';
 import { useEksporInsentif } from './_components/useEksporInsentif';
 import { useTahapanInsentif } from './_components/useTahapanInsentif';
 import { IsiInsentif } from './_components/IsiInsentif';
+import { KonteksInsentif, type NilaiKonteksInsentif } from './_components/konteks-insentif';
 
 export default function IncentivePTSPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -212,6 +184,19 @@ export default function IncentivePTSPage() {
 
   const thCls = 'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
+  const konteksInsentif: NilaiKonteksInsentif = {
+    sesi: { allUsers, currentUser, loading, notify, tab, tahunAktif, thCls },
+    izin: { bolehHapus },
+    saya: { exportingSaya, handleExportInsentifSaya, myPaidInsentif, myPendingInsentif, myProjectCount, mySplitsInYear, myTotalInsentif },
+    proyek: { bastYearsProjects, brandEditFor, filterBastYear, filteredProjects, hal, kandidatBulkGenerate, kandidatGabung, pilihHapus, searchProject, setBrandEditFor,
+      setBulkGenerateConfirm, setFilterBastYear, setKonfirmGabung, setPilihHapus, setSearchProject, togglePilih },
+    tahapan: { filteredTranches, konfirmasiMarkPaid, lateTickets, markingPaid, setBatalBatch, setBatchConfirm, setBatchYear, setFilterYear, setKetikBatalBatch, skema, totalPool,
+      tranches, uniqueYears },
+    akses: { cariUser, handleSetAkses, handleSetBrandScope, setCariUser },
+    ekspor: { exporting, handleExportBatch, handleExportSummary, setSummaryExportYear, summaryExportYear },
+    aksi: { handleSetProjectBrand, mintaKonfirmasiHapus, openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject,
+      setNominalValue, setShowGenerateModal },
+  };
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
@@ -246,9 +231,11 @@ export default function IncentivePTSPage() {
         </div>
       </div>
 
-      <IsiInsentif
-        allUsers={allUsers} bastYearsProjects={bastYearsProjects} bolehHapus={bolehHapus} brandEditFor={brandEditFor} cariUser={cariUser} currentUser={currentUser} exporting={exporting} exportingSaya={exportingSaya} filterBastYear={filterBastYear} filteredProjects={filteredProjects} filteredTranches={filteredTranches} hal={hal} handleExportBatch={handleExportBatch} handleExportInsentifSaya={handleExportInsentifSaya} handleExportSummary={handleExportSummary} handleSetAkses={handleSetAkses} handleSetBrandScope={handleSetBrandScope} handleSetProjectBrand={handleSetProjectBrand} kandidatBulkGenerate={kandidatBulkGenerate} kandidatGabung={kandidatGabung} konfirmasiMarkPaid={konfirmasiMarkPaid} lateTickets={lateTickets} loading={loading} markingPaid={markingPaid} mintaKonfirmasiHapus={mintaKonfirmasiHapus} myPaidInsentif={myPaidInsentif} myPendingInsentif={myPendingInsentif} myProjectCount={myProjectCount} mySplitsInYear={mySplitsInYear} myTotalInsentif={myTotalInsentif} notify={notify} openProjectDetail={openProjectDetail} pilihHapus={pilihHapus} searchProject={searchProject} setBatalBatch={setBatalBatch} setBatchConfirm={setBatchConfirm} setBatchYear={setBatchYear} setBrandEditFor={setBrandEditFor} setBulkGenerateConfirm={setBulkGenerateConfirm} setCariUser={setCariUser} setFilterBastYear={setFilterBastYear} setFilterYear={setFilterYear} setGenerateProject={setGenerateProject} setHapusTahapan={setHapusTahapan} setKetikBatalBatch={setKetikBatalBatch} setKetikHapusTahapan={setKetikHapusTahapan} setKonfirmGabung={setKonfirmGabung} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} setPilihHapus={setPilihHapus} setSearchProject={setSearchProject} setShowGenerateModal={setShowGenerateModal} setSummaryExportYear={setSummaryExportYear} skema={skema} summaryExportYear={summaryExportYear} tab={tab} tahunAktif={tahunAktif} thCls={thCls} togglePilih={togglePilih} totalPool={totalPool} tranches={tranches} uniqueYears={uniqueYears}
-      />
+      <KonteksInsentif.Provider value={konteksInsentif}>
+
+        <IsiInsentif />
+
+      </KonteksInsentif.Provider>
 
       <ModalNominalProyek
         handleSaveNominal={handleSaveNominal} nominalBast={nominalBast} nominalProject={nominalProject} nominalValue={nominalValue} savingNominal={savingNominal} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} skema={skema}

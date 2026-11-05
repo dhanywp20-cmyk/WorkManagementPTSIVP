@@ -1,32 +1,20 @@
 'use client';
 
-import { bisaKonfig, bisaInput, type CurrentUser } from './aturan-halaman';
+import { bisaKonfig, bisaInput } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
-import { IncentiveProjectRow, type KandidatGabung, formatRupiah } from './calc';
+import { formatRupiah } from './calc';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface FilterProyekInsentifProps {
-  bastYearsProjects: number[];
-  bolehHapus: boolean;
-  currentUser: CurrentUser | null;
-  exporting: boolean;
-  filterBastYear: number | null;
-  filteredProjects: IncentiveProjectRow[];
-  handleExportSummary: () => Promise<void>;
-  kandidatBulkGenerate: (tahun: number) => IncentiveProjectRow[];
-  kandidatGabung: KandidatGabung[];
-  mintaKonfirmasiHapus: (target: IncentiveProjectRow[]) => Promise<void>;
-  pilihHapus: Set<string>;
-  searchProject: string;
-  setBulkGenerateConfirm: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow[] | null>>;
-  setFilterBastYear: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  setKonfirmGabung: import("react").Dispatch<import("react").SetStateAction<KandidatGabung | null>>;
-  setPilihHapus: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSummaryExportYear: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  summaryExportYear: number | null;
-}
-
-export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUser, exporting, filterBastYear, filteredProjects, handleExportSummary, kandidatBulkGenerate, kandidatGabung, mintaKonfirmasiHapus, pilihHapus, searchProject, setBulkGenerateConfirm, setFilterBastYear, setKonfirmGabung, setPilihHapus, setSearchProject, setSummaryExportYear, summaryExportYear }: FilterProyekInsentifProps) {
+export function FilterProyekInsentif() {
+  const k = useKonteksInsentif();
+  const { currentUser } = k.sesi;
+  const { bolehHapus } = k.izin;
+  const {
+    bastYearsProjects, filterBastYear, filteredProjects, kandidatBulkGenerate, kandidatGabung, pilihHapus, searchProject, setBulkGenerateConfirm,
+    setFilterBastYear, setKonfirmGabung, setPilihHapus, setSearchProject
+  } = k.proyek;
+  const { exporting, handleExportSummary, setSummaryExportYear, summaryExportYear } = k.ekspor;
+  const { mintaKonfirmasiHapus } = k.aksi;
   return (
     <>
       <div className="px-4 pt-4 pb-3 border-b border-gray-200 space-y-2">

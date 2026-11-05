@@ -1,84 +1,22 @@
 'use client';
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, type KandidatGabung, type SkemaInsentif, formatRupiah } from './calc';
+import { formatRupiah } from './calc';
 import { FilterProyekInsentif } from './FilterProyekInsentif';
 import { DaftarProyekInsentifHP } from './DaftarProyekInsentifHP';
 import { TabelProyekInsentif } from './TabelProyekInsentif';
 import { TabJadwalTranche } from './TabJadwalTranche';
-import { bisaKonfig, bisaInput, type CurrentUser, type TabKey } from './aturan-halaman';
+import { bisaKonfig, bisaInput } from './aturan-halaman';
 import { SchemeTab } from './SchemeTab';
 import { TabPengaturanAkses } from './TabPengaturanAkses';
-import { type TingkatAkses } from '@/lib/incentive-akses';
-import { Paginasi } from '@/components/shared';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface IsiInsentifProps {
-  allUsers: CurrentUser[];
-  bastYearsProjects: number[];
-  bolehHapus: boolean;
-  brandEditFor: string | null;
-  cariUser: string;
-  currentUser: CurrentUser | null;
-  exporting: boolean;
-  exportingSaya: boolean;
-  filterBastYear: number | null;
-  filteredProjects: IncentiveProjectRow[];
-  filteredTranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<IncentiveProjectRow>;
-  handleExportBatch: () => Promise<void>;
-  handleExportInsentifSaya: () => Promise<void>;
-  handleExportSummary: () => Promise<void>;
-  handleSetAkses: (userId: string, nilai: TingkatAkses) => Promise<void>;
-  handleSetBrandScope: (userId: string, scope: string | null) => Promise<void>;
-  handleSetProjectBrand: (projectId: string, brand: "MVI" | "IVP" | "BOTH") => Promise<void>;
-  kandidatBulkGenerate: (tahun: number) => IncentiveProjectRow[];
-  kandidatGabung: KandidatGabung[];
-  konfirmasiMarkPaid: (trancheId: string, projectName: string, trancheNumber: number) => void;
-  lateTickets: LateTicketLink[];
-  loading: boolean;
-  markingPaid: string | null;
-  mintaKonfirmasiHapus: (target: IncentiveProjectRow[]) => Promise<void>;
-  myPaidInsentif: number;
-  myPendingInsentif: number;
-  myProjectCount: number;
-  mySplitsInYear: IncentiveSplit[];
-  myTotalInsentif: number;
-  notify: (type: "success" | "error", msg: string) => void;
-  openProjectDetail: (p: IncentiveProjectRow) => Promise<void>;
-  pilihHapus: Set<string>;
-  searchProject: string;
-  setBatalBatch: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  setBatchConfirm: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setBatchYear: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setBrandEditFor: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setBulkGenerateConfirm: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow[] | null>>;
-  setCariUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterBastYear: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  setFilterYear: import("react").Dispatch<import("react").SetStateAction<number>>;
-  setGenerateProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setHapusTahapan: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setKetikBatalBatch: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setKetikHapusTahapan: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setKonfirmGabung: import("react").Dispatch<import("react").SetStateAction<KandidatGabung | null>>;
-  setNominalBast: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setNominalValue: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setPilihHapus: import("react").Dispatch<import("react").SetStateAction<Set<string>>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowGenerateModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setSummaryExportYear: import("react").Dispatch<import("react").SetStateAction<number | null>>;
-  skema: SkemaInsentif | null;
-  summaryExportYear: number | null;
-  tab: TabKey;
-  tahunAktif: number;
-  thCls: "px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200";
-  togglePilih: (id: string) => void;
-  totalPool: number;
-  tranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-  uniqueYears: number[];
-}
-
-export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEditFor, cariUser, currentUser, exporting, exportingSaya, filterBastYear, filteredProjects, filteredTranches, hal, handleExportBatch, handleExportInsentifSaya, handleExportSummary, handleSetAkses, handleSetBrandScope, handleSetProjectBrand, kandidatBulkGenerate, kandidatGabung, konfirmasiMarkPaid, lateTickets, loading, markingPaid, mintaKonfirmasiHapus, myPaidInsentif, myPendingInsentif, myProjectCount, mySplitsInYear, myTotalInsentif, notify, openProjectDetail, pilihHapus, searchProject, setBatalBatch, setBatchConfirm, setBatchYear, setBrandEditFor, setBulkGenerateConfirm, setCariUser, setFilterBastYear, setFilterYear, setGenerateProject, setHapusTahapan, setKetikBatalBatch, setKetikHapusTahapan, setKonfirmGabung, setNominalBast, setNominalProject, setNominalValue, setPilihHapus, setSearchProject, setShowGenerateModal, setSummaryExportYear, skema, summaryExportYear, tab, tahunAktif, thCls, togglePilih, totalPool, tranches, uniqueYears }: IsiInsentifProps) {
+export function IsiInsentif() {
+  const k = useKonteksInsentif();
+  const { currentUser, loading, notify, tab } = k.sesi;
+  const { exportingSaya, handleExportInsentifSaya, myPaidInsentif, myPendingInsentif, myProjectCount, mySplitsInYear, myTotalInsentif } = k.saya;
+  const { filterBastYear } = k.proyek;
+  const { lateTickets } = k.tahapan;
   return (
     <>
       <div className="flex-1 overflow-y-auto p-4">
@@ -129,22 +67,14 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
             </div>
           )}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <FilterProyekInsentif
-              bastYearsProjects={bastYearsProjects} bolehHapus={bolehHapus} currentUser={currentUser} exporting={exporting} filterBastYear={filterBastYear} filteredProjects={filteredProjects} handleExportSummary={handleExportSummary} kandidatBulkGenerate={kandidatBulkGenerate} kandidatGabung={kandidatGabung} mintaKonfirmasiHapus={mintaKonfirmasiHapus} pilihHapus={pilihHapus} searchProject={searchProject} setBulkGenerateConfirm={setBulkGenerateConfirm} setFilterBastYear={setFilterBastYear} setKonfirmGabung={setKonfirmGabung} setPilihHapus={setPilihHapus} setSearchProject={setSearchProject} setSummaryExportYear={setSummaryExportYear} summaryExportYear={summaryExportYear}
-            />
-            <DaftarProyekInsentifHP
-              currentUser={currentUser} filteredProjects={filteredProjects} hal={hal} openProjectDetail={openProjectDetail} setGenerateProject={setGenerateProject} setHapusTahapan={setHapusTahapan} setKetikHapusTahapan={setKetikHapusTahapan} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} setShowGenerateModal={setShowGenerateModal} skema={skema} tranches={tranches}
-            />
+            <FilterProyekInsentif />
+            <DaftarProyekInsentifHP />
 
-            <TabelProyekInsentif
-              bolehHapus={bolehHapus} brandEditFor={brandEditFor} currentUser={currentUser} filteredProjects={filteredProjects} hal={hal} handleSetProjectBrand={handleSetProjectBrand} mintaKonfirmasiHapus={mintaKonfirmasiHapus} openProjectDetail={openProjectDetail} pilihHapus={pilihHapus} setBrandEditFor={setBrandEditFor} setGenerateProject={setGenerateProject} setHapusTahapan={setHapusTahapan} setKetikHapusTahapan={setKetikHapusTahapan} setNominalBast={setNominalBast} setNominalProject={setNominalProject} setNominalValue={setNominalValue} setShowGenerateModal={setShowGenerateModal} skema={skema} thCls={thCls} togglePilih={togglePilih} totalPool={totalPool} tranches={tranches}
-            />
+            <TabelProyekInsentif />
           </div>
         </>)}
 
-        <TabJadwalTranche
-          currentUser={currentUser} exporting={exporting} filteredTranches={filteredTranches} handleExportBatch={handleExportBatch} konfirmasiMarkPaid={konfirmasiMarkPaid} loading={loading} markingPaid={markingPaid} setBatalBatch={setBatalBatch} setBatchConfirm={setBatchConfirm} setBatchYear={setBatchYear} setFilterYear={setFilterYear} setKetikBatalBatch={setKetikBatalBatch} skema={skema} tab={tab} tahunAktif={tahunAktif} thCls={thCls} uniqueYears={uniqueYears}
-        />
+        <TabJadwalTranche />
 
         {tab === 'late' && bisaInput(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -186,9 +116,7 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
           />
         )}
 
-        <TabPengaturanAkses
-          allUsers={allUsers} cariUser={cariUser} currentUser={currentUser} handleSetAkses={handleSetAkses} handleSetBrandScope={handleSetBrandScope} loading={loading} setCariUser={setCariUser} tab={tab}
-        />
+        <TabPengaturanAkses />
       </div>
     </>
   );
