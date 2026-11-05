@@ -237,3 +237,5 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `lib/integrasi-aksi.ts` (609 → 231 baris): aksi baca DIWAYPI ke `integrasi-aksi-baca.ts`, aksi jadwal ke
   `integrasi-aksi-jadwal.ts`, konstanta & `akunChecklist` ke `integrasi-aksi-dasar.ts`. Dispatcher `jalankanAksi` dan
   aksi tulis tiket/daily report/checklist tetap di `integrasi-aksi.ts`.
+- `AdminDashboard.tsx` (696 → 603 baris): modal riwayat nilai per pengguna jadi `ModalNilaiPengguna.tsx`. Pengambilan
+  data tetap di `AdminDashboard`; modal hanya menampilkan.
