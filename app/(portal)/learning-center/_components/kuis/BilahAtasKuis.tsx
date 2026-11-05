@@ -1,7 +1,7 @@
 'use client';
 
 import { QuizSession } from '../shared';
-import { type QuizQuestion } from '../MyQuizPage';
+import { type QuizQuestion } from './bantu-kuis';
 
 export interface BilahAtasKuisProps {
   KELILING: number;

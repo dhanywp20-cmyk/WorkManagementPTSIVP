@@ -241,3 +241,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   data tetap di `AdminDashboard`; modal hanya menampilkan.
 - `MateriPage.tsx` (609 → 550 baris): modal Edit Materi jadi `ModalEditMateri.tsx`; simpan tetap lewat `handleEditMaterial`
   di halaman.
+- `MyQuizPage.tsx` (617 → 554 baris): fungsi murni `terjemahkanGalatUnggah`, `acakDenganBenih`, `tenggatQuiz` dan tipe
+  `QuizQuestion` pindah ke `kuis/bantu-kuis.ts`. Komponen `kuis/*` kini mengimpor dari sana, bukan dari `MyQuizPage`
+  (impor melingkar hilang).
