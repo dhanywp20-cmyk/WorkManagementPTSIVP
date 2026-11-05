@@ -1,7 +1,7 @@
 import { execFileSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 
-const berkas = execFileSync('git', ['ls-files', '--', 'lib', 'components'], { encoding: 'utf8' })
+const berkas = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '--', 'lib', 'components'], { encoding: 'utf8' })
   .split('\n').filter(f => /\.(ts|tsx)$/.test(f) && existsSync(f));
 const pelanggar = berkas.filter(f => /from ['"](@\/app\/|(\.\.\/)+app\/)/.test(readFileSync(f, 'utf8')));
 
