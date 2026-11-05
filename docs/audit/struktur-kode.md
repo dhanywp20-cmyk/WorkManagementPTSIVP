@@ -234,3 +234,6 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   `MaterialCard` + `FolderTreeView` → `learning-center/_components/KartuMateri.tsx` (`MateriPage.tsx` 748 → 609).
 - `SchemeTab.tsx` (716 → 345 baris): seksi 3 (PTS Daerah & Remote) dan 4 (Aturan Khusus & Pencairan) jadi komponen
   `SeksiDaerahRemote` / `SeksiAturanPencairan` di `seksi-skema.tsx`, bersama pembantu `Seksi`, `TotalPersen`, `rp`.
+- `lib/integrasi-aksi.ts` (609 → 231 baris): aksi baca DIWAYPI ke `integrasi-aksi-baca.ts`, aksi jadwal ke
+  `integrasi-aksi-jadwal.ts`, konstanta & `akunChecklist` ke `integrasi-aksi-dasar.ts`. Dispatcher `jalankanAksi` dan
+  aksi tulis tiket/daily report/checklist tetap di `integrasi-aksi.ts`.

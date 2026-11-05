@@ -655,11 +655,6 @@
       "barisPanjang": 1,
       "propsMaks": 6
     },
-    "lib/integrasi-aksi.ts": {
-      "baris": 609,
-      "barisPanjang": 0,
-      "propsMaks": 0
-    },
     "lib/perbandingan-prompt.ts": {
       "baris": 111,
       "barisPanjang": 2,
