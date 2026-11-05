@@ -256,3 +256,7 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `FormReviewPageInner.tsx` (698 → 591 baris): data diagram jadi `hitungPieReview` (`hitung-pie-review.ts`), kepala
   halaman jadi `KepalaReview.tsx`, modal hapus massal jadi `ModalHapusMassalReview.tsx` (tetap mencatat `logAudit`),
   CSS halaman jadi `GayaReview.tsx`.
+- `_kerangka/KerangkaPortal.tsx` (720 → 597 baris): `renderMenuCard` jadi komponen `KartuMenuPortal`, tiga grup kartu
+  menu jadi `GridMenuPortal` (keduanya di `KartuMenuPortal.tsx`), dan `AnalyticsIframe` pindah ke berkasnya sendiri.
+  Markup dicek sama persis dengan aslinya (dinormalisasi spasi); jalur portal biasa (sidebar, dashboard, pindah menu)
+  untuk admin dan guest identik sampai piksel.

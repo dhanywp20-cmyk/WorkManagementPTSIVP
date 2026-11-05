@@ -10,11 +10,6 @@
       "barisPanjang": 13,
       "propsMaks": 2
     },
-    "app/(portal)/_kerangka/KerangkaPortal.tsx": {
-      "baris": 720,
-      "barisPanjang": 2,
-      "propsMaks": 3
-    },
     "app/(portal)/_kerangka/LayarMasuk.tsx": {
       "baris": 516,
       "barisPanjang": 5,
