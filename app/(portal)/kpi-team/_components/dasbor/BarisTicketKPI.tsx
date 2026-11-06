@@ -1,6 +1,6 @@
 'use client';
 
-import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { UBIN, BAYANG_UBIN, RelAksen } from '@/components/shared/ubin';
 import { AKSEN, BAIK, BarisRincian, Cincin, HATI, KRITIS, KakiUbin, KartuModul, KepalaUbin, batasDenganLainnya, type KPIData, type Scope } from '../DashboardKPI';
 
 export interface BarisTicketKPIProps {

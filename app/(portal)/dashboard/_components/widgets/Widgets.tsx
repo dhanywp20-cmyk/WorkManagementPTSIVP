@@ -8,7 +8,7 @@ import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
-} from '@/app/(portal)/picket-showroom/_components/shared';
+} from '@/lib/piket';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';

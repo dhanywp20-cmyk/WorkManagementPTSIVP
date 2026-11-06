@@ -4,7 +4,7 @@ import React, { useCallback } from 'react';
 import { CATEGORY_COLORS, PiketPic, STATUS_COLORS, computeCascadedPiketToday, getMonday, monthStart, todayStr } from './DashboardKPI-bantu';
 import { lingkupSaya, namaKelompokPTS } from '@/lib/kelompok';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { KPIData, Scope } from './DashboardKPI-tipe';
 
 export interface MuatKPIKonteks {

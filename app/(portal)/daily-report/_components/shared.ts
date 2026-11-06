@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase';
 
-export { CATEGORIES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, SALES_DIVISIONS, PIE_COLORS, formatDate, formatDatetime } from '@/app/(portal)/reminder-schedule/_components/shared';
-export type { Priority, Status, RepeatType, TeamUser, GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+export { CATEGORIES, formatDate, type StatusJadwal as Status } from '@/lib/jadwal-aturan';
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
+export { DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, PIE_COLORS, formatDatetime } from '@/lib/jadwal-tampilan';
+export type { Priority, RepeatType, TeamUser, GuestUser } from '@/lib/jadwal-tampilan';
 
 export type EntrySource = 'reminder' | 'ticket' | 'manual';
 

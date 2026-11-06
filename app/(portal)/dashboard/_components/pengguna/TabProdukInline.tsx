@@ -2,7 +2,7 @@
 import { Keterangan } from '@/components/shared/Keterangan';
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { PRODUCT_TYPES } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { PRODUCT_TYPES } from '@/lib/jadwal-tampilan';
 import React from 'react';
 import { User } from '../shared';
 

@@ -5,7 +5,7 @@ import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader, ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { TechNoteFolder, TechNote, TechNoteHistory, STATUS_CONFIG, ACTION_CONFIG, formatDate, formatDateShort, getInitials } from './shared';
 import { logAudit } from '@/lib/audit';
@@ -20,7 +20,8 @@ import { ModalApprovalNote } from './ModalApprovalNote';
 import { ModalDetailNote } from './ModalDetailNote';
 import { ModalUnggahNote } from './ModalUnggahNote';
 import { ModalBuatFolder } from './ModalBuatFolder';
-import { IsiTechNote } from './IsiTechNote';import { linkOneDriveSah, KATEGORI_FOLDER } from '@/lib/aturan-tech-note';
+import { IsiTechNote } from './IsiTechNote';
+import { linkOneDriveSah, KATEGORI_FOLDER } from '@/lib/aturan-tech-note';
 export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from '@/lib/aturan-tech-note';
 
 

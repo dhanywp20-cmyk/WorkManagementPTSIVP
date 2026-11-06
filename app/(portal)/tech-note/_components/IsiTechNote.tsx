@@ -5,7 +5,7 @@ import { ListEmptyState, ErrorState } from '@/components/shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { TechNoteFolder, TechNote, formatDateShort } from './shared';
 import React from 'react';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { Avatar, FolderSidebar, Spinner, StatusBadge, TechNoteKPISummary, hrefAman } from './bagian-tech-note';
 
 export interface IsiTechNoteProps {

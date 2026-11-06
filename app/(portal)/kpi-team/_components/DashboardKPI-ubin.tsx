@@ -1,5 +1,5 @@
 'use client';
-import { BAYANG_UBIN, RelAksen, UBIN } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { BAYANG_UBIN, RelAksen, UBIN } from '@/components/shared/ubin';
 import { Ikon } from '@/components/shared/Ikon';
 import React from 'react';
 

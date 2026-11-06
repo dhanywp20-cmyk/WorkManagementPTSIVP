@@ -1,7 +1,7 @@
 'use client';
 
 import { ListEmptyState } from '@/components/shared';
-import { CATEGORY_CONFIG } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { CATEGORY_CONFIG } from '@/lib/jadwal-tampilan';
 import { TH, TD, SB, sb, avc, ini } from './bantu-halaman';
 import { Ikon } from '@/components/shared/Ikon';
 import { type CSSProperties } from 'react';

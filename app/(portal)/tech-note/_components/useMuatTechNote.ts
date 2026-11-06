@@ -3,7 +3,7 @@
 import React, { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { TechNoteFolder, TechNote } from './shared';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 
 export interface MuatTechNoteKonteks {
   canManage: boolean;

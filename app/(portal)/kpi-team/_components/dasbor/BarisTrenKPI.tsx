@@ -1,6 +1,6 @@
 'use client';
 
-import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { UBIN, BAYANG_UBIN, RelAksen } from '@/components/shared/ubin';
 import { Ikon } from '@/components/shared/Ikon';
 import { AKSEN, BAIK, Cincin, HATI, KRITIS, KepalaUbin, TrenBulanan, type KPIData, type Scope } from '../DashboardKPI';
 
