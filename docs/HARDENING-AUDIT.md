@@ -122,7 +122,8 @@ Pengamannya ada di dalam fungsi: masing-masing memeriksa `jwt_claim('sub')` / ha
 - **P6 `reminders.select('*')`:** diukur — seluruh tabel 306 baris / 142 kB (rata-rata 475 byte/baris), kolom terlebar
   hanya `completion_photo_url` (~150 byte). Penghematan dari memangkas kolom kecil dibanding risiko mematahkan pemakai
   kolom; ditutup tanpa perubahan.
-- **Open question share publik:** masih menunggu keputusan Dhany (lihat di atas).
+- **Open question share publik:** tidak berlaku lagi — `/api/project-progress/share/[token]` sudah ditulis ulang dan tidak
+  mengirim `audit_trail`; yang dikirim hanya data proyek, checklist, dan nama anggota checklist (`checklist_anggota`).
 
 ## Lanjutkan dari sini
 
