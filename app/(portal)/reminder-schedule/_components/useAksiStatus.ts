@@ -2,10 +2,9 @@
 
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
-import { Status, Reminder, TeamUser, GuestUser, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, sendFonnteWA } from './shared';
+import { Status, Reminder, TeamUser, GuestUser, REVIEW_TRIGGER_CATEGORIES, formatDate, sendFonnteWA } from './shared';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { appLink } from '@/lib/app-url';
-import { compressImage } from '@/lib/image-compress';
 import { useModePenyelesaian } from './useModePenyelesaian';
 import { useUbahStatus } from './useUbahStatus';
 

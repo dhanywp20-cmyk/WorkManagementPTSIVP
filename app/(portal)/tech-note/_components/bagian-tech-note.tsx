@@ -1,18 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
-import { PageHeader, ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
-import { supabase } from '@/lib/supabase';
+import { PageHeader, ModalPortal, ConfirmDialog, type ConfirmState, Toast, type Notif } from '@/components/shared';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
-import { TechNoteFolder, TechNote, TechNoteHistory, STATUS_CONFIG, ACTION_CONFIG, formatDate, formatDateShort, getInitials } from './shared';
-import { logAudit } from '@/lib/audit';
-import { sendWANotif } from '@/lib/wa/inti';
-import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
+import { TechNoteFolder, TechNote, TechNoteHistory, STATUS_CONFIG, ACTION_CONFIG, formatDate, getInitials } from './shared';
 import { hasFullAccess } from '@/lib/constants';
-import { appLink } from '@/lib/app-url';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { useAksiTechNote } from './useAksiTechNote';
 import { useMuatTechNote } from './useMuatTechNote';
@@ -21,7 +16,6 @@ import { ModalDetailNote } from './ModalDetailNote';
 import { ModalUnggahNote } from './ModalUnggahNote';
 import { ModalBuatFolder } from './ModalBuatFolder';
 import { IsiTechNote } from './IsiTechNote';
-import { linkOneDriveSah, KATEGORI_FOLDER } from '@/lib/aturan-tech-note';
 export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from '@/lib/aturan-tech-note';
 
 

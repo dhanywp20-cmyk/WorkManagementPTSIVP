@@ -1,17 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  KANAL, bacaPengaturan, simpanPengaturan, kanalUntuk,
-  type Kanal, type PengaturanNotifikasi,
-} from '@/lib/notifikasi/pengaturan';
+import { bacaPengaturan, simpanPengaturan, type Kanal, type PengaturanNotifikasi } from '@/lib/notifikasi/pengaturan';
 import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI,
   ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
-import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } from '@/lib/notifikasi/katalog';
-import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
+import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
+import { penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SeksiAI } from './integrasi/SeksiAI';
 import { SeksiTim } from './integrasi/SeksiTim';
 import { SeksiPush } from './integrasi/SeksiPush';

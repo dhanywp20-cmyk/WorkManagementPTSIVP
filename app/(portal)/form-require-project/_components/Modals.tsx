@@ -1,6 +1,5 @@
 'use client';
 import { BatalButton, ModalPortal, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
 import { useRef, useState } from 'react';
 import { FormRuanganUtama } from './form-baru/FormRuanganUtama';
 import { KolomInfoProyekBaru } from './form-baru/KolomInfoProyekBaru';

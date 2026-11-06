@@ -4,7 +4,7 @@ import React from 'react';
 
 import { MonthBarChart, TrendBadge, ModalPortal } from '@/components/shared';
 
-import { KPIMember, PeriodKey, warnaTim, KPI_COLOR, progressColor } from './shared';
+import { KPIMember, PeriodKey, warnaTim, progressColor } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function DrillModal({ member, onClose, period, onViewBreakdown }: { member: KPIMember; onClose: () => void; period: PeriodKey; onViewBreakdown?: () => void }) {

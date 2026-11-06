@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ingat } from '@/lib/cache-singkat';
 import { namaKelompokPTS } from '@/lib/kelompok/inti';
-import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,

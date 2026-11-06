@@ -1,22 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
-import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
+import { PageHeader } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok/inti';
-import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { bacaPicPiket } from '@/lib/piket/inti';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kuis/kpi-lc-tahunan';
 import { ingat } from '@/lib/cache-singkat';
 import { saringSumberKPI, type SumberKPI } from '@/lib/kpi-sumber';
-import { DrillModal, ProgressBar } from './_components/DrillModal';
+import { DrillModal } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ModalPengaturanKPI } from './_components/ModalPengaturanKPI';
 import { ModalDetailSnapshot } from './_components/ModalDetailSnapshot';

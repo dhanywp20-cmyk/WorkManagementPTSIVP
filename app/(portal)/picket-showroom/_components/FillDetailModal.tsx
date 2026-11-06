@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useDivisiSales } from '@/lib/merek/inti';
 import { ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
-import {
-  PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
-  DAY_COLOR, KEGIATAN_COLORS,
-  TEAM_LABEL,
-} from './shared';
+import { PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain, DAY_COLOR, TEAM_LABEL } from './shared';
 import { useKelompokPTS, namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok/inti';
 import { IkonTeks } from '@/components/shared/Ikon';
 
