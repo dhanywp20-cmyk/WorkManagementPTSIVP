@@ -289,6 +289,11 @@ Butuh keputusan eksplisit: apakah "semua Team PTS = staf internal
 terpercaya" ini memang disengaja (Full Access cuma soal kerapian tampilan),
 atau harus benar-benar dikunci di database juga.
 
+**Status 2026-11-06 — praktis tertutup.** Dicek ke `pg_policies` produksi: policy hapus kini 29 memakai
+`admin_atau_full_access()` (yang memeriksa Full Access) dan hanya 1 memakai `lingkup_semua()` (`piket_tamu_detail`,
+itu pun mensyaratkan `piket_boleh_ubah()`). Sisa `lingkup_semua()` pada tambah/ubah hanya untuk Daily Report milik
+sendiri dan roster/PIC piket — keduanya memang alur kerja seluruh tim.
+
 ## 3. Yang diperiksa dan ternyata BUKAN bug
 
 - **3 baris pembagian tanpa `user_id`** — installer eksternal, memang tidak
