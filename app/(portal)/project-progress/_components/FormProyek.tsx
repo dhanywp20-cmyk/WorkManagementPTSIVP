@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FileText, Copy as IkonSalin, Search, Upload } from 'lucide-react';
 import { Modal, SalesPicker, TombolModal, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { BATAS, STATUS_PROYEK, hitungItemDraft, type ChecklistProyek, type DraftChecklist, type StatusProyek } from '@/lib/checklist';
+import { BATAS, STATUS_PROYEK, hitungItemDraft, type ChecklistProyek, type DraftChecklist, type StatusProyek } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 import { ModalImpor } from './ModalImpor';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';

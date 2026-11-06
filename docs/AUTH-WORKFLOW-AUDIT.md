@@ -41,8 +41,8 @@ seperti tercatat di bawah, menunggu instruksi lanjutan.
 
 ---
 
-Metodologi: dibaca middleware, `lib/auth.ts`, `lib/server-auth.ts`, `lib/db-token.ts`,
-`lib/penjaga-admin.ts`, seluruh 22 route di `app/api/*`, arsitektur JWT/RLS
+Metodologi: dibaca middleware, `lib/auth/sesi.ts`, `lib/auth/server.ts`, `lib/auth/db-token.ts`,
+`lib/auth/penjaga-admin.ts`, seluruh 22 route di `app/api/*`, arsitektur JWT/RLS
 (`lib/supabase.ts`), lalu didelegasikan 3 sub-audit paralel untuk modul besar
 (Ticketing+Services+Reminder; Incentive PTS+Admin Panel; Project
 Progress+Require Project+Tech Note+Daily Report+Picket Showroom). Setiap
@@ -63,7 +63,7 @@ client ≠ terpercaya.
 ## Executive Summary
 
 Platform ini pakai auth kustom (bukan Supabase Auth): sesi cookie httpOnly +
-JWT PostgREST yang diterbitkan server (`lib/db-token.ts`) berisi klaim
+JWT PostgREST yang diterbitkan server (`lib/auth/db-token.ts`) berisi klaim
 `sub` (id), `username`, `user_role`, `full_name`, `sales_division`,
 `access_level`. Klaim ini **tidak bisa dipalsukan langsung** (ditandatangani
 HMAC server-side) — tapi RLS di banyak tabel memercayai **nilai klaim itu**
@@ -92,7 +92,7 @@ Total: **6 P0, 12 P1, 10 P2, 5 P3** (rincian di bawah).
 ## Critical Findings — P0
 
 ### P0-1 — [SINTESIS, LINTAS-MODUL] Self-rename mengalahkan seluruh hardening kepemilikan RLS tanggal 2 September
-**Severity**: P0 · **Module**: Tickets, Reminders, Project Requests, Project Progress (semua sub-tabel) · **File**: `sql/users-bisa-ditugaskan.sql:57-89` (trigger), `lib/db-token.ts:71-84`, `app/api/auth/session/route.ts:38-57`, `sql/edit-scoped-ke-assignee.sql`, `sql/reminders-edit-scoped-ke-aktor.sql`
+**Severity**: P0 · **Module**: Tickets, Reminders, Project Requests, Project Progress (semua sub-tabel) · **File**: `sql/users-bisa-ditugaskan.sql:57-89` (trigger), `lib/auth/db-token.ts:71-84`, `app/api/auth/session/route.ts:38-57`, `sql/edit-scoped-ke-assignee.sql`, `sql/reminders-edit-scoped-ke-aktor.sql`
 
 **Problem**: Migrasi tanggal 2 September 2026 (`sql/edit-scoped-ke-assignee.sql` 14:21, `sql/reminders-edit-scoped-ke-aktor.sql` 14:32) menutup lubang besar "siapa pun bisa UPDATE baris siapa pun" pada `tickets`/`reminders`/`project_requests`/`progress_*` dengan mempersempit RLS ke syarat kepemilikan (`assign_name = jwt_full_name()`, `sales_name = jwt_full_name()`, `pic = jwt_full_name()`, `created_by = jwt_claim('username')`, dst). Tapi fungsi `guard_users_privileged_columns()` (`sql/users-bisa-ditugaskan.sql:78-89`) — trigger yang membekukan kolom istimewa di `users` dari tulisan langsung `anon`/`authenticated` — **hanya membekukan**: `role, team_type, allow_incentive_input, allowed_menus, access_level, incentive_akses, incentive_brand_scope, piket_akses, telegram_chat_id, bisa_ditugaskan`. **`username`, `full_name`, `jabatan`, `atasan_id`, `kpi_enabled` TIDAK ada di daftar itu** — bebas diubah sendiri oleh pemilik baris (`users_ubah` RLS: `id::text = jwt_claim('sub')`).
 
@@ -139,7 +139,7 @@ Tiket langsung aktif di antrean kerja tim tanpa pernah melewati approval, dengan
 ### P0-3 — Kolom insentif (`incentive_value`, `bast_date`, dll) tersimpan di `reminders`, ditulis lewat RLS row-level TANPA melalui `incentive_akses` sama sekali
 **Severity**: P0 · **Module**: Incentive PTS · **File**: `sql/reminders-edit-scoped-ke-aktor.sql:34-60`, `sql/incentive-akses-reminders-rls.sql:53-68` (baru menambal SELECT, bukan UPDATE), `app/incentive-pts/_components/calc.ts:900-913`, `app/incentive-pts/page.tsx:399-478`
 
-**Problem**: Seluruh sistem tier akses `lib/incentive-akses.ts` (`lihat`/`input`/`penuh`) menjaga tabel `incentive_tranches`/`incentive_splits`/`incentive_scheme_settings` — tapi nominal, tanggal BAST, dan penanda keikutsertaan insentif **disimpan sebagai kolom di tabel `reminders`**, yang RLS-nya row-level (siapa aktor pada baris), bukan column-level. Tidak ada trigger pembeku kolom istimewa di `reminders` (beda dari `users`).
+**Problem**: Seluruh sistem tier akses `lib/incentive/akses.ts` (`lihat`/`input`/`penuh`) menjaga tabel `incentive_tranches`/`incentive_splits`/`incentive_scheme_settings` — tapi nominal, tanggal BAST, dan penanda keikutsertaan insentif **disimpan sebagai kolom di tabel `reminders`**, yang RLS-nya row-level (siapa aktor pada baris), bukan column-level. Tidak ada trigger pembeku kolom istimewa di `reminders` (beda dari `users`).
 
 **Attack scenario**: Team Handler dengan `incentive_akses = 'lihat'` (default semua orang) yang ditugaskan pada proyeknya sendiri (`assign_name` cocok — atau, digabung dengan P0-1, siapa pun yang menyamar jadi assignee lewat self-rename) memanggil:
 ```js
@@ -270,7 +270,7 @@ Beda dari 3 fungsi sejenis di file yang sama (`processYearlyBatch`, `batalkanBat
 Dump 30 Agustus masih mencantumkan `it_ubah` versi lama (admin/superadmin saja), padahal migrasi 2 September (`incentive-akses-konfigurasi.sql`) sudah menggantinya jadi berbasis tier akses. Bukan lubang di produksi saat ini, tapi risiko nyata bila dipakai apa adanya untuk deploy ke perusahaan pembeli baru — Manager PTS tier `input`/`penuh` di instalasi baru itu tidak akan bisa memproses apa pun. **File**: `sql/full-schema/04_rls.sql:134-140` vs `sql/incentive-akses-konfigurasi.sql:108-124`.
 
 ### P2-5 — Picket Showroom: `piket_tamu_detail` write memakai fungsi yang didesain untuk baca, bukan tulis
-`ptd_tulis` memakai `boleh_lihat_project()` — fungsi yang menurut dokumentasi kode sendiri (`lib/piket-akses.ts:34-37`) dimaksud murni untuk *visibility* (Sales dengan nama cocok "tetap tidak bisa menyunting"). RLS-nya menyalahi dokumentasi sendiri: Sales dengan nama cocok sebenarnya BISA insert/update/delete. **File**: `lib/piket-akses.ts:34-37,61-75`; `sql/full-schema/04_rls.sql:220-224`.
+`ptd_tulis` memakai `boleh_lihat_project()` — fungsi yang menurut dokumentasi kode sendiri (`lib/piket/akses.ts:34-37`) dimaksud murni untuk *visibility* (Sales dengan nama cocok "tetap tidak bisa menyunting"). RLS-nya menyalahi dokumentasi sendiri: Sales dengan nama cocok sebenarnya BISA insert/update/delete. **File**: `lib/piket/akses.ts:34-37,61-75`; `sql/full-schema/04_rls.sql:220-224`.
 
 ### P2-6 — Require Project: kolom sensitif (`assign_name`, `routing_status`) tidak dibatasi per-kolom
 `pr_update` memvalidasi baris, bukan kolom — requester/assignee bisa mengganti `assign_name` ke namanya sendiri untuk "mencuri" pekerjaan yang belum resmi di-assign kepadanya. **File**: `sql/edit-scoped-ke-assignee.sql:34-50`.
@@ -292,7 +292,7 @@ Saat tiket ditolak/selesai, kode menutup semua `reminders` dengan `ticket_id`+`c
 ## Low Findings — P3
 
 ### P3-1 — Riwayat bug `access_level` di JWT — sudah diperbaiki, layak smoke-test operasional
-Bug historis (`access_level` tidak pernah ikut payload JWT, melumpuhkan cabang Full Access `boleh_hapus_reminder()`) sudah diperbaiki (`lib/db-token.ts:83`, dikonfirmasi `sql/full-access-jwt-dan-delete-rls.sql`). Tidak ada bug aktif ditemukan; disarankan smoke-test operasional (login akun Full Access, cek `/api/auth/db-token-check`).
+Bug historis (`access_level` tidak pernah ikut payload JWT, melumpuhkan cabang Full Access `boleh_hapus_reminder()`) sudah diperbaiki (`lib/auth/db-token.ts:83`, dikonfirmasi `sql/full-access-jwt-dan-delete-rls.sql`). Tidak ada bug aktif ditemukan; disarankan smoke-test operasional (login akun Full Access, cek `/api/auth/db-token-check`).
 
 ### P3-2 — Dead-simple informational: `set-credential` bisa diprediksi/hijack pada akun pending-approval baru dalam window 30 menit
 UUID akun praktis tidak bisa ditebak (122-bit random) — bukan celah realistis, dicatat untuk kelengkapan saja.

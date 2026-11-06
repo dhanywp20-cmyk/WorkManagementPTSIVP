@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, cariChecklistShare, galat, muatChecklist, simpanPerubahan } from '@/lib/checklist-server';
-import { validasiNama } from '@/lib/checklist';
+import { NO_STORE, cariChecklistShare, galat, muatChecklist, simpanPerubahan } from '@/lib/checklist/server';
+import { validasiNama } from '@/lib/checklist/inti';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

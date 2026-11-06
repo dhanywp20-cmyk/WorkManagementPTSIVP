@@ -29,7 +29,7 @@ dengan platform ini; koleksi lengkap (84 merek) ada di repo sumbernya.
 
 ## Cara pakai
 
-1. **Aturan proyek dulu.** Platform punya merek & komponen sendiri (`lib/merek.ts`, `components/shared`,
+1. **Aturan proyek dulu.** Platform punya merek & komponen sendiri (`lib/merek/inti.ts`, `components/shared`,
    `tailwind.config.ts`, `app/globals.css`) dan aturan tampilan pemilik (mis. keterangan sebagai ikon ⓘ
    bukan paragraf, bahasa Indonesia). DESIGN.md referensi adalah ACUAN keputusan - jarak, hierarki, skala
    huruf, kepadatan, perilaku komponen - bukan warna / logo merek lain yang ditempel. Jangan menyalin

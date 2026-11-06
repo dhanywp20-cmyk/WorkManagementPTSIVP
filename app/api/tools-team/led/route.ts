@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';

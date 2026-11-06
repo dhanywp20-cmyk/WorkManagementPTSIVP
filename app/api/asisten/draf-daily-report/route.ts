@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
 
 export const runtime = 'nodejs';

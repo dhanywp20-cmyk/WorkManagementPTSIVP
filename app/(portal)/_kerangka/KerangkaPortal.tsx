@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken, SESI_HABIS } from '@/lib/supabase';
-import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth';
+import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth/sesi';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import type { User, MenuItem } from '../dashboard/_components/shared';
@@ -18,7 +18,7 @@ import { LayarMasuk } from './LayarMasuk';
 import { tujuanLanjutAman } from '@/lib/tujuan-lanjut';
 import { SidebarPortal } from './SidebarPortal';
 import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
-import { useMerek, latarDasbor } from '@/lib/merek';
+import { useMerek, latarDasbor } from '@/lib/merek/inti';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { catatPemakaian } from '@/lib/pemakaian';

@@ -1,6 +1,6 @@
 import { rapikanBriefing, BRIEFING_BAWAAN } from '../lib/briefing-pagi';
-import { pesanAlert, perluKirimAlert, sidikPeringatan, JEDA_ALERT_JAM } from '../lib/kesehatan-server';
-import type { Peringatan } from '../lib/kesehatan';
+import { pesanAlert, perluKirimAlert, sidikPeringatan, JEDA_ALERT_JAM } from '../lib/kesehatan/server';
+import type { Peringatan } from '../lib/kesehatan/inti';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

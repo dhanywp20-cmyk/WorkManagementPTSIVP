@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { sendWA } from '@/lib/wa';
-import { kirimWA } from '@/lib/wa-kirim-server';
-import { kirimTelegramKeNomorServer } from '@/lib/telegram-server';
-import { kirimPushKeUser } from '@/lib/web-push-server';
-import { ambilJatahWA } from '@/lib/wa-batas';
+import { sendWA } from '@/lib/wa/inti';
+import { kirimWA } from '@/lib/wa/kirim-server';
+import { kirimTelegramKeNomorServer } from '@/lib/notifikasi/telegram-server';
+import { kirimPushKeUser } from '@/lib/notifikasi/web-push-server';
+import { ambilJatahWA } from '@/lib/wa/batas';
 import type { EfekSamping } from '@/lib/efek-samping';
 
 export const PENANDA_DIWAYPI = 'via DIWAYPI';

@@ -1,4 +1,4 @@
-import { bolehSertifikat, nomorSertifikat, ringkasJudul, tanggalSertifikat } from '../lib/sertifikat';
+import { bolehSertifikat, nomorSertifikat, ringkasJudul, tanggalSertifikat } from '../lib/kuis/sertifikat';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

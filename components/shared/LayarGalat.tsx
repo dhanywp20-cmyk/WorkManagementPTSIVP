@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { RefreshCw, TriangleAlert, House } from 'lucide-react';
-import { bolehMuatUlang, galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat-berkas';
-import { laporGalat } from '@/lib/lapor-galat';
+import { bolehMuatUlang, galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat/berkas';
+import { laporGalat } from '@/lib/galat/lapor';
 
 export function LayarGalat({ error, reset, penuh = false }: {
   error: Error & { digest?: string };

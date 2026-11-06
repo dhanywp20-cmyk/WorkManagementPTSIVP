@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Grid3x3, Timer } from 'lucide-react';
-import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
+import type { AlasanKirimOtomatis } from '@/lib/kuis/kelas-eksternal';
 import { bacaDraf, panggilKelas, tulisDraf, type InfoKelas, type Percobaan } from './api';
 import { usePengawas } from './usePengawas';
 import { GambarSoal } from '@/components/shared/GambarSoal';

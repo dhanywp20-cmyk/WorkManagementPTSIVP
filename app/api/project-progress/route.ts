@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, akunAdmin, ambilAkun, galat, muatDaftarProyek } from '@/lib/checklist-server';
-import { isianProyek } from '@/lib/checklist-isian';
+import { NO_STORE, akunAdmin, ambilAkun, galat, muatDaftarProyek } from '@/lib/checklist/server';
+import { isianProyek } from '@/lib/checklist/isian';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

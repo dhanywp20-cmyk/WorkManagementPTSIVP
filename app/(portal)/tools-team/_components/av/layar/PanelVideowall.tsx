@@ -1,7 +1,7 @@
 'use client';
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { PANEL_VIDEOWALL, type PanelVideowall as Panel, videowallUntuk } from '@/lib/av-layar-proyektor';
+import { PANEL_VIDEOWALL, type PanelVideowall as Panel, videowallUntuk } from '@/lib/av/layar-proyektor';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';

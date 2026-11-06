@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { issueDbToken } from '@/lib/db-token';
-import { akunTertunda } from '@/lib/akun-tertunda';
+import { issueDbToken } from '@/lib/auth/db-token';
+import { akunTertunda } from '@/lib/auth/akun-tertunda';
 
 export const dynamic = 'force-dynamic';
 

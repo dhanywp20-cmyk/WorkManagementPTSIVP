@@ -1,4 +1,4 @@
-import { bacaSuaraNotif, BERKAS_BAWAAN, periksaBerkasSuara, periksaDurasiSuara, SUARA_BAWAAN, sumberSuara, urlSuaraSah } from '../lib/suara-notif-bawaan';
+import { bacaSuaraNotif, BERKAS_BAWAAN, periksaBerkasSuara, periksaDurasiSuara, SUARA_BAWAAN, sumberSuara, urlSuaraSah } from '../lib/notifikasi/suara-bawaan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

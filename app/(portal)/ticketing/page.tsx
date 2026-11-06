@@ -5,7 +5,7 @@ import { BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
-import { clearSession, getSession } from "@/lib/auth";
+import { clearSession, getSession } from "@/lib/auth/sesi";
 import { hasFullAccess } from "@/lib/constants";
 
 import {

@@ -7,7 +7,7 @@ import { ConfirmDialog, Modal, Toast, TombolModal, type ConfirmState, type Notif
 import { NETRAL } from '@/lib/desain';
 import {
   BATAS, formatTanggal, statDari, validasiNama, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, itemPerBagian, kirimFoto, progresDariStat,
 } from '@/app/(portal)/project-progress/_components/tampilan';

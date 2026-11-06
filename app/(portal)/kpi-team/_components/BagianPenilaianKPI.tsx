@@ -1,7 +1,7 @@
 'use client';
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { lingkupSaya } from '@/lib/kelompok';
+import { lingkupSaya } from '@/lib/kelompok/inti';
 import { KPIUser, KPIMember, KPISettings, warnaTim } from './shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import React from 'react';

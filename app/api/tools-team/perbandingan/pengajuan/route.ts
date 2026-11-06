@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/wa-server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import '@/lib/wa/server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { sendWA } from '@/lib/wa';
-import { bolehPerbandingan, jumlahCek, periksaKartu } from '@/lib/perbandingan';
-import { type AturanPerbandingan, bolehLangsungUnduh, bolehVerifikasi, KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan-aturan';
+import { sendWA } from '@/lib/wa/inti';
+import { bolehPerbandingan, jumlahCek, periksaKartu } from '@/lib/perbandingan/inti';
+import { type AturanPerbandingan, bolehLangsungUnduh, bolehVerifikasi, KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan/aturan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

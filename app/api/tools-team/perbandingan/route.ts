@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
-import { bolehPerbandingan, periksaHasil } from '@/lib/perbandingan';
-import { ambilJson, periksaKiriman, promptPengguna, promptSistem, SKEMA_GEMINI, teksBertanda } from '@/lib/perbandingan-prompt';
+import { bolehPerbandingan, periksaHasil } from '@/lib/perbandingan/inti';
+import { ambilJson, periksaKiriman, promptPengguna, promptSistem, SKEMA_GEMINI, teksBertanda } from '@/lib/perbandingan/prompt';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

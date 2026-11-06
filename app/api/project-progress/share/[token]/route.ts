@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { KOLOM_ITEM, NO_STORE, galat, supportPerDaftar, tokenSah } from '@/lib/checklist-server';
+import { KOLOM_ITEM, NO_STORE, galat, supportPerDaftar, tokenSah } from '@/lib/checklist/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

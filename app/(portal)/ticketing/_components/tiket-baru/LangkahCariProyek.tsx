@@ -3,7 +3,7 @@
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal, TombolModal } from '@/components/shared';
 import { type ReminderRef } from '../NewTicketModal';
-import { formatTanggal } from '@/lib/checklist';
+import { formatTanggal } from '@/lib/checklist/inti';
 
 export interface LangkahCariProyekProps {
   galatCari: string | null;

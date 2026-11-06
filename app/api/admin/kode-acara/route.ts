@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser, isAdminRole } from '@/lib/server-auth';
+import { getSessionUser, isAdminRole } from '@/lib/auth/server';
 import {
   TABEL_KODE_ACARA, rapikanKodeAcara, dariBaris,
   type PengaturanKodeAcara, type BarisKodeAcara,

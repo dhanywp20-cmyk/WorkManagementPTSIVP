@@ -1,6 +1,6 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import { PiketRow, KegiatanEntry, bacaPicPiket } from './shared';
-import { labelKelompokPTS } from '@/lib/kelompok';
+import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { daftarPilihan, denganNilai, produkSpesifik } from '@/lib/daftar-pilihan';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {

@@ -1,4 +1,4 @@
-import { cabinetUntukUkuran, pikselUnit, ukuranDariDiagonal } from '@/lib/av-hitung';
+import { cabinetUntukUkuran, pikselUnit, ukuranDariDiagonal } from '@/lib/av/hitung';
 import type { Benda, ModelVW, PanelVW, RasioLayar } from './tipe';
 import { terapkanUkuranTeks } from './teks';
 

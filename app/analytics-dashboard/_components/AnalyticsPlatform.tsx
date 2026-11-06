@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
 import type { PenggunaPortal as DashUser } from '@/lib/tipe-pengguna';
 import { FooterPlatform, StatCard } from '@/components/shared';

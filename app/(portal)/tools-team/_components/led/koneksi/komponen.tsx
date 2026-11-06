@@ -1,5 +1,5 @@
 'use client';
-import { hitungKoneksi, type SudutMulai } from '@/lib/av-hitung';
+import { hitungKoneksi, type SudutMulai } from '@/lib/av/hitung';
 import { useState } from 'react';
 
 export function IkonPola({ mulai, arah, pola }: { mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z' }) {

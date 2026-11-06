@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av-layar-proyektor';
+import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av/layar-proyektor';
 import { useState } from 'react';
 
 const RESOLUSI = [

@@ -3,7 +3,7 @@ import PDFDocument from 'pdfkit';
 import {
   bacaDraf, bacaPdf, bacaTabel, barisTeks, type DokCek, type DokChecklist, dokBaru, gambarChecklist, itemBaru,
   namaBerkasPdf, type PotongPdf, ringkas, tglIndo,
-} from '../lib/checklist-barang';
+} from '../lib/checklist/barang';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean, info?: unknown) => {

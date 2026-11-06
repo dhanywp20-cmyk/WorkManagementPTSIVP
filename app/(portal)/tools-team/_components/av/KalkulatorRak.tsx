@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { hitungRak, type ItemRak } from '@/lib/av-audio-jaringan';
+import { hitungRak, type ItemRak } from '@/lib/av/audio-jaringan';
 import { useState } from 'react';
 import { angkaDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../pustaka/PilihPustaka';

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 
 export function LogoMerek({
   ukuran = 'md',

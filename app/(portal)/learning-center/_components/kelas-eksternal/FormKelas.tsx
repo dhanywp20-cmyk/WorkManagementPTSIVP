@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Search, Trash2, Upload } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
-import { ISIAN_PESERTA, type IsianPeserta, type JenisKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
-import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis-live';
+import { ISIAN_PESERTA, type IsianPeserta, type JenisKelas, type KelasEksternal } from '@/lib/kuis/kelas-eksternal';
+import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis/live';
 
 interface SoalRingkas { id: string; materi_name: string | null; batch_name: string | null; question: string }
 

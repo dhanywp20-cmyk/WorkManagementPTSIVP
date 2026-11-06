@@ -3,7 +3,7 @@ import { KotakInfo, Modal, ModalSetujui, TombolModal, kelasIsianPersetujuan as k
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
-import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { triggersProjectProgress } from '@/lib/checklist/sinkron-progress';
 
 function Baris({ label, children, tebal }: { label: string; children: React.ReactNode; tebal?: boolean }) {
   return (

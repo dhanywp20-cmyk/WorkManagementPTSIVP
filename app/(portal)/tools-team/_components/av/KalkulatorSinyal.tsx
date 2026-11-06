@@ -1,7 +1,7 @@
 'use client';
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { ANTARMUKA, bandwidthGbps, type Chroma } from '@/lib/av-hitung';
+import { ANTARMUKA, bandwidthGbps, type Chroma } from '@/lib/av/hitung';
 import { useState } from 'react';
 import { PanelJaringanAV } from './sinyal/PanelJaringanAV';
 

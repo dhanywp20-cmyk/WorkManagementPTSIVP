@@ -2,7 +2,7 @@
 
 import React, { useCallback } from 'react';
 import { CATEGORY_COLORS, PiketPic, STATUS_COLORS, computeCascadedPiketToday, getMonday, monthStart, todayStr } from './DashboardKPI-bantu';
-import { lingkupSaya, namaKelompokPTS } from '@/lib/kelompok';
+import { lingkupSaya, namaKelompokPTS } from '@/lib/kelompok/inti';
 import { supabase } from '@/lib/supabase';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { KPIData, Scope } from './DashboardKPI-tipe';

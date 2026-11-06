@@ -1,7 +1,7 @@
 import type { Benda } from './tipe';
-import { PERANGKAT_RAK, isiRakBawaan, type PerangkatRak } from '@/lib/perangkat-rak';
+import { PERANGKAT_RAK, isiRakBawaan, type PerangkatRak } from '@/lib/av/perangkat-rak';
 
-export { PERANGKAT_RAK, JENIS_RAK, isiRakBawaan, bersihkanIsiRak, type JenisPerangkatRak, type PerangkatRak } from '@/lib/perangkat-rak';
+export { PERANGKAT_RAK, JENIS_RAK, isiRakBawaan, bersihkanIsiRak, type JenisPerangkatRak, type PerangkatRak } from '@/lib/av/perangkat-rak';
 
 export const uRak = (b: Pick<Benda, 'rakU'>) => Math.max(4, b.rakU ?? 20);
 export const isiRakDari = (b: Pick<Benda, 'rakU' | 'isiRak'>): PerangkatRak[] => (b.isiRak?.length ? b.isiRak : isiRakBawaan(uRak(b)));

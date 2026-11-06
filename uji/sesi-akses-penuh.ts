@@ -19,7 +19,7 @@ process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ??= 'https://contoh.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY ??= 'x';
 
 (async () => {
-  const { setSession, getSession } = await import('../lib/auth');
+  const { setSession, getSession } = await import('../lib/auth/sesi');
   type U = Record<string, unknown>;
 
   console.log('\n1. setSession mempertahankan hak akses');

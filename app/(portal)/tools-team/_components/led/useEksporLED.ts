@@ -3,7 +3,7 @@ import { bukaCetak, diagramSusunan, type Info, type Lembar, namaBerkas, unduhLem
 import { f } from '../bersama/ui';
 import { ringkasanDaya, seksiCetakDaya } from './daya/teks';
 import { ringkasanKoneksi, seksiCetakKoneksi } from './koneksi/teks';
-import { KECERAHAN } from '@/lib/av-hitung';
+import { KECERAHAN } from '@/lib/av/hitung';
 import { rupiah } from './data';
 import { isiLembarBom } from '../bersama/TabelBom';
 import type { KeadaanLED } from './useKeadaanLED';

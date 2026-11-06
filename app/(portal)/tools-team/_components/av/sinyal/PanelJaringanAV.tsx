@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { ALIRAN_IP, danteMbps, saranLink } from '@/lib/av-audio-jaringan';
+import { ALIRAN_IP, danteMbps, saranLink } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';

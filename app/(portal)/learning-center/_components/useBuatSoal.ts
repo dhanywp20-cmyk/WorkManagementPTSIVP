@@ -2,7 +2,7 @@
 
 import type { SisiBanding } from './QuestionsPage';
 import { supabase, User, Material, Question, generateWithGemini, DialogState } from './shared';
-import { nomorBerikutnya } from '@/lib/urutan-soal';
+import { nomorBerikutnya } from '@/lib/kuis/urutan-soal';
 
 export interface BuatSoalKonteks {
   batchName: string;

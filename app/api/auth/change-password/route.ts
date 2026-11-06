@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser, isAdminRole } from '@/lib/server-auth';
-import { cabutSemuaToken } from '@/lib/token-integrasi';
+import { getSessionUser, isAdminRole } from '@/lib/auth/server';
+import { cabutSemuaToken } from '@/lib/integrasi/token';
 
 export const dynamic = 'force-dynamic';
 

@@ -3,10 +3,10 @@ import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   catatPercobaan, getClientIp, muatUserMasuk, PESAN_TERKUNCI, sedangTerkunci, selesaikanMasuk,
-} from '@/lib/masuk-server';
-import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/dua-faktor-server';
-import { buatTantangan } from '@/lib/tantangan-2fa';
-import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
+} from '@/lib/auth/masuk-server';
+import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/auth/dua-faktor-server';
+import { buatTantangan } from '@/lib/auth/tantangan-2fa';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { divisiSales, muatMerek, simpanDivisi, divisiTerpakai, rapikanDivisi } from '@/lib/merek';
+import { divisiSales, muatMerek, simpanDivisi, divisiTerpakai, rapikanDivisi } from '@/lib/merek/inti';
 
 export function DivisiSalesInline() {
   const [divisi, setDivisi] = useState<string[]>([]);

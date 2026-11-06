@@ -1,7 +1,7 @@
 'use client';
 import { memo } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
-import type { ItemBarang, StatusCek } from '@/lib/checklist-barang';
+import type { ItemBarang, StatusCek } from '@/lib/checklist/barang';
 
 const kelasIsian = 'min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-base sm:text-[13px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 

@@ -1,4 +1,4 @@
-import type { KartuBanding, NilaiSpek } from '../../lib/perbandingan';
+import type { KartuBanding, NilaiSpek } from '../../lib/perbandingan/inti';
 
 const a = (teks: string, unggul = false): NilaiSpek => ({ teks, status: 'ada', ...(unggul ? { unggul } : {}), bukti: { kutipan: teks } });
 const x: NilaiSpek = { teks: '', status: 'tidak-disebut' };

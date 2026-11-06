@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import {
   Kelompok, LingkupManager, kelompokPTS, muatKelompok, lingkupManager,
   simpanLingkupManager,
-} from '@/lib/kelompok';
+} from '@/lib/kelompok/inti';
 
 interface Akun { id: string; full_name: string; jabatan: string | null; team_type: string | null; access_level: string | null }
 

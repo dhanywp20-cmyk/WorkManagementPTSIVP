@@ -1,6 +1,6 @@
 'use client';
 
-import { bandingkanUrutan } from '@/lib/urutan-soal';
+import { bandingkanUrutan } from '@/lib/kuis/urutan-soal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Material, Question, BtnEdit, BtnDelete } from '../shared';
 import { GambarSoal } from '@/components/shared/GambarSoal';

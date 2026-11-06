@@ -1,4 +1,4 @@
-import { kelompokDitugaskan, KELOMPOK_BAWAAN } from './kelompok-inti';
+import { kelompokDitugaskan, KELOMPOK_BAWAAN } from './kelompok/dasar';
 
 export const ASSIGNABLE_PTS_TEAMS = KELOMPOK_BAWAAN
   .filter(k => k.ditugaskan)

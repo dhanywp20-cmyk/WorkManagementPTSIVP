@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
+import { setSession } from '@/lib/auth/sesi';
 
 import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE } from './shared';
 import { ModalPortal, formatUsername } from '@/components/shared';
@@ -10,7 +10,7 @@ import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
 import { bolehDiwaypiDan2FA, hasFullAccess } from '@/lib/constants';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 import { InstallGuideModal } from './InstallGuideModal';
 import { UnduhApk } from './UnduhApk';
 import { Profil2FA } from './profil-2fa';

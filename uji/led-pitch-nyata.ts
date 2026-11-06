@@ -1,4 +1,4 @@
-import { hitungLED, pikselUnit, pitchNyata } from '../lib/av-hitung';
+import { hitungLED, pikselUnit, pitchNyata } from '../lib/av/hitung';
 import { susunanLED } from '../app/(portal)/tools-team/_components/desain3d/inti/produk';
 
 let lulus = 0, gagal = 0;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Pilihan } from '@/lib/kelas-eksternal';
-import { teksDiAtas } from '@/lib/kuis-live';
+import type { Pilihan } from '@/lib/kuis/kelas-eksternal';
+import { teksDiAtas } from '@/lib/kuis/live';
 
 export const UNGU = '#46178f';
 export const UNGU_TUA = '#25076b';

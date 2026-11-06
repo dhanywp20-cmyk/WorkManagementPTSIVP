@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, HardHat, MapPin, Users, X } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
-import { statDari, type ChecklistBagian, type ChecklistItem } from '@/lib/checklist';
-import type { AnggotaNama } from '@/lib/checklist-ringkasan';
+import { statDari, type ChecklistBagian, type ChecklistItem } from '@/lib/checklist/inti';
+import type { AnggotaNama } from '@/lib/checklist/ringkasan';
 import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 import { ringkasChecklist, type RingkasLokasi } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
 import { RingkasanChecklist, adaRingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';

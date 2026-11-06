@@ -2,12 +2,12 @@
 
 import { Reminder, TeamUser, GuestUser, newBatchId, sendFonnteWA, REMINDER_FIELDS } from './shared';
 import { supabase } from '@/lib/supabase';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { barisJadwalWA, galatIsianJadwal, pesanJadwalBaru, proyekSerupa } from '@/lib/jadwal-aturan';
-import { buatJadwal, tandaiGrupInsentif } from '@/lib/jadwal-buat';
+import { adalahKategoriInsentif } from '@/lib/incentive/scheme';
+import { barisJadwalWA, galatIsianJadwal, pesanJadwalBaru, proyekSerupa } from '@/lib/jadwal/aturan';
+import { buatJadwal, tandaiGrupInsentif } from '@/lib/jadwal/buat';
 import { efekPeramban } from '@/lib/efek-peramban';
 import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
-import { type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { appLink } from '@/lib/app-url';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from '@/lib/admin-edit';
 import { logAudit } from '@/lib/audit';

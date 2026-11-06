@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
-import { kirimPushKeUser } from '@/lib/web-push-server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { kirimPushKeUser } from '@/lib/notifikasi/web-push-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

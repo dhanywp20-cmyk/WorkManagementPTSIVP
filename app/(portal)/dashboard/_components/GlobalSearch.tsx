@@ -2,11 +2,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { namaKelompokPTS } from '@/lib/kelompok';
-import { bacaPicPiket } from '@/lib/piket';
+import { namaKelompokPTS } from '@/lib/kelompok/inti';
+import { bacaPicPiket } from '@/lib/piket/inti';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
-import { cariReminderByNama } from '@/lib/cari-reminder';
+import { cariReminderByNama } from '@/lib/jadwal/cari-reminder';
 import { hitungLingkupProject, type LingkupProject } from '@/lib/project-scope';
 import { hasFullAccess } from '@/lib/constants';
 import { Ikon } from '@/components/shared/Ikon';

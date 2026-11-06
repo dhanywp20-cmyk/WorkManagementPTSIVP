@@ -1,4 +1,4 @@
-import { rencanaBlending, type RencanaBlending } from '@/lib/av-layar-proyektor';
+import { rencanaBlending, type RencanaBlending } from '@/lib/av/layar-proyektor';
 import { idBaru } from './katalog';
 import { pasangKeLayar, rasioProyektorDari, resolusiProyektorDari, sinarProyektor } from './proyektor';
 import { ruangDari } from './ruang';

@@ -1,6 +1,6 @@
 import { isPimpinan, muatIdPimpinan } from '../lib/pimpinan';
 import { canAccessAnalytics, canSeeTeamMonitoring, hasMenu } from '../app/(portal)/dashboard/_components/widgets/permissions';
-import { akunAdmin, akunBacaSemua, akunLihatSemua } from '../lib/checklist-server';
+import { akunAdmin, akunBacaSemua, akunLihatSemua } from '../lib/checklist/server';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

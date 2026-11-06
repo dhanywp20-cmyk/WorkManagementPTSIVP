@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
 import { cariSolusiSerupa } from '@/lib/solusi-serupa';
 

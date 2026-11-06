@@ -1,4 +1,4 @@
-import { rekapLCTahunan, type SesiLC, type AttemptLC } from '../lib/kpi-lc-tahunan';
+import { rekapLCTahunan, type SesiLC, type AttemptLC } from '../lib/kuis/kpi-lc-tahunan';
 import { hitungSkorKPI, DEFAULT_KPI_SETTINGS, type KPIMember } from '../app/(portal)/kpi-team/_components/shared';
 
 let lulus = 0, gagal = 0;

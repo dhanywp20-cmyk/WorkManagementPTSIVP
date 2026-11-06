@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/shared';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 import { KalkulatorAV } from './_components/KalkulatorAV';

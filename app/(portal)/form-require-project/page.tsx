@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { LoadingScreen, ViewIconBtn, DeleteIconBtn, ConfirmDialog, type ConfirmState, ModalPortal } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
 import { User, ProjectRequest, RoomDetail, BrandPicMapping, ProjectMessage, ProjectAttachment, statusConfig, getRoomStatus, getRoomAssignName } from './_components/shared';

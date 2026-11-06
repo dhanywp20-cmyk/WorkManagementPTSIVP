@@ -1,4 +1,4 @@
-import { ukuranDariDiagonal } from '@/lib/av-hitung';
+import { ukuranDariDiagonal } from '@/lib/av/hitung';
 import { angkaDari, bacaPoligonShift, type EntriPustaka, teksDari } from '@/lib/pustaka';
 import { PANEL_VW_AWAL } from './produk';
 import { throwRatioDari } from './proyektor';

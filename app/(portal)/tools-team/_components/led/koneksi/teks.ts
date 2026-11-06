@@ -2,7 +2,7 @@ import { esc, type Seksi } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { type DataKoneksi, namaCadangan, namaPort, type PengaturanKoneksi, SUDUT, type Susunan, susunKoneksi } from './data';
 import { svgKoneksi } from './svg';
-import type { SudutMulai } from '@/lib/av-hitung';
+import type { SudutMulai } from '@/lib/av/hitung';
 
 export const teksCadangan = (t: Susunan) => (t.cadangan === 'loop' ? ` · loop cadangan +${t.portCadangan} kabel`
   : t.cadangan === 'controller' ? ` · +${t.controllerCadangan} controller cadangan` : '');

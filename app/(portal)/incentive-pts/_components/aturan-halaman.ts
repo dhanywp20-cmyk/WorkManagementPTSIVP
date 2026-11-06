@@ -1,10 +1,10 @@
 import type { IncentiveProjectRow } from './calc';
 import { persenPicBerlaku, type SkemaInsentif } from './calc';
-import { bisaKonfigPenuh, bisaInputNominal } from '@/lib/incentive-akses';
+import { bisaKonfigPenuh, bisaInputNominal } from '@/lib/incentive/akses';
 
 export interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; incentive_akses?: string | null; allow_incentive_input?: boolean; incentive_brand_scope?: string | null; [k: string]: unknown; }
 
-export { bolehLihatBrand } from '@/lib/incentive-nominal';
+export { bolehLihatBrand } from '@/lib/incentive/nominal';
 
 export function bisaKonfig(u: CurrentUser | null) { return bisaKonfigPenuh(u); }
 export function bisaInput(u: CurrentUser | null) { return bisaInputNominal(u); }

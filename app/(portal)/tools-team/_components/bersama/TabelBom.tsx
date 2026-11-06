@@ -1,6 +1,6 @@
 'use client';
 import type React from 'react';
-import type { BarisBOM } from '@/lib/av-hitung-bom';
+import type { BarisBOM } from '@/lib/av/hitung-bom';
 import { rupiah } from './cetak';
 
 export function TabelBom({ baris, harga, setHarga, ppn, nilai }: {

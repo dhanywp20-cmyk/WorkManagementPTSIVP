@@ -1,8 +1,8 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { type Beban, hitungDaya } from '@/lib/av-hitung';
-import { runtimeUPSMenit } from '@/lib/av-audio-jaringan';
+import { type Beban, hitungDaya } from '@/lib/av/hitung';
+import { runtimeUPSMenit } from '@/lib/av/audio-jaringan';
 import { useMemo, useState } from 'react';
 
 const BEBAN_AWAL: Beban[] = [

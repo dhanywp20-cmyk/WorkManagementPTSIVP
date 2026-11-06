@@ -6,9 +6,9 @@ import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ModalPortal } from '@/components/shared/ModalPortal';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 import { appBaseUrl } from '@/lib/app-url';
-import type { KelasEksternal, Pilihan } from '@/lib/kelas-eksternal';
-import type { AksiLive, Tahap } from '@/lib/kuis-live';
-import type { KeadaanHost } from '@/lib/kuis-live-server';
+import type { KelasEksternal, Pilihan } from '@/lib/kuis/kelas-eksternal';
+import type { AksiLive, Tahap } from '@/lib/kuis/live';
+import type { KeadaanHost } from '@/lib/kuis/live-server';
 import { Z } from '@/lib/z-index';
 import {
   BilahSoal, BilahWaktu, HitungMundur, LatarKuis, LogoEvent, PILIHAN_KUIS, Podium, WARNA_PILIHAN,

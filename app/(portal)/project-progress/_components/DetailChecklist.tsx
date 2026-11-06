@@ -11,7 +11,7 @@ import {
   BATAS, KOLOM_TEMPLATE, formatTanggal, formatWaktu, keadaanJadwal, statDari,
   type ChecklistAnggota, type ChecklistBagian, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
   type DraftChecklist,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
   itemPerBagian, kirimFoto, progresDariStat,

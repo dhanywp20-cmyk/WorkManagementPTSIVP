@@ -1,13 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ambilBearer, bentukSah, buatTokenMentah, hashToken, verifikasiToken } from '../lib/token-integrasi';
-import { jalankanAksi, statusResmi, type KonteksAksi } from '../lib/integrasi-aksi';
+import { ambilBearer, bentukSah, buatTokenMentah, hashToken, verifikasiToken } from '../lib/integrasi/token';
+import { jalankanAksi, statusResmi, type KonteksAksi } from '../lib/integrasi/aksi';
 import type { UserLengkap } from '../lib/ai-server';
 import type { EfekSamping } from '../lib/efek-samping';
 import type { NotifPayload } from '../lib/notifications';
 import type { AuditPayload } from '../lib/audit';
 import { kabarkanTicketSelesai } from '../lib/tiket-selesai';
-import { ubahStatusJadwal, type BarisJadwal } from '../lib/jadwal-status';
-import { buatJadwal, type IsianJadwal } from '../lib/jadwal-buat';
+import { ubahStatusJadwal, type BarisJadwal } from '../lib/jadwal/status';
+import { buatJadwal, type IsianJadwal } from '../lib/jadwal/buat';
 import { buatEfekServer } from '../lib/efek-server';
 
 let lulus = 0, gagal = 0;

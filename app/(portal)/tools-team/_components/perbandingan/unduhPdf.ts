@@ -1,6 +1,6 @@
 'use client';
-import { type KartuBanding, namaBerkasPdf } from '@/lib/perbandingan';
-import { type DokPenuh, gambarPerbandingan } from '@/lib/perbandingan-pdf';
+import { type KartuBanding, namaBerkasPdf } from '@/lib/perbandingan/inti';
+import { type DokPenuh, gambarPerbandingan } from '@/lib/perbandingan/pdf';
 import { unduhUrl } from '@/lib/lembar-cetak';
 
 const HURUF = {

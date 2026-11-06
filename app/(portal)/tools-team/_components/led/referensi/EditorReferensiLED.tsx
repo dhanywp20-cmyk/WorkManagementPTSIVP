@@ -7,7 +7,7 @@ import { useReferensiLED } from './useReferensiLED';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
-import { BRAND_LED, BRAND_UMUM, type BrandLED, brandModul, daftarBrand, type Hardware, type ModulLED } from '@/lib/av-hitung';
+import { BRAND_LED, BRAND_UMUM, type BrandLED, brandModul, daftarBrand, type Hardware, type ModulLED } from '@/lib/av/hitung';
 import { useState } from 'react';
 import type { RefLED } from '@/lib/tools-team';
 

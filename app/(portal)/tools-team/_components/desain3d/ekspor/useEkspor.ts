@@ -4,7 +4,7 @@ import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG
 import { berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { loadXLSX } from '@/lib/xlsx-loader';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { useKamera } from '../mesin/useKamera';

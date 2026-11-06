@@ -3,7 +3,7 @@
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { type NewTicketForm, type ReminderRef } from '../NewTicketModal';
-import { formatTanggal } from '@/lib/checklist';
+import { formatTanggal } from '@/lib/checklist/inti';
 
 export interface KolomInfoTiketProps {
   form: NewTicketForm;

@@ -3,7 +3,7 @@ import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { DEFAULT_KPI_SETTINGS, KPISettings } from '@/app/(portal)/kpi-team/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
-import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
+import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok/inti';
 import { isPimpinan } from '@/lib/pimpinan';
 import { supabase } from '@/lib/supabase';
 import React,{ useCallback,useEffect,useMemo,useRef,useState } from 'react';

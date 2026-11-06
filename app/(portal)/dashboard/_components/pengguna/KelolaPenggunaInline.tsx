@@ -5,7 +5,7 @@ import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { supabase } from '@/lib/supabase';
 import { adminUpdateUser } from '@/lib/admin-users';
 import { User, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES } from '../shared';
-import { useDivisiSales } from '@/lib/merek';
+import { useDivisiSales } from '@/lib/merek/inti';
 import { DivisiSalesInline } from '../divisi-sales';
 import { LingkupManagerInline } from '../lingkup-manager';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';

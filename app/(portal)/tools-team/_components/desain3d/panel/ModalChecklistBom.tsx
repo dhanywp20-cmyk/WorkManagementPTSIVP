@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
-import type { DraftChecklist } from '@/lib/checklist';
+import type { DraftChecklist } from '@/lib/checklist/inti';
 
 interface ProyekPilihan { id: string; nama: string; client: string | null; status: string }
 

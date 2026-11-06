@@ -1,12 +1,12 @@
 import type { AdminField } from '@/lib/admin-edit';
 import { supabase } from '@/lib/supabase';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { sendWA } from '@/lib/wa';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal-aturan';
+import { sendWA } from '@/lib/wa/inti';
+import { adalahKategoriInsentif } from '@/lib/incentive/scheme';
+import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal/aturan';
 export { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId };
 import { PRODUCT_TYPES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, PIE_COLORS, formatDatetime, type Priority, type RepeatType, type TeamUser,
-  type GuestUser } from '@/lib/jadwal-tampilan';
+  type GuestUser } from '@/lib/jadwal/tampilan';
 export { PRODUCT_TYPES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, PIE_COLORS, formatDatetime };
 export type { Priority, RepeatType, TeamUser, GuestUser };
 
@@ -106,7 +106,7 @@ export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
   { value: 'monthly', label: 'Setiap Bulan' },
 ];
 
-export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek/inti';
 
 export interface SupervisorCandidate {
   id: string;

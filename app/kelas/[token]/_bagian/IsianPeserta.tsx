@@ -1,6 +1,6 @@
 'use client';
 
-import { MAKS_INSTANSI, MAKS_KONTAK, type IsianPeserta } from '@/lib/kelas-eksternal';
+import { MAKS_INSTANSI, MAKS_KONTAK, type IsianPeserta } from '@/lib/kuis/kelas-eksternal';
 
 export interface NilaiIsian { instansi: string; kontak: string; izin_kontak: boolean }
 export const ISIAN_KOSONG: NilaiIsian = { instansi: '', kontak: '', izin_kontak: false };

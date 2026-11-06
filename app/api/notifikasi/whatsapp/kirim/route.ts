@@ -1,9 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
-import { kirimWA } from '@/lib/wa-kirim-server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { kirimWA } from '@/lib/wa/kirim-server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { ambilJatahWA } from '@/lib/wa-batas';
+import { ambilJatahWA } from '@/lib/wa/batas';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

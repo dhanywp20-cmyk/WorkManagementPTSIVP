@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Copy, RefreshCw, ExternalLink } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { urlShareChecklist } from '@/lib/checklist';
+import { urlShareChecklist } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 
 export interface TargetShare {

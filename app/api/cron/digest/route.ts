@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWA } from '@/lib/wa';
-import '@/lib/wa-server';
-import { kirimPushKeUser } from '@/lib/web-push-server';
-import { bacaRahasia } from '@/lib/rahasia-server';
+import { sendWA } from '@/lib/wa/inti';
+import '@/lib/wa/server';
+import { kirimPushKeUser } from '@/lib/notifikasi/web-push-server';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { catatCron } from '@/lib/cron-catat';
 import { itemTahapTertahan, type BarisTahap } from '@/lib/eskalasi-tahap';
 import { KUNCI_BRIEFING, rapikanBriefing } from '@/lib/briefing-pagi';
-import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
+import { kirimAlertKesehatan } from '@/lib/kesehatan/server';
 
 export const dynamic = 'force-dynamic';
 

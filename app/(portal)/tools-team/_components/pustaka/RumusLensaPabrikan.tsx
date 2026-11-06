@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Angka, f } from '../bersama/ui';
-import { rumusLensaDariDuaTitik } from '@/lib/av-layar-proyektor';
+import { rumusLensaDariDuaTitik } from '@/lib/av/layar-proyektor';
 
 const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
 

@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 
 import { User, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES } from './shared';
-import { useDivisiSales } from '@/lib/merek';
+import { useDivisiSales } from '@/lib/merek/inti';
 import { ConfirmDialog, type ConfirmState, ModalPortal } from '@/components/shared';
 
 import { maskPhone } from './modal-bersama';

@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase, Question, DialogState } from './shared';
-import { perubahanUrutan, geser } from '@/lib/urutan-soal';
+import { perubahanUrutan, geser } from '@/lib/kuis/urutan-soal';
 
 export interface UrutanSoalKonteks {
   load: () => Promise<void>;

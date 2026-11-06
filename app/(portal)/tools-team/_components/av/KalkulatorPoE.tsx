@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av-audio-jaringan';
+import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av/audio-jaringan';
 import { useState } from 'react';
 import { angkaDari, teksDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../pustaka/PilihPustaka';

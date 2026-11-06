@@ -1,5 +1,5 @@
-import { totalPenawaran } from '../lib/av-hitung-bom';
-import { bomIFP, bomVideowall, dayaVideowall, type MasukanIFP, type MasukanVideowall, saranIFP } from '../lib/av-hitung-display';
+import { totalPenawaran } from '../lib/av/hitung-bom';
+import { bomIFP, bomVideowall, dayaVideowall, type MasukanIFP, type MasukanVideowall, saranIFP } from '../lib/av/hitung-display';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

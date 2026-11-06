@@ -1,4 +1,4 @@
-import { type HasilDayaLED, hitungDayaLED, type SudutMulai } from '@/lib/av-hitung';
+import { type HasilDayaLED, hitungDayaLED, type SudutMulai } from '@/lib/av/hitung';
 
 export interface PengaturanDaya {
   fase: 1 | 3; mcb: number; beban: number;

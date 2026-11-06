@@ -7,7 +7,7 @@ import {
   DAYS_OF_WEEK, DAY_COLOR, DAY_EN, TEAM_LABEL, tulisPicPiket,
   addDays, toKey, getDayDate, isToday, getRollingUserIdForDate,
 } from './shared';
-import { useKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
+import { useKelompokPTS, labelKelompokPTS } from '@/lib/kelompok/inti';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{weekStart:Date;users:UserRow[];currentUser:any;onClose:()=>void;onSaved:()=>void}) {

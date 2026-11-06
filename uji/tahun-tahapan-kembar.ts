@@ -3,7 +3,7 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||= 'dummy';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL ||= 'https://y.supabase.co';
 process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY ||= 'dummy';
 
-import { periksaSkema, SKEMA_BAWAAN, type SkemaInsentif } from '../lib/incentive-scheme';
+import { periksaSkema, SKEMA_BAWAAN, type SkemaInsentif } from '../lib/incentive/scheme';
 
 let lulus = 0, gagal = 0;
 function ok(nama: string, syarat: boolean, ket = '') {

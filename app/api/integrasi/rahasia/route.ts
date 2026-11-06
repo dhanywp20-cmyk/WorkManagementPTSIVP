@@ -1,9 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { KUNCI_RAHASIA, galatBentukRahasia, type KunciRahasia } from '@/lib/rahasia-kunci';
-import { lupakanRahasia } from '@/lib/rahasia-server';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { KUNCI_RAHASIA, galatBentukRahasia, type KunciRahasia } from '@/lib/auth/rahasia-kunci';
+import { lupakanRahasia } from '@/lib/auth/rahasia-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

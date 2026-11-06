@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
-import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal';
+import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kuis/kelas-eksternal';
 
 const LABEL_OTOMATIS: Record<string, string> = { waktu: 'Waktu habis', pelanggaran: 'Batas pelanggaran', diakhiri: 'Diakhiri admin' };
 const SINGKAT: Record<JenisPelanggaran, string> = { pindah_tab: 'Tab', keluar_jendela: 'Jendela', salin_tempel: 'Salin' };

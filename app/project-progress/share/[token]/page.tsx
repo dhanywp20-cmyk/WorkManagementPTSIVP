@@ -1,7 +1,7 @@
 'use client';
 
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
-import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist';
+import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist/inti';
 import { NETRAL } from '@/lib/desain';
 import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';

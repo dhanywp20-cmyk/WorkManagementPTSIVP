@@ -2,7 +2,7 @@ import { BISA_PASANG, DISPLAY, LABEL_PASANG, pasangDari, type Benda } from './ti
 import { isiRakDari } from './rak';
 import { spekVideowall, susunanLED } from './produk';
 import { rekapKabel, type JalurKabel } from './kabel';
-import type { DraftBagian, DraftChecklist } from '@/lib/checklist';
+import type { DraftBagian, DraftChecklist } from '@/lib/checklist/inti';
 
 export type KategoriBom = 'Display' | 'Kamera & konferensi' | 'Audio & kontrol' | 'Rack & jaringan' | 'Aksesori pemasangan'
   | 'Kabel' | 'Furnitur' | 'Interior & pencahayaan' | 'Lainnya';

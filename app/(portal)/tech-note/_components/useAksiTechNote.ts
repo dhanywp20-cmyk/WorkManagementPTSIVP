@@ -5,7 +5,7 @@ import { KATEGORI_FOLDER, linkOneDriveSah } from '@/lib/aturan-tech-note';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
-import { sendWANotif } from '@/lib/wa';
+import { sendWANotif } from '@/lib/wa/inti';
 import { appLink } from '@/lib/app-url';
 import React from 'react';
 import { type ConfirmState } from '@/components/shared';

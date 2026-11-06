@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getSession, setSession } from '@/lib/auth';
+import { getSession, setSession } from '@/lib/auth/sesi';
 import { hasFullAccess, isSalesGuest } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import { User, AdminView, TeamView } from './_components/shared';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser } from '@/lib/server-auth';
-import { aksesSah, bisaKonfigPenuh, tingkatAkses } from '@/lib/incentive-akses';
+import { getSessionUser } from '@/lib/auth/server';
+import { aksesSah, bisaKonfigPenuh, tingkatAkses } from '@/lib/incentive/akses';
 
 export const dynamic = 'force-dynamic';
 

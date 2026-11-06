@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   KOLOM_ITEM, NO_STORE, ambilAkun, aturAnggota, galat, hakAtas, kabariAnggotaBaru, muatChecklist, sentuh,
   simpanPerubahan, tambahIsi, tokenBaru,
-} from '@/lib/checklist-server';
-import { daftarId, tanggal, teks } from '@/lib/checklist-isian';
-import { BATAS, validasiDraft } from '@/lib/checklist';
+} from '@/lib/checklist/server';
+import { daftarId, tanggal, teks } from '@/lib/checklist/isian';
+import { BATAS, validasiDraft } from '@/lib/checklist/inti';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

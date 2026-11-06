@@ -1,6 +1,6 @@
 
 import { NextResponse } from 'next/server';
-import { bacaRahasia } from '@/lib/rahasia-server';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

@@ -158,7 +158,7 @@ export interface ProjectAttachment {
   revision_version?: number;
 }
 
-export { sendWANotif } from '@/lib/wa';
+export { sendWANotif } from '@/lib/wa/inti';
 
 import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
 const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
@@ -223,7 +223,7 @@ export async function fetchWACCTargets(
   return targets;
 }
 
-export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek/inti';
 
 export const BRAND_PIC_DIVISIONS = ['IVP', 'MVI', 'MLDS', 'UMP', 'OSS'];
 

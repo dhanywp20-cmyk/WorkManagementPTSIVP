@@ -1,9 +1,9 @@
 import {
   keadaanJadwal, hitungProgres, progresDari, statDari, bersihkanSebaris,
   bacaTeks, bacaBaris, validasiDraft, validasiNama, kelompokkan, hitungItemDraft, BATAS,
-} from '../lib/checklist';
-import { isianProyek, tanggal, daftarId, statusProyek } from '../lib/checklist-isian';
-import { triggersProjectProgress } from '../lib/project-progress-sync';
+} from '../lib/checklist/inti';
+import { isianProyek, tanggal, daftarId, statusProyek } from '../lib/checklist/isian';
+import { triggersProjectProgress } from '../lib/checklist/sinkron-progress';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

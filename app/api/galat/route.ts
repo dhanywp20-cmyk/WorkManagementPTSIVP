@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser } from '@/lib/server-auth';
-import { BATAS_JENIS_PER_HARI, rapikanLaporan, type LaporanGalat } from '@/lib/galat-klien';
+import { getSessionUser } from '@/lib/auth/server';
+import { BATAS_JENIS_PER_HARI, rapikanLaporan, type LaporanGalat } from '@/lib/galat/klien';
 
 export const dynamic = 'force-dynamic';
 

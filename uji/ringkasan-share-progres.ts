@@ -2,9 +2,9 @@ import { readFileSync } from 'fs';
 import {
   hitungRingkasan, MAKS_HARI_LAJU, lajuDariPeta, ringkasChecklist, ringkasDaftarProyek, ringkasDariLokasi,
 } from '../app/(portal)/project-progress/_components/ringkasan/hitung';
-import { aktivitasProyek, kontribusiHandler, lokasiPerHandler, selesaiPerHari, tanggalWIB } from '../lib/checklist-ringkasan';
-import type { ChecklistItem } from '../lib/checklist';
-import { supportPerDaftar } from '../lib/checklist-server';
+import { aktivitasProyek, kontribusiHandler, lokasiPerHandler, selesaiPerHari, tanggalWIB } from '../lib/checklist/ringkasan';
+import type { ChecklistItem } from '../lib/checklist/inti';
+import { supportPerDaftar } from '../lib/checklist/server';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -88,7 +88,7 @@ cek('View-Only: handler dikirim ke ringkasan', /hitungRingkasan\(data\.proyek, d
 const detail = readFileSync('app/(portal)/project-progress/_components/DetailProyek.tsx', 'utf8');
 cek('detail proyek: bar header hanya bila belum ada checklist', /checklist\.length === 0 && \(\s*<div className="flex items-center gap-3 flex-wrap">\s*<div className="flex-1 min-w-\[220px\]"><BarProgres/.test(detail));
 cek('detail proyek: aktivitas dari server', /data\.aktivitas \?\? null/.test(detail));
-const server = readFileSync('lib/checklist-server.ts', 'utf8');
+const server = readFileSync('lib/checklist/server.ts', 'utf8');
 cek('server: hanya item selesai, kolom kecil, diagregasi', /select\('daftar_id,selesai,selesai_oleh,selesai_pada'\)[\s\S]{0,80}\.eq\('selesai', true\)/.test(server) && /aktivitasProyek\(selesai,/.test(server));
 cek('link tim publik: nama handler tanpa user_id', /user_id: '', nama: x\.nama/.test(server));
 

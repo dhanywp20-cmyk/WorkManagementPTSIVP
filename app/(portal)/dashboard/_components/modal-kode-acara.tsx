@@ -4,7 +4,7 @@ import { appBaseUrl } from '@/lib/app-url';
 import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from '@/lib/supabase';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { logAudit } from '@/lib/audit';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import type { User } from './shared';

@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import {
   acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban, rapikanDataPeserta,
   rapikanIsianPeserta, rapikanKelas, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
-} from '../lib/kelas-eksternal';
+} from '../lib/kuis/kelas-eksternal';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };

@@ -5,7 +5,7 @@ import {
   SkemaInsentif, PorsiPeran, SKEMA_BAWAAN, periksaSkema, simpanSkema, ambilSkema,
   hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
   riwayatSkema, labelSkema, type VersiSkema,
-} from '@/lib/incentive-scheme';
+} from '@/lib/incentive/scheme';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { rp, inputKecil, CONTOH, TotalPersen, Seksi, SeksiDaerahRemote, SeksiAturanPencairan } from './seksi-skema';
 

@@ -1,7 +1,7 @@
 'use client';
 import {
   bacaPdf, bacaTabel, type DokCek, type DokChecklist, gambarChecklist, type ItemBarang, namaBerkasPdf, type PotongPdf,
-} from '@/lib/checklist-barang';
+} from '@/lib/checklist/barang';
 import { loadXLSX } from '@/lib/xlsx-loader';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { pdfjs } from '../perbandingan/bacaPdf';

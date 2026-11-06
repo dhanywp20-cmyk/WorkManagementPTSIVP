@@ -1,10 +1,10 @@
 import { supabase } from '@/lib/supabase';
-import { namaSemuaKelompokTim } from '@/lib/kelompok';
+import { namaSemuaKelompokTim } from '@/lib/kelompok/inti';
 import { hasFullAccess } from '@/lib/constants';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import type { AdminField } from '@/lib/admin-edit';
 
-export { sendWANotif } from '@/lib/wa';
+export { sendWANotif } from '@/lib/wa/inti';
 
 import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
 import type { PenggunaDasar } from '@/lib/tipe-pengguna';

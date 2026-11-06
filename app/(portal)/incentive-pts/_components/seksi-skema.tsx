@@ -1,6 +1,6 @@
 'use client';
 
-import { SkemaInsentif, hitungPembagian, persenInstaller } from '@/lib/incentive-scheme';
+import { SkemaInsentif, hitungPembagian, persenInstaller } from '@/lib/incentive/scheme';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 export const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');

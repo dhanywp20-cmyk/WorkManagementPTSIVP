@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Merek, MEREK_BAWAAN, merek as merekSekarang, muatMerek, simpanMerek,
   unggahBerkasMerek, angkaTembus, gradasiPanelLogin,
-} from '@/lib/merek';
+} from '@/lib/merek/inti';
 
 export function MerekSettingInline() {
   const [form, setForm] = useState<Merek>(MEREK_BAWAAN);

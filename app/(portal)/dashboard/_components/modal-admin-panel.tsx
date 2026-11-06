@@ -7,7 +7,7 @@ import { User, AdminPanelModalProps } from './shared';
 import { KodeAcaraInline } from './modal-kode-acara';
 import { DaftarPilihanInline } from './modal-daftar-pilihan';
 import { ModalPortal } from '@/components/shared';
-import { muatKelompok, namaKelompokPTS, cariKelompok } from '@/lib/kelompok';
+import { muatKelompok, namaKelompokPTS, cariKelompok } from '@/lib/kelompok/inti';
 
 import { StripInfo } from './modal-bersama';
 import { AccountSettingsInline } from './modal-akun';

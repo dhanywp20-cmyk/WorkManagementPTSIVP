@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import {
   Toast, PageHeader, StatCardGrid, EmptyState, ListEmptyState, ErrorState, ViewIconBtn, LoadingScreen,

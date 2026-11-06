@@ -1,4 +1,4 @@
-import { amplifierLine, danteMbps, dayaUntukSPL, hitungPoE, hitungRak, impedansiSpeaker, rt60Sabine, rugiKabel, runtimeUPSMenit, saranKabel, saranLink, serapanTambahanM2 } from '../lib/av-audio-jaringan';
+import { amplifierLine, danteMbps, dayaUntukSPL, hitungPoE, hitungRak, impedansiSpeaker, rt60Sabine, rugiKabel, runtimeUPSMenit, saranKabel, saranLink, serapanTambahanM2 } from '../lib/av/audio-jaringan';
 
 let lulus = 0, gagal = 0;
 const dekat = (a: number, b: number, t = 0.01) => Math.abs(a - b) <= t;

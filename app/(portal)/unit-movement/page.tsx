@@ -5,9 +5,9 @@ import { useState, useEffect, useMemo, Suspense, type CSSProperties } from 'reac
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
+import { namaKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
 import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal , Paginasi, usePaginasi } from '@/components/shared';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { User, MovementLog, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';

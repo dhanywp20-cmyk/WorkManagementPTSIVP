@@ -3,7 +3,7 @@
 import { Ikon } from '@/components/shared/Ikon';
 import { avc, ini, type FlatRow } from './bantu-halaman';
 import { Username } from '@/components/shared';
-import { formatDate } from '@/lib/jadwal-aturan';
+import { formatDate } from '@/lib/jadwal/aturan';
 import { type DailyReport } from './shared';
 
 export interface DetailLaporanProps {

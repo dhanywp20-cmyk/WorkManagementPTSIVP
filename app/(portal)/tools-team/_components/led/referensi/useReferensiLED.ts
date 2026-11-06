@@ -1,4 +1,4 @@
-import { BRAND_LED, MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR } from '@/lib/av-hitung';
+import { BRAND_LED, MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR } from '@/lib/av/hitung';
 import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { useEffect, useState } from 'react';
 

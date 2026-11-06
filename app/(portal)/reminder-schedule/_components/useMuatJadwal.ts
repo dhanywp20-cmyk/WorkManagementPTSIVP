@@ -2,7 +2,7 @@
 
 import { Reminder, TeamUser } from './shared';
 import { ambilReminderUntuk } from './data-reminder';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 
 export interface MuatJadwalKonteks {
   currentUser: TeamUser | null;
