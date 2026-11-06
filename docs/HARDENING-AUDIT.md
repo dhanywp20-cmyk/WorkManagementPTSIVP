@@ -116,6 +116,14 @@ tutup_jadwal_ticket). **Mencabut EXECUTE dari `anon` akan merusak aplikasi**, ka
 Pengamannya ada di dalam fungsi: masing-masing memeriksa `jwt_claim('sub')` / hak pengguna (mis.
 `tutup_jadwal_ticket` & `rekap_lc_tahunan` -> 'Harus login' + cek hak). Peringatan ini diterima.
 
+## Verifikasi 2026-11-06
+
+- **RLS live:** 93 dari 93 tabel `public` di produksi RLS-nya menyala (`pg_tables.rowsecurity`), tidak ada yang mati.
+- **P6 `reminders.select('*')`:** diukur — seluruh tabel 306 baris / 142 kB (rata-rata 475 byte/baris), kolom terlebar
+  hanya `completion_photo_url` (~150 byte). Penghematan dari memangkas kolom kecil dibanding risiko mematahkan pemakai
+  kolom; ditutup tanpa perubahan.
+- **Open question share publik:** masih menunggu keputusan Dhany (lihat di atas).
+
 ## Lanjutkan dari sini
 
 Belum diperiksa malam ini (urutan berikutnya yang disarankan):

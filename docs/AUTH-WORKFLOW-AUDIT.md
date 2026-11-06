@@ -39,6 +39,25 @@ bukan cuma ditulis:
 **Belum dikerjakan** (P1-1, P1-2, P1-7 s.d. P1-12, seluruh P2/P3) — tetap
 seperti tercatat di bawah, menunggu instruksi lanjutan.
 
+## STATUS UPDATE (2026-11-06) — sisa temuan diverifikasi ulang ke database live
+
+Diperiksa langsung ke `pg_policies`/`pg_constraint`/trigger produksi (baca-saja) dan ke kode terbaru:
+
+| Temuan | Status | Bukti |
+|---|---|---|
+| P1-1 `supabaseServices` tanpa identitas | Tidak relevan saat ini | Basis Services (`eufvtrxfdbpbjimmtvqi`) sudah tidak ada; klien kini punya pemutus (PR porting #157) |
+| P1-2 `reminders.status` tanpa CHECK | **Ditutup 2026-11-06** | Migrasi `067_reminders_status_check` (`pending/done/cancelled`); diuji dulu di transaksi yang dibatalkan, 306 baris lama sesuai |
+| P1-7 / P2-1 transisi status Require Project & Ticket | Dibiarkan (keputusan desain) | Alur mundur status dipakai tim (reopen); validasi urutan di DB berisiko mematahkan alur harian |
+| P1-8 `dr_tambah` atas nama orang lain | **Tertutup** | `dr_tambah`: `user_id = jwt sub OR lingkup_semua()` |
+| P1-9 roster `piket_schedules` | Sesuai desain | `ps_tambah/ps_ubah`: `lingkup_semua()`; `ps_hapus`: admin/Full Access saja. Tim perlu INSERT untuk mengisi PIC hari "virtual" |
+| P1-10 hapus data tamu piket | **Tertutup** | `ptd_hapus` mensyaratkan `piket_boleh_ubah()` + lingkup |
+| P1-11 Telegram aksi kirim default | **Tertutup** | Jalur kirim memanggil `pastikanMasuk`; `cek`/`chat` memanggil `pastikanAdmin` |
+| P1-12 `nt_own WITH CHECK(true)` | **Tertutup** | `nt_insert` wajib login & `action_url` hanya tautan internal (migrasi 063); baca/ubah/hapus hanya pemilik atau admin |
+| P2-3 Mark Paid tanpa cek baris | **Tertutup** | `.eq('status','processed').select('id')` + cek `terubah.length` |
+| P2-7 `product_team_map` | **Tertutup** | Tulis hanya `admin/superadmin` |
+| P2-10 cron escalate memakai anon | **Tertutup** | Memakai `SUPABASE_SERVICE_ROLE_KEY`; `db-token-check` melaporkan bila kunci tak terpasang |
+| P3-3 `db-token-check` membuka klaim | **Tertutup** | Wajib sesi + role admin |
+
 ---
 
 Metodologi: dibaca middleware, `lib/auth/sesi.ts`, `lib/auth/server.ts`, `lib/auth/db-token.ts`,
