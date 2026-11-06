@@ -1,19 +1,22 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
-import { analisisDari, ukuranGambarDisplay, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
+import { analisisDari, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, golonganDipakai, jalurKabel, type OpsiKelas, type Titik, type Ruang, ruangDari, tinggiAlasDi, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth/sesi';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av/hitung';
 import { isPimpinan } from '@/lib/pimpinan';
-import type * as T from 'three';
-import type { Mesin, Sudut } from './mesin/tipe';
+import type { Sudut } from './mesin/tipe';
 import { batasDunia } from './mesin/kamera';
-import { lupakanPilihanKartu } from './mesin/ukurBlending';
-import { bacaIngatanAwal, isiDariIngatan, KATEGORI_AWAL } from './simpan/templateAwal';
+import { bacaIngatanAwal, isiDariIngatan } from './simpan/templateAwal';
+import { usePilihanBenda } from './usePilihanBenda';
+import { usePreferensiKanvas } from './usePreferensiKanvas';
+import { useStatusDesain } from './useStatusDesain';
+import { useRefMesin } from './useRefMesin';
+import { useAnalisisDisplay } from './useAnalisisDisplay';
 
-export const KUNCI_SIMPAN = 'wm_desain3d';
+export { KUNCI_SIMPAN } from './useStatusDesain';
 
 export interface DesainTim {
   id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
@@ -37,21 +40,8 @@ export function useKeadaanDesain() {
   const isiAwal = isiDariIngatan(ingatanAwal);
   const [ruang, setRuang] = useState<Ruang>(() => (isiAwal ? { ...RUANG_AWAL, ...isiAwal.ruang } : RUANG_AWAL));
   const [benda, setBenda] = useState<Benda[]>(() => (isiAwal ? isiAwal.benda : contohAwal(RUANG_AWAL)));
-  const [pilih, setPilih] = useState<string | null>(null);
-  const [pilihLain, setPilihLain] = useState<string[]>([]);
-  const [modeBanyak, setModeBanyak] = useState(false);
+  const { pilih, setPilih, pilihLain, setPilihLain, modeBanyak, setModeBanyak, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, setPilihan } = usePilihanBenda();
   const [layarPenuh, setLayarPenuh] = useState(false);
-  const pilihRef = useRef(pilih), pilihLainRef = useRef(pilihLain), modeBanyakRef = useRef(modeBanyak);
-  useEffect(() => { pilihRef.current = pilih; pilihLainRef.current = pilihLain; modeBanyakRef.current = modeBanyak; }, [pilih, pilihLain, modeBanyak]);
-  const dariToggle = useRef(false);
-  const setPilihan = (utama: string | null, lain: string[]) => {
-    if (utama !== pilihRef.current) dariToggle.current = true;
-    setPilih(utama); setPilihLain(lain);
-  };
-  useEffect(() => {
-    if (dariToggle.current) { dariToggle.current = false; return; }
-    setPilihLain(l => (l.length ? [] : l));
-  }, [pilih]);
   const [panel, setPanel] = useState(false);
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
   const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | null>(null);
@@ -63,26 +53,13 @@ export function useKeadaanDesain() {
   const [ukur, setUkur] = useState(true);
   const [garisUkur, setGarisUkur] = useState(true);
   const [labelProduk, setLabelProduk] = useState(() => typeof window === 'undefined' || window.innerWidth >= 640);
-  const [chipBuka, setChipBukaMentah] = useState(() => { try { const s = localStorage.getItem('wm_desain3d_chip'); return s === null ? window.innerWidth >= 640 : s === '1'; } catch { return false; } });
-  const setChipBuka = (f: (v: boolean) => boolean) => setChipBukaMentah(v => { const x = f(v); try { localStorage.setItem('wm_desain3d_chip', x ? '1' : '0'); } catch {  } return x; });
-  const [sembunyiTeks, setSembunyiTeksMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_sembunyi_teks') === '1'; } catch { return false; } });
-  const setSembunyiTeks = (v: boolean) => { setSembunyiTeksMentah(v); try { localStorage.setItem('wm_desain3d_sembunyi_teks', v ? '1' : '0'); } catch {  } };
-  const [sinarNyata, setSinarNyataMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_sinar_nyata') !== '0'; } catch { return true; } });
-  const setSinarNyata = (v: boolean) => { setSinarNyataMentah(v); try { localStorage.setItem('wm_desain3d_sinar_nyata', v ? '1' : '0'); } catch {  } };
-  const [jarakDinding, setJarakDindingMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_jarak_dinding') === '1'; } catch { return false; } });
-  const setJarakDinding = (v: boolean) => { setJarakDindingMentah(v); try { localStorage.setItem('wm_desain3d_jarak_dinding', v ? '1' : '0'); } catch {  } };
+  const { chipBuka, setChipBuka, sembunyiTeks, setSembunyiTeks, sinarNyata, setSinarNyata, jarakDinding, setJarakDinding, detailBlending,
+    setDetailBlending, teksSinar, setTeksSinar, snap, setSnap, daftarKanvas, setDaftarKanvas } = usePreferensiKanvas();
   const [targetKontras, setTargetKontras] = useState(15);
   const [kerucut, setKerucut] = useState(true);
   const [sinar, setSinar] = useState(true);
   const [tampilBlending, setTampilBlending] = useState(true);
-  const [detailBlending, setDetailBlendingMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_detail_blending') === '1'; } catch { return false; } });
-  const setDetailBlending = (v: boolean) => {
-    lupakanPilihanKartu(); setDetailBlendingMentah(v);
-    try { localStorage.setItem('wm_desain3d_detail_blending', v ? '1' : '0'); } catch {  }
-  };
   const [gridSinar, setGridSinar] = useState(false);
-  const [teksSinar, setTeksSinarMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_teks_sinar') !== '0'; } catch { return true; } });
-  const setTeksSinar = (v: boolean) => { setTeksSinarMentah(v); try { localStorage.setItem('wm_desain3d_teks_sinar', v ? '1' : '0'); } catch {  } };
   const [infoBlending, setInfoBlending] = useState<Blending[]>([]);
   const [ukuranCahaya, setUkuranCahaya] = useState<Record<string, CahayaDiPermukaan>>({});
   const [modeSeret, setModeSeret] = useState<'putar' | 'geser'>('putar');
@@ -113,31 +90,13 @@ export function useKeadaanDesain() {
   const [bukaKelas, setBukaKelas] = useState(false);
   const [opsiKelas, setOpsiKelas] = useState<OpsiKelas>({});
   const faktorPandang = jenisPandang === 'custom' ? faktorCustom : FAKTOR_PANDANG[jenisPandang];
-  const [namaDesain, setNamaDesain] = useState(() => (isiAwal ? `${isiAwal.nama} (salinan)` : 'Ruang Meeting'));
-  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal' | 'template'; nama?: string }>(() => (isiAwal
-    ? { jenis: 'template', nama: `${KATEGORI_RUANG.find(k => k.id === KATEGORI_AWAL)?.judul ?? isiAwal.nama} · default Admin` }
-    : { jenis: 'baru' }));
-  const [dasar, setDasar] = useState<string | null>(null);
-  const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
-  const [daftarTim, setDaftarTim] = useState<DesainTim[] | null>(null);
-  const [desainAktif, setDesainAktif] = useState<{ id: string; bolehUbah: boolean; versi: number } | null>(null);
-  const [lihatVersi, setLihatVersi] = useState<{ versi: number; terbaru: number } | null>(null);
-  const [statusSimpan, setStatusSimpan] = useState<{ teks: string; nada: 'ok' | 'galat' | 'info' } | null>(null);
-  const [sibukSimpan, setSibukSimpan] = useState(false);
+  const { namaDesain, setNamaDesain, asal, setAsal, dasar, setDasar, tersimpan, setTersimpan, daftarTim, setDaftarTim, desainAktif, setDesainAktif,
+    lihatVersi, setLihatVersi, statusSimpan, setStatusSimpan, sibukSimpan, setSibukSimpan } = useStatusDesain(isiAwal);
   const [siap, setSiap] = useState(false);
   const [galat, setGalat] = useState('');
-  const wadahRef = useRef<HTMLDivElement>(null);
-  const mesin = useRef<Mesin | null>(null);
-  const pasSetelahTemplate = useRef<boolean | 'langsung'>(false);
-  const teksturBayang = useRef<{ bayang: T.Texture; cahaya: T.Texture } | null>(null);
-  const gambarLayar = useRef(new Map<string, T.Texture>());
-  const sumberTekstur = useRef(new Map<string, string>());
-  const gambarTekstur = useRef(new Map<string, HTMLImageElement>());
+  const { wadahRef, mesin, pasSetelahTemplate, teksturBayang, gambarLayar, sumberTekstur, gambarTekstur, modelImpor, inputGambar, inputModel,
+    inputLaptop } = useRefMesin();
   const [versiTekstur, setVersiTekstur] = useState(0);
-  const [snap, setSnapMentah] = useState<Snap>(() => { try { return snapSah(JSON.parse(localStorage.getItem('wm_desain3d_snap') ?? 'null')); } catch { return snapSah(null); } });
-  const setSnap = (s: Snap) => { setSnapMentah(s); try { localStorage.setItem('wm_desain3d_snap', JSON.stringify(s)); } catch {  } };
-  const [daftarKanvas, setDaftarKanvasMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_daftar') === '1'; } catch { return false; } });
-  const setDaftarKanvas = (v: boolean) => { setDaftarKanvasMentah(v); try { localStorage.setItem('wm_desain3d_daftar', v ? '1' : '0'); } catch {  } };
   const [alatKanvas, setAlatKanvas] = useState<'pilih' | 'ukur'>('pilih');
   const [titikUkur, setTitikUkur] = useState<Titik | null>(null);
   const klikUkurRef = useRef<((p: Titik) => void) | null>(null);
@@ -145,11 +104,7 @@ export function useKeadaanDesain() {
   const sumbuGeserRef = useRef<'x' | 'z'>('x');
   const [sembunyiGolongan, setSembunyiGolongan] = useState<string[]>([]);
   const sembunyiRef = useRef(sembunyiGolongan); sembunyiRef.current = sembunyiGolongan;
-  const modelImpor = useRef(new Map<string, T.Object3D>());
   const [versiGambar, setVersiGambar] = useState(0);
-  const inputGambar = useRef<HTMLInputElement>(null);
-  const inputModel = useRef<HTMLInputElement>(null);
-  const inputLaptop = useRef<HTMLInputElement>(null);
   const [menuPusat, setMenuPusat] = useState(false);
   const bendaRef = useRef(benda); bendaRef.current = benda;
   const ruangRef = useRef(ruang); ruangRef.current = ruang;
@@ -175,35 +130,12 @@ export function useKeadaanDesain() {
   const plafonDi = (x: number) => kotakRuang[ruangDari(ruang, x)]?.t ?? ruang.t;
 
   useEffect(() => {
-    try { const s = localStorage.getItem(KUNCI_SIMPAN); if (s) setTersimpan(JSON.parse(s)); } catch {  }
-  }, []);
-  useEffect(() => {
     if (!pesan) return;
     const t = setTimeout(() => setPesan(''), 4000);
     return () => clearTimeout(t);
   }, [pesan]);
 
-  const analisis = useMemo(() => {
-    const penonton = titikPenonton(benda);
-    return benda.filter(b => DISPLAY.includes(b.jenis)).map(d => {
-      const ri = ruangDari(ruang, d.x);
-      const r = (d.rot * Math.PI) / 180;
-      const hadap = { x: Math.sin(r), z: Math.cos(r) };
-      const data = penonton.filter(p => ruangDari(ruang, p.x) === ri).map(p => {
-        const dx = p.x - d.x, dz = p.z - d.z;
-        const jarak = Math.hypot(dx, dz);
-        const sudut = jarak > 0 ? (Math.acos(Math.max(-1, Math.min(1, (dx * hadap.x + dz * hadap.z) / jarak))) * 180) / Math.PI : 0;
-        return { ...p, jarak, sudut };
-      });
-      const terjauhP = data.reduce<typeof data[number] | null>((m, x) => (!m || x.jarak > m.jarak ? x : m), null);
-      const terjauh = terjauhP?.jarak ?? 0;
-      const terdekat = data.reduce((m, x) => Math.min(m, x.jarak), Infinity);
-      const sudutMaks = data.reduce((m, x) => Math.max(m, x.sudut), 0);
-      const tinggiPerlu = terjauh / faktorPandang;
-      const gambar = ukuranGambarDisplay(d);
-      return { d, ri, gambar, jumlah: data.length, terjauh, terjauhP, terdekat, sudutMaks, tinggiPerlu, cukup: gambar.h >= tinggiPerlu };
-    });
-  }, [benda, faktorPandang, ruang]);
+  const analisis = useAnalisisDisplay({ benda, ruang, faktorPandang });
   const terpilih = benda.find(b => b.id === pilih) ?? null;
   const gantiBenda = (baru: Benda) => setBenda(bs => bs.map(b => (b.id === baru.id ? baru : b)));
   const duaRuang = kotakRuang.length > 1;

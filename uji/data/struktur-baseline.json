@@ -581,7 +581,7 @@
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts": {
-      "baris": 214,
+      "baris": 146,
       "barisPanjang": 1,
       "propsMaks": 0
     },
@@ -606,7 +606,7 @@
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/led/useKeadaanLED.ts": {
-      "baris": 163,
+      "baris": 52,
       "barisPanjang": 1,
       "propsMaks": 0
     },
