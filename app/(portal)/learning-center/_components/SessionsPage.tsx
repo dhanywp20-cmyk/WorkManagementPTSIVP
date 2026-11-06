@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
+import { supabase, User, Material, Question, QuizSession, SearchInput, AppDialog, DialogState } from './shared';
 import { logAudit } from '@/lib/audit';
-import { ModalPortal } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { ModalAlihkanSesi } from './sesi/ModalAlihkanSesi';
 import { DaftarSesi } from './sesi/DaftarSesi';
 import { FormSesi } from './sesi/FormSesi';

@@ -1,12 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import {
-  Reminder, TeamUser, GuestUser, Priority, Status, RepeatType,
-  CATEGORIES, CATEGORY_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG,
-  REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
-  PRODUCT_TYPES,
-} from './shared';
+import { Reminder, TeamUser, GuestUser, Priority, Status, RepeatType, CATEGORIES, CATEGORY_CONFIG, PRIORITY_CONFIG, STATUS_CONFIG, REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, PRODUCT_TYPES } from './shared';
 import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { useKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
