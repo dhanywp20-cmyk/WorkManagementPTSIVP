@@ -17,15 +17,15 @@ export function jendelaSupportTahap(
   };
 }
 
-function samakanNamaProyek(v: string): string {
+export function samakanNamaProyek(v: string): string {
   return v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-function tanggalSaja(v: string | null | undefined): string {
+export function tanggalSaja(v: string | null | undefined): string {
   return (v ?? '').slice(0, 10);
 }
 
-function didalamRentang(tgl: string, rentang?: { dari?: string | null; sampai?: string | null }): boolean {
+export function didalamRentang(tgl: string, rentang?: { dari?: string | null; sampai?: string | null }): boolean {
   if (!rentang?.dari && !rentang?.sampai) return true;
   if (!tgl) return false;
   if (rentang?.dari   && !(tgl > rentang.dari))   return false;
@@ -45,6 +45,7 @@ export interface SumberSupport {
   tickets: {
     id: string; project_name: string | null; reminder_id: string | null;
     date: string | null; assign_name: string | null; activity_logs: BarisAktivitas[] | null;
+    created_at?: string | null;
   }[];
   petaNama: Map<string, string>;
 }
@@ -58,7 +59,7 @@ export async function ambilSumberSupport(): Promise<{ data: SumberSupport; error
 
   const qt = supabase
     .from('tickets')
-    .select('id, project_name, reminder_id, status, date, assign_name, activity_logs(handler_username, handler_name, new_status, created_at)')
+    .select('id, project_name, reminder_id, status, date, created_at, assign_name, activity_logs(handler_username, handler_name, new_status, created_at)')
     .eq('status', 'Solved');
 
   const qu = supabase.from('users').select('username, full_name');
@@ -81,10 +82,30 @@ export async function ambilSumberSupport(): Promise<{ data: SumberSupport; error
   };
 }
 
+function jejakSolved(t: SumberSupport['tickets'][number]): BarisAktivitas[] {
+  return (t.activity_logs ?? []).filter(a => (a.new_status ?? '').toLowerCase() === 'solved');
+}
+
+export function tglSelesaiTiket(t: SumberSupport['tickets'][number]): string {
+  const jejak = jejakSolved(t);
+  return jejak.length
+    ? jejak.map(a => tanggalSaja(a.created_at)).sort().at(-1) ?? ''
+    : tanggalSaja(t.date);
+}
+
+export function waktuTercatatTiket(t: SumberSupport['tickets'][number]): number {
+  const keUtc = (v: string) => (/T.*(Z|[+-]\d\d:?\d\d)$/.test(v) || !v.includes('T') ? v : `${v}Z`);
+  const waktu = [...jejakSolved(t).map(a => a.created_at), t.created_at, t.date]
+    .map(v => (v ? Date.parse(keUtc(v)) : NaN))
+    .filter(n => !Number.isNaN(n));
+  return waktu.length ? Math.max(...waktu) : NaN;
+}
+
 export function supportUntukProyek(
   sumber: SumberSupport,
   proyek: { id?: string | null; project_name: string },
   rentang?: { dari?: string | null; sampai?: string | null },
+  lampiran?: ReadonlySet<string>,
 ): { user_id: string; user_name: string }[] {
   const dicari = samakanNamaProyek(proyek?.project_name ?? '');
   if (!dicari) return [];
@@ -112,13 +133,7 @@ export function supportUntukProyek(
       || samakanNamaProyek(t.project_name ?? '') === dicari;
     if (!cocok) continue;
 
-    const catatan = t.activity_logs ?? [];
-    const jejakSolved = catatan.filter(a => (a.new_status ?? '').toLowerCase() === 'solved');
-
-    const tglSelesai = jejakSolved.length
-      ? jejakSolved.map(a => tanggalSaja(a.created_at)).sort().at(-1) ?? ''
-      : tanggalSaja(t.date);
-    if (!didalamRentang(tglSelesai, rentang)) continue;
+    if (!lampiran?.has(t.id) && !didalamRentang(tglSelesaiTiket(t), rentang)) continue;
 
     tambah(usernameDariNama(t.assign_name), t.assign_name);
   }
@@ -129,9 +144,10 @@ export function supportUntukProyek(
 export async function fetchSupportFromTickets(
   proyek: { id?: string | null; project_name: string },
   rentang?: { dari?: string | null; sampai?: string | null },
+  lampiran?: ReadonlySet<string>,
 ): Promise<{ data: { user_id: string; user_name: string }[]; error: unknown }> {
   const { data: sumber, error } = await ambilSumberSupport();
-  return { data: supportUntukProyek(sumber, proyek, rentang), error };
+  return { data: supportUntukProyek(sumber, proyek, rentang, lampiran), error };
 }
 
 export async function fetchLateTickets(parentProjectId?: string) {
@@ -139,4 +155,22 @@ export async function fetchLateTickets(parentProjectId?: string) {
   if (parentProjectId) q = q.eq('parent_project_id', parentProjectId);
   const { data, error } = await q;
   return { data: (data || []) as LateTicketLink[], error };
+}
+
+export async function idTiketLampiranTahap(projectId: string, nomorTahap: number): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('late_ticket_links')
+    .select('late_ticket_id')
+    .eq('parent_project_id', projectId)
+    .eq('attached_tranche_number', nomorTahap)
+    .eq('is_sunset', false);
+  return new Set(((data ?? []) as { late_ticket_id: string | null }[]).map(b => b.late_ticket_id ?? '').filter(Boolean));
+}
+
+export async function lampirkanTiketTelat(baris: Omit<LateTicketLink, 'id' | 'attached_at'>) {
+  return supabase.from('late_ticket_links').insert(baris);
+}
+
+export async function lepasTiketTelat(id: string) {
+  return supabase.from('late_ticket_links').delete().eq('id', id);
 }

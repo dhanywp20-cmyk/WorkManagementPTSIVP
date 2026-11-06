@@ -1,12 +1,13 @@
 'use client';
 
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { formatRupiah } from './calc';
 import { FilterProyekInsentif } from './FilterProyekInsentif';
 import { DaftarProyekInsentifHP } from './DaftarProyekInsentifHP';
 import { TabelProyekInsentif } from './TabelProyekInsentif';
 import { TabJadwalTranche } from './TabJadwalTranche';
-import { bisaKonfig, bisaInput } from './aturan-halaman';
+import { TabLateTicket } from './TabLateTicket';
+import { bisaKonfig } from './aturan-halaman';
 import { SchemeTab } from './SchemeTab';
 import { TabPengaturanAkses } from './TabPengaturanAkses';
 import { useKonteksInsentif } from './konteks-insentif';
@@ -16,7 +17,6 @@ export function IsiInsentif() {
   const { currentUser, loading, notify, tab } = k.sesi;
   const { exportingSaya, handleExportInsentifSaya, myPaidInsentif, myPendingInsentif, myProjectCount, mySplitsInYear, myTotalInsentif } = k.saya;
   const { filterBastYear } = k.proyek;
-  const { lateTickets } = k.tahapan;
   return (
     <>
       <div className="flex-1 overflow-y-auto p-4">
@@ -76,38 +76,7 @@ export function IsiInsentif() {
 
         <TabJadwalTranche />
 
-        {tab === 'late' && bisaInput(currentUser) && !loading && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
-              <h2 className="font-bold text-gray-800"><IkonTeks nama="🕐" />Late Ticket Queue</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
-            </div>
-            {lateTickets.length === 0
-              ? (
-                <div className="px-5 py-10 text-center">
-                  <p className="text-2xl mb-2"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
-                  <p className="text-sm text-gray-500 italic">Belum ada late ticket yang dilampirkan.</p>
-                </div>
-              )
-              : (
-                <div className="divide-y divide-gray-100">
-                  {lateTickets.map(lt => (
-                    <div key={lt.id} className="px-5 py-3 flex items-center justify-between hover:bg-amber-50/40 transition-colors">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">Tranche {lt.attached_tranche_number}</p>
-                        <p className="text-xs text-gray-500">{new Date(lt.attached_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{lt.note ? ` · ${lt.note}` : ''}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value || 0)}</span>
-                        {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            }
-          </div>
-        )}
+        <TabLateTicket />
 
         {tab === 'skema' && bisaKonfig(currentUser) && (
           <SchemeTab

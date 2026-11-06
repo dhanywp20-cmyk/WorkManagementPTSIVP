@@ -46,10 +46,12 @@ export interface NilaiKonteksInsentif {
     togglePilih: (id: string) => void;
   };
   tahapan: {
+    allSplits: IncentiveSplit[];
     filteredTranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
     konfirmasiMarkPaid: (trancheId: string, projectName: string, trancheNumber: number) => void;
     lateTickets: LateTicketLink[];
     markingPaid: string | null;
+    muatUlangLampiran: () => Promise<void>;
     setBatalBatch: import("react").Dispatch<import("react").SetStateAction<number | null>>;
     setBatchConfirm: import("react").Dispatch<import("react").SetStateAction<boolean>>;
     setBatchYear: import("react").Dispatch<import("react").SetStateAction<number>>;

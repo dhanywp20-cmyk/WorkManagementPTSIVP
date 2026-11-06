@@ -11,3 +11,4 @@ export * from './calc-support';
 export * from './calc-batch';
 export * from './calc-pembatalan';
 export * from './calc-format';
+export * from './calc-telat';
