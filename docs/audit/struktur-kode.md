@@ -100,7 +100,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 | 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing**, **Incentive** & **Daily Report selesai** (§5) |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
 | 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
-| 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
+| 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | **selesai** (§7) |
 | 6 | `lib/` dikelompokkan ke subfolder per domain (`lib/incentive/`, `lib/av/`, `lib/wa/`, …) dengan ekspor ulang supaya impor lama tetap jalan | rendah | — |
 
 Urutan Fase 2 dipilih dari ukuran props drilling (§S1) dan seberapa sering modulnya diubah.
@@ -273,3 +273,20 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 - `analytics-dashboard/_components/AnalyticsPlatform.tsx` (606 → 530 baris): `Panel`, `Empty`, `Row`, `ACTION_STYLE`,
   `MODULE_ICON` pindah ke `panel-analitik.tsx`.
 - Setelah langkah ini tidak ada lagi berkas `.ts`/`.tsx` di atas 600 baris.
+
+## 8. Batas antar modul (aturan 4)
+
+- Impor `_components` milik modul lain turun dari 51 ke 20. Yang dipakai bersama naik ke `lib/` atau
+  `components/shared/`; berkas lama hanya mengekspor ulang, jadi impor di dalam modulnya tidak berubah:
+  - `picket-showroom/_components/shared.ts` → `lib/piket.ts` (jadwal & PIC piket, dipakai Dashboard, KPI, pencarian)
+  - `learning-center/_components/sertifikat.ts` → `lib/sertifikat-cetak.ts` (dipakai halaman Kelas)
+  - tipe `User` Dashboard → `PenggunaPortal` di `lib/tipe-pengguna.ts` (dipakai Tech Note, KPI, Summary, Progress, Analytics)
+  - `TeamUser`, `GuestUser`, `CATEGORY_CONFIG`, `DAILY_REPORT_CATEGORIES`, `PRODUCT_TYPES`, `PIE_COLORS`,
+    `formatDatetime`, `Priority`, `RepeatType` → `lib/jadwal-tampilan.ts` (dipakai Daily Report & Dashboard)
+  - `UBIN`, `BAYANG_UBIN`, `AKSEN_UTAMA`, `LABEL_UBIN`, `RelAksen` → `components/shared/ubin.tsx` (dipakai KPI)
+- Sisa yang memang komposisi fitur, dicatat di `uji/batas-modul.mjs` (daftar `BOLEH`):
+  - `_kerangka` → `dashboard` (kerangka portal memakai pencarian, nav bawah, modal akun)
+  - `checklist` → `project-progress` (halaman bagikan checklist memakai tampilan Project Progress)
+  - `dashboard` ↔ `analytics-dashboard` → `kpi-team` (widget Analytics & KPI tertanam)
+- `uji/batas-modul.mjs` menggagalkan uji bila ada impor lintas modul baru di luar daftar itu.
+

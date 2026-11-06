@@ -1,5 +1,5 @@
 'use client';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { DEFAULT_KPI_SETTINGS, KPISettings } from '@/app/(portal)/kpi-team/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';

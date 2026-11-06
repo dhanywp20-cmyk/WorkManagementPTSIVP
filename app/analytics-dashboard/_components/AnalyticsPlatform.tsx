@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
-import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as DashUser } from '@/lib/tipe-pengguna';
 import { FooterPlatform, StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';

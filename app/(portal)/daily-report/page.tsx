@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { clearSession, getSession } from '@/lib/auth';
 
-import { CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/lib/jadwal-tampilan';
 
 import { todayISO, type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry, type DailyReport, hapusAktivitasManual } from './_components/shared';
 

@@ -9,7 +9,7 @@ import { sendWANotif } from '@/lib/wa';
 import { appLink } from '@/lib/app-url';
 import React from 'react';
 import { type ConfirmState } from '@/components/shared';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 
 export interface AksiTechNoteKonteks {
   approvalForm: { action: string; note: string; };

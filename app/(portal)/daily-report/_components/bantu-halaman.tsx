@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/lib/jadwal-tampilan';
 import { type ManualActivity, type TeamEntry } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';

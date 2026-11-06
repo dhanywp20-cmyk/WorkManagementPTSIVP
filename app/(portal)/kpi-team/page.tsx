@@ -12,7 +12,7 @@ import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
-import { bacaPicPiket } from '@/app/(portal)/picket-showroom/_components/shared';
+import { bacaPicPiket } from '@/lib/piket';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
 import { ingat } from '@/lib/cache-singkat';
 import { saringSumberKPI, type SumberKPI } from '@/lib/kpi-sumber';

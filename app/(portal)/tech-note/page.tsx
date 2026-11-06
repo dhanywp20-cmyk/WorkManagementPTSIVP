@@ -5,7 +5,7 @@ import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader, ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
   TechNoteFolder, TechNote, TechNoteHistory,

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTS } from '@/lib/kelompok';
-import { bacaPicPiket } from '@/app/(portal)/picket-showroom/_components/shared';
+import { bacaPicPiket } from '@/lib/piket';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { cariReminderByNama } from '@/lib/cari-reminder';

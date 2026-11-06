@@ -6,7 +6,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { muatIdPimpinan } from '@/lib/pimpinan';
 import { bolehDitugaskanOleh } from '@/lib/teams';
-import type { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist';

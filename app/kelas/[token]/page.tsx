@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Award, Clock, FileQuestion, Loader2, Lock, Printer, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
 import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
-import { cetakSertifikat, unduhSertifikat, type DataSertifikat } from '@/app/(portal)/learning-center/_components/sertifikat';
+import { cetakSertifikat, unduhSertifikat, type DataSertifikat } from '@/lib/sertifikat-cetak';
 import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './_bagian/IsianPeserta';
 import { adalahLive, hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type InfoLive, type Percobaan } from './_bagian/api';
 import { KuisLive } from './_bagian/KuisLive';
