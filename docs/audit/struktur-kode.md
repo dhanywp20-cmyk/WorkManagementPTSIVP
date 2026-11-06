@@ -99,7 +99,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 | 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
 | 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing**, **Incentive** & **Daily Report selesai** (§5) |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
-| 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
+| 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | **selesai** (§10) |
 | 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | **selesai** (§7) |
 | 6 | `lib/` dikelompokkan ke subfolder per domain (`lib/incentive/`, `lib/av/`, `lib/wa/`, …) | rendah | **selesai** (§9) |
 
@@ -315,4 +315,27 @@ path berkas di `uji/` ikut ditulis ulang otomatis, tanpa berkas ekspor-ulang. Be
 
 Diverifikasi: `tsc`, 124 uji, build, 19 halaman + layar masuk identik dengan main, dan kode status 65 rute API
 (GET & POST) identik dengan main. Komentar di `sql/` yang menyebut path lama dibiarkan (berkas SQL sudah diterapkan).
+
+## 10. Fase 4 — kantong state Tools Team
+
+Bentuk kembalian kedua hook tidak berubah (pemakai seperti `KalkulatorLED`, `Desain3D`, `useEksporLED`, `panel/alat.ts`
+tidak disentuh); isinya dipecah per domain:
+
+- `led/useKeadaanLED.ts` (163 → 52 baris):
+  - `useIsianLED` — semua isian form + `isian` & `terapkan` untuk riwayat undo
+  - `useTurunanLED(isian, data)` — modul aktif, hitungan LED, hardware, koneksi, daya, BOM & penawaran
+- `desain3d/useKeadaanDesain.ts` (214 → 146 baris):
+  - `usePilihanBenda` — pilihan tunggal/banyak + ref sinkronnya
+  - `usePreferensiKanvas` — preferensi tampilan yang diingat di `localStorage`
+  - `useStatusDesain(isiAwal)` — nama, asal, desain tersimpan/tim/aktif, status simpan; `KUNCI_SIMPAN` pindah ke sini
+    (diekspor ulang dari `useKeadaanDesain`)
+  - `useRefMesin` — ref mesin 3D, tekstur, model impor, input berkas
+  - `useAnalisisDisplay` — analisis jarak & sudut pandang per display
+
+Diverifikasi di browser (WebGL swiftshader), build main vs perubahan:
+- **LED:** teks, nilai isian setelah diubah, undo dua langkah, serta tab Screen & Power Connection identik.
+- **Desain 3D:**
+  - teks dan `localStorage` identik setelah alur berikut: tampilan 3D/atas, sembilan opsi tampilan, ubah ruang, undo,
+    pilih benda;
+  - tangkapan layar hanya berbeda derau render: sekitar 1% piksel, tanpa piksel yang berbeda warna nyata.
 
