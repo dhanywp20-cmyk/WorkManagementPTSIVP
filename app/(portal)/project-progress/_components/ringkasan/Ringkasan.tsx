@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { BarChart3, ChevronDown, ListChecks } from 'lucide-react';
 import { MiniPieChart } from '@/components/shared';
 import { NETRAL, BAYANG } from '@/lib/desain';
-import type { StatChecklist } from '@/lib/checklist';
-import type { Kontribusi } from '@/lib/checklist-ringkasan';
+import type { StatChecklist } from '@/lib/checklist/inti';
+import type { Kontribusi } from '@/lib/checklist/ringkasan';
 import { KepingKendala, TEMA, fontAngka } from '../tampilan';
 import type { Ringkasan, RingkasanChecklist as DataChecklist, RingkasanDaftar, TitikLaju, Waktu } from './hitung';
 

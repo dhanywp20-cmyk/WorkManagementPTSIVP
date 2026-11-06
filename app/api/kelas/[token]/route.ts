@@ -4,9 +4,9 @@ import { getAdminClient } from '@/lib/supabase-admin';
 import {
   PESAN_STATUS, acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban,
   rapikanDataPeserta, rapikanIsianPeserta, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
-} from '@/lib/kelas-eksternal';
-import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis-live';
-import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
+} from '@/lib/kuis/kelas-eksternal';
+import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis/live';
+import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis/live-server';
 import { hapusSimpanan, simpanSebentar } from '@/lib/simpan-sebentar';
 
 export const dynamic = 'force-dynamic';

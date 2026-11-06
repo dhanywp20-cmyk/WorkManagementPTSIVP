@@ -3,10 +3,10 @@ import PDFDocument from 'pdfkit';
 import {
   bolehPerbandingan, jumlahCek, type KartuBanding, kutipanAda, loloskanSemua, MAKS_BYTE_BERKAS,
   namaBerkasPdf, periksaBerkas, periksaDaftarBerkas, periksaHasil, periksaKartu,
-} from '../lib/perbandingan';
-import { ATURAN_BAWAAN, bolehLangsungUnduh, bolehVerifikasi, rapikanAturan } from '../lib/perbandingan-aturan';
-import { ambilJson, periksaKiriman, promptPengguna, promptSistem } from '../lib/perbandingan-prompt';
-import { type DokPenuh, gambarPerbandingan } from '../lib/perbandingan-pdf';
+} from '../lib/perbandingan/inti';
+import { ATURAN_BAWAAN, bolehLangsungUnduh, bolehVerifikasi, rapikanAturan } from '../lib/perbandingan/aturan';
+import { ambilJson, periksaKiriman, promptPengguna, promptSistem } from '../lib/perbandingan/prompt';
+import { type DokPenuh, gambarPerbandingan } from '../lib/perbandingan/pdf';
 import { CONTOH } from './data/perbandingan-contoh';
 
 let lulus = 0, gagal = 0;

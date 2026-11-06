@@ -1,4 +1,4 @@
-import { tabelPenulisan, pesanGalatTulis, periksaJawabanTulis, NAMA_EVENT_GALAT_TULIS } from '../lib/galat-tulis';
+import { tabelPenulisan, pesanGalatTulis, periksaJawabanTulis, NAMA_EVENT_GALAT_TULIS } from '../lib/galat/tulis';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

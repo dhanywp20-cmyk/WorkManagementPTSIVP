@@ -1,5 +1,5 @@
-import { ambilPetaNominal } from '@/lib/incentive-nominal-api';
-import { SkemaInsentif, ambilSkema, bagikanTepat, labelSkema } from '@/lib/incentive-scheme';
+import { ambilPetaNominal } from '@/lib/incentive/nominal-api';
+import { SkemaInsentif, ambilSkema, bagikanTepat, labelSkema } from '@/lib/incentive/scheme';
 import { createNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from './calc-format';

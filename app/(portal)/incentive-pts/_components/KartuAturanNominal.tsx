@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { IkonTeks } from '@/components/shared/Ikon';
-import { ambilPetaNominal, simpanAturanNominal } from '@/lib/incentive-nominal-api';
-import type { LihatNominal } from '@/lib/incentive-nominal';
+import { ambilPetaNominal, simpanAturanNominal } from '@/lib/incentive/nominal-api';
+import type { LihatNominal } from '@/lib/incentive/nominal';
 
 const PILIHAN: { nilai: LihatNominal; label: string; petunjuk: string }[] = [
   { nilai: 'petugas', label: 'Petugas saja', petunjuk: 'Nominal total proyek hanya terlihat oleh pemegang akses Input/Penuh. Yang lain hanya melihat bagiannya yang sudah tercatat.' },

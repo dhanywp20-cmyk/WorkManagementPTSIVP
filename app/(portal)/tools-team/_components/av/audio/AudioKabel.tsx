@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { impedansiSpeaker, rugiKabel, saranKabel, type Susunan, UKURAN_KABEL_MM2 } from '@/lib/av-audio-jaringan';
+import { impedansiSpeaker, rugiKabel, saranKabel, type Susunan, UKURAN_KABEL_MM2 } from '@/lib/av/audio-jaringan';
 import { useState } from 'react';
 
 const SUSUNAN: { v: Susunan; l: string }[] = [

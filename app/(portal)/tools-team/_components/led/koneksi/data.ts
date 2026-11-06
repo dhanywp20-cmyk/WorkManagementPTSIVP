@@ -1,4 +1,4 @@
-import { type HasilKoneksi, hitungKoneksi, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av-hitung';
+import { type HasilKoneksi, hitungKoneksi, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
 
 export interface PengaturanKoneksi {
   mode: 'template' | 'manual';

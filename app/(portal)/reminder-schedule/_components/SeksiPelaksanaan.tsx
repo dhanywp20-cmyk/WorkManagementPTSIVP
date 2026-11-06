@@ -1,5 +1,5 @@
 'use client';
-import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { triggersProjectProgress } from '@/lib/checklist/sinkron-progress';
 import { Reminder, INCENTIVE_TRIGGER_CATEGORIES, formatDate } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { useKonteksJadwal } from './konteks-jadwal';

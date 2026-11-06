@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { clearSession, getSession } from '@/lib/auth';
+import { clearSession, getSession } from '@/lib/auth/sesi';
 
-import { CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/lib/jadwal-tampilan';
+import { CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/lib/jadwal/tampilan';
 
 import { todayISO, type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry, type DailyReport, hapusAktivitasManual } from './_components/shared';
 
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
+import { useKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
 
 import { LoadingScreen, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { PageHeader } from '@/components/shared';

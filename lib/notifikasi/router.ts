@@ -1,7 +1,7 @@
 
 import { bacaPengaturan, kanalUntuk, type Kanal } from './pengaturan';
 import { createNotification, type NotifPayload } from '@/lib/notifications';
-import { sendWA } from '@/lib/wa';
+import { sendWA } from '@/lib/wa/inti';
 
 export type PenerimaWA = { nama: string; telepon: string | null | undefined };
 

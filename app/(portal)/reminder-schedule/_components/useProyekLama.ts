@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Reminder } from './shared';
-import { normalkanNama } from '@/lib/kelompok-insentif';
+import { normalkanNama } from '@/lib/incentive/kelompok';
 import { type JadwalRequest } from './RequestJadwalModal';
 
 export interface ProyekLamaKonteks {

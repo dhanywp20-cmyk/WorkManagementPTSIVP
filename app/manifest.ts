@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { bacaMerekUntukManifest } from '@/lib/merek-server';
+import { bacaMerekUntukManifest } from '@/lib/merek/server';
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const m = await bacaMerekUntukManifest();

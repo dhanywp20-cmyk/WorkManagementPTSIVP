@@ -4,7 +4,7 @@ import {
   permukaanBenda, proyektorKeLayar, salinIsi, barisKeterangan, bomDesain, daftarBenda, lensaDari, rapikanLED, susunanLED,
   sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Blending, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av-hitung';
+import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean, ket = '') => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}${ket ? ` - ${ket}` : ''}`); } };

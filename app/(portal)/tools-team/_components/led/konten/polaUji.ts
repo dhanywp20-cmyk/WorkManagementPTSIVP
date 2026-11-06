@@ -1,4 +1,4 @@
-import { garisCabinet, labelCabinet } from '@/lib/led-banding';
+import { garisCabinet, labelCabinet } from '@/lib/av/led-banding';
 
 export type JenisPola = 'grid' | 'warna' | 'polos';
 export const WARNA_POLOS: { v: string; l: string }[] = [

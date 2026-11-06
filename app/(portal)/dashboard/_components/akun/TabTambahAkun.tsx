@@ -10,7 +10,7 @@ export interface TabTambahAkunProps {
   activeTab: "list" | "add" | "pending";
   daftarDivisi: string[];
   handleAddUser: () => Promise<void>;
-  kelompokPTSList: import("@/lib/kelompok").Kelompok[];
+  kelompokPTSList: import("@/lib/kelompok/inti").Kelompok[];
   newUser: { username: string; password: string; full_name: string; role: string; team_type: string; phone_number: string; sales_division: string; jabatan: string; allowed_menus: string[]; divisi: string; pts_type: string; pts_daerah: string; };
   saving: boolean;
   setNewUser: React.Dispatch<React.SetStateAction<{ username: string; password: string; full_name: string; role: string; team_type: string; phone_number: string; sales_division: string; jabatan: string; allowed_menus: string[]; divisi: string; pts_type: string; pts_daerah: string; }>>;

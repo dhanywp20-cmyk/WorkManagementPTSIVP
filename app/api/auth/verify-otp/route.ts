@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { cabutSemuaToken } from '@/lib/token-integrasi';
+import { cabutSemuaToken } from '@/lib/integrasi/token';
 
 export const dynamic = 'force-dynamic';
 

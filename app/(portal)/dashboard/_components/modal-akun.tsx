@@ -1,15 +1,15 @@
 'use client';
 import { adminCreateUser, adminSetAccessLevel, adminUpdateUser } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 
 import { createNotification } from '@/lib/notifications';
 
 import { ConfirmDialog, type ConfirmState, Username } from '@/components/shared';
-import { labelKelompokPTS, teamTypeDariLabelPTS, useKelompokPTS } from '@/lib/kelompok';
-import { useDivisiSales } from '@/lib/merek';
+import { labelKelompokPTS, teamTypeDariLabelPTS, useKelompokPTS } from '@/lib/kelompok/inti';
+import { useDivisiSales } from '@/lib/merek/inti';
 import { ALL_MENU_KEYS, DEFAULT_MENU_KEYS, SALES_MENU_KEYS, User } from './shared';
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';

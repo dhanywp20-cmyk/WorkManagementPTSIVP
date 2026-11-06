@@ -6,7 +6,7 @@ import { Calculator, Copy, Download, Printer, Trash2 } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { bukaCetak, namaBerkas, unduhLembarPNG, type Lembar } from '@/lib/lembar-cetak';
-import { formatWaktu } from '@/lib/checklist';
+import { formatWaktu } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 
 interface HasilAV {

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Kelompok, JenisKelompok, Lonceng, SEMUA_LONCENG, LABEL_LONCENG,
   KELOMPOK_BAWAAN, semuaKelompok, muatKelompok, simpanKelompok, kelompokTerpakai,
-} from '@/lib/kelompok';
+} from '@/lib/kelompok/inti';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
 import { Ikon } from '@/components/shared/Ikon';

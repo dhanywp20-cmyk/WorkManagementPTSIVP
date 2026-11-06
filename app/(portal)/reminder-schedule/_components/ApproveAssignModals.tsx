@@ -1,6 +1,6 @@
 'use client';
 import { Modal, TombolModal, KotakInfo, LabelIsian, ModalSetujui, PilihPenugasan, TombolSetujui, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
-import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { triggersProjectProgress } from '@/lib/checklist/sinkron-progress';
 import type { Reminder, TeamUser, SupervisorCandidate } from './shared';
 import { formatDate } from './shared';
 

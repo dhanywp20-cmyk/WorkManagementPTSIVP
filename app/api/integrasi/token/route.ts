@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAksesPenuh, pastikanMasuk } from '@/lib/penjaga-admin';
-import { MAKS_TOKEN_PER_USER, buatTokenMentah, hashToken, namaSah } from '@/lib/token-integrasi';
+import { pastikanAksesPenuh, pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { MAKS_TOKEN_PER_USER, buatTokenMentah, hashToken, namaSah } from '@/lib/integrasi/token';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

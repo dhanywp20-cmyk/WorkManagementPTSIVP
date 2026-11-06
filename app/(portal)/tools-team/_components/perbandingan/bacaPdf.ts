@@ -1,5 +1,5 @@
 'use client';
-import { MIN_KARAKTER_TEKS, periksaBerkas } from '@/lib/perbandingan';
+import { MIN_KARAKTER_TEKS, periksaBerkas } from '@/lib/perbandingan/inti';
 
 export interface HasilBaca { halaman: string[]; jumlahHalaman: number; karakter: number }
 

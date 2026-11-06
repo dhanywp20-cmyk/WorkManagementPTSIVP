@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { SESSION_DURATION_MS } from '../lib/constants';
-import { SESSION_HOURS } from '../lib/masuk-server';
+import { SESSION_HOURS } from '../lib/auth/masuk-server';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -32,7 +32,7 @@ cek('proxy: pindah menu (header RSC) & berkas statis tidak lewat proxy (fungsi N
 const klien = baca('lib/supabase.ts');
 cek('401 saat token diperbarui -> event SESI_HABIS', /if \(res\.status === 401\) \{ window\.dispatchEvent\(new Event\(SESI_HABIS\)\); return; \}/.test(klien));
 cek('portal mendengar SESI_HABIS -> layar masuk', /window\.addEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal) && /removeEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal));
-const auth = baca('lib/auth.ts');
+const auth = baca('lib/auth/sesi.ts');
 cek('cekSesiServer: hanya 401 dianggap habis (sinyal jelek bukan alasan keluar)', /if \(res\.status === 401\) return 'habis';\s*if \(!res\.ok\) return 'gagal';/.test(auth));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

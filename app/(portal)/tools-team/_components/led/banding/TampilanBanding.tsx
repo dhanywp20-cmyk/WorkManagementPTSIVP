@@ -2,8 +2,8 @@
 import { useMemo, useState } from 'react';
 import { Angka, Catatan, f, Kartu, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { bukaCetak, type Lembar, namaBerkas, unduhLembarPNG } from '../../bersama/cetak';
-import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av-hitung';
-import { bandingPitch, saranPitch } from '@/lib/led-banding';
+import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av/hitung';
+import { bandingPitch, saranPitch } from '@/lib/av/led-banding';
 import { BULAT, LINGKUNGAN_TIPE, PER_M2 } from '../data';
 import { BarSub } from '../panel/BarSub';
 import { ModalBersama } from '../panel/ModalBersama';

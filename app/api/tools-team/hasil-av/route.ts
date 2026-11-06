@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ambilAkun, bolehLihatProyek, galat, NO_STORE, type Db } from '@/lib/checklist-server';
+import { ambilAkun, bolehLihatProyek, galat, NO_STORE, type Db } from '@/lib/checklist/server';
 import { hasFullAccess } from '@/lib/constants';
 import { PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
-import { periksaHasilAV } from '@/lib/av-hasil';
+import { periksaHasilAV } from '@/lib/av/hasil';
 
 export const dynamic = 'force-dynamic';
 

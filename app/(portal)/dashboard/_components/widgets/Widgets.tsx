@@ -3,17 +3,17 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ingat } from '@/lib/cache-singkat';
-import { namaKelompokPTS } from '@/lib/kelompok';
+import { namaKelompokPTS } from '@/lib/kelompok/inti';
 import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
-} from '@/lib/piket';
+} from '@/lib/piket/inti';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/kuis/peringkat';
 import { PopupJawabanQuiz } from './PopupJawabanQuiz';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 

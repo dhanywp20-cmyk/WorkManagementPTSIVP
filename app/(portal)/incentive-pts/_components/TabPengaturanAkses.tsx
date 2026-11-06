@@ -3,7 +3,7 @@
 import { bisaKonfig } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { KartuAturanNominal } from './KartuAturanNominal';
-import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES } from '@/lib/incentive-akses';
+import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES } from '@/lib/incentive/akses';
 import { useKonteksInsentif } from './konteks-insentif';
 
 export function TabPengaturanAkses() {

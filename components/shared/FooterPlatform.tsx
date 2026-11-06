@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 import { ChipVersi } from './ChipVersi';
 
 export function FooterPlatform() {

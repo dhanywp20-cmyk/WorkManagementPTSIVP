@@ -15,7 +15,7 @@ cek('localhost BUKAN preview', !adalahPreviewVercel('localhost'));
 
 console.log('\n2. Semua pembuat link untuk orang lain memakai appBaseUrl');
 const sumber: Record<string, string> = {
-  'lib/checklist.ts (link tim isi checklist)': 'lib/checklist.ts',
+  'lib/checklist/inti.ts (link tim isi checklist)': 'lib/checklist/inti.ts',
   'ModalShare (link lihat saja)': 'app/(portal)/project-progress/_components/ModalShare.tsx',
   'ReminderDetailPopup (.ics)': 'app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx',
   'modal-kode-acara (link daftar)': 'app/(portal)/dashboard/_components/modal-kode-acara.tsx',

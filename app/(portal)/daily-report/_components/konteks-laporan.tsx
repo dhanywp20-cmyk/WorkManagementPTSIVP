@@ -3,7 +3,7 @@
 import { createContext, useContext } from 'react';
 import { type DailyReport } from './shared';
 import { type FlatRow } from './bantu-halaman';
-import { type TeamUser } from '@/lib/jadwal-tampilan';
+import { type TeamUser } from '@/lib/jadwal/tampilan';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 
 export interface NilaiKonteksLaporan {

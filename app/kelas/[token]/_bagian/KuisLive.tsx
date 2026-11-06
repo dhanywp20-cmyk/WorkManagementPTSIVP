@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, Lock, Pause, Trophy, Users, X } from 'lucide-react';
-import type { Pilihan } from '@/lib/kelas-eksternal';
+import type { Pilihan } from '@/lib/kuis/kelas-eksternal';
 import {
   BilahSoal, BilahWaktu, HIJAU, HitungMundur, LatarKuis, LogoEvent, MERAH, PILIHAN_KUIS, Podium,
   WARNA_PILIHAN, formatPoin, ukuranTeks, useDetak, useJamServer,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, ambilAkun, galat } from '@/lib/checklist-server';
-import { daftarId } from '@/lib/checklist-isian';
-import { sinkronkanReminderKeProgress } from '@/lib/sinkron-progress-server';
+import { NO_STORE, ambilAkun, galat } from '@/lib/checklist/server';
+import { daftarId } from '@/lib/checklist/isian';
+import { sinkronkanReminderKeProgress } from '@/lib/checklist/sinkron-progress-server';
 
 export const dynamic = 'force-dynamic';
 

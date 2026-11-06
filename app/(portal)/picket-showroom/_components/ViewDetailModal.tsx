@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR, KEGIATAN_COLORS, bacaPicPiket } from './shared';
-import { labelKelompokPTS } from '@/lib/kelompok';
+import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 

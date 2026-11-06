@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { bacaRahasia } from '@/lib/rahasia-server';
-import { pastikanAdmin, pastikanMasuk } from '@/lib/penjaga-admin';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
+import { pastikanAdmin, pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';

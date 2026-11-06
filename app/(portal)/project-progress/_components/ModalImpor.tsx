@@ -9,7 +9,7 @@ import { compressImage } from '@/lib/image-compress';
 import {
   bacaBaris, bacaTeks, hitungItemDraft, BATAS, CONTOH_TEMPLATE,
   type DraftChecklist,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 import { TEMA, fontAngka } from './tampilan';
 
 type Jenis = 'teks' | 'excel';

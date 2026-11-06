@@ -5,7 +5,7 @@ import { type FlatRow } from './bantu-halaman';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 import { usePaginasi } from '@/components/shared';
 import { todayISO, type ReminderActivity, type TicketActivity, type DailyReport } from './shared';
-import { CATEGORY_CONFIG, type TeamUser } from '@/lib/jadwal-tampilan';
+import { CATEGORY_CONFIG, type TeamUser } from '@/lib/jadwal/tampilan';
 
 export interface DataLaporanKonteks {
   filterCategory: string | null;

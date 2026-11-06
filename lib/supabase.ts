@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { periksaJawabanTulis } from './galat-tulis';
+import { periksaJawabanTulis } from './galat/tulis';
 
 const TOKEN_KEY = 'ivp_db_token';
 

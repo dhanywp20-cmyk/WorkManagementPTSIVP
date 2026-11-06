@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import {
   bomDesain, checklistDariBom, daftarBenda, jalurKabel, URUTAN_KATEGORI, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { validasiDraft } from '../lib/checklist';
+import { validasiDraft } from '../lib/checklist/inti';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };

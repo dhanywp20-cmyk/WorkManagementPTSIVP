@@ -4,7 +4,7 @@ import { Status, Reminder, TeamUser, GuestUser, INCENTIVE_TRIGGER_CATEGORIES } f
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { efekPeramban } from '@/lib/efek-peramban';
-import { ubahStatusJadwal } from '@/lib/jadwal-status';
+import { ubahStatusJadwal } from '@/lib/jadwal/status';
 
 export interface UbahStatusKonteks {
   currentUser: TeamUser | null;

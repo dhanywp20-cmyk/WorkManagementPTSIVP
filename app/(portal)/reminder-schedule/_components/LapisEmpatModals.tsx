@@ -1,6 +1,6 @@
 'use client';
 import { Modal, TombolModal } from '@/components/shared';
-import { normalkanNama } from '@/lib/kelompok-insentif';
+import { normalkanNama } from '@/lib/incentive/kelompok';
 import type { Reminder } from './shared';
 import { formatDate } from './shared';
 import { Ikon } from '@/components/shared/Ikon';

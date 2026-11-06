@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal';
+import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kuis/kelas-eksternal';
 import { laporPelanggaran, type HasilLapor } from './api';
 
 const JEDA_SALIN_MS = 2000;

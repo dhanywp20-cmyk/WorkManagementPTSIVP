@@ -5,10 +5,10 @@ import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
-import { clearSession, getSession } from '@/lib/auth';
+import { clearSession, getSession } from '@/lib/auth/sesi';
 import { logAudit } from '@/lib/audit';
-import { muatKategoriInsentif } from '@/lib/incentive-scheme';
-import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { muatKategoriInsentif } from '@/lib/incentive/scheme';
+import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { kutipNilai, cobaIdentitas } from '@/lib/identitas';
 
 import { Status, Reminder, TeamUser, GuestUser, resolveSupervisorsForProductType, diluarIncentive } from './_components/shared';

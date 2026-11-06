@@ -8,7 +8,7 @@ import { Modal, TombolModal } from '@/components/shared';
 import {
   BATAS, formatWaktu, kelompokkan, statDari,
   type ChecklistBagian, type ChecklistItem, type Progres, type StatChecklist,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 
 export const TEMA = {
   warna: '#2563eb',

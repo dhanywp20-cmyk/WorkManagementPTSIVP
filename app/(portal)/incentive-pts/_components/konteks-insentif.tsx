@@ -3,7 +3,7 @@
 import { createContext, useContext } from 'react';
 import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, type KandidatGabung, type SkemaInsentif } from './calc';
 import { type CurrentUser, type TabKey } from './aturan-halaman';
-import { type TingkatAkses } from '@/lib/incentive-akses';
+import { type TingkatAkses } from '@/lib/incentive/akses';
 
 export interface NilaiKonteksInsentif {
   sesi: {

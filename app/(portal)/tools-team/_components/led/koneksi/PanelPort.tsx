@@ -1,6 +1,6 @@
 'use client';
 import { Angka, Pilih, Segmen } from '../../bersama/ui';
-import { RECEIVING_CARD } from '@/lib/av-hitung';
+import { RECEIVING_CARD } from '@/lib/av/hitung';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
 
 export function PanelPort({ a }: { a: AlatRuangKoneksi }) {

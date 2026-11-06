@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '../shared';
 import { isAdminRole, isTeamMember } from '../widgets/permissions';
-import { hariIni as todayStr, keadaanJadwal, statDari } from '@/lib/checklist';
+import { hariIni as todayStr, keadaanJadwal, statDari } from '@/lib/checklist/inti';
 
 interface TugasChecklist {
   id: string;

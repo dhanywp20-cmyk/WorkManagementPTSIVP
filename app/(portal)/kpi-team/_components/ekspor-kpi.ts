@@ -5,7 +5,7 @@ import React from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 import { KPIMember, KPISettings, fmt, MONTHS_ID } from './shared';
-import { REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
+import { REKAP_LC_KOSONG } from '@/lib/kuis/kpi-lc-tahunan';
 
 export function exportKPIExcel(
   members: KPIMember[],

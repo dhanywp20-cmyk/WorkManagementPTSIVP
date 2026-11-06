@@ -1,1 +1,1 @@
-export * from '@/lib/piket';
+export * from '@/lib/piket/inti';

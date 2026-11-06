@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
 import { MAKS_IMPOR_SEKALI, MAKS_MODEL_PER_AKUN, MAKS_OBJEK_PER_AKUN, MAKS_TOTAL_MODEL, periksaObjekSaya, type IsiObjekSaya } from '@/lib/objek-saya';

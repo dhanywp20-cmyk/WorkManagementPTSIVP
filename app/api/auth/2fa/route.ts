@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { bolehDiwaypiDan2FA } from '@/lib/constants';
-import { catatPercobaan, getClientIp, PESAN_TERKUNCI, sedangTerkunci } from '@/lib/masuk-server';
+import { catatPercobaan, getClientIp, PESAN_TERKUNCI, sedangTerkunci } from '@/lib/auth/masuk-server';
 import {
   adalahAdmin, aktifkanDaftar2FA, baca2FA, bacaPengaturan2FA, gantiCadangan2FA, mulaiDaftar2FA, periksaKode2FA,
-} from '@/lib/dua-faktor-server';
+} from '@/lib/auth/dua-faktor-server';
 
 export const dynamic = 'force-dynamic';
 

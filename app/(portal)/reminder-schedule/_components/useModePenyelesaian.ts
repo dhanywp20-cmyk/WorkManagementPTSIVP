@@ -2,7 +2,7 @@
 
 import { Status, Reminder, TeamUser } from './shared';
 import { supabase } from '@/lib/supabase';
-import { galatPelaksanaan, simpanDetailPelaksanaan, type IsianPelaksanaan } from '@/lib/jadwal-status';
+import { galatPelaksanaan, simpanDetailPelaksanaan, type IsianPelaksanaan } from '@/lib/jadwal/status';
 
 export interface ModePenyelesaianKonteks {
   bastDate: string;

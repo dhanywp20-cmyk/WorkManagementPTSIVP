@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { getSession } from './auth';
+import { getSession } from './auth/sesi';
 
 export interface CurrentUser {
   id?: string;

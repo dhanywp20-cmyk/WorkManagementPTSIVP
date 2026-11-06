@@ -1,4 +1,4 @@
-import { namaKelompokPTSDitugaskan, namaKelompokPTS, KELOMPOK_BAWAAN } from '@/lib/kelompok';
+import { namaKelompokPTSDitugaskan, namaKelompokPTS, KELOMPOK_BAWAAN } from '@/lib/kelompok/inti';
 
 const anggota = [
   { nama: 'Yoga KS',            team_type: 'Team PTS IVP',  role: 'team'       },

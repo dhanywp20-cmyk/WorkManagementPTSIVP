@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CircleX, X } from 'lucide-react';
-import { NAMA_EVENT_GALAT_TULIS, type GalatTulis } from '@/lib/galat-tulis';
+import { NAMA_EVENT_GALAT_TULIS, type GalatTulis } from '@/lib/galat/tulis';
 
 export function PenjagaGalatTulis() {
   const [galat, setGalat] = useState<GalatTulis | null>(null);

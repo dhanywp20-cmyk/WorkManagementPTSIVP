@@ -1,6 +1,6 @@
 
 import type { User } from '../shared';
-import { gayaDashboard } from '@/lib/kelompok';
+import { gayaDashboard } from '@/lib/kelompok/inti';
 import { isPimpinan } from '@/lib/pimpinan';
 
 const ADMIN_ROLES = ['admin', 'superadmin'];

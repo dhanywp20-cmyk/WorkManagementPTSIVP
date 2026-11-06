@@ -6,14 +6,14 @@ import { useSearchParams } from 'next/navigation';
 import { PageHeader, ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import {
   TechNoteFolder, TechNote, TechNoteHistory,
   STATUS_CONFIG, ACTION_CONFIG, KKM_REQUIRED,
   formatDate, formatDateShort, getInitials,
 } from './_components/shared';
 import { logAudit } from '@/lib/audit';
-import { sendWANotif } from '@/lib/wa';
+import { sendWANotif } from '@/lib/wa/inti';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';

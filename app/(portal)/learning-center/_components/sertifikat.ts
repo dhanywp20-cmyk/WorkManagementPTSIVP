@@ -1,1 +1,1 @@
-export * from '@/lib/sertifikat-cetak';
+export * from '@/lib/kuis/sertifikat-cetak';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { baca2FA, bacaPengaturan2FA, KUNCI_PENGATURAN_2FA } from '@/lib/dua-faktor-server';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { baca2FA, bacaPengaturan2FA, KUNCI_PENGATURAN_2FA } from '@/lib/auth/dua-faktor-server';
 
 export const dynamic = 'force-dynamic';
 

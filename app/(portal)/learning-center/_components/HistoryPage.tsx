@@ -5,7 +5,7 @@ import { ListEmptyState } from '@/components/shared';
 import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { bolehSertifikat } from '@/lib/sertifikat';
+import { bolehSertifikat } from '@/lib/kuis/sertifikat';
 import { cetakSertifikat, unduhSertifikat } from './sertifikat';
 
 export function HistoryPage({ user }: { user: User }) {

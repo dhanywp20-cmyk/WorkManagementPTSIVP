@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser } from '@/lib/server-auth';
+import { getSessionUser } from '@/lib/auth/server';
 import { getServicesAdminClient } from '@/lib/supabase-services-admin';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
-import { kirimWA as kirimWAPenyedia } from '@/lib/wa-kirim-server';
+import { kirimWA as kirimWAPenyedia } from '@/lib/wa/kirim-server';
 
 export const dynamic = 'force-dynamic';
 

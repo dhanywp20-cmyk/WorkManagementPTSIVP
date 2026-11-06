@@ -4,11 +4,11 @@ import { denganNilai, useDaftarPilihan, produkSpesifik } from '@/lib/daftar-pili
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
-import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket-akses';
+import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket/akses';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR,
@@ -16,7 +16,7 @@ import {
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
   bacaPicPiket, tulisPicPiket,
 } from './_components/shared';
-import { namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
+import { namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok/inti';
 import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, Toast, type Notif } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';

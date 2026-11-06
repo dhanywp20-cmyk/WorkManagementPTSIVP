@@ -5,7 +5,7 @@ import type { User } from '../shared';
 import { WIDGETS, type WidgetDef } from './Widgets';
 import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
-import { useKelompok } from '@/lib/kelompok';
+import { useKelompok } from '@/lib/kelompok/inti';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { Ikon } from '@/components/shared/Ikon';
 import { AKSEN_UTAMA } from './primitives';

@@ -1,0 +1,18 @@
+import { BATAS_PER_HALAMAN, abaikanGalat, rapikanLaporan, type LaporanGalat } from './klien';
+
+const terkirim = new Set<string>();
+
+export function laporGalat(l: LaporanGalat, berkasSkrip?: string): void {
+  try {
+    if (typeof window === 'undefined') return;
+    if (abaikanGalat(l.pesan, berkasSkrip, window.location.origin)) return;
+    if (terkirim.size >= BATAS_PER_HALAMAN) return;
+    const r = rapikanLaporan({ ...l, jalur: l.jalur ?? window.location.pathname });
+    const kunci = `${r.sumber}|${r.pesan}|${r.jalur}`;
+    if (terkirim.has(kunci)) return;
+    terkirim.add(kunci);
+    const isi = JSON.stringify(r);
+    if (navigator.sendBeacon?.('/api/galat', new Blob([isi], { type: 'application/json' }))) return;
+    void fetch('/api/galat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: isi, keepalive: true }).catch(() => {});
+  } catch {  }
+}

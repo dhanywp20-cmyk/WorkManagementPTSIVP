@@ -2,12 +2,12 @@
 
 import { type JadwalRequest } from './RequestJadwalModal';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
+import { setSession } from '@/lib/auth/sesi';
 import { Reminder, TeamUser, GuestUser, formatDate, newBatchId, sendFonnteWA, type SupervisorCandidate, DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTargets } from './shared';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { adalahKategoriInsentif } from '@/lib/incentive/scheme';
+import { triggersProjectProgress, type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { logAudit } from '@/lib/audit';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { appLink } from '@/lib/app-url';

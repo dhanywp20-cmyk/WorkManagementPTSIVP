@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { bacaRahasia } from '@/lib/rahasia-server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { ambilPengaturanAI, ambilPengaturanPenilai } from '@/lib/ai-pengaturan';
 
 const MAX_BODY_BYTES = 4_000_000;

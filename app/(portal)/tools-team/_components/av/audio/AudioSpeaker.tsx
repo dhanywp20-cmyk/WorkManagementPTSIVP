@@ -1,8 +1,8 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { speakerPlafon, splMaks, splPadaJarak } from '@/lib/av-hitung';
-import { dayaUntukSPL } from '@/lib/av-audio-jaringan';
+import { speakerPlafon, splMaks, splPadaJarak } from '@/lib/av/hitung';
+import { dayaUntukSPL } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../../pustaka/PilihPustaka';
 import { useState } from 'react';

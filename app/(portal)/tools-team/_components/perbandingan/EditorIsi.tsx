@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan';
+import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan/inti';
 
 export type Sunting =
   | { jenis: 'teks'; judul: string; nilai: string; panjang?: boolean; simpan: (v: string) => void; hapus?: () => void }

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { appLink } from '@/lib/app-url';
 import { notifyReminderApproved, createNotification } from '@/lib/notifications';
-import { triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { triggersProjectProgress, type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 
 export interface PersetujuanAdminKonteks {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
-import { useKelompokCabang } from '@/lib/kelompok';
+import { useKelompokCabang } from '@/lib/kelompok/inti';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';

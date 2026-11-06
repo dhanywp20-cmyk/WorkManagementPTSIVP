@@ -5,7 +5,7 @@ import { Status, Reminder, TeamUser, isDueToday } from './shared';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { bolehUbahJadwal } from '@/lib/jadwal-aturan';
+import { bolehUbahJadwal } from '@/lib/jadwal/aturan';
 
 export interface TurunanJadwalKonteks {
   currentUser: TeamUser | null;

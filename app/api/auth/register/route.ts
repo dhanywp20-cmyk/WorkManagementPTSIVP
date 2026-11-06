@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { TIM_TERTUNDA } from '@/lib/akun-tertunda';
+import { TIM_TERTUNDA } from '@/lib/auth/akun-tertunda';
 import { SARING_PENERIMA_ADMIN } from '@/lib/penerima-admin';
 import {
   TABEL_KODE_ACARA, dariBaris, periksaKodeAcara,

@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link2, Plus, Search } from 'lucide-react';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { supabase } from '@/lib/supabase';
 import { muatIdPimpinan } from '@/lib/pimpinan';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist';
+import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist/inti';
 import { ringkasDaftarProyek } from './_components/ringkasan/hitung';
 import { RingkasanDaftarProyek } from './_components/ringkasan/Ringkasan';
 import { BarProgres, KepingKendala, TEMA, progresDariStat } from './_components/tampilan';

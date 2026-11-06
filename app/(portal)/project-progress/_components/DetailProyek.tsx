@@ -6,7 +6,7 @@ import { ConfirmDialog, type ConfirmState, type SalesPickerUser } from '@/compon
 import { NETRAL } from '@/lib/desain';
 import {
   STATUS_PROYEK, formatTanggal, keadaanJadwal, type ChecklistRingkas, type ProyekDetail,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from './tampilan';
 import { ModalShare } from './ModalShare';
 import { ModalChecklistBaru, ModalProyek, type IsianProyek } from './FormProyek';

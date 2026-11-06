@@ -1,5 +1,5 @@
-import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
-import { bersihkanIsiRak } from '@/lib/perangkat-rak';
+import type { ModulLED, Hardware, BrandLED } from '@/lib/av/hitung';
+import { bersihkanIsiRak } from '@/lib/av/perangkat-rak';
 import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[];  brand?: BrandLED[] }

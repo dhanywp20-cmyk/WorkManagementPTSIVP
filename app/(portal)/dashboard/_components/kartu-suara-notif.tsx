@@ -1,7 +1,7 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 import React, { useEffect, useRef, useState } from 'react';
-import { MAKS_DETIK_SUARA, simpanSuaraNotif, SUARA_BAWAAN, type SuaraNotif, sumberSuara, unggahSuaraNotif, useSuaraNotif } from '@/lib/suara-notif';
+import { MAKS_DETIK_SUARA, simpanSuaraNotif, SUARA_BAWAAN, type SuaraNotif, sumberSuara, unggahSuaraNotif, useSuaraNotif } from '@/lib/notifikasi/suara';
 
 export function KartuSuaraNotif() {
   const tersimpan = useSuaraNotif();

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { namaBerkas, unduhSvgPNG, unduhUrl } from '../../bersama/cetak';
 import { type DataKoneksi, type PengaturanKoneksi, rantaiDari, susunKoneksi } from './data';
 import { svgKoneksi, svgPosterKoneksi } from './svg';
-import type { SelRC } from '@/lib/av-hitung';
+import type { SelRC } from '@/lib/av/hitung';
 
 export interface PropsRuangKoneksi {
   d: DataKoneksi; s: PengaturanKoneksi; onUbah: (s: PengaturanKoneksi) => void; namaFile: string;

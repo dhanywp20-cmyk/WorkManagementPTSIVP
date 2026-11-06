@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { akunTertunda } from '@/lib/akun-tertunda';
+import { akunTertunda } from '@/lib/auth/akun-tertunda';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser, isAdminRole } from '@/lib/server-auth';
+import { getSessionUser, isAdminRole } from '@/lib/auth/server';
 
 export const dynamic = 'force-dynamic';
 

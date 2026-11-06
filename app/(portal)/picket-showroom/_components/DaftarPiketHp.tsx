@@ -1,6 +1,6 @@
 'use client';
 import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, toKey, bacaPicPiket } from './shared';
-import { labelKelompokPTS } from '@/lib/kelompok';
+import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 

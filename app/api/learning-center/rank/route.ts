@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { getSessionUser } from '@/lib/server-auth';
-import { hitungPeringkat, type BarisAttempt } from '@/lib/learning-rank';
+import { getSessionUser } from '@/lib/auth/server';
+import { hitungPeringkat, type BarisAttempt } from '@/lib/kuis/peringkat';
 
 export const dynamic = 'force-dynamic';
 

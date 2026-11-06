@@ -1,5 +1,5 @@
 import { calculateStandardScheme } from '@/app/(portal)/incentive-pts/_components/calc';
-import { SKEMA_BAWAAN, type SkemaInsentif } from '@/lib/incentive-scheme';
+import { SKEMA_BAWAAN, type SkemaInsentif } from '@/lib/incentive/scheme';
 
 const POOL = 1_000_000;
 const sk: SkemaInsentif = JSON.parse(JSON.stringify(SKEMA_BAWAAN));

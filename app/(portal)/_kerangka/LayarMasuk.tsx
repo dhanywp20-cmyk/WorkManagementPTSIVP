@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { User } from '../dashboard/_components/shared';
 import { JABATAN_LIST, JABATAN_CONFIG } from '../dashboard/_components/shared';
-import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
-import { useKelompokPTS } from '@/lib/kelompok';
+import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek/inti';
+import { useKelompokPTS } from '@/lib/kelompok/inti';
 import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { LangkahDuaFaktor, type HasilMasuk } from './LangkahDuaFaktor';
-import { akunTertunda, PESAN_TERTUNDA } from '@/lib/akun-tertunda';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 
 export function LayarMasuk({ onMasuk, onSelesai }: {
   onMasuk: (pengguna: User, dbToken: string | null) => void;

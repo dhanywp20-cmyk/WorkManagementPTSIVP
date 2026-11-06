@@ -1,4 +1,4 @@
-import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya, SoalTerurut } from '../lib/urutan-soal';
+import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya, SoalTerurut } from '../lib/kuis/urutan-soal';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

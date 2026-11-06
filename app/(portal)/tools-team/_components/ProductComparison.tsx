@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ConfirmDialog, type ConfirmState, ModalTolak, TombolSetujui, TombolTolak } from '@/components/shared';
 import { Bot, CheckCheck, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { type Bahasa, jumlahCek, type KartuBanding, loloskanSemua } from '@/lib/perbandingan';
+import { type Bahasa, jumlahCek, type KartuBanding, loloskanSemua } from '@/lib/perbandingan/inti';
 import { UnggahBrosur } from './perbandingan/UnggahBrosur';
 import { PratinjauKartu } from './perbandingan/PratinjauKartu';
 import { DaftarPengajuan } from './perbandingan/DaftarPengajuan';

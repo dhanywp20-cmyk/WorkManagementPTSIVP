@@ -4,9 +4,9 @@ import {
   batasShift, bendaBaru, daftarRuang, gantiRasioProyektor, hasilPadaJarak, hasilPanasonic, isiDariKatalog, jarakProyeksi, type KatalogTdc,
   aturJarakProyeksi, cekDataLensa, KATEGORI_TDC, kontrasProyektor, LENSA_MZ882, lensaPadaRasio, RASIO_PROYEKTOR, resolusiProyektorDari, sinarProyektor, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { ukuranDariDiagonal } from '../lib/av/hitung';
 import { bersihkanAturProduk } from '../lib/tools-team';
-import { rentangJarakLempar, rumusLensaDariDuaTitik } from '../lib/av-layar-proyektor';
+import { rentangJarakLempar, rumusLensaDariDuaTitik } from '../lib/av/layar-proyektor';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, info = '') {

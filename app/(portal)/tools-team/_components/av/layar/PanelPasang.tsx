@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { cekResolusi, jarakTerdekatNyamanM, sudutKeAtasDerajat } from '@/lib/av-layar-proyektor';
+import { cekResolusi, jarakTerdekatNyamanM, sudutKeAtasDerajat } from '@/lib/av/layar-proyektor';
 import { useState } from 'react';
 
 const CATATAN = 'Tepi bawah gambar ±1,0-1,2 m supaya terlihat melewati kepala penonton di depan. Sudut ke tepi atas ≤ 30° dari mata penonton terdekat (nyaman untuk menonton lama). Resolusi "cukup" bila penonton terdekat duduk sejauh jarak piksel menyatu atau lebih (ketajaman mata ±1 menit busur).';

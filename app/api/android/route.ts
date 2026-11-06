@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { pastikanAdmin, pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanAdmin, pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';

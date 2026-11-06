@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
-import type { ChecklistItem, LewatCentang, PerubahanItem } from '@/lib/checklist';
+import type { ChecklistItem, LewatCentang, PerubahanItem } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 
 function terapkan(it: ChecklistItem, p: PerubahanItem, nama: string, lewat: LewatCentang): ChecklistItem {

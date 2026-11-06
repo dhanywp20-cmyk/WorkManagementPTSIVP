@@ -9,7 +9,7 @@ import {
 } from './shared';
 import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
-import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
+import { useKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
 import { Ikon } from '@/components/shared/Ikon';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;

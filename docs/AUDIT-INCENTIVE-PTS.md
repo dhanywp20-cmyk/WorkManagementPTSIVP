@@ -132,7 +132,7 @@ Diatur dari tab **Pengaturan Akses** (tiga tombol per orang). `admin` selalu
 `penuh`. Aturan yang sama dipakai tiga sisi supaya tidak bisa berbeda
 pendapat:
 
-- layar → `lib/incentive-akses.ts`
+- layar → `lib/incentive/akses.ts`
 - route server → berkas yang sama
 - basis data → fungsi `akses_insentif()` di `sql/incentive-akses-konfigurasi.sql`
 
@@ -375,15 +375,15 @@ Supabase di `check_pending_tickets()` dan token Fonnte di
 | Berkas | Perubahan |
 |---|---|
 | `sql/incentive-akses-konfigurasi.sql` | kolom `incentive_akses`, fungsi `akses_insentif*()`, kebijakan RLS, trigger pembekuan |
-| `lib/incentive-akses.ts` | aturan akses (murni — dipakai layar & server) |
-| `lib/incentive-akses-api.ts` | pemanggil klien |
+| `lib/incentive/akses.ts` | aturan akses (murni — dipakai layar & server) |
+| `lib/incentive/akses-api.ts` | pemanggil klien |
 | `app/api/incentive/akses/route.ts` | setel akses & lingkup brand (penjaga: akses penuh, bukan role admin) |
 | `app/api/incentive/splits/route.ts` | `DELETE` baru; `GET` mengikuti tingkat akses |
 | `app/incentive-pts/_components/calc.ts` | penghapusan lewat server, `batalkanBatchTahun` diperbaiki, kategori dari skema |
 | `app/incentive-pts/page.tsx` | satu aturan akses, tab Pengaturan Akses 3 tingkat, spanduk kelengkapan data |
 | `app/incentive-pts/_components/SchemeTab.tsx` | Seksi 1 "Cakupan Proyek" |
-| `lib/incentive-scheme.ts` | `kategoriProyek` + pemeriksaannya |
-| `lib/kelompok-insentif.ts` | toleransi tanggal BAST |
+| `lib/incentive/scheme.ts` | `kategoriProyek` + pemeriksaannya |
+| `lib/incentive/kelompok.ts` | toleransi tanggal BAST |
 | `app/reminder-schedule/page.tsx` | memakai kategori dari skema |
 | `lib/admin-users.ts`, `app/api/admin/users/route.ts` | jalur akses insentif yang kembar dihapus |
 | `uji/kelompok-insentif.ts` | 5 pengujian toleransi BAST |

@@ -7,10 +7,10 @@ const cek = (nama: string, ok: boolean, info = '') => {
 };
 
 const MODUL = [
-  'lib/incentive-scheme-kategori.ts',
-  'lib/incentive-scheme-simpan.ts',
-  'lib/incentive-scheme-aturan.ts',
-  'lib/incentive-scheme.ts',
+  'lib/incentive/scheme-kategori.ts',
+  'lib/incentive/scheme-simpan.ts',
+  'lib/incentive/scheme-aturan.ts',
+  'lib/incentive/scheme.ts',
 ];
 
 for (const m of MODUL) {

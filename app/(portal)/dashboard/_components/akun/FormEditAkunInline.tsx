@@ -14,7 +14,7 @@ export interface FormEditAkunInlineProps {
   editPtsDaerah: string;
   editPtsType: string;
   editingUser: User;
-  kelompokPTSList: import("@/lib/kelompok").Kelompok[];
+  kelompokPTSList: import("@/lib/kelompok/inti").Kelompok[];
   setEditAccessLevel: React.Dispatch<React.SetStateAction<"full" | "guest">>;
   setEditBisaDitugaskan: React.Dispatch<React.SetStateAction<boolean>>;
   setEditDivisi: React.Dispatch<React.SetStateAction<string>>;

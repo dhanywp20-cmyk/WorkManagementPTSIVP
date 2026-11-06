@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'fs';
 import {
   ATURAN_NOMINAL_BAWAAN, bolehLihatBrand, nominalTerbuka, rapikanAturanNominal, tempelkanNominal, terlibatDiProyek,
-} from '../lib/incentive-nominal';
+} from '../lib/incentive/nominal';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, detail = '') {

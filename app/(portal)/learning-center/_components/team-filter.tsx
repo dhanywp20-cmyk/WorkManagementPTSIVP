@@ -1,6 +1,6 @@
 'use client';
 
-import { useKelompokCabang, namaKelompokCabang } from '@/lib/kelompok';
+import { useKelompokCabang, namaKelompokCabang } from '@/lib/kelompok/inti';
 import { Ikon } from '@/components/shared/Ikon';
 
 export type TeamFilter = 'PTS' | 'PTS Daerah' | 'Sales' | 'Marketing';

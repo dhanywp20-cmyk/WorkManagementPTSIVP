@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { bacaRahasia } from '@/lib/rahasia-server';
-import { issueDbToken } from '@/lib/db-token';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
+import { issueDbToken } from '@/lib/auth/db-token';
 import { ambilPengaturanAI } from '@/lib/ai-pengaturan';
 
 export const BATAS_PER_JAM = 20;

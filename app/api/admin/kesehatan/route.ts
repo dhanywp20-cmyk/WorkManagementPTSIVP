@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { kumpulkanKesehatan } from '@/lib/kesehatan-server';
-import { ringkasKesehatan } from '@/lib/kesehatan';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { kumpulkanKesehatan } from '@/lib/kesehatan/server';
+import { ringkasKesehatan } from '@/lib/kesehatan/inti';
 
 export const dynamic = 'force-dynamic';
 

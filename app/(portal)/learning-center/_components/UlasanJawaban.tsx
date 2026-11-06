@@ -5,7 +5,7 @@ import { supabase, User, Question, DIFF_COLOR, fmtDate, BtnView, GradingStatusBa
 import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { createNotification } from '@/lib/notifications';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { GambarSoal } from '@/components/shared/GambarSoal';

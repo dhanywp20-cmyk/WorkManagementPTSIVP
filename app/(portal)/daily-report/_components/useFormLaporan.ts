@@ -3,8 +3,8 @@
 import { todayISO, fetchReminderActivities, fetchTicketActivities, fetchExistingReport, saveReport, saveTeamEntries, type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry, type DailyReport } from './shared';
 import { newManualKey, emptyManual, emptyTeamEntry } from './bantu-halaman';
 import { useEffect } from 'react';
-import { formatDate } from '@/lib/jadwal-aturan';
-import { type TeamUser } from '@/lib/jadwal-tampilan';
+import { formatDate } from '@/lib/jadwal/aturan';
+import { type TeamUser } from '@/lib/jadwal/tampilan';
 import { logAudit } from '@/lib/audit';
 
 export interface FormLaporanKonteks {

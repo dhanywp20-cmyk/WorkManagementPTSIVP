@@ -1,7 +1,7 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 import { useCallback, useEffect, useState } from 'react';
-import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan';
+import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan/inti';
 
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
 const waktu = (iso: string | null | undefined) => (iso
