@@ -31,6 +31,7 @@ CREATE UNIQUE INDEX incentive_tranches_unik_per_proyek ON public.incentive_tranc
 CREATE INDEX idx_ksm_member_id ON public.kpi_snapshot_members USING btree (member_id);
 CREATE INDEX idx_ksm_snapshot_id ON public.kpi_snapshot_members USING btree (snapshot_id);
 CREATE INDEX idx_late_ticket_parent ON public.late_ticket_links USING btree (parent_project_id);
+CREATE UNIQUE INDEX late_ticket_links_tiket_unik ON public.late_ticket_links USING btree (late_ticket_id) WHERE (late_ticket_id IS NOT NULL);
 CREATE INDEX idx_lc_answers_attempt ON public.lc_answers USING btree (attempt_id);
 CREATE INDEX idx_lc_answers_user ON public.lc_answers USING btree (user_id);
 CREATE INDEX idx_lc_questions_material ON public.lc_questions USING btree (material_id);

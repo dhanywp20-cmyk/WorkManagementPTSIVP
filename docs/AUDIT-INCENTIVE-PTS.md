@@ -261,6 +261,17 @@ sama sekali), tapi kalau fitur ini memang dibutuhkan, ini catatan bahwa
 maksudnya belum terpenuhi. Tidak diubah - menunggu keputusan apakah fitur
 ini masih diperlukan.
 
+**Status 2026-11-07: dibangun.** Tab Late Ticket Queue kini mendeteksi ticket
+Solved yang selesai di jendela support tahap yang sudah diproses tetapi
+tercatat setelah tahap itu diproses, dan petugasnya belum mendapat bagian di
+tahap tersebut (`calc-telat.ts`). Admin melampirkannya ke tahap pending
+berikutnya, atau mencatatnya sebagai sunset bila tidak ada tahap pending lagi.
+Saat tahap diproses, petugas dari ticket yang dilampirkan ikut dihitung
+sebagai support (`calc-batch.ts` → `idTiketLampiranTahap`). Lampiran bisa
+dilepas selama tahap tujuannya belum diproses. Menulis dijaga RLS
+`akses_insentif_input()` dan satu ticket hanya bisa dilampirkan sekali
+(migrasi 068). Uji: `uji/tiket-telat.ts`.
+
 ### T-13 (TEMUAN, BELUM DIUBAH) — `access_level` ("Full Access" toggle) tidak pernah diperiksa RLS
 
 Arah SEBALIKNYA dari T-9/T-10: bukan "gagal diam-diam", tapi "kelonggaran
