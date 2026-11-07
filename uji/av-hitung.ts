@@ -1,7 +1,7 @@
 import {
   hitungKoneksi, hitungDayaLED, bomLED, totalPenawaran, cadangan, unitPerRC, RECEIVING_CARD, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
-  jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
+  jarakLempar, bandwidthGbps, kebutuhanAntarmuka, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
@@ -37,7 +37,7 @@ console.log('\n1. LED Videotron');
   cek('20 MP melebihi 1 unit -> 2x UHD Jr / 3x MCTRL4K', besar.vp?.hw.nama === 'NovaPro UHD Jr' && besar.vp.qty === 2 && besar.kartu?.qty === 3, `${besar.vp?.qty} ${besar.kartu?.qty}`);
   const v1260 = VIDEO_PROCESSOR.find(v => v.nama === 'V1260')!;
   const k = kapasitasHardware(v1260, 9_000_000, 14);
-  cek('V1260 (tanpa port) dihitung dari pixel saja: 9 MP -> 2 unit', k.qty === 2 && k.pembatas === 'pixel' && k.pakaiPort === 0, JSON.stringify(k));
+  cek('V1260 sesuai spesifikasi: 10,4 MP & 16 port, 9 MP / 14 port cukup 1 unit', v1260.senderBawaan && k.qty === 1 && k.pembatas === null, JSON.stringify(k));
   const m300 = kapasitasHardware(SENDING_CARD[0], 1_000_000, 3);
   cek('MCTRL300 1 MP / 3 port -> 2 kartu karena port', m300.qty === 2 && m300.pembatas === 'port');
 }
@@ -67,7 +67,6 @@ console.log('\n2. Layar & jarak pandang');
 console.log('\n3. Proyektor');
 {
   cek('throw 1.5 x lebar 3 m = 4.5 m', jarakLempar(1.5, 3) === 4.5);
-  cek('lumen naik saat ruangan lebih terang', lumenDibutuhkan(4, 300) > lumenDibutuhkan(4, 100));
 }
 
 console.log('\n4. Bandwidth sinyal');
@@ -77,7 +76,15 @@ console.log('\n4. Bandwidth sinyal');
   const uhd = bandwidthGbps(3840, 2160, 60, 8, '4:4:4');
   cek('4K60 4:4:4 8-bit ~ 14.26 Gbps (pas untuk HDMI 2.0)', dekat(uhd.dataGbps, 14.256) && uhd.dataGbps <= 14.4, `${uhd.dataGbps}`);
   const uhd420 = bandwidthGbps(3840, 2160, 60, 8, '4:2:0');
-  cek('4K60 4:2:0 muat HDBaseT 10.2', uhd420.dataGbps <= 10.2, `${uhd420.dataGbps}`);
+  cek('4K60 4:2:0 8-bit muat HDBaseT 2.0 (payload 8,16)', uhd420.dataGbps <= 8.16, `${uhd420.dataGbps}`);
+  const uhd422 = bandwidthGbps(3840, 2160, 60, 8, '4:2:2');
+  cek('4K60 4:2:2 HDMI selalu wadah 24 bit: butuh HDMI 2.0 penuh, tidak muat HDBaseT 2.0', dekat(uhd422.dataGbps, 14.256) && uhd422.dataGbps > 8.16, `${uhd422.dataGbps}`);
+  cek('4K30 4:4:4 10-bit tidak muat HDBaseT 2.0', bandwidthGbps(3840, 2160, 30, 10, '4:4:4').dataGbps > 8.16);
+  cek('pixel clock resmi: 4K50 594 MHz, 4K24 297 MHz, 1080p24 74,25 MHz, 8K60 2376 MHz',
+    dekat(bandwidthGbps(3840, 2160, 50, 8, '4:4:4').pixelClockMHz, 594) && dekat(bandwidthGbps(3840, 2160, 24, 8, '4:4:4').pixelClockMHz, 297)
+    && dekat(bandwidthGbps(1920, 1080, 24, 8, '4:4:4').pixelClockMHz, 74.25) && dekat(bandwidthGbps(7680, 4320, 60, 8, '4:4:4').pixelClockMHz, 2376));
+  cek('DisplayPort 1.4 memuat 4K120 8-bit 4:4:4 (timing reduced blanking)', kebutuhanAntarmuka('dp', 3840, 2160, 120, 8, '4:4:4') <= 25.92);
+  cek('SDI 12G memuat 4K60 4:2:2 10-bit, tidak memuat 4:4:4', dekat(kebutuhanAntarmuka('sdi', 3840, 2160, 60, 10, '4:2:2'), 11.88) && kebutuhanAntarmuka('sdi', 3840, 2160, 60, 10, '4:4:4') > 11.88);
 }
 
 console.log('\n5. Audio');

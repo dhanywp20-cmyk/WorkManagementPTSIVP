@@ -97,10 +97,10 @@ export function saranLink(totalMbps: number, bebanMaks = 0.7): string {
 }
 
 export const KELAS_POE = [
-  { v: 'af', l: '802.3af (PoE)', w: 15.4 },
-  { v: 'at', l: '802.3at (PoE+)', w: 30 },
-  { v: 'bt3', l: '802.3bt tipe 3 (PoE++)', w: 60 },
-  { v: 'bt4', l: '802.3bt tipe 4', w: 90 },
+  { v: 'af', l: '802.3af · PoE', w: 15.4, pd: 12.95 },
+  { v: 'at', l: '802.3at · PoE+', w: 30, pd: 25.5 },
+  { v: 'bt3', l: '802.3bt tipe 3', w: 60, pd: 51 },
+  { v: 'bt4', l: '802.3bt tipe 4', w: 90, pd: 71.3 },
 ] as const;
 export type KodePoE = (typeof KELAS_POE)[number]['v'];
 export const PORT_SWITCH = [8, 16, 24, 48] as const;
@@ -109,11 +109,12 @@ export const ANGGARAN_POE_W = [65, 130, 240, 370, 740] as const;
 export function hitungPoE<T extends { watt: number; jumlah: number; kelas: KodePoE }>(perangkat: T[], cadanganPersen = 20) {
   const port = perangkat.reduce((n, p) => n + Math.max(0, p.jumlah), 0);
   const totalW = perangkat.reduce((n, p) => n + Math.max(0, p.watt) * Math.max(0, p.jumlah), 0);
-  const butuhW = totalW * (1 + cadanganPersen / 100);
+  const reservasiW = perangkat.reduce((n, p) => n + (KELAS_POE.find(k => k.v === p.kelas)?.w ?? 0) * Math.max(0, p.jumlah), 0);
+  const butuhW = Math.max(totalW * (1 + cadanganPersen / 100), reservasiW);
   const urut = KELAS_POE.map(k => k.v);
   const kelasTertinggi = perangkat.reduce<KodePoE | null>((m, p) => (p.jumlah > 0 && (!m || urut.indexOf(p.kelas) > urut.indexOf(m)) ? p.kelas : m), null);
-  const melebihi = perangkat.filter(p => p.jumlah > 0 && p.watt > (KELAS_POE.find(k => k.v === p.kelas)?.w ?? 0));
-  return { port, totalW, butuhW, kelasTertinggi, melebihi, portSwitch: naikKe(PORT_SWITCH, port), anggaranW: naikKe(ANGGARAN_POE_W, butuhW) };
+  const melebihi = perangkat.filter(p => p.jumlah > 0 && p.watt > (KELAS_POE.find(k => k.v === p.kelas)?.pd ?? 0));
+  return { port, totalW, reservasiW, butuhW, kelasTertinggi, melebihi, portSwitch: naikKe(PORT_SWITCH, port), anggaranW: naikKe(ANGGARAN_POE_W, butuhW) };
 }
 
 export const UKURAN_RAK_U = [6, 9, 12, 15, 18, 20, 22, 27, 32, 37, 42, 47] as const;

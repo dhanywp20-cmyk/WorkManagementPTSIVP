@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import {
-  ChartColumn, ClipboardList, Users, Target, Package, Building2, User, ChartPie, Store, Ticket,
+  Server, SlidersVertical, BrickWall, ChartColumn, ClipboardList, Users, Target, Package, Building2, User, ChartPie, Store, Ticket,
   FileText, CalendarDays, Compass, House, GraduationCap, Star, Truck, Clock, Link, Pin, TrendingUp,
   TriangleAlert, Siren, Hand, KeyRound, Lock, Search, Camera, Smartphone, MapPin, File, Folder,
   HardHat, Briefcase, Trophy, Medal, Plane, CircleCheck, Upload, Construction, Hourglass, Wallet,
@@ -26,6 +26,7 @@ const PETA: Record<string, LucideIcon> = {
   '🏆': Trophy, '🏅': Medal, '🥇': Award, '🎖': Award, '🎭': Drama, '✈': Plane,
   '✅': CircleCheck, '✔': Check, '❌': CircleX, '⛔': Ban, '🚫': Ban, '📤': Upload,
   '🏗': Construction, '💰': Wallet, '💵': Banknote, '💼': Briefcase, '🖥': Monitor, '📺': Tv, '🖨': Printer, '📽': Projector, '🧊': Box, '〰': Cable, '🔊': Volume2, '🏧': TabletSmartphone,
+  '🗄': Server, '🎚': SlidersVertical, '🧱': BrickWall, '📘': BookOpen,
   '🔧': Wrench, '🛠': Hammer, '🔄': RefreshCw, '👑': Crown, '✏': Pencil, '✍': PenLine,
   '📐': Ruler, '💾': Save, '🏷': Tag, '🧮': Calculator, '🧩': Puzzle, '🛡': Shield,
   '🤝': Handshake, '🚗': Car, '🚀': Rocket, '🗑': Trash2, '🔬': Microscope, '🔔': Bell,

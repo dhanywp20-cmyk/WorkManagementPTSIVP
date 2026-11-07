@@ -50,7 +50,7 @@ export function PanelJaringanAV() {
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah aliran</button>
           <Angka label="Kanal audio Dante" nilai={dante} onUbah={v => v >= 0 && setDante(Math.round(v))} step={1} bantuan="total kanal yang mengalir di link ini" />
         </div>
-        <div className="grid grid-cols-2 gap-2.5 content-start">
+        <div className="kisi-nilai content-start">
           <Nilai label="Video" nilai={f(videoMbps, 0)} satuan="Mbps" />
           <Nilai label="Dante" nilai={f(audioMbps, 1)} satuan="Mbps" />
           <Nilai label="Total" nilai={f(total, 0)} satuan="Mbps" />

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Ikon } from '@/components/shared/Ikon';
 import { JENIS_PUSTAKA, type KelompokPustaka } from '@/lib/pustaka';
 import { DaftarPustaka } from './pustaka/DaftarPustaka';
 
@@ -11,7 +12,7 @@ export function Pustaka() {
   const [aktif, setAktif] = useState('artikel');
   const jenis = JENIS_PUSTAKA.find(j => j.v === aktif) ?? JENIS_PUSTAKA[0];
   return (
-    <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)] items-start">
+    <div className="grid gap-4 grid-cols-[minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)] items-start">
       <nav aria-label="Jenis pustaka" className="rounded-2xl border border-slate-200 bg-white p-2 lg:sticky lg:top-24">
         {KELOMPOK.map(k => (
           <div key={k.v} className="mb-2 last:mb-0">
@@ -22,7 +23,7 @@ export function Pustaka() {
                 return (
                   <button key={j.v} type="button" onClick={() => setAktif(j.v)} aria-current={on ? 'page' : undefined}
                     className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-left text-[13px] font-semibold whitespace-nowrap ${on ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-                    <span aria-hidden="true">{j.ikon}</span>{j.l}
+                    <Ikon nama={j.ikon} ukuran={15} />{j.l}
                   </button>
                 );
               })}
@@ -31,7 +32,7 @@ export function Pustaka() {
         ))}
       </nav>
       <section className="rounded-2xl border border-slate-200 bg-white p-4" aria-label={jenis.l}>
-        <h2 className="text-[16px] font-bold text-slate-900 mb-2 flex items-center gap-2"><span aria-hidden="true">{jenis.ikon}</span>{jenis.l}</h2>
+        <h2 className="text-[16px] font-bold text-slate-900 mb-2 flex items-center gap-2"><Ikon nama={jenis.ikon} ukuran={17} />{jenis.l}</h2>
         <DaftarPustaka key={jenis.v} jenis={jenis} />
       </section>
     </div>

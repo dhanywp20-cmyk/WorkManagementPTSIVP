@@ -198,7 +198,7 @@ export function KalkulatorDisplay() {
 
         <Kartu judul="Hasil">
           {jenis === 'videowall' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="kisi-nilai">
               <Nilai label="Susunan" nilai={`${kolom} × ${baris}`} ket={`${kolom * baris} panel${screen > 1 ? ` · ${kolom * baris * screen} total` : ''}`} />
               <Nilai label="Ukuran" nilai={`${f(vw.lebarM)} × ${f(vw.tinggiM)}`} satuan="m"
                 ket={modeVW === 'ukuran' ? `target ${f(targetW)} × ${f(targetH)} m` : undefined} />
@@ -209,7 +209,7 @@ export function KalkulatorDisplay() {
                 ket={panel.bezelMm <= 1.8 ? 'cocok untuk teks / spreadsheet' : 'sambungan terlihat pada teks kecil'} />
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="kisi-nilai">
               <Nilai label="Diagonal minimum" nilai={f(saran.diagonalMin, 0)} satuan="inci" ket={`penonton ${f(jarak, 1)} m`} />
               <Nilai label="IFP dipakai" nilai={`${ifp.diagonal}"`} nada={kurangBesar || ifp.diagonal < saran.diagonalMin ? 'awas' : 'baik'}
                 ket={kurangBesar ? 'tidak ada IFP cukup besar - pertimbangkan videowall / LED' : ifp.diagonal < saran.diagonalMin ? 'lebih kecil dari minimum' : 'memenuhi jarak pandang'} />

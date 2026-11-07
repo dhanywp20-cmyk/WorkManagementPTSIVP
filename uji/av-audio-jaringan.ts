@@ -24,8 +24,11 @@ cek('SPL 75 dB di 8 m, sens 90 dB, headroom 10 dB -> ±20,2 W', dekat(dayaUntukS
 console.log('\nJaringan');
 cek('Dante 64 kanal 48 kHz ±108 Mbps', dekat(danteMbps(64), 108.13, 0.05));
 cek('650 Mbps -> 1 GbE, 701 Mbps -> 10 GbE', saranLink(650) === '1 GbE' && saranLink(701) === '10 GbE');
-const poe = hitungPoE([{ watt: 13, jumlah: 4, kelas: 'af' }, { watt: 25, jumlah: 2, kelas: 'at' }]);
-cek('PoE 102 W + 20% -> anggaran 130 W, 6 port -> switch 8, kelas tertinggi PoE+', poe.totalW === 102 && poe.anggaranW === 130 && poe.portSwitch === 8 && poe.kelasTertinggi === 'at' && poe.melebihi.length === 0);
+const poe = hitungPoE([{ watt: 13, jumlah: 4, kelas: 'at' }, { watt: 25, jumlah: 2, kelas: 'at' }]);
+cek('13 W di port af melebihi batas perangkat 12,95 W', hitungPoE([{ watt: 13, jumlah: 1, kelas: 'af' }]).melebihi.length === 1);
+cek('reservasi per kelas: 6 port at = 180 W mengalahkan total + 20%', poe.reservasiW === 180 && poe.butuhW === 180);
+const poeRingan = hitungPoE([{ watt: 12, jumlah: 4, kelas: 'af' }, { watt: 25, jumlah: 2, kelas: 'at' }]);
+cek('PoE reservasi 121,6 W -> anggaran 130 W, 6 port -> switch 8, kelas tertinggi PoE+', poeRingan.totalW === 98 && poeRingan.anggaranW === 130 && poeRingan.portSwitch === 8 && poeRingan.kelasTertinggi === 'at' && poe.melebihi.length === 0);
 cek('perangkat 20 W di port 802.3af terdeteksi melebihi', hitungPoE([{ watt: 20, jumlah: 1, kelas: 'af' }]).melebihi.length === 1);
 
 console.log('\nRak & UPS');

@@ -170,7 +170,7 @@ export const VIDEO_PROCESSOR: Hardware[] = [
   { nama: 'VX600', maksPx: 3_900_000, port: 6, senderBawaan: true, ket: 'All-in-one compact; 4K; single screen' },
   { nama: 'VX1000', maksPx: 6_500_000, port: 10, senderBawaan: true, ket: 'Mid-high all-in-one; input 4K' },
   { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; input 4K; layar besar' },
-  { nama: 'V1260', maksPx: 7_680_000, port: 0, senderBawaan: false, ket: 'VP saja - perlu sending card terpisah' },
+  { nama: 'V1260', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: '2-in-1; 16x LAN + 4 fiber; input HDMI 2.0, DVI, 3G-SDI' },
 ];
 
 export interface Kapasitas {
@@ -202,7 +202,7 @@ export function saranHardware(totalPx: number, portLAN: number, kartu = SENDING_
     const urut = [...daftar].sort((a, b) => a.maksPx - b.maksPx);
     const cukup = urut.find(h => h.maksPx >= totalPx && h.port >= portLAN);
     if (cukup) return { hw: cukup, qty: 1 };
-    const besar = urut[urut.length - 1];
+    const besar = urut.find(h => h.maksPx === urut[urut.length - 1].maksPx)!;
     return { hw: besar, qty: kapasitasHardware(besar, totalPx, portLAN).qty };
   };
   return { vp: pilih(vp.filter(v => v.senderBawaan && v.port > 0)), kartu: pilih(kartu) };

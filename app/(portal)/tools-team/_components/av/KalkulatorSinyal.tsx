@@ -1,7 +1,7 @@
 'use client';
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { ANTARMUKA, bandwidthGbps, type Chroma } from '@/lib/av/hitung';
+import { ANTARMUKA, bandwidthGbps, type Chroma, kebutuhanAntarmuka } from '@/lib/av/hitung';
 import { useState } from 'react';
 import { PanelJaringanAV } from './sinyal/PanelJaringanAV';
 
@@ -14,7 +14,8 @@ export function KalkulatorSinyal() {
   const [chroma, setChroma] = useState<Chroma>('4:4:4');
   const [lebar, tinggi] = res.split('x').map(Number);
   const b = bandwidthGbps(lebar, tinggi, hz, bit, chroma);
-  const ringkas = () => `${lebar}×${tinggi} @${hz}Hz ${bit}-bit ${chroma}: ±${f(b.dataGbps, 2)} Gbps. Cocok: ${ANTARMUKA.filter(a => a.gbps >= b.dataGbps).map(a => a.nama).join(', ') || 'tidak ada (butuh kompresi DSC)'}.`;
+  const antarmuka = ANTARMUKA.map(a => { const butuh = kebutuhanAntarmuka(a.jenis, lebar, tinggi, hz, bit, chroma); return { ...a, butuh, ok: a.gbps >= butuh }; });
+  const ringkas = () => `${lebar}×${tinggi} @${hz}Hz ${bit}-bit ${chroma}: ±${f(b.dataGbps, 2)} Gbps. Cocok: ${antarmuka.filter(a => a.ok).map(a => a.nama).join(', ') || 'tidak ada (butuh kompresi DSC)'}.`;
   return (
     <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
@@ -30,15 +31,15 @@ export function KalkulatorSinyal() {
         [['Resolusi', `${lebar} × ${tinggi}`], ['Refresh', `${hz} Hz`], ['Bit depth / chroma', `${bit}-bit · ${chroma}`]],
         [['Data video', `${f(b.dataGbps, 2)} Gbps`, true], ['Pixel clock', `${f(b.pixelClockMHz, 1)} MHz`]],
         'Timing standar termasuk blanking. Extender/matrix dengan kompresi (DSC, VC-2) bisa membawa format di atas kapasitas murninya.',
-        [{ judul: 'Kecocokan antarmuka', jenis: 'tabel', kepala: ['Antarmuka', 'Kapasitas', 'Status', 'Panjang kabel'], rataKanan: [1],
-          isi: ANTARMUKA.map(a => [a.nama, `${a.gbps} Gbps`, a.gbps >= b.dataGbps ? 'Cukup' : 'Tidak cukup', a.panjang]) }]), 'Bandwidth Sinyal')} />}>
-        <div className="grid grid-cols-2 gap-2.5 mb-3">
-          <Nilai label="Data video" nilai={f(b.dataGbps, 2)} satuan="Gbps" />
+        [{ judul: 'Kecocokan antarmuka', jenis: 'tabel', kepala: ['Antarmuka', 'Butuh', 'Kapasitas', 'Status', 'Panjang kabel'], rataKanan: [1, 2],
+          isi: antarmuka.map(a => [a.nama, `${f(a.butuh, 2)} Gbps`, `${a.gbps} Gbps`, a.ok ? 'Cukup' : 'Tidak cukup', a.panjang]) }]), 'Bandwidth Sinyal')} />}>
+        <div className="kisi-nilai mb-3">
+          <Nilai label="Data video (HDMI)" nilai={f(b.dataGbps, 2)} satuan="Gbps" ket={chroma === '4:2:2' ? '4:2:2 HDMI selalu dikirim dalam wadah 24 bit' : undefined} />
           <Nilai label="Pixel clock" nilai={f(b.pixelClockMHz, 1)} satuan="MHz" />
         </div>
         <ul className="divide-y divide-slate-100">
-          {ANTARMUKA.map(a => {
-            const ok = a.gbps >= b.dataGbps;
+          {antarmuka.map(a => {
+            const ok = a.ok;
             return (
               <li key={a.nama} className="py-2 flex items-start justify-between gap-3 text-sm">
                 <span className="min-w-0">
@@ -46,7 +47,7 @@ export function KalkulatorSinyal() {
                   <span className="block text-[11.5px] text-slate-500">{a.panjang}</span>
                 </span>
                 <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full shrink-0 ${ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                  {ok ? 'Cukup' : 'Tidak cukup'} · {a.gbps} Gbps
+                  {ok ? 'Cukup' : 'Tidak cukup'} · {f(a.butuh, 2)} / {a.gbps} Gbps
                 </span>
               </li>
             );

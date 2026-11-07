@@ -68,7 +68,7 @@ export function TampilanKonten({ a }: { a: AlatLED }) {
       <KartuLayar a={a} judul="Konten & Pola Uji"><TombolSalin key="salin" teks={teks} /></KartuLayar>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
         <Kartu judul="Spesifikasi konten">
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Resolusi kanvas" nilai={`${h.resX} × ${h.resY}`} satuan="px" ket="buat materi persis ukuran ini" />
             <Nilai label="Rasio" nilai={h.rasioTerdekat} ket={h.rasio} />
             <Nilai label="Per unit" nilai={`${h.pxCabX} × ${h.pxCabY}`} satuan="px" ket={`${kolom} × ${baris} unit`} />

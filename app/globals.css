@@ -797,3 +797,6 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 @media (prefers-reduced-motion: reduce) {
   .tema-beranda, .tema-beranda * { animation: none !important; transition-duration: .01ms !important; }
 }
+/* Kisi hasil kalkulator AV: baris terakhir merata, tidak menyisakan sel kosong. */
+.kisi-nilai { display: flex; flex-wrap: wrap; gap: .625rem; }
+.kisi-nilai > * { flex: 1 1 11rem; min-width: 0; }

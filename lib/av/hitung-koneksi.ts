@@ -143,10 +143,10 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
 export interface ReceivingCard { nama: string;  w: number;  h: number; ket: string }
 
 export const RECEIVING_CARD: ReceivingCard[] = [
-  { nama: 'A4s Plus', w: 256, h: 256, ket: 'Ekonomis; layar kecil / modul besar' },
+  { nama: 'A4s', w: 256, h: 256, ket: 'Ekonomis; layar kecil / modul besar' },
   { nama: 'A5s Plus', w: 512, h: 384, ket: 'Umum indoor & outdoor' },
-  { nama: 'A7s Plus', w: 512, h: 512, ket: 'Indoor fine pitch' },
-  { nama: 'A8s', w: 512, h: 512, ket: 'Fine pitch, kalibrasi & HDR dasar' },
+  { nama: 'A7s Plus', w: 512, h: 512, ket: 'Indoor fine pitch; 512×384 untuk driver IC biasa' },
+  { nama: 'A8s', w: 512, h: 384, ket: 'Fine pitch, kalibrasi & HDR dasar; sudah tidak diproduksi' },
   { nama: 'A10s Plus', w: 512, h: 512, ket: 'Premium fine pitch, HDR, refresh tinggi' },
 ];
 

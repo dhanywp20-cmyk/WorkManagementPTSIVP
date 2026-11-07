@@ -46,7 +46,7 @@ export function AudioKabel() {
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Impedansi Kabel Speaker')} />}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Impedansi beban" nilai={f(z, 2)} satuan="Ω" nada={z >= minAmp ? 'baik' : 'buruk'} ket={z >= minAmp ? `aman (min ${minAmp} Ω)` : `di bawah ${minAmp} Ω - ubah susunan`} />
           <Nilai label="R kabel" nilai={f(k.rKabelOhm, 2)} satuan="Ω" ket="pergi-pulang" />
           <Nilai label="Rugi kabel" nilai={f(k.rugiDb, 2)} satuan="dB" ket={`${f(k.hilangPersen, 1)}% daya`} nada={k.rugiDb > 1 ? 'buruk' : k.rugiDb > 0.5 ? 'awas' : 'baik'} />
