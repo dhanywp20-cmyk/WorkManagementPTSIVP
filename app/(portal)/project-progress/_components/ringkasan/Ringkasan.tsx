@@ -127,6 +127,20 @@ const berwarna = (d: { label: string; value: number }[]) => d.map((x, i) => ({ .
 const pieOrang = (o: Kontribusi[]) => berwarna(o.map(x => ({ label: x.nama, value: x.jumlah })));
 const pie = (data: { label: string; value: number; color: string }[]) => data.filter(d => d.value > 0);
 
+export type JenisSaringRingkasan = 'lokasi' | 'tenggat' | 'divisi' | 'sales';
+export interface SaringRingkasan { jenis: JenisSaringRingkasan; label: string }
+export const LABEL_STATUS_LOKASI: Record<string, 'selesai' | 'berjalan' | 'belum' | 'kosong'> = {
+  'Selesai': 'selesai', 'Berjalan': 'berjalan', 'Belum mulai': 'belum', 'Belum ada item': 'kosong',
+};
+export const LABEL_TENGGAT: Record<string, 'aman' | 'dekat' | 'terlambat' | 'tanpa'> = {
+  'Aman': 'aman', '≤ 3 hari lagi': 'dekat', 'Terlambat': 'terlambat', 'Tanpa target': 'tanpa',
+};
+interface PropsSaring { saring?: SaringRingkasan | null; onSaring?: (s: SaringRingkasan) => void }
+const klikSaring = (jenis: JenisSaringRingkasan, { saring, onSaring }: PropsSaring) => ({
+  activeFilter: saring?.jenis === jenis ? saring.label : null,
+  onSliceClick: onSaring ? (label: string) => onSaring({ jenis, label }) : undefined,
+});
+
 function DikerjakanOleh({ orang, satuan }: { orang: Kontribusi[]; satuan: 'lokasi' | 'item' }) {
   return <MiniPieChart title="Dikerjakan Oleh (Handler)" icon="👷" data={pieOrang(orang)} centerLabel={satuan} />;
 }
@@ -146,7 +160,7 @@ export function LipatRingkasan({ children, hpTerlipat = false }: { children: Rea
   );
 }
 
-export function RingkasanProyek({ r }: { r: Ringkasan }) {
+export function RingkasanProyek({ r, ...ps }: { r: Ringkasan } & PropsSaring) {
   const tenggat = pie([
     { label: 'Aman', value: r.perTenggat.aman, color: TEMA.warna },
     { label: '≤ 3 hari lagi', value: r.perTenggat.dekat, color: '#d97706' },
@@ -158,13 +172,13 @@ export function RingkasanProyek({ r }: { r: Ringkasan }) {
       <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_minmax(0,2.2fr)] items-stretch">
         <KartuProgres persen={r.persen} stat={r.total} w={r} />
         <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 content-start">
-          <MiniPieChart title="Status Lokasi" icon="📍" data={pie([
+          <MiniPieChart title="Status Lokasi" icon="📍" {...klikSaring('lokasi', ps)} data={pie([
             { label: 'Selesai', value: r.perStatus.selesai, color: TEMA.selesai },
             { label: 'Berjalan', value: r.perStatus.berjalan, color: TEMA.warna },
             { label: 'Belum mulai', value: r.perStatus.belum, color: '#94a3b8' },
             { label: 'Belum ada item', value: r.perStatus.kosong, color: '#e2e8f0' },
           ])} />
-          {tenggat.length > 0 && <MiniPieChart title="Tenggat Lokasi Berjalan" icon="🗓️" data={tenggat} />}
+          {tenggat.length > 0 && <MiniPieChart title="Tenggat Lokasi Berjalan" icon="🗓️" {...klikSaring('tenggat', ps)} data={tenggat} />}
           {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} satuan="lokasi" />}
         </div>
       </div>
@@ -173,18 +187,18 @@ export function RingkasanProyek({ r }: { r: Ringkasan }) {
   );
 }
 
-export function RingkasanDaftarProyek({ r }: { r: RingkasanDaftar }) {
+export function RingkasanDaftarProyek({ r, ...ps }: { r: RingkasanDaftar } & PropsSaring) {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5">
-      <MiniPieChart title="Lokasi Selesai Semua Proyek" icon="📍" centerValue={r.lokasi.selesai} centerLabel={`dari ${r.lokasi.total} lokasi`} data={pie([
+      <MiniPieChart title="Lokasi Selesai Semua Proyek" icon="📍" {...klikSaring('lokasi', ps)} centerValue={r.lokasi.selesai} centerLabel={`dari ${r.lokasi.total} lokasi`} data={pie([
         { label: 'Selesai', value: r.lokasi.selesai, color: TEMA.selesai },
         { label: 'Berjalan', value: r.lokasi.berjalan, color: TEMA.warna },
         { label: 'Belum mulai', value: r.lokasi.belum, color: '#94a3b8' },
         { label: 'Belum ada item', value: r.lokasi.kosong, color: '#e2e8f0' },
       ])} />
-      <MiniPieChart title="Proyek per Divisi" icon="🏢" data={berwarna(r.perDivisi)} />
+      <MiniPieChart title="Proyek per Divisi" icon="🏢" {...klikSaring('divisi', ps)} data={berwarna(r.perDivisi)} />
       <div className="col-span-2 xl:col-span-1">
-        <MiniPieChart title="Proyek per Sales" icon="🤝" data={berwarna(r.perSales)} />
+        <MiniPieChart title="Proyek per Sales" icon="🤝" {...klikSaring('sales', ps)} data={berwarna(r.perSales)} />
       </div>
     </div>
   );
