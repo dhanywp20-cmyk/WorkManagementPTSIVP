@@ -81,7 +81,7 @@ export function KelasEksternalPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap bg-white/90 rounded-2xl border border-slate-200 shadow-xs px-4 py-3">
         <div className="flex-1 min-w-0">
           <h2 className="text-[16px] font-bold text-slate-900">Kelas Eksternal</h2>
           <p className="text-[12px] text-slate-500">Kuis live ala Kahoot & ujian untuk customer · cukup isi nama · tanpa akun</p>
@@ -94,7 +94,7 @@ export function KelasEksternalPage() {
 
       {kabar && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-[13px] font-semibold text-emerald-700 break-all">{kabar}</p>}
       {galat && <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[13px] font-semibold text-red-700">{galat}</p>}
-      {!daftar && !galat && <p className="py-12 text-center text-[13px] text-slate-400">Memuat…</p>}
+      {!daftar && !galat && <p className="py-12 text-center text-[13px] text-slate-500 bg-white/90 rounded-2xl border border-slate-200">Memuat…</p>}
       {daftar && daftar.length === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
           <p className="text-[14px] font-bold text-slate-800">Belum ada kelas eksternal</p>
