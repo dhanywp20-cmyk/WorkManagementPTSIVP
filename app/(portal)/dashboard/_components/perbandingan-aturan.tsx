@@ -1,8 +1,7 @@
 'use client';
-/** Admin Panel → Product Comparison: siapa unduh langsung, siapa verifikator, Loloskan semua, lama simpan. */
 import { useEffect, useState } from 'react';
-import { muatKelompok, semuaKelompok } from '@/lib/kelompok';
-import { ATURAN_BAWAAN, type AturanPerbandingan, JABATAN_PILIHAN, ROLE_PILIHAN } from '@/lib/perbandingan-aturan';
+import { muatKelompok, semuaKelompok } from '@/lib/kelompok/inti';
+import { ATURAN_BAWAAN, type AturanPerbandingan, JABATAN_PILIHAN, ROLE_PILIHAN } from '@/lib/perbandingan/aturan';
 
 const LABEL_ROLE: Record<string, string> = { admin: 'Admin', superadmin: 'Superadmin', team: 'Team', team_pts: 'Team PTS', guest: 'Sales / Marketing (guest)' };
 const API = '/api/tools-team/perbandingan/aturan';

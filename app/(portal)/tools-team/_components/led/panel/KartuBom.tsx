@@ -1,5 +1,4 @@
 'use client';
-/** Kartu daftar material (BOM) & penawaran dengan harga satuan. */
 import { bukaCetak, namaBerkas, unduhLembarPNG } from '../../bersama/cetak';
 import { Angka, Catatan, Kartu, TombolSalin } from '../../bersama/ui';
 import { TabelBom } from '../../bersama/TabelBom';

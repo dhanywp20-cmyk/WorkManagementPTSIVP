@@ -1,17 +1,12 @@
 'use client';
 
-/**
- * Hasil Kalkulator AV yang disimpan ke proyek ini (tools_av_hasil, migrasi 055) - dari tombol
- * "Simpan ke proyek" di AV Solution Tools. Tiap hasil bisa dicetak ulang (lembar A4), diunduh PNG,
- * ringkasannya disalin, dan dihapus oleh pembuatnya / admin.
- */
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calculator, Copy, Download, Printer, Trash2 } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { bukaCetak, namaBerkas, unduhLembarPNG, type Lembar } from '@/lib/lembar-cetak';
-import { formatWaktu } from '@/lib/checklist';
+import { formatWaktu } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 
 interface HasilAV {

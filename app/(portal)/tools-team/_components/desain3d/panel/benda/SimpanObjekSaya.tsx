@@ -1,5 +1,4 @@
 'use client';
-/** Simpan benda terpilih ke "Objek saya" (pribadi per akun - simpan/useObjekSaya.ts). */
 import { useState } from 'react';
 import type { KonteksAtur } from './konteks';
 

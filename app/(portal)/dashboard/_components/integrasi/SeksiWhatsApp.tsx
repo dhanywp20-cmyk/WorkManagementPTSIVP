@@ -1,6 +1,5 @@
 'use client';
 
-/** SeksiWhatsApp - dipecah dari app/(portal)/dashboard/_components/modal-integrasi.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { type StatusRahasia, type StatusKoneksi } from '../modal-integrasi';
 import { PENYEDIA_WA } from '@/lib/notifikasi/penyedia-wa';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -81,7 +80,6 @@ export function SeksiWhatsApp({ hapusRahasia, koneksi, p, pesanKanal, rahasia, s
             </div>
           </div>
 
-          {/* Panel uji: di SEBELAH barang yang diuji, bukan di dasar halaman. */}
           <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
             <h4 className="text-[13px] font-bold text-slate-700">Uji pengiriman</h4>
             <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3 leading-relaxed">

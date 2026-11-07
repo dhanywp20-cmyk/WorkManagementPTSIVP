@@ -1,14 +1,5 @@
-/**
- * uji/batas-galat.ts - batas galat (error boundary), 404, dan /api/health.
- *
- * Sebelum ini platform tidak punya error.tsx sama sekali: satu galat render menjatuhkan
- * seluruh halaman jadi layar putih. Uji ini menjaga supaya berkas-berkas itu tetap ada dan
- * /api/health tetap publik tanpa menyentuh basis data.
- *
- * Jalankan: npm test -- batas-galat
- */
 import { existsSync, readFileSync } from 'fs';
-import { bolehMuatUlang, galatBerkasTidakTermuat, JEDA_MUAT_ULANG_MS } from '../lib/galat-berkas';
+import { bolehMuatUlang, galatBerkasTidakTermuat, JEDA_MUAT_ULANG_MS } from '../lib/galat/berkas';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -52,7 +43,7 @@ cek('health tidak menyentuh basis data', !/supabase|getAdminClient|from\(/.test(
 cek('health tidak di-cache', /no-store/.test(health));
 
 console.log('\n4. Manifest tidak menunggu basis data di setiap permintaan');
-const merek = readFileSync('lib/merek-server.ts', 'utf8');
+const merek = readFileSync('lib/merek/server.ts', 'utf8');
 cek('ada simpanan sementara', /simpanan/.test(merek) && /UMUR_SIMPAN_MS/.test(merek));
 cek('hanya hasil berhasil yang disimpan (galat dilempar sebelum disimpan)', merek.indexOf('if (error) throw error') < merek.indexOf('simpanan = {'));
 

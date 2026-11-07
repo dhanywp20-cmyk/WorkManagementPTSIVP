@@ -1,7 +1,6 @@
 'use client';
 
-/** BarisTicketKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { UBIN, BAYANG_UBIN, RelAksen } from '@/components/shared/ubin';
 import { AKSEN, BAIK, BarisRincian, Cincin, HATI, KRITIS, KakiUbin, KartuModul, KepalaUbin, batasDenganLainnya, type KPIData, type Scope } from '../DashboardKPI';
 
 export interface BarisTicketKPIProps {
@@ -15,7 +14,6 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
-        {/* TICKET */}
         <KartuModul
           kelas="lg:col-span-3" ikon="🎫" judul="Ticket" warna="#e11d48"
           catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
@@ -35,7 +33,6 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
                 ))}
         </KartuModul>
 
-        {/* REMINDER SCHEDULE */}
         <KartuModul
           kelas="lg:col-span-3" ikon="📅" judul="Reminder Schedule" warna="#7c3aed"
           angka={loading?'—':(kpi?.reminders.total??0)}
@@ -53,7 +50,6 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
               </>}
         </KartuModul>
 
-        {/* PIKET SHOWROOM — cincin + papan nama, bukan bilah */}
         <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna="#0891b2"/>
           <KepalaUbin ikon="🏪" judul="Piket Showroom" warna="#0891b2"
@@ -62,9 +58,6 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
             <Cincin ukuran={82} warna="#0891b2"
               nilai={kpi?.piket.weekFilled??0} dari={kpi?.piket.weekTotal??0}
               teks={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}/>
-            {/*  PIC piket adalah NAMA, bukan angka - bilah sepanjang nol
-                untuk "belum diisi" cuma menipu mata: terbaca seperti
-                nilai nol padahal artinya "belum ada datanya". */}
             <div className="flex-1 min-w-0 flex flex-col gap-1.5">
               {[
                 {team:'IVP', person:kpi?.piket.todayIVP},
@@ -88,7 +81,6 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
           </div>
         </div>
 
-        {/* UNIT MOVEMENT */}
         <KartuModul
           kelas="lg:col-span-3" ikon="🚚" judul="Unit Movement" warna="#d97706"
           catatan="Bulan ini"

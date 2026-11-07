@@ -1,13 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/peta-jsx.mjs - Daftar blok JSX besar di sebuah berkas (baris awal-akhir, panjang, cuplikan).
- *
- *   node scripts/peta-jsx.mjs <berkas.tsx> [min-baris=40]
- *
- * Pasangan scripts/ekstrak-jsx.mjs: menunjukkan blok mana yang layak dipindah ke komponen sendiri.
- * Yang dicetak hanya blok yang panjangnya >= min-baris dan TIDAK berada di dalam blok lain yang juga
- * dicetak pada kedalaman yang sama (supaya terbaca sebagai peta, bukan daftar bersarang penuh).
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 
@@ -23,7 +14,7 @@ const hasil = [];
     const a = baris(n.getStart(sf)), b = baris(n.end), pj = b - a + 1;
     if (pj >= min) {
       hasil.push({ a, b, pj, kedalaman, cuplik: teks.slice(n.getStart(sf), n.getStart(sf) + 90).replace(/\s+/g, ' ') });
-      if (pj < 250) return; // blok sedang: cukup dicetak, tidak perlu diurai lagi
+      if (pj < 250) return;
     }
   }
   ts.forEachChild(n, c => jalan(c, kedalaman + (jsx ? 1 : 0)));

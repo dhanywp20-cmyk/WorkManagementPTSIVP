@@ -1,6 +1,5 @@
 'use client';
 
-/** DaftarSesi - dipecah dari app/(portal)/learning-center/_components/SessionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, QuizSession, fmtDate, BtnDelete } from '../shared';
 
@@ -41,10 +40,6 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
           return (
             <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-xs p-5"
               style={{ background: '#ffffff' }}>
-              {/* Di layar sempit deretan tombol turun ke bawah, bukan berdesakan
-                  di kanan judul: dengan shrink-0 tombolnya tidak mau
-                  mengecil, jadi ia meluber keluar kartu dan halaman ikut bisa
-                  digeser ke samping. */}
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0 w-full">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -80,16 +75,8 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
                       {s.close_at && <span className="text-rose-600 font-semibold"><IkonTeks nama="🔒" />Tutup: {fmtDT(s.close_at)}</span>}
                     </div>
                   )}
-                  {/*
-                    Berapa orang sudah MEMBUKA quiz ini, dan berapa yang sudah
-                    selesai - dari total sasarannya. Tanpa angka "mulai", sesi
-                    yang baru dibagikan terlihat sama persis dengan sesi yang
-                    tidak dibuka siapa pun.
-                  */}
                   {(() => {
                     const p = progresSesi[s.id] ?? { mulai: 0, submit: 0 };
-                    //  Sasaran 'semua' tidak menyimpan daftar id (target_user_ids
-                    //  null), jadi totalnya dihitung dari daftar akun yang ada.
                     const total = s.target_user_ids?.length ?? teamUsers.length;
                     const persen = total > 0 ? Math.round((p.mulai / total) * 100) : 0;
                     return (
@@ -122,7 +109,6 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
                     ) : targetNames.length === 0 ? (
                       <span className="text-xs text-slate-500 italic">—</span>
                     ) : (() => {
-                      // Try to detect if this was a division-targeted session
                       const divMatches = [...new Set(
                         teamUsers.filter(u => s.target_user_ids?.includes(u.id) && (u as any).sales_division)
                           .map(u => (u as any).sales_division as string)

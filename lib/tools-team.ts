@@ -1,21 +1,11 @@
-/**
- * lib/tools-team.ts - bentuk & validasi data Tools Team yang disimpan di
- * server (desain ruang 3D, tabel referensi LED bersama).
- *
- * Dipakai DUA sisi: route server (app/api/tools-team/*) memvalidasi apa yang
- * dikirim peramban sebelum menyimpannya, dan peramban memakai bentuk yang
- * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
- */
-import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
-import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
-import { bacaPoligonShift } from '@/lib/pustaka';
+import type { ModulLED, Hardware, BrandLED } from '@/lib/av/hitung';
+import { bersihkanIsiRak } from '@/lib/av/perangkat-rak';
+import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
-export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
+export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[];  brand?: BrandLED[] }
 
-/** Baris app_settings tempat referensi LED bersama disimpan. */
 export const KUNCI_REFERENSI_LED = 'tools_team_referensi_led';
 
-/** Batas ukuran satu desain tersimpan (JSON) & jumlah benda. */
 export const MAKS_BYTE_DESAIN = 400_000;
 export const MAKS_BENDA = 600;
 
@@ -53,14 +43,12 @@ function bersihkanHardware(x: unknown): Hardware | null {
   return { nama, ket, maksPx, port, senderBawaan: hw.senderBawaan };
 }
 
-/** Referensi LED yang sah (semua baris valid; maks 500 modul, 200 hardware, 100 brand), atau null. */
 export function bersihkanReferensiLED(x: unknown): RefLED | null {
   const r = x as Record<string, unknown>;
   if (!r || !Array.isArray(r.modul) || !Array.isArray(r.kartu) || !Array.isArray(r.vp)) return null;
   if (!r.modul.length || r.modul.length > 500 || r.kartu.length > 200 || r.vp.length > 200) return null;
   const modul = r.modul.map(bersihkanModul), kartu = r.kartu.map(bersihkanHardware), vp = r.vp.map(bersihkanHardware);
   if (modul.includes(null) || kartu.includes(null) || vp.includes(null)) return null;
-  //  Brand: opsional (referensi lama belum punya); nama unik, kosong dibuang.
   if (r.brand !== undefined && (!Array.isArray(r.brand) || r.brand.length > 100)) return null;
   const brand: BrandLED[] = [];
   for (const b of (r.brand as unknown[] | undefined) ?? []) {
@@ -72,15 +60,11 @@ export function bersihkanReferensiLED(x: unknown): RefLED | null {
   return { modul: modul as ModulLED[], kartu: kartu as Hardware[], vp: vp as Hardware[], ...(brand.length ? { brand } : {}) };
 }
 
-/** Data desain 3D yang sah ({ ruang, benda }) beserta jumlah benda, atau alasan penolakan. */
-/** Gambar konten layar (unggahan) yang ikut disimpan: JPEG dikompres di peramban, maks 6 per desain. */
 export const MAKS_GAMBAR_LAYAR = 6;
 export const MAKS_BYTE_LAYAR = 200_000;
 
-/** Tekstur lantai / dinding (gambar sendiri) per desain: kunci 'tx-...', data URL JPEG kecil (sama dengan gambar layar). */
 export const MAKS_TEKSTUR_RUANG = 4;
 const POLA_KUNCI_TEKSTUR = /^tx-[a-z0-9]{6,32}$/;
-/** Rujukan gambar yang sudah tersimpan sekali di tools_gambar_desain (lib/gambar-desain-server.ts). */
 export const POLA_REF_GAMBAR = /^ref:[0-9a-f]{40}$/;
 const gambarAtauRef = (v: unknown, maks: number) => (typeof v === 'string' && POLA_REF_GAMBAR.test(v) ? v : bersihkanGambar(v, maks));
 
@@ -97,7 +81,6 @@ export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah:
   }
   const data: DataDesain = { ruang: d.ruang, benda: d.benda };
   if (JSON.stringify(data).length > MAKS_BYTE_DESAIN) return { ok: false, alasan: 'Desain terlalu besar untuk disimpan.' };
-  //  Gambar layar: hanya untuk benda yang ada, data URL JPEG/WebP kecil, jumlah dibatasi.
   if (d.layar !== undefined) {
     if (!d.layar || typeof d.layar !== 'object' || Array.isArray(d.layar)) return { ok: false, alasan: 'Gambar layar tidak sah.' };
     const ids = new Set(d.benda.map(b => String((b as { id?: unknown }).id ?? '')));
@@ -111,7 +94,6 @@ export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah:
     }
     if (masuk.length) data.layar = layar;
   }
-  //  Tekstur lantai / dinding: dihitung terpisah dari batas JSON desain (seperti gambar layar).
   if (d.tekstur !== undefined) {
     if (!d.tekstur || typeof d.tekstur !== 'object' || Array.isArray(d.tekstur)) return { ok: false, alasan: 'Tekstur tidak sah.' };
     const masuk = Object.entries(d.tekstur as Record<string, unknown>);
@@ -127,21 +109,12 @@ export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah:
   return { ok: true, data, jumlah: d.benda.length };
 }
 
-// ── Versi desain & tautan ke Request Design Project ────────────────────────
-
-/** Gambar pratinjau per versi: data URL JPEG/WebP kecil (bukan file terpisah). */
 export const MAKS_BYTE_GAMBAR = 80_000;
-/** Gambar resolusi tinggi (±1400 px) untuk cetak/ZIP Request Design - diambil hanya saat ekspor. */
 export const MAKS_BYTE_GAMBAR_HD = 560_000;
 
-/**
- * Alamat gambar satu versi desain. Gambar tidak pernah ikut JSON daftar;
- * dimuat terpisah & di-cache peramban selamanya (versi tidak berubah).
- */
 export const urlGambarDesain = (id: string, versi: number, hd = false) =>
   `/api/tools-team/desain/gambar?id=${encodeURIComponent(id)}&v=${versi}${hd ? '&hd=1' : ''}`;
 
-/** Riwayat yang disimpan per desain: versi lebih lama dari ini (dan tidak ditautkan) dihapus. */
 export const SIMPAN_VERSI = 10;
 export function bersihkanGambar(x: unknown, maks = MAKS_BYTE_GAMBAR): string | null {
   if (typeof x !== 'string' || x.length > maks) return null;
@@ -166,17 +139,10 @@ export function kategoriBenda(jenis: string): string {
   return 'Lainnya';
 }
 
-/**
- * Ringkasan sebuah desain untuk ditampilkan/dicetak di Request Design tanpa
- * memuat data 3D: ukuran tiap ruang dan daftar perangkat per kategori (benda
- * bernama sama dijumlah; "Meja kelas 2.3" dihitung sebagai "Meja kelas").
- * Hanya data yang memang ada di desain - tidak ada nilai yang dikarang.
- */
 export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): RingkasanDesain {
   const r = (data.ruang ?? {}) as Record<string, unknown>;
   const ukur = (x: Record<string, unknown> | undefined) => ({ p: Number(x?.p) || 0, l: Number(x?.l) || 0, t: Number(x?.t) || 0 });
   const ruang = [ukur(r)];
-  //  Ruang tambahan berurutan (r2, lalu lain[]) - berhenti di yang pertama tidak aktif.
   for (const x of [r.r2, ...(Array.isArray(r.lain) ? r.lain : [])].slice(0, 3) as (Record<string, unknown> | null | undefined)[]) {
     if (!x || !x.aktif) break;
     ruang.push(ukur(x));
@@ -196,7 +162,6 @@ export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): Rin
   return { ruang, perangkat, jumlah: data.benda.length };
 }
 
-/** Status tahap kerja satu ruangan request (sama dengan getRoomStatus di halaman Request Design). */
 export function statusRuangan(req: { status: string; rooms?: { status?: string }[] | null }, roomIdx: number): string {
   if (roomIdx === 0) return req.status;
   return req.rooms?.[roomIdx - 1]?.status ?? req.status;
@@ -204,13 +169,6 @@ export function statusRuangan(req: { status: string; rooms?: { status?: string }
 
 export const PERAN_PTS = ['admin', 'superadmin', 'team_pts', 'team'];
 
-/**
- * Siapa yang boleh menautkan / melepas / memperbarui Design 3D di ruangan
- * request: tim PTS, pada ruangan yang sudah diterima dan belum Completed -
- * sama dengan aturan unggah SLD/BOQ/Design 3D yang sudah ada, ditambah kunci
- * saat Completed supaya catatan ruangan yang sudah selesai tidak berubah.
- * Desain tetap opsional: aturan ini TIDAK pernah dipakai untuk mewajibkannya.
- */
 export function bolehUbahTautan(role: string | null | undefined, status: string): { ok: true } | { ok: false; alasan: string } {
   if (!PERAN_PTS.includes((role ?? '').toLowerCase())) return { ok: false, alasan: 'Hanya tim PTS yang bisa menautkan Design 3D.' };
   if (status === 'pending' || status === 'rejected') return { ok: false, alasan: 'Ruangan ini belum diterima untuk dikerjakan.' };
@@ -220,9 +178,6 @@ export function bolehUbahTautan(role: string | null | undefined, status: string)
   return { ok: true };
 }
 
-// ── Kalkulator LED tersimpan (/api/tools-team/led) ─────────────────────────
-
-/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator + kabel manual Screen Connection). */
 export const MAKS_BYTE_LED = 120_000;
 
 export interface RingkasanLED {
@@ -230,7 +185,6 @@ export interface RingkasanLED {
   resX: number; resY: number; jumlahCab: number; screen: number;
 }
 
-/** Isian kalkulator LED yang sah (objek datar berukuran wajar), atau alasan penolakan. */
 export function periksaIsianLED(x: unknown): { ok: true; data: Record<string, unknown> } | { ok: false; alasan: string } {
   if (!x || typeof x !== 'object' || Array.isArray(x)) return { ok: false, alasan: 'Isian kalkulator tidak sah.' };
   const data = x as Record<string, unknown>;
@@ -239,7 +193,6 @@ export function periksaIsianLED(x: unknown): { ok: true; data: Record<string, un
   return { ok: true, data };
 }
 
-/** Ringkasan untuk daftar - hanya field yang dikenal, teks dipotong, angka harus angka. */
 export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
   const r = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const t = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
@@ -250,20 +203,15 @@ export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
   };
 }
 
-// ── Katalog "Produk saya" (template produk bersama tim) ─────────────────────
-
-/** Baris app_settings tempat template produk tim disimpan: { daftar: ProdukTim[] }. */
 export const KUNCI_PRODUK = 'tools_team_produk';
 export const MAKS_PRODUK = 300;
 export const MAKS_BYTE_PRODUK = 6_000;
 
-/** Jenis benda yang boleh dijadikan template ('model' = GLB impor tidak, geometrinya hanya di memori). */
 export const JENIS_PRODUK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic',
   'touchpanel', 'kamera', 'proyektor', 'rak', 'lift', 'tribun', 'panggung', 'bidang', 'lampu', 'perangkat'] as const;
 
 export interface ProdukTim {
   id: string; label: string; ket: string; jenis: (typeof JENIS_PRODUK)[number];
-  /** Properti benda (tanpa id & posisi): ukuran, model, warna, spesifikasi, tinggi pasang. */
   atur: Record<string, unknown>;
   oleh: string; olehId: string; dibuat: string;
 }
@@ -275,21 +223,20 @@ const ENUM_PRODUK: Record<string, readonly string[]> = {
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
   rasioProyektor: ['16:9', '16:10', '17:9', '4:3', '21:9'],
+  resolusiProyektor: ['XGA', 'SXGAP', 'WXGAH', 'WXGA', 'FHD', 'WUXGA', 'WQXGA', '4K', '4KP', '4KDCI'],
 };
-/** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
   w: [0.001, 40], h: [0.001, 40], d: [0.001, 40], elev: [0, 40], diag: [10, 500], pitch: [0.1, 50], cabW: [50, 3000], cabH: [50, 3000],
-  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
+  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 50], tilt: [-90, 45], trMin: [0.1, 50], trMax: [0.1, 50],
   baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
   modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
   offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [0, 100000], monitorMeja: [0, 12],
-  koreksiJarak: [-1, 1], koreksiJarakTele: [-1, 1], offsetTetap: [-0.5, 1.5], kontrasAsli: [1, 1e8], shiftAtasMaks: [0, 1.5], shiftBawahMaks: [0, 1.5], shiftHMaks: [0, 1], gainLayar: [0.1, 5], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
+  koreksiJarak: [-5, 5], koreksiJarakTele: [-5, 5], offsetTetap: [-0.5, 1.5], kontrasAsli: [1, 1e8], shiftAtasMaks: [0, 1.5], shiftBawahMaks: [0, 1.5], shiftHMaks: [0, 1], gainLayar: [0.1, 5], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
 };
 const ANGKA_PANEL: Record<string, [number, number]> = {
   w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],
 };
 
-/** Properti benda yang sah untuk template - hanya kunci yang dikenal, angka dalam batas, enum yang dikenal. */
 export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   const a = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
   const hasil: Record<string, unknown> = {};
@@ -304,6 +251,9 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (isiRak) hasil.isiRak = isiRak;
   const poligon = bacaPoligonShift(a.poligonShift);
   if (poligon) hasil.poligonShift = poligon;
+  const koef = bacaKoefRasio(a.koefRasio);
+  if (koef) hasil.koefRasio = koef;
+  if (typeof a.sumberLensa === 'string' && a.sumberLensa.trim()) hasil.sumberLensa = a.sumberLensa.trim().slice(0, 60);
   if (a.panel && typeof a.panel === 'object') {
     const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
     for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }
@@ -312,7 +262,6 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   return hasil;
 }
 
-/** Template baru yang sah (label, keterangan, jenis, atur), atau alasan penolakan. */
 export function periksaProduk(x: unknown): { ok: true; data: Pick<ProdukTim, 'label' | 'ket' | 'jenis' | 'atur'> } | { ok: false; alasan: string } {
   const d = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const label = typeof d.label === 'string' ? d.label.trim().slice(0, 80) : '';
@@ -326,7 +275,6 @@ export function periksaProduk(x: unknown): { ok: true; data: Pick<ProdukTim, 'la
   return { ok: true, data };
 }
 
-/** Daftar template dari app_settings (baris rusak dibuang). */
 export function bacaDaftarProduk(v: unknown): ProdukTim[] {
   const daftar = (v && typeof v === 'object' ? (v as { daftar?: unknown }).daftar : null);
   if (!Array.isArray(daftar)) return [];
@@ -338,11 +286,6 @@ export function bacaDaftarProduk(v: unknown): ProdukTim[] {
   });
 }
 
-/**
- * Id kategori ruangan Desain 3D yang boleh punya template default dari Admin
- * (/api/tools-team/template-kategori). HARUS sama dengan KATEGORI_RUANG di
- * desain3d/inti/template.ts - dijaga uji/template-kategori.ts.
- */
 export const ID_KATEGORI_RUANG = [
   'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
 ] as const;

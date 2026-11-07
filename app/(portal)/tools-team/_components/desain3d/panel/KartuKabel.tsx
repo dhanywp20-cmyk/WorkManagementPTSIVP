@@ -1,5 +1,4 @@
 'use client';
-/** Kartu jalur & panjang kabel: rekap per jenis, jadwal kabel. */
 import { Catatan, f, Kartu, TombolSalin } from '../../bersama/ui';
 import { AOC_MAKS, HDMI_MAKS, rekapKabel } from '../inti';
 import type { AlatDesain } from './alat';

@@ -1,6 +1,5 @@
 'use client';
 
-/** useAuditKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import React, { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { AuditEntry, Scope } from './DashboardKPI-tipe';
@@ -18,7 +17,6 @@ export function useAuditKPI(k: AuditKPIKonteks) {
     if (!scopeReady || scope.kind === 'none') { setAuditLoading(false); return; }
     setAuditLoading(true);
     try {
-      // Build ticket filter
       const ticketQ = (() => {
         let q = supabase.from('tickets').select('id,project_name,status,assign_name,created_by,created_at,date').order('created_at',{ascending:false}).limit(40);
         if (scope.kind==='pts_sup'&&scope.ptsMemberNames?.length) q=q.in('assign_name',scope.ptsMemberNames);

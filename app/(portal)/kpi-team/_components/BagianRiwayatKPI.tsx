@@ -1,6 +1,5 @@
 'use client';
 
-/** BagianRiwayatKPI - dipecah dari app/(portal)/kpi-team/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { KPIPeriodSnapshot, warnaTim } from './shared';
 import React from 'react';

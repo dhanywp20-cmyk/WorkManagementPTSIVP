@@ -1,22 +1,9 @@
-/**
- * /api/push/setup - tombol "Aktifkan Push Notifikasi" di Admin Panel.
- *
- * Generate sepasang kunci VAPID sekali (server yang generate, bukan admin
- * yang mengetik/menempel dari luar - beda dari Telegram/WhatsApp) lalu
- * simpan ke rahasia_integrasi lewat jalur yang sama seperti token lain.
- *
- * SENGAJA menolak menimpa kunci yang sudah ada tanpa ?force=1: mengganti
- * kunci VAPID membuat SEMUA subscription lama (push_subscriptions) langsung
- * tidak sah - setiap orang yang sudah mengaktifkan notifikasi di HP-nya
- * harus mendaftar ulang. Itu ongkos nyata, jadi harus sengaja diminta admin,
- * bukan kejadian sampingan tak terduga dari klik tombol yang sama dua kali.
- */
 
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { bacaRahasia, lupakanRahasia } from '@/lib/rahasia-server';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { bacaRahasia, lupakanRahasia } from '@/lib/auth/rahasia-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

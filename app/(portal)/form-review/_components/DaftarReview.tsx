@@ -2,44 +2,20 @@
 import { TombolEkspor } from '@/components/shared/TombolEkspor';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 
-/** DaftarReview - dipecah dari app/(portal)/form-review/_components/FormReviewPageInner.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StarRating, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Paginasi, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { ReviewForm, formatDatetime } from './shared';
 import { type CSSProperties } from 'react';
+import { useKonteksDaftarReview } from './konteks-daftar-review';
 
-export interface DaftarReviewProps {
-  bolehEditReview: (r: ReviewForm) => boolean;
-  fetchError: string | null;
-  fetchReviews: () => Promise<void>;
-  filterCategory: "Demo Product" | "BAST" | "all";
-  filterReviewCat: "Demo Product" | "BAST" | "all";
-  filteredReviews: ReviewForm[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<ReviewForm>;
-  isAdmin: boolean;
-  listLoading: boolean;
-  openDeleteModal: (r: ReviewForm) => void;
-  openEdit: (r: ReviewForm) => void;
-  reviews: ReviewForm[];
-  searchHandler: string;
-  searchProject: string;
-  searchSalesName: string;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  setDetailReview: import("react").Dispatch<import("react").SetStateAction<ReviewForm | null>>;
-  setFetchError: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<"Demo Product" | "BAST" | "all">>;
-  setFilterReviewCat: import("react").Dispatch<import("react").SetStateAction<"Demo Product" | "BAST" | "all">>;
-  setSearchHandler: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchSalesName: import("react").Dispatch<import("react").SetStateAction<string>>;
-  switchTab: "Demo Product" | "BAST";
-  tableReviews: ReviewForm[];
-  toggleSelectAll: () => void;
-  toggleSelectId: (id: string) => void;
-}
-
-export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filterCategory, filterReviewCat, filteredReviews, hal, isAdmin, listLoading, openDeleteModal, openEdit, reviews, searchHandler, searchProject, searchSalesName, selectMode, selectedIds, setDetailReview, setFetchError, setFilterCategory, setFilterReviewCat, setSearchHandler, setSearchProject, setSearchSalesName, switchTab, tableReviews, toggleSelectAll, toggleSelectId }: DaftarReviewProps) {
+export function DaftarReview() {
+  const k = useKonteksDaftarReview();
+  const {
+    fetchError, filterCategory, filterReviewCat, filteredReviews, hal, isAdmin, listLoading, reviews, searchHandler, searchProject, searchSalesName,
+    selectMode, selectedIds, switchTab, tableReviews
+  } = k.nilai;
+  const { setDetailReview, setFetchError, setFilterCategory, setFilterReviewCat, setSearchHandler, setSearchProject, setSearchSalesName } = k.ubah;
+  const { bolehEditReview, fetchReviews, openDeleteModal, openEdit, toggleSelectAll, toggleSelectId } = k.aksi;
   return (
     <>
       {listLoading ? (
@@ -64,7 +40,6 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
         />
       ) : (
         <>
-        {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
         <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
           {hal.potongan.map((r) => {
             const isDemo = r.review_category === 'Demo Product';
@@ -98,29 +73,21 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
           <Paginasi {...hal} satuan="review" />
         </div>
 
-        {/* ── DESKTOP: tabel ── */}
         <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
           <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
             <colgroup>
-              <col style={{ width: '3%' }} />   {/* No */}
-              <col style={{ width: '14%' }} />  {/* Project */}
-              <col style={{ width: '10%' }} />  {/* Kategori */}
-              <col style={{ width: '9%' }} />   {/* Sales */}
-              <col style={{ width: '11%' }} />   {/* Handler */}
-              <col style={{ width: '11%' }} />  {/* Product */}
-              <col style={{ width: '10%' }} />  {/* Grade 1 */}
-              {switchTab === 'BAST' && <col style={{ width: '10%' }} />}  {/* Grade 2 */}
-              <col style={{ width: '9%' }} />   {/* Status */}
-              {/*  Piksel, bukan persen. Isi kolom ini tombol ikon
-                  berukuran TETAP (32px + gap 4px), jadi persen adalah
-                  satuan yang keliru: 7% dari 920px cuma ~64px, sementara
-                  tiga tombol butuh 104px - dan makin lebar layarnya,
-                  makin banyak ruang terbuang untuk isi yang ukurannya
-                  tidak pernah berubah. */}
-              <col style={{ width: '116px' }} />   {/* Action */}
+              <col style={{ width: '3%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '11%' }} />
+              <col style={{ width: '10%' }} />
+              {switchTab === 'BAST' && <col style={{ width: '10%' }} />}
+              <col style={{ width: '9%' }} />
+              <col style={{ width: '116px' }} />
             </colgroup>
             <thead>
-              {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
               <tr>
                 {['No', 'Project',  'Kategori', 'Sales', 'Handler',
                   switchTab === 'Demo Product' ? 'Product Demo' : 'Product BAST',
@@ -149,29 +116,24 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                     className="stagger-item cursor-pointer"
                     style={{ '--aksen-baris': '#c4b5fd', '--bg-baris-sorot': '#faf5ff' } as CSSProperties}
                     >
-                    {/* No / Checkbox combined */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                       {selectMode && isAdmin
                         ? <input type="checkbox" checked={selectedIds.has(r.id)}
                             onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded-sm accent-violet-600 cursor-pointer" />
                         : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
                     </td>
-                    {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-xs font-bold text-gray-800 leading-tight wrap-break-word">{r.project_name || '—'}</div>
                       {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
                       <div className="text-[11px] text-gray-500 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                     </td>
-                    {/* Kategori */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-[12px] font-semibold text-violet-600 leading-tight">{r.reminder_category || '—'}</div>
                     </td>
-                    {/* Sales */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-[12px] font-semibold text-gray-700 truncate max-w-[100px]">{r.sales_name || '—'}</div>
                       {r.sales_division && <div className="text-[11px] text-purple-600 font-semibold">{r.sales_division}</div>}
                     </td>
-                    {/* Handler */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="flex items-center gap-1">
                         <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
@@ -181,26 +143,22 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                         <span className="text-[12px] font-bold text-gray-800 leading-tight wrap-break-word">{r.assign_name}</span>
                       </div>
                     </td>
-                    {/* Product */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-[11px] font-semibold text-gray-700 leading-tight">
                         {isDemo ? (r.product_demo || '—') : (r.product_bast || '—')}
                       </div>
                     </td>
-                    {/* Grade 1 */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       {isDemo
                         ? (r.grade_product_knowledge ? <StarRating value={r.grade_product_knowledge} disabled /> : <span className="text-gray-400 text-xs">—</span>)
                         : (r.grade_training_customer ? <StarRating value={r.grade_training_customer} disabled /> : <span className="text-gray-400 text-xs">—</span>)
                       }
                     </td>
-                    {/* Grade 2 (BAST only) */}
                     {!isDemo && (
                       <td className="px-3 py-3 border-r border-gray-200 align-middle">
                         {r.grade_product_knowledge_bast ? <StarRating value={r.grade_product_knowledge_bast} disabled /> : <span className="text-gray-400 text-xs">—</span>}
                       </td>
                     )}
-                    {/* Status */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-bold"
                         style={hasReview
@@ -209,7 +167,6 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                         {hasReview ? '✅ Terisi' : '⏳ Belum'}
                       </span>
                     </td>
-                    {/* Actions */}
                     <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
                       <ActionGroup>
                         <ViewIconBtn onClick={() => setDetailReview(r)} label="Detail" />
@@ -238,7 +195,6 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
   );
 }
 
-/** Rekap nilai review untuk Excel / cetak - kolom mengikuti tab (Demo Product / BAST). */
 function dataEksporReview(baris: ReviewForm[], tab: string, filter: [string, string][]): Ekspor<ReviewForm> {
   const demo = tab === 'Demo Product';
   const umum: Ekspor<ReviewForm>['kolom'] = [

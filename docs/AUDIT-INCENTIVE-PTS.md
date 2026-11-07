@@ -132,7 +132,7 @@ Diatur dari tab **Pengaturan Akses** (tiga tombol per orang). `admin` selalu
 `penuh`. Aturan yang sama dipakai tiga sisi supaya tidak bisa berbeda
 pendapat:
 
-- layar → `lib/incentive-akses.ts`
+- layar → `lib/incentive/akses.ts`
 - route server → berkas yang sama
 - basis data → fungsi `akses_insentif()` di `sql/incentive-akses-konfigurasi.sql`
 
@@ -261,6 +261,17 @@ sama sekali), tapi kalau fitur ini memang dibutuhkan, ini catatan bahwa
 maksudnya belum terpenuhi. Tidak diubah - menunggu keputusan apakah fitur
 ini masih diperlukan.
 
+**Status 2026-11-07: dibangun.** Tab Late Ticket Queue kini mendeteksi ticket
+Solved yang selesai di jendela support tahap yang sudah diproses tetapi
+tercatat setelah tahap itu diproses, dan petugasnya belum mendapat bagian di
+tahap tersebut (`calc-telat.ts`). Admin melampirkannya ke tahap pending
+berikutnya, atau mencatatnya sebagai sunset bila tidak ada tahap pending lagi.
+Saat tahap diproses, petugas dari ticket yang dilampirkan ikut dihitung
+sebagai support (`calc-batch.ts` → `idTiketLampiranTahap`). Lampiran bisa
+dilepas selama tahap tujuannya belum diproses. Menulis dijaga RLS
+`akses_insentif_input()` dan satu ticket hanya bisa dilampirkan sekali
+(migrasi 068). Uji: `uji/tiket-telat.ts`.
+
 ### T-13 (TEMUAN, BELUM DIUBAH) — `access_level` ("Full Access" toggle) tidak pernah diperiksa RLS
 
 Arah SEBALIKNYA dari T-9/T-10: bukan "gagal diam-diam", tapi "kelonggaran
@@ -288,6 +299,11 @@ ternyata sebagian anggota Team memang mengandalkan akses itu di luar UI.
 Butuh keputusan eksplisit: apakah "semua Team PTS = staf internal
 terpercaya" ini memang disengaja (Full Access cuma soal kerapian tampilan),
 atau harus benar-benar dikunci di database juga.
+
+**Status 2026-11-06 — praktis tertutup.** Dicek ke `pg_policies` produksi: policy hapus kini 29 memakai
+`admin_atau_full_access()` (yang memeriksa Full Access) dan hanya 1 memakai `lingkup_semua()` (`piket_tamu_detail`,
+itu pun mensyaratkan `piket_boleh_ubah()`). Sisa `lingkup_semua()` pada tambah/ubah hanya untuk Daily Report milik
+sendiri dan roster/PIC piket — keduanya memang alur kerja seluruh tim.
 
 ## 3. Yang diperiksa dan ternyata BUKAN bug
 
@@ -375,15 +391,15 @@ Supabase di `check_pending_tickets()` dan token Fonnte di
 | Berkas | Perubahan |
 |---|---|
 | `sql/incentive-akses-konfigurasi.sql` | kolom `incentive_akses`, fungsi `akses_insentif*()`, kebijakan RLS, trigger pembekuan |
-| `lib/incentive-akses.ts` | aturan akses (murni — dipakai layar & server) |
-| `lib/incentive-akses-api.ts` | pemanggil klien |
+| `lib/incentive/akses.ts` | aturan akses (murni — dipakai layar & server) |
+| `lib/incentive/akses-api.ts` | pemanggil klien |
 | `app/api/incentive/akses/route.ts` | setel akses & lingkup brand (penjaga: akses penuh, bukan role admin) |
 | `app/api/incentive/splits/route.ts` | `DELETE` baru; `GET` mengikuti tingkat akses |
 | `app/incentive-pts/_components/calc.ts` | penghapusan lewat server, `batalkanBatchTahun` diperbaiki, kategori dari skema |
 | `app/incentive-pts/page.tsx` | satu aturan akses, tab Pengaturan Akses 3 tingkat, spanduk kelengkapan data |
 | `app/incentive-pts/_components/SchemeTab.tsx` | Seksi 1 "Cakupan Proyek" |
-| `lib/incentive-scheme.ts` | `kategoriProyek` + pemeriksaannya |
-| `lib/kelompok-insentif.ts` | toleransi tanggal BAST |
+| `lib/incentive/scheme.ts` | `kategoriProyek` + pemeriksaannya |
+| `lib/incentive/kelompok.ts` | toleransi tanggal BAST |
 | `app/reminder-schedule/page.tsx` | memakai kategori dari skema |
 | `lib/admin-users.ts`, `app/api/admin/users/route.ts` | jalur akses insentif yang kembar dihapus |
 | `uji/kelompok-insentif.ts` | 5 pengujian toleransi BAST |

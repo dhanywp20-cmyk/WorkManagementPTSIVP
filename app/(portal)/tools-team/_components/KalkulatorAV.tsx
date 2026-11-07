@@ -10,12 +10,6 @@ import { KalkulatorSinyal } from './av/KalkulatorSinyal';
 import { Ikon } from '@/components/shared/Ikon';
 import { useState } from 'react';
 
-/**
- * Kalkulator AV (ukuran layar, videowall & IFP, proyektor, sinyal & jaringan AV, audio, daya & panas, rak, PoE). Rumus di
- * lib/av-hitung.ts; tiap hasil bisa disalin, dicetak (lembar A4), dan diunduh PNG.
- */
-
-/** Menu Kalkulator AV: delapan kalkulator dalam satu alat (sub menu). */
 const SUB_AV = [
   { k: 'layar', judul: 'Ukuran Layar', ikon: '📐', C: KalkulatorLayar },
   { k: 'display', judul: 'Videowall & IFP', ikon: '🖥', C: KalkulatorDisplay },

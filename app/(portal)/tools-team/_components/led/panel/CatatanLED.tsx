@@ -1,5 +1,4 @@
 'use client';
-/** Catatan cara hitung Kalkulator LED. */
 import { f } from '../../bersama/ui';
 import { PER_M2 } from '../data';
 import type { AlatLED } from './alat';

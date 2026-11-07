@@ -21,18 +21,6 @@ function fmtTgl(s: string | null): string {
   return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/**
- * Mapping Center (admin): antrean record yang belum punya project.
- *
- * Satu baris = satu NAMA (record dengan nama sama setelah normalisasi
- * dikelompokkan), karena biasanya satu keputusan berlaku untuk semuanya.
- * Tiga keputusan per grup:
- *   - petakan ke project yang sudah ada (saran trigram, atau cari manual)
- *   - buat project baru dari nama ini
- *   - abaikan (record memang tidak punya project, mis. tiket internal)
- * Record di dalam grup bisa dicentang sebagian kalau ternyata nama yang sama
- * menunjuk project berbeda.
- */
 export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
   currentUserName: string;
   onTutup: () => void;
@@ -66,9 +54,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
 
   useEffect(() => { muat(); }, [muat]);
 
-  // Saran grup yang diklik lebih dulu bisa datang BELAKANGAN - tanpa penjaga
-  // ini saran grup lama tampil di bawah grup baru, dan satu klik memetakan
-  // record grup baru ke project yang salah.
   const grupTerakhir = useRef<string | null>(null);
   const pilihGrup = async (g: GrupAntrean) => {
     grupTerakhir.current = g.kunci;
@@ -79,7 +64,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
     if (grupTerakhir.current === g.kunci) setSaran(hasil);
   };
 
-  // Cari project manual (nama/kode), untuk kasus saran trigram tidak menemukannya.
   useEffect(() => {
     if (!cariManual.trim()) { setHasilManual([]); return; }
     let batal = false;
@@ -157,7 +141,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
         )}
 
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Antrean */}
           <div className="space-y-2 min-w-0">
             <div className="flex gap-2">
               <input aria-label="Saring antrean berdasarkan nama" value={filter} onChange={e => setFilter(e.target.value)}
@@ -181,7 +164,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             </div>
           </div>
 
-          {/* Keputusan */}
           <div className="min-w-0">
             {!aktif ? (
               <div className="h-full min-h-[200px] rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-500 text-center p-6">

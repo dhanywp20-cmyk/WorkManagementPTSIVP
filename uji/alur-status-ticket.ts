@@ -1,21 +1,17 @@
 import {
   ALUR_STATUS_PTS, alasanBelumBisa, bolehCatatanSaja, jejakProgres, statusBerikutnya, updateSah, wajibCatatan,
-} from '@/app/(portal)/ticketing/_components/alur-status';
-
-// Aturan pindah status di panel "Update Status" Ticketing (Team PTS).
+} from '@/lib/alur-status-ticket';
 
 let gagal = 0;
 const cek = (s: boolean, l: string) => { console.log(`${s ? 'OK  ' : 'GAGAL'}  ${l}`); if (!s) gagal++; };
 const boleh = (sekarang: string) => statusBerikutnya(sekarang).join(',');
 
-// ── Aturan 1: Pending = status awal: mulai ditangani atau langsung Solved ──
 cek(boleh('Pending') === 'Call,Onsite,In Progress,Solved', `Pending -> Call/Onsite/In Progress/Solved (${boleh('Pending')})`);
 cek(updateSah('Pending', 'Solved'), 'Pending BISA langsung Solved (kasus BCA sentul BLBI: tidak perlu mengarang Onsite dulu)');
 cek(wajibCatatan('Pending', 'Solved'), 'Pending -> Solved tetap wajib catatan penyelesaian');
 cek(!updateSah('Pending', 'Pending Action'), 'Pending tidak bisa langsung Pending Action (belum ditangani)');
 cek(alasanBelumBisa('Pending')?.startsWith('Pending Action') === true, 'Pending: ada keterangan kenapa Pending Action belum bisa');
 
-// ── Aturan 2: setelah ditangani, bebas berpindah ──────────────────────────
 cek(boleh('Call') === 'Onsite,In Progress,Pending Action,Solved', `Call -> semua kecuali Pending (${boleh('Call')})`);
 cek(boleh('Onsite') === 'Call,In Progress,Pending Action,Solved', `Onsite -> boleh Call lagi (follow-up) (${boleh('Onsite')})`);
 cek(boleh('In Progress') === 'Call,Onsite,Pending Action,Solved', `In Progress -> boleh Onsite lagi (kunjungan ulang) (${boleh('In Progress')})`);
@@ -23,7 +19,6 @@ cek(boleh('Pending Action') === 'Call,Onsite,In Progress,Solved', `Pending Actio
 cek(['Call', 'Onsite', 'In Progress', 'Pending Action'].every(s => !updateSah(s, 'Pending')), 'Setelah ditangani tidak bisa kembali ke Pending');
 cek(['Call', 'Onsite', 'In Progress', 'Pending Action'].every(s => alasanBelumBisa(s) === null), 'Setelah ditangani: tidak ada status yang terkunci');
 
-// ── Aturan 3: Solved dari mana saja, lalu terkunci ────────────────────────
 cek(updateSah('Call', 'Solved'), 'Solved langsung dari Call (selesai lewat telepon/remote)');
 cek(boleh('Solved') === '', 'Solved: tidak ada pindah status (Buka Ulang lewat tombol khusus)');
 cek(!bolehCatatanSaja('Solved'), 'Solved: tidak bisa tambah catatan dari panel ini');
@@ -31,34 +26,26 @@ cek(boleh('Waiting Approval') === '', 'Waiting Approval: belum bisa diupdate (me
 cek(['Rejected', 'Cancelled'].every(s => boleh(s) === '' && !bolehCatatanSaja(s) && alasanBelumBisa(s) !== null), 'Rejected / Cancelled: tertutup, dengan keterangan');
 cek(boleh('toString') === 'Call,Onsite,In Progress,Solved', 'Nama status aneh tidak dianggap tertutup (cek own-property)');
 
-// ── Overdue (dipasang otomatis oleh SLA, menimpa status kerja) ────────────
 cek(boleh('Overdue') === 'Call,Onsite,In Progress,Pending Action,Solved', `Overdue -> semua kecuali Pending (${boleh('Overdue')})`);
 cek(updateSah('Overdue', 'Pending Action'), 'Overdue -> Pending Action (perpanjang deadline) boleh');
 cek(updateSah('Overdue', 'Overdue') && alasanBelumBisa('Overdue') === null, 'Overdue: catatan saja boleh, tidak ada yang terkunci');
 
-// ── Catatan saja (status tetap) ───────────────────────────────────────────
 cek(['Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action'].every(s => updateSah(s, s)), 'Tambah catatan saja boleh di semua status selain Solved');
 cek(['Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action'].every(s => wajibCatatan(s, s)), 'Catatan saja: notes wajib');
 
-// ── Notes wajib ───────────────────────────────────────────────────────────
 cek(wajibCatatan('Call', 'Pending Action') && wajibCatatan('In Progress', 'Solved'), 'Pending Action (alasan) & Solved: notes wajib');
 cek(!wajibCatatan('Pending', 'Call') && !wajibCatatan('Pending', 'Onsite') && !wajibCatatan('Call', 'In Progress'), 'Call / Onsite / In Progress: notes opsional');
 
-// ── Status asing tidak bocor ──────────────────────────────────────────────
 cek(!updateSah('In Progress', 'Warranty'), 'Status Team Services tidak sah di alur PTS');
 cek(ALUR_STATUS_PTS.length === 6, 'Daftar status PTS tetap 6');
 
-// ── Garis progres detail ticket: hanya langkah yang benar-benar dilalui yang dicentang ──
 const jejak = (status: string, log: string[]) => jejakProgres(status, log.map(new_status => ({ new_status }))).map(j => `${j.langkah}:${j.keadaan}`).join(' ');
-//  Kasus pemilik: Call lalu langsung Solved - dulu Onsite & In Progress ikut dicentang.
 cek(jejak('Solved', ['Call', 'Solved']) === 'Pending:selesai Call:selesai Onsite:dilewati In Progress:dilewati Solved:aktif',
   `Call -> Solved: Onsite & In Progress dilewati (${jejak('Solved', ['Call', 'Solved'])})`);
 cek(jejak('Solved', ['Call', 'Onsite', 'In Progress', 'Solved']).split(' ').filter(x => x.endsWith(':selesai')).length === 4, 'Jalur lengkap: 4 langkah selesai, Solved aktif');
 cek(jejak('Solved', ['Solved']) === 'Pending:selesai Call:dilewati Onsite:dilewati In Progress:dilewati Solved:aktif', 'Pending langsung Solved: tiga langkah penanganan dilewati');
 cek(jejak('Onsite', ['Onsite']) === 'Pending:selesai Call:dilewati Onsite:aktif In Progress:belum Solved:belum', 'Langsung Onsite: Call dilewati, sisanya belum');
-//  Dibuka ulang sesudah Solved: posisi mengikuti status sekarang, bukan langkah terjauh di riwayat.
 cek(jejak('Call', ['Call', 'Solved', 'Call']) === 'Pending:selesai Call:aktif Onsite:belum In Progress:belum Solved:belum', 'Dibuka ulang ke Call: Solved kembali "belum"');
-//  Status di luar garis (Pending Action, Overdue): aktif = langkah terjauh yang pernah dicapai.
 cek(jejak('Pending Action', ['Call', 'In Progress', 'Pending Action']) === 'Pending:selesai Call:selesai Onsite:dilewati In Progress:aktif Solved:belum', 'Pending Action: aktif di langkah terjauh (In Progress)');
 cek(jejak('Pending', []) === 'Pending:aktif Call:belum Onsite:belum In Progress:belum Solved:belum', 'Ticket baru: Pending aktif');
 

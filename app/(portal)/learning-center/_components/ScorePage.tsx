@@ -3,13 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { DonutChart } from '@/components/shared';
-import { UserAnswerReview } from './TeamPage';
-import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { UserAnswerReview } from './UlasanJawaban';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/kuis/peringkat';
 import { isSalesGuest } from '@/lib/constants';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-/** 'from-emerald-500/90 to-...' -> hex aksen keluarga warnanya. */
 const AKSEN_KELUARGA: Record<string, string> = {
   emerald: '#059669', amber: '#d97706', rose: '#e11d48', yellow: '#ca8a04', indigo: '#4f46e5',
   slate: '#64748b', blue: '#2563eb', violet: '#7c3aed', red: '#dc2626', green: '#16a34a', sky: '#0284c7',
@@ -27,7 +26,6 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Personal Dashboard
 export function ScorePage({ user }: { user: User }) {
   const [attempts, setAttempts]       = useState<any[]>([]);
   const [peringkat, setPeringkat]     = useState<HasilPeringkat | null>(null);
@@ -42,35 +40,11 @@ export function ScorePage({ user }: { user: User }) {
         .order('submitted_at', { ascending: false });
       setAttempts(myRes.data ?? []);
 
-      /*
-        SEMUA role - termasuk Team - lewat /api/learning-center/rank.
-
-        Dulu hanya Guest/Sales yang lewat sini, dan Team memakai query
-        lintas-peserta langsung dengan embed `users(full_name, role)`. Dua-duanya
-        rusak, masing-masing dengan cara sendiri:
-
-        1. Guest/Sales: RLS lca_milik (sql/kunci-tabel-lanjutan-2.sql) menahan
-           mereka membaca baris siapa pun selain dirinya, jadi query itu selalu
-           kembali kosong - "Top Performers" tampak tidak berpenghuni padahal
-           pesertanya jelas ada.
-        2. Team: embed `users(...)` bergantung pada PostgREST mengenali relasi
-           FK lc_quiz_attempts.user_id -> users.id, yang di basis data ini tidak
-           terbaca. Saat gagal, ia TIDAK melempar error - setiap baris kembali
-           dengan users: null, role ikut null, seluruh baris tersaring habis,
-           dan papannya kosong juga. Persis jebakan yang sudah didokumentasikan
-           di AdminDashboard.tsx.
-
-        Route-nya mengagregasi di server dengan service-role (satu-satunya
-        tempat agregasi lintas-peserta boleh terjadi) dan MENYAMARKAN nama
-        peserta lain sebelum dikirim - bukan mengirim nama asli lalu menutupnya
-        dengan blur() di CSS, yang tetap terbaca utuh di DevTools.
-      */
       setPeringkat(await ambilPeringkatSaya());
     };
     load();
   }, [user.id]);
 
-  // computed
   const gradedAttempts = attempts.filter((a: any) => a.grading_status !== 'pending_review');
   const total      = gradedAttempts.length;
   const avg        = total ? gradedAttempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / total : 0;
@@ -79,10 +53,7 @@ export function ScorePage({ user }: { user: User }) {
   const scoreMid   = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
   const scoreLow   = gradedAttempts.filter((a: any) => (a.score ?? 0) < 60).length;
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
-  //  Satu sumber untuk semua role: papan dari server, nama peserta lain sudah
-  //  disamarkan di sana.
   const papan      = peringkat?.papan ?? [];
-  //  Divisi = sales_division, jadi hanya bermakna untuk Sales/Guest.
   const pakaiDivisi = isSalesGuest({ role: user.role });
   const myRank     = peringkat?.globalRank ?? 0;
   const rankTotal  = peringkat?.globalTotal ?? 0;
@@ -97,12 +68,6 @@ export function ScorePage({ user }: { user: User }) {
     : attempts;
 
   if (viewingAttempt) {
-    //  autoOpenAttemptId: TANPA ini, UserAnswerReview membuka LIST attempt
-    //  miliknya sendiri dari awal - orang yang baru saja klik "Review" pada
-    //  satu baris tertentu harus mengklik baris yang SAMA sekali lagi di
-    //  dalam sana untuk benar-benar melihat jawabannya. Attempt yang mau
-    //  dibuka sudah diketahui di sini (viewingAttempt), jadi langsung
-    //  diteruskan.
     return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} autoOpenAttemptId={viewingAttempt.id} />;
   }
 
@@ -133,7 +98,6 @@ export function ScorePage({ user }: { user: User }) {
 
   return (
     <div>
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)' }}>
         <div>
@@ -145,12 +109,8 @@ export function ScorePage({ user }: { user: User }) {
 
       <div className="p-4 sm:p-8 space-y-8">
 
-        {/* ── Summary Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           {summaryCards.map(c => {
-            // Kartu putih + pita aksen + ikon garis - sama dengan StatCard di
-            // modul lain. Dulu blok gradien pekat + emoji 3xl: paling ramai
-            // di seluruh platform. Warna aksen diambil dari keluarga gradien lama.
             const aksen = aksenDariGradien(c.color);
             return (
               <div key={c.label} className="relative overflow-hidden rounded-xl bg-white border border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4"
@@ -168,11 +128,9 @@ export function ScorePage({ user }: { user: User }) {
           })}
         </div>
 
-        {/* ── Analytics + Leaderboard ── */}
         {total > 0 && (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-            {/* Left: mini pies 2x2 */}
             <div>
               <SectionHeader><IkonTeks nama="🥧" />Analytics Saya</SectionHeader>
               <div className="grid grid-cols-2 gap-3">
@@ -188,24 +146,8 @@ export function ScorePage({ user }: { user: User }) {
               </div>
             </div>
 
-            {/* Right: Papan peringkat sekelompok (role yang sama).
-
-                SATU bentuk untuk semua role. Nama peserta lain sudah diganti
-                jadi "Peserta #N" DI SERVER (lihat hitungPeringkat di
-                lib/learning-rank.ts), jadi blur di bawah ini murni penegas
-                visual - bukan satu-satunya yang menahan kebocoran. Bentuk lama
-                mengirim nama asli lalu menutupnya dengan blur() saja; itu tetap
-                terbaca utuh di DevTools/Network, jadi bukan proteksi. */}
             <div>
               <SectionHeader><IkonTeks nama="🏆" />Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
-              {/*
-                Aturan urutan ditulis eksplisit di UI - bukan cuma di kode.
-                Skor rata-rata yang seri (mis. sama-sama 100) itu WAJAR terjadi
-                dan bisa terlihat berkali-kali di satu papan; tanpa keterangan
-                ini, peserta yang skornya identik dengan orang di atas/bawahnya
-                cenderung menyimpulkan urutannya acak/bug, padahal tie-break
-                waktu pengerjaan-nya memang sedang bekerja seperti seharusnya.
-              */}
               <p className="text-[11px] text-slate-500 mb-3 -mt-2 leading-relaxed">
                 Urutan: <b className="text-slate-500">skor rata-rata</b> tertinggi dulu → kalau seri,{' '}
                 <b className="text-slate-500">waktu pengerjaan</b> tercepat menang → kalau keduanya sama persis,
@@ -221,17 +163,6 @@ export function ScorePage({ user }: { user: User }) {
                     {rankTotal ? `dari ${rankTotal} peserta ${user.role}` : 'Belum ada data'}
                   </p>
                 </div>
-                {/*
-                  Kartu Divisi HANYA untuk Sales/Guest.
-
-                  "Divisi" di sini adalah sales_division - pembagian wilayah
-                  penjualan. Anggota Team tidak punya dan tidak akan pernah
-                  punya, jadi menampilkan kartunya untuk mereka berarti sebuah
-                  kotak yang selamanya bertuliskan "Divisi belum diset di profil
-                  kamu": terbaca seperti data yang hilang atau profil yang salah
-                  isi, padahal tidak ada yang perlu diperbaiki. Peringkat
-                  globalnya sendiri sudah menjawab pertanyaan mereka.
-                */}
                 {pakaiDivisi && (
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-4 text-center">
                   <div className="text-xl mb-0.5"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
@@ -260,15 +191,9 @@ export function ScorePage({ user }: { user: User }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {/*  Kunci pakai posisi baris, BUKAN r.rank - sejak peringkat
-                        kembar diperkenalkan (dua peserta dengan skor & waktu
-                        identik dapat nomor yang sama), r.rank tidak lagi unik
-                        dan React akan menabrakkan dua baris jadi satu. */}
                     {papan.map((r, iBaris) => (
                       <tr key={r.aku ? 'aku' : `b${iBaris}`}
                         className={`stagger-item ${r.aku ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'} ${
-                          /* Pemisah tegas: baris ini melompati peringkat di antaranya,
-                             jadi ia tidak boleh terbaca seolah menempel di bawah baris atasnya. */
                           r.disisipkan ? 'border-t-2 border-dashed border-indigo-300' : ''
                         }`}>
                         <td className={`px-3 py-3 text-center font-black text-sm ${r.aku ? 'text-indigo-600' : 'text-slate-500'}`}>
@@ -293,12 +218,6 @@ export function ScorePage({ user }: { user: User }) {
                         </td>
                         <td className="px-3 py-3 text-center text-xs font-bold text-slate-500">{r.quiz}</td>
                         <td className="px-3 py-3 text-center">
-                          {/*  1 desimal, BUKAN toFixed(0). Dengan pembulatan ke
-                              bilangan bulat, 98.08 dan 97.62 sama-sama tampil
-                              "98" - dua baris terlihat bernilai sama persis tapi
-                              peringkatnya beda, tanpa apa pun di layar yang
-                              menjelaskan. Itu bentuk paling murni dari "kelihatan
-                              seperti bug" padahal urutannya benar. */}
                           <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-700' : r.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>
                             {r.avg.toFixed(1)}
                           </span>
@@ -325,7 +244,6 @@ export function ScorePage({ user }: { user: User }) {
           </div>
         )}
 
-        {/* ── Recent Activity (own, last 5) ── */}
         {attempts.length > 0 && (
           <section>
             <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
@@ -353,7 +271,6 @@ export function ScorePage({ user }: { user: User }) {
           </section>
         )}
 
-        {/* ── Full Rekap Table ── */}
         <section>
           <SectionHeader><IkonTeks nama="📋" />Rekap Nilai Per Quiz</SectionHeader>
           <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">

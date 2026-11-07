@@ -1,8 +1,7 @@
 'use client';
 
-/** useUrutanSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase, Question, DialogState } from './shared';
-import { perubahanUrutan, geser } from '@/lib/urutan-soal';
+import { perubahanUrutan, geser } from '@/lib/kuis/urutan-soal';
 
 export interface UrutanSoalKonteks {
   load: () => Promise<void>;
@@ -23,7 +22,6 @@ export function useUrutanSoal(k: UrutanSoalKonteks) {
     return [...terurut, ...sisa];
   };
 
-  /** Geser satu soal di dalam rancangan grupnya. Belum menyentuh database. */
   const geserSoal = (kunci: string, grup: Question[], idx: number, arah: -1 | 1) => {
     const baru = geser(grup, idx, arah);
     if (!baru) return;
@@ -33,14 +31,6 @@ export function useUrutanSoal(k: UrutanSoalKonteks) {
   const buangDraf = (kunci: string) =>
     setUrutanDraf(p => { const n = { ...p }; delete n[kunci]; return n; });
 
-  /*
-    Simpan rancangan satu grup - sekali tekan, sekali kirim.
-
-    Aturan nomornya ada di lib/urutan-soal.ts (logika murni, diuji di
-    uji/urutan-soal.ts). Hanya baris yang nomornya berubah yang dikirim, jadi
-    menggeser satu soal di grup berisi 45 soal tetap beberapa permintaan saja,
-    bukan 45.
-  */
   const simpanUrutan = async (kunci: string, susunan: Question[]) => {
     const perubahan = perubahanUrutan(susunan);
     if (perubahan.length === 0) { buangDraf(kunci); return; }
@@ -53,9 +43,6 @@ export function useUrutanSoal(k: UrutanSoalKonteks) {
 
     const gagal = hasil.find(r => r.error)?.error;
     if (gagal) {
-      // Rancangannya sengaja TIDAK dibuang saat gagal - susunan yang tadi
-      // disusun tetap di layar supaya bisa dicoba simpan lagi tanpa menyusun
-      // ulang dari awal.
       setDialog({
         type: 'error', title: 'Urutan gagal disimpan',
         message: /urutan/i.test(gagal.message)

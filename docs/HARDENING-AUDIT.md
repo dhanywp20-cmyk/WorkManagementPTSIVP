@@ -111,10 +111,19 @@ Advisor 0028/0029 menandai 11 fungsi `public` (akses_insentif, boleh_atur_kpi, c
 checklist_saya_anggota, pernah_dapat_bagian_insentif, piket_*, pimpinan_lihat_semua, rekap_lc_tahunan,
 tutup_jadwal_ticket). **Mencabut EXECUTE dari `anon` akan merusak aplikasi**, karena:
 - Pengguna yang SUDAH login pun menjalankan query sebagai peran Postgres `anon` - JWT aplikasi sengaja
-  berklaim `role: 'anon'` (`lib/db-token.ts`); identitasnya ada di klaim `sub`/`user_role`.
+  berklaim `role: 'anon'` (`lib/auth/db-token.ts`); identitasnya ada di klaim `sub`/`user_role`.
 - Sembilan dari fungsi itu dipanggil di dalam RLS policy untuk anon/public.
 Pengamannya ada di dalam fungsi: masing-masing memeriksa `jwt_claim('sub')` / hak pengguna (mis.
 `tutup_jadwal_ticket` & `rekap_lc_tahunan` -> 'Harus login' + cek hak). Peringatan ini diterima.
+
+## Verifikasi 2026-11-06
+
+- **RLS live:** 93 dari 93 tabel `public` di produksi RLS-nya menyala (`pg_tables.rowsecurity`), tidak ada yang mati.
+- **P6 `reminders.select('*')`:** diukur — seluruh tabel 306 baris / 142 kB (rata-rata 475 byte/baris), kolom terlebar
+  hanya `completion_photo_url` (~150 byte). Penghematan dari memangkas kolom kecil dibanding risiko mematahkan pemakai
+  kolom; ditutup tanpa perubahan.
+- **Open question share publik:** tidak berlaku lagi — `/api/project-progress/share/[token]` sudah ditulis ulang dan tidak
+  mengirim `audit_trail`; yang dikirim hanya data proyek, checklist, dan nama anggota checklist (`checklist_anggota`).
 
 ## Lanjutkan dari sini
 

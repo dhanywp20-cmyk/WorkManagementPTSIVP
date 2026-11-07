@@ -1,12 +1,7 @@
 'use client';
-/**
- * Berkas yang sedang dibuka: nama (bisa diganti langsung), asalnya, dan status tersimpan. Dulu satu baris sendiri di
- * atas bilah alat; kini bagian kiri bilah atas (BilahAlat) supaya Desain 3D hanya punya satu bilah.
- */
 import { Pencil } from 'lucide-react';
 import type { AlatDesain } from './alat';
 
-/** Kontrol kanvas (gaya SketchUp) - tooltip tombol bantuan di bilah atas. */
 export const BANTUAN_KONTROL = [
   'Klik benda = pilih · Shift / Ctrl + klik = pilih banyak',
   'Seret di ruang kosong = putar kamera',
@@ -18,7 +13,6 @@ export const BANTUAN_KONTROL = [
 
 export function IdentitasBerkas({ a }: { a: AlatDesain }) {
   const { adaPerubahan, asal, desainAktif, lihatVersi, namaDesain, setNamaDesain } = a.K;
-  //  Status ringkas: ikon / angka versi saja - penjelasan lengkap di tooltip (bukan kalimat di layar).
   const rinci: { isi: string; judul: string; nada: 'ok' | 'info' | 'awas' } = desainAktif
     ? (!desainAktif.bolehUbah
       ? { isi: '👁', judul: 'Desain tim - hanya lihat. Simpan membuat salinan milik Anda.', nada: 'info' }

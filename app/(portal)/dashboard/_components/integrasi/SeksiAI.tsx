@@ -1,6 +1,5 @@
 'use client';
 
-/** SeksiAI - dipecah dari app/(portal)/dashboard/_components/modal-integrasi.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { type StatusRahasia } from '../modal-integrasi';
 import { type PengaturanAI, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { BlokToken, PilihModel } from '../modal-integrasi';

@@ -8,10 +8,9 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
-import { jejakProgres, wajibCatatan } from './alur-status';
+import { jejakProgres, wajibCatatan } from '@/lib/alur-status-ticket';
 import { PilihStatusPTS } from './PilihStatusPTS';
 
-/** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
 export type NewActivityForm = {
   handler_name: string; action_taken: string; notes: string; new_status: string;
   sn_unit: string; file: File | null; photo: File | null;
@@ -21,12 +20,6 @@ export type NewActivityForm = {
   extend_days: string;
 };
 
-/**
- * Popup detail ticket (panel kiri) + panel "Update Status" (panel kanan,
- * kondisional) - dipindah dari app/ticketing/page.tsx apa adanya (JSX
- * identik). Blok JSX terbesar & paling entangled di berkas ini. State &
- * handler tetap di page.tsx, komponen ini murni presentasional.
- */
 export function TicketDetailPopup({
   selectedTicket, currentUser, currentUserTeamType, canManageTickets, users,
   showUpdateForm, setShowUpdateForm, onClose,
@@ -62,12 +55,10 @@ export function TicketDetailPopup({
   uploading: boolean;
 }) {
   const router = useRouter();
-  //  "Tambah catatan saja" = status yang dipilih sama dengan status sekarang (alur Team PTS).
   const catatanSaja = currentUserTeamType !== "Team Services" && newActivity.new_status !== "" && newActivity.new_status === selectedTicket.status;
   const notesWajib = currentUserTeamType === "Team Services"
     ? !["Pending","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status)
     : wajibCatatan(selectedTicket.status, newActivity.new_status);
-  //  Form update selalu dibuka TANPA pilihan bawaan - dulu selalu "Pending", apa pun status ticketnya.
   const bukaTutupUpdate = () => {
     if (!showUpdateForm) setNewActivity(a => ({ ...a, new_status: "", action_taken: "", notes: "" }));
     setShowUpdateForm(!showUpdateForm);
@@ -79,18 +70,9 @@ export function TicketDetailPopup({
         onClick={e => { if (e.target === e.currentTarget) { onClose(); setShowUpdateForm(false); } }}>
         <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
-          {/* LEFT: Detail. Di HP disembunyikan selama panel Update Status
-              terbuka - dua panel berdampingan di layar sempit membuat detail
-              terjepit jadi kolom selebar beberapa huruf. Panel Update punya
-              tombol "‹ Detail" untuk kembali. */}
           <div className={`bg-white rounded-kartu shadow-modal overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
             style={{ maxHeight: "94vh" }}>
-            {/* Header */}
             <div className="px-5 py-4 pr-12 shrink-0 relative border-b border-slate-100">
-              {/* Latar bulat dibuang: di atas kepala merah ini lencana
-                  putih-transparan membuat tulisannya nyaris tak terbaca.
-                  Teks putih polos di atas merah jauh lebih terbaca, dan
-                  ruangnya cukup untuk menyebut keterangan pelimpahan. */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-slate-600">
                 <span><IkonTeks nama="🎫" />Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
                 <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
@@ -115,7 +97,6 @@ export function TicketDetailPopup({
             </div>
 
             <div className="overflow-y-auto flex-1 min-h-0">
-              {/* Supervisor: ticket di-route ke kamu → wajib assign lanjut ke tim */}
               {selectedTicket.routing_status === "supervisor_assign" && selectedTicket.assigned_supervisor_id === currentUser?.id && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.4)" }}>
                   <span className="text-2xl"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -126,10 +107,6 @@ export function TicketDetailPopup({
                   <TombolTugaskan ukuran="kecil" className="shrink-0" onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}>Tugaskan Tim</TombolTugaskan>
                 </div>
               )}
-              {/* Admin / Full Access: betulkan data & alihkan pekerjaan.
-                  Sebelum ini satu-satunya cara membetulkan ticket yang salah
-                  adalah mengeditnya langsung di Supabase — tanpa jejak dan
-                  tanpa pemberitahuan ke yang menangani. */}
               {canManageTickets && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
                   <span className="text-2xl"><Ikon nama="🛠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -147,13 +124,9 @@ export function TicketDetailPopup({
                   </button>
                 </div>
               )}
-              {/* Progress Flowchart */}
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Progress</p>
-                  {/* Status Pending menahan pekerjaan, bukan membatalkannya —
-                      jadi yang perlu diketahui adalah berapa lama lagi
-                      tenggatnya, bukan sekadar bahwa ia sedang tertahan. */}
                   {adalahPending(selectedTicket.status) && (() => {
                     const dl = getDeadline(selectedTicket);
                     if (!dl) return null;
@@ -173,15 +146,11 @@ export function TicketDetailPopup({
                 </div>
                 <div className="flex items-center">
                   {(() => {
-                    /* Hanya langkah yang benar-benar dilalui yang dicentang; langkah yang dilompati (mis. Call
-                       langsung Solved) tampil "dilewati". Aturannya: alur-status.ts jejakProgres. */
                     const jejak = jejakProgres(selectedTicket.status, selectedTicket.activity_logs ?? []);
                     const iAktif = jejak.findIndex(j => j.keadaan === 'aktif');
                     const icons: Record<string,string> = { Pending:'🟡', Call:'📞', Onsite:'🚗', 'In Progress':'🔵', Solved:'✅' };
                     return jejak.map(({ langkah: step, keadaan }, idx, arr) => {
                       const done = keadaan === 'selesai', active = keadaan === 'aktif', lewat = keadaan === 'dilewati';
-                      //  Garis ke langkah berikutnya: hijau bila kedua ujung dilalui; putus-putus bila berada di jalur
-                      //  yang sudah lewat tetapi salah satu ujungnya dilompati; abu-abu di depan langkah aktif.
                       const kanan = arr[idx + 1]?.keadaan;
                       const ujungDilalui = (k?: string) => k === 'selesai' || k === 'aktif';
                       const garis = idx + 1 > iAktif ? 'h-0.5 bg-gray-200' : ujungDilalui(keadaan) && ujungDilalui(kanan) ? 'h-0.5 bg-green-400' : 'border-t-2 border-dashed border-gray-300';
@@ -202,7 +171,6 @@ export function TicketDetailPopup({
                 </div>
               </div>
 
-              {/* Info grid — print style */}
               <div className="px-4 py-3 border-b border-gray-100">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
                   <div>
@@ -216,11 +184,6 @@ export function TicketDetailPopup({
                   <div>
                     {selectedTicket.sales_name && <InfoLine label="Sales" value={`${selectedTicket.sales_name}${selectedTicket.sales_division ? ` (${selectedTicket.sales_division})` : ''}`} />}
                     <InfoLine label="Dibuat" value={selectedTicket.created_at ? formatDateTime(selectedTicket.created_at) : '-'} />
-                    {/* "Sales" di atas = ATAS NAMA siapa ticket diajukan; baris ini =
-                        siapa yang benar-benar mengetik & submit. Lewat SBU, Sales
-                        Internal bisa mengajukan atas nama Sales External, jadi kalau
-                        keduanya beda disebut tegas supaya Sales yang namanya tercantum
-                        tidak dikira membuat ticket yang tak pernah ia buat. */}
                     {selectedTicket.created_by && (() => {
                       const pembuat = users.find(u => u.username === selectedTicket.created_by);
                       const namaPembuat = pembuat?.full_name || selectedTicket.created_by;
@@ -239,7 +202,6 @@ export function TicketDetailPopup({
                   teks={[selectedTicket.issue_case, selectedTicket.product, selectedTicket.description].filter(Boolean).join(' ')} />
               )}
 
-              {/* Warranty Info */}
               {(() => {
                 const w = getWarrantyInfo(selectedTicket.project_name);
                 if (!w) return null;
@@ -272,7 +234,6 @@ export function TicketDetailPopup({
                 );
               })()}
 
-              {/* Foto awal */}
               {selectedTicket.photo_url && (
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5"><IkonTeks nama="📸" />Foto Awal</p>
@@ -280,7 +241,6 @@ export function TicketDetailPopup({
                 </div>
               )}
 
-              {/* Activity log compact */}
               <div className="px-4 py-3">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2"><IkonTeks nama="📝" />Activity Log ({selectedTicket.activity_logs?.length || 0})</p>
                 <div className="space-y-2">
@@ -309,15 +269,11 @@ export function TicketDetailPopup({
               </div>
 
             </div>
-            {/* Footer actions — outside overflow, always visible */}
             <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 shrink-0">
                 <button onClick={() => cetakTicket(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="📄" />PDF</button>
                 {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
                   <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open</button>
                 )}
-                {/* C2: dulu jalan buntu - services_status "Solved" tidak bisa dibuka siapa
-                    pun. Team Services (membetulkan salah klik sendiri) atau Admin/
-                    Superadmin (pengawasan) sekarang bisa. */}
                 {selectedTicket.services_status === "Solved" && bolehUpdateTicket(selectedTicket) &&
                   (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
                   <button onClick={() => setReopenServicesTarget(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open Services</button>
@@ -335,7 +291,6 @@ export function TicketDetailPopup({
               </div>
           </div>
 
-          {/* RIGHT: Update Status Panel */}
           {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
             <div className="bg-white rounded-kartu shadow-modal overflow-hidden shrink-0 w-full md:w-[340px]"
               style={{ maxHeight: "94vh" }}>
@@ -348,22 +303,16 @@ export function TicketDetailPopup({
                   </button>
                   <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-slate-800 text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
-                    {/* Di HP panel detail tersembunyi, jadi nama project
-                        disebut di sini supaya jelas ticket mana yang diubah. */}
                     <p className="md:hidden text-slate-600 text-[11px] font-semibold truncate">{selectedTicket.project_name}</p>
                     <p className="text-slate-500 text-[11px]">Handler: {newActivity.handler_name}</p>
                   </div>
                   <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:flex w-8 h-8 rounded-kecil items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-xs">✕</button>
-                  {/* HP: ✕ bulat sama persis dengan detail ticket - menutup
-                      seluruh popup, bukan hanya kembali ke detail (itu tugas
-                      tombol "‹ Detail"). */}
                   <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
                     className="md:hidden shrink-0 self-start w-8 h-8 rounded-kecil bg-black/5 text-slate-500 flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
               </div>
 
               <div className="overflow-y-auto p-3 space-y-3" style={{ maxHeight: 'calc(94vh - 70px)' }}>
-                {/* SN Unit */}
                 <div>
                   <label htmlFor="f-ticketing-components-ticketdetailpopup-1" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="🔢" />SN Unit</label>
                   <input id="f-ticketing-components-ticketdetailpopup-1" type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
@@ -371,7 +320,6 @@ export function TicketDetailPopup({
                     style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                 </div>
 
-                {/* Status flowchart buttons */}
                 <div>
                   {currentUserTeamType === "Team Services" && <label className="block text-[10px] font-bold mb-2 tracking-widest uppercase text-gray-500">Pilih Status *</label>}
                   {currentUserTeamType === "Team Services" ? (
@@ -426,7 +374,6 @@ export function TicketDetailPopup({
                   )}
                 </div>
 
-                {/* Notes/Action for statuses that need detail */}
                 {newActivity.new_status !== "" && (catatanSaja || !["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status)) && (
                   <>
                     <div>
@@ -445,7 +392,6 @@ export function TicketDetailPopup({
                         className="w-full rounded-lg px-3 py-2 text-xs outline-hidden focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
-                    {/* Pending Action: perpanjang deadline overdue (kendala bisa dari sisi user) */}
                     {newActivity.new_status === "Pending Action" && (
                       <div className="rounded-lg p-2.5" style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.25)' }}>
                         <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-orange-700"><IkonTeks nama="⏱" />Perpanjang Overdue</label>
@@ -462,7 +408,6 @@ export function TicketDetailPopup({
                   </>
                 )}
 
-                {/* Assign to Services */}
                 {currentUserTeamType !== "Team Services" && newActivity.new_status === "In Progress" && (
                   <div className="rounded-lg p-2.5" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
                     <div className="flex items-center gap-1.5 mb-1">
@@ -479,7 +424,6 @@ export function TicketDetailPopup({
                   </div>
                 )}
 
-                {/* Photo */}
                 <div>
                   <label htmlFor="f-ticketing-components-ticketdetailpopup-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="📷" />Foto Bukti</label>
                   <input id="f-ticketing-components-ticketdetailpopup-4" type="file" accept="image/jpeg,image/jpg,image/png"

@@ -1,13 +1,3 @@
-/**
- * uji/supabase-realtime.mjs - token login tetap terpasang di soket Realtime.
- *
- * Sejak supabase-js 2.117, Realtime meminta token ulang dari opsi `accessToken` di SETIAP heartbeat
- * (~25 dtk). Tanpa opsi itu ia jatuh ke anon key dan menimpa token login yang dipasang setDbToken(),
- * sehingga RLS menolak semua perubahan dan halaman berhenti menyegarkan diri - tanpa galat apa pun.
- * Uji ini memakai soket tiruan (tanpa jaringan) dan heartbeat dipercepat.
- *
- * Jalankan: npm test -- supabase-realtime
- */
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
@@ -42,12 +32,10 @@ async function jalankan(denganAccessToken) {
   const ch = klien.channel('uji-rt').on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => {}).subscribe();
   await tidur(250);
   const setelahHeartbeat = klien.realtime.accessTokenValue;
-  //  Token diperbarui persis seperti setDbToken(): variabel berganti, lalu setAuth(token baru).
   token = T2;
   await klien.realtime.setAuth(T2);
   await tidur(100);
   const setelahGanti = klien.realtime.accessTokenValue;
-  //  Sambungan putus lalu tersambung lagi (HP pindah jaringan / tab tidur).
   klien.realtime.disconnect();
   await tidur(30);
   klien.realtime.connect();

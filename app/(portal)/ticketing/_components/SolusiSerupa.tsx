@@ -2,12 +2,6 @@
 import { useEffect, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * "Solusi serupa" di detail tiket: tiket lama yang sudah Solved dengan kasus
- * mirip + catatan penyelesaiannya, dan Tech Note R&D terkait. Pengetahuan tim
- * dipakai ulang, bukan hilang di riwayat. Dimuat hanya untuk tiket yang belum
- * Solved, sekali per tiket (respons di-cache 5 menit di sisi peramban).
- */
 type Tiket = { id: string; project_name: string | null; issue_case: string | null; product: string | null; assign_name: string | null; tanggal: string; cocok: string[]; solusi: string | null };
 type Note = { id: string; title: string; product: string | null; cocok: string[] };
 

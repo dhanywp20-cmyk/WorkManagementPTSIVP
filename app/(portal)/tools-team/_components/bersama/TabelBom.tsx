@@ -1,7 +1,6 @@
 'use client';
-/** Tabel daftar material (BOM) dengan isian harga satuan & total penawaran - dipakai LED dan Videowall / IFP. */
 import type React from 'react';
-import type { BarisBOM } from '@/lib/av-hitung-bom';
+import type { BarisBOM } from '@/lib/av/hitung-bom';
 import { rupiah } from './cetak';
 
 export function TabelBom({ baris, harga, setHarga, ppn, nilai }: {
@@ -47,7 +46,6 @@ export function TabelBom({ baris, harga, setHarga, ppn, nilai }: {
   );
 }
 
-/** Baris tabel lembar cetak BOM / penawaran (kolom harga hanya bila ada harga). */
 export function isiLembarBom(baris: BarisBOM[], harga: Record<string, number>, ppn: number, nilai: { subtotal: number; ppn: number; total: number }) {
   const adaHarga = baris.some(b => (harga[b.kunci] ?? 0) > 0);
   return {
@@ -66,7 +64,6 @@ export function isiLembarBom(baris: BarisBOM[], harga: Record<string, number>, p
   };
 }
 
-/** Baris BOM sebagai teks WA (dengan harga bila diisi). */
 export function teksBarisBom(baris: BarisBOM[], harga: Record<string, number>, ppn: number, nilai: { subtotal: number; ppn: number; total: number }) {
   const adaHarga = baris.some(b => (harga[b.kunci] ?? 0) > 0);
   return [

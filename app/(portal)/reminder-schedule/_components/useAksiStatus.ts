@@ -1,12 +1,10 @@
 'use client';
 
-/** useAksiStatus - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
-import { Status, Reminder, TeamUser, GuestUser, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, sendFonnteWA } from './shared';
+import { Status, Reminder, TeamUser, GuestUser, REVIEW_TRIGGER_CATEGORIES, formatDate, sendFonnteWA } from './shared';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { appLink } from '@/lib/app-url';
-import { compressImage } from '@/lib/image-compress';
 import { useModePenyelesaian } from './useModePenyelesaian';
 import { useUbahStatus } from './useUbahStatus';
 
@@ -83,15 +81,8 @@ export function useAksiStatus(k: AksiStatusKonteks) {
 
   const { handleStatusChange, handleConfirmStatusUpdate } = useUbahStatus({ currentUser, detailReminder, fetchRemindersQuiet, guestUsers, notify, pendingStatus, reminders, setBastDate, setControllerBrand, setDetailReminder, setDisplayType, setInstallerDaerah, setInstallerName, setInstallerUserId, setModeEditSaja, setModePenyelesaian, setPendingPhotoUrl, setPendingStatus, setRequiresControllerAuto, setRequiresMiddleware, setShowModeModal, setStatusPhoto, setStatusPhotoPreview, setUpdatingStatus, statusPhoto });
 
-  /**
-   * Buka panel Mode untuk jadwal yang statusnya SUDAH Completed - mengisi
-   * detail yang belum pernah diisi, atau membetulkan yang salah. Nilai lama
-   * dimuat ulang lebih dulu supaya yang tinggal dibetulkan cukup satu field,
-   * bukan mengetik ulang semuanya.
-   */
   const { bukaEditDetailPelaksanaan, handleModeConfirm } = useModePenyelesaian({ bastDate, controllerBrand, detailReminder, displayType, fetchRemindersQuiet, handleStatusChange, installerDaerah, installerName, installerUserId, modeEditSaja, modePenyelesaian, notify, pendingPhotoUrl, requiresControllerAuto, requiresMiddleware, setBastDate, setControllerBrand, setDetailReminder, setDisplayType, setInstallerDaerah, setInstallerName, setInstallerUserId, setModeEditSaja, setModePenyelesaian, setPendingPhotoUrl, setPendingStatus, setRequiresControllerAuto, setRequiresMiddleware, setSavingMode, setShowModeModal, setStatusPhoto, setStatusPhotoPreview });
 
-  // Resend / Manual Send Form Review ke Guest
   const handleResendFormReview = async (r: Reminder) => {
     if (!r.sales_name?.trim()) {
       notify('error', 'Reminder ini tidak memiliki Sales yang terpilih!');
@@ -111,7 +102,6 @@ export function useAksiStatus(k: AksiStatusKonteks) {
     try {
       const salesName = r.sales_name.trim();
 
-      // Selalu fetch guest terbaru dari DB berdasarkan full_name === sales_name
       const { data: guestFromDb } = await supabase
         .from('users')
         .select('id, username, full_name, role, phone_number, sales_division')
@@ -127,7 +117,6 @@ export function useAksiStatus(k: AksiStatusKonteks) {
         return;
       }
 
-      // Cek apakah form_review sudah ada - batch-aware (lihat catatan di handleStatusChange)
       let existingQueryResend = supabase.from('form_reviews').select('id, guest_username').eq('sales_name', salesName);
       existingQueryResend = r.batch_id
         ? existingQueryResend.eq('batch_id', r.batch_id)
@@ -135,15 +124,12 @@ export function useAksiStatus(k: AksiStatusKonteks) {
       const { data: existingReview } = await existingQueryResend.maybeSingle();
 
       if (existingReview) {
-        // Patch guest_username jika masih kosong (data lama)
         if (!existingReview.guest_username && resolvedGuest.username) {
           await supabase.from('form_reviews')
             .update({ guest_username: resolvedGuest.username })
             .eq('id', existingReview.id);
         }
-        // Form sudah ada - hanya kirim ulang WA
       } else {
-        // Buat form_review baru
         const reviewCategory = r.category === 'Demo Product' ? 'Demo Product' : 'BAST';
         const productValue = r.product?.trim() || '';
         const barisReview = {
@@ -159,13 +145,10 @@ export function useAksiStatus(k: AksiStatusKonteks) {
           assigned_to: r.assigned_to,
           reminder_category: r.category,
           review_category: reviewCategory,
-          // Auto-insert product ke kolom yang sesuai berdasarkan review_category
           ...(reviewCategory === 'Demo Product'
             ? { product_demo: productValue }
             : { product_bast: productValue }),
-          // guest_fullname = full_name Guest (= sales_name), wajib NOT NULL
           guest_fullname: resolvedGuest.full_name ?? salesName,
-          // guest_username untuk filter di Form Review page
           guest_username: resolvedGuest.username,
         };
         const { error: reviewErr } = await cobaIdentitas(async pakaiUuid =>
@@ -177,7 +160,6 @@ export function useAksiStatus(k: AksiStatusKonteks) {
         }
       }
 
-      // Kirim / kirim ulang WA notif ke Guest
       if (resolvedGuest.phone_number) {
         const guestMsg =
           `⭐ *FORM REVIEW — PTS IVP*\n\n` +

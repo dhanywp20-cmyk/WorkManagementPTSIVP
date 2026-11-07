@@ -1,7 +1,6 @@
 'use client';
 
-/** GrupBatchSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { bandingkanUrutan } from '@/lib/urutan-soal';
+import { bandingkanUrutan } from '@/lib/kuis/urutan-soal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Material, Question, BtnEdit, BtnDelete } from '../shared';
 import { GambarSoal } from '@/components/shared/GambarSoal';
@@ -44,7 +43,6 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
           const bc = BATCH_COLORS[batchIdx % BATCH_COLORS.length];
           const expandKey = `${mat.id}__${batchKey || '__none__'}`;
           const isExpanded = expandedBatches.has(expandKey);
-          // Yang dirender adalah rancangan bila grup ini sedang disusun.
           const batchQs = susunanTampil(expandKey, batchTersimpan);
           const adaDraf = !!urutanDraf[expandKey];
           const sedangMenyimpan = menyimpanUrutan === expandKey;
@@ -56,7 +54,6 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
             <div key={batchKey || '__none__'} className="rounded-2xl border overflow-hidden transition-all"
               style={{ borderColor: bc.border }}>
 
-              {/* ── Accordion header (always visible, click to toggle) ── */}
               <button
                 type="button"
                 onClick={() => setExpandedBatches(prev => {
@@ -76,14 +73,11 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>
                     {batchQs.length} soal
                   </span>
-                  {/* Rancangan tetap hidup walau grupnya ditutup. Tanda ini
-                      yang mencegahnya terlupakan di balik grup yang terlipat. */}
                   {adaDraf && (
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
                       ● Urutan belum disimpan
                     </span>
                   )}
-                  {/* Difficulty mini-chips */}
                   <div className="flex gap-1">
                     {easyN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.easy,   color: DIFF_TEXT.easy,   border: `1px solid ${DIFF_BORDER.easy}` }}>  Mudah {easyN}</span>}
                     {medN  > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>Sedang {medN}</span>}
@@ -101,7 +95,6 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                     </svg>
                     Hapus
                   </button>
-                  {/* Chevron */}
                   <svg aria-hidden="true" focusable="false"
                     width="16" height="16" fill="none" stroke={bc.text} viewBox="0 0 24 24"
                     className="transition-transform duration-200 shrink-0"
@@ -112,16 +105,8 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                 </div>
               </button>
 
-              {/* ── Question cards — only rendered when expanded ── */}
               {isExpanded && (
                 <div className="p-3 space-y-2" style={{ background: '#fafafa' }}>
-                  {/*
-                    Bilah ini hanya muncul saat ada yang digeser, dan
-                    menempel di atas daftar (sticky) - untuk grup
-                    berisi 45 soal, tombol simpan yang ikut tergulir
-                    ke luar layar berarti orang menyusun urutan lalu
-                    kehilangan cara menyimpannya.
-                  */}
                   {adaDraf && (
                     <div className="sticky top-0 z-20 -mx-3 -mt-3 mb-1 px-3 py-2.5 flex items-center gap-2 flex-wrap border-b"
                       style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
@@ -156,18 +141,6 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           color: '#fff', fontSize: 12, fontWeight: 900,
                         }}>{idx + 1}</div>
-                        {/*
-                          Panah, bukan seret-lepas. Seret-lepas lebih
-                          luwes di tetikus, tapi di layar sentuh ia
-                          berebut dengan gulir halaman - menahan lalu
-                          menggeser soal ke luar layar adalah gerakan
-                          yang sama dengan menggulir daftarnya. Panah
-                          bekerja sama di keduanya, dan bisa dijangkau
-                          lewat papan ketik.
-
-                          Hanya muncul bila kolomnya sudah ada; tanpa
-                          itu tombolnya akan selalu gagal saat ditekan.
-                        */}
                         {kolomUrutanAda && batchQs.length > 1 && (
                           <div data-tulis className="flex flex-col gap-0.5">
                             <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
@@ -232,16 +205,6 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                     </div>
                   ))}
 
-                  {/*
-                    Tombol tambah diletakkan di BAWAH daftar, bukan
-                    di kepala grup bersama tombol Hapus. Di sanalah
-                    mata berhenti setelah membaca soal terakhir,
-                    dan di sana pula soal barunya akan muncul -
-                    jaraknya nol antara niat dan tempat hasilnya
-                    terlihat. Menaruhnya di kepala berarti menekan
-                    tombol di satu ujung lalu mencari hasilnya di
-                    ujung yang lain.
-                  */}
                   <button type="button"
                     data-tulis onClick={() => bukaTambahDiGrup(mat.id, batchKey)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed text-xs font-bold transition-all hover:bg-white"

@@ -1,9 +1,8 @@
 'use client';
 
-/** DaftarSesiKuis - dipecah dari app/(portal)/learning-center/_components/MyQuizPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { QuizSession, QuizAttempt } from '../shared';
-import { tenggatQuiz } from '../MyQuizPage';
+import { tenggatQuiz } from './bantu-kuis';
 
 export interface DaftarSesiKuisProps {
   activeAttempts: Record<string, QuizAttempt>;
@@ -34,12 +33,6 @@ export function DaftarSesiKuis({ activeAttempts, filteredSessions, handleStart, 
           const menungguNilai = pendingReviewIds.has(s.id);
           const tenggat = tenggatQuiz(s.close_at);
 
-          /*
-            Tombolnya ditulis sekali lalu dipakai di dua tempat: di kanan judul
-            saat ruangnya cukup, dan selebar kartu di layar sempit. Menyalinnya
-            dua kali berarti dua tombol yang bisa berbeda diam-diam - dan yang
-            di ponsel justru yang paling jarang dilihat saat menyunting.
-          */
           const tombol = alreadyDone ? (
             <button disabled
               className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-500 cursor-not-allowed w-full formulir:w-auto"
@@ -65,12 +58,6 @@ export function DaftarSesiKuis({ activeAttempts, filteredSessions, handleStart, 
                   </h4>
                   <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
                 </div>
-                {/*
-                  Tombol di kanan HANYA saat ruangnya cukup. Di lebar ponsel ia
-                  dan judul quiz berebut lebar yang sama: judulnya pecah jadi
-                  beberapa baris sementara tombolnya tetap menahan ruangnya.
-                  Di bawah 'formulir' tombolnya turun ke bawah, selebar kartu.
-                */}
                 <div className="hidden formulir:block shrink-0">{tombol}</div>
               </div>
 
@@ -81,12 +68,6 @@ export function DaftarSesiKuis({ activeAttempts, filteredSessions, handleStart, 
                 <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
               </div>
 
-              {/*
-                SATU baris lencana yang membungkus, bukan tiga div bertumpuk.
-                Yang lama memberi tiap lencana div-nya sendiri dengan mt-2, jadi
-                kartunya memanjang ke bawah satu tingkat per lencana - melar
-                persis saat isinya paling ramai.
-              */}
               {(inProgress || menungguNilai || alreadyDone || tenggat) && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {inProgress && (

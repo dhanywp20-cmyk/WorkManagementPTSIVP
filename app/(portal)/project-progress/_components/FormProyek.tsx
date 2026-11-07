@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { FileText, Copy as IkonSalin, Search, Upload } from 'lucide-react';
 import { Modal, SalesPicker, TombolModal, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { BATAS, STATUS_PROYEK, hitungItemDraft, type ChecklistProyek, type DraftChecklist, type StatusProyek } from '@/lib/checklist';
+import { BATAS, STATUS_PROYEK, hitungItemDraft, type ChecklistProyek, type DraftChecklist, type StatusProyek } from '@/lib/checklist/inti';
 import { TEMA } from './tampilan';
 import { ModalImpor } from './ModalImpor';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
@@ -19,7 +19,6 @@ export interface IsianProyek {
   start_date: string; target_date: string; deskripsi: string;
 }
 
-/** Form proyek (admin) - info yang sama dengan Project Progress lama. */
 export function ModalProyek({ buka, awal, salesUsers, onTutup, onSimpan }: {
   buka: boolean;
   awal: ChecklistProyek | null;
@@ -105,11 +104,6 @@ export function ModalProyek({ buka, awal, salesUsers, onTutup, onSimpan }: {
 interface SumberSalin { id: string; judul: string; proyek: string; jumlah: number }
 type IsiAwal = 'kosong' | 'impor' | 'salin';
 
-/**
- * Checklist lokasi baru (admin): nama, jadwal, anggota yang di-assign, dan
- * isi awal - kosong, impor teks/Excel, atau salin dari checklist lain
- * (centang dikosongkan). Tidak ada item yang perlu diketik satu per satu.
- */
 export function ModalChecklistBaru({ proyekId, buka, calonAnggota, onTutup, onDibuat }: {
   proyekId: string;
   buka: boolean;
@@ -268,12 +262,6 @@ export function ModalChecklistBaru({ proyekId, buka, calonAnggota, onTutup, onDi
 
 export interface ProyekPilihan { id: string; nama: string; client: string | null }
 
-/**
- * Salin satu checklist ke lokasi lain (proyek yang sama atau proyek lain):
- * bagian, item, kelompok, catatan, dan keterangan ikut; semua centang,
- * kendala, foto, dan link dikosongkan. Sesudahnya langsung dibuka supaya
- * tinggal mengedit yang berbeda - tanpa impor ulang.
- */
 export function ModalSalinChecklist({ buka, sumber, daftarProyek, calonAnggota, onTutup, onDibuat }: {
   buka: boolean;
   sumber: { id: string; judul: string; proyekId: string; anggota: string[]; jumlahItem: number };

@@ -8,14 +8,11 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   selectedYear:number;selectedMonth:number|null;
   onYearChange:(y:number)=>void;onMonthChange:(m:number|null)=>void;
 }) {
-  //  Produk showroom: Admin Panel › Daftar Pilihan ("All Product" disebar ke semuanya).
   const daftarProduk = useDaftarPilihan('piket-produk');
   const piketDateMap:Record<string,string>={};
   allRows.forEach(r=>{piketDateMap[r.id]=r.day_date;});
 
-  // Derive available years from allRows
   const availableYears=Array.from(new Set(allRows.map(r=>r.day_date?.slice(0,4)).filter(Boolean))).sort().reverse() as string[];
-  // If no data yet, at least show current year
   const now=new Date();
   const yearOptions=availableYears.length>0?availableYears:[String(now.getFullYear())];
 
@@ -31,29 +28,24 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
 
   const demoList=activeKg.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
 
-  // Top divisi - divisi yang paling banyak bawa tamu
   const divMap:Record<string,number>={};
   activeKg.forEach(k=>{if(k.sales_division)divMap[k.sales_division]=(divMap[k.sales_division]||0)+1;});
   const topDivisiEntry=Object.entries(divMap).sort(([,a],[,b])=>b-a)[0];
   const topDivisi=topDivisiEntry?topDivisiEntry[0]:'—';
   const topDivisiCount=topDivisiEntry?topDivisiEntry[1]:0;
 
-  // Top produk
   const topProdukMap:Record<string,number>={};
   activeKg.forEach(k=>(k.produk||[]).forEach(p=>{topProdukMap[p]=(topProdukMap[p]||0)+1;}));
   const topProduk=Object.entries(topProdukMap).sort(([,a],[,b])=>b-a)[0]?.[0]||'—';
 
-  // Top kebutuhan tamu terbanyak
   const kbtMap:Record<string,number>={};
   activeKg.forEach(k=>(k.kebutuhan||[]).forEach(kb=>{kbtMap[kb]=(kbtMap[kb]||0)+1;}));
   const topKbtEntry=Object.entries(kbtMap).sort(([,a],[,b])=>b-a)[0];
   const topKebutuhan=topKbtEntry?topKbtEntry[0]:'—';
   const topKebutuhanCount=topKbtEntry?topKbtEntry[1]:0;
 
-  // Jam pakai per produk - 6 kategori tetap, All Product distribusi ke semua
   const PRODUK_KATEGORI=produkSpesifik(daftarProduk);
   const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺',Projector:'📽','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
-  // Tone 700: dipakai sebagai warna TEKS angka, jadi harus lolos kontras AA di latar putih.
   const PRODUK_COLORS:Record<string,string>={Videowall:'#b91c1c',LED:'#b45309',IFP:'#1d4ed8',Projector:'#9d174d','Audio System':'#6d28d9',Lighting:'#047857',Kiosk:'#0e7490'};
   const WARNA_LAIN=['#334155','#9a3412','#155e75','#3f6212','#6b21a8'];
   const warnaProduk=(p:string,i:number)=>PRODUK_COLORS[p]??WARNA_LAIN[i%WARNA_LAIN.length];
@@ -84,7 +76,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
 
   return(
     <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:`1px solid ${accentColor}20`,boxShadow:`0 4px 20px ${accentColor}15`}}>
-      {/* Header */}
       <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{background:'#f8fafc',borderBottom:'1px solid rgba(15,23,42,0.08)'}}>
         <div className="flex items-center gap-2">
           <span className="text-base"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -93,15 +84,12 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
             <p className="text-[10px] text-slate-500 mt-0.5">{periodLabel}</p>
           </div>
         </div>
-        {/* Controls: Year + Month */}
         <div className="flex items-center gap-2">
-          {/* Year dropdown */}
           <select value={selectedYear} onChange={e=>onYearChange(Number(e.target.value))} aria-label="Tahun"
             className="rounded-lg px-2 py-1 text-[11px] font-bold outline-hidden cursor-pointer"
             style={{background:'#ffffff',color:'#334155',border:'1px solid rgba(15,23,42,0.12)'}}>
             {yearOptions.map(y=><option key={y} value={y} style={{background:'#1e293b',color:'white'}}>{y}</option>)}
           </select>
-          {/* Month buttons */}
           <div className="flex items-center gap-0.5 rounded-xl p-1 flex-wrap" style={{background:'rgba(15,23,42,0.05)'}}>
             <button onClick={()=>onMonthChange(null)}
               className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all"
@@ -118,7 +106,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           </div>
         </div>
       </div>
-      {/* Single stats row */}
       <div className="flex divide-x divide-slate-100 overflow-x-auto">
         {highlights.map((s,i)=>(
           <div key={i} className="flex-2 min-w-[168px] px-3 py-3 flex flex-col gap-0.5 shrink-0">
@@ -135,8 +122,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         </div>
         {PRODUK_KATEGORI.map((p,i)=>(
           <div key={p} className="flex-1 min-w-[104px] px-2.5 py-3 flex flex-col gap-0.5 shrink-0">
-            {/* Nama produk utuh (dulu terpotong "VIDEOW..." / "AUDIO S...") dan
-                ikon garis yang sama dengan kolom di kirinya, bukan emoji. */}
             <div className="flex items-center gap-1 mb-0.5 text-slate-500">
               <Ikon nama={PRODUK_ICONS[p]??'📦'} ukuran={12} className="shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>

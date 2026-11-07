@@ -1,16 +1,5 @@
-/**
- * uji/tahun-support.ts - tanggal selesainya Troubleshooting jatuh di tahun pencairan yang mana.
- *
- * Memakai jendelaSupportTahap() ASLI dari calc.ts. Versi lama (.mjs) menyalin rumusnya dan
- * menambahkan 'T00:00:00' - di komputer WIB salinan itu mundur sehari dan tesnya gagal,
- * padahal kode aslinya benar; karena runner hanya menjalankan *.ts, kegagalan itu tidak
- * pernah terlihat di CI. Sekarang diuji di DUA zona waktu: hasilnya wajib sama.
- *
- * Jalankan: npm test -- tahun-support
- */
 import { jendelaSupportTahap } from '@/app/(portal)/incentive-pts/_components/calc';
 
-// Replika aturan penyaringan di fetchSupportFromTickets: (dari, sampai].
 const didalam = (t: string, r: { dari: string | null; sampai: string | null }) => {
   if (!t) return false;
   if (r.dari && !(t > r.dari)) return false;
@@ -18,7 +7,7 @@ const didalam = (t: string, r: { dari: string | null; sampai: string | null }) =
   return true;
 };
 
-const BAST = '2026-02-09'; // BPKP ICT Timur
+const BAST = '2026-02-09';
 const kasus = [
   { nama: 'Ticket Ferdinan solved 27 Agu 2026 (kasus nyata)', tgl: '2026-08-27', tahun: 1 },
   { nama: 'Solved sebelum BAST (01 Jan 2026)',                tgl: '2026-01-01', tahun: 1 },
@@ -42,8 +31,6 @@ for (const tz of ['Asia/Jakarta', 'UTC']) {
     if (!ok) gagal++;
     console.log(`${ok ? 'OK  ' : 'GAGAL'}  ${k.nama.padEnd(46)} -> ${kena.length ? 'Tahun ' + kena.join(',') : 'tidak dibayar'}`);
   }
-  // Tiap tanggal hanya boleh masuk SATU tahun - kalau tumpang tindih, satu orang
-  // dibayar dua kali untuk pekerjaan yang sama.
   let tumpang = 0;
   const awal = Date.UTC(2026, 1, 9);
   for (let i = -400; i < 1200; i++) {

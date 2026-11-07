@@ -1,6 +1,5 @@
 'use client';
 import { Catatan } from '../../bersama/ui';
-/** Modal "Buka desain tersimpan", pratinjau versi, pemilih warna & judul panel samping (dipisah dari Desain3D.tsx). */
 import { useEffect, useState } from 'react';
 import { HardDriveUpload, History } from 'lucide-react';
 import { Ikon } from '@/components/shared/Ikon';
@@ -13,7 +12,6 @@ interface BarisDesain {
   updated_at: string; ruang: Ruang | null;
 }
 
-/** Pratinjau satu versi: dimuat malas & di-cache peramban; placeholder bila belum ada gambar. */
 export function GambarVersi({ id, versi, className }: { id: string; versi: number; className: string }) {
   const [gagal, setGagal] = useState(false);
   if (gagal) return <div className={`${className} rounded-lg bg-slate-100 grid place-items-center shrink-0 text-slate-400`}><Ikon nama="🧊" ukuran={18} /></div>;
@@ -21,16 +19,10 @@ export function GambarVersi({ id, versi, className }: { id: string; versi: numbe
     className={`${className} object-cover rounded-lg border border-slate-100 shrink-0 bg-slate-50`} />;
 }
 
-/**
- * Daftar desain tersimpan seluruh tim untuk dibuka lagi (cari di server),
- * dengan pratinjau dan riwayat versi - versi lama bisa dibuka; menyimpannya
- * membuat versi baru, riwayat tidak berubah.
- */
-export const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang' | 'daftar', { judul: string; ikon: string; ket?: string }> = {
+export const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang', { judul: string; ikon: string; ket?: string }> = {
   kategori: { judul: 'Kategori ruangan', ikon: '🏛', ket: 'Mulai dari tata letak siap pakai - semua isi tetap bisa diubah. Isi kanvas sekarang diganti (bisa dikembalikan dengan Undo).' },
   tambah: { judul: 'Tambah benda', ikon: '➕', ket: 'Klik produk untuk menambahkannya; panel tetap terbuka supaya bisa menambah beberapa sekaligus.' },
   ruang: { judul: 'Ruangan', ikon: '🏠', ket: 'Maks 4 ruang berderet ke kanan; sekat terbuka + lebar berbeda = ruang bentuk L. Saat ukuran diubah, isi ruang ikut menyesuaikan.' },
-  daftar: { judul: 'Daftar benda', ikon: '📋', ket: 'Klik nama benda untuk memilihnya di tampilan 3D.' },
 };
 
 export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
@@ -123,7 +115,6 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
   );
 }
 
-/** Pemilih warna dengan tombol kembali ke bawaan; `nilai` kosong = warna bawaan. */
 export function PilihWarna({ label, nilai, awal, onUbah }: { label: string; nilai?: string; awal: string; onUbah: (w: string | undefined) => void }) {
   const sah = warnaSah(nilai);
   return (

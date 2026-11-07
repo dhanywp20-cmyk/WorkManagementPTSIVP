@@ -1,17 +1,9 @@
+import type { PenggunaDasar } from '@/lib/tipe-pengguna';
+
 import { supabase } from '@/lib/supabase';
 
-// Types
-
-export interface User {
-  id: string;
-  username: string;
+export interface User extends PenggunaDasar {
   password: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  sales_division?: string;
-  phone_number?: string;
-  allowed_menus?: string[];
   jabatan?: string | null;
   bisa_ditugaskan?: boolean | null;
 }
@@ -56,11 +48,6 @@ export interface ProjectRequest {
   suggest_tampilan: string;
   keterangan_lain: string;
   assign_name?: string;
-  /**
-   * Identitas berupa uuid, hidup berdampingan dengan sales_name/assign_name.
-   * uuid menjawab SIAPA; nama tetap menjawab TERCATAT SEBAGAI SIAPA. Boleh
-   * kosong - lihat sql/identitas-uuid.sql.
-   */
   sales_user_id?: string | null;
   assign_user_id?: string | null;
   ivp_assignee?: string;
@@ -71,11 +58,6 @@ export interface ProjectRequest {
   brand_display?: string;
   brand_display_pic_id?: string;
   brand_display_pic_name?: string;
-  /**
-   * Display KEDUA untuk Ruangan 1. Disimpan di kolom tabel (bukan di `rooms`),
-   * karena Ruangan 1 memang tidak ikut JSONB - lihat
-   * sql/design-project-brand-display-2.sql.
-   */
   brand_display_2?: string;
   brand_display_2_pic_id?: string;
   brand_display_2_pic_name?: string;
@@ -83,14 +65,14 @@ export interface ProjectRequest {
   brand_middleware_pic_id?: string;
   brand_middleware_pic_name?: string;
   rejection_reason?: string;
-  routing_status?: string | null;      // 'internal_review' | 'admin_review' | 'supervisor_assign' | null
-  internal_sales_id?: string | null;   // Sales Internal reviewer utama / MVI saat brand BOTH
+  routing_status?: string | null;
+  internal_sales_id?: string | null;
   internal_approved_by?: string | null;
   internal_approved_at?: string | null;
-  brand?: string | null;               // 'MVI' | 'IVP' | 'BOTH' - Marketing Brand pilihan Sales External
-  internal_sales_id_2?: string | null; // reviewer kedua (IVP) saat brand BOTH
-  internal_approved_at_2?: string | null; // approve reviewer kedua
-  assigned_supervisor_id?: string | null; // Supervisor yg wajib assign lanjut ke tim (tahap supervisor_assign)
+  brand?: string | null;
+  internal_sales_id_2?: string | null;
+  internal_approved_at_2?: string | null;
+  assigned_supervisor_id?: string | null;
 }
 
 export interface RoomDetail {
@@ -101,7 +83,6 @@ export interface RoomDetail {
   solution_product: string[];
   solution_other: string;
   brand_display: string;
-  /** Display kedua - satu ruangan bisa memakai dua brand display dengan PIC berbeda. */
   brand_display_2?: string;
   brand_display_2_pic_id?: string;
   brand_display_2_pic_name?: string;
@@ -137,18 +118,6 @@ export interface RoomDetail {
   suggest_tampilan: string;
   keterangan_lain: string;
   survey_photos_count?: number;
-  /**
-   * Status tahap kerja RUANGAN INI SENDIRI - satu request bisa punya beberapa
-   * ruangan yang progresnya beda-beda (mis. Smart ClassRoom sudah selesai,
-   * Command Center masih dikerjakan). Ruangan pertama TIDAK punya field ini -
-   * ia memakai status di level request langsung (project_requests.status),
-   * karena field teknisnya juga sudah di situ, bukan di JSONB rooms[].
-   *
-   * Ruangan lama yang belum pernah disentuh lewat alur assign/status baru
-   * TIDAK punya field ini sama sekali (undefined) - tampilannya jatuh
-   * kembali ke status request supaya data lama tidak tiba-tiba terlihat
-   * "Pending" padahal sudah lama selesai. Lihat getRoomStatus() di page.tsx.
-   */
   status?: 'pending' | 'approved' | 'in_progress' | 'completed' | 'rejected';
   assign_name?: string | null;
   assign_user_id?: string | null;
@@ -189,22 +158,12 @@ export interface ProjectAttachment {
   revision_version?: number;
 }
 
-// Constants
+export { sendWANotif } from '@/lib/wa/inti';
 
-
-// WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
-export { sendWANotif } from '@/lib/wa';
-
-// Hierarki jabatan & aturan CC - satu sumber kebenaran di lib/jabatan.ts,
-// diimpor (bukan cuma re-export) karena JABATAN_CC_RULES juga dipakai
-// langsung di fetchWACCTargets di bawah ini. Dilonggarkan ke Record<string,...>
-// di sini karena diindeks dengan jabatan dinamis (kolom users.jabatan, tipe
-// string biasa) - lib/jabatan.ts sendiri tetap ketat (Record<JabatanType,...>).
 import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
 const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
 export { JABATAN_TIER, JABATAN_CC_RULES };
 
-// CC ke atasan berdasarkan jabatan tier + IVP handler
 export async function fetchWACCTargets(
   userId: string,
   salesDiv: string
@@ -264,33 +223,10 @@ export async function fetchWACCTargets(
   return targets;
 }
 
-/**
- * Daftar divisi sales - HANYA nilai bawaan, bukan lagi sumber kebenaran.
- *
- * Daftar yang benar-benar berlaku disimpan di database dan dibaca lewat
- * useDivisiSales() (lihat lib/merek.ts), supaya divisi baru bisa ditambahkan
- * dari Admin Panel tanpa deploy. Nama ini dipertahankan untuk pemakaian di
- * luar React dan sebagai cadangan saat pengaturannya belum termuat.
- *
- * Sebelumnya daftar yang sama disalin di lima berkas shared.ts: menambah satu
- * divisi berarti menyunting kelimanya, dan satu yang terlewat membuat divisi
- * itu muncul di sebagian menu saja.
- */
-export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek/inti';
 
-// Merek display & middleware: Admin Panel › Daftar Pilihan (useDaftarPilihan, lib/daftar-pilihan.ts).
 export const BRAND_PIC_DIVISIONS = ['IVP', 'MVI', 'MLDS', 'UMP', 'OSS'];
 
-/**
- * Status tahap kerja untuk SATU ruangan tertentu (roomIdx: 0 = ruangan
- * pertama/req.room_name, 1+ = req.rooms[roomIdx-1]).
- *
- * Ruangan pertama selalu memakai status request langsung. Ruangan lain
- * memakai status miliknya sendiri KALAU sudah pernah di-assign/di-update
- * lewat alur baru; kalau belum (room.status undefined - data lama), jatuh
- * kembali ke status request supaya tidak tiba-tiba terlihat berbeda dari
- * sebelumnya.
- */
 export function getRoomStatus(req: ProjectRequest, roomIdx: number): ProjectRequest['status'] {
   if (roomIdx === 0) return req.status;
   return req.rooms?.[roomIdx - 1]?.status ?? req.status;
@@ -304,12 +240,6 @@ export function getRoomAssignUserId(req: ProjectRequest, roomIdx: number): strin
   return req.rooms?.[roomIdx - 1]?.assign_user_id ?? req.assign_user_id ?? undefined;
 }
 
-/**
- * true kalau request ini punya lebih dari satu ruangan DAN progresnya sudah
- * tidak seragam lagi (mis. Smart ClassRoom completed, Command Center masih
- * in_progress). Dipakai di listing supaya admin tahu status di kolom itu
- * cuma mewakili ruangan pertama - buka detailnya untuk lihat per-ruangan.
- */
 export function hasDivergentRoomStatus(req: ProjectRequest): boolean {
   if (!req.rooms || req.rooms.length === 0) return false;
   const totalRooms = 1 + req.rooms.length;
@@ -332,7 +262,6 @@ export const emptyRoom = (): RoomDetail => ({
   controller_automation: 'No', controller_type: [],
   ukuran_ruangan: '', suggest_tampilan: '', keterangan_lain: '',
 });
-
 
 export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
 

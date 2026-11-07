@@ -1,13 +1,8 @@
-/**
- * uji/av-hitung.ts - rumus Tools Team PTS (LED, layar, proyektor, sinyal, audio, daya).
- *
- * Jalankan: npx tsx uji/av-hitung.ts
- */
 import {
   hitungKoneksi, hitungDayaLED, bomLED, totalPenawaran, cadangan, unitPerRC, RECEIVING_CARD, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
-} from '../lib/av-hitung';
+} from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -18,7 +13,6 @@ const dekat = (a: number, b: number, tol = 0.01) => Math.abs(a - b) <= tol * Mat
 
 console.log('\n1. LED Videotron');
 {
-  // 8x6 cabinet 500x500 P2.5 = 4m x 3m, 1600x1200
   const h = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 8, tegangan: 220 });
   cek('ukuran 4 x 3 m', h.lebarM === 4 && h.tinggiM === 3, `${h.lebarM}x${h.tinggiM}`);
   cek('resolusi 1600 x 1200', h.resX === 1600 && h.resY === 1200, `${h.resX}x${h.resY}`);
@@ -35,8 +29,6 @@ console.log('\n1. LED Videotron');
   const h10 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 10, tegangan: 220 });
   cek('10-bit: kapasitas port separuh 8-bit (327.680 px) -> 6 port', h10.pxPerPort === 327_680 && h10.portLAN === 6, `${h10.pxPerPort} ${h10.portLAN}`);
   cek('12-bit sama dengan 10-bit', pxPerPortPada(60, 12) === 327_680);
-  //  Cabinet 960x960 P2.5 = 147.456 px -> 4 cabinet/port. 13 cabinet = 4 port,
-  //  padahal total piksel / kapasitas (1,92 MP / 655 rb) cuma memberi 3.
   cek('port dihitung per cabinet utuh: 13 cabinet besar -> 4 port', portDibutuhkan(13, 384 * 384, 655_360) === 4, String(portDibutuhkan(13, 384 * 384, 655_360)));
   cek('cabinet melebihi kapasitas 1 port memakai beberapa port', portDibutuhkan(3, 800_000, 655_360) === 6);
   const s = saranHardware(h.totalPx, h.portLAN);
@@ -55,7 +47,6 @@ console.log('\n1. LED Videotron');
 }
 
 {
-  //  Excel DWP: 10 x 5 m, P3 (modul 192 mm, 64 px) -> 52 x 26 modul, 3328 x 1664 px.
   const m = MODUL_LED.find(x => x.kode === 'P3')!;
   const c = cabinetUntukUkuran(10, 5, m.w, m.h);
   const h = hitungLED({ pitch: m.pitch, cabLebar: m.w, cabTinggi: m.h, kolom: c.kolom, baris: c.baris, pxX: m.pxW, pxY: m.pxH, dayaMaksCab: 20, faktorRata: 0.33, beratCab: 0.5, refresh: 60, bit: 8, tegangan: 220 });
@@ -108,7 +99,6 @@ console.log('\n6. Daya');
 
 console.log('\nScreen connection (urutan kabel & port)');
 {
-  //  8 x 5 cabinet 500x500 P2.5 (200x200 px = 40.000 px), port 655.360 px -> maks 16 RC per port.
   const dasar = { kolom: 8, baris: 5, pxPerRC: 40_000, pxPerPort: 655_360, mulai: 'kiri-atas' as const, arah: 'horizontal' as const, pola: 'S' as const, bagi: 'baris' as const };
   const k = hitungKoneksi(dasar);
   cek('kapasitas 16 RC/port; baris utuh: 2 baris (16 RC) per port -> 3 port', k.rcPerPortMaks === 16 && k.jumlahPort === 3 && k.port.map(p => p.jumlah).join(',') === '16,16,8');
@@ -137,7 +127,6 @@ console.log('\nScreen connection (urutan kabel & port)');
     && tigaBaris.sel.filter(x => x.port === 2)[4].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].r === 4);
   const lebarPenuh = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, bagi: 'penuh' });
   cek('isi penuh pada layar lebar: 16, 16, 8 (port paling hemat)', lebarPenuh.port.map(p => p.jumlah).join(',') === '16,16,8');
-  //  Custom ala NovaLCT: ukuran receiving card berbeda, sel kosong, kabel manual.
   const beda = hitungKoneksi({ ...dasar, kolom: 3, baris: 1, lebarPx: [640, 512, 256], tinggiPx: [512], pxPerPort: 655_360, bagi: 'penuh' });
   cek('ukuran berbeda: port dihitung per pixel (640+512 lebar muat, +256 tidak) -> port 2 RC + 1 RC', beda.port.map(p => p.jumlah).join(',') === '2,1'
     && beda.port[0].px === 640 * 512 + 512 * 512);
@@ -175,7 +164,6 @@ console.log('\nReceiving card, power connection & BOM');
   cek('usulan terlalu besar dikecilkan: 4×6 modul = 512×384', besar.kol === 4 && besar.baris === 6);
   cek('cabinet lebih besar dari kartu ditandai tidak muat', !unitPerRC(a5, 640, 480, 1, 1).muat);
 
-  //  10 kolom × 4 baris cabinet 150 W, MCB 16 A @220 V PF 1, beban 80% = 2.816 W -> 18 cabinet/sirkuit.
   const d1 = hitungDayaLED({ kolom: 10, baris: 4, wattUnit: 150, tegangan: 220, faktorDaya: 1, mcb: 16, beban: 80, fase: 1, mulai: 'kiri-bawah', arah: 'vertikal', pola: 'S' });
   cek('kapasitas sirkuit = 16 A × 220 V × 80%', dekat(d1.kapasitasW, 2816) && d1.unitPerSirkuitMaks === 18);
   cek('sirkuit per kolom utuh, dibagi rata: 10 kolom -> 3 sirkuit 3/4/3 kolom (bukan 4/4/2)', d1.sirkuit.map(c => c.unit).join(',') === '12,16,12');

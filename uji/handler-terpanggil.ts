@@ -1,10 +1,3 @@
-/**
- * uji/handler-terpanggil.ts - penjaga satu jenis bug yang lolos tsc & lint: handler yang hanya DISEBUT, tidak
- * DIPANGGIL, mis. onClick={() => onAdminPanel} (tombol Admin Panel di sidebar mati sejak refactor 8 Okt 2026).
- * Memindai seluruh app/ & components/ (.tsx) mencari lambda yang mengembalikan nama handler tanpa tanda kurung.
- *
- * Jalankan: npm test -- handler-terpanggil
- */
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
@@ -22,7 +15,6 @@ function berkas(dir: string, hasil: string[] = []): string[] {
   return hasil;
 }
 
-//  Atribut event JSX berisi lambda tanpa argumen/argumen biasa yang hanya mengembalikan nama handler (tanpa ()).
 const POLA = /\bon[A-Z][A-Za-z]*=\{\s*\(\s*[A-Za-z_,\s]*\)\s*=>\s*(?:on|handle|toggle|buka|tutup|simpan|hapus)[A-Z][A-Za-z0-9]*\s*\}/g;
 
 console.log('\n1. Handler JSX selalu dipanggil');

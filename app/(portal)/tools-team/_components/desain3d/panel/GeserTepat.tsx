@@ -1,9 +1,4 @@
 'use client';
-/**
- * Geser tepat: benda terpilih (dan yang ikut terpilih) bergeser persis N mm sepanjang sumbu X (kiri-kanan) atau
- * Z (depan-belakang). Dibuka tombol "Geser tepat" atau langsung mengetik angka saat benda terpilih; sumbu bawaan =
- * sumbu terakhir yang diseret di gizmo. Enter = jalankan, Tab = ganti sumbu, Esc = batal.
- */
 import { useState } from 'react';
 import { geserTepat } from '../inti';
 import type { AlatDesain } from './alat';

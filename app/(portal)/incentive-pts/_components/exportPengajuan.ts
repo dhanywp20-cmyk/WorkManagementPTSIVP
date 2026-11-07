@@ -5,103 +5,19 @@ import { IncentiveProjectRow, OrgUser, ambilSkema, type SkemaInsentif } from './
 import { siapkanDataSummary, type Peran, type Proyek } from './exportPengajuan-data';
 import { INSTALLER_FILL, KOL, KOL_ORANG_AWAL, KOL_REKAP, NAVY_HDR, RUPIAH_FMT, SUB_HDR, TOTAL_FILL, aturLebarKolom, dataFont, fillWarna, hitungBarisTerbungkus, perbesarKolom, putih, selGabung, sumCell, thinBorder, tulisKepalaPerOrang } from './exportPengajuan-gaya';
 
-// Summary Export (semua project, split dihitung on-the-fly)
-
-/*
-  REKAP SUMMARY - tema & susunan tabel mengikuti contoh yang diberikan
-  langsung (bukan format bebas): navy #1F3864 untuk kepala tabel, biru muda
-  #2E5395 untuk sub-kepala, abu-biru #D9E1F2 untuk baris TOTAL/GRAND TOTAL,
-  kuning lembut #FFF2CC untuk baris Installer.
-
-  TIGA tabel, dan masing-masing menjawab pertanyaan berbeda:
-
-    1. List Project    - satu baris per proyek, tiap ORANG (bukan tiap peran)
-                          mendapat grup TIGA kolom sendiri (Posisi, %, Rp) -
-                          daftar orangnya dinamis, diambil dari siapa saja
-                          yang benar-benar muncul di proyek yang di-export
-                          (lihat orangUrut), bukan 4 kolom peran tetap PIC/
-                          Support/Supervisor/Manager seperti sebelumnya.
-                          Kolom Posisi menunjukkan peran orang itu DI PROYEK
-                          BARIS INI - satu orang bisa berperan beda di proyek
-                          berbeda. Baris TOTAL di bawahnya menjumlah kolom Rp
-                          tiap orang ke bawah, jadi total per nama langsung
-                          kebaca di tabel ini sendiri. Installer TETAP grup
-                          kolom terpisah di ujung kanan (Nama/Lokasi/%/Rp,
-                          tidak berubah) dan TIDAK ikut dijumlah di baris
-                          TOTAL - totalnya sudah benar di Tabel 3. Kolom Rp
-                          memakai FORMULA (%  Nominal), jadi kalau persennya
-                          dikoreksi manual di Excel, rupiahnya ikut terhitung
-                          ulang sendiri.
-
-    2. Summary Total per Anggota Team PTS - satu baris per ORANG (Installer
-       tidak masuk sini - ia bukan bagian Team PTS, dibayar terpisah lunas
-       di tahun pertama). Jumlah Project dan Total Nominal DIHITUNG DI
-       JAVASCRIPT dari splits asli, bukan lewat COUNTIF/SUMIF yang membaca
-       Tabel 1 - sebab Tabel 1 bisa menggabung beberapa Support jadi satu sel
-       teks kalau lebih dari satu orang, dan formula pencarian nama akan
-       melewatkan yang tidak tertulis literal di selnya sendiri. Menghitung
-       di JavaScript dari sumbernya langsung tidak punya celah itu.
-
-    3. Nilai Pengajuan Incentive per Tahun - porsi tiap orang dipecah ke
-       TAHUN PEMBAYARAN sesungguhnya (BAST tiap proyek + Tahapan Pencairan),
-       bukan tiga kolom tahun yang dipatok sama untuk semua orang - orang
-       yang proyeknya berasal dari BAST berbeda akan punya tahun pembayaran
-       yang berbeda pula, dan menyamaratakannya akan salah menaruh uang di
-       tahun anggaran yang keliru.
-
-  Installer TIDAK ikut dipecah ke tahapan: porsinya lunas 100% di tahun
-  pertama proyeknya, ditandai kuning dan keterangan di sebelah namanya.
-*/
 export interface DataSummary {
   projects: IncentiveProjectRow[];
   allUsers: { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[];
   supportsMap: Map<string, { user_id: string; user_name: string }[]>;
   managerName: string;
   managerUserId: string;
-  /**
-   * Batasi ke proyek yang BAST-nya jatuh di tahun ini saja. `null`/`undefined`
-   * = semua tahun (perilaku lama, tidak berubah). Menyaring proyek MASUKNYA
-   * (bast_date), bukan tahun pembayaran - satu proyek tetap tercatat lunas
-   * 3 tahun berturut, tapi Anda bisa export "proyek yang selesai tahun ini"
-   * saja tanpa membuka file lintas-tahun yang makin besar tiap tahun platform
-   * berjalan.
-   */
   year?: number | null;
-  /**
-   * Batasi ke project_id dalam daftar ini saja - dipakai tombol Export di
-   * tab Tranche Schedule, supaya persis mengikuti daftar proyek yang tampil
-   * di batch TAHUN BAYAR itu (payment_year tranche-nya), BEDA dari `year`
-   * di atas yang menyaring lewat tahun BAST. Kedua filter independen - kalau
-   * keduanya diisi, proyek harus lolos keduanya. `null`/`undefined` = tidak
-   * membatasi (perilaku lama).
-   */
   projectIds?: string[] | null;
-  /**
-   * Kalau diisi, dipakai HANYA untuk judul & nama berkas ("Project Batch
-   * Tahun Bayar X") - supaya jelas ini beda dari filter BAST `year` di atas.
-   * Diisi bersamaan dengan `projectIds` oleh tombol Export di Tranche
-   * Schedule.
-   */
   batchYearLabel?: number | null;
 }
 
-/**
- * Susun workbook-nya saja - TANPA menyentuh basis data dan tanpa mengunduh.
- *
- * Dipisah dari exportSummaryIncentive supaya bentuk berkasnya bisa diperiksa
- * di luar peramban: skema diteruskan sebagai argumen (bukan dibaca sendiri
- * lewat Supabase) dan hasilnya dikembalikan (bukan langsung disimpan lewat
- * saveAs). Tanpa pemisahan ini satu-satunya cara memastikan tata letaknya
- * benar adalah mengunduh manual lalu membukanya - yang berarti tidak pernah
- * ada yang memeriksanya secara otomatis. Lihat uji/bentuk-summary-nyata.mjs.
- */
 export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif) {
   const { allUsers, supportsMap, managerName, managerUserId, year: tahunFilter, projectIds, batchYearLabel } = data;
-  //  Saring di sini, SEBELUM daftarProyek dibangun - supaya Tabel 1/2/3 dan
-  //  akumulasi per-tahun-pembayaran di bawah semuanya otomatis mengikuti,
-  //  tanpa menyalin ulang logikanya. Dua filter independen - BAST (`year`)
-  //  dan daftar project_id eksplisit (`projectIds`, dipakai tombol Export
-  //  di Tranche Schedule) - proyek harus lolos keduanya kalau dua-duanya diisi.
   const projects = (tahunFilter == null
     ? data.projects
     : data.projects.filter(p => p.bast_date && new Date(p.bast_date).getFullYear() === tahunFilter))
@@ -123,18 +39,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     projects, supportsMap, orgList, managerUserId, managerName, sk, tahapUrut, totalPersenTahap,
   });
 
-  /*
-    Kisi kolom Tabel 1 (per-orang) & lebar keseluruhan berkas - dihitung DI
-    SINI, sebelum satu sel pun ditulis, karena keduanya bergantung pada
-    orangUrut/tahunUrut yang baru selesai dihitung di atas. kolTotal3
-    (lebar Tabel 3 sendiri) juga dihitung sekarang, bukan nanti saat Tabel 3
-    ditulis, supaya KOL_TERAKHIR (dipakai judul di paling atas berkas -
-    BUKAN catatan di bawah Tabel 3, yang sengaja memakai kolTotal3 sendiri,
-    lihat komentarnya) sudah benar sejak baris pertama - bukan cuma selebar
-    Tabel 1, yang jadi terlalu sempit begitu tahun tercatat makin banyak
-    seiring platform ini berjalan tahunan (setiap tahun tambah 2 kolom di
-    Tabel 3).
-  */
   const kolOrang = orangUrut.map((o, i) => ({
     nama: o.nama,
     posisi: KOL_ORANG_AWAL + i * 3,
@@ -153,7 +57,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   const KOL_TERAKHIR = Math.max(kolTerakhirTabel1, kolTotal3);
   aturLebarKolom(ws, kolOrang, kolInst);
 
-  // ── Judul ──────────────────────────────────────────────────────────────
   const cTitle = ws.getCell(row, KOL.no);
   const judulProyek = batchYearLabel != null ? `Project Batch Tahun Bayar ${batchYearLabel}`
     : tahunFilter != null ? `Project BAST ${tahunFilter}` : 'Semua Project';
@@ -170,7 +73,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   ws.mergeCells(row, KOL.no, row, KOL_TERAKHIR);
   row += 2;
 
-  // ── TABEL 1 — List Project ───────────────────────────────────────────
   const cJudul1 = ws.getCell(row, KOL.no);
   cJudul1.value = '1. List Project';
   cJudul1.font = { bold: true, size: 12, name: 'Arial' };
@@ -212,7 +114,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   row = kepalaB + 1;
   const dataAwal = row;
 
-  /** Semua peran seseorang PADA SATU PROYEK - biasanya 0 atau 1, >1 hanya kalau data anomali (nama sama, dua peran sekaligus). */
   function perananOrang(pr: Proyek, nama: string): { peran: Peran; label: string }[] {
     const kelompok: [Peran[], string][] = [
       [pr.pic, 'PIC'], [pr.support, 'Support'], [pr.supervisor, 'Supervisor'], [pr.manager, 'Manager'],
@@ -222,7 +123,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     return hasil;
   }
 
-  /** Sel Posisi/%/Rp satu orang di satu baris proyek. >1 peran (anomali) -> label digabung, Rp dijumlah statis. */
   function tulisOrang(r: number, kolPosisi: number, hasil: { peran: Peran; label: string }[], baris: number, isEstimate: boolean) {
     const cPos = ws.getCell(r, kolPosisi);
     const cPct = ws.getCell(r, kolPosisi + 1);
@@ -243,9 +143,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       if (isEstimate) { cPos.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } }; cPct.value = null; }
       return;
     }
-    //  >1 peran orang yang sama di proyek yang sama (anomali data, jarang) -
-    //  label digabung, tapi Rp tetap RUMUS - bukan angka mati - dengan
-    //  menjumlah nominal masing-masing secara eksplisit di formula-nya sendiri.
     cPos.value = hasil.map(h => h.label).join('\n');
     if (!isEstimate) {
       const total = hasil.reduce((n, h) => n + h.peran.amount, 0);
@@ -254,32 +151,10 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     if (isEstimate) cPos.font = { ...dataFont(), italic: true, color: { argb: 'AAAAAA' } };
   }
 
-  /*
-    Alamat sel Rp Tabel 1 tiap orang - dikumpulkan SAMBIL menulis baris di
-    bawah, dipakai Tabel 2 supaya "Total Nominal" ORANG ITU adalah RUMUS
-    yang MERUJUK sel-sel Tabel 1 sungguhan (mis. `=G5+G12+K8`), bukan angka
-    yang sudah dijumlah duluan di JavaScript lalu ditulis ulang sebagai
-    angka mati di dalam formula (`=300000+125000+...`). Kalau ada yang
-    mengoreksi % di Tabel 1 langsung di Excel, Total di Tabel 2 ikut
-    berubah sendiri - tidak lagi bisa berbeda dari Tabel 1 tanpa disadari.
-  */
   const selRpByNama = new Map<string, string[]>();
 
   daftarProyek.forEach((pr, idx) => {
     const r = dataAwal + idx;
-    /*
-      Tinggi baris DIHITUNG dari isinya, bukan angka tetap.
-
-      Sebelumnya setiap baris dipatok 18px berapa pun isinya. Begitu Excel
-      diberi tinggi baris eksplisit, ia BERHENTI menyesuaikan tinggi otomatis
-      untuk baris itu - jadi sel yang teksnya melipat ke baris kedua (nama
-      "Ferdinan Agustinus" di kolom selebar 17 karakter, atau Support berisi
-      lebih dari satu orang) terpotong/tumpang tindih secara visual, persis
-      keluhan "nama jadi tertumpuk". lebarKarakter di bawah mengikuti lebar
-      kolom yang sesungguhnya (KOL) - kalau lebarnya berubah di sana, ukuran
-      di sini ikut menyesuaikan karena keduanya bukan dua angka yang ditulis
-      terpisah.
-    */
     const kandidat: [string, number][] = [
       [pr.p.project_name, 30],
       [pr.installer[0]?.user_name ?? '—', 17],
@@ -313,9 +188,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     for (const ko of kolOrang) {
       const hasil = perananOrang(pr, ko.nama);
       tulisOrang(r, ko.posisi, hasil, r, pr.isEstimate);
-      //  Sel Rp ini bisa kosong (proyek estimasi) - itu tidak apa-apa, SUM()
-      //  Excel mengabaikan sel kosong, hasilnya tetap 0 dari sel itu persis
-      //  seperti sebelumnya (proyek estimasi tidak pernah ikut akumulasi).
       if (hasil.length > 0) {
         const arr = selRpByNama.get(ko.nama) ?? [];
         arr.push(`${getColLetter(ko.rp)}${r}`);
@@ -323,7 +195,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       }
     }
 
-    // Installer - 4 kolom (Nama, Lokasi, %, Rp), tidak ikut jadi kolom per-orang di atas.
     const cIN = ws.getCell(r, kolInst.nama), cIL = ws.getCell(r, kolInst.lokasi);
     const cIP = ws.getCell(r, kolInst.pct), cIR = ws.getCell(r, kolInst.rp);
     [cIN, cIL, cIP, cIR].forEach(c => { c.border = thinBorder(); c.font = dataFont(); });
@@ -342,10 +213,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   const dataAkhir = dataAwal + daftarProyek.length - 1;
   row = dataAkhir + 1;
 
-  //  TOTAL - kolom Nominal DAN kolom Rp tiap ORANG dijumlah ke bawah (jadi
-  //  total per nama langsung kebaca di tabel ini). Kolom Posisi/% tidak
-  //  berarti apa-apa dijumlah, jadi dibiarkan kosong. Installer TIDAK ikut
-  //  dijumlah di sini - totalnya sudah benar di Tabel 3.
   const cLabelTot = ws.getCell(row, KOL.no);
   cLabelTot.value = 'TOTAL'; cLabelTot.font = { ...dataFont(), bold: true }; cLabelTot.fill = fillWarna(TOTAL_FILL);
   cLabelTot.border = thinBorder(); cLabelTot.alignment = { vertical: 'middle' };
@@ -383,7 +250,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   ws.getRow(row).height = 24;
   row += 2;
 
-  // ── TABEL 2 — Summary Total per Anggota Team PTS ─────────────────────
   const cJudul2 = ws.getCell(row, KOL.no);
   cJudul2.value = '2. Summary Total per Anggota Team PTS (PIC / Support / Supervisor / Manager)';
   cJudul2.font = { bold: true, size: 12, name: 'Arial' };
@@ -407,11 +273,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
       rata: 'center',
       font: belumFinal ? { ...dataFont(), color: { argb: '999999' } } : dataFont(),
     });
-    //  RUMUS yang MERUJUK sel Rp Tabel 1 sungguhan (lihat selRpByNama) -
-    //  bukan angka yang sudah dijumlah duluan lalu ditulis ulang sebagai
-    //  angka mati. Kalau orang ini dari akumulasi lama-lama tidak muncul di
-    //  Tabel 1 sama sekali (semestinya tidak pernah terjadi), jatuh balik ke
-    //  angka JavaScript supaya baris ini tidak kosong tanpa penjelasan.
     const selRp = selRpByNama.get(o.nama) ?? [];
     const nilaiTotal = selRp.length ? sumCell(selRp.join('+'), o.total) : o.total;
     const cT = selGabung(ws, row, KOL_REKAP.total, nilaiTotal, {
@@ -438,11 +299,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   cGT2v.numFmt = RUPIAH_FMT;
   row += 2;
 
-  // ── TABEL 3 — Nilai Pengajuan Incentive per Tahun ────────────────────
-  //  Tanpa paragraf penjelasan tahapan di sini - aturannya sudah ada di
-  //  proposal, dan kepala tabelnya sendiri ("dibayarkan tahun N") sudah
-  //  cukup menjawab pertanyaan "uang ini keluar kapan". Minim penjelasan,
-  //  cukup yang ada di tabel.
   const cJudul3 = ws.getCell(row, KOL.no);
   cJudul3.value = '3. Nilai Pengajuan Incentive per Tahun';
   cJudul3.font = { bold: true, size: 12, name: 'Arial' };
@@ -452,9 +308,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   const k3A = row, k3B = row + 1;
   const cNamaH = ws.getCell(k3A, KOL_REKAP.nama[0]); cNamaH.value = 'Nama'; cNamaH.font = putih(); cNamaH.fill = fillWarna(NAVY_HDR);
   cNamaH.alignment = { horizontal: 'center', vertical: 'middle' }; cNamaH.border = thinBorder();
-  //  Nama & Peran memakai rentang yang SAMA dengan Tabel 2 (B:C dan D:E) -
-  //  lihat alasannya di tulisKepalaPerOrang: kolom B sendirian terlalu sempit
-  //  untuk nama orang, dan melebarkannya akan merusak kolom "No" di Tabel 1.
   for (let k = KOL_REKAP.nama[0]; k <= KOL_REKAP.nama[1]; k++) {
     const x = ws.getCell(k3A, k); x.fill = fillWarna(NAVY_HDR); x.border = thinBorder();
     const y = ws.getCell(k3B, k); y.fill = fillWarna(NAVY_HDR); y.border = thinBorder();
@@ -469,9 +322,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   cPeranH.alignment = { horizontal: 'center', vertical: 'middle' };
   ws.mergeCells(k3A, KOL_REKAP.peran[0], k3B, KOL_REKAP.peran[1]);
 
-  //  kolTotal3 sudah dihitung lebih awal (lihat dekat KOL_TERAKHIR) dari
-  //  rumus yang SAMA persis dengan loop di bawah ini - supaya keduanya tidak
-  //  pernah menyimpang, `kh` di sini hanya penunjuk posisi berjalan.
   let kh = KOL_TAHUN_AWAL;
   for (const th of tahunUrut) {
     const c = ws.getCell(k3A, kh);
@@ -526,14 +376,8 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     row += 1;
   });
 
-  // Baris Installer - kuning, satu tahun terisi (100%), sisanya kosong.
   installerList.forEach(inst => {
     const r = row;
-    //  Tanpa keterangan "100% di tahun pertama" - baris kuning + kolom
-    //  Peran="Installer" sudah cukup menunjukkan bedanya dari Tim PTS, dan
-    //  aturan pembayarannya sendiri sudah ada di proposal. Kepala tabel
-    //  yang minim penjelasan lebih mudah dibaca daripada satu yang
-    //  mengulang apa yang sudah tertulis di tempat lain.
     selGabung(ws, r, KOL_REKAP.nama, `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : '' }`,
       { isi: INSTALLER_FILL });
     selGabung(ws, r, KOL_REKAP.peran, 'PTS Daerah', { isi: INSTALLER_FILL });
@@ -571,8 +415,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     const kolAmt = kg + 1;
     const huruf = getColLetter(kolAmt);
     const cJ = ws.getCell(row, kolAmt);
-    // Jumlahkan nilai riil dari baris-baris di atas (bukan formula SUM saja),
-    // supaya cache hasilnya benar walau ada baris kosong di antaranya.
     let totalNilai = 0;
     for (let rr = t3Awal; rr <= t3Akhir; rr++) {
       const v = ws.getCell(rr, kolAmt).value;
@@ -596,21 +438,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   cGT3v.alignment = { horizontal: 'right', vertical: 'middle' };
   row += 1;
 
-  /*
-    Catatan proyeksi tahap ke-2/ke-3 - kenapa CATATAN, bukan penanda per
-    KOLOM: kolom di tabel ini adalah TAHUN KALENDER ("dibayarkan tahun 2027"),
-    sama untuk semua orang, sedangkan tahap ke berapa tahun itu bagi SESEORANG
-    tergantung BAST proyeknya masing-masing - tahun 2027 bisa jadi Tahap 1
-    untuk proyek BAST 2026, sekaligus Tahap 2 untuk proyek BAST 2025. Menandai
-    "kolom ke-2/ke-3" akan salah untuk sebagian orang, jadi disebut apa
-    adanya di sini, bukan dipetakan ke posisi kolom yang keliru.
-
-    Lebar merge-nya sengaja `kolTotal3` (lebar Tabel 3 sendiri), BUKAN
-    KOL_TERAKHIR (lebar keseluruhan berkas, yang sejak Tabel 1 jadi per-orang
-    biasanya JAUH lebih lebar dari Tabel 3) - kalau dipaksa selebar
-    KOL_TERAKHIR, baris catatan ini melebar jauh melewati kolom asli Tabel 3
-    dan terlihat seperti bilah kosong yang salah tempat.
-  */
   selGabung(ws, row, [KOL_REKAP.nama[0], kolTotal3], 'Catatan: nilai Tahap 2 & 3 tiap proyek (tahun ke-2/ke-3 sejak BAST-nya '
     + 'masing-masing, bukan kolom ke-2/ke-3 di tabel ini) masih PROYEKSI - dihitung dari skema & Support yang terdeteksi saat '
     + 'berkas ini dibuat. Support baru yang terdeteksi sepanjang tahun tersebut bisa mengubah nominalnya. Export ulang menjelang '
@@ -619,13 +446,10 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   ws.getRow(row).height = 24;
   row += 2;
 
-  // ── Tanggal & tanda tangan ────────────────────────────────────────────
   ws.getCell(row, KOL.no).value = `Jakarta, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
   ws.getCell(row, KOL.no).font = dataFont();
   row += 2;
 
-  //  Tiga posisi tanda tangan disebar rata di lebar berkas - bukan kolom
-  //  peran tertentu lagi (Tabel 1 sekarang per-orang, bukan per-peran).
   const ttdKolom = [KOL.no, KOL_ORANG_AWAL, Math.max(KOL_ORANG_AWAL + 6, Math.round(KOL_TERAKHIR * 0.7))];
   const ttdLabel = ['Di buat oleh,', 'Diperiksa Oleh,', 'Menyetujui,'];
   ttdKolom.forEach((c, i) => { ws.getCell(row, c).value = ttdLabel[i]; ws.getCell(row, c).font = dataFont(); });
@@ -649,7 +473,6 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
   return wb;
 }
 
-/** Baca skema, susun workbook-nya, lalu unduh. Dipanggil tombol Export Summary (tab Project) & Export Batch (tab Tranche Schedule). */
 export async function exportSummaryIncentive(data: DataSummary) {
   const sk = await ambilSkema();
   const wb = await bangunWorkbookSummary(data, sk);

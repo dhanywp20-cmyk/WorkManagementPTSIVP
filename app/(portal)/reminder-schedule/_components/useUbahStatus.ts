@@ -1,11 +1,10 @@
 'use client';
 
-/** useUbahStatus - dipecah dari app/(portal)/reminder-schedule/_components/useAksiStatus.ts (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Status, Reminder, TeamUser, GuestUser, INCENTIVE_TRIGGER_CATEGORIES } from './shared';
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { efekPeramban } from '@/lib/efek-peramban';
-import { ubahStatusJadwal } from '@/lib/jadwal-status';
+import { ubahStatusJadwal } from '@/lib/jadwal/status';
 
 export interface UbahStatusKonteks {
   currentUser: TeamUser | null;
@@ -40,28 +39,9 @@ export function useUbahStatus(k: UbahStatusKonteks) {
   const handleStatusChange = async (id: string, status: Status, photoUrl?: string) => {
     const sebelum = reminders.find(r => r.id === id);
 
-    /*
-      Satu jadwal multi-tanggal = SATU pekerjaan, bukan lima.
-
-      Jadwal 5 hari berturut-turut tersimpan sebagai lima baris (satu per
-      tanggal) yang diikat batch_id. Daftar sudah menggabungkannya jadi satu
-      baris - lihat groupedReminders - tapi penandaan statusnya dulu hanya
-      mengenai satu baris. Akibatnya penangan harus menekan "Completed" lima
-      kali untuk satu pekerjaan yang sudah selesai, dan sebelum tekanan kelima
-      jadwalnya masih tampak menggantung.
-
-      Yang lebih merugikan ada di hilirnya: Incentive Project membaca baris
-      reminder, jadi satu pekerjaan Konfigurasi 2 hari terhitung DUA proyek.
-
-      Sekarang seluruh baris sebatch diperbarui sekaligus. Tidak ada layar yang
-      bisa menunjuk satu tanggal saja - daftarnya memang sudah satu baris -
-      jadi tidak ada perilaku yang hilang karenanya.
-    */
     const sebatch = sebelum?.batch_id
       ? reminders.filter(r => r.batch_id === sebelum.batch_id)
       : [];
-    //  Baris yang ditulis, WA handler, form review otomatis + WA guest: lib/jadwal-status.ts
-    //  (dipakai juga DIWAYPI). Toast tetap di sini, pada saat yang sama seperti dulu.
     const hasil = await ubahStatusJadwal(supabase, efekPeramban, {
       id, status, sebelum, photoUrl,
       pelaku: currentUser, jumlahSebatch: sebatch.length, cadanganGuest: guestUsers,
@@ -88,7 +68,7 @@ export function useUbahStatus(k: UbahStatusKonteks) {
       const fileName = `completion_${detailReminder.id}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('reminder-photos')
-        .upload(fileName, compressed, { upsert: true, cacheControl: '31536000' });
+        .upload(fileName, compressed, { upsert: false, cacheControl: '31536000' });
       if (upErr) {
         notify('error', 'Gagal upload foto: ' + upErr.message);
         setUpdatingStatus(false);
@@ -98,7 +78,6 @@ export function useUbahStatus(k: UbahStatusKonteks) {
       photoUrl = urlData?.publicUrl;
     }
 
-    // Jika kategori incentive-trigger dan status Completed  tampilkan mode modal
     const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category);
     if (pendingStatus === 'done' && isIncentiveCat) {
       setModeEditSaja(false);

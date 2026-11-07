@@ -1,6 +1,5 @@
 'use client';
 
-/** TabelKinerjaHandler - dipecah dari app/(portal)/kpi-team/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
 import { KPIMember, PeriodKey, SortKey, warnaTim } from './shared';
@@ -24,7 +23,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
   return (
     <>
       <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
-        {/* Table header */}
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="👥" />Handler Performance</span>
@@ -34,7 +32,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
               </span>
             )}
           </div>
-          {/* Search */}
           <input aria-label="Cari nama..."
             value={searchQ} onChange={e => setSearchQ(e.target.value)}
             placeholder="Cari nama..."
@@ -42,7 +39,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
           />
         </div>
 
-        {/* ── MOBILE: kartu ringkas KPI per anggota (tap utk detail) ── */}
         <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
           {!loading && sortedMembers.length === 0 && (
             <ListEmptyState
@@ -77,7 +73,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
           })}
         </div>
 
-        {/* ── DESKTOP: tabel KPI penuh (TIDAK diubah) ── */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-[11px]">
             <thead>
@@ -132,7 +127,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
                     onMouseEnter={e => (e.currentTarget.style.background = '#e0f2fe')}
                     onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
 
-                    {/* Name */}
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
@@ -146,7 +140,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
                       </div>
                     </td>
 
-                    {/* Tickets */}
                     <td className="px-3 py-3 text-center">
                       <span className="font-black text-slate-700">{m.ticketsHandled}</span>
                       {m.ticketsOverdue > 0 && (
@@ -154,24 +147,20 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
                       )}
                     </td>
 
-                    {/* Solve Rate */}
                     <td className="px-3 py-3" style={{ minWidth: 100 }}>
                       <ProgressBar value={m.ticketsSolved} max={m.ticketsHandled} h={6} />
                     </td>
 
-                    {/* Avg Days */}
                     <td className="px-3 py-3 text-center">
                       <span className="font-bold" style={{ color: dayColor }}>
                         {m.avgResolutionDays === 0 ? '—' : `${m.avgResolutionDays}h`}
                       </span>
                     </td>
 
-                    {/* Reminder */}
                     <td className="px-3 py-3" style={{ minWidth: 90 }}>
                       <ProgressBar value={m.remindersDone} max={m.remindersAssigned} h={6} />
                     </td>
 
-                    {/* LC Score */}
                     <td className="px-3 py-3 text-center">
                       <span className="font-bold" style={{ color: lcColor }}>
                         {m.lcAvgScore === 0 ? '—' : m.lcAvgScore}
@@ -181,13 +170,11 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
                       )}
                     </td>
 
-                    {/* Piket */}
                     <td className="px-3 py-3 text-center">
                       <span className="font-bold text-slate-600">{m.piketFilled}</span>
                       <div className="text-[10px] text-slate-500">hari</div>
                     </td>
 
-                    {/* Trend Spark */}
                     <td className="px-3 py-3 text-center">
                       <div className="flex justify-center">
                         <MiniSpark values={m.monthlyTickets} color={teamCol} />
@@ -208,7 +195,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
           </table>
         </div>
 
-        {/* Legend */}
         {!loading && sortedMembers.length > 0 && (
           <div className="px-4 py-2.5 border-t border-slate-50 flex items-center gap-4 flex-wrap">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Progress bar:</span>

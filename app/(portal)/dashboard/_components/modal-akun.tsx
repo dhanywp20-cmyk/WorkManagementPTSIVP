@@ -1,15 +1,15 @@
 'use client';
 import { adminCreateUser, adminSetAccessLevel, adminUpdateUser } from '@/lib/admin-users';
 import { logAudit } from '@/lib/audit';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 
 import { createNotification } from '@/lib/notifications';
 
 import { ConfirmDialog, type ConfirmState, Username } from '@/components/shared';
-import { labelKelompokPTS, teamTypeDariLabelPTS, useKelompokPTS } from '@/lib/kelompok';
-import { useDivisiSales } from '@/lib/merek';
+import { labelKelompokPTS, teamTypeDariLabelPTS, useKelompokPTS } from '@/lib/kelompok/inti';
+import { useDivisiSales } from '@/lib/merek/inti';
 import { ALL_MENU_KEYS, DEFAULT_MENU_KEYS, SALES_MENU_KEYS, User } from './shared';
 
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -18,21 +18,6 @@ import { TabAkunTertunda } from './akun/TabAkunTertunda';
 import { TabTambahAkun } from './akun/TabTambahAkun';
 import { pesanSebar, propagateUserRename, sendWelcomeWA } from './modal-bersama';
 
-/**
- * Minor (docs/UX-WORKFLOW-AUDIT.md): kolom Role dulu menampilkan enum
- * mentah dari database (guest/team/admin/superadmin) - kontras dengan
- * KpiRosterInline yang sudah pakai label ramah. Platform ini dijual ke
- * perusahaan lain, jadi kesan "dibuat developer untuk developer" ini
- * kecil tapi sebaiknya tidak ada.
- */
-/**
- * Paket menu bawaan untuk sebuah kelompok PTS - mengikuti setelan "Tampilan
- * Dashboard" di Admin Panel -> Kelompok.
- *
- * Dipakai saat Tipe PTS dipilih di form Tambah Akun, jadi akun baru langsung
- * lahir dengan tampilan yang benar tanpa admin mencentang satu per satu.
- * Centangnya tetap bisa disesuaikan setelahnya - ini paket awal, bukan kunci.
- */
 export function paketMenuKelompok(labelPTS: string, daftar: { label: string; dashboard: 'team' | 'sales' }[]): string[] {
   return daftar.find(k => k.label === labelPTS)?.dashboard === 'sales'
     ? [...SALES_MENU_KEYS]
@@ -67,17 +52,8 @@ export function AccountSettingsInline() {
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvingUser, setApprovingUser] = useState<User | null>(null);
   const [approveMenus, setApproveMenus] = useState<string[]>(DEFAULT_MENU_KEYS);
-  /**
-   * Nilai AKSES yang sedang dipilih di form Edit.
-   *
-   * Dulu ini tombol di kolom tersendiri pada tabel, yang berarti satu klik
-   * langsung mengubah hak akses tanpa konfirmasi apa pun - mudah tersenggol
-   * saat menggulir daftar 74 akun. Sekarang ia jadi bagian form Edit dan baru
-   * berlaku saat "Simpan Perubahan" ditekan, sama seperti field lainnya.
-   */
   const [editAccessLevel, setEditAccessLevel] = useState<'full' | 'guest'>('guest');
   const [editPimpinanAwal, setEditPimpinanAwal] = useState(false);
-  /** Muncul di dropdown penerima tugas? Lihat bolehDitugaskan di lib/teams.ts. */
   const [editBisaDitugaskan, setEditBisaDitugaskan] = useState(true);
 
   const menuLabels: Record<string, { label: string; icon: string }> = {
@@ -107,7 +83,6 @@ export function AccountSettingsInline() {
     setLoadingUsers(true);
     const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,piket_ubah,bisa_ditugaskan').order('full_name');
     if (error) {
-      // Fallback: try without extended columns (divisi/pts_type may not exist yet)
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
       if (!err2 && fallback) {
         setPendingUsers(fallback.filter((u: User) => u.team_type === 'Pending Approval'));
@@ -116,7 +91,6 @@ export function AccountSettingsInline() {
         notify('error', `Gagal memuat akun: ${err2?.message ?? error.message}`);
       }
     } else if (data) {
-      //  Penanda pimpinan: kueri terpisah & toleran (kolom baru, migrasi 034). Bila gagal = semua bukan pimpinan.
       const { data: pim } = await supabase.from('users').select('id,pimpinan');
       const adaPim = new Set<string>(((pim ?? []) as { id: string; pimpinan: boolean | null }[]).filter(p => p.pimpinan === true).map(p => p.id));
       const gabung = (u: User): User => ({ ...u, pimpinan: adaPim.has(u.id) });
@@ -139,7 +113,6 @@ export function AccountSettingsInline() {
     setSaving(false);
     if (error) { notify('error', 'Gagal approve: ' + error.message); return; }
     notify('success', `Akun ${approvingUser.full_name} berhasil disetujui!`);
-    // Audit
     const admin = getSession<User>();
     logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'approve', module: 'user', target_id: approvingUser.id, target_name: approvingUser.full_name, new_value: role }).catch(() => {});
     void createNotification({ user_id: approvingUser.id, type: 'user', title: '✅ Akun kamu telah disetujui', body: `Selamat! Akun ${approvingUser.full_name} sudah aktif. Silakan login.`, action_url: '/dashboard', created_by: admin?.full_name ?? '' });
@@ -167,11 +140,6 @@ export function AccountSettingsInline() {
 
     let role = 'guest';
     let team_type: string | null = null;
-    /*
-      Administrator = peran admin + Full Access. Viewer = akun pimpinan (lib/pimpinan.ts): melihat
-      semua, HANYA BACA - penolakan tulisnya ditegakkan basis data (migrasi 034), bukan cuma tombol
-      yang disembunyikan. /api/admin/users juga melepas atasan, KPI & penugasan untuk pimpinan.
-    */
     const peranKhusus: Record<string, unknown> =
       newUser.divisi === 'Administrator' ? { access_level: 'full', kpi_enabled: false }
       : newUser.divisi === 'Viewer' ? { pimpinan: true }
@@ -190,13 +158,9 @@ export function AccountSettingsInline() {
     }
 
     setSaving(true);
-    // Marketing & Sales divisi IVP/MVI = "Sales Internal" utk routing pipeline -
-    // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
-    // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
     const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
     const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales, pts_daerah: isCabangBaru2 ? newUser.pts_daerah.trim() : null, ...peranKhusus };
     const { id: createdId, error } = await adminCreateUser(insertPayload);
-    // Simpan password via server route (hash + insert ke user_credentials di server).
     if (!error && createdId && newUser.password) {
       await fetch('/api/auth/set-credential', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -227,30 +191,15 @@ export function AccountSettingsInline() {
       else if (editDivisi === 'Marketing') { role = 'guest'; team_type = 'Marketing'; }
     }
     const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
-      // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi terisi).
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
       ...(editDivisi === 'PTS' ? { pts_daerah: isCabangEdit2 ? editPtsDaerah.trim() : null } : {}),
-      //  Lingkup catatan tamu Piket Showroom. Ikut updatePayload biasa (bukan
-      //  jalur tersendiri seperti access_level) karena route admin sudah
-      //  memasukkannya ke whitelist dan menulisnya dengan service-role, jadi
-      //  trigger pembekuan kolom tidak menghalangi.
       piket_akses: role === 'team' ? null : (editingUser.piket_akses === 'lingkup' ? 'lingkup' : null),
-      //  Hak mengisi/menyunting Piket Showroom. Tim PTS selalu boleh (by role), jadi tidak disimpan.
       piket_ubah: role === 'team' ? false : editingUser.piket_ubah === true,
-      //  Ikut updatePayload biasa: route admin menulisnya dengan service-role,
-      //  jadi pembekuan kolom di trigger tidak menghalangi.
       bisa_ditugaskan: editBisaDitugaskan,
-      //  Hanya dikirim bila diubah: kolom baru (migrasi 034), dan mengirimnya di setiap simpan akan
-      //  menggagalkan SEMUA penyimpanan akun selama migrasi belum dijalankan. Server memaksa
-      //  atasan_id = null, kpi_enabled = false, bisa_ditugaskan = false untuk pimpinan.
       ...((editingUser.pimpinan === true) !== editPimpinanAwal ? { pimpinan: role === 'team' ? false : editingUser.pimpinan === true } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
 
-    // access_level TIDAK bisa ikut updatePayload di atas: kolom itu dibekukan
-    // trigger guard_users_privileged_columns() untuk anon/authenticated, jadi
-    // harus lewat jalur admin tersendiri. Hanya dikirim kalau memang berubah,
-    // supaya tiap simpan form tidak menambah baris audit palsu.
     const aksesLama = editingUser.access_level === 'full' ? 'full' : 'guest';
     if (role === 'team' && editAccessLevel !== aksesLama) {
       const { error: eAkses } = await adminSetAccessLevel(editingUser.id, editAccessLevel);
@@ -267,10 +216,6 @@ export function AccountSettingsInline() {
   const handleDeleteUser = (userId: string, name: string) => {
     setConfirmState({ message: `Hapus akun "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
-      //  Pesan asli Supabase disertakan - dulu selalu "Gagal menghapus akun."
-      //  polos, jadi galat pelanggaran foreign key (akun yang sudah punya
-      //  aktivitas: quiz, reminder, tiket, dst) tidak bisa dibedakan dari
-      //  galat RLS tanpa membongkar basis data langsung.
       if (error) { notify('error', `Gagal menghapus akun: ${error.message}`); return; }
       notify('success', 'Akun dihapus.');
       const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
@@ -317,13 +262,8 @@ export function AccountSettingsInline() {
         </div>
       )}
 
-      {/* Isi dibungkus kartu putih di atas latar slate — bentuk yang sama
-          dengan Kartu di halaman Profil. Sebelumnya tab dan isinya menempel
-          langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
-          belum jadi dibanding bagian lain. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-      {/* Tab bar */}
       <div className="flex border-b border-slate-100 px-5 pt-3 shrink-0 bg-slate-50/60">
         <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
@@ -342,7 +282,6 @@ export function AccountSettingsInline() {
       <div className="flex-1 overflow-y-auto p-5">
         {activeTab === 'list' && (
           <>
-            {/* Search bar */}
             <div className="relative mb-4">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
@@ -376,9 +315,6 @@ export function AccountSettingsInline() {
                       {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
                         <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
-                      {/* Menempel di kanan hanya mulai layar md. Di ponsel kolom
-                          ini menutupi kolom lain sampai yang terlihat cuma
-                          tombol Edit/Hapus berulang tanpa nama pemiliknya. */}
                       <th className="md:sticky md:right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                   </thead>

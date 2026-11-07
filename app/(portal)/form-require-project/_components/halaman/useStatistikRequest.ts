@@ -1,6 +1,5 @@
 'use client';
 
-/** useStatistikRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { daftarKebutuhan } from '../ruangan';
 import { usePaginasi } from '@/components/shared';
 import { ProjectRequest, PIE_COLORS } from '../shared';
@@ -21,7 +20,6 @@ export function useStatistikRequest(k: StatistikRequestKonteks) {
   const { filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, requests, searchQuery, searchSales } = k;
   const availableYears = [...new Set(requests.map(r => new Date(r.created_at).getFullYear().toString()))].sort((a, b) => b.localeCompare(a));
 
-  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
   const filteredRequests = requests.filter(r => {
     const matchStatus = filterStatus === 'all' || r.status === filterStatus;
     const matchYear = filterYear === 'all' || new Date(r.created_at).getFullYear().toString() === filterYear;

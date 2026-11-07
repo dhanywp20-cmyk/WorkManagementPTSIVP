@@ -1,0 +1,2 @@
+# Arsip data mentah pabrikan (arsip/tdc): simpan byte demi byte, tanpa konversi akhir baris.
+arsip/** -text

@@ -1,8 +1,7 @@
 'use client';
 
-/** useTambahAktivitas - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { SERVICES_STATUSES, User, TeamMember, Ticket, OverdueSetting } from './shared';
-import { updateSah, wajibCatatan } from './alur-status';
+import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 
@@ -34,8 +33,6 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
     const SERVICES_SIMPLE = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
     const isSvcSimple = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services" && SERVICES_SIMPLE.includes(newActivity.new_status);
     const timServices = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services";
-    //  Team PTS: aturan pindah status & notes wajib ada di alur-status.ts. "Tambah catatan saja"
-    //  = status sama dengan sekarang.
     const catatanSaja = !timServices && newActivity.new_status === selectedTicket.status;
     const noteOptional = timServices ? isSvcSimple : !wajibCatatan(selectedTicket.status, newActivity.new_status);
     if (!noteOptional && !newActivity.notes.trim()) { notify("error", catatanSaja ? "Isi catatannya dulu." : "Notes must be filled!"); return; }
@@ -49,9 +46,8 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
     if (isServicesTeam) {
       if (!(SERVICES_STATUSES as readonly string[]).includes(newActivity.new_status)) { notify("error", "Status tidak valid untuk Team Services!"); return; }
     } else {
-      if (!validStatusesPTS.includes(newActivity.new_status)) { notify("error", "Invalid status!"); return; }
+      if (!catatanSaja && !validStatusesPTS.includes(newActivity.new_status)) { notify("error", "Invalid status!"); return; }
     }
-    // services_assignee no longer required - admin Services will assign internally
     try {
       setUploading(true);
       setShowLoadingPopup(true);
@@ -88,7 +84,6 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
       }
       setLoadingMessage("Saving activity log...");
       const SVCSS = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
-      //  Catatan otomatis Call/Onsite hanya saat BERPINDAH ke status itu; "tambah catatan saja" memakai teks pengguna.
       const isSimpleStatusCalc = !catatanSaja && (newActivity.new_status === "Call" || newActivity.new_status === "Onsite");
       const isSvcSimpleCalc = isServicesTeam && SVCSS.includes(newActivity.new_status);
       const onsiteHasSchedule = newActivity.new_status === "Onsite" && newActivity.onsite_use_schedule && newActivity.onsite_schedule_date;
@@ -105,8 +100,6 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
         if (onsiteHasSchedule) autoNotes = `Dijadwalkan Onsite pada ${newActivity.onsite_schedule_date} pukul ${newActivity.onsite_schedule_hour}:${newActivity.onsite_schedule_minute} WIB.`;
         else autoNotes = "Tim sedang Onsite ke lokasi customer.";
       } else if (isSvcSimpleCalc) autoNotes = svcSimpleNotes[newActivity.new_status] || newActivity.new_status;
-      // Onsite + punya jadwal  status ticket = "Onsite" (bukan Pending)
-      // Activity log juga dicatat sebagai "Onsite"
       const effectiveStatus = newActivity.new_status;
       const useAutoNotes = isSimpleStatusCalc || isSvcSimpleCalc;
       const activityData: any = {
@@ -133,29 +126,14 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
         updateData.services_status = effectiveStatus;
         const { error: svcErr } = await supabaseServices.from("tickets").update(updateData).eq("id", selectedTicket.id);
         if (svcErr) throw new Error(`Gagal memperbarui ticket di basis data Services: ${svcErr.message}`);
-        // Salin status ke basis data PTS supaya kedua sisi tidak berbeda. Gagal
-        // di sini tidak membatalkan pekerjaan Services yang sudah tercatat,
-        // tapi harus terlihat - bukan hilang tanpa jejak.
         const { error: ptsErr } = await supabase.from("tickets").update({ services_status: effectiveStatus }).eq("id", selectedTicket.id);
         if (ptsErr) notify("error", `Status tersimpan di Services, tapi gagal disalin ke PTS: ${ptsErr.message}. Refresh lalu ulangi.`);
-        // M1 (docs/UX-WORKFLOW-AUDIT.md): dulu HANYA jalur PTS IVP yang kabari
-        // semua pihak saat "Solved" - jalur Services (di sini) tidak mengirim
-        // apa pun, padahal konsepnya sama-sama "ticket selesai". Sales, handler
-        // PTS yang menyerahkan ke Services, dan Supervisor tidak pernah tahu
-        // kapan Team Services benar-benar selesai.
         if (effectiveStatus === "Solved") {
           void kabarkanTicketSelesai(selectedTicket, useAutoNotes ? autoNotes : (newActivity.notes || ""));
         }
       } else {
         updateData.status = effectiveStatus;
         if (newActivity.assign_to_services) {
-          // ASSIGN TO TEAM SERVICES
-          // Dua basis data terpisah, tanpa transaksi bersama. Penyalinan ke
-          // basis data Services WAJIB dikerjakan lebih dulu, dan serah
-          // terimanya hanya ditulis kalau salinan itu berhasil. Kalau urutannya
-          // dibalik, satu penyalinan yang gagal membuat ticket hilang dari
-          // kedua sisi: PTS menganggap bukan urusannya lagi, Services tidak
-          // pernah menerimanya.
           let mirrorBerhasil = true;
           let mirrorPesan = "";
           try {
@@ -174,7 +152,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
                 product: selectedTicket.product || null,
                 issue_case: selectedTicket.issue_case,
                 description: selectedTicket.description || null,
-                assign_name: "Admin Team Services", // akan di-assign ulang oleh admin Services
+                assign_name: "Admin Team Services",
                 date: selectedTicket.date,
                 status: "Waiting Approval",
                 services_status: "Waiting Approval",
@@ -195,15 +173,9 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
           }
 
           if (mirrorBerhasil) {
-            // current_team pindah ke Team Services, services_status = Waiting Approval.
-            // assign_name TETAP handler PTS terakhir - admin Services yang akan
-            // meneruskannya ke anggota mereka sendiri.
             updateData.current_team = "Team Services";
             updateData.services_status = "Waiting Approval";
 
-            // Kabari admin Team Services lewat WA. Pembacaan nomor mereka dan
-            // penyusunan pesannya dikerjakan di server (/api/services/notify-admins)
-            // supaya kontak organisasi lain tidak ikut terunduh ke browser.
             try {
               await fetch("/api/services/notify-admins", {
                 method: "POST",
@@ -219,36 +191,21 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
                   catatan:        newActivity.notes,
                 }),
               });
-            } catch { /* WA gagal tidak boleh membatalkan serah terima */ }
+            } catch {  }
           } else {
             notify("error", `Catatan tersimpan, tapi ticket GAGAL dikirim ke Team Services (${mirrorPesan}). Ticket masih di PTS — coba assign ulang.`);
           }
         }
 
-        //  .select + cek baris: update yang ditolak RLS mengembalikan 0 baris
-        //  TANPA error. Dulu itu lolos sebagai "berhasil" - activity log
-        //  tercatat Solved, tapi status ticket tetap Pending (kasus BCA
-        //  sentul BLBI, 15 Okt 2026).
         const { data: terubah, error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id).select("id");
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
         if (!terubah || terubah.length === 0) throw new Error("Catatan tersimpan, tapi status ticket TIDAK berubah (ditolak sistem). Refresh lalu ulangi, atau hubungi admin.");
 
-        //  Kabar penyelesaian - baru dikirim SESUDAH ticketnya benar-benar
-        //  tersimpan sebagai Solved, bukan sebelum. Mengabari lebih dulu lalu
-        //  penyimpanannya gagal berarti orang diberi tahu sesuatu yang tidak
-        //  terjadi.
         if (effectiveStatus === "Solved") {
           void kabarkanTicketSelesai(selectedTicket, useAutoNotes ? autoNotes : (newActivity.notes || ""));
-          //  Jadwal Onsite yang lahir dari ticket ini ikut ditutup, supaya tim
-          //  tidak perlu menandai selesai dua kali di dua layar berbeda -
-          //  pekerjaannya memang satu, cuma tercatat di dua tempat.
           void tutupJadwalTicket(selectedTicket, 'done');
         }
 
-        // PENDING ACTION: perpanjang deadline Overdue sesuai hari yg dipilih
-        // Kendala bisa dari sisi user  team boleh menggeser deadline supaya
-        // ticket tidak dihitung overdue. Pakai tabel overdue_settings yg sudah ada
-        // (due_date absolut = sekarang + N hari).
         if (newActivity.new_status === "Pending Action") {
           const extDays = parseInt(newActivity.extend_days || "0", 10);
           if (extDays > 0) {
@@ -261,35 +218,17 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
                 await supabase.from("overdue_settings").insert([{ ticket_id: selectedTicket.id, due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" }]);
               }
               await fetchOverdueSettings();
-            } catch { /* jangan gagalkan update status kalau perpanjangan gagal */ }
+            } catch {  }
           }
         }
 
-        // AUTO-CREATE REMINDER saat status Onsite
-        // Jika team update status ke Onsite, otomatis buat reminder di tabel
-        // reminders sebagai kategori Troubleshooting.
-        // Jika ada jadwal (onsite_use_schedule + date), gunakan tanggal tersebut.
-        // Jika tidak ada jadwal, gunakan tanggal hari ini.
         if (newActivity.new_status === "Onsite" && !catatanSaja) {
           try {
-            /*
-              Penjaga duplikat. Sebelum ini tidak ada: setiap kali status
-              diubah ke Onsite - termasuk saat tim mengoreksi catatan lalu
-              menyimpan ulang - satu reminder BARU dibuat lagi untuk ticket
-              yang sama. Akibatnya jadwal yang sudah dikerjakan muncul dua
-              kali di Reminder Schedule dan harus ditutup satu per satu.
-
-              Yang diperiksa hanya reminder yang MASIH TERBUKA: kunjungan
-              onsite kedua untuk ticket yang sama memang sah punya jadwal
-              sendiri, jadi kalau yang lama sudah selesai, yang baru tetap
-              boleh dibuat.
-            */
             const { data: sudahAda } = await supabase.from('reminders')
               .select('id').eq('ticket_id', selectedTicket.id).neq('status', 'done').limit(1);
             if (sudahAda && sudahAda.length > 0) throw new Error('sudah ada jadwal terbuka');
 
             const assignedUsername = currentUser?.username || "";
-            // Cari full_name user
             const { data: userData } = await supabase
               .from("users")
               .select("full_name, username")
@@ -299,7 +238,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
 
             const onsiteDueDate = (newActivity.onsite_use_schedule && newActivity.onsite_schedule_date)
               ? newActivity.onsite_schedule_date
-              : new Date().toISOString().split("T")[0]; // fallback: hari ini
+              : new Date().toISOString().split("T")[0];
             const onsiteDueTime = (newActivity.onsite_use_schedule && newActivity.onsite_schedule_date)
               ? `${newActivity.onsite_schedule_hour}:${newActivity.onsite_schedule_minute}`
               : `${String(new Date().getHours()).padStart(2, "0")}:${String(new Date().getMinutes()).padStart(2, "0")}`;
@@ -307,9 +246,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
             const reminderPayload = {
               project_name: selectedTicket.project_name,
               description: `[AUTO dari Ticketing] Issue: ${selectedTicket.issue_case}${selectedTicket.product ? ` | Product: ${selectedTicket.product}` : ""}`,
-              // assigned_to = username (FK ke users.username) - wajib untuk filter notif
               assigned_to: assignedUsername,
-              // assign_name = full name untuk display
               assign_name: assignedName,
               due_date: onsiteDueDate,
               due_time: onsiteDueTime,
@@ -324,19 +261,13 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
               pic_phone: "",
               product: selectedTicket.product || selectedTicket.sn_unit || "",
               created_by: assignedUsername,
-              //  Kaitan sungguhan ke ticketnya. Catatan teks di bawah tetap
-              //  ditulis supaya terbaca manusia, tapi yang dipakai program
-              //  untuk menutup reminder ini nanti adalah kolom ini.
               ticket_id: selectedTicket.id,
-              // ticket_id sebagai link reference ke Ticketing
               notes: `Ticket ID: ${selectedTicket.id} | Project: ${selectedTicket.project_name} | Dibuat otomatis dari Platform Ticketing saat status Onsite dijadwalkan`,
             };
             const { error: reminderErr } = await supabase.from("reminders").insert([reminderPayload]);
           } catch { }
         }
       }
-      // Refresh OPTIMIS: update selectedTicket + list saat itu juga supaya
-      // status baru langsung terlihat tanpa perlu refresh manual (fix keluhan).
       const optimisticLog = { ...activityData, id: `tmp-${Date.now()}`, created_at: new Date().toISOString() } as any;
       setSelectedTicket(prev => prev && prev.id === selectedTicket.id ? {
         ...prev,

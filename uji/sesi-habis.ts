@@ -1,18 +1,6 @@
-/**
- * uji/sesi-habis.ts - menu "macet" sesudah platform dibuka berjam-jam.
- *
- * Sebabnya: cookie sesi (httpOnly) mati 6 jam sesudah login, sementara portal tetap tampak masuk dari
- * sessionStorage. Setiap pindah menu dialihkan proxy.ts ke /dashboard?lanjut=... - sorotan menu tertahan,
- * layar diam di Dashboard, dan muat ulang jaring pengaman kembali ke Dashboard yang sama.
- *
- * Kini sesi praktis tidak habis (400 hari, permintaan pemilik: tidak perlu sesi habis, terutama di HP), dan
- * bila cookie tetap hilang portal langsung menampilkan layar masuk - tanpa permintaan berkala ke server.
- *
- * Jalankan: npm test -- sesi-habis
- */
 import { existsSync, readFileSync } from 'fs';
 import { SESSION_DURATION_MS } from '../lib/constants';
-import { SESSION_HOURS } from '../lib/masuk-server';
+import { SESSION_HOURS } from '../lib/auth/masuk-server';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -26,7 +14,8 @@ cek('banner "Sesi akan berakhir / Perpanjang Sesi" dihapus', !existsSync('app/_c
 
 console.log('\n2. Cookie hilang -> layar masuk, bukan menu macet');
 const portal = baca('app/(portal)/_kerangka/KerangkaPortal.tsx');
-const efek = portal.slice(portal.indexOf('COOKIE SESI HILANG'), portal.indexOf('// Auto-navigate sales/guest'));
+const awalEfek = portal.lastIndexOf('useEffect(', portal.indexOf('void cekSesiServer()'));
+const efek = portal.slice(awalEfek, portal.indexOf('}, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);', awalEfek) + 70);
 cek('server ditanya HANYA bila alamat membawa ?lanjut= (tanpa polling)',
   /const lanjut = new URLSearchParams\(window\.location\.search\)\.get\('lanjut'\);\s*if \(!lanjut\) return;/.test(efek) && /cekSesiServer\(\)/.test(efek) && !/setInterval/.test(efek));
 cek('401 -> layar masuk (sesiBerakhir)', /if \(hasil === 'habis'\) sesiBerakhir\(\);/.test(efek));
@@ -36,7 +25,14 @@ cek('sesiBerakhir melepas tujuan menu (jaring pengaman 12 dtk tidak memuat ulang
 cek('Keluar memakai jalur yang sama', /const handleLogout = \(\) => \{\s*sesiBerakhir\(\);\s*router\.push\('\/dashboard'\);/.test(portal));
 cek('sesudah login kembali ke ?lanjut=', /const lanjut = tujuanLanjutAman\(new URLSearchParams\(window\.location\.search\)\.get\('lanjut'\)\);\s*if \(lanjut\) router\.replace\(lanjut\);/.test(portal));
 cek('proxy.ts tetap memasang ?lanjut= saat cookie tidak ada', /keLogin\.searchParams\.set\('lanjut'/.test(baca('proxy.ts')));
-const auth = baca('lib/auth.ts');
+const proxy = baca('proxy.ts');
+cek('proxy: /api selalu lewat proxy', /matcher: \[\s*'\/api\/:path\*',/.test(proxy));
+cek('proxy: pindah menu (header RSC) & berkas statis tidak lewat proxy (fungsi Node bom1)',
+  /missing: \[\{ type: 'header', key: 'rsc' \}\]/.test(proxy) && /\(\?!api\/\|_next\/static/.test(proxy) && /png\|jpe\?g/.test(proxy));
+const klien = baca('lib/supabase.ts');
+cek('401 saat token diperbarui -> event SESI_HABIS', /if \(res\.status === 401\) \{ window\.dispatchEvent\(new Event\(SESI_HABIS\)\); return; \}/.test(klien));
+cek('portal mendengar SESI_HABIS -> layar masuk', /window\.addEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal) && /removeEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal));
+const auth = baca('lib/auth/sesi.ts');
 cek('cekSesiServer: hanya 401 dianggap habis (sinyal jelek bukan alasan keluar)', /if \(res\.status === 401\) return 'habis';\s*if \(!res\.ok\) return 'gagal';/.test(auth));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

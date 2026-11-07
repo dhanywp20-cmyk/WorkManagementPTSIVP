@@ -1,8 +1,3 @@
-/**
- * daftar-menu.tsx - Menu portal (urutan kode = urutan tampil), kelompok sidebar & ikon garisnya.
- * Data statis, dipecah dari KerangkaPortal. Hak tampil per akun disaring di KerangkaPortal
- * (allowed_menus / Full Access).
- */
 import React from 'react';
 import type { MenuItem } from '../dashboard/_components/shared';
 
@@ -99,7 +94,6 @@ export const DAFTAR_MENU: MenuItem[] = [
   },
 ];
 
-/** Kelompok sidebar & menu bawah HP (urutan kategori: Learning -> Project -> Internal Daily). */
 export const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress', 'summary-project', 'tools-team'];
 export const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
 export const LEARNING_KEYS = ['kpi-team', 'learning-center', 'tech-note'];

@@ -43,7 +43,6 @@ const AKSI_TEAM: AksiDef[] = [
   { key: 'learning-center', label: 'Learning Center', icon: '🎓', warna: '#4338ca', run: (openMenu) => openMenu('learning-center') },
 ];
 
-/** Chip Quick Action Team - dirender DI DALAM kartu My Action, di bawah daftar item. */
 function TeamActionChips({ user, openMenu, openUrl }: {
   user: User; openMenu: (k: string) => void; openUrl: (url: string, title: string) => void;
 }) {
@@ -60,26 +59,16 @@ function TeamActionChips({ user, openMenu, openUrl }: {
 
 type TabAgenda = 'aksi' | 'hari' | 'nanti';
 
-/** "2026-10-06" -> "Sen, 6 Okt". */
 function tglPendek(iso: string | null): string {
   if (!iso) return '';
   const d = new Date(iso + 'T00:00:00');
   return isNaN(d.getTime()) ? '' : d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-/**
- * Agenda - SATU kartu bertab menggantikan tiga ubin terpisah (My Action,
- * Hari Ini, Mendatang). Tiga ubin dulu membuat beranda kaku: kolom
- * Mendatang membentang dua baris walau sering kosong, dan item yang sama
- * (mis. "Daily Report belum diisi") tercetak di My Action DAN Hari Ini.
- * Kini satu daftar, tab memilih sudut pandangnya, jumlah tiap tab tetap
- * terlihat sehingga tidak ada yang tersembunyi.
- */
 const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) => {
   const { loading, error, myAction, today, upcoming } = useWorkQueue(user);
   const isTeamSide = isTeamMember(user) || isAdminRole(user);
   const idAksi = new Set(myAction.map(i => i.id));
-  //  Hari Ini tanpa item yang sudah ada di Perlu tindakan - tidak dicetak dua kali.
   const hariIni = today.filter(i => !idAksi.has(i.id));
   const tabAwal: TabAgenda = myAction.length ? 'aksi' : hariIni.length ? 'hari' : upcoming.length ? 'nanti' : 'aksi';
   const [tab, setTab] = React.useState<TabAgenda | null>(null);
@@ -108,8 +97,6 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
 
   const kosongSemua = myAction.length === 0 && hariIni.length === 0 && upcoming.length === 0;
 
-  //  Sales/Guest tanpa tugas: bilah tipis - Quick Action mereka ada di kartu
-  //  Analytics Saya, jadi kartu penuh hanya akan berisi satu kalimat.
   if (kosongSemua && !isTeamSide) {
     return (
       <div className="h-full flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 px-4 py-3">
@@ -135,7 +122,6 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
           </div>
         ) : (
           <>
-            {/* Tab bersegmen - jumlah tiap sudut pandang selalu terlihat. */}
             <div role="tablist" aria-label="Agenda" className="flex gap-1 p-1 rounded-xl bg-slate-100 mb-3">
               {TAB.map(t => {
                 const on = t.k === aktif;

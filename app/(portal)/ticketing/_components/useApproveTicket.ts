@@ -1,6 +1,5 @@
 'use client';
 
-/** useApproveTicket - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { sendWANotif, fetchWACCTargets, User, TeamMember, Ticket } from './shared';
 import { supabase } from '@/lib/supabase';
 import { notifyTicketAssigned, createNotification } from '@/lib/notifications';
@@ -30,15 +29,8 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
     try {
       setApprovingId(tk.id);
       setUploading(true);
-      // Route ke Supervisor: approve tapi belum assign ke handler. Supervisor
-      //    yang lanjut assign ke anggota tim (atau kerjakan sendiri).
       if (asg.startsWith("SUP::")) {
         const [, supId, supName] = asg.split("::");
-        // .eq('status','Waiting Approval') + cek baris: kalau admin lain
-        // sudah lebih dulu meng-approve ticket yang sama (2 tab/2 admin
-        // bersamaan), update ini sengaja tidak menyentuh baris apa pun -
-        // tanpa pengecekan ini WA & notifikasi di bawah tetap terkirim ganda
-        // walau approval kedua sebenarnya tidak pernah benar-benar tersimpan.
         const { data: routeRows, error: routeErr } = await supabase.from("tickets").update({
           status: "Pending", assign_name: "",
           routing_status: "supervisor_assign", assigned_supervisor_id: supId,
@@ -73,13 +65,6 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
         notify("success", `Ticket diteruskan ke Supervisor ${supName} untuk di-assign`);
         return;
       }
-      // Assign langsung (bukan route). Kolom routing TIDAK ditulis di sini supaya
-      // tetap jalan walau migrasi supervisor belum di-run (ticket "Waiting Approval"
-      // yg di-approve langsung tak pernah punya routing_status).
-      // .eq('status','Waiting Approval') + cek baris: sama seperti cabang
-      // route-ke-supervisor di atas - mencegah 2 admin men-approve ticket
-      // yang sama ke 2 handler berbeda tanpa saling tahu (yang terakhir
-      // menang diam-diam, WA terkirim ke keduanya).
       const { data: rows, error } = await supabase.from("tickets")
         .update({ status: "Pending", assign_name: asg }).eq("id", tk.id).eq("status", "Waiting Approval").select("id");
       if (error) throw error;
@@ -90,18 +75,14 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
       if (tk.created_by) {
         const creatorUser = users.find((u) => u.username === tk.created_by);
         if (creatorUser && creatorUser.role === "guest" && creatorUser.id) {
-          // Notify guest/sales bahwa ticket mereka sudah diproses
           void createNotification({ user_id: creatorUser.id, type: 'ticket', title: `🎫 Ticket disetujui`, body: `${tk.project_name} — ditugaskan ke ${asg}`, action_url: '/ticketing', ref_id: tk.id, created_by: currentUser?.full_name || '' });
         }
       }
-      // WA ke handler yang di-assign
       try {
-        // Cari handler dari teamMembers state (sudah load dari users)
         const tm = teamMembers.find(m => m.name === asg);
         const { data: handlerUser } = tm?.username ? await supabase
           .from("users").select("phone_number, full_name")
           .eq("username", tm.username).maybeSingle() : { data: null };
-        // In-app notification (using notifications table)
         if (handlerUser) {
           const { data: handlerFull } = await supabase.from('users').select('id').eq('username', tm!.username).maybeSingle();
           if (handlerFull?.id) {
@@ -111,7 +92,6 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
             ).catch(() => {});
           }
         }
-        // Audit log
         logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'assign', module: 'ticket', target_id: tk.id, target_name: tk.project_name, new_value: asg }).catch(() => {});
         if (handlerUser?.phone_number) {
           const waMsg = [
@@ -132,7 +112,6 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
         console.warn('[ticket] WA to handler (approval) failed:', err?.message);
         notify('error', 'WA ke handler gagal dikirim. Ticket berhasil di-approve.');
       }
-      // CC ke atasan + IVP berdasarkan divisi creator ticket
       try {
         const creatorUser = tk.created_by ? users.find((u) => u.username === tk.created_by) : null;
         const ccDiv = (tk as any).sales_division ?? creatorUser?.sales_division ?? "";
@@ -159,9 +138,6 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
     } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); setApprovingId(null); }
   };
 
-  // Ticket & handler baris INI dikirim eksplisit — bukan lewat state bersama —
-  // supaya yang diproses tidak mungkin tertukar dengan baris lain di modal
-  // Approval yang sama.
   const jalankanApproveTicket = async (ticket: Ticket) => {
     const pilihan = approvalAssignees[ticket.id];
     if (!pilihan) { notify("error", "Pilih handler atau Supervisor terlebih dahulu!"); return; }

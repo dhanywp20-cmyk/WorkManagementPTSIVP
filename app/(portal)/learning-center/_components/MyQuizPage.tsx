@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
+import { supabase, User, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -11,102 +11,19 @@ import { BilahNavigasiSoal } from './kuis/BilahNavigasiSoal';
 import { IsiSoalKuis } from './kuis/IsiSoalKuis';
 import { BilahAtasKuis } from './kuis/BilahAtasKuis';
 import { GambarSoal } from '@/components/shared/GambarSoal';
-
-/*
-  Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
-
-  Peserta quiz melihat pesan ini di tengah pengerjaan berbatas waktu. "new row
-  violates row-level security policy" tidak memberi tahu dia maupun pengurusnya
-  apa yang harus dilakukan - dan yang lebih buruk, ia terbaca seperti "kamu
-  tidak berhak", padahal artinya pemasangannya belum lengkap. Orang lalu
-  mencoba lagi berkali-kali, dan waktunya habis untuk sesuatu yang tidak akan
-  pernah berhasil sampai ada yang menjalankan satu berkas SQL.
-*/
-function terjemahkanGalatUnggah(pesan?: string): string {
-  const p = pesan ?? 'Gagal mengunggah.';
-  if (/row-level security|violates row/i.test(p)) {
-    return 'Penyimpanan gambar belum diizinkan di server. Ini bukan kesalahan kamu — '
-      + 'hubungi admin untuk menjalankan sql/perbaikan-unggah-jawaban-gambar.sql. '
-      + 'Jawaban lain yang sudah kamu isi tetap tersimpan.';
-  }
-  if (/bucket not found|not found/i.test(p)) {
-    return 'Tempat penyimpanan gambar belum dibuat di server. Hubungi admin — '
-      + 'jalankan sql/learning-center-essay-gambar.sql.';
-  }
-  if (/exceeded the maximum allowed size|payload too large|413/i.test(p)) {
-    return 'Fotonya terlalu besar walau sudah dikecilkan. Coba foto ulang dari jarak '
-      + 'lebih dekat, atau potong bagian yang tidak perlu.';
-  }
-  if (/mime type|not supported/i.test(p)) {
-    return 'Jenis berkasnya tidak didukung. Pakai foto biasa (JPG atau PNG).';
-  }
-  return p;
-}
-
-/**
- * Soal seperti yang ditarik SAAT MENGERJAKAN quiz - TANPA `correct_answer`.
- * Kunci jawaban baru boleh diketahui klien SETELAH submit (lihat
- * perQuestionResult di bawah) - sebelum itu, mengirim correct_answer ke
- * browser sama saja membocorkan kunci jawaban sebelum soal dijawab.
- */
-export type QuizQuestion = Omit<Question, 'correct_answer' | 'model_answer'>;
-
-/**
- * Pengacak urutan soal - Fisher-Yates dengan benih (seed), bukan Math.random().
- *
- * Benihnya `attempt.id`, jadi urutannya BERBEDA antar peserta tapi SAMA setiap
- * kali attempt yang sama dibuka lagi. Itu bukan detail kosmetik: peserta boleh
- * menutup tab, kehabisan baterai, atau memuat ulang halaman di tengah quiz
- * berbatas waktu. Dengan Math.random() urutannya akan disusun ulang saat itu,
- * sementara jawaban tersimpan per question_id - nomor 3 yang tadi dijawab
- * mendadak jadi soal lain, dan papan navigasi menunjuk ke tempat yang keliru.
- *
- * Ini pengacakan tampilan, bukan pengamanan: penilaian tetap per question_id
- * di server (/api/learning-center/submit-quiz), tidak bergantung urutan.
- */
-function acakDenganBenih<T>(daftar: T[], benih: string): T[] {
-  // Hash string -> uint32 (FNV-1a), lalu dipakai sebagai state PRNG mulberry32.
-  let h = 2166136261;
-  for (let i = 0; i < benih.length; i++) {
-    h ^= benih.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  let state = h >>> 0;
-  const acak = () => {
-    state = (state + 0x6D2B79F5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  const hasil = [...daftar];
-  for (let i = hasil.length - 1; i > 0; i--) {
-    const j = Math.floor(acak() * (i + 1));
-    [hasil[i], hasil[j]] = [hasil[j], hasil[i]];
-  }
-  return hasil;
-}
+import { terjemahkanGalatUnggah, acakDenganBenih, type QuizQuestion } from './kuis/bantu-kuis';
 
 function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
-  /** Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada CTA langsung "Coba Lagi"
-   *  setelah gagal walau allow_retake true - peserta harus keluar dulu ke
-   *  daftar quiz, baru mulai lagi dari sana. */
   onRetake?: (session: QuizSession) => void;
 }) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
-  /** Pratinjau gambar jawaban per soal - yang ditampilkan, bukan gambar penuhnya. */
   const [gambarJawaban, setGambarJawaban] = useState<Record<string, string>>({});
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{ score: number; correct: number; passed: boolean; pendingReview?: boolean } | null>(null);
-  /**
-   * Kunci jawaban per soal - HANYA terisi setelah submit berhasil (dari
-   * response /api/learning-center/submit-quiz), dipakai layar "Review
-   * Jawaban". Sebelum submit ini selalu kosong.
-   */
   const [perQuestionResult, setPerQuestionResult] = useState<Record<string, { correct_answer: string; is_correct: boolean }>>({});
   const isEssay = session.session_type === 'essay';
   const [timeLeft, setTimeLeft] = useState<number | null>(session.timer_minutes ? session.timer_minutes * 60 : null);
@@ -114,27 +31,15 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   const tabSwitchesRef = useRef(0);
   const [showReview, setShowReview] = useState(false);
   const [dialog, setDialog] = useState<DialogState>(null);
-  /** Konfirmasi keluar sebelum quiz dikumpulkan. */
   const [konfirmasiKeluar, setKonfirmasiKeluar] = useState(false);
 
-  /*
-    Minta induk menaikkan iframe-nya ke seluruh layar selama quiz berjalan.
-
-    Modal yang dibuat DI DALAM iframe hanya menutupi area iframe; sidebar dan
-    bilah atas tetap terlihat dan tetap bisa diklik. Untuk quiz berbatas waktu
-    itu bukan sekadar soal tampilan - satu klik menu di luar sana mengganti isi
-    iframe, dan pengerjaan yang sedang berjalan hilang di tengah jalan.
-
-    Pesannya diabaikan begitu saja bila halaman ini dibuka langsung (bukan di
-    dalam iframe), jadi tidak ada cabang khusus yang perlu ditulis.
-  */
   useEffect(() => {
     const kirim = (tipe: 'IFRAME_MODAL_OPEN' | 'IFRAME_MODAL_CLOSE') => {
       try {
         if (window.parent !== window) {
           window.parent.postMessage({ type: tipe, modul: 'learning-quiz' }, window.location.origin);
         }
-      } catch { /* induk beda asal - abaikan, layar tetap berfungsi */ }
+      } catch {  }
     };
     kirim('IFRAME_MODAL_OPEN');
     return () => kirim('IFRAME_MODAL_CLOSE');
@@ -144,9 +49,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   useEffect(() => {
     const load = async () => {
       if (!session.question_ids?.length) return;
-      // TANPA correct_answer/model_answer - lihat catatan QuizQuestion di atas.
-      // Kolom ini yang dulu membocorkan kunci jawaban ke browser sebelum
-      // soal dijawab.
       const { data } = await supabase.from('lc_questions')
         .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format, gambar_url')
         .in('id', session.question_ids);
@@ -157,13 +59,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     const loadAnswers = async () => {
       const { data } = await supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id);
       const map: Record<string, string> = {};
-      // Essay menyimpan teksnya di essay_text (answer selalu '' untuk baris
-      // essay); ABCD menyimpan pilihannya di answer (essay_text selalu null).
-      // Membaca .answer saja untuk keduanya membuat quiz essay yang dilanjutkan
-      // tampil kosong walau jawabannya sudah tersimpan.
-      // Jawaban bergambar disimpan sebagai tautan, bukan teks. Tanpa baris
-      // ketiga ini, quiz bergambar yang dilanjutkan akan tampil BELUM
-      // dijawab walau fotonya sudah terunggah - lalu peserta mengunggah ulang.
       const gbr: Record<string, string> = {};
       (data ?? []).forEach((a: any) => {
         map[a.question_id] = a.essay_text || a.answer_image_url || a.answer;
@@ -201,23 +96,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     return () => document.removeEventListener('visibilitychange', onVisChange);
   }, [submitted]);
 
-  /**
-   * Unggah foto jawaban untuk soal essay bertipe gambar.
-   *
-   * HEMAT KUOTA - dua hal yang dikerjakan di perangkat peserta, sebelum apa
-   * pun menyentuh jaringan:
-   *
-   *   1. Fotonya dikecilkan. Kamera ponsel menghasilkan 3-8 MB pada 4000px,
-   *      padahal yang dibutuhkan penilai cuma bisa membaca coretan di kertas.
-   *      1600px pada mutu 0.75 menghasilkan sekitar 250 KB - turun 95%.
-   *   2. Dibuat DUA berkas: gambar penuh dan pratinjau 320px. Daftar
-   *      penilaian hanya memuat pratinjaunya. Pada satu sesi berisi 30
-   *      jawaban, itu bedanya mengunduh 450 KB atau 7 MB setiap kali daftar
-   *      penilaian dibuka.
-   *
-   * Peserta di lapangan sering memakai kuota pribadi, jadi penghematan ini
-   * bukan cuma soal tagihan Supabase.
-   */
   const [unggah, setUnggah] = useState<string | null>(null);
 
   const handleUploadGambar = async (questionId: string, file: File): Promise<boolean> => {
@@ -243,9 +121,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
       const isi = { answer_image_url: urlPenuh, answer_thumb_url: urlKecil, answered_at: new Date().toISOString() };
       const sudahAda = savedAnswers[questionId] !== undefined;
-      //  select('id') pada UPDATE: RLS yang menolak menjawab 0 baris TANPA
-      //  galat - tanpa memeriksa panjangnya, foto jawaban yang gagal
-      //  tersimpan tetap tampak terunggah di layar.
       const { data: hasil, error } = sudahAda
         ? await supabase.from('lc_answers').update(isi)
             .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id')
@@ -271,14 +146,10 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     }
   };
 
-  /** true kalau tersimpan, false kalau gagal (dan sudah ditampilkan ke user). */
   const handleAnswer = async (questionId: string, answer: string): Promise<boolean> => {
     setAnswers(p => ({ ...p, [questionId]: answer }));
     const existing = savedAnswers[questionId];
     let error: { message: string } | null = null;
-    //  select('id') pada tiap UPDATE: tanpa memeriksa jumlah baris, RLS yang
-    //  menolak (0 baris, tanpa galat) lolos dari pemeriksaan `if (error)` di
-    //  bawah - persis pola yang dijelaskan di komentar bawah fungsi ini.
     if (isEssay) {
       if (existing !== undefined) {
         const r = await supabase.from('lc_answers').update({ essay_text: answer, answered_at: new Date().toISOString() })
@@ -296,19 +167,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id');
       error = r.error ?? (!r.data || r.data.length === 0 ? { message: 'tersimpan 0 baris' } : null);
     } else {
-      // is_correct SELALU false di sini - klien tidak lagi punya kunci
-      // jawaban untuk dicocokkan (lihat QuizQuestion). Nilai sebenarnya
-      // ditulis server saat submit (/api/learning-center/submit-quiz).
       ({ error } = await supabase.from('lc_answers').insert([{
         attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
         question_id: questionId, answer, is_correct: false,
       }]));
       if (!error) setSavedAnswers(p => ({ ...p, [questionId]: answer }));
     }
-    // Tanpa ini, jawaban yang GAGAL tersimpan (RLS, jaringan putus, dst) tetap
-    // terlihat terisi di layar (state lokal `answers` sudah ter-update di atas)
-    // padahal server tidak pernah menerimanya - persis pola yang membuat admin
-    // melihat "Tidak dijawab" walau peserta yakin sudah menjawab.
     if (error) {
       setDialog({ type: 'error', title: 'Jawaban Gagal Tersimpan', message: `Jawaban belum tersimpan ke server (${error.message}). Coba ketik ulang atau periksa koneksi internet kamu sebelum lanjut.` });
       return false;
@@ -329,12 +193,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
 
     if (isEssay) {
-      // Flush SEMUA jawaban essay yang ada di state lokal dulu - kalau peserta
-      // mengetik lalu langsung klik Submit tanpa pindah fokus dulu, onBlur pada
-      // textarea belum sempat terpanggil dan teks itu belum pernah tersimpan ke
-      // server sama sekali. Tanpa flush ini submit tetap "berhasil" tapi
-      // jawaban terakhir hilang - persis kasus "sudah jawab tapi admin lihat
-      // Tidak dijawab".
       const flushResults = await Promise.all(
         questions.map(q => {
           const text = answers[q.id] ?? savedAnswers[q.id] ?? '';
@@ -342,10 +200,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         }),
       );
       if (flushResults.some(ok => !ok)) {
-        // handleAnswer sudah menampilkan dialog error spesifik per soal yang gagal.
         return;
       }
-      // Essay: tidak dinilai otomatis. Status jadi 'pending_review' sampai admin nilai manual di ReportPage.
       const { error } = await supabase.from('lc_quiz_attempts').update({
         submitted_at: new Date().toISOString(), score: null, total_correct: 0,
         total_questions: questions.length, passed: null, is_submitted: true, time_taken_sec: timeTaken,
@@ -359,20 +215,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       return;
     }
 
-    // Penilaian ABCD dikerjakan SERVER, bukan di sini - lihat komentar panjang
-    // di app/api/learning-center/submit-quiz/route.ts. Klien tidak lagi
-    // punya kunci jawaban (QuizQuestion tidak membawa correct_answer) untuk
-    // dicocokkan sendiri.
     let res: Response;
     try {
-      //  tabSwitches disertakan di sini sebagai sumber kebenaran TERAKHIR -
-      //  pencatatan tab_switches per-kejadian selama quiz berjalan (di atas)
-      //  fire-and-forget tanpa penanganan galat, jadi bisa gagal diam-diam
-      //  di tengah jalan (jaringan sempat putus, dst) dan angkanya di
-      //  database ketinggalan dari yang sebenarnya. tabSwitchesRef.current
-      //  di browser tidak pernah kehilangan hitungan itu, jadi server
-      //  menuliskannya ulang di sini sebagai penyelamat terakhir - persis
-      //  pola yang sudah dipakai jalur essay saat submit.
       res = await fetch('/api/learning-center/submit-quiz', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ attemptId: attempt.id, tabSwitches: tabSwitchesRef.current }),
@@ -411,8 +255,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <div className="p-4 sm:p-8 space-y-4 max-w-3xl mx-auto w-full">
             {questions.map((q, idx) => {
               const userAnswer = answers[q.id] ?? savedAnswers[q.id] ?? null;
-              // Kunci jawaban HANYA tersedia di sini (setelah submit, dari
-              // perQuestionResult) - lihat catatan QuizQuestion di atas.
               const correctAnswer = perQuestionResult[q.id]?.correct_answer;
               const isCorrect = perQuestionResult[q.id]?.is_correct ?? false;
               const notAnswered = !userAnswer;
@@ -428,7 +270,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                       <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="mx-0! mt-2 border border-slate-200" />
                     </div>
                   </div>
-                  {/* 1 kolom di ponsel - lihat catatan yang sama di TeamPage.tsx */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-2 sm:ml-10">
                     {(['A','B','C','D'] as const).map(opt => {
                       const optVal = (q as any)[`option_${opt.toLowerCase()}`];
@@ -526,14 +367,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   const q = questions[current];
   const answered = Object.keys(answers).filter(k => answers[k]).length;
 
-  /*
-    Status timer - tiga tingkat, bukan dua.
-
-    Warna hanya berarti kalau ia tidak selalu menyala. Merah dari awal membuat
-    merah kehilangan arti persis pada menit terakhir, saat ia paling
-    dibutuhkan. Jadi: tenang selama masih lega, kuning saat tersisa seperempat,
-    merah berdenyut di bawah satu menit.
-  */
   const totalDetik = session.timer_minutes ? session.timer_minutes * 60 : null;
   const tingkatWaktu: 'tenang' | 'waspada' | 'kritis' =
     timeLeft === null ? 'tenang'
@@ -541,31 +374,11 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       : (totalDetik !== null && timeLeft <= totalDetik * 0.25) ? 'waspada'
       : 'tenang';
   const isUrgent = tingkatWaktu === 'kritis';
-  //  Digelapkan dari versi mode-gelap sebelumnya (#2DD4A0/#FBBF24/#FB5779) -
-  //  warna itu dipilih supaya menyala di atas latar gelap, dan jadi pudar/
-  //  kurang kontras kalau dipakai sebagai teks angka di atas KARTU PUTIH.
   const WARNA_WAKTU = { tenang: '#059669', waspada: '#D97706', kritis: '#DC2626' } as const;
   const KET_WAKTU = { tenang: 'Sisa waktu', waspada: 'Waktu menipis', kritis: 'Segera kumpulkan' } as const;
-  //  Cincin waktu: keliling lingkaran r=19. Porsi yang tersisa digambar sebagai
-  //  busur, jadi sisa waktu terbaca SEKILAS tanpa memproses angkanya.
   const KELILING = 2 * Math.PI * 19;
   const porsiWaktu = (timeLeft !== null && totalDetik) ? Math.max(0, Math.min(1, timeLeft / totalDetik)) : 1;
 
-  /*
-    Rel kemajuan yang SEKALIGUS navigasi - satu ruas per soal.
-
-    Menggantikan tiga hal yang dulu terpisah dan saling tumpang tindih: garis
-    kemajuan setebal 1px (praktis tak terlihat), deret nomor bergulir khusus
-    ponsel, dan panel nomor di kanan khusus desktop. Ketiganya menjawab
-    pertanyaan yang sama - "sudah sampai mana, mana yang masih kosong" -
-    dengan tiga tampilan berbeda, dan dua di antaranya memakan ruang yang
-    seharusnya milik soal.
-  */
-  //  Fungsi render biasa, BUKAN komponen inline. Komponen yang didefinisikan
-  //  di dalam render punya identitas baru tiap kali render, jadi React
-  //  membongkar-pasang seluruh isinya alih-alih memperbaruinya - untuk deret
-  //  yang bisa berisi 50 tombol, itu pekerjaan sia-sia tiap kali detik timer
-  //  berdetak.
   const relSoal = () => (
     <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto shrink-0 bg-white border-b border-slate-200"
       role="group" aria-label="Navigasi soal">
@@ -590,26 +403,9 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   return (
     <ModalPortal>
     <>
-    {/*
-      Quiz menempati SELURUH layar, bukan sekadar area modul.
-
-      Dua alasan, dan keduanya soal keadilan pengerjaan. Pertama, waktu sedang
-      berjalan - apa pun yang menarik perhatian keluar dari soal merugikan
-      peserta. Kedua, sidebar dan bilah atas yang masih terlihat bisa diklik,
-      dan satu klik menu mengganti isi iframe sehingga pengerjaan hilang di
-      tengah jalan. Induknya diminta menaikkan iframe ke layar penuh lewat
-      postMessage (lihat useEffect di atas); lapisan di sini yang menutup
-      sisanya bila halaman dibuka langsung.
-    */}
     <div className="fixed inset-0 z-250 flex bg-slate-100">
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/*
-          Bilah atas TERANG - permintaan eksplisit: mode gelap sebelumnya tidak
-          disukai. Kejelasan "ini yang sedang dikerjakan" sekarang dipegang
-          oleh UKURAN kartu soal dan garis pemisahnya yang tegas, bukan lagi
-          kontras terang-gelap.
-        */}
         <BilahAtasKuis
           KELILING={KELILING} KET_WAKTU={KET_WAKTU} WARNA_WAKTU={WARNA_WAKTU} answered={answered} fmtTimer={fmtTimer} handleSubmit={handleSubmit} isUrgent={isUrgent} porsiWaktu={porsiWaktu} questions={questions} session={session} setKonfirmasiKeluar={setKonfirmasiKeluar} timeLeft={timeLeft} tingkatWaktu={tingkatWaktu}
         />
@@ -620,11 +416,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           answers={answers} current={current} gambarJawaban={gambarJawaban} handleAnswer={handleAnswer} handleUploadGambar={handleUploadGambar} isEssay={isEssay} q={q} questions={questions} savedAnswers={savedAnswers} setAnswers={setAnswers} setCurrent={setCurrent} unggah={unggah}
         />
 
-        {/*
-          Bilah aksi menempel di BAWAH layar, bukan ikut menggulung bersama
-          soal. Di ponsel inilah tempat ibu jari berada, dan tombolnya tidak
-          perlu dicari dengan menggulung sampai habis.
-        */}
         <BilahNavigasiSoal
           answered={answered} current={current} handleSubmit={handleSubmit} questions={questions} setCurrent={setCurrent} tabSwitches={tabSwitches}
         />
@@ -632,11 +423,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     </div>
     {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
 
-    {/* Konfirmasi keluar. Menutup quiz berbatas waktu tanpa peringatan berarti
-        kehilangan kesempatan mengerjakan, dan itu tidak bisa dibatalkan.
-        Jawaban yang SUDAH tersimpan tetap ada - itu disebut supaya orang tidak
-        mengira semuanya hilang, lalu memaksakan diri melanjutkan padahal
-        keadaannya tidak memungkinkan. */}
     {konfirmasiKeluar && (
       <div className="fixed inset-0 z-260 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.6)' }}
@@ -679,37 +465,6 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   );
 }
 
-/**
- * Sisa waktu sampai quiz ditutup, dalam kalimat yang bisa langsung dibaca.
- *
- * close_at SUDAH lama dipakai untuk MENYARING daftar - begitu lewat, quiz-nya
- * hilang dari layar peserta. Yang tidak pernah ada: tanggalnya sendiri.
- * Peserta tidak punya satu pun cara mengetahui quiz akan tutup nanti malam,
- * sampai ia membuka halaman dan quiz-nya sudah tidak ada di sana.
- *
- * `mendesak` dipisah dari teksnya supaya warna merah hanya dipakai saat
- * tenggatnya memang tinggal hitungan jam. Kalau setiap tenggat merah, tidak
- * ada satu pun yang terbaca mendesak.
- */
-export function tenggatQuiz(closeAt: string | null | undefined): { teks: string; mendesak: boolean } | null {
-  if (!closeAt) return null;
-  const tutup = new Date(closeAt);
-  if (Number.isNaN(tutup.getTime())) return null;
-
-  const sisaJam = (tutup.getTime() - Date.now()) / 3_600_000;
-  if (sisaJam <= 0) return null;   // sudah lewat - kartunya memang tidak akan tampil
-
-  const jam = tutup.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  if (sisaJam < 1) {
-    return { teks: `Tutup ${Math.max(1, Math.round(sisaJam * 60))} menit lagi · ${jam}`, mendesak: true };
-  }
-  if (sisaJam < 24) {
-    return { teks: `Tutup ${Math.round(sisaJam)} jam lagi · ${jam}`, mendesak: true };
-  }
-  const tanggal = tutup.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-  return { teks: `Tutup ${tanggal} · ${jam}`, mendesak: false };
-}
-
 export function MyQuizPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [activeAttempts, setActiveAttempts]     = useState<Record<string, QuizAttempt>>({});
@@ -730,30 +485,11 @@ export function MyQuizPage({ user }: { user: User }) {
     });
     setSessions(filtered);
 
-    // Fetch active (in-progress) attempts
     const { data: a } = await supabase.from('lc_quiz_attempts').select('*').eq('user_id', user.id).eq('is_submitted', false);
     const map: Record<string, QuizAttempt> = {};
     (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
     setActiveAttempts(map);
 
-    /*
-      Attempt yang sudah disubmit - dipakai dua hal: mematikan tombol saat
-      allow_retake=false, DAN menandai essay yang masih menunggu dinilai.
-
-      '*' disengaja, bukan daftar kolom. Versi sebelumnya mengambil
-      `quiz_session_id` saja dengan alasan yang benar - menyebut kolom yang
-      belum ada di skema membuat PostgREST menolak SELURUH kueri, jadi
-      grading_status sengaja tidak disebut. Tapi baris di bawah tetap
-      menyaring memakai kolom itu: yang dibaca selalu undefined, himpunannya
-      selalu kosong, dan lencana "Menunggu Penilaian Admin" TIDAK PERNAH
-      muncul sekali pun - peserta essay melihat quiz-nya seolah belum
-      dikerjakan.
-
-      '*' menyelesaikan keduanya: kolomnya ikut terbaca kalau ada, dan kueri
-      tetap tidak pernah gagal kalau migrasinya belum jalan. Pola yang sama
-      sudah dipakai di AdminDashboard.tsx dan /api/learning-center/rank untuk
-      alasan yang persis sama.
-    */
     const { data: submitted } = await supabase
       .from('lc_quiz_attempts')
       .select('*')

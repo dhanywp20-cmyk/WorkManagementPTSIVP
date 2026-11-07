@@ -1,17 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/panggil-komponen-dalam.mjs - `<X .../>` -> `{X({...})}` untuk komponen yang DIDEFINISIKAN
- * DI DALAM komponen lain.
- *
- *   node scripts/panggil-komponen-dalam.mjs <berkas.tsx> [...]
- *
- * Komponen yang dibuat di dalam render (const X = () => <div/>) mendapat identitas baru tiap render;
- * dirender sebagai <X/>, React membongkar & memasang ulang seluruh isinya setiap kali induknya
- * dirender (iframe dimuat ulang, fokus hilang, animasi mengulang). Memanggilnya sebagai fungsi
- * menghasilkan elemen yang sama persis TANPA batas komponen baru - jadi tidak ada pemasangan ulang.
- * Hanya dilakukan bila badan fungsinya tidak memanggil hook (use…), karena hook di dalam fungsi yang
- * dipanggil biasa akan menempel pada komponen induk.
- */
 import ts from 'typescript';
 import fs from 'node:fs';
 
@@ -23,8 +10,6 @@ for (const berkas of process.argv.slice(2)) {
 
   const adalahFungsi = n => ts.isFunctionDeclaration(n) || ts.isArrowFunction(n) || ts.isFunctionExpression(n);
   (function jalan(n, dalamFungsi) {
-    //  Kumpulkan komponen dalam: const Besar = (…) => … di dalam badan fungsi.
-    //  Bentuk `function Besar(…) {…}` di dalam fungsi diperlakukan sama.
     const sebagaiFungsi = dalamFungsi && ts.isFunctionDeclaration(n) && n.name && /^[A-Z]/.test(n.name.text) && n.body
       ? { name: n.name, initializer: n } : null;
     const decl = sebagaiFungsi ?? n;
@@ -49,7 +34,6 @@ for (const berkas of process.argv.slice(2)) {
   })(sf, false);
 
   const teksDari = n => teks.slice(n.getStart(sf), n.end);
-  // dari belakang supaya posisi tidak bergeser; buang yang bersarang di dalam penggantian lain
   ganti.sort((a, b) => b.m.getStart(sf) - a.m.getStart(sf));
   let hasil = teks, terakhirAwal = Infinity, n = 0;
   for (const { m, buka, tanpaParam } of ganti) {
@@ -67,7 +51,6 @@ for (const berkas of process.argv.slice(2)) {
       bagian.push(`children: <>${m.children.map(c => teks.slice(c.pos, c.end)).join('')}</>`);
     }
     const panggil = tanpaParam && !bagian.length ? `${buka.tagName.text}()` : `${buka.tagName.text}({ ${bagian.join(', ')} })`;
-    //  Elemen di posisi anak JSX -> bungkus {…}; di posisi ekspresi (mis. kondisi ? <X/> : null) -> apa adanya.
     const diAnakJsx = m.parent && (ts.isJsxElement(m.parent) || ts.isJsxFragment(m.parent));
     hasil = hasil.slice(0, m.getStart(sf)) + (diAnakJsx ? `{${panggil}}` : panggil) + hasil.slice(m.end);
     terakhirAwal = m.getStart(sf); n++;

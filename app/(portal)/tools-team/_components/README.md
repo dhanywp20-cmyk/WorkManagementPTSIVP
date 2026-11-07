@@ -8,12 +8,14 @@ _components/
   Desain3D.tsx       kerangka Desain 3D Ruang AV        → desain3d/  (lihat desain3d/README.md)
   KalkulatorLED.tsx  kerangka LED Videotron             → led/
   KalkulatorAV.tsx   kerangka Kalkulator AV (5 sub)     → av/
+  ChecklistBarang.tsx kerangka Checklist Barang         → cekbarang/ (impor Excel / PDF, PDF hasil + tanda tangan;
+                     logika murni lib/checklist/barang.ts, diuji uji/checklist-barang.ts)
   bersama/           dipakai semua alat: ui.tsx (isian, kartu, nilai), cetak.ts (lembar A4 & PNG),
                      riwayat.ts (undo / redo)
 ```
 
 Rumus murni yang dipakai lintas modul (ukuran layar, lumen, bandwidth, SPL, hitung LED,
-koneksi & daya LED) ada di `lib/av-hitung.ts` dan diuji di `uji/av-hitung.ts`.
+koneksi & daya LED) ada di `lib/av/hitung.ts` dan diuji di `uji/av-hitung.ts`.
 
 ## led/ — LED Videotron
 
@@ -40,6 +42,6 @@ led/
 
 1. **Kerangka** (`Desain3D.tsx`, `KalkulatorLED.tsx`) hanya memanggil hook lalu menyusun panel.
 2. **Keadaan** di satu hook (`useKeadaanDesain`, `useKeadaanLED`) — satu sumber kebenaran.
-3. **Aturan & hitungan murni** (tanpa React) di `inti/`, `data.ts`, atau `lib/av-hitung.ts` — diuji.
+3. **Aturan & hitungan murni** (tanpa React) di `inti/`, `data.ts`, atau `lib/av/hitung.ts` — diuji.
 4. **Panel** menerima satu objek `a` (keadaan + hook) dan hanya membongkar yang dipakainya.
 5. Batas ukuran berkas ±300 baris; lebih dari itu dipecah per kelompok.

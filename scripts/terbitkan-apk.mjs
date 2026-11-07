@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-/**
- * scripts/terbitkan-apk.mjs - terbitkan APK rilis dari CI ke Admin Panel.
- *
- * Padanan otomatis dari Admin Panel -> Aplikasi Android (app/api/android),
- * dengan aturan yang SAMA persis: bucket privat "aplikasi-android", path
- * rilis/<kode>-<12 hex>.apk, satu baris rilis_android, kode versi wajib naik,
- * dan hanya 2 berkas terbaru yang disimpan (baris lama tetap sebagai riwayat).
- *
- * Idempoten: kalau versionCode di android/version.properties tidak lebih besar
- * dari rilis terakhir, skrip berhenti dengan sukses tanpa menerbitkan apa pun.
- * Jadi push ke main yang tidak menaikkan versi tidak pernah menimpa rilis.
- *
- * Tanpa dependensi npm - hanya fetch bawaan Node 20.
- *
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *   node scripts/terbitkan-apk.mjs <berkas.apk> [catatan]
- */
 import { readFileSync, statSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
@@ -74,14 +57,12 @@ try {
     body: JSON.stringify({ versi, kode_versi: kode, ukuran, path, catatan, wajib: false }),
   });
 } catch (e) {
-  // Baris gagal dicatat -> jangan tinggalkan berkas yatim di Storage.
   await rest(`/storage/v1/object/${BUCKET}`, {
     method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prefixes: [path] }),
   }).catch(() => {});
   throw e;
 }
 
-// Sisakan SIMPAN_BERKAS berkas terbaru; baris lama tetap (riwayat & catatan).
 const lama = await rest(`/rest/v1/rilis_android?select=id,path&path=not.is.null&order=kode_versi.desc&offset=${SIMPAN_BERKAS}&limit=50`);
 if (lama.length) {
   await rest(`/storage/v1/object/${BUCKET}`, {

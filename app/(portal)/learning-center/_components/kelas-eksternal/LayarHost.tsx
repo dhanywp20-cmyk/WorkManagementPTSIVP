@@ -1,43 +1,26 @@
 'use client';
 
-/**
- * Kuis Live (ala Kahoot) - LAYAR HOST admin, untuk diproyeksikan. Admin hanya menekan Mulai; sesudah
- * itu kuis berjalan sendiri mengikuti waktu tiap soal (hitung mundur -> soal -> jawaban benar &
- * distribusi -> papan skor -> soal berikutnya -> podium). Lewati = maju satu tahap sekarang juga.
- * Peserta tidak bisa mulai sebelum Mulai ditekan.
- *
- * Kendali presenter: Jeda / Lanjutkan (jam kuis beku - waktu membaca soal atau diskusi), Ulang soal ini,
- * Mundur ke soal sebelumnya (jawaban soal itu dianulir), dan Dari awal (kembali ke lobi kapan saja;
- * Mulai berikutnya = sesi baru, skor sesi lama tetap ada di Hasil).
- *
- * Tampil di atas SELURUH platform (portal ke <body>, lapisan Z.layarHost) dan isinya disusun di
- * panggung 16:9 yang diskalakan memenuhi layar, jadi di proyektor/monitor mana pun tidak ada yang
- * terpotong. Layar tegak (HP) memakai tata letak biasa yang bisa digulir.
- * Status dibaca dari /api/admin/kelas-eksternal?live=<id> (berkala) dan tombol mengirim aksi live_*.
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BarChart3, Check, Maximize, Minimize, Pause, Play, RefreshCcw, RotateCcw, SkipBack, SkipForward, Square, Users, X } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ModalPortal } from '@/components/shared/ModalPortal';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 import { appBaseUrl } from '@/lib/app-url';
-import type { KelasEksternal, Pilihan } from '@/lib/kelas-eksternal';
-import type { AksiLive, Tahap } from '@/lib/kuis-live';
-import type { KeadaanHost } from '@/lib/kuis-live-server';
+import type { KelasEksternal, Pilihan } from '@/lib/kuis/kelas-eksternal';
+import type { AksiLive, Tahap } from '@/lib/kuis/live';
+import type { KeadaanHost } from '@/lib/kuis/live-server';
 import { Z } from '@/lib/z-index';
 import {
   BilahSoal, BilahWaktu, HitungMundur, LatarKuis, LogoEvent, PILIHAN_KUIS, Podium, WARNA_PILIHAN,
   formatPoin, ukuranTeks, useDetak, useJamServer, type TemaKuis,
 } from '@/components/kuis-live/tema';
 
-/** Ukuran panggung yang dirancang; diskalakan ke layar sebenarnya. */
 const LEBAR = 1280;
 const TINGGI = 720;
 
 const tombolUtama = 'inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-[17px] font-black text-slate-900 shadow-[0_5px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-none disabled:opacity-50';
 const tombolKecil = 'inline-flex items-center gap-1.5 rounded-lg bg-black/25 hover:bg-black/40 px-3 py-2 text-[13px] font-bold';
 
-/** Skala panggung 16:9 agar pas di layar mendatar; null = layar tegak (tata letak biasa). */
 function useSkala() {
   const [skala, setSkala] = useState<number | null>(null);
   useEffect(() => {
@@ -52,12 +35,10 @@ function useSkala() {
   return skala;
 }
 
-/** Keluar layar penuh (bila sedang) - dipakai saat layar host ditutup. */
 export function keluarLayarPenuh() {
   if (typeof document !== 'undefined' && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
 }
 
-/** Masuk layar penuh. Harus dipanggil langsung dari klik (aturan peramban). */
 export function masukLayarPenuh() {
   if (typeof document !== 'undefined' && !document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => {});
 }
@@ -73,8 +54,6 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
   const { catat, sekarang } = useJamServer();
   const skala = useSkala();
   const sedangMuat = useRef(false);
-  //  Domain yang sedang dibuka, bukan appBaseUrl(): peserta harus masuk ke deployment yang sama
-  //  dengan layar host (di Preview, domain produksi belum tentu punya versi kuis yang sama).
   const url = `${typeof window !== 'undefined' ? window.location.origin : appBaseUrl()}/kelas/${kelas.token}`;
 
   const muat = useCallback(async () => {
@@ -98,13 +77,11 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
 
   const tahapServer = host?.tahap;
   useEffect(() => {
-    //  Pergantian tahap ditangkap penyegaran terjadwal di bawah; berkala ini untuk jumlah menjawab & pemain baru.
     const jeda = tahapServer === 'selesai' ? 10_000 : 3000;
     const t = window.setInterval(() => void muat(), jeda);
     return () => window.clearInterval(t);
   }, [tahapServer, muat]);
 
-  //  Tepat saat tahap berganti otomatis (waktu habis, hasil -> papan, papan -> soal berikutnya).
   useEffect(() => {
     if (!host?.akhirMs || host.tahap === 'siap') return;
     const t = window.setTimeout(() => void muat(), Math.max(0, host.akhirMs + 120 - sekarang()));
@@ -122,13 +99,10 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
   }, []);
 
   const h = host;
-  //  Dijeda: jam kuis beku di titik jeda - hitung mundur & bilah waktu berhenti di layar.
   const kini = h?.jedaMs ?? sekarang();
   const dijeda = !!h?.jedaMs;
-  //  Layar tegak (admin memegang HP): huruf diperkecil dan teks tidak dipotong - halaman bisa digulir.
   const huruf = (teks: string, tangga: [number, number][]) => Math.round(ukuranTeks(teks, tangga) * (skala ? 1 : 0.6));
   const potong = skala ? 'line-clamp-3' : '';
-  //  Hitung mundur -> soal tanpa menunggu penyegaran (soal & pilihan sudah ada di data).
   const tahap: Tahap | null = !h ? null : h.tahap === 'siap' && h.mulaiMs && kini >= h.mulaiMs ? 'soal' : h.tahap;
   const waktuHabis = tahap === 'soal' && !!h?.tutupMs && kini >= h.tutupMs;
   const sisaOtomatis = h?.akhirMs ? Math.max(0, Math.ceil((h.akhirMs - kini) / 1000)) : null;
@@ -212,7 +186,6 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
           <div className={`flex-1 min-h-0 grid gap-6 ${skala ? 'grid-cols-[minmax(0,400px)_minmax(0,1fr)]' : 'grid-cols-1'}`}>
             <section className="rounded-3xl bg-white text-slate-900 p-6 shadow-2xl flex flex-col items-center justify-center gap-3 min-h-0">
               <p className="text-[14px] font-black uppercase tracking-[0.18em] text-slate-500">Pindai untuk bergabung</p>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               {qr ? <img src={qr} alt="QR untuk bergabung" className="w-full max-w-[340px] aspect-square" /> : <div className="w-full max-w-[340px] aspect-square rounded-xl bg-slate-100" />}
               <p className="text-[13px] font-semibold text-slate-500 text-center">Isi nama di HP, lalu tunggu kuis dimulai.</p>
             </section>
@@ -398,7 +371,6 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
   );
 }
 
-/** Grafik batang jumlah pemilih tiap pilihan; yang benar diberi centang, lainnya diredupkan. */
 function Distribusi({ distribusi, kunci }: { distribusi: Record<Pilihan, number> | null; kunci: Pilihan | null }) {
   const d = distribusi ?? { A: 0, B: 0, C: 0, D: 0 };
   const maks = Math.max(1, ...Object.values(d));

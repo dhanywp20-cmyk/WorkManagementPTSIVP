@@ -1,17 +1,10 @@
-/**
- * Langkah kedua login. Dipanggil dengan tiket dari /api/auth/login:
- *  - tahap 'kode_2fa'   : { tantangan, kode }            -> sesi
- *  - tahap 'daftar_2fa' : { tantangan, aksi:'mulai' }    -> { rahasia, url } untuk QR
- *                         { tantangan, aksi:'aktifkan', kode } -> sesi + kode cadangan (sekali tampil)
- * Kode salah dihitung ke lockout login yang sama (5 gagal / 15 menit per username).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   catatPercobaan, getClientIp, muatUserMasuk, PESAN_TERKUNCI, sedangTerkunci, selesaikanMasuk,
-} from '@/lib/masuk-server';
-import { aktifkanDaftar2FA, baca2FA, mulaiDaftar2FA, periksaKode2FA } from '@/lib/dua-faktor-server';
-import { bacaTantangan } from '@/lib/tantangan-2fa';
+} from '@/lib/auth/masuk-server';
+import { aktifkanDaftar2FA, baca2FA, mulaiDaftar2FA, periksaKode2FA } from '@/lib/auth/dua-faktor-server';
+import { bacaTantangan } from '@/lib/auth/tantangan-2fa';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +39,6 @@ export async function POST(request: NextRequest) {
         cek.pakaiCadangan ? { sisa_cadangan: cek.sisaCadangan } : undefined);
     }
 
-    // tahap 'daftar_2fa' - admin wajib 2FA tapi belum mendaftar
     if (baris?.aktif) return NextResponse.json({ error: HABIS }, { status: 401 });
     if (body?.aksi === 'mulai') {
       return NextResponse.json(await mulaiDaftar2FA(supabase, user));

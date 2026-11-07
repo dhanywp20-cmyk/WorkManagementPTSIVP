@@ -1,8 +1,3 @@
-/**
- * Grup pilihan (checkbox / radio) untuk modal Edit Request.
- * Dulu didefinisikan DI DALAM komponen halaman - setiap render membuat tipe
- * komponen baru, sehingga React me-remount seluruh grup tiap render.
- */
 
 const toggleArr = (arr: string[], val: string): string[] =>
   arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];

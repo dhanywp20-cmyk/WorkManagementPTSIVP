@@ -1,14 +1,9 @@
-/**
- * Lembar cetak Tools Team - bagian umumnya kini di lib/lembar-cetak.ts (dipakai seluruh platform);
- * di sini tinggal yang khusus Tools Team.
- */
 import { esc } from '@/lib/lembar-cetak';
 
 export * from '@/lib/lembar-cetak';
 
 export const rupiah = (v: number) => `Rp ${Math.round(v).toLocaleString('id-ID')}`;
 
-/** Diagram susunan cabinet/modul (SVG) dengan proporsi sebenarnya + label ukuran. */
 export function diagramSusunan(kolom: number, baris: number, lebarM: number, tinggiM: number, satuan: string): string {
   const maksW = 480, maksH = 170;
   const skala = Math.min(maksW / Math.max(0.01, lebarM), maksH / Math.max(0.01, tinggiM));

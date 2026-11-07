@@ -4,25 +4,10 @@ import { supabase } from '@/lib/supabase';
 import {
   Kelompok, LingkupManager, kelompokPTS, muatKelompok, lingkupManager,
   simpanLingkupManager,
-} from '@/lib/kelompok';
+} from '@/lib/kelompok/inti';
 
 interface Akun { id: string; full_name: string; jabatan: string | null; team_type: string | null; access_level: string | null }
 
-/**
- * Bagian "Lingkup Manager" pada User Management.
- *
- * Menjawab satu pertanyaan yang sebelumnya tidak punya tempat sama sekali:
- * seorang Manager PTS membawahi kelompok yang mana.
- *
- * Sebelum ini, akun dengan Full Access melihat SELURUH pekerjaan PTS. Untuk
- * Manager yang memang membawahi semuanya itu benar; untuk yang hanya
- * memegang sebagian, pekerjaan kelompok lain ikut terbaca tanpa ada cara
- * membatasinya selain mencabut Full Access-nya sekalian.
- *
- * Tidak dipetakan = tanpa batas, sama seperti sekarang. Ini disengaja:
- * memberi arti "tidak melihat apa-apa" pada ketiadaan pemetaan akan mengunci
- * semua Manager keluar pada detik fitur ini menyala.
- */
 export function LingkupManagerInline() {
   const [akun, setAkun] = useState<Akun[]>([]);
   const [group, setGroup] = useState<Kelompok[]>([]);
@@ -49,13 +34,6 @@ export function LingkupManagerInline() {
     })();
   }, []);
 
-  /**
-   * Yang ditampilkan hanya akun yang PUNYA jangkauan lintas kelompok:
-   * Full Access, atau berjabatan Manager ke atas. Untuk Staff dan Supervisor,
-   * pembatasan kelompok tidak berarti apa-apa - mereka memang sudah terikat
-   * kelompoknya sendiri, dan menampilkannya di sini hanya bikin daftar panjang
-   * yang tidak satu barisnya pun perlu diisi.
-   */
   const ATASAN = ['Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
   const kandidat = akun.filter(u =>
     (u.access_level ?? '') === 'full' || ATASAN.includes(u.jabatan ?? ''));

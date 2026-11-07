@@ -4,11 +4,6 @@ import { supabase } from '@/lib/supabase';
 import { BRIEFING_BAWAAN, KUNCI_BRIEFING, rapikanBriefing, type PengaturanBriefing } from '@/lib/briefing-pagi';
 import { KUNCI_CRON_TERAKHIR, type JejakCron } from '@/lib/cron-catat';
 
-/**
- * Admin Panel -> Integrations -> kartu "Briefing Pagi". Dua saklar untuk cron
- * /api/cron/digest (06:00 WIB, ke WA / Telegram / push): saklar utama, dan pengingat Daily
- * Report yang belum diisi. Kanal mana yang dipakai tetap diatur di bagian Integrations di bawahnya.
- */
 function Saklar({ nilai, onUbah, label, ket, mati }: { nilai: boolean; onUbah: (v: boolean) => void; label: string; ket: string; mati?: boolean }) {
   return (
     <div className={`flex items-start justify-between gap-3 py-2.5 ${mati ? 'opacity-50' : ''}`}>
@@ -40,7 +35,7 @@ export function BriefingPagiKartu() {
           if (b.key === KUNCI_BRIEFING) setP(rapikanBriefing(b.value));
           if (b.key === KUNCI_CRON_TERAKHIR) setTerakhir(((b.value ?? {}) as JejakCron).digest ?? null);
         }
-      } catch { /* jatuh ke bawaan */ }
+      } catch {  }
       if (hidup) setSiap(true);
     })();
     return () => { hidup = false; };

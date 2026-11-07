@@ -1,30 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWA } from '@/lib/wa';
-import '@/lib/wa-server';
-import { kirimPushKeUser } from '@/lib/web-push-server';
-import { bacaRahasia } from '@/lib/rahasia-server';
+import { sendWA } from '@/lib/wa/inti';
+import '@/lib/wa/server';
+import { kirimPushKeUser } from '@/lib/notifikasi/web-push-server';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { catatCron } from '@/lib/cron-catat';
 import { itemTahapTertahan, type BarisTahap } from '@/lib/eskalasi-tahap';
 import { KUNCI_BRIEFING, rapikanBriefing } from '@/lib/briefing-pagi';
-import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
+import { kirimAlertKesehatan } from '@/lib/kesehatan/server';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * /api/cron/digest - ringkasan tenggat harian per orang, lewat WhatsApp.
- * Mencakup target Project Progress, jadwal reminder, dan garansi yang habis.
- *
- * Prinsip yang dijaga:
- *   - Satu pesan per orang, bukan satu per item. Sepuluh notifikasi terpisah
- *     berakhir diabaikan; satu ringkasan dibaca.
- *   - Tidak mengirim apa pun kepada orang yang tidak punya tenggat. Pesan
- *     "tidak ada apa-apa hari ini" melatih orang mengabaikan pengirimnya.
- *   - Hanya melihat ke depan sampai H+3, dan ke belakang untuk yang lewat.
- */
-
-/** Berapa hari ke depan yang dianggap "mendekat". */
 const HARI_KE_DEPAN = 3;
 
 function berwenang(request: NextRequest): boolean {
@@ -35,15 +22,9 @@ function berwenang(request: NextRequest): boolean {
   return false;
 }
 
-/*
-  Tanggal WIB, bukan UTC. Cron ini berjalan 23:00 UTC = 06:00 WIB; dengan
-  tanggal UTC, "hari ini" di pesan pagi sebenarnya kemarin - tenggat hari ini
-  terbaca "besok" dan yang kemarin belum dihitung terlambat.
-*/
 function tanggalISO(offsetHari: number): string {
   return new Date(Date.now() + 7 * 3600_000 + offsetHari * 86_400_000).toISOString().slice(0, 10);
 }
-/** 0 = Minggu ... 6 = Sabtu, untuk tanggal ISO. */
 const hariDari = (iso: string) => new Date(iso + 'T00:00:00Z').getUTCDay();
 
 function labelTanggal(iso: string): string {
@@ -60,26 +41,15 @@ function labelTanggal(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-/** ringan = pengingat rutin (DR belum diisi, tiket aktif): cukup push +
- *  Telegram. WA hanya untuk tenggat sungguhan & blok atasan - nomor gateway
- *  pernah ditandai spam, jangan kirim WA harian ke semua orang. */
 interface Item { label: string; tanggal: string; terlambat: boolean; ringan?: boolean }
 
 async function jalankan() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    //  Lihat catatan di lib/supabase-admin.ts: tanpa cache:'no-store' di sini,
-    //  digest cron ini bisa mengirim rekap tiket yang sama berulang-ulang -
-    //  dibekukan sejak jadwal pertama route ini jalan setelah deploy.
     { global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) } },
   );
 
-  /*
-    Saklar dari Admin Panel -> Integrations -> Briefing Pagi. Mati = tidak mengirim apa pun,
-    tetapi jejak "terakhir jalan" tetap dicatat (cron-nya sehat, hanya sengaja dimatikan).
-    Alert kesehatan tetap diperiksa: briefing yang mati tidak boleh ikut membisukan alert admin.
-  */
   const { data: barisSaklar } = await supabase.from('app_settings').select('value').eq('key', KUNCI_BRIEFING).maybeSingle();
   const saklar = rapikanBriefing(barisSaklar?.value);
   if (!saklar.aktif) {
@@ -91,7 +61,6 @@ async function jalankan() {
   const hariIni = tanggalISO(0);
   const batas   = tanggalISO(HARI_KE_DEPAN);
 
-  // nama lengkap  daftar tenggat miliknya
   const perOrang = new Map<string, Item[]>();
   const catat = (nama: string | null | undefined, item: Item) => {
     const n = (nama ?? '').trim();
@@ -101,10 +70,6 @@ async function jalankan() {
     perOrang.set(n, arr);
   };
 
-  // Lokasi Project Progress yang targetnya mendekat / lewat
-  //  Yang sudah selesai dilewati: mengingatkan target pada pekerjaan yang
-  //  sudah rampung hanya membuat kiriman ini terasa tidak akurat.
-  //  (Project Progress berbasis checklist: satu checklist = satu lokasi.)
   const { data: lokasi } = await supabase
     .from('checklist_daftar')
     .select('id, judul, target_date, proyek_id')
@@ -136,12 +101,9 @@ async function jalankan() {
     };
     const anggota = ((anggotaLokasi ?? []) as { daftar_id: string; nama: string }[]).filter(a => a.daftar_id === l.id).map(a => a.nama);
     for (const n of anggota) catat(n, item);
-    // Sales ikut diberi tahu hanya bila ia bukan anggotanya sendiri, supaya
-    // tidak menerima baris yang sama dua kali.
     if (p.sales_name && !anggota.includes(p.sales_name)) catat(p.sales_name, item);
   }
 
-  // Reminder yang jatuh tempo dan belum selesai
   const { data: reminders } = await supabase
     .from('reminders')
     .select('project_name, address, assign_name, due_date, status, category')
@@ -159,14 +121,6 @@ async function jalankan() {
     });
   }
 
-  /*
-    M3 (docs/UX-WORKFLOW-AUDIT.md): tiket "Waiting Approval" dulu tidak
-    pernah di-follow-up otomatis - WA ke approver cuma sekali saat tiket
-    dibuat, dan kalau diabaikan tidak ada reminder susulan sama sekali.
-    Tiket yang sudah menunggu >24 jam diikutkan ke digest harian ini,
-    ditujukan ke admin/superadmin + pemegang Full Access - penerima yang
-    sama dengan yang menerima notifikasi persetujuan saat tiket dibuat.
-  */
   const batasApproval = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const { data: menungguApproval } = await supabase
     .from('tickets')
@@ -192,11 +146,6 @@ async function jalankan() {
     }
   }
 
-  /* ── Tambahan briefing pagi ───────────────────────────────────────────
-     1. Daily Report hari kerja sebelumnya yang belum diisi (Team PTS).
-     2. Tiket aktif yang sedang dipegang.
-     3. Untuk atasan: anggota langsungnya yang belum mengisi Daily Report.
-     4. Senin: insight mingguan untuk Admin & Manager.  */
   const { data: semuaUser } = await supabase
     .from('users')
     .select('id, full_name, phone_number, team_type, jabatan, role, atasan_id, access_level, telegram_chat_id');
@@ -207,7 +156,6 @@ async function jalankan() {
   const adalahAdmin = (u: U) => ['admin', 'superadmin'].includes((u.role ?? '').toLowerCase()) || u.access_level === 'full';
   const adalahManager = (u: U) => /manager/i.test(u.jabatan ?? '');
 
-  //  Hari kerja sebelumnya: mundur melewati Sabtu, Minggu, dan hari libur piket.
   const { data: libur } = await supabase.from('picket_holidays').select('date').gte('date', tanggalISO(-10));
   const setLibur = new Set(((libur ?? []) as { date: string }[]).map(l => l.date));
   let kemarin = tanggalISO(-1);
@@ -215,7 +163,6 @@ async function jalankan() {
 
   const { data: drKemarin } = await supabase.from('daily_reports').select('user_id').eq('report_date', kemarin);
   const sudahDR = new Set(((drKemarin ?? []) as { user_id: string }[]).map(r => r.user_id));
-  //  Saklar "Pengingat Daily Report" mati: daftar kosong -> tak ada baris pengingat & tak ada blok atasan.
   const belumDR = saklar.pengingatDailyReport ? timPTS.filter(u => !sudahDR.has(u.id)) : [];
   const labelKemarin = new Date(kemarin + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
   for (const u of belumDR) {
@@ -244,11 +191,6 @@ async function jalankan() {
     });
   }
 
-  /*
-    Eskalasi tahap routing: request yang tertahan > 24 jam di gerbang review Sales Internal /
-    Admin / Supervisor masuk ke briefing pemegang gerbangnya (lib/eskalasi-tahap.ts). Ticket
-    tahap admin tidak diambil di sini - sudah tercakup "Menunggu approval" di atas.
-  */
   const TAHAP = '("internal_review","admin_review","supervisor_assign")';
   const kolomTahap = 'project_name, routing_status, status, internal_sales_id, internal_sales_id_2, assigned_supervisor_id, created_at';
   const [{ data: rTahap }, { data: pTahap }, { data: tTahap }] = await Promise.all([
@@ -272,7 +214,6 @@ async function jalankan() {
     }
   }
 
-  //  Blok tambahan per penerima (teks bebas di bawah daftar tenggat).
   const blok = new Map<string, string[]>();
   const tambahBlok = (nama: string, teks: string) => { const a = blok.get(nama) ?? []; a.push(teks); blok.set(nama, a); };
 
@@ -291,7 +232,6 @@ async function jalankan() {
       supabase.from('reminders').select('id').lt('due_date', hariIni).not('status', 'in', '("done","cancelled")').not('is_deleted', 'is', true),
       supabase.from('daily_reports').select('user_id, report_date').gte('report_date', sejak).lt('report_date', hariIni),
     ]);
-    //  Hari kerja dalam 7 hari terakhir, untuk tingkat pengisian Daily Report.
     const hariKerja: string[] = [];
     for (let n = 7; n >= 1; n--) { const d = tanggalISO(-n); if (hariDari(d) !== 0 && hariDari(d) !== 6 && !setLibur.has(d)) hariKerja.push(d); }
     const setHK = new Set(hariKerja);
@@ -322,10 +262,6 @@ async function jalankan() {
 
   const perNama = new Map(daftarUser.map(u => [u.full_name!, u]));
 
-  /*  Telegram langsung ke Bot API. lib/telegram-pribadi.ts memanggil
-      '/api/notifikasi/telegram' (alamat relatif) yang hanya jalan di
-      peramban - dari cron ini ia selalu gagal diam-diam. Teks polos, tanpa
-      parse_mode (lihat alasannya di route Telegram). */
   const [tokenTg, pengaturan] = await Promise.all([bacaRahasia('telegram.bot_token'), bacaPengaturan()]);
   const kirimTg = async (chatId: string, teks: string) => {
     if (!tokenTg || !pengaturan.aktif.telegram) return false;
@@ -345,8 +281,6 @@ async function jalankan() {
     const items = perOrang.get(nama) ?? [];
     const tambahan = blok.get(nama) ?? [];
 
-    // Terlambat lebih dulu, lalu urut tanggal - yang paling mendesak dibaca
-    // pertama, karena pesan panjang sering hanya terbaca beberapa baris awal.
     items.sort((a, b) =>
       (a.terlambat === b.terlambat ? 0 : a.terlambat ? -1 : 1) || a.tanggal.localeCompare(b.tanggal));
 
@@ -362,19 +296,17 @@ async function jalankan() {
       (tambahan.length ? `\n\n${tambahan.join('\n\n')}` : '') +
       `\n\nBuka Work Management untuk menindaklanjuti.`;
 
-    //  Push ke aplikasi/HP: ringkas, pesan lengkap tetap lewat WA/Telegram.
     if (u) {
       const ringkas = items.length
         ? `${items.length} hal perlu perhatian${jumlahTerlambat ? `, ${jumlahTerlambat} lewat tenggat` : ''}: ${items[0].label}`
         : (tambahan[0] ?? '').replace(/\*/g, '').slice(0, 140);
-      try { await kirimPushKeUser([u.id], { title: 'Briefing pagi', body: ringkas, url: '/dashboard' }); push++; } catch { /* push opsional */ }
+      try { await kirimPushKeUser([u.id], { title: 'Briefing pagi', body: ringkas, url: '/dashboard' }); push++; } catch {  }
     }
 
     if (u?.telegram_chat_id && await kirimTg(u.telegram_chat_id, pesan)) telegram++;
 
     const wa = u?.phone_number;
     if (!wa) { tanpaNomor++; continue; }
-    //  WA hanya bila ada tenggat sungguhan / blok atasan (lihat Item.ringan).
     if (!(items.some(i => !i.ringan) || tambahan.length > 0)) continue;
     const hasil = await sendWA(wa, pesan, 'digest_wa', 'system.digest');
     if (hasil.ok) terkirim++; else gagal++;

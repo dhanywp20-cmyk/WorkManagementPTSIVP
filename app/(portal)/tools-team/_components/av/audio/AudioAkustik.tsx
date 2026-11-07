@@ -1,16 +1,11 @@
 'use client';
-/**
- * Audio · akustik ruang: RT60 Sabine dari ukuran ruang, material permukaan & jumlah orang, dibanding
- * target per jenis ruang; luas panel akustik tambahan agar masuk target. Rumus: lib/av-audio-jaringan.ts.
- */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av-audio-jaringan';
+import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
 
-/** Material diacu lewat NAMA - daftarnya dari Pustaka (material-akustik), bawaan kode bila kosong. */
 interface Tambahan { material: string; luas: number }
 const namaMat = (m: string) => m;
 const CATATAN = 'RT60 Sabine dengan koefisien serap tipikal 500 Hz - perkiraan awal untuk ruang berbentuk kotak. Permukaan tambahan (kaca, panel akustik, gorden) mengganti sebagian dinding dengan luas yang sama. Panel akustik paling efektif di dinding belakang & titik pantul samping; ruang video conference sebaiknya ≤ 0,6 s.';
@@ -20,7 +15,6 @@ export function AudioAkustik() {
   const bahan = entri.length ? entri.map(e => ({ l: e.nama, a: angkaDari(e, 'a') })) : MATERIAL_AKUSTIK.map(m => ({ l: m.l, a: m.a }));
   const koef = (m: string) => bahan.find(b => b.l === m)?.a ?? MATERIAL_AKUSTIK.find(x => x.l === m)?.a ?? 0.05;
   const OPSI_MAT = bahan.map(b => ({ v: b.l, l: `${b.l} (α ${b.a})` }));
-  //  Panel akustik untuk saran luas: entri "Panel akustik" di pustaka, bila tidak ada α 0,9.
   const aPanel = bahan.find(b => /panel akustik/i.test(b.l))?.a ?? 0.9;
   const [p, setP] = useState(8); const [l, setL] = useState(6); const [t, setT] = useState(3);
   const [lantai, setLantai] = useState('Keramik / granit');
@@ -40,7 +34,6 @@ export function AudioAkustik() {
   const h = rt60Sabine(volume, permukaan, orang);
   const tg = TARGET_RT60[jenis];
   const tambahSerap = serapanTambahanM2(volume, h.serapanM2, tg.maks);
-  //  Panel akustik di atas dinding: tiap m² menambah α panel − α dinding.
   const panelM2 = tambahSerap > 0 ? tambahSerap / Math.max(0.05, aPanel - koef(dinding)) : 0;
   const status = h.rt60 > tg.maks ? 'terlalu bergema' : h.rt60 < tg.min ? 'terlalu "mati"' : 'sesuai target';
   const ubah = (i: number, x: Partial<Tambahan>) => setTambahan(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));

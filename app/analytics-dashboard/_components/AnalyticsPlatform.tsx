@@ -1,24 +1,16 @@
 'use client';
 
-/**
- * analytics-dashboard/page.tsx  -  Analytics Platform
- *
- * Tab order (default: Dashboard Analytics first):
- *   1. Dashboard Analytics - full DashboardKPI component (original KPI view)
- *   2. Command Center      - live bottleneck alerts, My Tasks, Aktivitas Terbaru
- *   3. Audit Log           - audit_trail + activity_logs (historical ticketing logs)
- */
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
-import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as DashUser } from '@/lib/tipe-pengguna';
 import { FooterPlatform, StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
-
-// Types
+import { hasFullAccess } from '@/lib/constants';
+import { PanelPemakaian } from './PanelPemakaian';
+import { Panel, Empty, Row, ACTION_STYLE, MODULE_ICON } from './panel-analitik';
 
 interface User {
   id: string; full_name: string; role: string;
@@ -46,89 +38,8 @@ interface Stats {
   activity: { id: string; label: string; sub: string; time: string; dot: string }[];
 }
 
-export type Tab = 'kpi' | 'command' | 'audit';
+export type Tab = 'kpi' | 'command' | 'audit' | 'pemakaian';
 
-// Small helper components
-
-function Panel({ title, icon, color, borderClr, count, children }: {
-  title: string; icon: string; color: string; borderClr: string; count?: number; children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-2xl overflow-hidden flex flex-col"
-      style={{ background: 'rgba(255,255,255,0.97)', border: `1px solid ${borderClr}`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      <div className="flex items-center gap-2 px-4 py-3 shrink-0"
-        style={{ background: `${color}10`, borderBottom: `1px solid ${borderClr}` }}>
-        <span className="text-base select-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-        <span className="font-bold text-sm flex-1" style={{ color }}>{title}</span>
-        {count !== undefined && count > 0 && (
-          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: color }}>
-            {count}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 overflow-y-auto max-h-56 p-3 space-y-1.5">{children}</div>
-    </div>
-  );
-}
-
-function Empty({ emoji, msg }: { emoji: string; msg: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-8 gap-2">
-      <span className="text-3xl select-none"><Ikon nama={emoji} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-      <p className="text-xs font-medium text-gray-500 text-center">{msg}</p>
-    </div>
-  );
-}
-
-function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
-  dot: string; title: string; sub: string;
-  badge?: string; badgeBg?: string; badgeColor?: string; badgeBorder?: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 px-3 py-2 rounded-xl"
-      style={{ background: `${dot}0C`, border: `1px solid ${dot}20` }}>
-      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: dot }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-800 truncate">{title}</p>
-        <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>
-      </div>
-      {badge && (
-        <span className="text-[11px] font-black px-1.5 py-0.5 rounded-sm whitespace-nowrap shrink-0 mt-0.5"
-          style={{ background: badgeBg ?? '#f3f4f6', color: badgeColor ?? '#374151', border: `1px solid ${badgeBorder ?? '#d1d5db'}` }}>
-          {badge}
-        </span>
-      )}
-    </div>
-  );
-}
-
-// Action badge colors
-const ACTION_STYLE: Record<string, { bg: string; color: string; border: string }> = {
-  create:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-  approve:       { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-  mark_done:     { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-  Solved:        { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-  update:        { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-  assign:        { bg: '#ede9fe', color: '#5b21b6', border: '#c4b5fd' },
-  status_change: { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
-  export:        { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
-  delete:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-  reject:        { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-  Overdue:       { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-  login:         { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-  logout:        { bg: '#f1f5f9', color: '#475569', border: '#cbd5e1' },
-  'In Progress': { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-  'Waiting Approval': { bg: '#fef3c7', color: '#92400e', border: '#fcd34d' },
-};
-
-const MODULE_ICON: Record<string, string> = {
-  ticket: '🎫', reminder: '📅', project: '🏗️', piket: '🏪',
-  kpi: '📊', incentive: '💰', movement: '🚚', user: '👥',
-  learning: '🎓', 'tech-note': '📝', 'form-review': '⭐',
-  'daily-report': '📈', system: '⚙️',
-};
-
-// Tab button
 export function TabBtn({ label, icon, active, onClick, badge }: {
   label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
 }) {
@@ -150,37 +61,25 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
   );
 }
 
-// Main component
-
 export function AnalyticsPlatform({
   embedded = false, injectedUser, controlledTab, onTabChange, onCounts,
 }: {
   embedded?: boolean; injectedUser?: User;
-  /*
-    Dipakai HANYA saat embedded di homepage dashboard: tab switcher-nya
-    dipindah ke header sticky (sebelah "N widget aktif") supaya tidak perlu
-    scroll dulu ke widget ini untuk ganti tab - lihat PermissionAwareDashboard.
-    Kalau tidak diberikan (pemakaian standalone di /analytics-dashboard),
-    komponen ini tetap mengelola tab-nya sendiri seperti semula.
-  */
   controlledTab?: Tab; onTabChange?: (tab: Tab) => void;
-  /** Kabari totalAlerts/audit count ke pemanggil, supaya badge di tab header (di luar komponen ini) tetap akurat. */
   onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void;
 } = {}) {
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>(injectedUser ? 'ok' : 'checking');
-  const [tabState, setTabState] = useState<Tab>('kpi');   // Default: Dashboard Analytics
-  /** Halaman dibuka langsung (bukan di iframe bingkai portal yang sudah berkaki FooterPlatform). Diisi setelah
-   *  mount - di server `window` tidak ada, nilai awal false supaya HTML server & klien sama. */
+  const [tabState, setTabState] = useState<Tab>('kpi');
   const [diLuarBingkai, setDiLuarBingkai] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { try { setDiLuarBingkai(window.self === window.top); } catch { /* iframe lintas origin: di dalam bingkai */ } }, []);
+  useEffect(() => { try { setDiLuarBingkai(window.self === window.top); } catch {  } }, []);
   const tab = controlledTab ?? tabState;
+  const lihatPemakaian = hasFullAccess(user);
   const setTab = (t: Tab) => { onTabChange?.(t); if (controlledTab === undefined) setTabState(t); };
   const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Audit log state
   const [auditRows,    setAuditRows]    = useState<AuditRow[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditModule,  setAuditModule]  = useState('All');
@@ -190,12 +89,10 @@ export function AnalyticsPlatform({
   const AUDIT_PAGE_SIZE = 30;
 
   useEffect(() => {
-    // Embedded (di dashboard): user sudah di-inject & sudah lolos gate canAccessAnalytics.
     if (injectedUser) { setUser(injectedUser); setAuth('ok'); return; }
     const u = getSession<User>();
     if (!u) { const tgt = window.top !== window ? window.top : window; if (tgt) tgt.location.href = '/dashboard'; return; }
     const r = (u.role ?? '').toLowerCase();
-    // HANYA Admin & Team. Command Center & Audit Log dilarang utk sales/marketing/guest.
     const ok = ['admin','superadmin'].includes(r) || r === 'team' || isPimpinan(u);
     setUser(u); setAuth(ok ? 'ok' : 'denied');
     return startSessionWatcher();
@@ -203,7 +100,6 @@ export function AnalyticsPlatform({
 
   const today = new Date().toISOString().split('T')[0];
 
-  // Load Command Center stats
   const loadStats = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -240,18 +136,15 @@ export function AnalyticsPlatform({
     setLoading(false);
   }, [user, today]);
 
-  // Load Audit Log - gabungan audit_trail + activity_logs
   const loadAudit = useCallback(async () => {
     setAuditLoading(true);
     try {
-      // 1. New audit_trail table (platform-wide structured audit)
       const auditQ = supabase
         .from('audit_trail')
         .select('id,user_name,action,module,target_name,old_value,new_value,notes,created_at')
         .order('created_at', { ascending: false })
         .limit(300);
 
-      // 2. Legacy activity_logs table (ticketing per-ticket activity - historical)
       const actQ = supabase
         .from('activity_logs')
         .select('id,handler_name,action_taken,new_status,notes,created_at,ticket_id')
@@ -260,7 +153,6 @@ export function AnalyticsPlatform({
 
       const [auditRes, actRes] = await Promise.all([auditQ, actQ]);
 
-      // Map audit_trail rows
       const fromAudit: AuditRow[] = ((auditRes.data ?? []) as any[]).map(r => ({
         id:          r.id,
         user_name:   r.user_name ?? '—',
@@ -274,7 +166,6 @@ export function AnalyticsPlatform({
         source:      'audit_trail' as const,
       }));
 
-      // Map activity_logs rows  same AuditRow shape
       const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => ({
         id:          r.id,
         user_name:   r.handler_name ?? '—',
@@ -288,11 +179,9 @@ export function AnalyticsPlatform({
         source:      'activity_logs' as const,
       }));
 
-      // Merge + sort by created_at desc
       const merged = [...fromAudit, ...fromActivity]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-      // Apply module/action filters
       const filtered = merged.filter(row => {
         const moduleMatch = auditModule === 'All' || row.module === auditModule;
         const actionMatch = auditAction === 'All' || row.action === auditAction || row.new_value === auditAction;
@@ -316,25 +205,6 @@ export function AnalyticsPlatform({
       supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},loadStats).subscribe(),
       supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},loadStats).subscribe(),
     ];
-    /*
-      Polling fallback - realtime bisa terlewat di konteks iframe.
-
-      Dulu setInterval(loadStats, 30000) TANPA syarat apa pun - berjalan
-      terus tiap 30 detik selama halaman ini terbuka, tidak peduli tabnya
-      sedang dilihat atau tidak. Halaman ini ("Command Center") justru jenis
-      dashboard yang biasa ditinggal terbuka berjam-jam di layar kantor -
-      jadi 4 query (tickets+reminders+project_requests+users) tiap 30 detik
-      itu terus berjalan 24/7 walau tidak ada yang melihatnya. Sama persis
-      kelas bug yang sudah diperbaiki di Ticketing (lihat komentar
-      "BERHENTI saat tab tidak terlihat" di app/ticketing/page.tsx) - di sini
-      belum pernah ikut dibetulkan.
-
-      Pola yang sama diterapkan di sini: polling berhenti total saat tab
-      disembunyikan, ditarik SEKALI + polling dilanjutkan begitu tab dilihat
-      lagi (supaya tidak menyajikan data basi), dan jedanya dilebarkan dari
-      30 detik ke 2 menit - realtime di atas sudah menangani perubahan
-      langsung, jaring pengaman ini tidak perlu ditebar sesering itu.
-    */
     let poll: ReturnType<typeof setInterval> | null = null;
     const mulaiPolling = () => { if (!poll) poll = setInterval(loadStats, 120_000); };
     const hentikanPolling = () => { if (poll) { clearInterval(poll); poll = null; } };
@@ -370,7 +240,6 @@ export function AnalyticsPlatform({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalAlerts, auditRows.length]);
 
-  // Audit filtered + paged (search on top of already-filtered rows)
   const auditFiltered = auditRows.filter(a => {
     if (!auditSearch) return true;
     const q = auditSearch.toLowerCase();
@@ -385,7 +254,6 @@ export function AnalyticsPlatform({
   const AUDIT_MODULES = ['All','ticket','reminder','project','piket','kpi','incentive','movement','user','learning','system'];
   const AUDIT_ACTIONS = ['All','create','update','delete','approve','reject','assign','status_change','login','logout','export','mark_done','Solved','Overdue','In Progress','Waiting Approval'];
 
-  // Auth screens
   if (auth === 'denied') return (
     <div className="flex items-center justify-center h-screen" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
       <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
@@ -404,19 +272,17 @@ export function AnalyticsPlatform({
     </div>
   );
 
-  // RENDER
   return (
     <div className={embedded ? 'flex flex-col w-full' : 'flex flex-col bg-cover bg-center bg-fixed'}
       style={embedded ? undefined : { height: '100dvh', background: 'var(--latar-halaman)' }}>
 
       {embedded && controlledTab === undefined && (
-        /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab
-           non-aktif tetap kontras di atas background transparan. */
         <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap mb-3 p-2 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)' }}>
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
           <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
+          {lihatPemakaian && <TabBtn label="Pemakaian" icon="👥" active={tab==='pemakaian'} onClick={() => setTab('pemakaian')} />}
           <button aria-label="Refresh" onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
             className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
             style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
@@ -425,7 +291,6 @@ export function AnalyticsPlatform({
         </div>
       )}
 
-      {/* ── HEADER — full width, same style as PageHeader used in other platforms ── */}
       {!embedded && (
       <header className="shrink-0 z-50"
         style={{background:'#ffffff',borderBottom:'1px solid #e2e8f0',boxShadow:'inset 0 2px 0 #d97706'}}>
@@ -464,45 +329,34 @@ export function AnalyticsPlatform({
               </button>
             </div>
           </div>
-          {/* Tab navigation */}
           <div className="flex gap-2 mt-3 overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ scrollbarWidth: "none" }}>
             <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
+            {lihatPemakaian && <TabBtn label="Pemakaian" icon="👥" active={tab==='pemakaian'} onClick={() => setTab('pemakaian')} />}
           </div>
         </div>
       </header>
       )}
 
-      {/* ── SCROLLABLE CONTENT (embedded: ikut scroll dashboard, tanpa padding samping) ── */}
       <div className={embedded ? 'space-y-4' : 'flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-4'}>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 1 — DASHBOARD ANALYTICS (no white wrapper — same as other platforms) */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
         {tab === 'kpi' && (
           <DashboardKPI currentUser={user as unknown as DashUser} />
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 2 — COMMAND CENTER                                          */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
         {tab === 'command' && (
           <div className="space-y-4">
             {loading
               ? <div className="flex justify-center py-16"><div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
               : <>
-                {/* Stat Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {/* Lonceng peringatan lama dihapus: angkanya mengulang nilai utama
-                      di tiga dari empat kartu, jadi tidak menambah informasi apa pun. */}
                   <StatCard label="Tiket Open"     value={stats?.ticketOpen ?? 0}      sub={`${stats?.ticketOverdue ?? 0} overdue`} accent="#b91c1c" />
                   <StatCard label="Jadwal Pending" value={stats?.reminderPending ?? 0} sub="Belum di-assign"                        accent="#1d4ed8" />
                   <StatCard label="Proyek Pending" value={stats?.projectPending ?? 0}  sub="Design request"                         accent="#6d28d9" />
                   <StatCard label="User Pending"   value={stats?.userPending ?? 0}     sub="Menunggu aktivasi"                      accent="#b45309" />
                 </div>
 
-                {/* Bottleneck 2×2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Panel title="Tiket Overdue" icon="🚨" color="#dc2626" borderClr="rgba(220,38,38,0.22)" count={stats?.ticketOverdue}>
                     {!(stats?.overdueTickets?.length) ? <Empty emoji="✅" msg="Tidak ada tiket overdue" /> : (stats?.overdueTickets ?? []).map(t => (
@@ -530,7 +384,6 @@ export function AnalyticsPlatform({
                   </Panel>
                 </div>
 
-                {/* Recent Activity */}
                 <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)'}}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{background:'rgba(0,0,0,0.025)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>
                     <span className="text-base select-none"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -555,13 +408,11 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* TAB 3 — AUDIT LOG  (audit_trail + activity_logs)               */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
+        {tab === 'pemakaian' && lihatPemakaian && <PanelPemakaian />}
+
         {tab === 'audit' && (
           <div className="rounded-2xl overflow-hidden"
             style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
-            {/* Filters */}
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
               <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 focus:bg-white w-44"
@@ -582,13 +433,11 @@ export function AnalyticsPlatform({
               </button>
               <div className="ml-auto flex items-center gap-2">
                 <span className="text-[11px] text-gray-500">{auditFiltered.length} log</span>
-                {/* Source legend */}
                 <span className="text-[11px] px-1.5 py-0.5 rounded-sm" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
                 <span className="text-[11px] px-1.5 py-0.5 rounded-sm" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
               </div>
             </div>
 
-            {/* Table */}
             {auditLoading
               ? <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
               : auditPaged.length === 0
@@ -660,7 +509,6 @@ export function AnalyticsPlatform({
                 </div>
             }
 
-            {/* Pagination */}
             {auditTotalPages > 1 && (
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                 <button onClick={() => setAuditPage(p => Math.max(0, p-1))} disabled={auditPage === 0}
@@ -675,10 +523,7 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-      </div>{/* end scrollable content */}
-      {/*  Kaki halaman = FooterPlatform yang sama dengan bingkai portal - bukan label "Analytics Platform — …"
-          sendiri. Di dashboard (embedded) & di iframe portal kaki itu sudah ada di bingkainya; hanya saat
-          halaman ini dibuka langsung (bukan di dalam bingkai) kakinya dipasang di sini. */}
+      </div>
       {!embedded && diLuarBingkai && <FooterPlatform />}
     </div>
   );

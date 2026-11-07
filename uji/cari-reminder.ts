@@ -1,11 +1,8 @@
-import { cariReminderByNama } from '@/lib/cari-reminder';
+import { cariReminderByNama } from '@/lib/jadwal/cari-reminder';
 
-// Mata-mata: mencatat URL tiap kueri SETELAH pembatas lingkup diterapkan.
 const url: string[] = [];
 const FILTER = 'sales_name.eq."Fajar Setiawan"';
 
-// URLSearchParams menulis spasi sebagai '+', bukan '%20'. Tanpa diseragamkan,
-// tesnya menuduh kode yang sebenarnya benar.
 const baca = (u: unknown) => decodeURIComponent(String(u)).replace(/\+/g, ' ');
 
 async function jalan() {
@@ -31,7 +28,6 @@ async function jalan() {
   console.log('\n--- URL yang terbentuk ---');
   url.forEach((u, i) => console.log(`[${i + 1}] ${u.replace('https://x.supabase.co/rest/v1/', '')}`));
 
-  // Wildcard pada kata kunci harus dilucuti.
   const url2: string[] = [];
   await cariReminderByNama('%', 'id', 5, (k: any) => { url2.push(baca(k.url)); return k; });
   cek(url2.every(u => u.includes('\\%')), 'Karakter % pada kata kunci dilucuti, bukan jadi wildcard');

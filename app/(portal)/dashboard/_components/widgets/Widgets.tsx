@@ -1,38 +1,21 @@
 'use client';
 
-/**
- * Widgets.tsx - kumpulan widget reusable + Widget Registry.
- *
- * Setiap widget: komponen mandiri yang fetch datanya sendiri & render 1 kartu.
- * Registry (WIDGETS) = metadata deklaratif (id, permission, priority, size,
- * Component). Permission Resolver ada di permissions.ts. Proses compose
- * (filter  sort  render) ada di PermissionAwareDashboard.tsx.
- *
- * Prinsip: widget = RINGKASAN untuk homepage, bukan list otoritatif - angka &
- * beberapa item terbaru, lalu "Lihat semua" membuka menu aslinya.
- */
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ingat } from '@/lib/cache-singkat';
-import { namaKelompokPTS } from '@/lib/kelompok';
-import type { User } from '../shared';
+import { namaKelompokPTS } from '@/lib/kelompok/inti';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
   getMonday, getDayDate, toKey, DAYS_OF_WEEK, getRollingNameForDate, type PiketRow,
-} from '@/app/(portal)/picket-showroom/_components/shared';
+} from '@/lib/piket/inti';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/kuis/peringkat';
 import { PopupJawabanQuiz } from './PopupJawabanQuiz';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
-// Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
-// Work Center (../workcenter/) bisa memakainya tanpa circular import (lihat
-// komentar di primitives.tsx). Diimpor ulang di sini + di-export lagi supaya
-// pemakai lama (PermissionAwareDashboard.tsx) tidak perlu ganti sumber impor.
 import {
   type WidgetProps, type WidgetSize, type WidgetDef,
   WidgetCard, EmptyState, Loading, AKSEN_UTAMA,
@@ -45,17 +28,6 @@ import { IkonTeks } from '@/components/shared/Ikon';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-/**
- * Tiga angka ringkas Team Monitoring.
- *
- * Dulu tiap angka duduk di kotak pastel sendiri - bahasa visual yang tidak
- * dipakai di mana pun lagi sesudah ubin Analytics disatukan, jadi bagian atas
- * dashboard terbaca seperti tempelan dari aplikasi lain. Sekarang angkanya
- * telanjang seperti di kartu Learning Center: titik kecil berwarna membawa
- * identitasnya, angkanya sendiri tetap tinta gelap supaya terbaca sebagai
- * bilangan, bukan sebagai status.
- */
-/** Cincin progres "sudah / total" - warna ikut ambang (>=80 hijau, >=50 kuning, sisanya oranye). */
 function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; total: number }) {
   const r = 34, k = 2 * Math.PI * r;
   const warna = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ea580c';
@@ -102,25 +74,18 @@ function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: stri
   );
 }
 
-// WIDGET: Analytics (native) - render AnalyticsPlatform LANGSUNG (BUKAN iframe),
-// lengkap dgn tab Analytics / Command Center / Audit Log. Tema analytics penuh utk
-// Admin/Team, digabung ke dashboard. Widget ringkasan personal disembunyikan utk
-// role ini (`!canAccessAnalytics`)  anti-duplikat.
 const AnalyticsNativeWidget: React.FC<WidgetProps> = ({ user }) => (
   <AnalyticsPlatform embedded injectedUser={user} />
 );
 
-// WIDGET: Team Monitoring Hari Ini (Team/Admin).
 interface Anggota {
   id: string; name: string; reported: boolean; active: number;
   jabatan: string; atasanId: string | null;
 }
 
-// WIDGET: Team Monitoring Hari Ini (Team/Admin).
 const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Anggota[]>([]);
-  /** Nama & jabatan tiap atasan, dipakai sebagai judul kelompok. */
   const [atasan, setAtasan] = useState<Record<string, { nama: string; jabatan: string }>>({});
   useEffect(() => {
     let alive = true;
@@ -128,12 +93,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       try {
         const today = todayStr();
         const [{ data: team }, { data: reports }, { data: rems }] = await Promise.all([
-          //  atasan_id & jabatan ikut diambil supaya daftarnya bisa disusun
-          //  mengikuti struktur organisasi, bukan sekadar urutan abjad.
-          //  Keduanya dari users (sql/user-hierarchy-atasan.sql) - satu sumber
-          //  kebenaran yang sama dipakai Incentive PTS.
           ingat('users:team-pts-atasan', () => supabase.from('users').select('id, username, full_name, team_type, jabatan, atasan_id').eq('role', 'team')
-            .in('team_type', [...ASSIGNABLE_PTS_TEAMS])),  // IVP & MVI saja (UMP hanya utk Piket Showroom)
+            .in('team_type', [...ASSIGNABLE_PTS_TEAMS])),
           supabase.from('daily_reports').select('user_id').eq('report_date', today),
           supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'),
         ]);
@@ -146,10 +107,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           jabatan: (m.jabatan as string) ?? '', atasanId: (m.atasan_id as string) ?? null,
         })).sort((a: Anggota, b: Anggota) => Number(a.reported) - Number(b.reported) || b.active - a.active);
 
-        //  Atasan boleh siapa saja - termasuk Manager di luar daftar team PTS
-        //  di atas (mis. role admin). Karena itu namanya diambil terpisah,
-        //  bukan dicari di dalam `list`; kalau tidak, kelompoknya muncul
-        //  tanpa nama untuk atasan yang bukan anggota team.
         const idAtasan = Array.from(new Set(list.map(m => m.atasanId).filter(Boolean))) as string[];
         const peta: Record<string, { nama: string; jabatan: string }> = {};
         if (idAtasan.length) {
@@ -157,7 +114,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
         if (alive) { setRows(list); setAtasan(peta); }
-      } catch { /* silent */ }
+      } catch {  }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
@@ -171,23 +128,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const pct = total > 0 ? Math.round((sudah / total) * 100) : 0;
   const belumList = rows.filter(r => !r.reported);
 
-  //  Susun per atasan. Tanpa ini daftarnya cuma deretan nama tanpa keterangan
-  //  siapa membawahi siapa - dan itu yang membuatnya sulit dibaca saat
-  //  anggotanya banyak.
-  //
-  //  Orang yang TIDAK punya atasan adalah puncak struktur (Manager/Direktur),
-  //  bukan data yang belum diisi. Melabelinya "Belum diatur atasannya" salah,
-  //  dan tampak makin janggal karena ia biasanya sudah muncul di sebelahnya
-  //  sebagai kepala kelompoknya sendiri - jadi namanya seolah tampil dua kali
-  //  dengan dua arti berbeda.
-  //
-  //  Maka: kalau ia memang kepala sebuah kelompok di daftar ini, tandai saja
-  //  JUDUL kelompoknya (titik di sebelah namanya) - tidak perlu kelompok
-  //  terpisah. Yang benar-benar yatim (tanpa atasan DAN tanpa bawahan yang
-  //  belum lapor) tetap ditampilkan di kelompok "Lainnya"; membuangnya akan
-  //  menyembunyikan orang yang justru belum lapor - persis kebalikan dari
-  //  guna widget ini, dan akan membuat angka di lencana tidak cocok dengan
-  //  jumlah nama yang terlihat.
   type KelompokBelum = {
     kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
   };
@@ -205,25 +145,12 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         const bos = atasan[m.atasanId];
         ambil(m.atasanId, bos?.nama ?? '—', bos?.jabatan ?? '').anggota.push(m);
       } else if (punyaBawahan.has(m.id)) {
-        //  Dia sendiri kepala kelompok di daftar ini - cukup tandai judulnya.
         ambil(m.id, m.name, m.jabatan).ketuaBelumLapor = true;
       } else {
         ambil('(lainnya)', 'Lainnya', '').anggota.push(m);
       }
     }
 
-    /*
-      Susun jadi pohon (org chart), bukan daftar rata. Sebelumnya SEMUA
-      kelompok (termasuk kelompok milik seorang Supervisor yang notabene
-      bawahan si Manager) ditumpuk sejajar lewat flex-wrap - jadi Manager bisa
-      terlihat "kesasar" berdampingan dengan salah satu Supervisor-nya
-      sendiri, padahal satu adalah atasan dari yang lain. Aturannya:
-      kelompok X adalah ANAK dari kelompok lain kalau kepala kelompok X
-      (person berid `X.kunci`) sendiri muncul sebagai salah satu anggota di
-      kelompok manapun - posisi itu digantikan sub-pohonnya saat dirender
-      (lihat renderKelompok), bukan ditumpuk lagi sebagai kelompok terpisah
-      di level teratas.
-    */
     const idJadiAnggota = new Set(
       Array.from(peta.values()).flatMap(g => g.anggota.map(m => m.id))
     );
@@ -235,25 +162,13 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     return { peta, akar };
   })();
 
-  //  Render satu kelompok + sub-pohonnya secara rekursif. Anggota yang
-  //  ternyata kepala kelompok lain (Supervisor yang bawahannya sendiri juga
-  //  belum lapor) dirender sebagai sub-kelompok berindentasi, bukan baris
-  //  nama biasa - garis tepi kiri jadi menumpuk mengikuti kedalaman, persis
-  //  seperti struktur organisasi yang bertingkat.
   const renderKelompok = (g: KelompokBelum, depth: number): React.ReactNode => (
     <div key={g.kunci} className={depth > 0 ? 'mt-2' : ''}>
       <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
-        {/*
-          Titik oranye di judul = ketua kelompoknya sendiri yang
-          belum lapor. Ini menggantikan kelompok "Belum diatur
-          atasannya" yang dulu memuat orang-orang puncak struktur
-          dan karena itu salah label.
-        */}
         {g.ketuaBelumLapor && (
           <span className="w-1.5 h-1.5 rounded-full shrink-0 self-center" style={{ background: '#f59e0b' }}
             title="Belum daily report" />
         )}
-        {/* Judul kelompok naik dari text-[11px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
         <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
           <span className="text-[11px] font-semibold text-slate-500 shrink-0">{g.jabatan}</span>
@@ -262,16 +177,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <span className="text-[11px] font-bold text-slate-500 shrink-0">{g.anggota.length}</span>
         )}
       </div>
-      {/*
-        garis tepi kiri = penanda "ini bawahannya" - menumpuk per kedalaman.
-        Sub-kelompok (Supervisor yang bawahannya sendiri juga belum lapor)
-        SELALU baris sendiri - butuh ruang penuh untuk sub-pohonnya. Anggota
-        biasa (daun, tidak punya bawahan) dibiarkan flex-wrap berdampingan -
-        dulu semua baris dipaksa selebar kartu walau isinya cuma satu nama
-        pendek, jadi sisi kanannya kosong sia-sia. Dipisah di sini supaya
-        nama-nama pendek mengisi ruang itu, sementara sub-kelompok tetap
-        dapat baris sendiri untuk indentasinya.
-      */}
       <div className="border-l-2 border-slate-200 pl-1.5 ml-0.5">
         {g.anggota.filter(m => kelompok.peta.has(m.id)).map(m => renderKelompok(kelompok.peta.get(m.id)!, depth + 1))}
         <div className="flex flex-wrap">
@@ -279,12 +184,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             <button key={m.id} onClick={() => openMenu('daily-report')}
               className="flex items-center gap-1.5 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
-              {/*
-                Nama anggota - INI yang dikeluhkan terlalu kecil.
-                text-[11px] -> text-[13px], dan max-w ikut
-                diperlebar supaya nama yang lebih besar tidak
-                lebih cepat kepotong "...".
-              */}
               <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{m.name}</span>
               {m.active > 0 && (
                 <span className="text-[11px] font-bold px-1 py-px rounded-full shrink-0"
@@ -303,18 +202,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        // DUA kolom di layar lebar: angka ringkas lalu daftar nama.
-        //
-        // Kolom ketiga dulu berisi "Ringkasan Performa" - enam angka yang kini
-        // sudah jadi isi pita ringkas di puncak halaman. Membiarkan keduanya
-        // berarti lima angka yang sama persis dicetak dua kali dalam satu layar,
-        // dan pembaca yang melihat angka sama di dua tempat berbeda justru jadi
-        // ragu mana yang benar. Kolom angkanya diperlebar 190px -> 220px karena
-        // labelnya sekarang di atas angka, bukan di bawahnya.
-        /*  Satu kolom: kartu ini kini berdiri di samping Agenda (4 dari 12
-            kolom), bukan selebar halaman. Cincin progres menggantikan tiga
-            angka + batang tipis - satu bentuk yang langsung terbaca
-            "berapa dari berapa". */
         <div className="flex flex-col gap-4 h-full">
           <div className="flex items-center gap-4">
             <CincinProgres pct={pct} sudah={sudah} total={total} />
@@ -324,20 +211,12 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100"><dt className="text-slate-600">Total tim</dt><dd className="font-bold text-slate-900 tabular-nums">{total}</dd></div>
             </dl>
           </div>
-          {/* Kanan: yang belum daily report, dikelompokkan per atasan */}
           <div className="min-w-0 flex-1 min-h-0 flex flex-col">
             {belumList.length === 0 ? (
               <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
             ) : (
               <>
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
-                {/*
-                  Ditumpuk vertikal (bukan flex-wrap berdampingan) supaya
-                  hierarkinya jelas: Manager selalu di atas, Supervisor
-                  bawahannya berindentasi PERSIS di bawahnya (lihat
-                  renderKelompok) - bukan tersusun sejajar seolah setara
-                  cuma karena kebetulan sama-sama muat di baris yang sama.
-                */}
                 <div className="flex flex-col gap-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
@@ -350,34 +229,19 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   );
 };
 
-
-/**
- * Satu baris angka - dipakai untuk rekap nilai & peringkat di LearningWidget.
- * `sub` opsional untuk keterangan singkat ("dari 12 peserta").
- */
 interface RiwayatQuizRingkas {
   id: string; score: number | null; passed: boolean | null;
   grading_status: string | null; submitted_at: string | null; sesi: string;
 }
 
-/** "19 Sep" - cukup untuk baris ringkas, tanggal lengkap ada di halaman Learning Center sendiri. */
 function fmtTglSingkat(iso: string) {
   return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
 }
 
-/**
- * Satu baris riwayat quiz: lencana skor + nama sesi + tanggal.
- * Lencana MENJAWAB pertanyaan yang sama seperti HistoryPage (lulus/tidak/
- * menunggu koreksi) memakai warna yang sama, cuma diperkecil supaya muat di
- * kartu widget yang sempit.
- */
 function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () => void }) {
   const menunggu = r.grading_status === 'pending_review';
   const warna = menunggu ? 'bg-amber-100 text-amber-700' : r.passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
   return (
-    // Baris ini KLIK -> popup jawaban (lihat PopupJawabanQuiz), bukan cuma
-    // ringkasan pasif. <button>, bukan <div onClick>, supaya bisa dijangkau
-    // keyboard/pembaca layar seperti kontrol lain di platform ini.
     <button type="button" onClick={onClick}
       className="flex items-center gap-2 py-1.5 w-full text-left border-b border-indigo-100/70 last:border-0 hover:bg-indigo-100/40 rounded-lg px-1 -mx-1 transition-colors">
       <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${warna}`}>
@@ -387,9 +251,6 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
         <p className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">{r.sesi}</p>
         {r.submitted_at && <p className="text-[10px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
       </div>
-      {/*  Lencana panah, bukan sekadar chevron tipis - diminta eksplisit
-          sebagai penanda "klik untuk buka popup", bukan hiasan yang gampang
-          terlewat matanya di kartu sepadat ini. */}
       <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 bg-indigo-100 text-indigo-600">→</span>
     </button>
   );
@@ -409,17 +270,6 @@ function BarisAngka({ icon, label, value, sub }: { icon: string; label: string; 
   );
 }
 
-// WIDGET: Learning (menu learning-center).
-//
-// Untuk Guest/Sales, kartu ini bukan cuma CTA - ditambahkan rekap nilai &
-// peringkat sendiri (Global + Divisi), supaya mereka tidak perlu membuka
-// Learning Center hanya untuk tahu "skor saya berapa, peringkat saya berapa".
-// Peringkatnya diambil lewat /api/learning-center/rank (lib/learning-rank.ts) -
-// server yang menghitung, bukan klien menarik data seluruh peserta lalu
-// menyamarkannya sendiri. Lihat catatan keamanan di route itu.
-//
-// Team (non-analytics) TETAP kartu CTA sederhana seperti semula - permintaan
-// ini eksplisit soal pengalaman Guest, bukan Team.
 const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const guest = isSalesGuest({ role: user.role });
   const [milikSaya, setMilikSaya] = useState<{ total: number; avg: number } | null>(null);
@@ -481,12 +331,6 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   );
 };
 
-// WIDGET: Riwayat Quiz - kartu TERPISAH di sebelah Learning Center, BUKAN
-// digabung ke dalamnya. Klik satu baris membuka popup soal & jawaban lewat
-// PopupJawabanQuiz (dynamic import - lihat catatan di berkas itu kenapa),
-// tanpa membuka menu Learning Center. Guest saja - sama seperti bagian
-// statistik personal di LearningWidget, angka pribadi begini tidak relevan
-// untuk Team yang cuma dapat kartu CTA polos.
 const RiwayatQuizWidget: React.FC<WidgetProps> = ({ user }) => {
   const [riwayat, setRiwayat] = useState<RiwayatQuizRingkas[] | null>(null);
   const [attemptDibuka, setAttemptDibuka] = useState<string | null>(null);
@@ -512,17 +356,6 @@ const RiwayatQuizWidget: React.FC<WidgetProps> = ({ user }) => {
       {riwayat === null ? <Loading /> : riwayat.length === 0 ? (
         <EmptyState text="Belum ada quiz yang diselesaikan." />
       ) : (
-        /*
-          flex-col h-full + daftar sebagai flex-1 min-h-0 overflow-y-auto:
-          bukan max-h berangka tebak-tebakan. WidgetCard sudah h-full, dan
-          baris grid tempat kartu ini duduk (lihat PermissionAwareDashboard,
-          grid Piket Showroom/Learning Center/Riwayat Quiz TANPA items-start)
-          meregangkan ketiganya ke tinggi yang sama - jadi "flex-1" di sini
-          otomatis berarti "sisa tinggi sesudah judul", yang nilainya SAMA
-          dengan tinggi kartu Learning Center di sebelahnya tanpa perlu
-          disamakan manual. Kalau isinya melebihi itu, yang muncul gulir
-          DI DALAM kartu, bukan kartu yang memanjang sendiri.
-        */
         <div className="flex flex-col h-full">
           <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5">
             {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} onClick={() => setAttemptDibuka(r.id)} />)}
@@ -536,9 +369,6 @@ const RiwayatQuizWidget: React.FC<WidgetProps> = ({ user }) => {
   );
 };
 
-// WIDGET: Piket Showroom - siapa PIC piket hari ini + minggu ini.
-// Muncul utk SEMUA role (info penting bersama: Sales/Marketing perlu tahu PIC).
-// Nama PIC dihitung dgn getRollingNameForDate - SAMA persis dgn halaman Piket.
 interface PicketDay { day: string; dateKey: string; name: string; isToday: boolean; team: string; libur: boolean; }
 
 const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
@@ -566,7 +396,7 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
           return { day, dateKey: toKey(date), name, isToday: toKey(date) === todayKey, team: name ? (teamByName[name] ?? '') : '', libur: holidays.includes(toKey(date)) };
         });
         if (alive) setDays(list);
-      } catch { /* silent */ }
+      } catch {  }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
@@ -585,8 +415,6 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
             {today.team && <div className="text-[11px] text-slate-500">{today.team.replace('Team ', '')}</div>}
           </>
         ) : (
-          /*  Tiga keadaan berbeda, bukan satu kalimat "libur / akhir pekan"
-              untuk semuanya: hari kerja yang belum dijadwalkan bukan libur. */
           <div className="text-xs font-semibold text-slate-600 mt-1">
             {!today ? 'Akhir pekan - tidak ada piket' : today.libur ? 'Hari libur - tidak ada piket' : 'Belum ada PIC terjadwal'}
           </div>
@@ -606,39 +434,12 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   );
 };
 
-// WIDGET REGISTRY - metadata deklaratif. Compose di PermissionAwareDashboard.
 export const WIDGETS: WidgetDef[] = [
-  /*
-    WORK CENTER - My Action/Today/Upcoming, PLUS Quick Action Team yang
-    dirender DI DALAM kartu My Action-nya sendiri (lihat WorkQueueSection.tsx).
-    Priority PALING RENDAH (tampil PALING ATAS), untuk SEMUA role yang login -
-    inilah yang menjawab "apa yang harus saya kerjakan sekarang" sebelum
-    statistik apa pun di bawahnya. permission selalu true: widget-nya sendiri
-    yang berempty-state rapi kalau memang tidak ada tugas aktif untuk role
-    itu - lebih jujur daripada widget yang hilang tanpa penjelasan.
-  */
-  //  Pimpinan tidak mengerjakan tugas (tidak ditugaskan) - kartu "tugas aktif"-nya selalu kosong, jadi disembunyikan.
   { id: 'work-queue',     permission: (u) => !isPimpinan(u), priority: 0,   size: 'full', Component: WorkQueueSection },
-  /*
-    Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 kartu
-    statistik + Quick Action (Request Schedule/Design Project/Ticket/Form
-    Review/Project Progress) dirender DI DALAM kartu ini sendiri, lihat
-    SalesAnalyticsWidget.tsx. Priority 0.5 - tepat di bawah My Action, karena
-    bagi Sales/Guest kartu inilah "frame" Quick Action mereka, jadi harus
-    tampil sedini My Action tampil bagi Team.
-  */
   { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
-  // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
-  // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
-  // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning  widget di bawah
-  // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
   { id: 'analytics',       permission: canAccessAnalytics,   priority: 2, size: 'full', Component: AnalyticsNativeWidget },
-  // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam analytics).
   { id: 'showroom',        permission: (u) => !canAccessAnalytics(u),               priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center')        && !canAccessAnalytics(u), priority: 7, size: 'sm', Component: LearningWidget },
-  //  Guest SAJA (bukan `hasMenu` saja seperti Learning di atas) - kartu ini
-  //  cuma berarti kalau LearningWidget di sebelahnya sedang menampilkan
-  //  statistik personal (cabang guest-nya), bukan kartu CTA polos milik Team.
   { id: 'riwayat-quiz',    permission: (u) => isSalesGuest({ role: u.role }) && hasMenu(u, 'learning-center') && !canAccessAnalytics(u), priority: 7.1, size: 'sm', Component: RiwayatQuizWidget },
 ];

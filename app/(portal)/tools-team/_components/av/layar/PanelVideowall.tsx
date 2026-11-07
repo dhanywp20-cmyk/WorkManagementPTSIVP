@@ -1,11 +1,7 @@
 'use client';
-/**
- * Saran videowall LCD untuk ukuran gambar yang dibutuhkan: susunan kolom × baris panel 16:9 yang
- * paling mendekati, termasuk celah bezel. Rumus: lib/av-layar-proyektor.ts.
- */
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { PANEL_VIDEOWALL, type PanelVideowall as Panel, videowallUntuk } from '@/lib/av-layar-proyektor';
+import { PANEL_VIDEOWALL, type PanelVideowall as Panel, videowallUntuk } from '@/lib/av/layar-proyektor';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
@@ -13,7 +9,6 @@ import { useState } from 'react';
 const CATATAN = 'Ukuran panel = area gambar 16:9 dari diagonalnya; celah bezel (bezel-to-bezel) ditambahkan di antara panel. Bezel tipis (≤ 1,8 mm) disarankan bila teks/spreadsheet melintasi sambungan. Daftar material & penawaran: menu Videowall & IFP.';
 
 export function PanelVideowall({ lebarM, tinggiM }: { lebarM: number; tinggiM: number }) {
-  //  Panel dari Pustaka (display dengan bezel > 0); bawaan kode bila pustaka kosong.
   const { entri } = usePustaka('display');
   const dariPustaka: Panel[] = entri.filter(e => angkaDari(e, 'bezel') > 0).map(e => ({ nama: e.nama, diagonalInci: angkaDari(e, 'diagonal'), bezelMm: angkaDari(e, 'bezel') }));
   const daftar = dariPustaka.length ? dariPustaka : PANEL_VIDEOWALL;

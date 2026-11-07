@@ -1,6 +1,5 @@
 'use client';
 
-/** FormSesi - dipecah dari app/(portal)/learning-center/_components/SessionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, Material, Question } from '../shared';
 
@@ -67,7 +66,6 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                 })}
               </select>
             </div>
-            {/* ── Batch / Grup selector — dropdown, muncul setelah material dipilih dan punya batch ── */}
             {(() => {
               if (!form.material_id) return null;
               const batches = [...new Set(
@@ -136,8 +134,6 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                   className="w-4 h-4 rounded-sm border-slate-300 text-emerald-700 focus:ring-emerald-400" />
                 <span className="text-sm font-medium text-slate-700">Boleh Retake</span>
               </label>
-              {/* Mengacak urutan TAMPIL saja - penilaian tetap per question_id
-                  di server, jadi tidak ada hubungannya dengan kunci jawaban. */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
                   className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-400" />
@@ -215,8 +211,6 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                       <p className="text-xs text-slate-500 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
                     )}
                     {uniqueDivisions
-                      // Divisi terpilih tetap tampil walau tidak cocok kata kunci,
-                      // sama alasannya dengan daftar anggota di bawah.
                       .filter(div => !cariDivisi.trim()
                         || form.target_divisions.includes(div)
                         || div.toLowerCase().includes(cariDivisi.trim().toLowerCase()))
@@ -256,10 +250,6 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                     {teamUsers.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Tidak ada user ditemukan</p>}
                     {(() => {
                       const q = cariAnggota.trim().toLowerCase();
-                      // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
-                      // dengan kata kunci - kalau tidak, pilihan yang sudah dibuat
-                      // seolah hilang begitu kata kuncinya diganti, dan mudah
-                      // dikira ikut terhapus.
                       const tampil = q
                         ? teamUsers.filter(u =>
                             form.target_user_ids.includes(u.id) ||

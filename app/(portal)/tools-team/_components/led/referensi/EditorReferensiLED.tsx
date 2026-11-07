@@ -7,28 +7,15 @@ import { useReferensiLED } from './useReferensiLED';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
-import { BRAND_LED, BRAND_UMUM, type BrandLED, brandModul, daftarBrand, type Hardware, type ModulLED } from '@/lib/av-hitung';
+import { BRAND_LED, BRAND_UMUM, type BrandLED, brandModul, daftarBrand, type Hardware, type ModulLED } from '@/lib/av/hitung';
 import { useState } from 'react';
 import type { RefLED } from '@/lib/tools-team';
-/**
- * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
- * Hardware" di LED Calculator v1 - DWP).
- *
- * Tiga lapis, yang paling atas menang:
- *   1. lokal   - ubahan di perangkat ini yang belum disimpan untuk tim (draf)
- *   2. tim     - referensi bersama di server (/api/tools-team/referensi-led),
- *                hanya Admin/Full Access yang boleh menyimpannya
- *   3. bawaan  - lib/av-hitung.ts
- * Pengguna biasa tetap bisa menyesuaikan tabel untuk simulasinya sendiri
- * (lapis lokal), seperti sebelum referensi bersama ada.
- */
 
 export type { RefLED };
 
 export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [saringBrand, setSaringBrand] = useState('');
-  //  Daftar brand lengkap (termasuk brand yang hanya tertulis di baris modul); referensi lama tanpa daftar brand memakai daftar bawaan.
   const brands = daftarBrand(r.brand ?? BRAND_LED, r.modul);
   const tulisBrand = (daftar: BrandLED[], modul = r.modul) => ubah({ ...r, modul, brand: daftar });
   const brandPolos = () => brands.map(({ nama, sendiri }) => ({ nama, sendiri }));
@@ -45,7 +32,6 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     tulisBrand(brandPolos().filter(b => b.nama !== nama), sisa);
     if (saringBrand === nama) setSaringBrand('');
   };
-  /** Tabel referensi sebagai lembar cetak / PNG (untuk arsip & dibagikan ke tim). */
   const lembar = (): Lembar => {
     const fmt = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
     const hwBaris = (d: Hardware[]) => d.map(x => [x.nama, x.maksPx.toLocaleString('id-ID'), String(x.port), x.senderBawaan && x.port > 0 ? 'Ya' : 'Tidak', x.ket]);
@@ -81,7 +67,6 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     modul: r.modul.map((m, j) => {
       if (j !== i) return m;
       const baru = { ...m, ...p };
-      //  Pitch / ukuran berubah -> pixel dihitung ulang; pixel tetap bisa diketik manual.
       if (p.pitch !== undefined || p.w !== undefined || p.h !== undefined) {
         baru.pxW = Math.round(baru.w / Math.max(0.1, baru.pitch));
         baru.pxH = Math.round(baru.h / Math.max(0.1, baru.pitch));

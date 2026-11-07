@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-pustaka.ts - benda Desain 3D diisi dari Pustaka Tools Team: entri yang cocok per
- * jenis benda, proyektor (lumen & zoom), panel videowall (ukuran set = area aktif + bezel), TV, speaker.
- *
- * Jalankan: npx tsx uji/desain3d-pustaka.ts
- */
 import { bendaBaru, cocokPustaka, isiDariPustaka, spekVideowall, terapkanUkuran } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import type { EntriPustaka } from '../lib/pustaka';
 

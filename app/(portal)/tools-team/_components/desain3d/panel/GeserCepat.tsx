@@ -1,9 +1,4 @@
 'use client';
-/**
- * Geser cepat benda terpilih tanpa menyeret gizmo: kiri / kanan / maju / mundur MENGIKUTI arah kamera
- * (layar), naik / turun. Juga tombol panah keyboard (PageUp / PageDown = naik / turun, Shift = 1 cm).
- * Tombol tengah = besar langkah. Benda terkunci tidak bergeser.
- */
 import { useEffect, useState } from 'react';
 import { ArrowBigDown, ArrowBigUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { jepitProyektor } from '../inti';
@@ -17,7 +12,6 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   const [iLangkah, setILangkah] = useState(1);
   const langkahDasar = snap.aktif ? snap.langkah : LANGKAH[iLangkah];
 
-  /** Sumbu lantai yang paling sejajar dengan kanan layar -> arah kanan & maju (menjauhi kamera). */
   const arahLayar = () => {
     const m = mesin.current;
     if (!m) return { kanan: [1, 0], maju: [0, -1] };
@@ -34,7 +28,6 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
     setBenda(bs => bs.map(b => {
       if (!ids.has(b.id) || b.terkunci) return b;
       if (b.jenis === 'proyektor') {
-        //  Badan boleh menembus dinding / plafon - yang dijaga di dalam ruang hanya lensanya.
         const j = jepitProyektor({ ...b, x: b.x + dx, z: b.z + dz, elev: b.elev + dNaik * langkah }, batas.x, batas.z, plafonDi(Math.min(batas.x, Math.max(0, b.x + dx))));
         return { ...b, x: r(j.x), z: r(j.z), elev: r(j.elev) };
       }
@@ -61,19 +54,26 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   });
 
   if (!terpilih || terpilih.terkunci) return null;
-  const t = 'w-8 h-9 grid place-items-center text-slate-700 hover:bg-slate-100 active:bg-blue-100';
-  //  Satu baris di bilah benda terpilih (tengah-atas kanvas): kiri, maju, mundur, kanan | naik, turun | langkah.
+  const t = 'h-9 grid place-items-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 active:bg-blue-100';
   return (
-    <div className="flex items-center rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md overflow-hidden divide-x divide-slate-100" role="group" aria-label="Geser cepat">
-      <button type="button" className={t} onClick={() => geser(-1, 0, 0)} title="Kiri (←)" aria-label="Kiri"><ChevronLeft size={16} /></button>
-      <button type="button" className={t} onClick={() => geser(0, 1, 0)} title="Maju / menjauh (↑)" aria-label="Maju"><ChevronUp size={16} /></button>
-      <button type="button" className={t} onClick={() => geser(0, -1, 0)} title="Mundur / mendekat (↓)" aria-label="Mundur"><ChevronDown size={16} /></button>
-      <button type="button" className={t} onClick={() => geser(1, 0, 0)} title="Kanan (→)" aria-label="Kanan"><ChevronRight size={16} /></button>
-      <button type="button" className={t} onClick={() => geser(0, 0, 1)} title="Naik (PageUp)" aria-label="Naik"><ArrowBigUp size={15} /></button>
-      <button type="button" className={t} onClick={() => geser(0, 0, -1)} title="Turun (PageDown)" aria-label="Turun"><ArrowBigDown size={15} /></button>
+    <div className="flex items-stretch gap-2" role="group" aria-label="Geser cepat">
+      <div className="grid grid-cols-3 gap-1 w-30">
+        <span />
+        <button type="button" className={t} onClick={() => geser(0, 1, 0)} title="Maju / menjauh (↑)" aria-label="Maju"><ChevronUp size={16} /></button>
+        <span />
+        <button type="button" className={t} onClick={() => geser(-1, 0, 0)} title="Kiri (←)" aria-label="Kiri"><ChevronLeft size={16} /></button>
+        <button type="button" className={t} onClick={() => geser(0, -1, 0)} title="Mundur / mendekat (↓)" aria-label="Mundur"><ChevronDown size={16} /></button>
+        <button type="button" className={t} onClick={() => geser(1, 0, 0)} title="Kanan (→)" aria-label="Kanan"><ChevronRight size={16} /></button>
+      </div>
+      <div className="grid grid-rows-2 gap-1 w-10">
+        <button type="button" className={t} onClick={() => geser(0, 0, 1)} title="Naik (PageUp)" aria-label="Naik"><ArrowBigUp size={15} /></button>
+        <button type="button" className={t} onClick={() => geser(0, 0, -1)} title="Turun (PageDown)" aria-label="Turun"><ArrowBigDown size={15} /></button>
+      </div>
       <button type="button" onClick={() => !snap.aktif && setILangkah(i => (i + 1) % LANGKAH.length)} disabled={snap.aktif}
-        title={snap.aktif ? 'Langkah = snap grid' : 'Besar langkah - klik untuk ganti (Shift = 1 cm)'} className="h-9 px-2.5 text-[11.5px] font-bold text-blue-800 bg-blue-50 hover:bg-blue-100 disabled:opacity-70 whitespace-nowrap">
-        {label(langkahDasar)}
+        title={snap.aktif ? 'Langkah = snap grid' : 'Besar langkah - klik untuk ganti (Shift = 1 cm)'}
+        className="flex-1 flex flex-col items-center justify-center rounded-lg text-blue-800 bg-blue-50 hover:bg-blue-100 disabled:opacity-70">
+        <span className="text-[10.5px] font-semibold text-blue-700/80">Langkah</span>
+        <span className="text-[13px] font-bold whitespace-nowrap">{label(langkahDasar)}</span>
       </button>
     </div>
   );

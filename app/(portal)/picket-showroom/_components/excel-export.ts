@@ -1,6 +1,6 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import { PiketRow, KegiatanEntry, bacaPicPiket } from './shared';
-import { labelKelompokPTS } from '@/lib/kelompok';
+import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { daftarPilihan, denganNilai, produkSpesifik } from '@/lib/daftar-pilihan';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
@@ -8,7 +8,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
     const exportDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
     const sorted = [...allRows].sort((a,b)=>a.day_date.localeCompare(b.day_date));
 
-    // Style definitions (same as ticketing)
     const border = {top:{style:'thin',color:{rgb:'D1D5DB'}},bottom:{style:'thin',color:{rgb:'D1D5DB'}},left:{style:'thin',color:{rgb:'D1D5DB'}},right:{style:'thin',color:{rgb:'D1D5DB'}}};
     const boldBorder = {top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}}};
     const hdrStyle = {font:{name:'Arial',bold:true,sz:11,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'991B1B'},patternType:'solid'},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:boldBorder};
@@ -26,7 +25,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
     const empty = (s?:any) => ({v:'',s:s||cellStyle,t:'s'});
     const row0 = (n:number,s?:any) => Array(n).fill(null).map(()=>empty(s));
 
-    // Warna per jenis kegiatan
     const kgColorMap:Record<string,{bg:string;fg:string}> = {
       'Demo Product'   :{bg:'DBEAFE',fg:'1E40AF'},
       'RnD'            :{bg:'EDE9FE',fg:'6D28D9'},
@@ -38,7 +36,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       ...(kgColorMap[jenis]?{font:{name:'Arial',sz:10,bold:true,color:{rgb:kgColorMap[jenis].fg}},fill:{fgColor:{rgb:kgColorMap[jenis].bg},patternType:'solid'}}:{}),
     });
 
-    // PIC team color
     const picStyle=(team:string,base:any={})=>{
       const colors:Record<string,{bg:string;fg:string}> = {'PTS IVP':{bg:'FEE2E2',fg:'991B1B'},'PTS UMP':{bg:'DBEAFE',fg:'1E3A5F'},'PTS MVI':{bg:'EDE9FE',fg:'6D28D9'}};
       const c=colors[team]||{bg:'F3F4F6',fg:'374151'};
@@ -47,31 +44,25 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
 
     const wb = XLSX.utils.book_new();
 
-    // SHEET 1 -  Dashboard
     {
       const COLS = 6;
       const totalHari = sorted.length;
       const totalKegiatan = kegiatanList.length;
       const totalDemo = kegiatanList.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi).length;
-      //  Jumlah per jenis kegiatan: daftar dari Admin Panel (+ jenis lama yang masih ada di data).
-      //  Demo Product dihitung yang ada tamunya, sama seperti sebelumnya.
       const jenisKg = denganNilai(daftarPilihan('piket-kegiatan'), kegiatanList.map(k=>k.jenis_kegiatan));
       const jumlahKg = (j:string) => j==='Demo Product' ? totalDemo : kegiatanList.filter(k=>k.jenis_kegiatan===j).length;
       const activeDaysSet = new Set(kegiatanList.map(k=>{const r=sorted.find(r=>r.id===k.piket_id);return r?.day_date;}).filter(Boolean));
       const totalActiveDays = activeDaysSet.size;
 
-      // Top divisi
       const divMapEx:Record<string,number>={};
       kegiatanList.forEach(k=>{if(k.sales_division)divMapEx[k.sales_division]=(divMapEx[k.sales_division]||0)+1;});
       const divArrEx=Object.entries(divMapEx).sort(([,a],[,b])=>b-a);
       const topDivisiEx=divArrEx[0]?.[0]||'-';
       const topDivisiCountEx=divArrEx[0]?.[1]||0;
 
-      // Top kegiatan
       const kgMapEx:Record<string,number>=Object.fromEntries(jenisKg.map(j=>[j,jumlahKg(j)]));
       const topKgEx=Object.entries(kgMapEx).sort(([,a],[,b])=>b-a)[0]?.[0]||'-';
 
-      // Top produk - distribusi All Product ke semua produk spesifik
       const PRODUK_SPESIFIK_EX=produkSpesifik(daftarPilihan('piket-produk'));
       const prodMapEx:Record<string,number>={};
       kegiatanList.forEach(k=>{
@@ -89,7 +80,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         [cell(`📊 PIKET SHOWROOM — DASHBOARD REPORT${periodLabel?' · '+periodLabel:''}`,titleStyle),...row0(COLS-1,titleStyle)],
         [cell(`Tanggal Export: ${exportDate}${periodLabel?' · Periode: '+periodLabel:''}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
-        // Ringkasan
         [ctr('RINGKASAN STATISTIK',secHdr),...row0(COLS-1,secHdr)],
         [ctr('Kategori',hdrStyle),ctr('Jumlah',hdrStyle),ctr('Persentase / Keterangan',hdrStyle),ctr('',hdrStyle),ctr('',hdrStyle),ctr('',hdrStyle)],
       ];
@@ -115,7 +105,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
 
       data.push(row0(COLS));
 
-      // Statistik Produk (baru)
       if(prodArrEx.length>0){
         const secHdrTeal={font:{name:'Arial',bold:true,sz:10,color:{rgb:'FFFFFF'}},fill:{fgColor:{rgb:'0F766E'},patternType:'solid'},alignment:{horizontal:'center',vertical:'center'},border:boldBorder};
         data.push([ctr('PENGGUNAAN PRODUK',secHdrTeal),...row0(COLS-1,secHdrTeal)]);
@@ -129,7 +118,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         data.push(row0(COLS));
       }
 
-      // Statistik per Instansi
       const instansiMap:Record<string,number>={};
       kegiatanList.filter(k=>k.tamu_instansi).forEach(k=>{instansiMap[k.tamu_instansi!]=(instansiMap[k.tamu_instansi!]||0)+1;});
       const instansiArr = Object.entries(instansiMap).sort(([,a],[,b])=>b-a);
@@ -144,7 +132,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         data.push(row0(COLS));
       }
 
-      // Statistik Division Sales
       if(divArrEx.length>0){
         data.push([ctr('DIVISION SALES AKTIF',secHdrPurple),...row0(COLS-1,secHdrPurple)]);
         data.push([ctr('Division',hdrStyle),ctr('Jumlah Kegiatan',hdrStyle),ctr('Persentase',hdrStyle),ctr('',hdrStyle),ctr('',hdrStyle),ctr('',hdrStyle)]);
@@ -156,10 +143,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         data.push(row0(COLS));
       }
 
-      // Statistik PIC
-      //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari kelompok
-      //  PTS di luar IVP/UMP/MVI (tersimpan di kolom `pic` JSONB) tidak
-      //  pernah ikut terhitung di sini.
       const picMap:Record<string,number>={};
       sorted.forEach(r=>{
         const p=bacaPicPiket(r);
@@ -177,7 +160,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         data.push(row0(COLS));
       }
 
-      // Statistik Kebutuhan
       const kbtMap:Record<string,number>={};
       kegiatanList.forEach(k=>(k.kebutuhan||[]).forEach(kb=>{kbtMap[kb]=(kbtMap[kb]||0)+1;}));
       const kbtArr = Object.entries(kbtMap).sort(([,a],[,b])=>b-a);
@@ -203,7 +185,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       XLSX.utils.book_append_sheet(wb,ws,'📊 Dashboard');
     }
 
-    // SHEET 2 -  Jadwal Piket
     {
       const headers=['No.','Tanggal','Hari','PIC','Team PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Tamu Instansi','Nama Sales','Division Sales','Kebutuhan','Keterangan','Diedit Oleh'];
       const COLS=headers.length;
@@ -219,9 +200,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const toR=kgs.length>0?kgs:[null];
         const dateObj=new Date(piket.day_date+'T00:00:00');
         const dateStr=dateObj.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari
-        //  kelompok PTS di luar IVP/UMP/MVI (kolom `pic` JSONB) tidak
-        //  pernah muncul di ekspor ini.
         const picInfoRow=bacaPicPiket(piket);
         const picNames=picInfoRow?.name||'-';
         const teamKey=picInfoRow?(labelKelompokPTS(picInfoRow.team_type)||picInfoRow.team_type):'';
@@ -256,7 +234,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       XLSX.utils.book_append_sheet(wb,ws,'📋 Jadwal Piket');
     }
 
-    // SHEET 3 -  Demo Product
     {
       const demoKg=kegiatanList.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
       const headers=['No.','Tanggal','Hari','PIC','Tamu Instansi','Nama Sales','Division','Produk','Kebutuhan'];
@@ -267,7 +244,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         row0(COLS),
         headers.map(h=>ctr(h,hdrBlue)),
       ];
-      // Build piket map
       const piketMap:Record<string,PiketRow>={};
       sorted.forEach(r=>{piketMap[r.id]=r;});
       demoKg.forEach((kg,i)=>{
@@ -296,7 +272,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       XLSX.utils.book_append_sheet(wb,ws,'🏢 Demo Product');
     }
 
-    // SHEET 4 -  Kegiatan Lain (RnD, Maintenance, Shooting)
     {
       const lainKg=kegiatanList.filter(k=>k.jenis_kegiatan!=='Demo Product');
       const headers=['No.','Tanggal','Hari','PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Keterangan'];
@@ -335,7 +310,6 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       XLSX.utils.book_append_sheet(wb,ws,'🔧 Kegiatan Lain');
     }
 
-    // SHEET 5 -  Beban Daya Tambahan (Produk Lain di luar list default)
     {
       const piketMap:Record<string,PiketRow>={};
       sorted.forEach(r=>{piketMap[r.id]=r;});

@@ -1,13 +1,7 @@
-/**
- * /api/tools-team/perbandingan/aturan - aturan Product Comparison untuk Admin Panel (lib/perbandingan-aturan.ts).
- *   GET   Admin: aturan sekarang (bawaan bila belum diisi).
- *   PUT   Admin: simpan aturan (dirapikan - isian tak dikenal dibuang, Admin selalu verifikator).
- * Disimpan di app_settings 'tools.perbandingan' lewat service role.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan-aturan';
+import { KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan/aturan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

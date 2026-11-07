@@ -1,26 +1,14 @@
-/**
- * Label produk menempel di tepi benda (titik kecil + garis sangat pendek): di atas benda (benda plafon: di
- * bawah). Bila menumpuk label lain, digeser sedikit ke samping; tetap menumpuk = disembunyikan sementara.
- * Boleh menutupi benda lain (permintaan owner: label harus dekat produknya, bukan jauh). Aturan pilih
- * tempat: `pilihTempatLabel` (murni, diuji di uji/desain3d-label.ts).
- */
 import type * as T from 'three';
 import type { Mesin } from './tipe';
 
 export interface KotakLayar { l: number; t: number; r: number; b: number }
 
 const WARNA_GARIS = '#64748b';
-/** Jarak label dari titik benda (px) yang dicoba, dari terdekat - tetap dekat supaya terasa menempel. */
 const JARAK = [3, 10, 18];
 
 const tumpang = (a: KotakLayar, b: KotakLayar) =>
   Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
 
-/**
- * Tempat label (pusat, relatif titik jangkar) berukuran w × h: arah pilihan dulu (-1 = di atas, 1 = di bawah),
- * jarak terdekat dulu. Biaya = tumpang dengan label lain (sangat berat) + tumpang dengan benda. null = semua
- * calon menabrak label lain (label disembunyikan sementara).
- */
 export function pilihTempatLabel(ax: number, ay: number, w: number, h: number, arah: -1 | 1, benda: KotakLayar[], label: KotakLayar[]): { dx: number; dy: number } | null {
   const v = arah;
   const arahCoba: [number, number][] = [[0, v], [1, v], [-1, v], [1, 0], [-1, 0], [1, -v], [-1, -v], [0, -v]];
@@ -37,7 +25,6 @@ export function pilihTempatLabel(ax: number, ay: number, w: number, h: number, a
   return terbaik ? { dx: terbaik.dx, dy: terbaik.dy } : null;
 }
 
-/** Label produk (CSS2D): wadah 0 × 0 di titik benda berisi titik, garis & pil nama. */
 export function buatLabelProduk(m: Mesin, teks: string, pos: T.Vector3, arah: -1 | 1): T.Object3D {
   const luar = document.createElement('div');
   luar.dataset.produk = '1'; luar.dataset.arah = String(arah);
@@ -55,12 +42,7 @@ export function buatLabelProduk(m: Mesin, teks: string, pos: T.Vector3, arah: -1
 }
 
 let tandaLalu = '';
-/** Elemen label yang sudah pernah ditata (label baru dari pembaruan adegan selalu memicu penataan). */
 const tertata = new WeakSet<HTMLElement>();
-/**
- * Tata semua label produk. `terpakai` = kotak label lain yang sudah tampil (penting / mengalah). Dilewati bila
- * kamera, ukuran kanvas & daftar label tidak berubah sejak penataan terakhir.
- */
 export function tataLabelProduk(m: Mesin, wadah: HTMLElement, terpakai: KotakLayar[]) {
   const daftar = [...wadah.querySelectorAll<HTMLElement>('[data-produk]')].filter(el => el.style.display !== 'none');
   const kv = m.renderer.domElement;
@@ -79,7 +61,6 @@ export function tataLabelProduk(m: Mesin, wadah: HTMLElement, terpakai: KotakLay
     isi.style.left = `${t.dx}px`; isi.style.top = `${t.dy}px`;
     el.dataset.ox = String(t.dx); el.dataset.oy = String(t.dy);
     label.push({ l: a.left + t.dx - w / 2, r: a.left + t.dx + w / 2, t: a.top + t.dy - h / 2, b: a.top + t.dy + h / 2 });
-    //  Garis dari titik benda ke tepi pil terdekat.
     const gx = Math.max(t.dx - w / 2, Math.min(0, t.dx + w / 2)), gy = Math.max(t.dy - h / 2, Math.min(0, t.dy + h / 2));
     garis.setAttribute('x2', String(gx)); garis.setAttribute('y2', String(gy));
   }

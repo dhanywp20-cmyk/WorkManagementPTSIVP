@@ -1,8 +1,4 @@
 'use client';
-/**
- * Engine three.js: renderer, adegan, lampu, kamera orbit, gizmo, klik-pilih, putaran render; mode seret.
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useEffect } from 'react';
 import { sesuaikanTinggi } from '../bangun';
 import { daftarRuang, ikutUtama, jepitProyektor, magnet, ruangDari, tampilDi, togglePilih } from '../inti';
@@ -14,10 +10,8 @@ import { batasDunia, terbangKe } from './kamera';
 import { hindariTumpuk } from './label';
 import { pasangPatchProyektor } from './proyektorNyata';
 
-
 export function useMesin(K: KeadaanDesain) {
   const { bendaRef, dariToggle, gambarLayar, klikUkurRef, sembunyiRef, snapRef, sumbuGeserRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
-  // ── Inisialisasi (sekali) ──
   useEffect(() => {
     let hidup = true;
     let bersihkan = () => {};
@@ -35,7 +29,6 @@ export function useMesin(K: KeadaanDesain) {
         const wadah = wadahRef.current;
         if (!hidup || !wadah) return;
 
-        //  Proyektor = SpotLight bergambar (mesin/proyektorNyata.ts): di luar bingkai gambar tidak menyala.
         pasangPatchProyektor(THREE);
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
@@ -47,8 +40,6 @@ export function useMesin(K: KeadaanDesain) {
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.localClippingEnabled = true;
         renderer.domElement.style.touchAction = 'none';
-        //  setSize(..., false) tidak menyetel ukuran CSS: tanpa ini kanvas tampil seukuran buffer (w x dpr)
-        //  sehingga di HP (dpr 2-3) yang terlihat hanya seperempat kiri-atas tampilan 3D.
         renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
         wadah.appendChild(renderer.domElement);
 
@@ -56,6 +47,7 @@ export function useMesin(K: KeadaanDesain) {
         labelRenderer.domElement.style.position = 'absolute';
         labelRenderer.domElement.style.inset = '0';
         labelRenderer.domElement.style.pointerEvents = 'none';
+        labelRenderer.domElement.style.zIndex = '0';
         wadah.appendChild(labelRenderer.domElement);
 
         const scene = new THREE.Scene();
@@ -77,8 +69,6 @@ export function useMesin(K: KeadaanDesain) {
         const orbit = new OrbitControls(kamera, renderer.domElement);
         orbit.enableDamping = true; orbit.dampingFactor = 0.12;
         orbit.maxPolarAngle = Math.PI / 2 - 0.02;
-        //  Geser mengikuti LAYAR (gaya SketchUp): kanvas ikut kursor ke arah mana pun. Dulu menggeser bidang lantai -
-        //  dari sudut rendah geser jadi lambat & melompat. Roda/pinch zoom menuju titik di bawah kursor/jari.
         orbit.screenSpacePanning = true;
         orbit.zoomToCursor = true;
         orbit.minDistance = 0.4; orbit.maxDistance = 80;
@@ -88,10 +78,7 @@ export function useMesin(K: KeadaanDesain) {
         gizmo.setSize(0.8);
         gizmo.addEventListener('dragging-changed', (e: { value: unknown }) => {
           orbit.enabled = !e.value;
-          //  Selama benda diseret, kontrol di atas kanvas (.kontrol-kanvas) tidak menangkap kursor - kursor yang
-          //  lewat di atas chip / tombol tidak memblok teks atau "mencuri" seretan (globals.css).
           wadah.toggleAttribute('data-seret', !!e.value);
-          //  Lepas seret: posisi terakhir langsung disimpan (tidak menunggu frame berikutnya).
           if (!e.value && frameSeret) { cancelAnimationFrame(frameSeret); kirimSeret(); }
         });
         let tundaSeret: { id: string; x: number; z: number; rot: number; elev: number } | null = null, frameSeret = 0;
@@ -102,7 +89,6 @@ export function useMesin(K: KeadaanDesain) {
             const lama = bs.find(b => b.id === t.id); if (!lama) return bs;
             const pos = { x: t.x, z: t.z, rot: t.rot, elev: t.elev };
             const satu = bs.map(b => (b.id === t.id ? { ...b, ...pos } : b));
-            //  Pilih banyak: benda lain ikut tergeser / berputar mengelilingi benda utama.
             return pilihLainRef.current.length ? ikutUtama(satu, pilihLainRef.current, lama, pos) : satu;
           });
         };
@@ -111,22 +97,16 @@ export function useMesin(K: KeadaanDesain) {
           const r = ruangRef.current;
           const bt = batasDunia(r);
           const b0 = bendaRef.current.find(b => b.id === o.userData.id); if (!b0) return;
-          //  Proyektor: badan boleh menembus dinding / plafon (tersembunyi, hanya lensa di dalam ruang) - dijepit
-          //  lewat posisi lensanya di bawah, bukan titik tengahnya.
           const proyektor = b0.jenis === 'proyektor';
           const jepitX = (v: number) => (proyektor ? v : Math.min(bt.x, Math.max(0, v)));
           const jepitZ = (v: number) => (proyektor ? v : Math.min(bt.z, Math.max(0, v)));
           let x = Math.round(jepitX(o.position.x) * 1000) / 1000;
           let z = Math.round(jepitZ(o.position.z) * 1000) / 1000;
-          //  Magnet: tarik ke tepi / tengah benda lain (yang tidak ikut terpilih & tidak disembunyikan).
           if ((gizmo as unknown as { mode: string }).mode === 'translate' && snapRef.current.magnet) {
             const ikut = new Set([o.userData.id as string, ...pilihLainRef.current]);
             const mg = magnet({ ...b0, x, z }, bendaRef.current.filter(b => !ikut.has(b.id) && tampilDi(b, sembunyiRef.current)));
             x = jepitX(mg.x); z = jepitZ(mg.z);
           }
-          //  Sudut putar dari arah MUKA benda (sumbu +z lokal), bukan dari o.rotation.y: lewat ±90° three.js
-          //  menyimpan putaran gizmo sebagai Euler (180°, 180° - θ, 180°), sehingga rotation.y saja tercatat salah
-          //  (diputar 120° terbaca 60°) - sinar proyektor lalu keluar dari samping badan, bukan dari lensa.
           const muka = new THREE.Vector3(0, 0, 1).applyQuaternion(o.quaternion);
           const sudut = Math.atan2(muka.x, muka.z);
           o.rotation.set(0, sudut, 0);
@@ -139,11 +119,9 @@ export function useMesin(K: KeadaanDesain) {
           }
           o.position.set(x, elev, z);
           sesuaikanTinggi(o, { ...b0, elev }, plafon);
-          //  Mouse cepat mengirim ratusan objectChange per detik: state React cukup diperbarui sekali per frame layar.
           tundaSeret = { id: o.userData.id as string, x, z, rot, elev };
           if (!frameSeret) frameSeret = requestAnimationFrame(kirimSeret);
         });
-        //  Sumbu terakhir yang diseret (X / Z) - arah bawaan "ketik jarak geser".
         gizmo.addEventListener('mouseUp', () => {
           const s = String((gizmo as unknown as { axis?: string | null }).axis ?? '');
           if (s === 'X' || s === 'Z') sumbuGeserRef.current = s === 'X' ? 'x' : 'z';
@@ -170,7 +148,6 @@ export function useMesin(K: KeadaanDesain) {
         };
         const ro = new ResizeObserver(atur); ro.observe(wadah); atur();
 
-        // Klik = pilih benda (bukan saat gizmo sedang diseret).
         const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2();
         let turunDi: { x: number; y: number } | null = null;
         let ketukLalu: { t: number; x: number; y: number } | null = null;
@@ -178,32 +155,26 @@ export function useMesin(K: KeadaanDesain) {
         const naik = (e: PointerEvent) => {
           const diam = !!turunDi && Math.hypot(e.clientX - turunDi.x, e.clientY - turunDi.y) <= 5;
           turunDi = null;
-          //  Gizmo diabaikan dalam mode penggaris: klik di dekat panah gizmo tetap menjadi titik ukur.
           if (!diam || (!klikUkurRef.current && (gizmo as unknown as { dragging: boolean }).dragging)) return;
           const r = renderer.domElement.getBoundingClientRect();
           ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
           ray.setFromCamera(ptr, kamera);
-          //  Mode penggaris: klik = titik ukur di permukaan pertama yang kena (benda atau ruangan), bukan memilih benda.
           if (klikUkurRef.current) {
             const p = kenaPermukaan(ray, [...grupBenda.children, ...grupRuang.children])?.point;
             if (p) klikUkurRef.current([p.x, p.y, p.z]);
             return;
           }
-          //  Kotak sorotan (garis) dikecualikan: ambang raycast garis 1 m membuat
-          //  klik di dekat benda terpilih justru membatalkan pilihan.
           const kena = kenaPermukaan(ray, grupBenda.children);
           let o: T.Object3D | null = kena?.object ?? null;
           while (o && !o.userData.id) o = o.parent;
           const idKena = (o?.userData.id as string | undefined) ?? null;
           if (e.shiftKey || e.ctrlKey || e.metaKey || modeBanyakRef.current) {
-            //  Tambah / lepas dari pilihan; klik ruang kosong tidak melepas pilihan.
             if (idKena) {
               const r = togglePilih(pilihRef.current, pilihLainRef.current, idKena);
               if (r.pilih !== pilihRef.current) dariToggle.current = true;
               setPilih(r.pilih); setPilihLain(r.lain);
             }
           } else setPilih(idKena);
-          //  Klik/ketuk dua kali: titik itu menjadi pusat putaran kamera (fokus).
           const kini = performance.now();
           const ganda = !!ketukLalu && kini - ketukLalu.t < 350 && Math.hypot(e.clientX - ketukLalu.x, e.clientY - ketukLalu.y) < 30;
           ketukLalu = ganda ? null : { t: kini, x: e.clientX, y: e.clientY };
@@ -234,8 +205,6 @@ export function useMesin(K: KeadaanDesain) {
             kamera.position.copy(vT).add(vS.setFromSpherical(sf));
             if (k >= 1 && mesin.current) mesin.current.terbang = null;
           } else {
-            //  Titik pusat putaran dijaga di sekitar ruangan supaya geser tidak "tersesat" - dengan kelonggaran separuh
-            //  ukuran ruang (min. 3 m). Dulu hanya 1 m di luar dinding, sehingga geser terasa mentok di tepi ruangan.
             const bt = batasDunia(ruangRef.current);
             const ls = Math.max(3, Math.max(bt.x, bt.z) * 0.5);
             vT.set(Math.min(bt.x + ls, Math.max(-ls, orbit.target.x)), Math.min(bt.t + ls, Math.max(-0.5, orbit.target.y)), Math.min(bt.z + ls, Math.max(-ls, orbit.target.z)));
@@ -250,18 +219,9 @@ export function useMesin(K: KeadaanDesain) {
         setSiap(true);
         bersihkan = () => {
           jalan = false; ro.disconnect();
-          //  BUKAN gizmo.dispose(): di three r169 TransformControls tidak lagi
-          //  turunan Object3D, tapi dispose()-nya masih memanggil this.traverse
-          //  -> TypeError saat komponen dibongkar, dan React menjatuhkan seluruh
-          //  halaman ("Application error") setiap kali pengguna pindah dari
-          //  Desain 3D ke alat lain. Cukup lepas event-nya; geometri helper
-          //  gizmo ikut dibersihkan scene.traverse di bawah (helper ada di scene).
-          try { gizmo.detach(); (gizmo as unknown as { disconnect?: () => void }).disconnect?.(); } catch { /* lanjut bersihkan */ }
-          try { orbit.dispose(); } catch { /* lanjut bersihkan */ }
+          try { gizmo.detach(); (gizmo as unknown as { disconnect?: () => void }).disconnect?.(); } catch {  }
+          try { orbit.dispose(); } catch {  }
           pmrem.dispose();
-          //  renderer.dispose() TIDAK melepas geometri, material, dan tekstur di
-          //  dalam scene. Tanpa ini memori GPU bertambah tiap kali pengguna
-          //  pindah alat (LED <-> 3D) karena komponen dibongkar-pasang.
           scene.traverse(o => {
             const mesh = o as T.Mesh;
             mesh.geometry?.dispose();
@@ -274,9 +234,6 @@ export function useMesin(K: KeadaanDesain) {
           gambarLayar.current.forEach(t => t.dispose()); gambarLayar.current.clear();
           if (scene.environment instanceof THREE.Texture) scene.environment.dispose();
           renderer.dispose();
-          //  dispose() TIDAK menutup konteks WebGL-nya. Chrome hanya mengizinkan ±16 konteks hidup per tab:
-          //  tanpa ini, bolak-balik membuka Desain 3D di sesi yang lama menumpuk konteks (memori GPU naik,
-          //  peringatan "Too many active WebGL contexts", tab makin berat).
           renderer.forceContextLoss();
           renderer.domElement.remove(); labelRenderer.domElement.remove();
         };
@@ -287,8 +244,6 @@ export function useMesin(K: KeadaanDesain) {
     return () => { hidup = false; bersihkan(); };
   }, []);
 
-  // ── Mode seret (gaya SketchUp): klik kiri di ruang kosong = putar, klik kanan = geser, roda = zoom; Spasi + seret
-  //    kiri = geser sementara; tombol tangan (NavKamera) = seret kiri selalu geser. Dua jari selalu pinch-zoom. ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const { MOUSE, TOUCH } = m.THREE;
@@ -303,7 +258,6 @@ export function useMesin(K: KeadaanDesain) {
     pasang();
     const mengetik = (e: KeyboardEvent) => e.target instanceof Element && !!e.target.closest('input, textarea, select, [contenteditable="true"], [role=dialog]');
     const turun = (e: KeyboardEvent) => {
-      //  Hanya saat kursor di atas kanvas & tidak mengetik - Spasi di tempat lain tetap menggulir halaman / mengetik.
       if (e.code !== 'Space' || !diAtas || mengetik(e)) return;
       e.preventDefault();
       if (!spasi) { spasi = true; pasang(); }

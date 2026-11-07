@@ -1,13 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { laporGalat } from '@/lib/lapor-galat';
+import { laporGalat } from '@/lib/galat/lapor';
 
-/**
- * Tangkap galat skrip & promise yang tidak tertangani di seluruh platform dan laporkan ke
- * Admin Panel -> Kesehatan Sistem. Galat render ditangani batas galat (LayarGalat) sendiri.
- * Dipasang sekali di app/layout.tsx; tidak merender apa pun.
- */
 export function PelaporGalat() {
   useEffect(() => {
     const galatSkrip = (e: ErrorEvent) => laporGalat({ pesan: e.message || String(e.error ?? ''), sumber: 'skrip' }, e.filename);

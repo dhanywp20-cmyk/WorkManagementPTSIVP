@@ -1,5 +1,4 @@
 'use client';
-/** Atur perangkat: laptop + dongle WyreStorm, layar tujuan share nirkabel (bawaan: terdekat). */
 import { bisaJadiTujuan, nirkabel, tipePerangkatDari, tujuanShare } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

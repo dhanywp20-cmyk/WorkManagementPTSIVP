@@ -1,23 +1,21 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
+import { setSession } from '@/lib/auth/sesi';
 
 import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE } from './shared';
 import { ModalPortal, formatUsername } from '@/components/shared';
 
 import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
-import { hasFullAccess } from '@/lib/constants';
+import { bolehDiwaypiDan2FA, hasFullAccess } from '@/lib/constants';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 import { InstallGuideModal } from './InstallGuideModal';
 import { UnduhApk } from './UnduhApk';
 import { Profil2FA } from './profil-2fa';
 import { ProfilIntegrasi } from './profil-integrasi';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-
-// UserProfileModal
 
 interface UserProfileModalProps {
   currentUser: User;
@@ -36,24 +34,13 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   const [cariIzin, setCariIzin] = useState('');
   const [supervisors, setSupervisors] = useState<{ full_name: string; phone_number?: string; sales_division?: string; jabatan?: string }[]>([]);
   const [subordinates, setSubordinates] = useState<{ full_name: string; username: string; sales_division?: string; jabatan?: string }[]>([]);
-  /** Notifikasi Telegram pribadi - lihat blok "Hubungkan Telegram" di bawah. */
   const [telegramBot, setTelegramBot] = useState<{ status: 'memuat' | 'siap' | 'galat'; username?: string; alasan?: string }>({ status: 'memuat' });
   const [menghubungkan, setMenghubungkan] = useState(false);
   const [pesanTelegram, setPesanTelegram] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
-  /**
-   * Kanal Telegram bisa dimatikan admin (Admin Panel → Integrations). Kalau
-   * mati, TIDAK ADA gunanya menawarkan "hubungkan Telegram" ke siapa pun -
-   * pesan memang tidak akan pernah terkirim ke kanal itu. null = belum
-   * diketahui (jangan render dulu, supaya tidak sempat kelihatan lalu hilang).
-   */
   const [telegramAktif, setTelegramAktif] = useState<boolean | null>(null);
-  /** Auto-cek koneksi Telegram setelah bot dibuka - lihat mulaiAutoHubung(). */
   const [autoHubung, setAutoHubung] = useState<'diam' | 'menunggu' | 'gagal'>('diam');
   const autoHubungRef = useRef<{ interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout> }>({});
 
-  /** Kartu "Aplikasi di HP" - status live yang sama dengan banner install
-   *  otomatis (lib/pwa-install.ts), supaya tombolnya di sini juga memicu
-   *  prompt asli Chrome/Android, bukan sekadar tautan ke panduan. */
   const merek = useMerek();
   const [statusInstall, setStatusInstall] = useState<StatusInstallPWA>('belum-siap');
   const [memasang, setMemasang] = useState(false);
@@ -83,10 +70,9 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
       if (userDiv) {
         const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
         if (supMaps && supMaps.length > 0) {
-          const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: string) => id !== currentUser.id); // exclude self
+          const ids = supMaps.map((s: any) => s.supervisor_id).filter((id: string) => id !== currentUser.id);
           if (ids.length > 0) {
             const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
-            // Only show users with HIGHER tier (true atasan)
             const filtered = (sups ?? []).filter((s: any) => {
               const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
               return tier > selfTier;
@@ -107,9 +93,8 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
         if (divMaps && divMaps.length > 0) {
           const divs = divMaps.map((m: any) => m.sales_division);
           const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('sales_division', divs).eq('role', 'guest').neq('sales_division', 'IVP').neq('id', currentUser.id);
-          // Only show users with LOWER tier (true bawahan), exclude self
           const filtered = (subUsers ?? []).filter((u: any) => {
-            if (u.username === currentUser.username) return false; // exclude self
+            if (u.username === currentUser.username) return false;
             const tier = u.jabatan ? (JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0) : 0;
             return tier < selfTier;
           });
@@ -137,9 +122,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     })();
   }, []);
 
-  // Kanal Telegram (Admin Panel → Integrations → Kanal & Event) - kalau admin
-  // mematikannya, seluruh blok "Notifikasi Telegram" disembunyikan untuk
-  // SEMUA akun (lihat pemakaian telegramAktif di JSX).
   useEffect(() => {
     (async () => {
       try {
@@ -168,16 +150,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     } catch { return false; }
   };
 
-  /**
-   * Membuka bot Telegram dengan payload = id akun sendiri, LALU otomatis
-   * mengecek berkala (tiap 4 detik, sampai 5 menit) apakah orangnya sudah
-   * menekan Start di sana - tidak ada lagi tombol konfirmasi manual. Kalau
-   * sampai 5 menit belum terbaca, berhenti dan statusnya kembali "Belum
-   * Terhubung" (orangnya tinggal tekan tombolnya lagi untuk mencoba ulang).
-   *
-   * Lihat catatan panjang di app/api/notifikasi/telegram/route.ts tentang
-   * kenapa payload start=<id akun sendiri> ini aman dipakai siapa saja.
-   */
   const mulaiAutoHubung = () => {
     if (telegramBot.status !== 'siap' || !telegramBot.username) return;
     window.open(`https://t.me/${telegramBot.username}?start=${currentUser.id}`, '_blank', 'noopener,noreferrer');
@@ -195,7 +167,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
       const { data } = await ambilProfil(currentUser.id);
       if (data) { setUserData(data); setSession(data); }
     };
-    cekSekali(); // langsung cek sekali, jangan tunggu interval pertama
+    cekSekali();
     autoHubungRef.current.interval = setInterval(cekSekali, 4000);
     autoHubungRef.current.timeout = setTimeout(() => {
       hentikanAutoHubung();
@@ -285,7 +257,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     return tb - ta;
   });
 
-  // Nilai turunan untuk tampilan
   const salam = (() => {
     const j = new Date().getHours();
     if (j < 11) return 'Selamat Pagi';
@@ -294,10 +265,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     return 'Selamat Malam';
   })();
 
-  // Admin, superadmin, dan pemegang Full Access melewati allowed_menus
-  // sepenuhnya (lihat saringan menu di dashboard/page.tsx), jadi daftarnya
-  // dianggap penuh - kalau tidak, profil mereka justru terbaca paling sedikit
-  // aksesnya, kebalikan dari kenyataannya.
   const menuAktif = hasFullAccess(userData)
     ? ALL_MENU_KEYS
     : (userData.allowed_menus ?? []);
@@ -321,11 +288,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-slate-50 rounded-kartu shadow-modal w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
 
-        {/* ── HERO ──
-            Menyapa lalu langsung menyebut identitas, bukan judul generik
-            "User Profile". Judul semacam itu hanya mengulang apa yang sudah
-            jelas dari cara halamannya dibuka — ruangnya lebih berguna dipakai
-            menampilkan siapa pemilik akun ini. */}
         <div className="shrink-0 px-6 py-5 relative overflow-hidden"
           style={{ background: 'linear-gradient(120deg,#be123c,#9f1239 55%,#881337)' }}>
           <button aria-label="Tutup" onClick={onClose}
@@ -337,7 +299,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90 mb-1.5">
                 {salam} · <span className="text-white/70 normal-case tracking-normal font-medium">{formatUsername(userData.username)}</span>
               </p>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight truncate">
+              <h2 className="text-2xl sm:text-3xl sm:leading-9 font-black text-white tracking-tight leading-tight truncate">
                 {userData.full_name}
               </h2>
               <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
@@ -358,7 +320,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
             </div>
             <div className="flex gap-2.5 shrink-0">
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(0,0,0,0.22)' }}>
-                <p className="text-lg sm:text-2xl font-black text-white leading-none">{menuAktif.length}</p>
+                <p className="text-lg sm:text-2xl sm:leading-8 font-black text-white leading-none">{menuAktif.length}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
               </div>
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(250,204,21,0.9)' }}>
@@ -378,16 +340,8 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
         <div className="flex-1 min-h-0 overflow-y-auto p-5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-            {/* ══ KIRI ══ */}
             <div className="lg:col-span-2 space-y-4">
 
-              {/*
-                Notifikasi Telegram sengaja diletakkan PALING ATAS, sebelum
-                Informasi Pribadi - supaya langsung terlihat tanpa scroll ke
-                tengah. Orang awam yang belum terhubung jarang scroll mencari
-                sendiri; kartu ini justru satu-satunya yang butuh tindakan
-                dari pemilik akun begitu profil dibuka.
-              */}
               {telegramAktif && (
               <Kartu icon="✈️" judul="Notifikasi Telegram">
                 <div className="p-4 space-y-3">
@@ -480,21 +434,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </div>
                     )}
                   </Baris>
-                  {/*
-                    Tim dan Divisi ditampilkan TERPISAH, bukan satu baris
-                    "Divisi / Team" yang diisi salah satunya.
-
-                    Bentuk lamanya `team_type || sales_division`: begitu
-                    team_type ada isinya, divisi penjualan tidak pernah
-                    tampil. Untuk akun Guest - yang team_type-nya memang selalu
-                    'Guest' - artinya barisnya SELALU berbunyi "Guest", dan
-                    divisi yang susah-susah dipilih orangnya saat mendaftar
-                    tidak muncul di mana pun di layar ini. Terbaca persis
-                    seperti data yang gagal tersimpan, padahal ada di database.
-
-                    Dua nilai yang menjawab dua pertanyaan berbeda tidak boleh
-                    berebut satu baris.
-                  */}
                   {userData.team_type && (
                     <Baris icon="👥" label="Tim" value={userData.team_type} />
                   )}
@@ -565,20 +504,12 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       <IkonTeks nama="🔑" />Ubah Password
                     </button>
                   )}
-                  <Profil2FA />
-                  <ProfilIntegrasi />
+                  {bolehDiwaypiDan2FA(userData) && <><Profil2FA /><ProfilIntegrasi /></>}
                 </div>
               </Kartu>
             </div>
 
-            {/* ══ KANAN ══ */}
             <div className="space-y-4">
-              {/*
-                Sebelumnya cara pasang aplikasi HANYA lewat banner otomatis
-                (bisa lewat/ditutup) atau tautan di layar login (harus logout
-                dulu untuk melihatnya lagi). Kartu ini membuatnya selalu ada
-                di satu tempat yang pasti dicari orang: profil akun sendiri.
-              */}
               <Kartu icon="📲" judul="Aplikasi di HP">
                 <div className="p-4 space-y-3">
                   {statusInstall === 'terpasang' ? (
@@ -638,13 +569,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   <input aria-label="Cari modul..." value={cariIzin} onChange={e => setCariIzin(e.target.value)}
                     placeholder="Cari modul..."
                     className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-hidden focus:ring-2 focus:ring-rose-200" />
-                  {/* TANPA max-h: halaman ini sudah menggulir sebagai satu blok
-                      (bungkusnya flex-1 overflow-y-auto di induk - lihat
-                      className pembungkus modal). Kotak setinggi 256px yang
-                      menggulir sendiri DI DALAM halaman yang sudah menggulir
-                      menyembunyikan chip tanpa penanda apa pun - diuji dengan
-                      14 modul aktif: badge menunjukkan "14" tapi hanya 9 chip
-                      yang terlihat, 128px sisanya tersembunyi begitu saja. */}
                   <div className="flex flex-wrap gap-1.5">
                     {menuTersaring.length === 0 ? (
                       <p className="text-xs text-slate-500 py-2">Tidak ada modul yang cocok.</p>

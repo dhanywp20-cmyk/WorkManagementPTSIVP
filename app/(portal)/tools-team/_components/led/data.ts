@@ -1,7 +1,5 @@
-/** Data & aturan Kalkulator LED: pengaturan BOM, pitch & cabinet umum, daya/berat per m², pembulatan. */
-import type { Pembulatan } from '@/lib/av-hitung';
+import type { Pembulatan } from '@/lib/av/hitung';
 
-/** Pengaturan daftar material (BOM) & penawaran. */
 export interface PengaturanBOM { cadanganUnit: number; cadanganRC: number; psuW: number; panjangLAN: number; ppn: number }
 
 export const BOM_AWAL: PengaturanBOM = { cadanganUnit: 3, cadanganRC: 2, psuW: 200, panjangLAN: 10, ppn: 11 };
@@ -35,7 +33,6 @@ export const CABINET: { v: string; l: string; w: number; h: number }[] = [
 
 export type Lingkungan = 'indoor' | 'semi-outdoor' | 'outdoor';
 
-/** Nilai umum per m² (W maks, kg) - selalu bisa ditimpa. */
 export const PER_M2: Record<Lingkungan, { daya: number; berat: number }> = {
   indoor: { daya: 600, berat: 30 }, 'semi-outdoor': { daya: 750, berat: 38 }, outdoor: { daya: 900, berat: 45 },
 };

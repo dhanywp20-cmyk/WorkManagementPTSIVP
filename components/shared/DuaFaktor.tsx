@@ -1,16 +1,10 @@
 'use client';
 
-/**
- * Potongan tampilan verifikasi dua langkah (2FA) - dipakai layar login (admin wajib 2FA) dan
- * Profil -> Keamanan. Semua panggilan server dilakukan pemanggil lewat props; komponen ini hanya
- * menampilkan QR, kotak kode, dan kode cadangan.
- */
 import React, { useEffect, useState } from 'react';
 
 const kelasInput = 'w-full border border-slate-200 rounded-xl px-4 py-3 bg-white text-slate-800 font-mono text-lg tracking-[0.3em] text-center outline-hidden focus:border-rose-500 focus:ring-2 focus:ring-rose-100';
 const kelasTombol = 'w-full py-3 rounded-xl font-bold text-sm text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-50 flex items-center justify-center gap-2';
 
-/** Kotak kode 6 digit (atau kode cadangan bila `cadangan`). */
 export function InputKode2FA({ nilai, ubah, kirim, cadangan = false, autoFocus = true }: {
   nilai: string; ubah: (v: string) => void; kirim: () => void; cadangan?: boolean; autoFocus?: boolean;
 }) {
@@ -29,10 +23,6 @@ export function InputKode2FA({ nilai, ubah, kirim, cadangan = false, autoFocus =
   );
 }
 
-/**
- * Pendaftaran: minta rahasia baru -> tampilkan QR -> kode pertama dari aplikasi authenticator.
- * `kirimKode` mengembalikan pesan galat, atau null bila berhasil.
- */
 export function PanelDaftar2FA({ mintaRahasia, kirimKode, onBatal }: {
   mintaRahasia: () => Promise<{ rahasia: string; url: string } | { error: string }>;
   kirimKode: (kode: string) => Promise<string | null>;
@@ -98,14 +88,13 @@ export function PanelDaftar2FA({ mintaRahasia, kirimKode, onBatal }: {
   );
 }
 
-/** 8 kode cadangan - teksnya hanya ada saat ini, jadi wajib disalin/diunduh sebelum lanjut. */
 export function DaftarKodeCadangan({ kode, onSelesai, labelSelesai = 'Sudah saya simpan' }: {
   kode: string[]; onSelesai: () => void; labelSelesai?: string;
 }) {
   const [disalin, setDisalin] = useState(false);
   const teks = kode.join('\n');
   const salin = async () => {
-    try { await navigator.clipboard.writeText(teks); setDisalin(true); } catch { /* salin manual */ }
+    try { await navigator.clipboard.writeText(teks); setDisalin(true); } catch {  }
   };
   const unduh = () => {
     const a = document.createElement('a');

@@ -1,47 +1,22 @@
 'use client';
 
-/**
- * PermissionAwareDashboard.tsx - Homepage adaptif berbasis permission.
- *
- * Flow (sesuai spec): Registry  Permission Resolver  Filter  Sort Priority
- * Compose  Render. Semua role memakai komponen INI (tidak ada dashboard
- * terpisah per role); yang berbeda hanya kumpulan widget hasil resolve dari
- * `allowed_menus`. Widget `full` (Analytics hero, Quick Action) dirender full
- * width; sisanya (lg/md/sm) di-grid responsif dengan `lg` melebar 2 kolom.
- */
-
 import React, { useEffect, useState } from 'react';
 import type { User } from '../shared';
 import { WIDGETS, type WidgetDef } from './Widgets';
 import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
-import { useKelompok } from '@/lib/kelompok';
+import { useKelompok } from '@/lib/kelompok/inti';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { Ikon } from '@/components/shared/Ikon';
 import { AKSEN_UTAMA } from './primitives';
+import { hasFullAccess } from '@/lib/constants';
 
-/**
- * Ruang kosong di sebelah Piket Showroom + Learning Center (lg:grid-cols-3
- * dengan cuma 2 widget) DULU ditambal dengan melebarkan 'md' jadi
- * lg:col-span-2 - salah arah. Solusi yang benar adalah widget KETIGA
- * (Riwayat Quiz, size 'sm', lihat RiwayatQuizWidget) yang mengisi kolom itu
- * dengan ISI, bukan meregangkan salah satu kartu yang sudah ada supaya
- * menutupi kekosongan di sampingnya. Dengan tiga widget 1-kolom, span
- * bawaan (semuanya '') sudah pas mengisi 3/3 kolom.
- */
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
   md: '',
   sm: '',
 };
 
-/**
- * Tombol tab Analytics/Command Center/Audit Log versi ringkas untuk header
- * sticky - TabBtn asli (di AnalyticsPlatform) berukuran penuh (px-4 py-2.5
- * text-sm) untuk header standalone-nya sendiri; di sini harus muat berdampingan
- * dengan sambutan "Halo, ..." dan badge "N widget aktif" tanpa mendorong
- * layout jadi terlalu tinggi di mobile.
- */
 function HeaderTabBtn({ label, icon, active, onClick, badge }: {
   label: string; icon: string; active: boolean; onClick: () => void; badge?: number;
 }) {
@@ -67,36 +42,11 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   currentUser: User;
   openMenu: (key: string) => void;
   openUrl: (url: string, title: string) => void;
-  /** Membuka Profil, tempat akun Telegram dihubungkan. */
   onHubungkanTelegram?: () => void;
 }) {
-  /*
-    Spanduk "Telegram belum terhubung".
-
-    Telegram hanya bisa mengirim ke orang yang SUDAH menyapa botnya sendiri -
-    tidak ada cara admin mengisikannya dari belakang layar. Jadi selama seorang
-    anggota belum melakukannya, seluruh notifikasi Telegram untuknya hilang
-    tanpa jejak: tidak ada yang gagal, tidak ada yang error, pesannya memang
-    tidak pernah punya tujuan. Spanduk ini satu-satunya tempat kenyataan itu
-    bisa terlihat oleh orang yang bisa membereskannya.
-
-    Hanya muncul kalau kanal Telegram memang menyala - kalau admin belum
-    menyalakannya, mengajak orang menghubungkan akun cuma jadi gangguan.
-  */
   const [ajakTelegram, setAjakTelegram] = useState(false);
   const [tutupAjakan, setTutupAjakan] = useState(false);
 
-  /*
-    Tab Analytics/Command Center/Audit Log dipindah ke sini (header sticky)
-    dari dalam widget Analytics-nya sendiri - sebelumnya tab bar itu muncul
-    mengambang di tengah alur widget, jauh di bawah header, padahal ia
-    sebenarnya navigasi tingkat-halaman (mengganti seluruh isi widget
-    Analytics), bukan bagian dari satu widget. Ditaruh di sebelah badge
-    "N widget aktif" supaya berpindah tab tidak perlu scroll ke bawah dulu.
-    State-nya tetap di sini (bukan di dalam AnalyticsPlatform) supaya header
-    & widget-nya bisa saling melihat tab yang sama - lihat prop
-    controlledTab/onTabChange/onCounts di AnalyticsPlatform.
-  */
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('kpi');
   const [analyticsCounts, setAnalyticsCounts] = useState({ totalAlerts: 0, auditCount: 0 });
 
@@ -108,30 +58,17 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         if (!p.aktif.telegram) return;
         const { data, error } = await supabase.from('users')
           .select('telegram_chat_id').eq('id', currentUser.id).maybeSingle();
-        // Kolomnya baru; pemasangan yang belum menjalankan migrasinya cukup
-        // tidak menampilkan spanduk, bukan menampilkan ajakan yang keliru.
         if (!batal && !error && data && !data.telegram_chat_id) setAjakTelegram(true);
-      } catch { /* diam - spanduk opsional, bukan bagian alur kerja */ }
+      } catch {  }
     })();
     return () => { batal = true; };
   }, [currentUser.id]);
-  // Resolve: filter by permission  sort by priority.
-  /*
-    Berlangganan daftar kelompok. Nilainya tidak dipakai langsung - yang
-    dibutuhkan efek sampingnya: daftar kelompok dimuat asinkron, dan
-    canAccessAnalytics() membacanya lewat gayaDashboard(). Tanpa langganan
-    ini, resolusi widget berjalan sekali saat daftar itu masih kosong
-    (jatuh ke bawaan 'team'), lalu tidak pernah diulang - jadi setelan
-    "Seperti Sales" baru terlihat setelah halaman dimuat ulang penuh.
-  */
   useKelompok();
 
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
     .sort((a, b) => a.priority - b.priority);
 
-  // Compose: pertahankan urutan priority, tapi kelompokkan widget non-full yang
-  // berurutan ke dalam satu grid; widget `full` berdiri sendiri full width.
   const composed: ({ type: 'full'; widget: WidgetDef } | { type: 'grid'; widgets: WidgetDef[] })[] = [];
   let buffer: WidgetDef[] = [];
   const flush = () => { if (buffer.length) { composed.push({ type: 'grid', widgets: buffer }); buffer = []; } };
@@ -144,64 +81,30 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const firstName = (currentUser.full_name ?? '').trim().split(' ')[0] || currentUser.username || '';
   const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
-  /** Agenda berbagi baris dengan Daily Report Tim bila kartu itu tampil. */
   const adaTeam = visible.some(w => w.id === 'team-monitoring');
-  /** Tanpa Agenda (mis. akun pimpinan), Daily Report Tim melebar penuh menggantikan tempatnya. */
   const adaAgenda = visible.some(w => w.id === 'work-queue');
 
   return (
-    /*  Latar mengikuti setelan Admin Panel -> Merek -> "Latar Dashboard"
-        (bawaan: Netral). Dulu beranda dipaksa netral di sini, sehingga
-        pilihan "Gambar" diam-diam tidak berlaku di beranda saja. Ubin
-        berlatar putih pekat, jadi teks tetap terbaca di atas foto. */
-    <div className="w-full h-full overflow-y-auto">
-      {/* ── Header sambutan ──────────────────────────────────────────────────
-          Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
-          sama dengan isi, jadi ia melayang di atas latar tanpa batas yang
-          jelas — beda sendiri dari seluruh platform lain yang memakai bilah
-          header penuh kiri-ke-kanan. Sekarang bilahnya membentang penuh dan
-          menempel di atas seperti PageHeader di modul lain; hanya isinya yang
-          tetap dibatasi lebarnya supaya sejajar dengan widget di bawahnya. */}
+    <div className="dasbor-3d w-full h-full overflow-y-auto">
       <header className="sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-2.5 md:py-3.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
+            <h1 className="text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
             <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
-          {/*
-            Badge "N widget aktif" dulu di sini - angkanya cuma jumlah entri
-            registry (bukan jumlah kartu yang kelihatan, karena satu widget
-            bisa memuat beberapa kartu sekaligus), jadi tidak actionable buat
-            user dan sudah dihapus. Tab Analytics/Command Center/Audit Log
-            (kalau berhak) sekarang jadi satu-satunya isi sisi kanan header.
-          */}
           {showAnalyticsTabs && (
             <div className="flex items-center gap-1 md:gap-1.5 flex-wrap justify-end">
               <HeaderTabBtn label="Analytics"      icon="📊" active={analyticsTab==='kpi'}     onClick={() => setAnalyticsTab('kpi')} />
               <HeaderTabBtn label="Command Center" icon="🏠" active={analyticsTab==='command'} onClick={() => setAnalyticsTab('command')} badge={analyticsCounts.totalAlerts} />
               <HeaderTabBtn label="Audit Log"      icon="📋" active={analyticsTab==='audit'}   onClick={() => setAnalyticsTab('audit')} badge={analyticsCounts.auditCount} />
+              {hasFullAccess(currentUser) && <HeaderTabBtn label="Pemakaian" icon="👥" active={analyticsTab==='pemakaian'} onClick={() => setAnalyticsTab('pemakaian')} />}
             </div>
           )}
         </div>
       </header>
 
-      {/*
-        Kisi bento 12 kolom untuk SELURUH halaman, bukan tumpukan bagian.
-
-        Sebelumnya isinya space-y: tiap widget `full` jadi satu slab selebar
-        layar, ditumpuk ke bawah, dan masing-masing punya kisi sendiri di
-        dalamnya. Matanya membaca tiga blok bertingkat - itu yang terasa kaku,
-        dan itu tidak bisa dibereskan dengan menyeragamkan kartunya (justru
-        keseragaman tanpa variasi ukuran yang membuatnya makin kaku).
-
-        Dengan satu kisi bersama, ubin boleh berbeda lebar (My Action 6 kolom,
-        Hari Ini & Mendatang 3 kolom) tapi tepi kiri-kanannya tetap berbaris.
-        Widget yang isinya sudah berupa beberapa ubin memakai `lg:contents`
-        supaya ubinnya LANGSUNG jadi anggota kisi ini - bukan kisi di dalam
-        kisi, yang justru membuat jaraknya tidak pernah sama.
-      */}
-      <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
+      <div className="dasbor-masuk max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
                       grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch">
 
         {ajakTelegram && !tutupAjakan && (
@@ -230,33 +133,12 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
 
         {composed.map((block, i) =>
           block.type === 'full' ? (
-            /*
-              work-queue sudah berisi tiga ubin sendiri (My Action, Hari Ini,
-              Mendatang) - `lg:contents` melarutkan pembungkusnya supaya
-              ketiganya jadi anggota langsung kisi bento di atas.
-
-              team-monitoring TIDAK lagi ikut lg:col-span-12 seperti widget
-              full lainnya - diminta eksplisit: Mendatang (di work-queue,
-              lihat lg:row-span-2 di sana) membentang tinggi menutupi kolom
-              10-12 sampai baris INI juga, jadi Team Monitoring dipersempit
-              ke lg:col-span-9 (persis lebar My Action+Hari Ini gabungan,
-              6+3) supaya auto-placement CSS Grid menaruhnya di kolom 1-9 -
-              otomatis menghindari kolom yang sudah dipesan Mendatang, tanpa
-              koordinat manual di kedua sisi. Widget full LAIN (Analytics,
-              Sales Analytics) tetap 12 kolom - mereka tidak pernah muncul
-              berdampingan dengan Mendatang yang masih "aktif" membentang.
-            */
             <div key={`full-${block.widget.id}-${i}`}
               className={
                 block.widget.id === 'work-queue' ? (adaTeam ? 'lg:col-span-7 xl:col-span-8' : 'lg:col-span-12')
                 : block.widget.id === 'team-monitoring' ? (adaAgenda ? 'lg:col-span-5 xl:col-span-4' : 'lg:col-span-12')
                 : 'lg:col-span-12'
               }>
-              {/*
-                Widget Analytics dirender langsung (bukan lewat
-                block.widget.Component) supaya tab-nya bisa dikontrol dari
-                header di atas - lihat analyticsTab/showAnalyticsTabs.
-              */}
               {block.widget.id === 'analytics' ? (
                 <AnalyticsPlatform embedded injectedUser={currentUser}
                   controlledTab={analyticsTab} onTabChange={setAnalyticsTab} onCounts={setAnalyticsCounts} />
@@ -266,15 +148,6 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             </div>
           ) : (
             <div key={`grid-${i}`} className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-              {/*
-                TIDAK items-start di sini (beda dari grid lain di berkas ini) -
-                sengaja dibiarkan meregang (bawaan CSS Grid). Baris ini hanya
-                pernah diisi Piket Showroom + Learning Center (+ Riwayat Quiz),
-                dan menyamakan tinggi ketiganya membuat kartu ringkas (Learning
-                Center, Riwayat Quiz) berhenti mengambang setinggi isinya
-                sendiri yang jauh lebih pendek dari daftar 5 hari Piket -
-                ketiganya jadi rapi sejajar, bukan bertangga.
-              */}
               {block.widgets.map(w => (
                 <div key={w.id} className={SIZE_SPAN[w.size] ?? ''}>
                   <w.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} />

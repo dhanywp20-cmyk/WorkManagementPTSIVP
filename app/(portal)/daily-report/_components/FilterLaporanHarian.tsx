@@ -1,24 +1,13 @@
 'use client';
 
-/** FilterLaporanHarian - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { type TeamUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { useKonteksLaporan } from './konteks-laporan';
 
-export interface FilterLaporanHarianProps {
-  filterDate: string;
-  filterSource: string;
-  filterStatus: string;
-  filterUser: string;
-  lihatSemua: boolean;
-  searchProject: string;
-  setFilterDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterSource: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  teamUsers: TeamUser[];
-}
-
-export function FilterLaporanHarian({ filterDate, filterSource, filterStatus, filterUser, lihatSemua, searchProject, setFilterDate, setFilterSource, setFilterStatus, setFilterUser, setSearchProject, teamUsers }: FilterLaporanHarianProps) {
+export function FilterLaporanHarian() {
+  const k = useKonteksLaporan();
+  const { lihatSemua, teamUsers } = k.sesi;
+  const {
+    filterDate, filterSource, filterStatus, filterUser, searchProject, setFilterDate, setFilterSource, setFilterStatus, setFilterUser, setSearchProject
+  } = k.filter;
   return (
     <>
       <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-100">

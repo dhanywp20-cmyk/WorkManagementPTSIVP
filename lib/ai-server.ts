@@ -1,20 +1,7 @@
-/**
- * lib/ai-server.ts - perkakas server bersama untuk fitur AI tim
- * (Asisten "Tanya Platform", draf Daily Report).
- *
- *  - jatahAI(): batas pemakaian per user (tabel ai_pakai_log, migrasi 023).
- *    Kuota Gemini gratis dibagi seluruh tim; tanpa batas per orang, satu
- *    obrolan panjang bisa mematikan fitur untuk semua.
- *  - panggilGemini(): token dari rahasia_integrasi (ai.gemini_token_asisten,
- *    cadangan ai.gemini_token) - tidak pernah sampai ke peramban.
- *  - klienSebagaiUser(): klien Supabase yang membawa token DB milik user itu
- *    sendiri, sehingga RLS berlaku persis seperti di layarnya. Asisten tidak
- *    bisa melihat lebih dari yang user itu boleh lihat.
- */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { bacaRahasia } from '@/lib/rahasia-server';
-import { issueDbToken } from '@/lib/db-token';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
+import { issueDbToken } from '@/lib/auth/db-token';
 import { ambilPengaturanAI } from '@/lib/ai-pengaturan';
 
 export const BATAS_PER_JAM = 20;
@@ -33,7 +20,6 @@ export async function muatUser(id: string): Promise<UserLengkap | null> {
   return (data as UserLengkap | null) ?? null;
 }
 
-/** null = boleh (dan pemakaian dicatat); string = alasan ditolak. */
 export async function jatahAI(userId: string, fitur: string): Promise<string | null> {
   const db = getAdminClient();
   const sejak = (ms: number) => new Date(Date.now() - ms).toISOString();
@@ -65,14 +51,13 @@ export type IsiGemini = { role: 'user' | 'model'; parts: Record<string, unknown>
 export interface HasilGemini {
   ok: boolean; alasan?: string;
   parts?: { text?: string; functionCall?: { name: string; args?: Record<string, unknown> } }[];
-  /** Alasan berhenti dari Gemini (STOP, MAX_TOKENS, SAFETY, ...). */
   selesai?: string;
 }
 
 export async function panggilGemini(opsi: {
   sistem: string; isi: IsiGemini[]; alat?: Record<string, unknown>[]; suhu?: number; maksToken?: number;
-  /** Paksa keluaran JSON (responseMimeType); `skema` = responseSchema (bentuk dijamin oleh Gemini). */ json?: boolean; skema?: Record<string, unknown>;
-  /** Batas waktu permintaan ke Gemini (ms) - di bawah batas durasi fungsi Vercel. */ batasMs?: number;
+   json?: boolean; skema?: Record<string, unknown>;
+   batasMs?: number;
 }): Promise<HasilGemini> {
   const [tAsisten, tUmum, setelan] = await Promise.all([
     bacaRahasia('ai.gemini_token_asisten'), bacaRahasia('ai.gemini_token'), ambilPengaturanAI(),
@@ -89,8 +74,6 @@ export async function panggilGemini(opsi: {
   if (opsi.alat?.length) payload.tools = [{ functionDeclarations: opsi.alat }];
   if (opsi.json) (payload.generationConfig as Record<string, unknown>).responseMimeType = 'application/json';
   if (opsi.skema) (payload.generationConfig as Record<string, unknown>).responseSchema = opsi.skema;
-  //  Model 2.5 "berpikir" dulu dan pikirannya memakan jatah maxOutputTokens -
-  //  untuk tanya-jawab ringkas itu hanya menambah lambat & menghabiskan kuota.
   if (/2\.5-flash/.test(model)) {
     (payload.generationConfig as Record<string, unknown>).thinkingConfig = { thinkingBudget: 0 };
   }

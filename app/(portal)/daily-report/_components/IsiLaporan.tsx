@@ -1,63 +1,26 @@
 'use client';
 
-/** IsiLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { MiniPieChart, StatCardGrid, Paginasi, TombolEkspor } from '@/components/shared';
-import { todayISO, type DailyReport, RENTANG_HARI } from './shared';
+import { MiniPieChart, StatCardGrid, TombolEkspor } from '@/components/shared';
+import { todayISO, RENTANG_HARI } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
-import { card, cardHdr, type FlatRow } from './bantu-halaman';
+import { card, cardHdr } from './bantu-halaman';
 import { FilterLaporanHarian } from './FilterLaporanHarian';
 import { DaftarLaporanHarian } from './DaftarLaporanHarian';
-import { type TeamUser } from '@/app/(portal)/reminder-schedule/_components/shared';
-import type { Ekspor } from '@/lib/ekspor-tabel';
+import { useKonteksLaporan } from './konteks-laporan';
 
-export interface IsiLaporanProps {
-  belumLaporHariIni: TeamUser[];
-  bolehHapus: (row: any) => boolean;
-  catPieData: { label: string; value: number; color: string; }[];
-  dataEkspor: () => Ekspor<FlatRow>;
-  divisionPieData: { label: string; value: number; color: string; }[];
-  filterCategory: string | null;
-  filterDate: string;
-  filterDivision: string | null;
-  filterHandler: string | null;
-  filterProduct: string | null;
-  filterSource: string;
-  filterStatus: string;
-  filterUser: string;
-  filteredRows: FlatRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<FlatRow>;
-  handlerPieData: { label: string; value: number; color: string; }[];
-  judulKelompokPTS: string;
-  lihatSemua: boolean;
-  liveLoading: boolean;
-  loadLiveData: () => Promise<void>;
-  loadReports: () => Promise<void>;
-  mintaHapus: (row: any) => void;
-  openEditForm: (report: DailyReport) => Promise<void>;
-  pimpinan: boolean;
-  productPieData: { label: string; value: number; color: string; }[];
-  reports: DailyReport[];
-  searchProject: string;
-  setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterDivision: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterHandler: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterProduct: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFilterSource: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFilterUser: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setModalRow: import("react").Dispatch<any>;
-  setSearchProject: import("react").Dispatch<import("react").SetStateAction<string>>;
-  stats: { total: number; pending: number; selesai: number; hariIni: number; fromTicket: number; fromReminder: number; fromManual: number; };
-  teamUsers: TeamUser[];
-}
-
-export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEkspor, divisionPieData, filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, filteredRows, hal, handlerPieData, judulKelompokPTS, lihatSemua, liveLoading, loadLiveData, loadReports, mintaHapus, openEditForm, pimpinan, productPieData, reports, searchProject, setFilterCategory, setFilterDate, setFilterDivision, setFilterHandler, setFilterProduct, setFilterSource, setFilterStatus, setFilterUser, setModalRow, setSearchProject, stats, teamUsers }: IsiLaporanProps) {
+export function IsiLaporan() {
+  const k = useKonteksLaporan();
+  const { judulKelompokPTS } = k.sesi;
+  const { belumLaporHariIni, dataEkspor, filteredRows, liveLoading, loadLiveData, loadReports } = k.data;
+  const { catPieData, divisionPieData, handlerPieData, productPieData, stats } = k.ringkasan;
+  const {
+    filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, setFilterCategory, setFilterDivision, setFilterHandler,
+    setFilterProduct, setFilterSource
+  } = k.filter;
   return (
     <>
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
-        {/* ── Stat cards besar (identik reminder-schedule) ── */}
         <StatCardGrid cols={4} items={[
           { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, accent: '#4f46e5' },
           { label: 'Pending', sub: 'Menunggu tindakan', value: stats.pending, accent: '#b45309' },
@@ -65,18 +28,7 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
           { label: 'Hari Ini', sub: todayISO(), value: stats.hariIni, accent: '#0e7490' },
         ]} />
 
-        {/* M7: siapa yang belum lapor hari ini - hanya untuk admin/supervisor */}
         {belumLaporHariIni.length > 0 && (
-          // Latar SEBELUMNYA rgba(220,38,38,0.06) - opasitas 6% - hampir
-          // tembus pandang. Halaman ini punya foto latar tetap
-          // (backgroundAttachment: fixed di PW di atas), jadi panel ini
-          // dulu nyaris hanya berupa teks merah tua mengambang langsung di
-          // atas foto gedung, tanpa kartu solid di belakangnya - persis
-          // yang bikin tulisan "sangat transparan"/susah dibaca. Kartu lain
-          // di halaman ini (mis. strip "Sumber Data" di bawah) sudah pakai
-          // latar putih ~92% + backdrop-blur; panel ini disamakan, dengan
-          // aksen merah tetap dipertahankan di border supaya nuansa
-          // "peringatan"-nya tidak hilang.
           <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(220,38,38,0.25)', backdropFilter: 'blur(10px)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
             <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5" style={{ color: '#b91c1c' }}>
               🔴 Belum Lapor Hari Ini ({belumLaporHariIni.length})
@@ -91,7 +43,6 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
           </div>
         )}
 
-        {/* ── Source breakdown strip ── */}
         <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Sumber Data</span>
           {([
@@ -114,11 +65,6 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
           )}
         </div>
 
-        {/* ── Charts row ── */}
-        {/* Satu-satunya grafik di platform ini yang dulu memakai grid-cols-4
-            tanpa titik henti - semua halaman lain sudah grid-cols-1 md:...
-            Di ponsel itu berarti empat kolom selebar ~80px, dan di situlah
-            legendanya terhimpit habis. */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
           <MiniPieChart
             data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
@@ -142,7 +88,6 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
           />
         </div>
 
-        {/* ── Schedule/Activity List ── */}
         <div style={card}>
           <div style={cardHdr}>
             <div className="flex items-center gap-2">
@@ -161,7 +106,6 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
             </div>
           </div>
 
-          {/* Active filter chips from pie charts */}
           {(filterCategory || filterHandler || filterDivision || filterProduct) && (
             <div className="px-5 pt-3 flex flex-wrap gap-2">
               {filterCategory && (
@@ -195,20 +139,14 @@ export function IsiLaporan({ belumLaporHariIni, bolehHapus, catPieData, dataEksp
             </div>
           )}
 
-          {/* Search + filter bar identik reminder-schedule */}
-          <FilterLaporanHarian
-            filterDate={filterDate} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} lihatSemua={lihatSemua} searchProject={searchProject} setFilterDate={setFilterDate} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setSearchProject={setSearchProject} teamUsers={teamUsers}
-          />
+          <FilterLaporanHarian />
           {!filterDate && (
             <p className="text-[11.5px] text-slate-500 -mt-1 mb-2">
               Menampilkan {RENTANG_HARI} hari terakhir. Pilih tanggal untuk melihat hari yang lebih lama.
             </p>
           )}
 
-          {/* Table */}
-          <DaftarLaporanHarian
-            bolehHapus={bolehHapus} filterCategory={filterCategory} filterDate={filterDate} filterSource={filterSource} filterStatus={filterStatus} filterUser={filterUser} filteredRows={filteredRows} hal={hal} liveLoading={liveLoading} mintaHapus={mintaHapus} openEditForm={openEditForm} pimpinan={pimpinan} reports={reports} searchProject={searchProject} setFilterCategory={setFilterCategory} setFilterDate={setFilterDate} setFilterSource={setFilterSource} setFilterStatus={setFilterStatus} setFilterUser={setFilterUser} setModalRow={setModalRow} setSearchProject={setSearchProject}
-          />
+          <DaftarLaporanHarian />
         </div>
       </div>
     </>

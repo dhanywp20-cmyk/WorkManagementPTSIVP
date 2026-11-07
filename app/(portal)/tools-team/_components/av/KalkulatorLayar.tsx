@@ -1,8 +1,7 @@
 'use client';
-/** Kalkulator ukuran layar dari jarak pandang (aturan 4-6-8). */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import { aksiLembar, type Baris, lembarAV } from './lembar';
-import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av-hitung';
+import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av/hitung';
 import { useState } from 'react';
 import { PanelPasang } from './layar/PanelPasang';
 import { PanelVideowall } from './layar/PanelVideowall';
@@ -18,8 +17,6 @@ export const RASIO: { v: string; l: string; w: number; h: number }[] = [
   { v: '21:9', l: '21:9', w: 21, h: 9 }, { v: '4:3', l: '4:3', w: 4, h: 3 },
 ];
 
-/* ── Ukuran layar & jarak pandang ────────────────────────────────────── */
-
 export function KalkulatorLayar() {
   const [mode, setMode] = useState<'dariJarak' | 'dariLayar'>('dariJarak');
   const [jarak, setJarak] = useState(8);
@@ -34,7 +31,6 @@ export function KalkulatorLayar() {
   const ringkas = () => mode === 'dariJarak'
     ? `Penonton terjauh ${jarak} m (${jenis}): tinggi gambar min ${f(dariJarak.tinggiM)} m, lebar ${f(dariJarak.lebarM)} m, diagonal ±${f(dariJarak.diagonalInci, 0)}" (${rasioK}).`
     : `Layar ${diag}" ${rasioK}: ${f(ukuran.lebarM)} × ${f(ukuran.tinggiM)} m; jarak maks umum ${f(jarakMaksDariLayar(ukuran.tinggiM, 'umum'), 1)} m, analitis ${f(jarakMaksDariLayar(ukuran.tinggiM, 'analitis'), 1)} m, detail ${f(jarakMaksDariLayar(ukuran.tinggiM, 'detail'), 1)} m.`;
-  //  Ukuran gambar untuk panel pemasangan & videowall: hasil cari (mode 1) atau layar yang dicek (mode 2).
   const gambar = mode === 'dariJarak' ? { lebarM: dariJarak.lebarM, tinggiM: dariJarak.tinggiM } : ukuran;
   return (
     <div className="space-y-4">
@@ -82,4 +78,3 @@ export function KalkulatorLayar() {
   );
 }
 
-/* ── Proyektor ───────────────────────────────────────────────────────── */

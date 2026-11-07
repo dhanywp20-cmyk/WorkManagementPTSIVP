@@ -1,5 +1,4 @@
 'use client';
-/** Pengaturan cara menyambung: template (pojok mulai, arah, pola, pembagian port) atau manual. */
 import { f, Segmen, Catatan } from '../../bersama/ui';
 import { SUDUT, warnaPort } from './data';
 import { IkonPola, kelasJudul, kelasTombol } from './komponen';

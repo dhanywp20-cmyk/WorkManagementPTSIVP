@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, akunAdmin, ambilAkun, galat, statPerDaftar } from '@/lib/checklist-server';
+import { NO_STORE, akunAdmin, ambilAkun, galat, statPerDaftar } from '@/lib/checklist/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * GET /api/project-progress/checklist - admin: semua checklist (judul,
- * proyek, jumlah item) sebagai sumber "Salin dari" saat membuat checklist
- * lokasi baru. Isi checklist tidak ikut - hanya yang perlu untuk memilih.
- */
 export async function GET(request: NextRequest) {
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;

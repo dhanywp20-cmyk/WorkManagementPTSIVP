@@ -1,8 +1,3 @@
-/**
- * uji/tujuan-lanjut.ts - ?lanjut= setelah login hanya boleh jalur internal (bukan open redirect).
- *
- * Jalankan: npx tsx uji/tujuan-lanjut.ts
- */
 import { tujuanLanjutAman } from '../lib/tujuan-lanjut';
 
 let lulus = 0, gagal = 0;

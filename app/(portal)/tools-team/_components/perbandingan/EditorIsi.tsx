@@ -1,7 +1,6 @@
 'use client';
-/** Editor kecil untuk pratinjau Product Comparison: teks bebas, atau satu nilai spesifikasi (teks, status, ✓, sumber). */
 import { useState } from 'react';
-import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan';
+import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan/inti';
 
 export type Sunting =
   | { jenis: 'teks'; judul: string; nilai: string; panjang?: boolean; simpan: (v: string) => void; hapus?: () => void }

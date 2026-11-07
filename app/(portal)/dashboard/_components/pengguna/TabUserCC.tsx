@@ -1,6 +1,5 @@
 'use client';
 
-/** TabUserCC - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, JabatanType, JABATAN_CONFIG } from '../shared';
 import React from 'react';
@@ -25,20 +24,13 @@ export function TabUserCC({ activeTab, autoSuggested, ccChecked, ccEligibleUsers
   return (
     <>
       {activeTab === 'user_cc' && (
-        /* flex-1 + min-h-0: isinya MENGISI tinggi panel, dan daftar di
-           dalamnya yang menggulir - bukan kotak setinggi 320px yang
-           menggulir sendiri sementara 178px di bawahnya kosong
-           menganga. Terukur sebelum perbaikan: kotak 320px memuat isi
-           634px, jadi separuh daftarnya tersembunyi padahal ruangnya ada. */
         <div className="flex-1 min-h-0 flex flex-col p-5 gap-4">
-          {/* Search user */}
           <div className="relative shrink-0">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <input aria-label="Cari nama user..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
           </div>
           <div className="flex-1 min-h-0 grid grid-cols-1 formulir:grid-cols-2 gap-5">
-            {/* Left: user list */}
             <div className="flex flex-col min-h-0">
               <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest shrink-0">Pilih User</p>
               <div className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1">
@@ -63,7 +55,6 @@ export function TabUserCC({ activeTab, autoSuggested, ccChecked, ccEligibleUsers
                 })}
               </div>
             </div>
-            {/* Right: CC targets */}
             <div className="flex flex-col min-h-0">
               {selectedUserObj ? (
                 <>

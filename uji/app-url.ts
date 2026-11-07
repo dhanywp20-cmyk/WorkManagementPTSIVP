@@ -1,12 +1,3 @@
-/**
- * uji/app-url.ts - tautan untuk orang lain tidak boleh membawa domain Preview Vercel.
- *
- * Bug 12 Okt 2026: link checklist tim & link "lihat saja" Project Progress yang disalin saat
- * menguji di Preview membawa domain `...-git-...vercel.app`, yang dikunci login Vercel - tim luar
- * terlempar ke halaman login ("link jadi private"). Sama halnya link di pesan WA.
- *
- * Jalankan: npm test -- app-url
- */
 import { readFileSync } from 'fs';
 import { adalahPreviewVercel } from '../lib/app-url';
 
@@ -24,7 +15,7 @@ cek('localhost BUKAN preview', !adalahPreviewVercel('localhost'));
 
 console.log('\n2. Semua pembuat link untuk orang lain memakai appBaseUrl');
 const sumber: Record<string, string> = {
-  'lib/checklist.ts (link tim isi checklist)': 'lib/checklist.ts',
+  'lib/checklist/inti.ts (link tim isi checklist)': 'lib/checklist/inti.ts',
   'ModalShare (link lihat saja)': 'app/(portal)/project-progress/_components/ModalShare.tsx',
   'ReminderDetailPopup (.ics)': 'app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx',
   'modal-kode-acara (link daftar)': 'app/(portal)/dashboard/_components/modal-kode-acara.tsx',

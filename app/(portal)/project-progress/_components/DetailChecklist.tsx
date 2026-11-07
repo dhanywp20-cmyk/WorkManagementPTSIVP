@@ -11,7 +11,7 @@ import {
   BATAS, KOLOM_TEMPLATE, formatTanggal, formatWaktu, keadaanJadwal, statDari,
   type ChecklistAnggota, type ChecklistBagian, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
   type DraftChecklist,
-} from '@/lib/checklist';
+} from '@/lib/checklist/inti';
 import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
   itemPerBagian, kirimFoto, progresDariStat,
@@ -35,22 +35,13 @@ const LABEL_AKSI: Record<string, string> = {
 
 const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold transition-colors';
 
-/**
- * Satu checklist lokasi. Hak dari server (detail.hak):
- *   admin -> semua, termasuk ubah info/jadwal, atur anggota, hapus
- *   edit  -> anggota yang di-assign: centang, kendala, foto, item, impor, link tim
- *   lain  -> hanya lihat
- */
 export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggota, namaSaya, daftarProyek, onBukaChecklist }: {
   id: string;
   onKembali: () => void;
   beritahu: (type: 'success' | 'error', msg: string) => void;
-  /** Menandai daftar proyek perlu dimuat ulang (dimuat saat kembali ke daftar, bukan sekarang). */
   onBerubah: () => void;
   calonAnggota: CalonAnggota[];
-  /** Nama yang tampil pada centang yang belum disimpan. */
   namaSaya: string;
-  /** Tujuan "Salin ke lokasi lain". */
   daftarProyek: ProyekPilihan[];
   onBukaChecklist: (id: string, proyekId: string) => void;
 }) {
@@ -91,7 +82,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   const gantiItem = (baru: ChecklistItem) => setDetail(d => d && { ...d, items: d.items.map(i => (i.id === baru.id ? baru : i)) });
 
   const hak = detail?.hak ?? { admin: false, edit: false };
-  // Centang & kendala ditampung sampai tombol Simpan ditekan - lihat tertunda.tsx.
   const t = useTertunda(detail?.items, namaSaya, 'admin');
   const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
   const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
@@ -104,7 +94,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
     t.aturKendala(item, kendala, catatan);
   };
 
-  /** Kirim semua centang & kendala yang tertunda dalam SATU permintaan. */
   const simpanCentang = async () => {
     if (!t.jumlah || menyimpanCentang) return;
     setMenyimpanCentang(true);
@@ -146,10 +135,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
     }
   };
 
-  /**
-   * Jalankan satu aksi ubah lalu terapkan hasilnya ke layar TANPA memuat
-   * ulang seluruh checklist (hemat egress). `terapkan` menerima jawaban server.
-   */
   const jalankan = async (body: Record<string, unknown>, sukses: string, tutup: () => void,
     terapkan: (hasil: Record<string, unknown>) => void) => {
     setMenyimpan(true);
@@ -266,7 +251,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
   return (
     <div className="space-y-4">
-      {/* Kepala */}
       <div className="rounded-xl p-4 space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <div className="flex items-start gap-3 flex-wrap">
           <button onClick={kembali} aria-label="Kembali ke proyek"
@@ -364,7 +348,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <div className="space-y-3 min-w-0">
-          {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek), teks lepas tidak terbaca di atasnya. */}
           <div className="flex items-center justify-between gap-2 flex-wrap rounded-xl px-4 py-2.5 shadow-xs"
             style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
             <p className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>
@@ -430,7 +413,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
           )}
         </div>
 
-        {/* Riwayat: siapa mengerjakan apa, kapan */}
         <aside className="rounded-xl overflow-hidden lg:sticky lg:top-20" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: NETRAL.tinta2 }}>Riwayat pengerjaan</p>
@@ -454,7 +436,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         </aside>
       </div>
 
-      {/* Form item */}
       <Modal buka={!!formItem} onTutup={() => !menyimpan && setFormItem(null)} ukuran="md" tutupDiLuar={false}
         judul={formItem?.mode === 'tambah' ? 'Tambah item' : 'Ubah item'}
         footer={<>
@@ -486,7 +467,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         )}
       </Modal>
 
-      {/* Form bagian */}
       <Modal buka={!!formBagian} onTutup={() => !menyimpan && setFormBagian(null)} ukuran="lg" tutupDiLuar={false}
         judul={formBagian?.bagian ? 'Ubah bagian' : 'Tambah bagian'}
         keterangan="Catatan mendukung teks, poin (- ...), dan tabel pipa (| a | b |)."
@@ -520,7 +500,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         )}
       </Modal>
 
-      {/* Form info & jadwal (admin) */}
       <Modal buka={!!formInfo} onTutup={() => !menyimpan && setFormInfo(null)} ukuran="lg" tutupDiLuar={false}
         judul="Ubah info & jadwal checklist"
         footer={<>
@@ -558,7 +537,6 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         )}
       </Modal>
 
-      {/* Anggota (admin) */}
       <Modal buka={!!formAnggota} onTutup={() => !menyimpan && setFormAnggota(null)} ukuran="md" tutupDiLuar={false} ikon="👥"
         judul="Anggota checklist" keterangan="Yang di-assign bisa mencentang, menandai kendala, mengunggah foto, dan mengubah item checklist ini."
         footer={<>

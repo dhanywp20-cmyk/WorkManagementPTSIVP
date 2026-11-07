@@ -15,7 +15,7 @@ sama.
 
 ## 🔴 A1 — 21 dari 22 saklar notifikasi di Admin Panel tidak berpengaruh
 
-**Berkas:** `lib/notifikasi/router.ts` · `lib/wa.ts:37` · `app/dashboard/_components/modal-integrasi.tsx:699`
+**Berkas:** `lib/notifikasi/router.ts` · `lib/wa/inti.ts:37` · `app/dashboard/_components/modal-integrasi.tsx:699`
 
 Admin Panel → Integrations → **Kanal & Event** menampilkan 22 kejadian dengan
 centang per kanal ("centang lewat kanal mana masing-masing dikabarkan").
@@ -156,7 +156,7 @@ detail tidak terbuka lagi tiap daftarnya di-fetch ulang, dan pembungkus
 
 Platform ini dijual ke perusahaan lain, dan perusahaan lain tidak punya tim
 bernama "Team PTS IVP". Daftar kelompok sudah bisa diatur admin
-(`lib/kelompok.ts`), tapi 19 berkas masih menyebut namanya langsung:
+(`lib/kelompok/inti.ts`), tapi 19 berkas masih menyebut namanya langsung:
 
 | Berkas | Jumlah |
 |---|---|
@@ -167,7 +167,7 @@ bernama "Team PTS IVP". Daftar kelompok sudah bisa diatur admin
 | `app/reminder-schedule/_components/ReminderFormModal.tsx` | 7 |
 | 14 berkas lain | @1–3 |
 
-`lib/kelompok.ts` (8) sah — itu daftar bawaannya sendiri.
+`lib/kelompok/inti.ts` (8) sah — itu daftar bawaannya sendiri.
 
 ### Koreksi & pembagian saat pengerjaan
 
@@ -192,7 +192,7 @@ pertama yang bisa diperbaiki tanpa menyentuh basis data:
 **b. False positive — tidak ada yang perlu diperbaiki.**
 `modal-admin-panel.tsx` sudah punya `FALLBACK_PALETTE` untuk kelompok yang
 tidak dikenal; tiga entri yang terdeteksi pemindai adalah warna pilihan untuk
-kelompok bawaan, bukan asumsi bahwa hanya ada tiga. `lib/kelompok.ts` sendiri
+kelompok bawaan, bukan asumsi bahwa hanya ada tiga. `lib/kelompok/inti.ts` sendiri
 sama — itu memang daftar bawaannya.
 
 **c. Terhalang SKEMA — SUDAH DIKERJAKAN.**
@@ -234,7 +234,7 @@ transisi itu — tempatnya memang di situ, dan hilang sendiri di langkah 4.
 tapi tidak pernah dipakai di mana pun.
 
 Sisa hardcode se-repo: **78 → 47**, dan yang tersisa adalah palet warna yang
-sudah bercadangan, daftar bawaan `lib/kelompok.ts` sendiri, serta dua fungsi
+sudah bercadangan, daftar bawaan `lib/kelompok/inti.ts` sendiri, serta dua fungsi
 transisi di atas.
 
 ---

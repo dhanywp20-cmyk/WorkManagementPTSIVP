@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalAlihkanSesi - dipecah dari app/(portal)/learning-center/_components/SessionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Modal, TombolModal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, QuizSession } from '../shared';
@@ -33,7 +32,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
           <TombolModal onClick={() => setShowReassign(false)} disabled={reassigning}>Batal</TombolModal>
           <TombolModal jenis="utama" onClick={() => { void handleReassign(); }} disabled={reassigning}>{reassigning ? 'Menyimpan...' : 'Tugaskan Sekarang'}</TombolModal>
         </>}>
-            {/* Info materi — read-only */}
             <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 flex-wrap">
               <span className="text-sm"><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div className="flex-1 min-w-0">
@@ -44,7 +42,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
             </div>
 
             <div className="pt-4 space-y-4">
-              {/* Nama Sesi */}
               <div>
                 <label htmlFor="f-learning-center-components-sessionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
                 <input id="f-learning-center-components-sessionspage-9" value={reassignForm.session_name}
@@ -53,7 +50,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                   placeholder="Nama sesi untuk target baru..." />
               </div>
 
-              {/* Pengaturan ringkas */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label htmlFor="f-learning-center-components-sessionspage-10" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
@@ -83,7 +79,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                 </div>
               </div>
 
-              {/* Waktu buka / tutup */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="f-learning-center-components-sessionspage-12" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
@@ -99,7 +94,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                 </div>
               </div>
 
-              {/* Target Penerima */}
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2"><IkonTeks nama="👥" />Target Penerima</label>
                 <div className="flex gap-2 mb-3 flex-wrap">
@@ -150,8 +144,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                   <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
                     {uniqueDivisions.length === 0 && <p className="text-xs text-slate-500 text-center py-3">Tidak ada sales division ditemukan</p>}
                     {uniqueDivisions
-                      // Divisi terpilih tetap tampil walau tidak cocok kata kunci -
-                      // alasan yang sama dengan daftar anggota di bawah.
                       .filter(div => !cariDivisiUlang.trim()
                         || reassignForm.target_divisions.includes(div)
                         || div.toLowerCase().includes(cariDivisiUlang.trim().toLowerCase()))
@@ -181,10 +173,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                     {teamUsers.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Tidak ada user ditemukan</p>}
                     {(() => {
                       const q = cariAnggotaUlang.trim().toLowerCase();
-                      // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
-                      // dengan kata kunci - kalau tidak, pilihan yang sudah dibuat
-                      // seolah hilang begitu kata kuncinya diganti, dan mudah
-                      // dikira ikut terhapus.
                       const tampil = q
                         ? teamUsers.filter(u =>
                             reassignForm.target_user_ids.includes(u.id) ||
@@ -215,7 +203,6 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                   </div>
                 )}
 
-                {/* Summary */}
                 {reassignForm.target_mode === 'role' && reassignForm.target_roles.length > 0 && (
                   <p className="text-xs text-indigo-600 font-semibold mt-1.5">
                     ✓ {reassignForm.target_roles.length} role · {teamUsers.filter(u => reassignForm.target_roles.includes((u.role ?? '').toLowerCase())).length} user

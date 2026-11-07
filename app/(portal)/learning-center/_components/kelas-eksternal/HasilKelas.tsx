@@ -1,15 +1,13 @@
 'use client';
 
-/** Peserta & nilai satu Kelas Eksternal (nilai terakhir tiap peserta) + unduh CSV. Kuis Live: papan skor per sesi. */
 import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
-import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal';
+import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kuis/kelas-eksternal';
 
 const LABEL_OTOMATIS: Record<string, string> = { waktu: 'Waktu habis', pelanggaran: 'Batas pelanggaran', diakhiri: 'Diakhiri admin' };
 const SINGKAT: Record<JenisPelanggaran, string> = { pindah_tab: 'Tab', keluar_jendela: 'Jendela', salin_tempel: 'Salin' };
 
-/** Perusahaan & kontak peserta (migrasi 054) - kosong untuk kelas "Nama saja". */
 interface DataPeserta { instansi?: string | null; kontak?: string | null; izin_kontak?: boolean }
 const kolomData = ['Perusahaan', 'Kontak', 'Bersedia dihubungi'];
 const isiData = (d: DataPeserta) => [d.instansi ?? '', d.kontak ?? '', d.kontak ? (d.izin_kontak ? 'Ya' : 'Tidak') : ''];
@@ -133,7 +131,6 @@ interface HasilLive {
   papan: ({ peserta_id: string; nama: string; poin: number; benar: number; dijawab: number; waktuBenarMs: number; peringkat: number } & DataPeserta)[];
 }
 
-/** Kuis Live: peringkat akhir satu sesi (tanpa nilai lulus) + CSV. */
 function PapanLive({ judul, live, onSesi, onTutup }: { judul: string; live: HasilLive; onSesi: (s: number) => void; onTutup: () => void }) {
   const rata = (b: HasilLive['papan'][number]) => (b.benar ? (b.waktuBenarMs / b.benar / 1000).toFixed(1) : '-');
   const unduh = () => {

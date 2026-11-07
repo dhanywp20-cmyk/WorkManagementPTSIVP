@@ -2,18 +2,6 @@
 import { ModalPortal } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-/**
- * Panduan pasang aplikasi ke HP - langkah MANUAL lewat menu peramban, bukan
- * mengandalkan banner otomatis (PwaBootstrap) yang punya syarat kemunculan
- * sendiri di Chrome (butuh sinyal keterlibatan tertentu, bisa jadi tidak
- * pernah tampil untuk sebagian orang) dan TIDAK PERNAH tampil di Safari
- * (iOS tidak punya event install sama sekali).
- *
- * Ditaruh sebagai tautan yang SELALU ada di layar login - bukan cuma
- * menunggu banner muncul sendiri - supaya sales/tim yang bukan admin punya
- * satu tempat pasti untuk mencari tahu caranya, kapan pun mereka butuh,
- * tanpa perlu diajari admin satu-satu.
- */
 export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string; onClose: () => void }) {
   return (
     <ModalPortal>
@@ -30,7 +18,6 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Android */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black shrink-0" style={{ background: '#16a34a' }}>A</div>
@@ -51,7 +38,6 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
               </ol>
             </div>
 
-            {/* iPhone */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black shrink-0" style={{ background: '#1f2937' }}></div>

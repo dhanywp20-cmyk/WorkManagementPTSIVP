@@ -1,6 +1,5 @@
 'use client';
 
-/** PopupNotifikasiBaru - ringkasan ticket yang perlu perhatian saat halaman dibuka. Semua keadaan tetap milik induk. */
 import { Modal, TombolModal } from '@/components/shared';
 import { Ticket } from './shared';
 import { BarisNotifikasiTicket } from './PopupDaftarNotifikasi';

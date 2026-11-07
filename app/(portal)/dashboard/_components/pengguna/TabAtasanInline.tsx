@@ -1,6 +1,5 @@
 'use client';
 
-/** TabAtasanInline - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User } from '../shared';
 import React from 'react';
@@ -27,7 +26,6 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
     <>
       {activeTab === 'atasan' && (
         <div className="p-5 space-y-5">
-          {/* Add form */}
           <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
             <p className="text-xs font-bold text-amber-700 mb-3"><IkonTeks nama="➕" />Tambah Mapping Atasan</p>
             <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
@@ -52,7 +50,6 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
               </div>
             </div>
           </div>
-          {/* List */}
           <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
             {filteredAtasanByDiv.map(([div, maps]) => (
               <div key={div} className="rounded-xl border border-amber-200 overflow-hidden">

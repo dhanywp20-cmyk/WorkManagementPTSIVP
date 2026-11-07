@@ -2,17 +2,10 @@
 
 import React from 'react';
 
-
 import { MonthBarChart, TrendBadge, ModalPortal } from '@/components/shared';
 
-import { KPIMember, PeriodKey, warnaTim, KPI_COLOR, progressColor } from './shared';
+import { KPIMember, PeriodKey, warnaTim, progressColor } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-
-/**
- * Popup rincian satu metrik KPI, berikut dua komponen kecil yang hanya dipakai di dalamnya.
- */
-
-// Drill-down Modal
 
 export function DrillModal({ member, onClose, period, onViewBreakdown }: { member: KPIMember; onClose: () => void; period: PeriodKey; onViewBreakdown?: () => void }) {
   const solveRate = member.ticketsHandled > 0 ? Math.round((member.ticketsSolved / member.ticketsHandled) * 100) : 0;
@@ -27,7 +20,6 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden flex flex-col"
         style={{ maxHeight: '100%' }}>
 
-        {/* Header */}
         <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center gap-3 shrink-0 relative">
           <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div className="flex items-center gap-3">
@@ -46,7 +38,6 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
         <div className="p-5 space-y-5 overflow-y-auto flex-1 min-h-0">
 
-          {/* Ticket Stats */}
           <section>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="🎫" />Ticketing</p>
             <div className="grid grid-cols-3 gap-2 mb-3">
@@ -57,7 +48,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
-                  <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
+                  <span className="text-lg sm:text-2xl sm:leading-8 font-black leading-none" style={{ color: s.c }}>{s.value}</span>
                   <span className="text-[11px] text-slate-500 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
@@ -85,7 +76,6 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
             </div>
           </section>
 
-          {/* Reminder */}
           <section>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📅" />Reminder Schedule</p>
             <div>
@@ -101,7 +91,6 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
             </div>
           </section>
 
-          {/* Learning Center */}
           <section>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📚" />Learning Center</p>
             <div className="grid grid-cols-3 gap-2">
@@ -112,14 +101,13 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
-                  <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
+                  <span className="text-lg sm:text-2xl sm:leading-8 font-black leading-none" style={{ color: s.c }}>{s.value}</span>
                   <span className="text-[11px] text-slate-500 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Piket */}
           <section>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2"><IkonTeks nama="🏪" />Piket Showroom</p>
             <div className="flex items-center gap-3">
@@ -128,17 +116,11 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
             </div>
           </section>
 
-          {/* Monthly Trend */}
           <section>
             <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📈" />Trend Ticket per Bulan</p>
             <MonthBarChart values={member.monthlyTickets} color={teamColor} />
           </section>
 
-          {/* M14 (docs/UX-WORKFLOW-AUDIT.md): modal ini (dibuka dari klik baris
-              tabel - jalur paling wajar) dulu cuma angka mentah tanpa konteks
-              "apa yang harus diperbaiki". Breakdown per-bobot yang actionable
-              sudah ada di modal lain (chip kecil "Penilaian KPI") - dihubungkan
-              di sini alih-alih dibangun ulang. */}
           {onViewBreakdown && (
             <button onClick={onViewBreakdown}
               className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-1.5"
@@ -167,7 +149,7 @@ export function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBett
         <span className="text-sm"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.56)' }}>{label}</span>
       </div>
-      <div className="text-lg sm:text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>
+      <div className="text-lg sm:text-2xl sm:leading-8 font-black leading-none tracking-tight" style={{ color }}>{value}</div>
       <div className="flex items-center justify-between gap-1 min-h-[14px]">
         {sub && <span className="text-[11px] text-slate-500 truncate">{sub}</span>}
         {trend !== undefined && <TrendBadge delta={trend} lowerIsBetter={lowerIsBetter} />}
@@ -175,8 +157,6 @@ export function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBett
     </div>
   );
 }
-
-// Sub-components
 
 export function ProgressBar({ value, max, showPct = true, h = 6 }: { value: number; max: number; showPct?: boolean; h?: number }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;

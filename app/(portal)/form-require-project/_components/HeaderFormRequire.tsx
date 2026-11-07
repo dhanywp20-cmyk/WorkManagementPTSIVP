@@ -1,6 +1,5 @@
 'use client';
 
-/** HeaderFormRequire - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { PageHeader } from '@/components/shared';
 import { Z } from '@/lib/z-index';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -19,7 +18,6 @@ export function HeaderFormRequire({ bellDropdownOpen, handleOpenDetail, pimpinan
   return (
     <>
       <PageHeader icon="🏗️" title="Request Design Project" subtitle="IVP Product — AV Solution Request">
-        {/* Bell notif — tiket pending/in_progress */}
         {(() => {
           const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
           if (activeTickets.length === 0) return null;

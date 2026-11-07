@@ -72,7 +72,6 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
         </div>
       </div>
 
-      {/* Selected day events */}
       {selectedCalDay && (() => {
         const dayRems = reminders.filter(r => r.due_date === selectedCalDay);
         return dayRems.length > 0 ? (

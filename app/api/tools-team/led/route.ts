@@ -1,19 +1,5 @@
-/**
- * /api/tools-team/led - hitungan Kalkulator LED yang disimpan untuk tim.
- *
- *   GET              siapa pun yang masuk: daftar (ringkasan, tanpa isian), ?q= cari.
- *   GET ?id=         satu hitungan lengkap untuk dibuka lagi.
- *   POST {id?, nama, data, ringkasan}
- *                    simpan. Tanpa id = baru. Dengan id = timpa, hanya pembuat
- *                    atau Admin/Full Access; lainnya 403 -> peramban menyimpan
- *                    sebagai salinan.
- *   DELETE ?id=      pembuat atau Admin/Full Access.
- *
- * Tabel tools_led_simpan ber-RLS tanpa policy (migrasi 029): hanya service
- * role di sini yang menyentuhnya, sesi diperiksa di server.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';

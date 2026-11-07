@@ -1,10 +1,9 @@
 'use client';
-/** Ekspor Kalkulator LED: ringkasan teks, lembar cetak & PNG (LED, BOM / penawaran, Screen & Power Connection). */
 import { bukaCetak, diagramSusunan, type Info, type Lembar, namaBerkas, unduhLembarPNG } from '../bersama/cetak';
 import { f } from '../bersama/ui';
 import { ringkasanDaya, seksiCetakDaya } from './daya/teks';
 import { ringkasanKoneksi, seksiCetakKoneksi } from './koneksi/teks';
-import { KECERAHAN } from '@/lib/av-hitung';
+import { KECERAHAN } from '@/lib/av/hitung';
 import { rupiah } from './data';
 import { isiLembarBom } from '../bersama/TabelBom';
 import type { KeadaanLED } from './useKeadaanLED';
@@ -26,7 +25,6 @@ export function useEksporLED(K: KeadaanLED) {
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
-  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web; juga diekspor sebagai PNG. */
   const lembarLED = (): Lembar => {
     const satu = (judul: string, nilai: string, sorot = false): Info => ({ label: judul, nilai, sorot });
     const kali = (v: string) => (n > 1 ? `${v} / screen` : v);
@@ -93,7 +91,6 @@ export function useEksporLED(K: KeadaanLED) {
   const cetak = () => bukaCetak(lembarLED());
   const pngLED = () => unduhLembarPNG(lembarLED(), namaBerkas('LED', labelLED, project, customer));
 
-  /** Lembar daftar material; dengan harga = penawaran (quotation). */
   const lembarBom = (): Lembar => ({
     judul: adaHarga ? 'Penawaran LED Videotron' : 'Daftar Material LED Videotron',
     subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),

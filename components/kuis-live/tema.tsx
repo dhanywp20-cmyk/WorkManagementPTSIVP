@@ -1,13 +1,8 @@
 'use client';
 
-/**
- * Tema Kuis Live (ala Kahoot) - dipakai layar peserta (/kelas/<token>) dan layar host admin.
- * Warna tiap pilihan sama persis di kedua layar, supaya peserta yang melihat proyektor cukup
- * mencocokkan warna (tanpa simbol - permintaan admin).
- */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Pilihan } from '@/lib/kelas-eksternal';
-import { teksDiAtas } from '@/lib/kuis-live';
+import type { Pilihan } from '@/lib/kuis/kelas-eksternal';
+import { teksDiAtas } from '@/lib/kuis/live';
 
 export const UNGU = '#46178f';
 export const UNGU_TUA = '#25076b';
@@ -17,19 +12,13 @@ export const MERAH = '#e21b3c';
 export const PILIHAN_KUIS: readonly Pilihan[] = ['A', 'B', 'C', 'D'];
 export const WARNA_PILIHAN: Record<Pilihan, string> = { A: '#e21b3c', B: '#1368ce', C: '#d89e00', D: '#26890c' };
 
-/** Ukuran huruf menyesuaikan panjang teks, supaya soal/jawaban panjang tetap muat tanpa terpotong. */
 export function ukuranTeks(teks: string, tangga: [number, number][]): number {
   for (const [batas, px] of tangga) if (teks.length <= batas) return px;
   return tangga[tangga.length - 1][1];
 }
 
-/** Tampilan per kuis yang diatur admin: warna tema, logo event, gambar latar. */
 export interface TemaKuis { warna: string | null; logo: string | null; latar: string | null }
 
-/**
- * Latar layar kuis: gambar latar event (digelapkan supaya tulisan tetap terbaca) atau warna tema
- * bermotif samar seperti Kahoot. `warna` menimpa tema - dipakai layar Benar (hijau) / Salah (merah).
- */
 export function LatarKuis({ children, tema, warna, className = '' }: { children: React.ReactNode; tema?: TemaKuis | null; warna?: string; className?: string }) {
   const dasar = warna ?? tema?.warna ?? UNGU;
   const gambar = !warna && tema?.latar;
@@ -45,25 +34,21 @@ export function LatarKuis({ children, tema, warna, className = '' }: { children:
         <div aria-hidden="true" className="pointer-events-none absolute top-1/3 -right-16 w-48 h-48 rotate-12 rounded-3xl bg-white/5" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-10 w-96 h-96 rotate-45 bg-black/8" />
       </>}
-      {/* Warna tema yang sangat terang: digelapkan sedikit supaya tulisan putih tetap terbaca. */}
       {terang && <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/35" />}
       <div className="relative">{children}</div>
     </div>
   );
 }
 
-/** Logo event di atas kotak putih (logo gelap tetap terlihat di latar gelap). */
 export function LogoEvent({ url, tinggi = 40, className = '' }: { url: string | null | undefined; tinggi?: number; className?: string }) {
   if (!url) return null;
   return (
     <span className={`inline-flex items-center justify-center rounded-xl bg-white/95 px-2.5 py-1.5 shadow-md ${className}`}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt="Logo event" style={{ height: tinggi, width: 'auto', maxWidth: tinggi * 4 }} className="object-contain" />
     </span>
   );
 }
 
-/** Kemajuan kuis: "Soal x dari N" + bilah bersegmen. */
 export function BilahSoal({ indeks, total, selesai = false, terang = true }: { indeks: number; total: number; selesai?: boolean; terang?: boolean }) {
   const jadi = selesai ? total : indeks;
   return (
@@ -81,7 +66,6 @@ export function BilahSoal({ indeks, total, selesai = false, terang = true }: { i
   );
 }
 
-/** Sisa waktu soal: bilah yang menyusut + angka detik. */
 export function BilahWaktu({ sisaMs, durasiMs }: { sisaMs: number; durasiMs: number }) {
   const r = Math.max(0, Math.min(1, sisaMs / Math.max(1, durasiMs)));
   const detik = Math.ceil(sisaMs / 1000);
@@ -95,7 +79,6 @@ export function BilahWaktu({ sisaMs, durasiMs }: { sisaMs: number; durasiMs: num
   );
 }
 
-/** Hitung mundur besar sebelum pilihan muncul. */
 export function HitungMundur({ sisaMs }: { sisaMs: number }) {
   const n = Math.max(1, Math.ceil(sisaMs / 1000));
   return (
@@ -106,17 +89,11 @@ export function HitungMundur({ sisaMs }: { sisaMs: number }) {
   );
 }
 
-/**
- * Jam server di peramban: selisih jam perangkat vs server diukur dari tiap respons (sampel dengan
- * jeda jaringan terpendek yang dipakai), supaya hitung mundur di semua perangkat serentak walau
- * jam HP peserta melenceng.
- */
 export function useJamServer() {
   const selisih = useRef(0);
   const rttTerbaik = useRef(Number.POSITIVE_INFINITY);
   const catat = useCallback((sekarangServer: number, t0: number, t1: number) => {
     const rtt = t1 - t0;
-    //  Sampel lama bisa basi (jam HP disetel ulang) - beri sedikit kelonggaran supaya tetap diperbarui.
     if (rtt <= rttTerbaik.current + 150) {
       rttTerbaik.current = Math.min(rttTerbaik.current, rtt);
       selisih.current = sekarangServer - (t0 + rtt / 2);
@@ -126,7 +103,6 @@ export function useJamServer() {
   return { catat, sekarang };
 }
 
-/** Render ulang berkala selama `aktif` (untuk bilah waktu & hitung mundur). */
 export function useDetak(aktif: boolean, ms = 200) {
   const [, setN] = useState(0);
   useEffect(() => {
@@ -139,7 +115,6 @@ export function useDetak(aktif: boolean, ms = 200) {
 const angka = (n: number) => n.toLocaleString('id-ID');
 export { angka as formatPoin };
 
-/** Podium juara 1-3 (urutan tampil 2-1-3 seperti Kahoot). */
 export function Podium({ juara, besar = false }: { juara: { nama: string; poin: number; peringkat: number }[]; besar?: boolean }) {
   const tinggi = besar ? { 1: 'h-40', 2: 'h-28', 3: 'h-20' } : { 1: 'h-32', 2: 'h-24', 3: 'h-16' };
   const susunan = [juara[1], juara[0], juara[2]];

@@ -1,10 +1,3 @@
-/**
- * uji/versi-web.ts - kapan halaman yang lama terbuka memeriksa versi web & kapan ajakan muat ulang muncul
- * (lib/versi-web.ts). Latar: aplikasi Android menjalankan kode web lama berhari-hari - perbaikan sesi 400 hari
- * tidak sampai ke HP.
- *
- * Jalankan: npx tsx uji/versi-web.ts
- */
 import { readFileSync } from 'fs';
 import { adaVersiBaru, JEDA_PERIKSA_MS, perluPeriksa } from '../lib/versi-web';
 

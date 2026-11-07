@@ -3,9 +3,10 @@ import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   catatPercobaan, getClientIp, muatUserMasuk, PESAN_TERKUNCI, sedangTerkunci, selesaikanMasuk,
-} from '@/lib/masuk-server';
-import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/dua-faktor-server';
-import { buatTantangan } from '@/lib/tantangan-2fa';
+} from '@/lib/auth/masuk-server';
+import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/auth/dua-faktor-server';
+import { buatTantangan } from '@/lib/auth/tantangan-2fa';
+import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    // Lockout brute-force (lib/masuk-server.ts): ketat per username, longgar per IP (NAT kantor).
     if (await sedangTerkunci(supabase, username, ip)) {
       return NextResponse.json({ error: PESAN_TERKUNCI }, { status: 429 });
     }
@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // Ambil password hash dari user_credentials
     const { data: cred } = await supabase
       .from('user_credentials')
       .select('password_hash')
@@ -39,37 +38,22 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!cred?.password_hash) {
-      // Tidak ada credential - akun belum dimigrasi atau tidak punya password
       await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Akun belum aktif. Hubungi admin.' }, { status: 401 });
     }
 
-    // Verifikasi password
     const stored = cred.password_hash;
-    const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
-    let valid = false;
-
-    if (isHashed) {
-      valid = await bcrypt.compare(password, stored);
-    } else {
-      // Plaintext tersisa - bandingkan lalu upgrade ke bcrypt
-      valid = stored === password;
-      if (valid) {
-        const hash = await bcrypt.hash(password, 12);
-        await supabase.from('user_credentials')
-          .update({ password_hash: hash })
-          .eq('user_id', user.id);
-      }
-    }
+    const valid = (stored.startsWith('$2b$') || stored.startsWith('$2a$')) && await bcrypt.compare(password, stored);
 
     if (!valid) {
       await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // Verifikasi dua langkah (migrasi 049). Password benar belum berarti masuk: akun ber-2FA,
-    // atau admin saat "wajib 2FA admin" menyala, menerima tiket 5 menit untuk /api/auth/login-2fa.
-    // Gagal membaca status 2FA = tolak (jangan sampai galat basis data melewatkan 2FA).
+    if (akunTertunda(user)) {
+      return NextResponse.json({ error: PESAN_TERTUNDA }, { status: 403 });
+    }
+
     if (process.env.SUPABASE_JWT_SECRET) {
       let baris;
       try { baris = await baca2FA(supabase, user.id); } catch {

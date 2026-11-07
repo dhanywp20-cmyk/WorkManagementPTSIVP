@@ -5,20 +5,12 @@ import { Ikon } from '@/components/shared/Ikon';
 import { Angka, f, Segmen, Catatan } from '../../bersama/ui';
 import { type HasilKontur, type Kontur, konturDariPiksel, type ModeLatar } from '../impor/kontur';
 
-/**
- * "Objek dari gambar": foto / gambar patung, tampak gedung, logo, atau sketsa bidang dari user
- * menjadi objek 3D untuk mapping - siluet diekstrusi setebal yang diisi (volume) atau panel tipis.
- * Latar dibuang otomatis (PNG transparan / warna latar dari tepi gambar), garis tepinya terlihat
- * di pratinjau sebelum objek dibuat.
- */
-
 export interface HasilObjekGambar {
   nama: string; kontur: Kontur;
-  /** Foto yang sudah dipotong ke kotak batas objek (maks 1280 px) - jadi tekstur permukaan depan. */ foto: HTMLCanvasElement | null;
+   foto: HTMLCanvasElement | null;
   w: number; h: number; d: number;
 }
 
-/** Sisi terpanjang gambar yang dianalisis (piksel): cukup halus, tetap cepat di HP. */
 const SISI_ANALISIS = 320;
 const SISI_FOTO = 1280;
 const PRATINJAU = { w: 520, h: 300 };
@@ -40,7 +32,6 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
   const [tinggi, setTinggi] = useState(2);
   const [foto, setFoto] = useState(true);
 
-  //  Tutup = mulai bersih lagi berikutnya (gambar besar tidak tertahan di memori).
   useEffect(() => { if (!buka) { setGambar(null); setGalat(''); } }, [buka]);
 
   const pilihBerkas = (file: File | null) => {
@@ -54,7 +45,6 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
     img.src = url;
   };
 
-  /** Piksel gambar yang dianalisis (diperkecil) - dihitung sekali per gambar. */
   const analisis = useMemo(() => {
     if (!gambar) return null;
     const { img } = gambar, k = Math.min(1, SISI_ANALISIS / Math.max(img.naturalWidth, img.naturalHeight));
@@ -72,7 +62,6 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
   const rasio = hasil ? (hasil.kotak.x1 - hasil.kotak.x0) / Math.max(1, hasil.kotak.y1 - hasil.kotak.y0) : 1;
   const lebar = tinggi * rasio;
 
-  //  Pratinjau: gambar + latar yang dibuang diredupkan + garis tepi siluet.
   useEffect(() => {
     const c = kanvas.current; if (!c || !gambar || !analisis) return;
     const k = Math.min(PRATINJAU.w / analisis.w, PRATINJAU.h / analisis.h);
@@ -80,7 +69,6 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
     c.width = w * dpr; c.height = h * dpr; c.style.width = `${w}px`; c.style.height = `${h}px`;
     const g = c.getContext('2d'); if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    //  Papan catur = area transparan.
     for (let y = 0; y < h; y += 10) for (let x = 0; x < w; x += 10) { g.fillStyle = (x + y) % 20 ? '#e2e8f0' : '#f8fafc'; g.fillRect(x, y, 10, 10); }
     g.drawImage(gambar.img, 0, 0, w, h);
     if (!hasil) return;
@@ -89,7 +77,6 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
     const jalur = new Path2D();
     const tambah = (p: number[]) => { jalur.moveTo(px(p[0]), py(p[1])); for (let i = 2; i < p.length; i += 2) jalur.lineTo(px(p[i]), py(p[i + 1])); jalur.closePath(); };
     for (const b of hasil.kontur) { tambah(b.l); for (const hl of b.h ?? []) tambah(hl); }
-    //  Latar diredupkan: seluruh kanvas dikurangi siluet (aturan genap-ganjil).
     const luar = new Path2D(); luar.rect(0, 0, w, h); luar.addPath(jalur);
     g.fillStyle = 'rgba(15,23,42,0.55)'; g.fill(luar, 'evenodd');
     g.lineWidth = 2; g.strokeStyle = '#f43f5e'; g.stroke(jalur);

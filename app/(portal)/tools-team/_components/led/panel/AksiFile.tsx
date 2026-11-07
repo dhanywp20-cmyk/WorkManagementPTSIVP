@@ -1,5 +1,4 @@
 'use client';
-/** Tombol buka / simpan hitungan & undo-redo. */
 import { FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
 import type { AlatLED } from './alat';
 

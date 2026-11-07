@@ -1,9 +1,8 @@
 'use client';
 
-/** useProyekLama - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { useMemo } from 'react';
 import { Reminder } from './shared';
-import { normalkanNama } from '@/lib/kelompok-insentif';
+import { normalkanNama } from '@/lib/incentive/kelompok';
 import { type JadwalRequest } from './RequestJadwalModal';
 
 export interface ProyekLamaKonteks {
@@ -53,13 +52,6 @@ export function useProyekLama(k: ProyekLamaKonteks) {
     setLangkahBuat('pilih');
   };
 
-  /**
-   * Pemicu untuk role Sales/Guest - sebelumnya "Request Jadwal" langsung
-   * membuka RequestJadwalModal kosong, tanpa lewat pemilihan tipe project
-   * sama sekali. Sekarang memakai DUA LANGKAH YANG SAMA dengan jalur admin;
-   * yang membedakan hanya `buatUntukGuest`, dipakai di 'pilih' untuk teks dan
-   * di konfirmasiProyekLama untuk menentukan form mana yang dibuka.
-   */
   const mulaiRequestJadwal = () => {
     setBuatUntukGuest(true);
     setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
@@ -69,19 +61,11 @@ export function useProyekLama(k: ProyekLamaKonteks) {
   const konfirmasiProyekLama = () => {
     if (!praPilihProyek) return;
     const n = normalkanNama(praPilihProyek.project_name);
-    // Sengaja dari `reminders` yang SUDAH termuat di halaman ini, bukan kueri
-    // baru. Untuk akun Sales/Guest, fetchRemindersForUser hanya memuat baris
-    // miliknya sendiri (lihat catatan di sana) - jadi daftar ini otomatis
-    // tidak pernah memuat project sales lain, tanpa saringan tambahan di sini.
     const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
     setProyekLamaTerpilih(sebatch);
     setLangkahBuat(null);
 
     if (buatUntukGuest) {
-      // JadwalRequest tidak punya sales_name/assign_name - pelakunya sudah
-      // pasti currentUser, jadi tidak perlu (dan tidak boleh) disalin dari
-      // baris lama, yang bisa saja milik Sales External lain yang sedang
-      // di-CC-kan (SBU) ke akun ini.
       setPraFillGuest({
         project_name: praPilihProyek.project_name || '',
         address: praPilihProyek.address ?? '',

@@ -1,8 +1,7 @@
 'use client';
 
-/** BagianPenilaianKPI - dipecah dari app/(portal)/kpi-team/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { lingkupSaya } from '@/lib/kelompok';
+import { lingkupSaya } from '@/lib/kelompok/inti';
 import { KPIUser, KPIMember, KPISettings, warnaTim } from './shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import React from 'react';
@@ -31,7 +30,6 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
   return (
     <>
       <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
-        {/* Header */}
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
@@ -40,7 +38,6 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
             </span>
             {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin shrink-0" />}
           </div>
-          {/* KPI period controls */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <div className="flex rounded-lg border border-slate-200 overflow-hidden">
               {(['6m','1y'] as const).map(p => (
@@ -74,7 +71,6 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
           </div>
         </div>
 
-        {/* Legend */}
         <div className="mx-4 mt-3 px-3 py-2.5 rounded-xl text-[11px] text-sky-700 leading-relaxed"
           style={{ background: '#f0f9ff', border: '1px solid #bae6fd' }}>
           <b><IkonTeks nama="📌" />Keterangan:</b> Data ✅ otomatis dari platform.&nbsp;
@@ -83,7 +79,6 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
           <b><IkonTeks nama="📝" />R&D</b> (nilai penuh jika ≥{kpiSettings.rndTarget} tech note/tahun). Klik kartu untuk detail.
         </div>
 
-        {/* Member chips */}
         {kpiLoading ? (
           <div className="flex items-center justify-center py-10">
             <div className="w-6 h-6 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin" />
@@ -91,9 +86,6 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
         ) : kpiFiltered.length === 0 ? (
           <p className="text-center py-10 text-slate-500 text-sm">Tidak ada anggota dengan KPI aktif. Aktifkan kpi_enabled di user management.</p>
         ) : (() => {
-          // Urutan & isinya mengikuti lingkup akun ini - lihat catatan di
-          // pemuatan anggota. Kelompok di luar lingkup tidak pernah sampai
-          // ke kpiFiltered, jadi baris ini hanya menentukan urutan tampil.
           const teams = lingkupSaya(currentUser?.id);
           const rows = filterTeam === 'all'
             ? teams.map(tt => ({ tt, ms: kpiFiltered.filter(m => m.team_type === tt) })).filter(r => r.ms.length > 0)

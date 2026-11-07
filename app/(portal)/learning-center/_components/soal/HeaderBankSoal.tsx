@@ -1,6 +1,5 @@
 'use client';
 
-/** HeaderBankSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { Question, SearchInput } from '../shared';
 import { DIFF_BG, DIFF_BORDER, DIFF_TEXT } from '../QuestionsPage';
@@ -25,7 +24,6 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
       <div className="sticky top-0 z-10 bg-white shadow-xs border-b border-slate-200">
         <div className="flex items-center justify-between px-6 py-4 gap-4">
           <div className="min-w-0">
-            {/* Breadcrumb */}
             <div className="flex items-center gap-1 text-xs text-slate-500 mb-1 flex-wrap">
               <span className="font-medium">Bank Soal</span>
               <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +82,6 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </button>
           </div>
         </div>
-        {/* Stats bar */}
         <div className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border-t border-slate-100 flex-wrap">
           <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-xs">
             Total: {filteredQuestions.length}

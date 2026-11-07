@@ -1,23 +1,15 @@
 'use client';
 
-/**
- * Kelas Eksternal Learning Center - halaman CUSTOMER (publik, tanpa login, tanpa header platform).
- * Alur: isi nama (+ perusahaan/kontak bila diminta) -> (mode admin: ruang tunggu sampai pengajar menekan
- * Mulai) -> kerjakan quiz -> nilai (+ sertifikat bila lulus).
- * Perangkat yang sama dikenali (token di localStorage),
- * jadi membuka link lagi melanjutkan / menampilkan nilai, bukan mendaftar ulang.
- */
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Award, Clock, FileQuestion, Loader2, Lock, Printer, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
-import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
-import { cetakSertifikat, unduhSertifikat, type DataSertifikat } from '@/app/(portal)/learning-center/_components/sertifikat';
+import type { AlasanKirimOtomatis } from '@/lib/kuis/kelas-eksternal';
+import { cetakSertifikat, unduhSertifikat, type DataSertifikat } from '@/lib/kuis/sertifikat-cetak';
 import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './_bagian/IsianPeserta';
 import { adalahLive, hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type InfoLive, type Percobaan } from './_bagian/api';
 import { KuisLive } from './_bagian/KuisLive';
 import { LayarQuiz } from './_bagian/LayarQuiz';
 
-/** Ruang tunggu mode admin: cek tiap 4 dtk apakah pengajar sudah menekan Mulai. */
 const CEK_MULAI_MS = 4000;
 
 function Kartu({ children }: { children: React.ReactNode }) {
@@ -49,7 +41,6 @@ export default function HalamanKelas() {
     const r = await panggilKelas<InfoKelas | InfoLive>(token);
     if (!r.ok) { setGalat(r.data.error || 'Link kelas tidak ditemukan.'); return; }
     document.title = r.data.kelas.judul;
-    //  Kuis Live punya alurnya sendiri (KuisLive) - halaman ini hanya meneruskan.
     if (adalahLive(r.data)) { setLive(r.data); return; }
     setInfo(r.data);
     setHasil(r.data.hasil);
@@ -76,7 +67,6 @@ export default function HalamanKelas() {
     setSibuk(false);
     if (r.ok) { setPercobaan(r.data); setHasil(null); return; }
     if (r.data.hasil) { setHasil(r.data.hasil); return; }
-    //  Masuk ruang tunggu: muat ulang info supaya jumlah peserta hadir langsung termasuk diri sendiri.
     if (r.data.menunggu) { setInfo(i => (i ? { ...i, menunggu: true } : i)); void muat(); return; }
     setPesan(r.data.error || 'Gagal memulai.');
   };

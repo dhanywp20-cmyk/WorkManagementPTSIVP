@@ -1,5 +1,4 @@
 'use client';
-/** Kartu analisis tampilan: aturan 4-6-8, jarak penonton terjauh, sudut nyaman per display. */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih } from '../../bersama/ui';
 import type { AlatDesain } from './alat';
 

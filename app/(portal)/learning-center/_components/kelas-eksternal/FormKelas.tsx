@@ -1,15 +1,11 @@
 'use client';
 
-/**
- * Buat / ubah Kelas Eksternal. Soal dipilih dari Bank Soal (hanya pilihan ganda ABCD - dinilai otomatis).
- * Format Kuis Live (ala Kahoot, bawaan untuk yang baru) atau Ujian mandiri (nilai & KKM).
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Search, Trash2, Upload } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
-import { ISIAN_PESERTA, type IsianPeserta, type JenisKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
-import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis-live';
+import { ISIAN_PESERTA, type IsianPeserta, type JenisKelas, type KelasEksternal } from '@/lib/kuis/kelas-eksternal';
+import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis/live';
 
 interface SoalRingkas { id: string; materi_name: string | null; batch_name: string | null; question: string }
 
@@ -38,13 +34,12 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
   const [mengunggah, setMengunggah] = useState<'logo' | 'latar' | null>(null);
   const live = f.jenis === 'live';
 
-  /** Logo dikirim apa adanya (tetap transparan); gambar latar dikecilkan dulu (foto kamera bisa belasan MB). */
   const unggah = async (berkas: File | undefined, jenis: 'logo' | 'latar') => {
     if (!berkas) return;
     setMengunggah(jenis); setGalat('');
     let siap = berkas;
     if (jenis === 'latar') {
-      try { const { compressImage } = await import('@/lib/image-compress'); siap = await compressImage(berkas, { maxDim: 1920, quality: 0.8 }); } catch { /* kirim aslinya */ }
+      try { const { compressImage } = await import('@/lib/image-compress'); siap = await compressImage(berkas, { maxDim: 1920, quality: 0.8 }); } catch {  }
     }
     const fd = new FormData();
     fd.append('berkas', siap); fd.append('jenis', jenis);
@@ -241,7 +236,6 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
 
 type IsianTampilan = { tema_warna: string; logo_url: string; latar_url: string; judul: string };
 
-/** Warna tema, logo event, gambar latar + pratinjau kecil layar peserta. */
 function TampilanKuis<T extends IsianTampilan>({ f, setF, mengunggah, unggah }: {
   f: T; setF: React.Dispatch<React.SetStateAction<T>>; mengunggah: 'logo' | 'latar' | null;
   unggah: (b: File | undefined, jenis: 'logo' | 'latar') => Promise<void>;
@@ -276,7 +270,6 @@ function TampilanKuis<T extends IsianTampilan>({ f, setF, mengunggah, unggah }: 
             <div key={jenis} className="space-y-1.5">
               <p className="text-[12px] font-semibold text-slate-600">{jenis === 'logo' ? 'Logo event' : 'Gambar latar'}</p>
               <div className={`h-16 rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden ${jenis === 'logo' ? 'bg-slate-50' : 'bg-slate-100'}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 {url ? <img src={url} alt="" className={jenis === 'logo' ? 'max-h-12 max-w-full object-contain' : 'w-full h-full object-cover'} />
                   : <ImagePlus size={20} className="text-slate-400" />}
               </div>
@@ -306,7 +299,6 @@ function TampilanKuis<T extends IsianTampilan>({ f, setF, mengunggah, unggah }: 
           {!f.latar_url && terang && <div className="absolute inset-0 bg-black/35" />}
           {f.logo_url && (
             <span className="relative rounded-md bg-white/95 px-1.5 py-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={f.logo_url} alt="" className="h-6 w-auto max-w-[110px] object-contain" />
             </span>
           )}

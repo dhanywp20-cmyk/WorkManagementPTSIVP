@@ -1,8 +1,7 @@
 'use client';
 
-/** BilahAtasKuis - dipecah dari app/(portal)/learning-center/_components/MyQuizPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { QuizSession } from '../shared';
-import { type QuizQuestion } from '../MyQuizPage';
+import { type QuizQuestion } from './bantu-kuis';
 
 export interface BilahAtasKuisProps {
   KELILING: number;
@@ -34,14 +33,6 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
           </p>
         </div>
 
-        {/*
-          TIMER - benda terbesar di bilah ini, dan memang seharusnya.
-
-          Bentuk lamanya sebuah pil kecil seukuran tombol Submit di sebelahnya.
-          Padahal di quiz berbatas waktu, inilah angka yang paling sering
-          dicari orang. Cincin di kirinya menyusut mengikuti sisa waktu, jadi
-          bisa dibaca sekilas tanpa memproses angkanya.
-        */}
         {timeLeft !== null && (
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="relative shrink-0" style={{ width: 38, height: 38 }}>
@@ -69,12 +60,6 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
           </div>
         )}
 
-        {/*
-          Submit di bilah atas TINGGAL jalan keluar untuk mengumpulkan lebih
-          awal - dan hanya selama masih ada soal kosong. Begitu semua
-          terjawab ia menghilang, digantikan tombol besar di bawah, tempat
-          mata peserta sudah berada.
-        */}
         {answered < questions.length && (
           <button onClick={() => handleSubmit(false)}
             className="px-3 py-2 lg:px-7 lg:py-3.5 text-[12px] lg:text-base font-bold rounded-lg lg:rounded-xl transition-all shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
@@ -82,9 +67,6 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
           </button>
         )}
 
-        {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
-            Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
-            kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
         <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
           className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
           <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,12 +4,6 @@ import React, { type ReactNode } from 'react';
 import { WARNA_STATUS_TICKET } from '@/lib/desain';
 import { Ikon } from '@/components/shared/Ikon';
 
-/**
- * Tipe, warna, penolong tanggal, dan komponen kecil ringkasan KPI dashboard. Semuanya berdiri sendiri - tidak satu pun menyentuh state DashboardKPI.
- */
-
-// Types
-
 export interface KPIData {
   tickets: {
     total: number; open: number; solved: number; waitingApproval: number;
@@ -37,7 +31,6 @@ export interface KPITeamMember {
   name: string;
   team_type: string;
   jabatan: string;
-  // Auto dari platform
   ticketsHandled: number;
   ticketsSolved: number;
   ticketsOverdue: number;
@@ -48,32 +41,30 @@ export interface KPITeamMember {
   lcAttempts: number;
   lcAvgScore: number;
   lcPassed: number;
-  lcFailedBelow75: number;   // LC: jumlah attempt score < 75
+  lcFailedBelow75: number;
   piketFilled: number;
   ticketAvgResponseHours: number;
   formReviewLowRating: number;
-  // Monthly sparkline data (12 bulan)
   monthlyTickets: number[];
   monthlyLC: number[];
-  // Manual input (KPI yg tidak bisa diambil otomatis)
   manual: {
-    komplainCount: number;        // Technical knowledge - jumlah komplain (max 12)
-    responTime: number;           // Kecepatan respon komplain (1=OK, 0=Tidak OK)
-    technicalNote: number;        // RnD - jumlah technical note diterbitkan (min 6/thn)
-    bastDemo: number;             // BAST & Demo - jumlah form selesai dalam 7 hari
-    bastDemoTotal: number;        // Total BAST & Demo yang ada
-    reportBulanan: number;        // Pelaporan bulanan tepat waktu (0-12)
-    learningMastery: number;      // Penguasaan teknikal (0-12 kategori)
+    komplainCount: number;
+    responTime: number;
+    technicalNote: number;
+    bastDemo: number;
+    bastDemoTotal: number;
+    reportBulanan: number;
+    learningMastery: number;
   };
 }
 
 export interface KPITeamState {
   members: KPITeamMember[];
   loading: boolean;
-  editingMember: string | null;  // member id yang sedang diedit
+  editingMember: string | null;
   editValues: Partial<KPITeamMember['manual']>;
   filterYear: number;
-  filterPeriod: '6m' | '1y';   // NEW: 6 bulan atau 1 tahun
+  filterPeriod: '6m' | '1y';
   filterTeam: string;
 }
 
@@ -85,12 +76,9 @@ export interface AuditEntry {
 
 export interface Scope {
   kind: 'admin' | 'pts_sup' | 'none';
-  // pts_sup
   ptsTeamType?: string;
   ptsMemberNames?: string[];
 }
-
-// Constants
 
 export const STATUS_COLORS: Record<string, string> = WARNA_STATUS_TICKET;
 
@@ -106,8 +94,6 @@ export const SEVERITY_STYLE = {
   critical: { bg: 'rgba(239,68,68,0.06)',   border: 'rgba(239,68,68,0.18)',   dot: '#ef4444', text: '#991b1b' },
 };
 
-// Helpers
-
 export const todayStr   = () => new Date().toISOString().split('T')[0];
 
 export const dayOfWeek  = () => ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
@@ -119,8 +105,6 @@ export function getMonday() {
   d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
   return d.toISOString().split('T')[0];
 }
-
-// Sub-components
 
 export function MiniDonut({ segments, size = 56 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);

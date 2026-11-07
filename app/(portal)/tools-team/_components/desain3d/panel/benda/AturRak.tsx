@@ -1,12 +1,10 @@
 'use client';
-/** Atur rack: ukuran U, tipe pintu, isi rack (elevation) + editor & PNG elevation. */
 import { namaBerkas, unduhSvgPNG } from '../../../bersama/cetak';
 import { Angka, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { type Benda, isiRakDari, JENIS_RAK, type JenisPerangkatRak, PERANGKAT_RAK, type PerangkatRak, RAK_U, susunRak, svgElevasiRak } from '../../inti';
 import { useState } from 'react';
 import type { KonteksAtur } from './konteks';
 
-/** Rack elevation: isi rack per U (urutan dari atas), diagram, dan unduh PNG. */
 function EditorRak({ b, onUbah }: { b: Benda; onUbah: (isi: PerangkatRak[] | undefined) => void }) {
   const [buka, setBuka] = useState(false);
   const isi = isiRakDari(b);

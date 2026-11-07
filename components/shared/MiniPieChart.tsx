@@ -1,46 +1,19 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Ikon } from './Ikon';
-import { NETRAL } from '@/lib/desain';
-
-/**
- * Shared MiniPieChart - kartu komposisi (bagian dari keseluruhan).
- *
- * Dirombak 2026-09-25 mengikuti kaidah visualisasi data, bukan selera:
- *  - Cincin tipis dengan CELAH 2px antar segmen (warna permukaan), bukan blok
- *    tebal menempel. Tanpa glow/drop-shadow.
- *  - Teks memakai warna tinta (slate), BUKAN warna seri - titik warna di
- *    sampingnya yang membawa identitas. Angka rata kanan, plus persentase,
- *    karena "41" tidak berarti apa-apa tanpa "59%".
- *  - Legenda tidak lagi dipotong max-height + scroll (segmen ke-6 dulu hilang
- *    dari pandangan). Lebih dari 7 kategori dilipat ke "Lainnya" - lebih dari
- *    itu donat tidak bisa dibaca siapa pun.
- *  - Arahkan kursor ke segmen/legenda: angka tengah menampilkan segmen itu.
- *  - Nilai persentase yang TIDAK menjumlah ke 100 (valueSuffix '%', mis.
- *    "Progres per Project") tidak digambar sebagai donat - donat menyiratkan
- *    bagian-dari-keseluruhan. Ditampilkan sebagai meter per baris.
- *
- * Props tidak berubah (kompatibel dengan seluruh pemanggil).
- */
+import { NETRAL, BAYANG } from '@/lib/desain';
+import { useAngkaNaik } from './AngkaNaik';
 
 const PERMUKAAN = NETRAL.permukaan;
 
-/**
- * Legenda SELALU dibatasi tingginya dan digulir - bukan hanya ketika
- * kategorinya banyak. Tanpa batas tetap, tinggi kartu ikut jumlah datanya:
- * satu kartu memanjang, kartu di sebelahnya pendek, dan barisnya jadi tidak
- * rata. Kategori ke-8 dan seterusnya juga TIDAK dilipat ke "Lainnya" lagi -
- * keputusan pemilik platform: semua nilai harus bisa dilihat, yang tidak
- * muat dijangkau dengan menggulir.
- */
 const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
 function Kartu({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
-      style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
+    <div data-kartu3d className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
+      style={{ background: `linear-gradient(180deg, ${NETRAL.permukaan}, #f8fafc)`, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d }}>
       <p className="flex items-center gap-1.5 text-[11px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
         {icon && <Ikon nama={icon} ukuran={14} className="text-slate-500" />}
         <span className="truncate">{title}</span>
@@ -58,13 +31,8 @@ export function MiniPieChart({
   title: string; icon: string;
   activeFilter?: string | null;
   onSliceClick?: (label: string) => void;
-  /**
-   * Angka besar di tengah. Default = jumlah seluruh nilai.
-   * Diisi manual bila menjumlahkan slice TIDAK bermakna.
-   */
   centerValue?: string | number;
   centerLabel?: string;
-  /** Akhiran nilai di legenda, mis. '%'. */
   valueSuffix?: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
@@ -82,6 +50,8 @@ export function MiniPieChart({
 
   const semua: Item[] = data.map(d => ({ label: d.label ?? d.name ?? '', value: d.value, color: d.color }));
   const total = semua.reduce((s, d) => s + d.value, 0);
+  const tengahAngka = centerValue === undefined || typeof centerValue === 'number';
+  const angkaNaik = useAngkaNaik(tengahAngka ? Number(centerValue ?? total) : 0);
 
   if (total === 0) {
     return (
@@ -93,13 +63,12 @@ export function MiniPieChart({
 
   const bisaKlik = typeof onSliceClick === 'function';
 
-  // ── Mode meter: nilai persentase per baris, bukan komposisi ──
   if (valueSuffix === '%') {
     return (
       <Kartu title={title} icon={icon}>
         {centerValue !== undefined && (
           <div className="flex items-baseline gap-1.5">
-            <span className="text-lg sm:text-2xl font-bold text-slate-900 leading-none">{centerValue}</span>
+            <span className="text-lg sm:text-2xl sm:leading-8 font-bold text-slate-900 leading-none">{centerValue}</span>
             <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 uppercase tracking-wide">{(centerLabel ?? '').toLowerCase()}</span>
           </div>
         )}
@@ -123,7 +92,6 @@ export function MiniPieChart({
     );
   }
 
-  // ── Mode donat: komposisi ──
   const items = semua;
   const cx = 60, cy = 60, r = 52, ir = 38;
   let sudut = -Math.PI / 2;
@@ -136,7 +104,7 @@ export function MiniPieChart({
     const besar = a > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${besar} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${besar} 0 ${xi1} ${yi1} Z`;
     sudut += a;
-    return { ...d, path, i, penuh: d.value === total };
+    return { ...d, path, i, penuh: d.value === total, garis: Math.min(2, a * r / 4) };
   });
 
   const persen = (v: number) => Math.round((v / total) * 100);
@@ -145,7 +113,7 @@ export function MiniPieChart({
   const redup = (i: number) => sorot !== null && sorot !== i;
   const tengah = sorot !== null
     ? { angka: `${slices[sorot].value}`, ket: `${persen(slices[sorot].value)}% · ${slices[sorot].label}` }
-    : { angka: `${centerValue ?? total}`, ket: (centerLabel ?? 'Total').toLowerCase() };
+    : { angka: tengahAngka ? `${angkaNaik}` : `${centerValue}`, ket: (centerLabel ?? 'Total').toLowerCase() };
 
   const klik = (s: { label: string; lipat?: boolean }) => { if (bisaKlik && !s.lipat) onSliceClick!(s.label); };
 
@@ -153,16 +121,6 @@ export function MiniPieChart({
 
   return (
     <Kartu title={title} icon={icon}>
-      {/* flex-wrap: di kartu sempit legenda turun ke bawah donat, bukan
-          menyusut sampai hilang (terukur dulu 0px pada kartu 78-108px). */}
-      {/*  Di HP legenda turun ke BAWAH donat dengan lebar penuh, bukan
-           berdampingan: kartu selebar ~170px hanya menyisakan ~90px untuk
-           nama, dan setiap label jadi "Konfi..." - daftar yang tidak bisa
-           dibaca sama saja dengan tidak ditampilkan. */}
-      {/*  flex-wrap + min-w-0: di kartu yang kurang lebar untuk donat DAN legenda
-           berdampingan (grid 5 kolom di layar lebar, kartu ±295px), legenda
-           turun ke bawah donat. Sebelumnya legenda dipaksa min 160px dan
-           mendorong kolom persen keluar dari kartu (terpotong "20%" / "83%"). */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
           className="shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
@@ -172,7 +130,7 @@ export function MiniPieChart({
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
           ) : (
-            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={2} strokeLinejoin="round"
+            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={s.garis} strokeLinejoin="round"
               opacity={redup(s.i) ? 0.3 : 1}
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />

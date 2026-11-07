@@ -1,9 +1,7 @@
 'use client';
-/** Komponen kecil Screen Connection: ikon pola S/Z, isian angka ringkas, kelas tombol & judul. */
-import { hitungKoneksi, type SudutMulai } from '@/lib/av-hitung';
+import { hitungKoneksi, type SudutMulai } from '@/lib/av/hitung';
 import { useState } from 'react';
 
-/** Ikon pola kabel 3×3 (S/Z) dari pojok & arah - seperti tombol koneksi cepat NovaLCT. */
 export function IkonPola({ mulai, arah, pola }: { mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z' }) {
   const h = hitungKoneksi({ kolom: 3, baris: 3, pxPerRC: 1, pxPerPort: 100, mulai, arah, pola, bagi: 'penuh' });
   const titik = h.sel.map(s => `${6 + s.c * 10},${6 + s.r * 10}`).join(' ');
@@ -17,7 +15,6 @@ export function IkonPola({ mulai, arah, pola }: { mulai: SudutMulai; arah: 'hori
   );
 }
 
-/** Isian angka kecil (untuk deret lebar kolom / tinggi baris). */
 export function AngkaKecil({ nilai, onUbah, label }: { nilai: number; onUbah: (v: number) => void; label: string }) {
   const [teks, setTeks] = useState<string | null>(null);
   return (

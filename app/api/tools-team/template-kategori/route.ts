@@ -1,19 +1,5 @@
-/**
- * /api/tools-team/template-kategori - template default per kategori Desain 3D (Tools Team).
- *
- *   GET                 siapa pun yang masuk: daftar kategori yang punya template Admin (tanpa isi),
- *                       untuk penanda di panel Kategori. + `bolehAtur` untuk akun ini.
- *   GET ?awal=          seperti GET, + `awal`: isi lengkap kategori kanvas awal (null = tidak ada).
- *   GET ?kategori=      isi lengkap template kategori itu (null = pakai bawaan kode).
- *   POST {kategori, nama, data}
- *                       Admin / Full Access: jadikan isi kanvas template default kategori.
- *   DELETE ?kategori=   Admin / Full Access: kembali ke template bawaan kode.
- *
- * Tabel ber-RLS tanpa policy (migrasi 039): hanya service role di sini yang menyentuhnya.
- * Hak Admin dibaca ulang dari tabel users (bukan klaim token); akun pimpinan hanya-lihat ditolak.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
@@ -27,7 +13,6 @@ const TABEL = 'tools_template_kategori';
 const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 type Db = ReturnType<typeof getAdminClient>;
 
-/** Admin / Full Access, bukan akun pimpinan hanya-lihat. */
 async function bolehAtur(db: Db, userId: string): Promise<boolean> {
   const { data } = await db.from('users').select('role, access_level').eq('id', userId).maybeSingle();
   if (!hasFullAccess(data as { role?: string; access_level?: string } | null)) return false;
@@ -48,8 +33,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, template: data ?? null });
   }
 
-  //  ?awal=<kategori>: isi lengkap kategori kanvas awal ikut dikirim, supaya halaman yang baru dibuka
-  //  cukup SATU permintaan sebelum menampilkan default Admin (bukan daftar lalu isi, berurutan).
   const awal = req.nextUrl.searchParams.get('awal');
   if (awal !== null && !kategoriRuangSah(awal)) return gagal('Kategori tidak dikenal.');
   const [{ data, error }, atur] = await Promise.all([

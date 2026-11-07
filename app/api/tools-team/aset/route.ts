@@ -1,13 +1,5 @@
-/**
- * /api/tools-team/aset?h=<hash> - satu gambar Desain 3D (tekstur / konten layar) yang disimpan sekali per
- * isi (lib/gambar-desain-server.ts, migrasi 044).
- *
- * Alamatnya ditentukan isi gambar (SHA-256), jadi isi di balik satu alamat tidak pernah berubah: dikirim
- * dengan Cache-Control immutable 1 tahun - tiap peramban cukup mengunduhnya sekali, berapa kali pun
- * desainnya dibuka (hemat egress Supabase & bandwidth Vercel paket gratis).
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';

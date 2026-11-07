@@ -16,11 +16,6 @@ interface Baris {
 
 const tgl = (x: string) => new Date(x).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/**
- * Simpan & buka hitungan Kalkulator LED (dibagikan ke seluruh tim). Satu modal
- * untuk dua keperluan: `mode` 'simpan' menampilkan kolom nama + tombol simpan
- * di atas daftar; 'buka' hanya daftar.
- */
 export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, onBuka, onTersimpan }: {
   mode: 'buka' | 'simpan' | null; onTutup: () => void;
   isian: Record<string, unknown>; ringkasan: RingkasanLED; namaAwal: string;

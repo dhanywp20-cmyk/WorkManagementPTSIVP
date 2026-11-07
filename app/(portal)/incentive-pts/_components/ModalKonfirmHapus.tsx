@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalKonfirmHapus - keluarkan project dari Incentive. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 import { IncentiveProjectRow, formatRupiah } from './calc';
 

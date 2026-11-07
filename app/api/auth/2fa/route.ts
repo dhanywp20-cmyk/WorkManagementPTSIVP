@@ -1,19 +1,11 @@
-/**
- * /api/auth/2fa - pengguna yang sudah masuk mengatur 2FA akunnya sendiri (Profil -> Keamanan).
- *  GET                         -> { aktif, sisaCadangan, wajib }
- *  POST { aksi:'mulai' }       -> { rahasia, url } untuk QR
- *  POST { aksi:'aktifkan', kode }    -> { cadangan }  (teks kode cadangan hanya tampil sekali)
- *  POST { aksi:'cadangan', kode }    -> { cadangan }  (kode lama hangus)
- *  POST { aksi:'matikan', kode }     -> { ok }        (ditolak bila admin & wajib 2FA admin)
- * Kode salah dihitung ke lockout login (5 gagal / 15 menit per username).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
-import { catatPercobaan, getClientIp, PESAN_TERKUNCI, sedangTerkunci } from '@/lib/masuk-server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { bolehDiwaypiDan2FA } from '@/lib/constants';
+import { catatPercobaan, getClientIp, PESAN_TERKUNCI, sedangTerkunci } from '@/lib/auth/masuk-server';
 import {
   adalahAdmin, aktifkanDaftar2FA, baca2FA, bacaPengaturan2FA, gantiCadangan2FA, mulaiDaftar2FA, periksaKode2FA,
-} from '@/lib/dua-faktor-server';
+} from '@/lib/auth/dua-faktor-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +48,9 @@ export async function POST(req: NextRequest) {
       return jawab({ error: 'Kode salah atau sudah dipakai.' }, 400);
     };
 
+    if ((aksi === 'mulai' || aksi === 'aktifkan') && !bolehDiwaypiDan2FA(user)) {
+      return jawab({ error: '2FA hanya untuk admin & akun yang ditunjuk.' }, 403);
+    }
     if (aksi === 'mulai') {
       if (baris?.aktif) return jawab({ error: '2FA sudah aktif.' }, 409);
       return jawab(await mulaiDaftar2FA(db, user));

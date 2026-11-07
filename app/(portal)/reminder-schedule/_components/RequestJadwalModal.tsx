@@ -11,47 +11,31 @@ export interface JadwalRequest {
   description: string;
   address: string;
   category: string;
-  product_type: string;   // tipe produk (LED / LCD·Middleware / LED & LCD) - utk routing
+  product_type: string;
   due_date: string;
-  /**
-   * Usulan rentang pengerjaan untuk Project Progress. Hanya diisi bila
-   * kategorinya Konfigurasi / Konfigurasi & Training. Sifatnya USULAN - admin
-   * masih bisa mengubahnya saat approve, dan draft baru lahir setelah request
-   * di-assign ke tim.
-   */
   progress_start_date: string;
   progress_target_date: string;
-  extra_dates: string[];   // hari tambahan - request sekali untuk beberapa hari sekaligus
+  extra_dates: string[];
   due_time: string;
   pic_name: string;
   pic_phone: string;
   product: string;
   notes: string;
-  sales_division?: string; // dikirim dari modal agar tidak bergantung hanya pada localStorage
-  brand?: Brand;           // Sales External pilih brand (MVI/IVP/BOTH)  routing ke Sales Internal
-  // SBU - hanya diisi kalau creator = Sales Internal & membuat atas nama Sales
-  // External tertentu. Kalau terisi  request diatasnamakan External tsb.
+  sales_division?: string;
+  brand?: Brand;
   sbu_name?: string;
   sbu_division?: string;
-  /** uuid Sales External yang dipilih - dicatat berdampingan dengan sbu_name. */
   sbu_user_id?: string | null;
 }
 
 interface RequestJadwalModalProps {
-  salesName: string;       // full_name dari currentUser (guest)
-  salesUsername: string;   // username dari currentUser
-  salesDivision?: string;  // sales_division dari currentUser (opsional, pre-fill)
-  isInternalSales?: boolean;          // creator adalah Sales Internal  tampilkan SBU
-  externalSalesUsers?: SalesPickerUser[]; // daftar Sales External utk dropdown SBU
+  salesName: string;
+  salesUsername: string;
+  salesDivision?: string;
+  isInternalSales?: boolean;
+  externalSalesUsers?: SalesPickerUser[];
   onClose: () => void;
   onSubmit: (data: JadwalRequest) => Promise<void>;
-  /**
-   * Diisi lewat pencarian "Project Lama Anda" SEBELUM modal ini dibuka -
-   * lihat langkah 'cari' di reminder-schedule/page.tsx. Hanya field yang
-   * masuk akal dibawa dari pekerjaan lama (alamat, PIC, produk, brand);
-   * kategori dan tanggal SENGAJA tidak ikut, karena keduanya milik
-   * pekerjaan BARU yang sedang diajukan.
-   */
   initial?: Partial<JadwalRequest>;
 }
 
@@ -62,7 +46,6 @@ const inputStyle = {
   border: '1px solid rgba(0,0,0,0.12)',
 };
 
-// Kategori yang diizinkan untuk Guest request
 const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training', 'Maintenance'];
 
 export function RequestJadwalModal({
@@ -104,7 +87,6 @@ export function RequestJadwalModal({
   const handleSubmit = async () => {
     if (!form.project_name.trim()) { setFormErr('Nama project wajib diisi!'); return; }
     if (!form.address.trim()) { setFormErr('Lokasi project wajib diisi!'); return; }
-    // Sales External wajib pilih Brand (menentukan Sales Internal mana yg handle/approve).
     if (!isInternalSales && !form.brand) { setFormErr('Pilih Brand dulu (MVI / IVP / Kedua Brand)!'); return; }
     if (!form.product_type) { setFormErr('Pilih tipe produk dulu (LED / LCD·Middleware / LED & LCD)!'); return; }
     if (!form.due_date) { setFormErr('Tanggal wajib diisi!'); return; }
@@ -120,18 +102,14 @@ export function RequestJadwalModal({
   return (
     <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1100 p-3 sm:p-4" style={LATAR_MODAL}>
-      {/*  Kartu & kepala baku (components/shared/Modal.tsx) - kerangkanya sendiri hanya karena tiga kolom setinggi layar. */}
       <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
         <KepalaModal judul="Request Jadwal" keterangan="Permintaan dikirim ke Admin untuk disetujui & ditugaskan ke Team PTS" onTutup={onClose} />
 
-        {/* Tiga kolom menyamping — pola yang sama dengan form Reminder & Ticket. */}
         <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
           <div className="p-4 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
-          {/* ── Kolom 1: siapa & project apa ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
 
-          {/* Info requester */}
           <div
             className="rounded-xl p-3 flex items-center gap-3"
             style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
@@ -157,9 +135,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* SBU — hanya Sales Internal. Opsional: buat schedule ATAS NAMA Sales
-             External tertentu (mis. bantu request untuk SBU-nya). Kalau dipilih,
-             schedule diatasnamakan Sales External tsb (nama & divisi). */}
           {isInternalSales && (
             <div>
               <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
@@ -182,8 +157,6 @@ export function RequestJadwalModal({
             </div>
           )}
 
-          {/* Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global)
-             yang meng-handle & meng-approve request ini. */}
           {!isInternalSales && (
             <div>
               <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
@@ -206,11 +179,6 @@ export function RequestJadwalModal({
             </div>
           )}
 
-          {/*
-            Ringkasan "sudah terisi dari project lama" - hanya muncul lewat
-            jalur pencarian "Project Lama Anda". Tanpa ini, isian yang
-            tiba-tiba penuh saat modal terbuka terlihat seperti keajaiban.
-          */}
           {!!initial?.project_name && (
             <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)' }}>
               <p className="text-[12px] font-bold" style={{ color: '#0e7490' }}>
@@ -223,7 +191,6 @@ export function RequestJadwalModal({
             </div>
           )}
 
-          {/* Nama Project */}
           <div>
             <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Nama Project *
@@ -236,7 +203,6 @@ export function RequestJadwalModal({
             />
           </div>
 
-          {/* Lokasi */}
           <div>
             <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Lokasi Project *
@@ -252,7 +218,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Deskripsi */}
           <div>
             <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Deskripsi Kebutuhan
@@ -268,9 +233,7 @@ export function RequestJadwalModal({
 
           </div>
 
-          {/* ── Kolom 2: jenis pekerjaan & waktu ── */}
           <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
-          {/* Kategori */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Kategori *
@@ -307,7 +270,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Tipe Produk — WAJIB, untuk auto-routing ke supervisor */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Tipe Produk *
@@ -328,7 +290,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Product */}
           <div>
             <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Product / Unit (Opsional)
@@ -344,7 +305,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Tanggal & Waktu */}
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
@@ -370,10 +330,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* ── Usulan Timeline Project Progress ──
-              Muncul hanya untuk kategori yang otomatis membuat draft di Project
-              Progress. Tanggal Usulan di atas adalah jadwal KUNJUNGAN; yang ini
-              rentang PENGERJAAN — dua hal berbeda, jadi ditanyakan terpisah. */}
           {(form.category === 'Konfigurasi' || form.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
               <div className="flex items-center gap-2 mb-2">
@@ -406,9 +362,6 @@ export function RequestJadwalModal({
             </div>
           )}
 
-          {/* Tambah Hari Lain — mini calendar multi-select. Disembunyikan di HP
-             (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
-             Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
           <div className="hidden satulayar:block">
             <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Tambah Hari Lain (Opsional)
@@ -418,9 +371,7 @@ export function RequestJadwalModal({
 
           </div>
 
-          {/* ── Kolom 3: PIC, catatan & alur ── */}
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
-          {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-7" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
@@ -449,7 +400,6 @@ export function RequestJadwalModal({
             </div>
           </div>
 
-          {/* Catatan */}
           <div>
             <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-8" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Catatan Tambahan
@@ -463,7 +413,6 @@ export function RequestJadwalModal({
             />
           </div>
 
-          {/* Info approval flow */}
           <div
             className="rounded-xl p-3 flex items-start gap-3"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
@@ -483,13 +432,10 @@ export function RequestJadwalModal({
           </div>
         </div>
 
-        {/* Footer tetap — tombol kirim tidak boleh ikut tergulir bersama kolom. */}
         <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70">
           {formErr && (
             <div className="px-3 py-2 rounded-lg text-xs font-medium text-red-700 bg-red-50 border border-red-200 mb-2">{formErr}</div>
           )}
-          {/* Satu baris, rata kanan, seukuran isinya — bukan dua baris tombol
-              selebar frame yang membuat Batal terasa sepenting Kirim. */}
           <div className="flex gap-2 justify-end">
             <BatalButton onClick={onClose} />
             <SubmitFormButton

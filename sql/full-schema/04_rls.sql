@@ -158,6 +158,10 @@ CREATE POLICY ksm_insert ON public.kpi_snapshot_members AS PERMISSIVE FOR INSERT
   WITH CHECK (true);
 CREATE POLICY ltl_baca ON public.late_ticket_links AS PERMISSIVE FOR SELECT TO anon, authenticated
   USING ((jwt_claim('sub'::text) <> ''::text));
+CREATE POLICY ltl_hapus ON public.late_ticket_links AS PERMISSIVE FOR DELETE TO anon, authenticated
+  USING (akses_insentif_input());
+CREATE POLICY ltl_tambah ON public.late_ticket_links AS PERMISSIVE FOR INSERT TO anon, authenticated
+  WITH CHECK (akses_insentif_input());
 CREATE POLICY lcj_milik ON public.lc_answers AS PERMISSIVE FOR ALL TO anon, authenticated
   USING ((((user_id)::text = jwt_claim('sub'::text)) OR lingkup_semua()))
   WITH CHECK ((((user_id)::text = jwt_claim('sub'::text)) OR lingkup_semua()));

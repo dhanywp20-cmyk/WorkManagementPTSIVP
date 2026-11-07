@@ -1,16 +1,7 @@
-/**
- * uji/incentive-nominal.ts - nominal total proyek insentif TERKUNCI di server.
- *
- * Yang dijaga: siapa boleh melihat nominal (lib/incentive-nominal.ts), nominal tidak
- * pernah bocor dari sisa kolom lama, dan tidak ada kode peramban yang menulis nominal
- * ke tabel jadwal (reminders) lagi.
- *
- * Jalankan: npm test -- incentive-nominal
- */
 import { readdirSync, readFileSync } from 'fs';
 import {
   ATURAN_NOMINAL_BAWAAN, bolehLihatBrand, nominalTerbuka, rapikanAturanNominal, tempelkanNominal, terlibatDiProyek,
-} from '../lib/incentive-nominal';
+} from '../lib/incentive/nominal';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, detail = '') {
@@ -53,7 +44,7 @@ cek('username/nama kosong tidak mencocokkan baris tanpa handler',
 
 console.log('\n4. Nominal tidak bocor dari sisa kolom lama');
 const proyek = [
-  { id: 'a', incentive_value: 7_000_000, nama: 'A' },   // sisa kolom lama, tidak ada di peta
+  { id: 'a', incentive_value: 7_000_000, nama: 'A' },
   { id: 'b', incentive_value: 0, nama: 'B' },
   { id: 'c', incentive_value: 1, nama: 'C' },
 ];
@@ -66,13 +57,11 @@ cek('nilai bukan angka dianggap 0', tempelkanNominal([{ id: 'z', incentive_value
 cek('bolehLihatBrand tanpa lingkup = bebas', bolehLihatBrand(null, 'IVP'));
 
 console.log('\n5. Tidak ada tulis nominal ke reminders dari peramban');
-//  Halaman dipecah: handler simpan kini di hook _components/use*.ts - periksa halaman + semua hook-nya.
 const DIR_HAL = 'app/(portal)/incentive-pts/';
 const page = [readFileSync(DIR_HAL + 'page.tsx', 'utf8'),
   ...readdirSync(DIR_HAL + '_components').filter(f => /^use[A-Z]\w*\.ts$/.test(f)).map(f => readFileSync(DIR_HAL + '_components/' + f, 'utf8'))].join('\n');
 cek('layar menyimpan lewat server (simpanNominal)', /simpanNominal\(/.test(page));
 cek('tidak ada update reminders berisi incentive_value', !/from\('reminders'\)\s*\.update\(\s*\{[^}]*incentive_value/.test(page) && !/incentive_value:\s*Number\(nominalValue\)/.test(page));
-//  calc.ts dipecah menjadi calc-*.ts (calc.ts tinggal barrel) - periksa gabungan semuanya.
 const DIR_CALC = 'app/(portal)/incentive-pts/_components/';
 const calc = readdirSync(DIR_CALC).filter(f => /^calc(-[a-z]+)?\.ts$/.test(f)).map(f => readFileSync(DIR_CALC + f, 'utf8')).join('\n');
 cek('daftar proyek ditempeli nominal dari server', /lengkapiNominal\(gabungkanProyek/.test(calc));

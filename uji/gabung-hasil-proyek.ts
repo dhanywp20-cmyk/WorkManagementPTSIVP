@@ -1,9 +1,5 @@
 import { gabungHasilProyek, type BarisHasilProyek } from '@/lib/gabung-hasil-proyek';
 
-// Penjaga lib/gabung-hasil-proyek.ts - pencarian "Project yang sudah ada" di
-// Create Ticket. Kasus nyata: MHU Coal di CFX TOWER punya jadwal Konfigurasi
-// (30 Jun) dan Standby Event (9 Jul); dulu hanya Standby Event yang tampil.
-
 type B = BarisHasilProyek & { id: string };
 const jadwal = (id: string, nama: string, alamat: string, kategori: string): B =>
   ({ id, project_name: nama, address: alamat, category: kategori, _sumber: 'reminder' });
@@ -19,7 +15,6 @@ const cek = (syarat: boolean, label: string) => {
   if (!syarat) gagal++;
 };
 
-// Urutan masuk = terbaru dulu, seperti kueri aslinya.
 const h1 = gabungHasilProyek([
   jadwal('se', 'MHU Coal', CFX, 'Standby Event'),
   jadwal('kf', 'MHU Coal', CFX, 'Konfigurasi'),

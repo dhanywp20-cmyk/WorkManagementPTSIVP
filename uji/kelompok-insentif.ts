@@ -1,12 +1,7 @@
-/**
- * uji/kelompok-insentif.ts - kapan beberapa jadwal dihitung SATU proyek insentif.
- *
- *   npx tsx uji/kelompok-insentif.ts
- */
 import {
   gabungkanProyek, deteksiKandidatGabung, idUntukDigabung, kunciProyek, normalkanNama,
   type BarisKelompok,
-} from '../lib/kelompok-insentif';
+} from '../lib/incentive/kelompok';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, ok: boolean, c = '') => {
@@ -29,7 +24,6 @@ console.log('\n1. Penggabungan menurut penanda yang sudah ditetapkan');
   cek('yang dipakai tanggal terakhir', hasil[0].due_date === '2026-08-31', hasil[0].due_date ?? '');
 }
 {
-  // Konfigurasi Senin + Training 3 hari kemudian, sudah digabung manusia.
   const hasil = gabungkanProyek([
     b({ id: 'a', category: 'Konfigurasi', due_date: '2026-08-24', incentive_group_id: 'G1' }),
     b({ id: 'b', category: 'Training',    due_date: '2026-08-27', incentive_group_id: 'G1' }),
@@ -38,7 +32,6 @@ console.log('\n1. Penggabungan menurut penanda yang sudah ditetapkan');
   cek('kategori yang menang dari tanggal terakhir', hasil[0].category === 'Training', hasil[0].category ?? '');
 }
 {
-  // Kelompok manusia harus MELEBUR batch, bukan berdampingan dengannya.
   const hasil = gabungkanProyek([
     b({ id: 'a', batch_id: 'B1', incentive_group_id: 'G1', due_date: '2026-08-24' }),
     b({ id: 'b', batch_id: 'B1', incentive_group_id: 'G1', due_date: '2026-08-25' }),
@@ -68,13 +61,11 @@ console.log('\n2. Deteksi hanya MENANDAI');
   const k = deteksiKandidatGabung(data);
   cek('BAST sama + nama sama = kandidat', k.length === 1, String(k.length));
   cek('kedua jadwal masuk kandidat', k[0]?.anggota.length === 2);
-  // Yang paling penting: mendeteksi TIDAK mengubah apa pun.
   cek('data asli tidak tersentuh',
     data.every(r => r.incentive_group_id === null));
   cek('gabungkanProyek tetap melihatnya 2', gabungkanProyek(data).length === 2);
 }
 {
-  // Dua kontrak berbeda untuk klien yang sama: BAST beda, harus TETAP terpisah.
   const k = deteksiKandidatGabung([
     b({ id: 'a', bast_date: '2026-09-01' }),
     b({ id: 'b', bast_date: '2026-11-20' }),
@@ -82,13 +73,6 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('BAST berbeda bukan kandidat', k.length === 0);
 }
 {
-  /*
-    Kasus Celebrity Fitness MOI: satu serah terima yang jadwalnya dua hari
-    (Konfigurasi hari ini, Training besok) ditutup dengan dua tanggal BAST
-    berurutan. Versi lama mengunci ke tanggal yang sama persis, jadi pasangan
-    seperti ini TIDAK PERNAH ditandai - dan proyeknya berjalan dengan dua pool
-    insentif untuk satu pekerjaan.
-  */
   const k = deteksiKandidatGabung([
     b({ id: 'a', bast_date: '2026-08-10' }),
     b({ id: 'b', bast_date: '2026-08-11' }),
@@ -96,7 +80,6 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('BAST beda sehari TETAP ditandai kandidat', k.length === 1 && k[0].anggota.length === 2);
 }
 {
-  //  Batas toleransi: 7 hari masih satu kandidat, 8 hari sudah bukan.
   const pas = deteksiKandidatGabung([
     b({ id: 'a', bast_date: '2026-08-01' }),
     b({ id: 'b', bast_date: '2026-08-08' }),
@@ -109,11 +92,6 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('jarak 8 hari bukan kandidat', lewat.length === 0);
 }
 {
-  /*
-    Rangkaian tidak boleh melar tanpa batas: tiga baris berjarak 6 hari satu
-    sama lain memang satu rangkaian (itu memang satu rentetan pekerjaan), tapi
-    dua kelompok yang terpisah jauh harus tetap jadi DUA kandidat, bukan satu.
-  */
   const k = deteksiKandidatGabung([
     b({ id: 'a', bast_date: '2026-03-01' }),
     b({ id: 'b', bast_date: '2026-03-03' }),
@@ -124,7 +102,6 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('tiap kandidat berisi 2 baris', k.every(x => x.anggota.length === 2));
 }
 {
-  // Dua proyek berbeda kebetulan serah-terima di hari yang sama.
   const k = deteksiKandidatGabung([
     b({ id: 'a', project_name: 'BPKP Aceh',  bast_date: '2026-09-01' }),
     b({ id: 'b', project_name: 'BPKP Medan', bast_date: '2026-09-01' }),
@@ -139,7 +116,6 @@ console.log('\n2. Deteksi hanya MENANDAI');
   cek('beda spasi & huruf besar tetap terdeteksi', k.length === 1);
 }
 {
-  // Tanpa BAST tidak ada penanda yang bisa dipercaya - jangan menebak.
   const k = deteksiKandidatGabung([
     b({ id: 'a', bast_date: null }),
     b({ id: 'b', bast_date: null }),
@@ -181,9 +157,6 @@ console.log('\n4. Hal-hal kecil yang mudah terlewat');
 
 console.log('\n5. BAST dipinjam dari baris lain sekelompok bila wakilnya sendiri kosong (kasus Steak 21)');
 {
-  // Baris wakil (due_date terakhir) justru yang tidak pernah kebagian BAST -
-  // persis skenario nyata sebelum perbaikan handleModeConfirm menulis ke
-  // SELURUH baris batch.
   const hasil = gabungkanProyek([
     b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: '2026-06-17' }),
     b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: null }),
@@ -195,7 +168,6 @@ console.log('\n5. BAST dipinjam dari baris lain sekelompok bila wakilnya sendiri
     hasil[0].id === 'b');
 }
 {
-  // Kalau memang tidak ada satu pun baris berisi BAST, jangan mengarang.
   const hasil = gabungkanProyek([
     b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: null }),
     b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: null }),
@@ -203,7 +175,6 @@ console.log('\n5. BAST dipinjam dari baris lain sekelompok bila wakilnya sendiri
   cek('tanpa BAST sama sekali tetap kosong, bukan dipaksakan', hasil[0].bast_date == null);
 }
 {
-  // Wakil yang SUDAH punya BAST sendiri tidak boleh ketiban nilai pinjaman.
   const hasil = gabungkanProyek([
     b({ id: 'a', batch_id: 'B1', due_date: '2026-06-15', bast_date: '2026-06-15' }),
     b({ id: 'b', batch_id: 'B1', due_date: '2026-06-17', bast_date: '2026-06-17' }),

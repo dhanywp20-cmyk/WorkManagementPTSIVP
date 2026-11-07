@@ -1,50 +1,22 @@
 'use client';
 
-/** FormLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { inp, inpCls, card, avc, ini, emptyManual, CatPicker, SalesDrop } from './bantu-halaman';
 import { FormField, SectionHeaderSmall } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
-import { type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry } from './shared';
+import { useKonteksFormLaporan } from './konteks-form-laporan';
 
-export interface FormLaporanProps {
-  autoCount: number;
-  currentUser: TeamUser | null;
-  editingId: string | null;
-  formDate: string;
-  formLoading: boolean;
-  formReminders: ReminderActivity[];
-  formTickets: TicketActivity[];
-  formUserId: string;
-  galatSusun: string;
-  guestUsers: GuestUser[];
-  handleSave: () => Promise<void>;
-  hapusDraf: () => void;
-  isAdmin: boolean;
-  manualActs: ManualActivity[];
-  menyusun: boolean;
-  reminderNotes: string;
-  saving: boolean;
-  setEditingId: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-  setFormDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setFormOpen: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  setFormUserId: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setManualActs: import("react").Dispatch<import("react").SetStateAction<ManualActivity[]>>;
-  setReminderNotes: import("react").Dispatch<import("react").SetStateAction<string>>;
-  susunDenganAI: () => Promise<void>;
-  targetUser: TeamUser | null | undefined;
-  teamEntries: TeamEntry[];
-  teamUsers: TeamUser[];
-  updM: (key: string, p: Partial<ManualActivity>) => void;
-  updT: (key: string, p: Partial<TeamEntry>) => void;
-}
-
-export function FormLaporan({ autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, handleSave, hapusDraf, isAdmin, manualActs, menyusun, reminderNotes, saving, setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes, susunDenganAI, targetUser, teamEntries, teamUsers, updM, updT }: FormLaporanProps) {
+export function FormLaporan() {
+  const k = useKonteksFormLaporan();
+  const {
+    autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, isAdmin, manualActs, menyusun,
+    reminderNotes, saving, targetUser, teamEntries, teamUsers
+  } = k.nilai;
+  const { setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes } = k.ubah;
+  const { handleSave, hapusDraf, susunDenganAI, updM, updT } = k.aksi;
   return (
     <>
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
         <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
-          {/* Modal header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
               <h2 className="text-base font-bold text-slate-800">{editingId ? '✏️ Edit Report' : '📋 Buat Daily Report'}</h2>
@@ -58,7 +30,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
           </div>
           <div className="px-6 py-5 space-y-5 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 80px)' }}>
 
-            {/* Identitas */}
             <div className="grid gap-3" style={{ gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr' }}>
               <FormField label="Tanggal *">
                 <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className={inpCls} style={inp} />
@@ -79,7 +50,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
               </div>
             )}
 
-            {/* Auto: Reminder + Ticket — info ringkas saja */}
             {(formReminders.length > 0 || formTickets.length > 0 || formLoading) && (
               <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
                 {formLoading
@@ -89,7 +59,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
               </div>
             )}
 
-            {/* Manual activities */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="✍" />Aktivitas Manual ({manualActs.length})</span>
@@ -121,7 +90,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
               </div>
             </div>
 
-            {/* Ringkasan hari ini - boleh disusun AI dari aktivitas di atas */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="📝" />Ringkasan hari ini</span>
@@ -140,7 +108,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
                 : <p className="text-[11px] text-slate-500 mt-1">Draf AI hanya merangkum aktivitas di atas. Periksa dan ubah bila perlu sebelum menyimpan.</p>}
             </div>
 
-            {/* Team Entries (admin) */}
             {isAdmin && teamEntries.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -166,7 +133,6 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
               </div>
             )}
 
-            {/* Save */}
             <div className="flex gap-3 pt-2 pb-2">
               <button onClick={() => { hapusDraf(); setFormOpen(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">Batal</button>
               <button onClick={handleSave} disabled={saving} className="tombol-utama flex-1 py-3 rounded-kontrol font-bold text-sm  flex items-center justify-center gap-2 transition-all">

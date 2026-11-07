@@ -1,23 +1,13 @@
 'use client';
-/** modal-notifikasi-panel.tsx - dipecah dari modal-notifikasi.tsx (scripts/pecah-modul.mjs); modal-notifikasi.tsx tetap mengekspor ulang semuanya. */
 import { ModalPortal } from '@/components/shared/ModalPortal';
 import React,{ useEffect,useState } from 'react';
 import { NotificationItem } from './shared';
-
-// Panel rincian notifikasi per bagian
 
 export type BagianNotif = {
   kunci: string; label: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string; bgColor: string; dotColor: string; items: NotificationItem[]; onMarkAllRead?: () => void;
 };
 
-/**
- * Di HP lonceng per bagian disembunyikan (tidak muat), sehingga yang terlihat
- * hanya angka total - orang tidak tahu notifikasi itu dari Ticket, Require,
- * atau Reminder. Badge total kini membuka panel ini: tiap bagian dengan
- * jumlahnya sendiri, ketuk untuk membuka daftarnya. Di HP tampil sebagai
- * lembar dari bawah; di layar lebar sebagai panel di bawah header.
- */
 export function PanelNotifBagian({ bagian, onTutup, onItemClick }: {
   bagian: BagianNotif[]; onTutup: () => void; onItemClick: (item: NotificationItem) => void;
 }) {

@@ -1,12 +1,3 @@
-/**
- * uji/menu-instan.ts - pindah menu terasa langsung (KerangkaPortal).
- *
- * Keluhan: tombol menu baru tersorot belakangan dan layar seperti macet. Penyebabnya: sorotan
- * dibaca dari pathname (baru berganti setelah halaman tujuan selesai dimuat), menu memakai
- * router.push tanpa prefetch, dan tidak ada tanda sedang memuat. Uji ini menjaga ketiganya.
- *
- * Jalankan: npm test -- menu-instan
- */
 import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;
@@ -31,7 +22,7 @@ cek('pindahKe membungkus router.push dalam startTransition', /mulaiPindah\(\(\) 
 
 console.log('\n3. Tanda sedang memuat');
 cek('bilah tampil selama perpindahan', /\{sedangPindah && <div aria-hidden="true" className="bilah-pindah-menu" \/>\}/.test(kp));
-cek('CSS bilah & redup ada', /\.bilah-pindah-menu::before/.test(css) && /\.isi-sedang-pindah > :not\(\.bilah-pindah-menu\)/.test(css));
+cek('CSS bilah & redup ada', /\.bilah-pindah-menu::before/.test(css) && /\.isi-sedang-pindah \.dasbor-3d, \.isi-sedang-pindah \.isi-portal > \* > \*/.test(css));
 cek('redup ditunda (perpindahan cepat tidak berkedip)', /redupPindahMenu 0\.2s ease 0\.15s/.test(css));
 
 console.log('\n4. Prefetch kode menu saat menganggur');

@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalGenerateTranche - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { ModalPortal } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { IncentiveProjectRow, generateTranches, petaPorsiBerlaku, type SkemaInsentif, formatRupiah } from './calc';
@@ -25,27 +24,10 @@ export function ModalGenerateTranche({ generateProject, generating, handleGenera
             <h3 className="text-lg font-bold text-gray-800 mb-4"><IkonTeks nama="⚡" />Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-700">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
-            {/*
-              Pratinjau memisahkan porsi Tim PTS dan porsi Installer, karena
-              keduanya memang dibayar dengan cara berbeda: Tim PTS dipecah
-              menurut tahapan, Installer lunas sekali di tahap pertama.
-              Sebelumnya baris ini menampilkan pool x persen tahap begitu saja -
-              angka yang tidak pernah benar untuk proyek Remote, sebab porsi
-              Installer sudah dipotong lebih dulu dari pool Tim PTS.
-            */}
             {(() => {
               if (!skema) return <p className="text-sm text-gray-500 mb-6">Memuat skema insentif...</p>;
-              //  Pratinjau ini jalan begitu modal dibuka, sebelum tombol Generate
-              //  ditekan - kalau proyeknya belum punya BAST, generateTranches()
-              //  di bawah menghitung tanggal dari nilai yang tidak valid dan
-              //  crash. handleGenerateTranches() sudah menolak kasus ini saat
-              //  submit; pratinjau perlu penjagaan yang sama karena jalan lebih
-              //  dulu.
               if (!generateProject.bast_date) return <p className="text-sm text-amber-700 mb-6"><IkonTeks nama="⚠" />BAST belum diisi - isi lewat 💲 Input Nominal dulu.</p>;
               const pool = generateProject.incentive_value || 0;
-              //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
-              //  Remote diatur sendiri, porsi Installer diambil dari baris di
-              //  tabel itu - bukan dari kolom "Porsi Installer".
               const pctInst = petaPorsiBerlaku(
                 skema, generateProject.mode_penyelesaian === 'remote', true,
               ).pctInstaller;

@@ -2,52 +2,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { namaKelompokPTS } from '@/lib/kelompok';
-import { bacaPicPiket } from '@/app/(portal)/picket-showroom/_components/shared';
+import { namaKelompokPTS } from '@/lib/kelompok/inti';
+import { bacaPicPiket } from '@/lib/piket/inti';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
-import { cariReminderByNama } from '@/lib/cari-reminder';
-import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
+import { cariReminderByNama } from '@/lib/jadwal/cari-reminder';
+import { hitungLingkupProject, type LingkupProject } from '@/lib/project-scope';
 import { hasFullAccess } from '@/lib/constants';
 import { Ikon } from '@/components/shared/Ikon';
-
-// Types
-
-type ResultType = 'ticket' | 'reminder' | 'project' | 'piket' | 'unit' | 'user'
-  | 'progress' | 'technote' | 'daily' | 'review' | 'materi';
-
-interface SearchResult {
-  id: string;
-  type: ResultType;
-  icon: string;
-  title: string;
-  sub: string;
-  meta: string;
-  url?: string;
-  badge?: string;
-  badgeColor?: string;
-}
-
-const TYPE_CONFIG: Record<ResultType, { label: string; color: string; bg: string }> = {
-  ticket:   { label: 'Ticket',         color: '#be123c', bg: 'rgba(254,205,211,0.5)' },
-  reminder: { label: 'Reminder',       color: '#0e7490', bg: 'rgba(207,250,254,0.5)' },
-  project:  { label: 'Form Require',   color: '#7e22ce', bg: 'rgba(233,213,255,0.5)' },
-  piket:    { label: 'Piket Showroom', color: '#0f766e', bg: 'rgba(204,251,241,0.5)' },
-  unit:     { label: 'Unit Movement',  color: '#92400e', bg: 'rgba(254,243,199,0.5)' },
-  user:     { label: 'User',           color: '#374151', bg: 'rgba(243,244,246,0.8)' },
-  progress: { label: 'Project Progress', color: '#0e7490', bg: 'rgba(207,250,254,0.5)' },
-  technote: { label: 'Tech Note',      color: '#3730a3', bg: 'rgba(224,231,255,0.6)' },
-  daily:    { label: 'Daily Report',   color: '#065f46', bg: 'rgba(209,250,229,0.5)' },
-  review:   { label: 'Form Review',    color: '#b45309', bg: 'rgba(254,243,199,0.5)' },
-  materi:   { label: 'Learning Center', color: '#1d4ed8', bg: 'rgba(219,234,254,0.6)' },
-};
-
-const ALL_TYPES: ResultType[] = [
-  'ticket','reminder','project','progress','review','daily',
-  'piket','unit','technote','materi','user',
-];
-
-// Component
+import { TYPE_CONFIG, ALL_TYPES, type ResultType, type SearchResult } from './cari-global-tipe';
 
 export default function GlobalSearch({ currentUser, onNavigate }: {
   currentUser: User;
@@ -63,77 +26,33 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const listRef   = useRef<HTMLDivElement>(null);
   const debounce  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /**
-   * Cakupan pencarian:
-   *   admin / superadmin / team   seluruh data, tanpa batas
-   *   sales supervisor            divisi & bawahannya
-   *   sales biasa                 HANYA yang mencatat namanya
-   *
-   * Penyaringan WAJIB dilakukan di query (lihat batasiLingkup), bukan setelah
-   * data tiba. Menyaring setelah tiba berarti daftar pelanggan dan nilai
-   * project milik sales lain sudah sampai di browser dan terbaca dari DevTools.
-   */
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
-  /** Orang dalam PTS: admin, superadmin, dan seluruh role team. */
-  //  Pimpinan (lib/pimpinan.ts) mencari di SEMUA data, sama seperti orang dalam PTS.
   const tanpaBatas = isAdmin || currentUser.role?.toLowerCase() === 'team' || isPimpinan(currentUser);
-  //  Kelompok PTS dari lib/kelompok.ts, bukan tiga nama yang ditulis
-  //  langsung: Supervisor di kelompok PTS yang ditambahkan admin lewat Admin
-  //  Panel dulu tidak dikenali sebagai Supervisor PTS sama sekali, jadi
-  //  lingkup pencariannya diam-diam menyempit.
   const isPTSsup = currentUser.role === 'team' &&
     namaKelompokPTS().includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isPimpinan(currentUser) &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
 
-  /** Sales biasa = guest/sales yang BUKAN supervisor. */
   const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup && !isPimpinan(currentUser);
 
-  /**
-   * Lingkup divisi untuk Sales Internal.
-   *
-   * Batas "hanya milik saya" saja TERLALU sempit untuk Sales Internal: dia bertugas
-   * menangani beberapa divisi sekaligus, dan divisi itu ditentukan tabel
-   * pemetaan - bukan bisa disimpulkan dari profilnya. Tanpa ini, Sales Internal
-   * tidak menemukan project divisi yang justru jadi tanggung jawabnya.
-   */
-
-  /**
-   * Batasi query ke lingkup user.
-   *
-   * Untuk sales biasa hasilnya "hanya milik saya"; untuk Sales Internal,
-   * divisi yang dipetakan ikut terbuka.
-   */
   const batasiLingkup = <T,>(lingkup: LingkupProject, query: T, kolomMilik: string[], kolomDivisi = 'sales_division'): T => {
     if (lingkup.semua) return query;
     const nama = (currentUser.full_name ?? '').replace(/"/g, '');
     const user = (currentUser.username ?? '').replace(/"/g, '');
     const syarat = kolomMilik
       .map(k => (k === 'created_by' ? `${k}.eq."${user}"` : `${k}.eq."${nama}"`));
-    // Divisi yang dipetakan ikut di-OR - inilah bedanya dengan batas
-    // "hanya milik saya": Sales Internal memang bertugas atas beberapa divisi.
     for (const d of lingkup.divisi) syarat.push(`${kolomDivisi}.eq."${d.replace(/"/g, '')}"`);
     return (query as { or: (x: string) => T }).or(syarat.join(','));
   };
 
-  /**
-   * Modul yang boleh dicari = modul yang menunya memang diberikan ke user ini.
-   *
-   * Tanpa penjagaan ini, kotak pencarian jadi pintu belakang: menu-nya tidak
-   * ada di sidebar, tapi isinya tetap bisa dibaca dengan mengetikkan kata
-   * kunci. Admin, superadmin, dan pemegang Full Access melewati allowed_menus
-   * sebagaimana di sidebar - kalau di sini hanya role admin yang dilewatkan,
-   * pencarian jadi lebih sempit daripada menu yang tampil untuknya.
-   */
   const bolehModul = (kunci: string): boolean => {
     if (hasFullAccess(currentUser)) return true;
     const izin = (currentUser as { allowed_menus?: string[] }).allowed_menus;
-    if (!izin) return true; // belum diatur = perilaku lama, jangan mendadak menutup
+    if (!izin) return true;
     return izin.includes(kunci);
   };
 
-  // Open/close via keyboard
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(o => !o); }
@@ -147,7 +66,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     if (open) { setTimeout(() => inputRef.current?.focus(), 50); setQuery(''); setResults([]); setSelected(0); }
   }, [open]);
 
-  // Keyboard navigation inside modal
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -160,7 +78,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return () => window.removeEventListener('keydown', handler);
   }, [open, results, selected, activeType]);
 
-  // Fetch scope: get team member names for PTS supervisor
   const getPTSTeamNames = useCallback(async (): Promise<string[]> => {
     const { data } = await supabase.from('users')
       .select('full_name')
@@ -169,7 +86,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return (data ?? []).map((u: any) => u.full_name as string);
   }, [currentUser]);
 
-  // Fetch scope: get supervised divisions & subordinate names for Sales supervisor
   const getSalesScope = useCallback(async (): Promise<{ divisions: string[]; subNames: string[] }> => {
     const selfTier = currentUser.jabatan === 'Supervisor' ? 2 :
                      currentUser.jabatan === 'Manager' ? 3 :
@@ -186,7 +102,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       divisions.push(currentUser.sales_division);
     }
 
-    // Get subordinate user names from division + direct mapping
     const directUserIds = (userSupMapsRes.data ?? []).map((m: any) => m.user_id as string);
     const subFromDivRes = await supabase.from('users')
       .select('id, full_name, sales_division, jabatan')
@@ -210,12 +125,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return { divisions, subNames };
   }, [currentUser]);
 
-  // Main search
   const doSearch = useCallback(async (q: string) => {
-    /* Lingkup dihitung DI SINI dan DITUNGGU, jangan disimpan di state lalu
-       dijaga dengan `if (!lingkup) return query`: penjaga seperti itu gagal ke
-       arah terbuka, sehingga query yang berangkat sebelum lingkup tiba tidak
-       tersaring sama sekali - dan tetap terlihat seolah sudah aman. */
     const lingkup = await hitungLingkupProject(currentUser as never);
     if (!q.trim()) { setResults([]); return; }
     setLoading(true);
@@ -234,23 +144,18 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
     const res: SearchResult[] = [];
 
-    // 1. Tickets
     if (bolehModul('ticket-troubleshooting')) try {
       let q2 = supabase.from('tickets')
         .select('id, project_name, issue_case, assign_name, status, date, sales_division, sales_name, created_by')
         .or(`project_name.ilike.%${q}%,issue_case.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,sn_unit.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(20);
 
-      // Sales biasa: dibatasi DI QUERY - tiket sales lain tidak pernah dikirim
-      // ke browser, bukan sekadar disembunyikan setelah tiba.
       if (!tanpaBatas) q2 = batasiLingkup(lingkup, q2, ['sales_name', 'created_by']);
 
       const { data: tData } = await q2;
       let tickets = (tData ?? []) as any[];
 
-      // Scope filter
       if (tanpaBatas) {
-        // admin, superadmin, team — tanpa batas, sesuai aturan cakupan di atas.
       } else if (isSalesSup) {
         tickets = tickets.filter((t: any) =>
           salesDivisions.includes(t.sales_division) ||
@@ -269,27 +174,13 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] tickets:', e); }
 
-    // 2. Reminders
     if (bolehModul('reminder-schedule')) try {
-      // Nama project dicari LEBIH DULU dan sendirian.
-      //
-      // Sebelumnya project_name, title, category, assign_name, sales_name, dan
-      // address disatukan dalam satu .or(). Enam kolom hidup-mati bersama: satu
-      // saja yang bermasalah - `title` adalah kolom peninggalan - dan PostgREST
-      // menolak seluruh kueri, termasuk pencarian nama yang tidak bersalah.
-      // Galatnya lalu dibuang oleh destructuring `{ data: rData }`, sehingga
-      // kegagalan total tampil sama persis dengan "tidak ada hasil".
-      // `title` TIDAK disebut di sini. Kolom itu tidak ada di basis data ini,
-      // dan menyebutnya membuat seluruh kueri ditolak. Pencariannya ditangani
-      // lib/cari-reminder.ts lewat kueri terpisah yang boleh gagal sendirian.
       const KOLOM_REMINDER =
         'id, project_name, category, due_date, assign_name, sales_name, sales_division, status';
       const namaRes = await cariReminderByNama<any>(q, KOLOM_REMINDER, 20,
         kueri => (tanpaBatas ? kueri : batasiLingkup(lingkup, kueri, ['sales_name', 'created_by'])));
       if (namaRes.error) console.error('[search] reminders (nama):', namaRes.error.message);
 
-      // Kolom pendukung menyusul sebagai kueri terpisah - boleh gagal tanpa
-      // menjatuhkan pencarian nama.
       let qr = supabase.from('reminders')
         .select(KOLOM_REMINDER)
         .or(`category.ilike.%${q}%,assign_name.ilike.%${q}%,sales_name.ilike.%${q}%,address.ilike.%${q}%`)
@@ -303,7 +194,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         .filter((r: any) => !terlihat.has(String(r.id)) && terlihat.add(String(r.id)));
 
       if (tanpaBatas) {
-        // tanpa batas
       } else if (isSalesSup) {
         reminders = reminders.filter((r: any) =>
           salesDivisions.includes(r.sales_division) ||
@@ -313,8 +203,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
       reminders.forEach((r: any) => res.push({
         id: `reminder-${r.id}`, type: 'reminder', icon: '🗓️',
-        // Nama bisa ada di salah satu dari dua kolom - pakai urutan yang sama
-        // dengan halaman Request Schedule supaya judulnya tidak jadi '-'.
         title: r.project_name || r.title || '-',
         sub: `${r.category} · ${r.due_date ?? '-'}`,
         meta: r.assign_name ?? '-',
@@ -324,7 +212,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] reminders:', e); }
 
-    // 3. Form Require Project
     if (bolehModul('request-design-project')) try {
       let qp = supabase.from('project_requests')
         .select('id, project_name, status, sales_name, sales_division, created_at, requester_id')
@@ -343,7 +230,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
           salesDivisions.includes(p.sales_division) || subIds.includes(p.requester_id)
         );
       } else if (currentUser.role?.toLowerCase() === 'team' && !isAdmin) {
-        projects = []; // Team PTS tidak berkepentingan dengan Form Require Project
+        projects = [];
       }
 
       projects.forEach((p: any) => res.push({
@@ -357,7 +244,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] projects:', e); }
 
-    // 4. Piket Showroom
     if (bolehModul('picket-showroom')) try {
       const { data: pkData } = await supabase.from('piket_schedules')
         .select('id, day_date, day_of_week, pic, pic_ivp_name, pic_ump_name, pic_mvi_name, pic_ivp_id, pic_ump_id, pic_mvi_id')
@@ -366,13 +252,9 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       let pikets = (pkData ?? []) as any[];
 
       if (isSalesBiasa || isSalesSup) {
-        pikets = []; // Piket showroom bukan wilayah Sales
+        pikets = [];
       } else if (isPTSsup) {
         const myTeam = currentUser.team_type;
-        //  Disaring lewat bacaPicPiket(): Supervisor hanya melihat piket
-        //  anggota TIMNYA SENDIRI. Cara lama menyebut tiga nama tim satu per
-        //  satu, jadi Supervisor kelompok PTS baru jatuh ke `return true` -
-        //  ia melihat piket SEMUA tim, kebalikan dari yang dimaksud.
         pikets = pikets.filter((p: any) => {
           const pic = bacaPicPiket(p);
           if (!pic) return false;
@@ -389,7 +271,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] piket:', e); }
 
-    // 5. Unit Movement
     if (bolehModul('unit-movement')) try {
       if (tanpaBatas) {
         const { data: uData } = await supabase.from('movement_logs')
@@ -414,11 +295,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }
     } catch (e) { console.error('[search] units:', e); }
 
-    // 7. Project Progress
-    //  RLS di checklist_proyek (migrasi 025) menegakkan isolasi Sales di level basis data,
-    //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya -
-    //  tanpa perlu penyaringan tambahan di sini. Batas untuk sales biasa tetap
-    //  dipasang sebagai lapis kedua, kalau-kalau RLS dimatikan sewaktu-waktu.
     if (bolehModul('project-progress')) try {
       let qpp = supabase.from('checklist_proyek')
         .select('id, nama, client, status, sales_name')
@@ -437,9 +313,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] project progress:', e); }
 
-    // 8. Tech Note
-    //  Catatan teknis adalah pengetahuan bersama tim PTS - tidak dibatasi per
-    //  orang, tapi Sales memang tidak berkepentingan dengannya.
     if (bolehModul('tech-note')) try {
       if (tanpaBatas) {
         const { data } = await supabase.from('tech_notes')
@@ -458,14 +331,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }
     } catch (e) { console.error('[search] tech note:', e); }
 
-    // 9. Daily Report
     if (bolehModul('daily-report')) try {
       let qd = supabase.from('daily_reports')
         .select('id, report_date, user_name, sales_division, reminder_notes')
         .or(`user_name.ilike.%${q}%,reminder_notes.ilike.%${q}%,sales_division.ilike.%${q}%`)
         .order('report_date', { ascending: false }).limit(10);
-      // Batasnya sama dengan modul lain: siapa pun yang bukan orang dalam PTS
-      // dibatasi ke lingkupnya, termasuk Sales Supervisor.
       if (!tanpaBatas) qd = batasiLingkup(lingkup, qd, ['user_name']);
       const { data } = await qd;
       (data ?? []).forEach((d: any) => res.push({
@@ -477,7 +347,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] daily report:', e); }
 
-    // 10. Form Review
     if (bolehModul('form-bast')) try {
       let qf = supabase.from('form_reviews')
         .select('id, project_name, address, sales_name, sales_division, assign_name')
@@ -499,9 +368,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] form review:', e); }
 
-    // 11. Materi Learning Center
-    //  Materi pelatihan terbuka untuk semua yang login - tidak ada isi rahasia
-    //  antar-orang di sini, jadi tidak perlu dibatasi.
     if (bolehModul('learning-center')) try {
       const { data } = await supabase.from('lc_materials')
         .select('id, materi_name')
@@ -516,7 +382,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       }));
     } catch (e) { console.error('[search] materi:', e); }
 
-    // 6. Users (admin only)
     try {
       if (isAdmin) {
         const { data: usrData } = await supabase.from('users')
@@ -537,7 +402,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     setLoading(false);
   }, [isAdmin, isPTSsup, isSalesSup, currentUser, getPTSTeamNames, getSalesScope]);
 
-  // Debounced search
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     if (!query.trim()) { setResults([]); setLoading(false); return; }
@@ -561,19 +425,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     return acc;
   }, {} as Record<ResultType, number>);
 
-  /*
-    Tombolnya BERTULISAN, tidak hanya berikon.
-
-    Ikon kaca pembesar sendirian mengandalkan orang menebak - dan pencarian ini
-    menjangkau sebelas modul sekaligus, jadi yang tidak tahu keberadaannya
-    kehilangan jalan pintas paling berguna di platform. Kata "Pencarian"
-    ditampilkan mulai lebar sm; di layar tersempit ia menyusut kembali jadi
-    ikon saja karena bilah atasnya memang sudah padat, dan aria-label tetap
-    menyebutkannya untuk pembaca layar.
-
-    Pintasan ⌘K ikut ditulis - itu satu-satunya tempat orang bisa
-    mengetahuinya tanpa diberi tahu lisan.
-  */
   if (!open) return (
     <button aria-label="Pencarian semua platform (Ctrl+K)" onClick={() => setOpen(true)}
       className="flex items-center justify-center gap-1.5 h-10 w-10 sm:w-auto sm:px-3 rounded-xl transition-all hover:shadow-md"
@@ -597,7 +448,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: 'rgba(255,255,255,0.98)', border: '1.5px solid rgba(0,0,0,0.1)', animation: 'dropIn 0.18s ease-out' }}>
 
-        {/* ── Search input ── */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
           <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -615,7 +465,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
           </button>
         </div>
 
-        {/* ── Type filter tabs ── */}
         {results.length > 0 && (
           <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-100 overflow-x-auto">
             <button onClick={() => setActiveType('all')}
@@ -637,7 +486,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
           </div>
         )}
 
-        {/* ── Results list ── */}
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto">
           {!query.trim() ? (
             <div className="px-4 py-8 text-center">
@@ -679,12 +527,10 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                     style={isSelected
                       ? { background: '#f1f5f9', outline: `2px solid ${cfg.color}22` }
                       : { background: 'transparent' }}>
-                    {/* Icon */}
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
                       style={{ background: cfg.bg }}>
                       <Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
                     </div>
-                    {/* Text */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-slate-800 truncate">{r.title}</span>
@@ -700,12 +546,10 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                         {r.meta && <span className="text-[11px] text-slate-500 shrink-0">· {r.meta}</span>}
                       </div>
                     </div>
-                    {/* Module badge */}
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0"
                       style={{ background: cfg.bg, color: cfg.color }}>
                       {cfg.label}
                     </span>
-                    {/* Arrow */}
                     {isSelected && r.url && (
                       <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: cfg.color }}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -718,7 +562,6 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
           )}
         </div>
 
-        {/* ── Footer ── */}
         <div className="px-4 py-2 border-t border-slate-100 flex items-center justify-between">
           <span className="text-[11px] text-slate-500">
             {results.length > 0 ? `${results.length} hasil ditemukan` : 'Ketik untuk mulai pencarian'}

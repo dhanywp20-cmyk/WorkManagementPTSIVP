@@ -1,9 +1,6 @@
 'use client';
-/** DashboardKPI-grafik.tsx - dipecah dari DashboardKPI.tsx (scripts/pecah-modul.mjs); DashboardKPI.tsx tetap mengekspor ulang semuanya. */
 import { Ikon } from '@/components/shared/Ikon';
 import { type ReactNode } from 'react';
-
-// Sub-components
 
 function MiniDonut({ segments, size = 72 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((s, x) => s + x.value, 0);

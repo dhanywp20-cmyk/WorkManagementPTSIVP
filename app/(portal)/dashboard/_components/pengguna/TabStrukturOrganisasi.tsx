@@ -1,7 +1,6 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 
-/** TabStrukturOrganisasi - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { User } from '../shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';
@@ -37,17 +36,9 @@ export function TabStrukturOrganisasi({ ORG_GROUP_STYLE, activeTab, allUsers, ha
         };
         (orgChildren['__root__'] || []).forEach(r => walk(r, 0));
 
-        /**
-         * Siapa yang TIDAK muncul di pohon sama sekali. Penelusuran
-         * berangkat dari orang tanpa atasan, jadi rantai yang melingkar
-         * (A atasan B, B atasan A) tidak tersambung ke akar mana pun dan
-         * anggotanya lenyap dari layar tanpa pesan. Dihitung tanpa
-         * filter pencarian supaya peringatannya tidak ikut hilang saat
-         * daftar sedang disaring.
-         */
         const tampilSemua = new Set<string>();
         const walkAll = (u: User) => {
-          if (tampilSemua.has(u.id)) return;      // penjaga siklus
+          if (tampilSemua.has(u.id)) return;
           tampilSemua.add(u.id);
           (orgChildren[u.id] || []).forEach(walkAll);
         };
@@ -61,7 +52,6 @@ export function TabStrukturOrganisasi({ ORG_GROUP_STYLE, activeTab, allUsers, ha
               <Keterangan className="ml-1">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</Keterangan>
             </div>
 
-            {/* Peringatan: akun yang tidak muncul di pohon mana pun. */}
             {tidakTampil.length > 0 && (
               <div className="px-4 py-3 rounded-xl" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
                 <p className="text-xs font-bold text-amber-800 mb-1">

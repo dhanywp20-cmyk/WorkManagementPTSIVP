@@ -22,10 +22,6 @@ export function ConfirmDialog({
   const badan = useRef<HTMLDivElement>(null);
   const buka = !!state;
 
-  // Ikut tumpukan+kunci-gulir yang sama dengan Modal - dialog ini sering
-  // dibuka DARI DALAM modal (mis. konfirmasi hapus di atas form Project
-  // Progress), jadi Esc dan kunci gulir harus dihitung lintas keduanya,
-  // bukan masing-masing menyimpan hitungannya sendiri.
   useEffect(() => {
     if (!buka) return;
     tumpukan.push(idJudul);
@@ -41,8 +37,6 @@ export function ConfirmDialog({
     if (buka) badan.current?.focus();
   }, [buka]);
 
-  // Esc membatalkan, dan jebakan fokus mengunci Tab di dalam dialog -
-  // keduanya cuma aktif kalau dialog ini yang paling atas di tumpukan.
   useEffect(() => {
     if (!buka) return;
     const tekan = (e: KeyboardEvent) => {
@@ -84,18 +78,10 @@ export function ConfirmDialog({
   return (
     <ModalPortal>
     <div role="dialog" aria-modal="true"
-      // Z.blocking (2000) - WAJIB di atas SELURUH lapisan overlay, karena
-      // dialog ini dipanggil dari dalam modal bertingkat (mis. detail Project
-      // Progress di Z.overlay, assign di Z.overlayTop). Kalau lebih rendah,
-      // konfirmasinya ter-render tapi tertutup total: klik user jatuh ke modal
-      // di belakangnya dan terasa seperti tombolnya tidak berfungsi.
       className="fixed inset-0 z-2000 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onCancel}
     >
-      {/* role="alertdialog": ini pertanyaan yang MENUNGGU jawaban, bukan
-          sekadar panel. Penandanya membuat pembaca layar mengumumkan
-          pertanyaannya begitu muncul, bukan menunggu user menemukannya. */}
       <div
         ref={badan}
         role="alertdialog"

@@ -1,12 +1,10 @@
-/** Gambar SVG Power Connection (diagram & poster cetak/PNG). */
 import { esc } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { warnaPort } from '../koneksi/data';
 import { type DataDaya, type PengaturanDaya, susunDaya, WARNA_FASE } from './data';
 import { teksCara } from './teks';
-import type { HasilDayaLED } from '@/lib/av-hitung';
+import type { HasilDayaLED } from '@/lib/av/hitung';
 
-/** Diagram sirkuit power (SVG mandiri) untuk layar, cetak, dan unduhan. */
 export function svgDaya(d: DataDaya, h: HasilDayaLED, arah: 'horizontal' | 'vertikal', judul?: string): string {
   const lebarM = (d.kolom * d.wUnit) / 1000, tinggiM = (d.baris * d.hUnit) / 1000;
   const skala = Math.min(860 / Math.max(0.01, lebarM), 430 / Math.max(0.01, tinggiM));
@@ -31,11 +29,9 @@ export function svgDaya(d: DataDaya, h: HasilDayaLED, arah: 'horizontal' | 'vert
       if (titik.length > 1) out.push(`<polyline points="${titik.map(([x, y]) => `${n(x)},${n(y)}`).join(' ')}" fill="none" stroke="${warnaPort(no)}" stroke-width="${n(Math.max(1, Math.min(2.5, selMin * 0.06)))}" stroke-linejoin="round" stroke-opacity="0.85"/>`);
     });
   }
-  //  Titik masuk tiap sirkuit: label sirkuit + fase di tepi terdekat.
   for (const s of h.sirkuit) {
     if (!s.mulai) continue;
     const m = s.mulai, [cx, cy] = pusat(m.c, m.r), warna = warnaPort(s.no);
-    //  Seri jarak: sisi searah kabel didahulukan (kabel tegak masuk dari atas/bawah).
     const searah = (sisi: string) => ((sisi === 'atas' || sisi === 'bawah') === (arah === 'vertikal') ? 1 : 0);
     const jarak = [{ sisi: 'kiri', v: m.c }, { sisi: 'kanan', v: d.kolom - 1 - m.c }, { sisi: 'atas', v: m.r }, { sisi: 'bawah', v: d.baris - 1 - m.r }]
       .sort((a, b) => a.v - b.v || searah(b.sisi) - searah(a.sisi));
@@ -60,7 +56,6 @@ export function svgDaya(d: DataDaya, h: HasilDayaLED, arah: 'horizontal' | 'vert
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${tinggi}" viewBox="0 0 ${lebar} ${tinggi}" style="max-width:100%;height:auto">${out.join('')}</svg>`;
 }
 
-/** Gambar siap kirim: judul, ringkasan, diagram, legenda fase & sirkuit. */
 export function svgPosterDaya(d: DataDaya, s: PengaturanDaya, judul: string, sub: string): string {
   const h = susunDaya(d, s);
   const diagram = svgDaya(d, h, s.arah);

@@ -1,13 +1,5 @@
-/**
- * /api/asisten/draf-daily-report - susun "Ringkasan hari ini" Daily Report
- * dari aktivitas yang sudah ada di form (tiket, jadwal, manual).
- *
- * Datanya dikirim peramban dari form yang sedang dibuka (sudah terfilter hak
- * aksesnya di sana) dan dipangkas di sini; AI hanya MERANGKUM, tidak menambah
- * fakta. Hasilnya draf - user memeriksa sebelum menyimpan.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
 
 export const runtime = 'nodejs';

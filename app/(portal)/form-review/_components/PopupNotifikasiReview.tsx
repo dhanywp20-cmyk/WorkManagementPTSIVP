@@ -1,9 +1,5 @@
 'use client';
 
-/**
- * PopupNotifikasiReview - review yang belum diisi. Semua keadaan tetap milik induk. Kerangka: Modal bersama
- * (dulu kepala ungu/kuning sendiri). DaftarReviewTertunda dipakai juga oleh PopupLonceng.
- */
 import { Modal, TombolModal } from '@/components/shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { ReviewForm } from './shared';
@@ -16,7 +12,6 @@ export interface PopupNotifikasiReviewProps {
   showNotificationPopup: boolean;
 }
 
-/** Popup daftar review yang belum diisi - satu wujud untuk popup otomatis & lonceng. */
 export function DaftarReviewTertunda({ judul, keterangan, kosong, reviews, isTeam, onBuka, onTutup }: {
   judul: string; keterangan: string; kosong: string; reviews: ReviewForm[]; isTeam: boolean;
   onBuka: (r: ReviewForm) => void; onTutup: () => void;

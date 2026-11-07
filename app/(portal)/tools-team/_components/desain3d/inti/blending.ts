@@ -1,24 +1,10 @@
-/**
- * desain3d/inti/blending.ts - Area blending antar proyektor (edge blending): bagian permukaan yang
- * disinari dua proyektor sekaligus. Lebar diukur menyusuri permukaan (cm, ikut menekuk di layar
- * lengkung / sudut dinding) dan persennya terhadap lebar gambar MASING-MASING proyektor - angka
- * yang diisi di software blending (mis. 15% = 288 px dari 1920 px).
- *
- * Murni: tanpa three.js / React / DOM (diuji di uji/blending-proyektor.ts). Titik permukaan
- * (hasil raycast) & uji keterhalangan diberikan pemanggil (mesin/alatBantu.ts).
- */
-import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, throwRatioDari } from './proyektor';
+import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, resolusiProyektorDari, throwRatioDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
-/** Model lensa proyektor: basis ortonormal (sumbu, kanan, atas) + lebar/tinggi gambar per meter lempar. */
 export interface Lensa {
-  /**
-   * Puncak kerucut sinar: ujung lensa digeser mundur sejauh koreksi jarak b (rumus lensa L = TR x W - b), jadi
-   * lebar gambar = jarak dari puncak / TR. b = 0 (bawaan): puncak = ujung lensa.
-   */
   O: Titik; D: Titik; kanan: Titik; atas: Titik;
-  /** lebar & tinggi gambar per 1 m jarak lempar (rasio panel proyektor: 16:9 / 16:10 / 4:3) */ w1: number; h1: number;
-  /** pergeseran pusat gambar (lens shift) dalam pecahan lebar / tinggi gambar */ gH: number; gV: number;
+   w1: number; h1: number;
+   gH: number; gV: number;
 }
 
 const tambah = (a: Titik, b: Titik, k = 1): Titik => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
@@ -29,25 +15,21 @@ const panjang = (a: Titik) => Math.hypot(a[0], a[1], a[2]);
 const satuan = (a: Titik): Titik => { const l = panjang(a) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
 export const jarakTitik = (a: Titik, b: Titik) => panjang(kurang(a, b));
 
-/** Lensa proyektor di dunia - rumus yang sama dengan sinar di kanvas (TR/zoom, lens shift, pan & tilt). */
 export function lensaDari(p: Benda): Lensa {
   const r = (p.rot * Math.PI) / 180;
   const D = satuan(arahProyektor(p));
   const kanan: Titik = [-Math.cos(r), 0, Math.sin(r)];
   const atas = satuan(silang(kanan, D));
   const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p);
-  //  Gantung plafon = terbalik: offset vertikal lensa ke bawah sumbu.
   const arahV = p.pasangProyektor === 'meja' ? 1 : -1;
   const O = tambah(keDunia(p, lensaProyektor(p)), D, -koreksiJarakDari(p));
   return { O, D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
 }
 
-/** Arah sinar ke titik gambar (u, v) - u, v dari -0,5 (kiri / bawah) sampai 0,5 (kanan / atas). */
 export function arahSinar(L: Lensa, u: number, v: number): Titik {
   return satuan(tambah(tambah(L.D, L.kanan, (u + L.gH) * L.w1), L.atas, (v + L.gV) * L.h1));
 }
 
-/** Kebalikan arahSinar: koordinat gambar (u, v) titik dunia X, atau null bila di belakang lensa. */
 export function keGambar(L: Lensa, X: Titik): { u: number; v: number } | null {
   const w = kurang(X, L.O);
   const t = titik(w, L.D);
@@ -55,35 +37,22 @@ export function keGambar(L: Lensa, X: Titik): { u: number; v: number } | null {
   return { u: titik(w, L.kanan) / t / L.w1 - L.gH, v: titik(w, L.atas) / t / L.h1 - L.gV };
 }
 
-/** Titik X berada di dalam bingkai gambar proyektor (belum memeriksa keterhalangan). */
 export function dalamGambar(L: Lensa, X: Titik): boolean {
   const k = keGambar(L, X);
   return !!k && Math.abs(k.u) <= 0.5 + 1e-9 && Math.abs(k.v) <= 0.5 + 1e-9;
 }
 
-/** Panjang polyline titik-titik berurutan (null = sinar tidak mengenai apa pun - memutus garis). */
 function panjangGaris(t: (Titik | null)[], dari = 0, sampai = t.length - 1): number {
   let s = 0;
   for (let i = dari + 1; i <= sampai; i++) { const a = t[i - 1], b = t[i]; if (a && b) s += jarakTitik(a, b); }
   return s;
 }
 
-/** Sisa ruang di dalam bingkai gambar L pada titik X: >= 0 di dalam (0 = tepat di tepi), null di belakang lensa. */
 function sisaBingkai(L: Lensa, X: Titik): number | null {
   const k = keGambar(L, X);
   return k ? 0.5 - Math.max(Math.abs(k.u), Math.abs(k.v)) : null;
 }
 
-/**
- * Tumpang tindih satu garis sampel gambar proyektor A (titik permukaan berurutan dari tepi ke tepi,
- * jarak SERAGAM dalam koordinat gambar) dengan gambar proyektor B: run terpanjang titik yang juga
- * disinari B. Tepi run berada di antara dua sampel: bila sampel luarnya keluar bingkai B, titik tepi
- * diinterpolasi tepat di garis bingkai B; selain itu (terhalang / tidak kena) diambil setengah sampel.
- *   - lebarM : panjang run menyusuri permukaan (ikut menekuk di layar lengkung)
- *   - persen : porsi run terhadap lebar GAMBAR (koordinat lensa = piksel) - angka yang diisi di
- *              software blending; tidak terpengaruh gambar yang tumpah ke dinding di luar layar.
- *   - garis  : titik permukaan dari tepi ke tepi area blending (untuk garis ukur berpanah).
- */
 export function tumpangGaris(garisA: (Titik | null)[], LB: Lensa, terlihatB: (X: Titik) => boolean = () => true):
   { lebarM: number; persen: number; tengah: Titik; garis: Titik[] } | null {
   const n = garisA.length;
@@ -98,10 +67,8 @@ export function tumpangGaris(garisA: (Titik | null)[], LB: Lensa, terlihatB: (X:
   }
   if (!terbaik) return null;
   const [s, e] = terbaik;
-  //  Segmen yang "melompat" (gambar tumpah ke permukaan lain) tidak dipakai untuk tepi: > 3x median.
   const seg = garisA.slice(1).map((b, i) => (b && garisA[i] ? jarakTitik(garisA[i]!, b) : 0)).filter(x => x > 0).sort((a, b) => a - b);
   const batasSeg = (seg[Math.floor(seg.length / 2)] ?? 0) * 3;
-  /** Tepi di luar sampel `dalam` ke arah sampel `luar`: porsi segmen yang masih di dalam & titiknya. */
   const tepi = (dalam: number, luar: number): { t: number; X: Titik } => {
     const a = garisA[dalam]!, b = garisA[luar];
     if (!b || jarakTitik(a, b) > batasSeg) return { t: 0.5, X: a };
@@ -121,27 +88,26 @@ export function tumpangGaris(garisA: (Titik | null)[], LB: Lensa, terlihatB: (X:
 
 export interface SampelProyektor {
   p: Benda; L: Lensa;
-  /** Titik permukaan sepanjang garis tengah mendatar (kiri -> kanan) & tegak (bawah -> atas) gambar. */
   baris: (Titik | null)[]; kolom: (Titik | null)[];
 }
 
 export interface Blending {
   a: string; b: string; namaA: string; namaB: string;
   arah: 'kiri-kanan' | 'atas-bawah';
-  /** Lebar area blending menyusuri permukaan (m). */ lebarM: number;
-  /** Persen dari lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B. */ persenA: number; persenB: number;
-  /** Titik tengah area blending (untuk label). */ tengah: Titik;
-  /** Titik permukaan dari tepi ke tepi area blending di garis tengah gambar A (garis ukur berpanah). */ garis: Titik[];
-  /** Piksel acuan lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B - dari rasio aspek tiap proyektor. */ pxA?: number; pxB?: number;
+   lebarM: number;
+   persenA: number; persenB: number;
+   tengah: Titik;
+   garis: Titik[];
+   pxA?: number; pxB?: number; resA?: string; resB?: string;
 }
 
-/** Blending di bawah ini diabaikan (sentuhan tepi / pembulatan sampel). */
+function pikselSisi(p: Benda, arah: Blending['arah']): { px: number; res?: string } {
+  const r = resolusiProyektorDari(p), a = rasioProyektorDari(p).px;
+  return r ? { px: arah === 'kiri-kanan' ? r.x : r.y, res: r.kunci } : { px: arah === 'kiri-kanan' ? a.x : a.y };
+}
+
 export const BLENDING_MIN_PERSEN = 1;
 
-/**
- * Semua pasangan proyektor yang gambarnya bertumpuk di permukaan yang sama. `terlihat(i, X)` = titik
- * X benar-benar terkena sinar proyektor ke-i (tidak terhalang benda lain) - dari raycast pemanggil.
- */
 export function hitungBlending(daftar: SampelProyektor[], terlihat: (i: number, X: Titik) => boolean = () => true): Blending[] {
   const hasil: Blending[] = [];
   for (let i = 0; i < daftar.length; i++) for (let j = i + 1; j < daftar.length; j++) {
@@ -152,50 +118,43 @@ export function hitungBlending(daftar: SampelProyektor[], terlihat: (i: number, 
       return ab && ba ? { ab, ba } : null;
     };
     const h = ukur('baris'), v = ukur('kolom');
-    //  Arah blending = sumbu yang bertumpuk lebih sempit (sisi-ke-sisi); bila hanya satu sumbu bertumpuk, itu.
     const pilih = h && v ? (h.ab.persen <= v.ab.persen ? { arah: 'kiri-kanan' as const, ...h } : { arah: 'atas-bawah' as const, ...v })
       : h ? { arah: 'kiri-kanan' as const, ...h } : v ? { arah: 'atas-bawah' as const, ...v } : null;
     if (!pilih || Math.max(pilih.ab.persen, pilih.ba.persen) < BLENDING_MIN_PERSEN) continue;
+    const sa = pikselSisi(A.p, pilih.arah), sb = pikselSisi(B.p, pilih.arah);
     hasil.push({
       a: A.p.id, b: B.p.id, namaA: A.p.nama, namaB: B.p.nama, arah: pilih.arah,
       lebarM: (pilih.ab.lebarM + pilih.ba.lebarM) / 2, persenA: pilih.ab.persen, persenB: pilih.ba.persen,
       tengah: [(pilih.ab.tengah[0] + pilih.ba.tengah[0]) / 2, (pilih.ab.tengah[1] + pilih.ba.tengah[1]) / 2, (pilih.ab.tengah[2] + pilih.ba.tengah[2]) / 2],
       garis: pilih.ab.garis,
-      pxA: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(A.p).px.x : rasioProyektorDari(A.p).px.y,
-      pxB: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(B.p).px.x : rasioProyektorDari(B.p).px.y,
+      pxA: sa.px, pxB: sb.px, ...(sa.res ? { resA: sa.res } : {}), ...(sb.res ? { resB: sb.res } : {}),
     });
   }
   return hasil;
 }
 
-/** Teks ringkas satu blending, mis. "52 cm · 15%" atau "52 cm · 15% / 17%". */
 export function teksBlending(b: Pick<Blending, 'lebarM' | 'persenA' | 'persenB'>): string {
   const cm = Math.round(b.lebarM * 100);
   const pa = Math.round(b.persenA), pb = Math.round(b.persenB);
   return `${cm} cm · ${pa === pb ? `${pa}%` : `${pa}% / ${pb}%`}`;
 }
 
-/** Piksel acuan bila rasio proyektor tidak diketahui: 1920 x 1080 (16:9). */
 export const PIKSEL_ACUAN = { 'kiri-kanan': 1920, 'atas-bawah': 1080 } as const;
 
-/** Lebar blending dalam piksel acuan, mis. 12% kiri-kanan dari 1920 px -> 230. `px` = lebar / tinggi acuan proyektor itu. */
 export const pikselBlending = (persen: number, arah: Blending['arah'], px: number = PIKSEL_ACUAN[arah]) => Math.round((persen / 100) * px);
 
-/**
- * Baris keterangan detail satu blending (kartu di kanvas & PNG), mis.
- *   Area blending P1 ↔ P2 · kiri-kanan
- *   Lebar area 49 cm
- *   P1: 12% ≈ 230 px · P2: 11% ≈ 211 px
- *   dari lebar gambar (acuan 1920 px)
- */
 export function barisKeterangan(b: Blending, nama: (n: string) => string = n => n): string[] {
   const pxA = b.pxA ?? PIKSEL_ACUAN[b.arah], pxB = b.pxB ?? PIKSEL_ACUAN[b.arah];
   const p = (x: number, px: number) => `${Math.round(x)}% ≈ ${pikselBlending(x, b.arah, px)} px`;
   const sisi = b.arah === 'kiri-kanan' ? 'lebar' : 'tinggi';
+  const sumber = (res: string | undefined, px: number) => `${res ?? 'acuan'} ${px}`;
+  const asal = b.resA || b.resB
+    ? (sumber(b.resA, pxA) === sumber(b.resB, pxB) ? `${sumber(b.resA, pxA)} px` : `${sumber(b.resA, pxA)} / ${sumber(b.resB, pxB)} px`)
+    : `acuan ${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`}`;
   return [
     `Area blending ${nama(b.namaA)} ↔ ${nama(b.namaB)} · ${b.arah}`,
     `${sisi === 'lebar' ? 'Lebar' : 'Tinggi'} area ${Math.round(b.lebarM * 100)} cm`,
     `${nama(b.namaA)}: ${p(b.persenA, pxA)} · ${nama(b.namaB)}: ${p(b.persenB, pxB)}`,
-    `dari ${sisi} gambar (acuan ${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`})`,
+    `dari ${sisi} gambar (${asal})`,
   ];
 }

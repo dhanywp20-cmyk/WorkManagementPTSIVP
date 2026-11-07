@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalNominalProyek - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { ModalPortal } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { IncentiveProjectRow, persenPicBerlaku, type SkemaInsentif, formatRupiah, formatPct } from './calc';
@@ -30,22 +29,6 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
               <p className="text-xs text-slate-500 mt-0.5 truncate">{nominalProject.project_name}</p>
             </div>
             <div className="p-5 space-y-4">
-              {/*
-                BAST - terisi otomatis saat Handler klik Completed, TAPI tetap
-                bisa dibetulkan di sini.
-
-                Alasannya bukan kelengkapan fitur: status Completed sengaja
-                dikunci di Reminder Schedule ("tidak dapat diubah kembali"), dan
-                formulir Edit-nya tidak punya input BAST sama sekali. Jadi
-                begitu sebuah proyek terlanjur selesai tanpa BAST - mis. jadwal
-                multi-tanggal yang BAST-nya menempel di baris lain, atau jadwal
-                lama dari sebelum modal penyelesaian ada - tidak ada satu pun
-                jalan di layar untuk membetulkannya, dan tombol Generate Tahapan
-                tidak akan pernah muncul karena syaratnya adalah adanya BAST.
-                Satu-satunya jalan keluar tersisa adalah menyunting basis data
-                langsung, dan itu bukan sesuatu yang boleh jadi prosedur normal
-                untuk data yang menentukan pembayaran.
-              */}
               <div className="px-4 py-3 rounded-xl bg-gray-50 border border-gray-200">
                 <div className="flex items-center justify-between gap-3 mb-1.5">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tanggal BAST</p>
@@ -62,22 +45,12 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
                 </p>
               </div>
 
-              {/* Mode info */}
               {nominalProject.mode_penyelesaian && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-sm ${nominalProject.mode_penyelesaian === 'onsite' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                     {nominalProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : '💻 Remote'}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {/*
-                      Dulu ditulis literal ('100%'/'85%'/'60%'/'51%'), lepas dari skema
-                      yang sedang berlaku - begitu Scheme Setting diubah, angka di sini
-                      diam-diam berbeda dari yang benar-benar dibayar (dihitung
-                      calcHandlerSplit beberapa baris di bawah). Sekarang pakai fungsi
-                      yang sama dengan mesin pembayaran (persenPicBerlaku), dengan
-                      asumsi "ada Troubleshooting" - konvensi yang sama dipakai
-                      calcHandlerSplit di atas untuk ringkasan ini.
-                    */}
                     {nominalProject.pic_type === 'manager_pic' ? 'Manager PIC → ' : 'Standard → '}
                     {skema ? formatPct(persenPicBerlaku(
                       skema, nominalProject.mode_penyelesaian === 'remote', true,
@@ -87,7 +60,6 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
                 </div>
               )}
 
-              {/* Nominal */}
               <div>
                 <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Nilai Incentive (Rp) *</label>
                 <div className="relative">

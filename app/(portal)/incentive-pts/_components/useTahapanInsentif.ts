@@ -1,7 +1,6 @@
 'use client';
 
-/** useTahapanInsentif - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
-import { simpanNominal } from '@/lib/incentive-nominal-api';
+import { simpanNominal } from '@/lib/incentive/nominal-api';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { IncentiveProjectRow, IncentiveTranche, insertTranches, processYearlyBatch, batalkanBatchTahun, hapusTahapanProyek, type SkemaInsentif, formatRupiah } from './calc';
@@ -50,24 +49,9 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
     if (!nominalValue || Number(nominalValue) <= 0) { notify('error', 'Nominal incentive harus > 0'); return; }
     setSavingNominal(true);
 
-    /*
-      Nominal TIDAK lagi ditulis ke tabel jadwal (reminders): tabel itu terbaca
-      siapa pun yang boleh melihat jadwalnya, sedangkan nominal proyek hanya
-      untuk petugas. Ia disimpan lewat /api/incentive/nominal ke tabel
-      terkunci - dan server pula yang menolak bila tahapan pencairan proyek
-      ini sudah dibuat (nominal terkunci begitu tahapan ada, sebab tahap
-      berikutnya akan dihitung dari pool yang berbeda dengan yang sudah cair).
-    */
     const simpan = await simpanNominal(nominalProject.id, Number(nominalValue));
     if (simpan.error) { notify('error', simpan.error.message); setSavingNominal(false); return; }
 
-    /*
-      BAST ikut disimpan bila diubah - dan ke SELURUH baris sebatch, sama
-      seperti alur penyelesaian di Reminder Schedule. Jadwal berhari-hari
-      tersimpan sebagai beberapa baris; menulis ke satu baris saja meninggalkan
-      sisanya tanpa BAST, dan wakil proyek yang dipilih layar ini (tanggal
-      paling akhir) belum tentu baris yang barusan diperbaiki.
-    */
     const bastBerubah = (nominalProject.bast_date ?? '') !== nominalBast;
     if (bastBerubah) {
       const isiBast = { bast_date: nominalBast || null, updated_at: new Date().toISOString() };
@@ -86,17 +70,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
         notes: 'Tanggal BAST dibetulkan dari layar Incentive',
       }).catch(() => {});
     }
-    /*
-      Peringatan terpisah kalau BAST TETAP kosong sesudah simpan.
-
-      Tanpa ini, menyimpan nominal pada proyek yang BAST-nya belum diisi
-      terasa berhasil ("Nominal tersimpan!") padahal tombol Generate Tahapan
-      tetap tidak akan muncul - dan tidak ada petunjuk apa pun kenapa. Ini
-      persis yang terjadi pada Steak 21 Gading Serpong: nominalnya diperbarui,
-      kolom BAST di modal ini dibiarkan kosong (mungkin dikira otomatis
-      terisi), lalu Generate Tahapan tetap tidak muncul tanpa pesan yang
-      menjelaskan sebabnya.
-    */
     const bastMasihKosong = !(nominalBast || nominalProject.bast_date);
     if (bastMasihKosong) {
       notify('error', `Nominal ${formatRupiah(Number(nominalValue))} tersimpan, tapi BAST masih kosong — `
@@ -114,16 +87,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
     if (!generateProject?.bast_date) { notify('error', 'BAST belum ada — isi lewat tombol 💲 Input Nominal pada proyek ini.'); return; }
     setGenerating(true);
 
-    /*
-      Penjaga duplikat. Tanpa ini, menekan tombolnya dua kali - atau dua orang
-      menekannya bersamaan - menghasilkan DUA set tahapan untuk proyek yang
-      sama, dan batch pencairan akan membayar keduanya. Tidak ada yang gagal,
-      tidak ada galat; uangnya saja keluar dua kali.
-
-      Diperiksa ke database, bukan ke state layar: state hanya tahu apa yang
-      dimuat terakhir kali, sedangkan yang berbahaya justru tranche yang baru
-      saja dibuat orang lain.
-    */
     const { data: sudahAda } = await supabase
       .from('incentive_tranches').select('id').eq('project_id', generateProject.id).limit(1);
     if (sudahAda && sudahAda.length > 0) {
@@ -139,14 +102,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
     loadAll();
   };
 
-  /**
-   * Kandidat untuk Generate Tahapan Massal - proyek di tahun BAST yang
-   * dipilih, yang memenuhi syarat SAMA dengan tombol Generate Tranche satu
-   * per satu (hasNominal, BAST ada, belum punya tahapan). Dipisah dari
-   * jalankanBulkGenerate supaya tombolnya bisa menampilkan jumlah kandidat
-   * SEBELUM diklik, dan supaya modal konfirmasi menunjukkan daftar proyek
-   * yang PERSIS akan diproses.
-   */
   const kandidatBulkGenerate = (tahun: number): IncentiveProjectRow[] => {
     const punyaTahapan = new Set(tranches.map(t => t.project_id));
     return filteredProjects.filter(p =>
@@ -155,17 +110,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
       && !punyaTahapan.has(p.id));
   };
 
-  /**
-   * Generate Tahapan untuk banyak proyek sekaligus, satu tahun BAST.
-   *
-   * Memanggil insertTranches yang SAMA dipakai tombol satu-per-satu - tidak
-   * ada rumus tahapan kedua. Penjaga duplikatnya juga sama: dicek ulang ke
-   * database tepat sebelum menulis (bukan ke `tranches` di state, yang bisa
-   * saja sudah basi sejak modal konfirmasi dibuka), dan tiap proyek diproses
-   * satu-satu (bukan satu INSERT borongan) supaya satu proyek yang gagal
-   * tidak menggagalkan proyek lain dalam batch yang sama - dan supaya jelas
-   * PROYEK MANA yang gagal, bukan cuma "sebagian gagal".
-   */
   const jalankanBulkGenerate = async () => {
     if (!bulkGenerateConfirm || !bulkGenerateConfirm.length || !skema || filterBastYear == null) return;
     setBulkGenerating(true);
@@ -201,11 +145,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
   const handleBatchProcess = async () => {
     if (!currentUser) return;
     setBatchProcessing(true);
-    //  Dulu dicari lewat jabatan='Manager' AND team_type='Team PTS IVP' -
-    //  nama tim dipaku, dan ada DUA jabatan Manager di basis data ini
-    //  (PTS IVP & PTS UMP) sehingga .limit(1) memilih tanpa aturan. Untuk
-    //  dokumen yang menyangkut uang itu tidak boleh diserahkan pada urutan
-    //  baris. Lihat managerUtama() di lib/penerima-admin.ts.
     const mgrData = await managerUtama();
     const managerId = (mgrData?.id || currentUser.id || '') as string;
     const managerName = (mgrData?.full_name || currentUser.full_name || 'Manager') as string;
@@ -219,7 +158,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
     setBatchProcessing(false); setBatchConfirm(false); loadAll();
   };
 
-  /** Batalkan hasil Process Batch satu tahun. Yang sudah Paid tidak disentuh. */
   const jalankanBatalBatch = async () => {
     if (batalBatch === null) return;
     setMembatalkan(true);
@@ -245,7 +183,6 @@ export function useTahapanInsentif(k: TahapanInsentifKonteks) {
     loadAll();
   };
 
-  /** Hapus seluruh tahapan satu proyek supaya bisa dibuat ulang. */
   const jalankanHapusTahapan = async () => {
     if (!hapusTahapan) return;
     setMembatalkan(true);

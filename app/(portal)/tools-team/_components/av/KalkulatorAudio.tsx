@@ -1,8 +1,4 @@
 'use client';
-/**
- * Kalkulator audio: speaker plafon & SPL, line 70/100 V, impedansi & kabel speaker, akustik ruang (RT60).
- * Satu berkas per bagian di av/audio/; rumus di lib/av-hitung.ts & lib/av-audio-jaringan.ts.
- */
 import { Segmen } from '../bersama/ui';
 import { AudioAkustik } from './audio/AudioAkustik';
 import { AudioKabel } from './audio/AudioKabel';

@@ -1,12 +1,7 @@
 'use client';
-/**
- * Alur "buat" Product Comparison: brosur dibaca di peramban, lalu disusun AI - otomatis (Gemini platform,
- * /api/tools-team/perbandingan) atau lewat AI chat pilihan pengguna (salin prompt, tempel jawaban). Kedua jalan
- * diperiksa dengan aturan yang sama (periksaHasil: kutipan wajib ada di brosur).
- */
 import { useRef, useState } from 'react';
-import { type Bahasa, type KartuBanding, MAKS_PRODUK, MIN_PRODUK, periksaDaftarBerkas, periksaHasil } from '@/lib/perbandingan';
-import { ambilJson, promptSalin, type SumberProduk, teksBertanda } from '@/lib/perbandingan-prompt';
+import { type Bahasa, type KartuBanding, MAKS_PRODUK, MIN_PRODUK, periksaDaftarBerkas, periksaHasil } from '@/lib/perbandingan/inti';
+import { ambilJson, promptSalin, type SumberProduk, teksBertanda } from '@/lib/perbandingan/prompt';
 import { bacaTeksPdf } from './bacaPdf';
 import type { Brosur } from './UnggahBrosur';
 
@@ -32,7 +27,6 @@ export function useBuatPerbandingan() {
   };
   const hapus = (id: string) => { setBrosur(bs => bs.filter(b => b.id !== id)); if (unggulan === id) setUnggulan(brosur.find(b => b.id !== id)?.id ?? null); };
 
-  /** Urutan kolom: unggulan dulu. null = belum siap (alasan dikembalikan). */
   const sumber = (): SumberProduk[] | string => {
     const salah = periksaDaftarBerkas(brosur.map(b => ({ nama: b.file.name, ukuran: b.file.size })));
     if (salah) return salah;
@@ -62,7 +56,6 @@ export function useBuatPerbandingan() {
 
   const prompt = (bahasa: Bahasa): string => { const s = sumber(); if (typeof s === 'string') throw new Error(s); return promptSalin(bahasa, s); };
 
-  /** Jawaban dari AI chat lain -> diperiksa terhadap teks brosur yang sama. */
   const pakaiJawaban = (teks: string, bahasa: Bahasa): HasilSusun => {
     const s = sumber(); if (typeof s === 'string') throw new Error(s);
     const json = ambilJson(teks);

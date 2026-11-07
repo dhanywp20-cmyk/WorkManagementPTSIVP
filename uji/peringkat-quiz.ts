@@ -1,19 +1,4 @@
-/**
- * uji/peringkat-quiz.ts - hitungPeringkat() (lib/learning-rank.ts).
- *
- * Fungsi ini menggantikan "Top Performers" lama yang (a) mengirim nama & skor
- * SELURUH peserta ke browser lalu cuma disamarkan CSS blur() - bukan proteksi
- * sungguhan, dan (b) selalu kosong untuk Guest/Sales karena RLS lc_quiz_attempts
- * menahan mereka membaca baris siapa pun selain dirinya. hitungPeringkat cuma
- * mengembalikan ANGKA milik si pemanggil - tidak pernah nama/skor orang lain.
- *
- *   NEXT_PUBLIC_SUPABASE_URL=https://x.supabase.co \
- *   NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy \
- *   NEXT_PUBLIC_SUPABASE_SERVICES_URL=https://y.supabase.co \
- *   NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY=dummy \
- *   npx tsx uji/peringkat-quiz.ts
- */
-import { hitungPeringkat, type BarisAttempt } from '../lib/learning-rank';
+import { hitungPeringkat, type BarisAttempt } from '../lib/kuis/peringkat';
 
 let lulus = 0, gagal = 0;
 function ok(nama: string, syarat: boolean, ket = '') {
@@ -46,7 +31,7 @@ console.log('\n2. Role lain TIDAK ikut tercampur ke peer group');
 {
   const rows = [
     baris('u1', 99, 'guest', null),
-    baris('t1', 100, 'team', null),   // skor tertinggi, tapi beda role - tidak boleh menggeser peringkat guest
+    baris('t1', 100, 'team', null),
     baris('t2', 95, 'team', null),
   ];
   const hasil = hitungPeringkat(rows, { id: 'u1', role: 'guest', sales_division: null });
@@ -69,7 +54,7 @@ console.log('\n4. Attempt pending_review (belum dinilai) tidak ikut dihitung');
 {
   const rows = [
     baris('u1', 60, 'guest', null),
-    baris('u2', 200, 'guest', null, 'pending_review'), // skor mentah tinggi tapi belum final
+    baris('u2', 200, 'guest', null, 'pending_review'),
   ];
   const hasil = hitungPeringkat(rows, { id: 'u1', role: 'guest', sales_division: null });
   sama('u2 (pending) tidak ikut peer group', hasil.globalTotal, 1);
@@ -79,8 +64,8 @@ console.log('\n4. Attempt pending_review (belum dinilai) tidak ikut dihitung');
 console.log('\n5. Rata-rata dari beberapa attempt per orang, bukan attempt terakhir saja');
 {
   const rows = [
-    baris('u1', 100, 'guest', null), baris('u1', 50, 'guest', null),   // avg 75
-    baris('u2', 60, 'guest', null), baris('u2', 60, 'guest', null),    // avg 60
+    baris('u1', 100, 'guest', null), baris('u1', 50, 'guest', null),
+    baris('u2', 60, 'guest', null), baris('u2', 60, 'guest', null),
   ];
   const hasil = hitungPeringkat(rows, { id: 'u2', role: 'guest', sales_division: null });
   sama('u2 (avg 60) di bawah u1 (avg 75) -> peringkat 2', hasil.globalRank, 2);
@@ -112,16 +97,6 @@ console.log('\n8. Baris yatim (user tidak ditemukan / role null) tidak ikut & ti
   sama('Baris yatim tidak ikut peer group', hasil.globalTotal, 1);
 }
 
-
-/*
-  PAPAN PERINGKAT - penyamaran nama terjadi di SERVER, bukan lewat blur() CSS.
-
-  Ini bagian yang paling mudah salah dan paling mahal kalau salah: kalau nama
-  asli ikut terkirim lalu "disembunyikan" di sisi tampilan, ia tetap terbaca
-  utuh oleh siapa pun yang membuka Network tab - dan tidak ada satu pun
-  pengujian tampilan yang akan menangkapnya. Yang diuji di sini karena itu
-  bukan tampilannya, melainkan ISI data yang keluar dari hitungPeringkat.
-*/
 console.log('\n9. Papan peringkat: hanya nama SENDIRI yang asli');
 {
   const rows: BarisAttempt[] = [
@@ -140,9 +115,6 @@ console.log('\n9. Papan peringkat: hanya nama SENDIRI yang asli');
     !namaLain.includes('Ana Pertama') && !namaLain.includes('Cakra Ketiga'), namaLain.join(', '));
   ok('Nama peserta lain berbentuk "Peserta #N"', namaLain.every(n => /^Peserta #\d+$/.test(n)));
 
-  //  Penjagaan paling penting: nama asli siapa pun selain pemanggil tidak
-  //  boleh muncul DI MANA PUN pada hasil - termasuk lewat field yang
-  //  ditambahkan belakangan tanpa sadar ikut membawa nama.
   const semuaTeks = JSON.stringify(h);
   ok('Nama asli peserta lain tidak bocor di seluruh hasil',
     !semuaTeks.includes('Ana Pertama') && !semuaTeks.includes('Cakra Ketiga'));
@@ -156,17 +128,6 @@ console.log('\n9. Papan peringkat: hanya nama SENDIRI yang asli');
 
 console.log('\n10. Tanpa data apa pun: papan berisi SATU baris "belum dinilai"');
 {
-  /*
-    Pengujian ini dulu berbunyi `h.papan.length === 0` dan karena itu MERAH
-    permanen - bertentangan dengan perilaku yang justru sengaja dibangun di
-    hitungPeringkat: pemanggil yang belum punya nilai tetap diberi barisnya
-    sendiri bertanda belumDinilai, supaya papannya tidak tampil berisi orang
-    lain semua tanpa satu pun keterangan kenapa dirinya tidak ada di sana.
-
-    Yang diperbaiki adalah HARAPANNYA, bukan kode produksinya. Pengujian yang
-    merah terus-menerus lebih berbahaya daripada tidak ada pengujian sama
-    sekali: ia melatih orang mengabaikan kegagalan, termasuk yang sungguhan.
-  */
   const h = hitungPeringkat([], { id: 'u1', role: 'guest', sales_division: null });
   ok('Papan berupa array, bukan undefined', Array.isArray(h.papan));
   sama('Tepat satu baris - milik pemanggil sendiri', h.papan.length, 1);
@@ -174,11 +135,6 @@ console.log('\n10. Tanpa data apa pun: papan berisi SATU baris "belum dinilai"')
   ok('Tidak mengarang peringkat', h.globalRank === null && h.papan[0]?.rank === 0);
 }
 
-/*
-  11-13. ATURAN URUTAN - ini yang selama ini memicu komplain "peringkat saya
-  pindah sendiri". Ketiganya menguji hal yang sama dari tiga sisi: hasil
-  untuk data yang sama harus SELALU identik, apa pun urutan baris masuknya.
-*/
 console.log('\n11. Skor seri -> waktu pengerjaan tercepat menang');
 {
   const rows: BarisAttempt[] = [
@@ -212,9 +168,6 @@ console.log('\n13. Urutan baris masukan tidak mengubah hasil (stabil antar reloa
     user_id: id, score: 88, grading_status: null, role: 'guest',
     sales_division: 'Jakarta', full_name: id, time_taken_sec: 1200,
   });
-  //  Semua peserta seri SEMPURNA - inilah kasus yang dulu urutannya
-  //  ditentukan urutan baris apa adanya dari database, dan karena itu bisa
-  //  berubah antar permintaan tanpa ada satu pun data yang berubah.
   const maju  = ['u1', 'u2', 'u3', 'u4'].map(buat);
   const mundur = [...maju].reverse();
   const h1 = hitungPeringkat(maju,  { id: 'u3', role: 'guest', sales_division: 'Jakarta' });
@@ -234,8 +187,6 @@ console.log('\n14. Peringkat PER SESI tidak digeser oleh sesi lain');
     grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: user_id,
   });
 
-  //  Sesi A: aku juara 1. Sesi B (yang TIDAK aku ikuti) dipakai untuk
-  //  membuktikan angkanya tidak ikut berubah gara-gara sesi lain berjalan.
   const sesiA = [
     att('a-aku', 'A', 'aku', 100, 600),
     att('a-x',   'A', 'x',   90,  500),

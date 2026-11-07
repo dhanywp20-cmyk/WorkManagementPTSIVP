@@ -1,28 +1,19 @@
 'use client';
 
-/** DaftarProyekInsentifHP - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { bisaKonfig, bisaInput, calcHandlerSplit, type CurrentUser } from './aturan-halaman';
+import { bisaKonfig, bisaInput, calcHandlerSplit } from './aturan-halaman';
 import { MobileListCard, MobileCardBadge, Paginasi } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { IncentiveProjectRow, IncentiveTranche, type SkemaInsentif, formatRupiah } from './calc';
+import { formatRupiah } from './calc';
+import { useKonteksInsentif } from './konteks-insentif';
 
-export interface DaftarProyekInsentifHPProps {
-  currentUser: CurrentUser | null;
-  filteredProjects: IncentiveProjectRow[];
-  hal: import("@/components/shared/Paginasi").HasilPaginasi<IncentiveProjectRow>;
-  openProjectDetail: (p: IncentiveProjectRow) => Promise<void>;
-  setGenerateProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setHapusTahapan: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setKetikHapusTahapan: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalBast: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setNominalProject: import("react").Dispatch<import("react").SetStateAction<IncentiveProjectRow | null>>;
-  setNominalValue: import("react").Dispatch<import("react").SetStateAction<string>>;
-  setShowGenerateModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
-  skema: SkemaInsentif | null;
-  tranches: (IncentiveTranche & { project: IncentiveProjectRow; })[];
-}
-
-export function DaftarProyekInsentifHP({ currentUser, filteredProjects, hal, openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject, setNominalValue, setShowGenerateModal, skema, tranches }: DaftarProyekInsentifHPProps) {
+export function DaftarProyekInsentifHP() {
+  const k = useKonteksInsentif();
+  const { currentUser } = k.sesi;
+  const { filteredProjects, hal } = k.proyek;
+  const { skema, tranches } = k.tahapan;
+  const {
+    openProjectDetail, setGenerateProject, setHapusTahapan, setKetikHapusTahapan, setNominalBast, setNominalProject, setNominalValue, setShowGenerateModal
+  } = k.aksi;
   return (
     <>
       <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
@@ -31,12 +22,6 @@ export function DaftarProyekInsentifHP({ currentUser, filteredProjects, hal, ope
         ) : hal.potongan.map((p) => {
           const hasNominal = (p.incentive_value || 0) > 0;
           const handlerSplit = calcHandlerSplit(skema, p);
-          //  Diurutkan ulang di sini - fetchTranches() mengurutkan lewat
-          //  payment_year (dipakai tab Tahapan Pencairan mengelompokkan per
-          //  tahun), bukan tranche_number. Kalau dua tahapan kebetulan
-          //  bertahun sama (mis. gara-gara data lama yang salah), badge di
-          //  sini bisa tampil "T1 T3 T2" - urutan tampilan proyek per
-          //  proyek harus tetap T1 T2 T3 apa pun urutan hasil fetch-nya.
           const projTranches = tranches.filter(t => t.project_id === p.id)
             .sort((a, b) => a.tranche_number - b.tranche_number);
           const showNominal = bisaInput(currentUser);
@@ -51,15 +36,6 @@ export function DaftarProyekInsentifHP({ currentUser, filteredProjects, hal, ope
               </>}
               badges={<>
                 <MobileCardBadge className="bg-purple-100 text-purple-700 border border-purple-200">{p.category}</MobileCardBadge>
-                {/*
-                  Nominal tampil utk semua role (dulu ikut showNominal,
-                  yang privileged-only) - list ini sudah tersaring ke
-                  project sendiri (userInProject), jadi bukan kebocoran
-                  baru. showNominal TETAP dipakai di bawah utk tombol
-                  Input Nominal & field Bagian Handler - dua hal itu
-                  beda: satu aksi ubah data, satu lagi bisa jadi bagian
-                  ORANG LAIN.
-                */}
                 {hasNominal
                   ? <span className="text-sm font-black text-emerald-700 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
                   : showNominal

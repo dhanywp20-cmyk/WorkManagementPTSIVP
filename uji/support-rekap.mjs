@@ -1,27 +1,3 @@
-/*
-  UJI: kolom Support di rekap Excel tidak boleh kosong padahal Troubleshooting-nya
-  jelas ada.
-
-  Laporan: "excel di table support kosong padahal ada project yang ada trigger
-  troubleshooting team dan masuk ke support".
-
-  Layar Incentive PTS dulu punya SALINAN SENDIRI aturan penilaian Support di
-  handleExportSummary - satu kueri ke `reminders` saja, dikelompokkan dengan
-  project_name apa adanya sebagai kunci. Dua perbaikan yang sudah lama ada di
-  fetchSupportFromTickets tidak ikut tersalin, dan dua-duanya menghasilkan
-  kolom kosong tanpa satu pun pesan galat:
-
-    1. Ticket berstatus Solved tidak dibaca. Troubleshooting yang ditutup
-       lewat Ticketing - tanpa pernah dijadwalkan ulang sebagai reminder
-       Onsite - tidak pernah menghasilkan porsi Support.
-    2. Nama proyek dicocokkan persis, jadi "BPKP ICT TIMUR" dan "BPKP ICT
-       Timur" adalah dua kunci berbeda dan tidak pernah bertemu.
-
-  Uji ini meniru kedua aturan pencocokan itu dan membuktikan bentuk lama
-  memang gagal sementara bentuk sekarang menemukannya.
-
-    node uji/support-rekap.mjs
-*/
 
 let lulus = 0, gagal = 0;
 function ok(nama, syarat, ket = '') {
@@ -29,24 +5,19 @@ function ok(nama, syarat, ket = '') {
   else { gagal++; console.log(`  GAGAL ${nama}${ket ? ' — ' + ket : ''}`); }
 }
 
-/** Sama dengan samakanNamaProyek di calc.ts. */
 const samakan = (v) => (v ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
 
-// ── Data uji: satu proyek, Troubleshooting-nya datang dari dua jalur ──────
 const proyek = { id: 'p1', project_name: 'BPKP ICT Timur' };
 
 const reminders = [
-  // Nama diketik ulang dengan huruf & spasi berbeda - proyek yang sama bagi manusia.
   { project_name: 'BPKP  ICT TIMUR ', assigned_to: 'ferdinan', assign_name: 'Ferdinan Agustinus', due_date: '2026-05-02' },
 ];
 const tickets = [
-  // Ditutup lewat Ticketing, tidak pernah jadi reminder Onsite.
   { id: 't1', project_name: 'BPKP ICT Timur', reminder_id: null, date: '2026-07-01',
     assign_name: 'Pandu Kusuma Adji', activity_logs: [{ new_status: 'Solved', created_at: '2026-07-03T09:00:00Z' }] },
 ];
 const petaNama = new Map([[samakan('Pandu Kusuma Adji'), 'pandu']]);
 
-/** BENTUK LAMA: hanya reminders, kunci nama apa adanya. */
 function supportLama(proyek) {
   const peta = new Map();
   for (const r of reminders) {
@@ -58,7 +29,6 @@ function supportLama(proyek) {
   return peta.get(proyek.project_name) || [];
 }
 
-/** BENTUK SEKARANG: dua sumber, nama dinormalkan, username dipetakan. */
 function supportSekarang(proyek, rentang) {
   const dicari = samakan(proyek.project_name);
   const hasil = [];
@@ -115,8 +85,6 @@ console.log('\n2. Bentuk SEKARANG - keduanya ketemu');
 
 console.log('\n3. Rekap tanpa batas tahun memuat SELURUH Troubleshooting');
 {
-  //  Rekap Summary memang lintas tahun - tidak boleh menjatuhkan pekerjaan
-  //  hanya karena rentangnya tidak disebutkan.
   ok('Tanpa rentang, dua-duanya masuk', supportSekarang(proyek, undefined).length === 2);
   ok('Tanpa rentang, baris tanpa tanggal pun tidak dibuang',
     supportSekarang({ ...proyek }, {}).length === 2);
@@ -124,8 +92,6 @@ console.log('\n3. Rekap tanpa batas tahun memuat SELURUH Troubleshooting');
 
 console.log('\n4. Rentang tahun tetap dihormati saat diminta');
 {
-  //  Jendela tahun ke-1 (BAST 2026-01-01 .. 2027-01-01) memuat keduanya;
-  //  jendela yang lebih sempit hanya memuat yang Mei.
   const sempit = supportSekarang(proyek, { dari: '2026-04-01', sampai: '2026-06-01' });
   ok('Hanya yang di dalam rentang', sempit.length === 1, JSON.stringify(sempit.map(s => s.user_name)));
   ok('Yang masuk adalah jalur reminder Mei', sempit[0].user_name === 'Ferdinan Agustinus');

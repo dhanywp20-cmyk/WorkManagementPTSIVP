@@ -1,13 +1,11 @@
-/** Panggilan ke /api/kelas/<token> dari halaman customer + penyimpanan token & draf di perangkat. */
-import { kunciPeserta, type IsianPeserta } from '@/lib/kelas-eksternal';
-import type { KeadaanPeserta } from '@/lib/kuis-live-server';
+import { kunciPeserta, type IsianPeserta } from '@/lib/kuis/kelas-eksternal';
+import type { KeadaanPeserta } from '@/lib/kuis/live-server';
 
 export interface InfoKelas {
   kelas: {
     judul: string; keterangan: string; jumlahSoal: number; timerMenit: number | null; passingGrade: number; satuKali: boolean;
     modeMulai: 'auto' | 'admin'; batasPelanggaran: number | null; jenis: 'mandiri'; isianPeserta: IsianPeserta;
   };
-  /** Mode admin & belum dimulai: peserta terdaftar menunggu di ruang tunggu. */
   menunggu: boolean;
   jumlahPeserta?: number;
   status: 'buka' | 'nonaktif' | 'belum' | 'selesai' | 'penuh';
@@ -16,7 +14,6 @@ export interface InfoKelas {
   hasil: Hasil | null;
   berjalan: boolean;
 }
-/** Kuis Live (ala Kahoot): status permainan ikut di tiap GET. */
 export interface InfoLive {
   kelas: {
     judul: string; keterangan: string; jumlahSoal: number; jenis: 'live'; detikPerSoal: number; isianPeserta: IsianPeserta;
@@ -35,8 +32,8 @@ export interface Percobaan { percobaan: number; mulai_pada: string; sisaMs: numb
 
 const simpan = {
   baca(k: string): string | null { try { return localStorage.getItem(k); } catch { return null; } },
-  tulis(k: string, v: string) { try { localStorage.setItem(k, v); } catch { /* mode privat: tetap jalan, hanya tidak diingat */ } },
-  hapus(k: string) { try { localStorage.removeItem(k); } catch { /* abaikan */ } },
+  tulis(k: string, v: string) { try { localStorage.setItem(k, v); } catch {  } },
+  hapus(k: string) { try { localStorage.removeItem(k); } catch {  } },
 };
 
 export const tokenPeserta = (kelas: string) => simpan.baca(kunciPeserta(kelas));
@@ -66,7 +63,6 @@ export async function panggilKelas<T>(kelas: string, body?: Record<string, unkno
 
 export interface HasilLapor { total: number | null; batas: number | null; kirimOtomatis: boolean }
 
-/** Laporkan satu pelanggaran. keepalive: tetap terkirim walau halaman sedang disembunyikan. */
 export async function laporPelanggaran(kelas: string, jenis: string): Promise<HasilLapor | null> {
   const t = tokenPeserta(kelas);
   if (!t) return null;

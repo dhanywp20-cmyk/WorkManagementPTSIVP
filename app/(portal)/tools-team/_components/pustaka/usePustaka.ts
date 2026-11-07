@@ -1,11 +1,4 @@
 'use client';
-/**
- * Klien Pustaka Tools Team (lib/pustaka.ts, /api/tools-team/pustaka).
- *
- * Tiap jenis dimuat SEKALI per sesi tab lalu dipakai bersama semua kalkulator (hemat egress); setelah
- * Admin mengubah isi, segarkanPustaka(jenis) membuang ingatan & memberi tahu semua pemakai. Gagal muat
- * tidak diingat - kalkulator memakai nilai bawaan kode dan mencoba lagi lain kali.
- */
 import { useEffect, useState } from 'react';
 import type { EntriPustaka } from '@/lib/pustaka';
 
@@ -28,13 +21,11 @@ function muat(jenis: string): Promise<HasilMuat> {
   return p;
 }
 
-/** Buang ingatan (satu jenis / semua) lalu muat ulang di semua komponen yang memakainya. */
 export function segarkanPustaka(jenis?: string) {
   if (jenis) ingatan.delete(jenis); else ingatan.clear();
   pendengar.forEach(f => f());
 }
 
-/** Entri satu jenis pustaka. `memuat` true sampai jawaban pertama datang. */
 export function usePustaka(jenis: string) {
   const [isi, setIsi] = useState<HasilMuat & { memuat: boolean }>({ entri: [], bolehAtur: false, gagal: false, memuat: true });
   useEffect(() => {

@@ -1,8 +1,7 @@
 'use client';
 
-/** useKelolaSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase, User, Material, Question, DialogState } from './shared';
-import { nomorBerikutnya } from '@/lib/urutan-soal';
+import { nomorBerikutnya } from '@/lib/kuis/urutan-soal';
 
 export interface KelolaSoalKonteks {
   KOSONG_SOAL: { readonly question: ""; readonly option_a: ""; readonly option_b: ""; readonly option_c: ""; readonly option_d: ""; readonly correct_answer: "A"; readonly model_answer: ""; };
@@ -28,7 +27,6 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
       message: 'Soal ini akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        // Delete linked answers first (FK constraint)
         await supabase.from('lc_answers').delete().eq('question_id', id);
         const { error } = await supabase.from('lc_questions').delete().eq('id', id);
         if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
@@ -44,7 +42,6 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
       message: `Semua ${count} soal pada materi "${matName}" akan dihapus permanen. Lanjutkan?`,
       confirmLabel: 'Hapus Semua',
       onConfirm: async () => {
-        // Get question IDs first, delete answers, then questions
         const qIds = questions.filter(q => q.material_id === matId).map(q => q.id);
         if (qIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', qIds);
         const { error } = await supabase.from('lc_questions').delete().eq('material_id', matId);
@@ -56,9 +53,6 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
 
   const handleSaveEdit = async () => {
     if (!editQ) return;
-    //  Diperiksa: soal yang gagal tersimpan diam-diam akan tampak
-    //  ter-update di layar (setEditQ(null) menutup formnya) padahal
-    //  peserta masih mengerjakan versi soal yang lama.
     const { data, error } = await supabase.from('lc_questions').update({
       question: editQ.question, option_a: editQ.option_a, option_b: editQ.option_b,
       option_c: editQ.option_c, option_d: editQ.option_d,
@@ -84,22 +78,7 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
           difficulty: newQ.difficulty, question_type: 'essay', model_answer: newQ.model_answer,
           answer_format: newQ.answer_format ?? 'text', gambar_url: newQ.gambar_url || null,
           option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: null }
-      //  answer_format tetap DITULIS 'text' walau tidak berarti apa-apa untuk
-      //  soal abcd - kolomnya NOT NULL. Menyetelnya ke `undefined` (versi
-      //  sebelumnya) TIDAK membuat PostgREST melewatkan kolom ini seperti
-      //  dugaan semula: klien Supabase membangun daftar kolom insert dari
-      //  Object.keys(objeknya), dan Object.keys() tetap menyertakan kunci
-      //  yang nilainya undefined - PostgREST lalu mengirim NULL eksplisit
-      //  untuk kolom yang "disebut tapi tidak diisi" itu, bukan memakai
-      //  default tabelnya. Baris yang sama persis membuat generate-AI gagal
-      //  (lihat simpanHasil), dan berlaku juga di sini walau cuma satu baris.
       : { ...newQ, question_type: 'abcd', answer_format: 'text', gambar_url: newQ.gambar_url || null };
-    /*
-      Soal baru diberi nomor di EKOR grupnya. Tanpa ini ia masuk tanpa nomor,
-      dan soal tanpa nomor jatuh ke pengurutan created_at - artinya begitu
-      grupnya diatur ulang sekali, posisi soal-soal baru ikut bergeser tanpa
-      ada yang menggesernya.
-    */
     const nomorBaru = kolomUrutanAda
       ? nomorBerikutnya(questions.filter(q => q.material_id === newQ.material_id
           && (q.batch_name ?? '') === (newQ.batch_name ?? '')))
@@ -110,14 +89,6 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
     }]);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     if (modeGrup) {
-      /*
-        Form dibiarkan terbuka, dan hanya isi soalnya yang dikosongkan. Materi,
-        grup, tipe, dan tingkat kesulitannya tetap - orang yang menambah satu
-        soal ke sebuah grup hampir selalu menambah beberapa sekaligus, dan
-        menutup form lalu memintanya memilih materi dan mengetik nama grup yang
-        sama berulang kali adalah cara paling mudah melahirkan grup kembar
-        akibat salah ketik.
-      */
       setNewQ(p => ({ ...p, ...KOSONG_SOAL }));
     } else {
       setShowAddManual(false);

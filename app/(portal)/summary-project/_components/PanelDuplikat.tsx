@@ -5,13 +5,6 @@ import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ambilKandidatDuplikat, gabungkanProject, type KandidatDuplikat } from '@/lib/summary-project';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-/**
- * Pasangan project bernama mirip (trigram) - hasil sampingan pemetaan
- * otomatis yang membuat satu project per nama persis. Admin memilih arah
- * penggabungan: project yang DIPERTAHANKAN menerima seluruh aktivitas yang
- * lain. Pasangan yang memang berbeda (mis. "BINUS Alam Sutera" vs "BINUS
- * Taman Anggrek") cukup dilewati - tidak ada yang berubah.
- */
 export function PanelDuplikat({ currentUserName, onBerubah }: {
   currentUserName: string;
   onBerubah: () => void;

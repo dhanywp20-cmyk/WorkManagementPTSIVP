@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalDetailReview - dipecah dari app/(portal)/form-review/_components/FormReviewPageInner.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StarRating, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ReviewForm, formatDatetime } from './shared';
@@ -24,8 +23,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl my-4 overflow-hidden flex flex-col"
             style={{ maxHeight: '96dvh' }}>
 
-            {/* Header */}
-            {/*  Kepala putih baku (sama dengan Modal bersama) - dulu ungu / biru menurut kategori. */}
             <div className="px-6 py-5 pr-12 shrink-0 relative border-b border-slate-100 bg-white">
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
@@ -34,7 +31,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
                   <Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.reminder_category}
                 </span>
-                {/* Status badge */}
                 {(() => {
                   const hasReview = detailReview.review_category === 'Demo Product'
                     ? !!detailReview.grade_product_knowledge
@@ -64,7 +60,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
 
             <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
 
-              {/* Info Cards Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {[
                   { icon: '👤', label: 'Sales', value: detailReview.sales_name },
@@ -81,7 +76,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 ))}
               </div>
 
-              {/* Demo Product review detail */}
               {detailReview.review_category === 'Demo Product' && (
                 <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(124,58,237,0.04)', border: '1.5px solid rgba(124,58,237,0.15)' }}>
                   <p className="text-[11px] font-bold tracking-widest uppercase text-violet-600"><IkonTeks nama="🖥" />Review Demo Product</p>
@@ -117,7 +111,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 </div>
               )}
 
-              {/* BAST review detail */}
               {detailReview.review_category === 'BAST' && (
                 <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(14,165,233,0.04)', border: '1.5px solid rgba(14,165,233,0.15)' }}>
                   <p className="text-[11px] font-bold tracking-widest uppercase text-sky-700"><IkonTeks nama="📌" />Review BAST (Training)</p>
@@ -168,7 +161,6 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 </div>
               )}
 
-              {/* Foto Dokumentasi */}
               {detailReview.foto_dokumentasi_url ? (
                 <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
                   <p className="text-[11px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
@@ -194,9 +186,7 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 </div>
               )}
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-1">
-                {/* Edit untuk admin/Full Access, atau Guest/Sales/Team yang memang pemilik baris ini */}
                 {bolehEditReview(detailReview) && (
                   <button onClick={() => openEdit(detailReview)}
                     className="tombol-utama flex-1 py-3 rounded-kontrol font-bold text-sm flex items-center justify-center gap-2">

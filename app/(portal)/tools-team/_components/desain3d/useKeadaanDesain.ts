@@ -1,24 +1,22 @@
 'use client';
-/**
- * Keadaan Desain 3D: seluruh state, ref, dan nilai turunan (analisis tampilan, kabel, riwayat undo).
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
-import { analisisDari, ukuranGambarDisplay, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
+import { analisisDari, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, golonganDipakai, jalurKabel, type OpsiKelas, type Titik, type Ruang, ruangDari, tinggiAlasDi, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
-import { getSession } from '@/lib/auth';
-import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
+import { getSession } from '@/lib/auth/sesi';
+import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av/hitung';
 import { isPimpinan } from '@/lib/pimpinan';
-import type * as T from 'three';
-import type { Mesin, Sudut } from './mesin/tipe';
+import type { Sudut } from './mesin/tipe';
 import { batasDunia } from './mesin/kamera';
-import { lupakanPilihanKartu } from './mesin/ukurBlending';
-import { bacaIngatanAwal, isiDariIngatan, KATEGORI_AWAL } from './simpan/templateAwal';
+import { bacaIngatanAwal, isiDariIngatan } from './simpan/templateAwal';
+import { usePilihanBenda } from './usePilihanBenda';
+import { usePreferensiKanvas } from './usePreferensiKanvas';
+import { useStatusDesain } from './useStatusDesain';
+import { useRefMesin } from './useRefMesin';
+import { useAnalisisDisplay } from './useAnalisisDisplay';
 
-
-export const KUNCI_SIMPAN = 'wm_desain3d';
+export { KUNCI_SIMPAN } from './useStatusDesain';
 
 export interface DesainTim {
   id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
@@ -29,212 +27,88 @@ export const RUANG_AWAL: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
 
 export const API_PRODUK = '/api/tools-team/produk';
 
-/** Template "Produk saya" seperti dikirim /api/tools-team/produk. */
 export type ProdukTimC = { id: string; label: string; ket: string; jenis: Benda['jenis']; atur: Record<string, unknown>; oleh: string; bolehHapus?: boolean };
 
 export const R2_AWAL = { aktif: true, p: 6, l: 6, t: 3, lantai: 'karpet' as const, pintu: true };
 
-/** Sidik isi desain (ruangan + benda + nama) - pembeda "ada perubahan belum disimpan". */
 export const ambilKunci = (r: Ruang, b: Benda[], n: string) => JSON.stringify({ r, b, n });
 
-
-/** Seluruh keadaan Desain 3D - diteruskan ke hook engine & panel. */
 export type KeadaanDesain = ReturnType<typeof useKeadaanDesain>;
 
 export function useKeadaanDesain() {
-  //  Kanvas awal: default Admin yang diingat perangkat ini (simpan/templateAwal.ts), selain itu bawaan
-  //  pabrikan. Dibaca sekali saat dipasang - komponen ini hanya dirender di peramban (ssr: false).
   const [ingatanAwal] = useState(bacaIngatanAwal);
   const isiAwal = isiDariIngatan(ingatanAwal);
   const [ruang, setRuang] = useState<Ruang>(() => (isiAwal ? { ...RUANG_AWAL, ...isiAwal.ruang } : RUANG_AWAL));
   const [benda, setBenda] = useState<Benda[]>(() => (isiAwal ? isiAwal.benda : contohAwal(RUANG_AWAL)));
-  const [pilih, setPilih] = useState<string | null>(null);
-  /** Pilih banyak: benda lain yang ikut terpilih bersama `pilih` (utama). Shift / Ctrl + klik, atau mode pilih banyak (HP). */
-  const [pilihLain, setPilihLain] = useState<string[]>([]);
-  const [modeBanyak, setModeBanyak] = useState(false);
-  /** Kanvas layar penuh (menutupi seluruh jendela, fokus ke desain) - Esc / tombol untuk kembali. */
+  const { pilih, setPilih, pilihLain, setPilihLain, modeBanyak, setModeBanyak, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, setPilihan } = usePilihanBenda();
   const [layarPenuh, setLayarPenuh] = useState(false);
-  //  Salinan terbaru untuk handler engine (klik kanvas, gizmo) yang dipasang sekali.
-  const pilihRef = useRef(pilih), pilihLainRef = useRef(pilihLain), modeBanyakRef = useRef(modeBanyak);
-  useEffect(() => { pilihRef.current = pilih; pilihLainRef.current = pilihLain; modeBanyakRef.current = modeBanyak; }, [pilih, pilihLain, modeBanyak]);
-  /** true = perubahan `pilih` berikut berasal dari toggle pilih banyak (pilihan lain tidak direset). */
-  const dariToggle = useRef(false);
-  /** Pasang pilihan banyak sekaligus (utama + lain) tanpa direset efek di bawah. */
-  const setPilihan = (utama: string | null, lain: string[]) => {
-    if (utama !== pilihRef.current) dariToggle.current = true;
-    setPilih(utama); setPilihLain(lain);
-  };
-  //  Pilih satu benda dari tempat lain (klik biasa, tambah benda, daftar) = pilihan lain dilepas.
-  useEffect(() => {
-    if (dariToggle.current) { dariToggle.current = false; return; }
-    setPilihLain(l => (l.length ? [] : l));
-  }, [pilih]);
   const [panel, setPanel] = useState(false);
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
-  //  Panel kanan (menempel di samping kanvas, tidak menutupi tampilan 3D). Satu panel
-  //  pada satu waktu: Tambah / Ruangan / Daftar benda, atau Atur benda terpilih (`panel`).
-  const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | 'daftar' | null>(null);
+  const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | null>(null);
   const asideRef = useRef<HTMLElement>(null);
-  const bukaSisi = (k: 'kategori' | 'tambah' | 'ruang' | 'daftar') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
+  const bukaSisi = (k: 'kategori' | 'tambah' | 'ruang') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
   const [targetRuang, setTargetRuang] = useState<string>('0');
   const [tampilan, setTampilan] = useState<'3d' | 'atas' | 'kursi'>('3d');
   const [modeGizmo, setModeGizmo] = useState<'translate' | 'rotate'>('translate');
   const [ukur, setUkur] = useState(true);
-  //  Garis ukuran display (lebar & tinggi dalam mm, garis merah ala gambar kerja).
   const [garisUkur, setGarisUkur] = useState(true);
-  //  Label nama produk di atas tiap benda (benda kembar cukup satu label + jumlah).
-  //  Layar HP sempit: label produk mulai mati supaya kanvas tidak tertutup (tetap bisa dinyalakan).
   const [labelProduk, setLabelProduk] = useState(() => typeof window === 'undefined' || window.innerWidth >= 640);
-  /**
-   * Centang tampilan di atas kanvas bisa dilipat ke satu tombol "Tampilan" (semua layar) supaya tidak menutupi
-   * gambar; diingat per perangkat. Bawaan: terbuka di layar lebar, terlipat di ponsel.
-   */
-  const [chipBuka, setChipBukaMentah] = useState(() => { try { const s = localStorage.getItem('wm_desain3d_chip'); return s === null ? window.innerWidth >= 640 : s === '1'; } catch { return false; } });
-  const setChipBuka = (f: (v: boolean) => boolean) => setChipBukaMentah(v => { const x = f(v); try { localStorage.setItem('wm_desain3d_chip', x ? '1' : '0'); } catch { /* abaikan */ } return x; });
-  /**
-   * Semua tulisan di kanvas disembunyikan sekaligus (label ukuran & nama, angka blending, jarak, keterangan di
-   * cahaya) - gambar bersih tanpa teks yang menutupi; ikut ke PNG. Diingat per perangkat.
-   */
-  const [sembunyiTeks, setSembunyiTeksMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_sembunyi_teks') === '1'; } catch { return false; } });
-  const setSembunyiTeks = (v: boolean) => { setSembunyiTeksMentah(v); try { localStorage.setItem('wm_desain3d_sembunyi_teks', v ? '1' : '0'); } catch { /* abaikan */ } };
-  /**
-   * Sinar nyata: proyektor = lampu sungguhan yang memproyeksikan kontennya (terang dari lumen vs cahaya ruangan,
-   * bayangan, bahan permukaan) - mesin/proyektorNyata.ts. Mati = penanda warna per proyektor untuk merencanakan.
-   * Bawaan nyala; diingat per perangkat.
-   */
-  const [sinarNyata, setSinarNyataMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_sinar_nyata') !== '0'; } catch { return true; } });
-  const setSinarNyata = (v: boolean) => { setSinarNyataMentah(v); try { localStorage.setItem('wm_desain3d_sinar_nyata', v ? '1' : '0'); } catch { /* abaikan */ } };
-  /** Jarak benda terpilih ke keempat dinding & lantai (garis putus + mm). Bawaan mati - lima angka itu menutupi gambar; diingat per perangkat. */
-  const [jarakDinding, setJarakDindingMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_jarak_dinding') === '1'; } catch { return false; } });
-  const setJarakDinding = (v: boolean) => { setJarakDindingMentah(v); try { localStorage.setItem('wm_desain3d_jarak_dinding', v ? '1' : '0'); } catch { /* abaikan */ } };
-  //  Target kontras gambar proyeksi (ANSI/INFOCOMM 3M-2011): 15:1 = presentasi / rapat.
+  const { chipBuka, setChipBuka, sembunyiTeks, setSembunyiTeks, sinarNyata, setSinarNyata, jarakDinding, setJarakDinding, detailBlending,
+    setDetailBlending, teksSinar, setTeksSinar, snap, setSnap, daftarKanvas, setDaftarKanvas } = usePreferensiKanvas();
   const [targetKontras, setTargetKontras] = useState(15);
   const [kerucut, setKerucut] = useState(true);
   const [sinar, setSinar] = useState(true);
-  /** Area blending antar proyektor (lebar cm & persen) - label & zona di kanvas, panel proyektor, lembar cetak. */
   const [tampilBlending, setTampilBlending] = useState(true);
-  /**
-   * Kartu keterangan blending (persen & piksel) - garis ukur & angka cm tetap ikut tampilBlending. Bawaan
-   * TERSEMBUNYI (kartunya besar & menutupi gambar); diingat per perangkat. Satu kartu bisa dibuka / ditutup
-   * sendiri lewat ⓘ di angka cm (mesin/ukurBlending.ts).
-   */
-  const [detailBlending, setDetailBlendingMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_detail_blending') === '1'; } catch { return false; } });
-  const setDetailBlending = (v: boolean) => {
-    lupakanPilihanKartu(); setDetailBlendingMentah(v);
-    try { localStorage.setItem('wm_desain3d_detail_blending', v ? '1' : '0'); } catch { /* abaikan */ }
-  };
-  /** Sinar proyektor ditampilkan sebagai pola grid (test pattern) - seperti mode grid simulator pabrikan. */
   const [gridSinar, setGridSinar] = useState(false);
-  /** Keterangan kecil di cahaya proyektor (nama, jarak, ukuran, lux) - bisa disembunyikan tanpa mematikan sinar; diingat per perangkat. */
-  const [teksSinar, setTeksSinarMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_teks_sinar') !== '0'; } catch { return true; } });
-  const setTeksSinar = (v: boolean) => { setTeksSinarMentah(v); try { localStorage.setItem('wm_desain3d_teks_sinar', v ? '1' : '0'); } catch { /* abaikan */ } };
-  /** Hasil hitung blending terakhir dari kanvas (mesin/alatBantu.ts). */
   const [infoBlending, setInfoBlending] = useState<Blending[]>([]);
-  /** Ukuran gambar tiap proyektor di permukaan yang benar-benar disinari (m, dari raycast kanvas) - untuk ukuran kotak grid di panel. */
   const [ukuranCahaya, setUkuranCahaya] = useState<Record<string, CahayaDiPermukaan>>({});
-  /** Seret satu jari / klik kiri: putar kamera atau geser bidang. */
   const [modeSeret, setModeSeret] = useState<'putar' | 'geser'>('putar');
   const [menuSudut, setMenuSudut] = useState(false);
   const [fokusRuang, setFokusRuang] = useState<'semua' | number>('semua');
   const [gantiIsi, setGantiIsi] = useState(false);
   const [pesan, setPesan] = useState('');
-  //  Akun pimpinan: melihat & mengekspor saja, tidak menyimpan ke server (server juga menolak).
   const [hanyaLihat] = useState(() => isPimpinan(getSession()));
-  //  Konfirmasi di dalam aplikasi (bukan dialog bawaan browser yang menampilkan alamat situs).
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const sudutRef = useRef<Sudut | 'kursi'>('iso');
   const kameraSiap = useRef(false);
-  //  Pengaturan analisis tampilan tersimpan bersama desain (ruang.analisis), jadi ikut
-  //  terbuka lagi dari server/laptop dan ikut undo/redo.
   const an = analisisDari(ruang);
   const jenisPandang = an.jenis, faktorCustom = an.faktor, sudutNyaman = an.sudut;
   const setAnalisis = (x: Partial<NonNullable<Ruang['analisis']>>) => setRuang(r => ({ ...r, analisis: { ...analisisDari(r), ...x } }));
   const setJenisPandang = (v: JenisPandang | 'custom') => setAnalisis({ jenis: v });
   const setFaktorCustom = (v: number) => setAnalisis({ faktor: v });
   const setSudutNyaman = (v: number) => setAnalisis({ sudut: v });
-  /** Tampilkan jangkauan suara semua speaker (per speaker: Benda.tampilJangkauan). */
   const [jangkau, setJangkau] = useState(false);
-  /** Garis share nirkabel (dongle / HP / tablet -> display) di kanvas. */
   const [tampilShare, setTampilShare] = useState(true);
-  /** Jalur kabel perangkat -> rack digambar di kanvas. */
   const [tampilKabel, setTampilKabel] = useState(false);
-  /** Kabel power ke stop kontak terdekat (opsional - menambah banyak garis). */
   const [kabelPower, setKabelPower] = useState(false);
   const kabel = useMemo(() => jalurKabel(benda, ruang, { power: kabelPower }), [benda, ruang, kabelPower]);
-  /** Legend kabel tampil (di layar, PNG & cetak) hanya saat jalur kabel dicentang. */
   const legendaKabel = tampilKabel && kabel.length > 0 ? golonganDipakai(kabel) : null;
-  /** Bayangan lembut display di dinding/lantai + cahaya layar ke lantai. */
   const [bayangan, setBayangan] = useState(true);
-  /** Katalog "Produk saya" (template tim di server). */
   const [produkTim, setProdukTim] = useState<{ daftar: ProdukTimC[]; bolehTambah: boolean } | null>(null);
   const [galatProduk, setGalatProduk] = useState('');
   const [cariProduk, setCariProduk] = useState('');
-  /** Set ruang kelas: panel pilihan & isiannya (kosong = otomatis dari ukuran ruang). */
   const [bukaKelas, setBukaKelas] = useState(false);
   const [opsiKelas, setOpsiKelas] = useState<OpsiKelas>({});
   const faktorPandang = jenisPandang === 'custom' ? faktorCustom : FAKTOR_PANDANG[jenisPandang];
-  //  Nama & asal mengikuti pasangKategoriYa() supaya kanvas awal dari ingatan sama persis dengan
-  //  kanvas yang dipasang dari server.
-  const [namaDesain, setNamaDesain] = useState(() => (isiAwal ? `${isiAwal.nama} (salinan)` : 'Ruang Meeting'));
-  /**
-   * Dari mana desain di kanvas berasal, untuk penanda "berkas yang sedang dibuka":
-   * baru = belum pernah disimpan; laptop = dibuka dari/disimpan ke .glb; lokal = salinan di perangkat ini.
-   * Desain server dikenali dari `desainAktif`. `dasar` = sidik isi saat terakhir dibuka/disimpan.
-   */
-  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal' | 'template'; nama?: string }>(() => (isiAwal
-    ? { jenis: 'template', nama: `${KATEGORI_RUANG.find(k => k.id === KATEGORI_AWAL)?.judul ?? isiAwal.nama} · default Admin` }
-    : { jenis: 'baru' }));
-  const [dasar, setDasar] = useState<string | null>(null);
-  const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
-  /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
-  const [daftarTim, setDaftarTim] = useState<DesainTim[] | null>(null);
-  /** versi = versi TERBARU di server saat dibuka (dikirim balik saat menyimpan untuk cek konflik). */
-  const [desainAktif, setDesainAktif] = useState<{ id: string; bolehUbah: boolean; versi: number } | null>(null);
-  /** Sedang melihat versi lama (mis. dibuka dari tautan Request Design). */
-  const [lihatVersi, setLihatVersi] = useState<{ versi: number; terbaru: number } | null>(null);
-  const [statusSimpan, setStatusSimpan] = useState<{ teks: string; nada: 'ok' | 'galat' | 'info' } | null>(null);
-  const [sibukSimpan, setSibukSimpan] = useState(false);
+  const { namaDesain, setNamaDesain, asal, setAsal, dasar, setDasar, tersimpan, setTersimpan, daftarTim, setDaftarTim, desainAktif, setDesainAktif,
+    lihatVersi, setLihatVersi, statusSimpan, setStatusSimpan, sibukSimpan, setSibukSimpan } = useStatusDesain(isiAwal);
   const [siap, setSiap] = useState(false);
   const [galat, setGalat] = useState('');
-  const wadahRef = useRef<HTMLDivElement>(null);
-  const mesin = useRef<Mesin | null>(null);
-  /** Kamera dipas ke ruangan baru setelah template kategori dipasang. */
-  /** Kamera dipas ke ruangan setelah template dipasang: true = terbang (animasi), 'langsung' = tanpa animasi (pemuatan awal). */
-  const pasSetelahTemplate = useRef<boolean | 'langsung'>(false);
-  /** Tekstur bayangan & cahaya (dibuat sekali, dipakai ulang tiap pembaruan). */
-  const teksturBayang = useRef<{ bayang: T.Texture; cahaya: T.Texture } | null>(null);
-  const gambarLayar = useRef(new Map<string, T.Texture>());
-  /** Tekstur lantai / dinding (simpan/teksturRuang.ts): kunci -> data URL (ikut disimpan) & gambar termuat (bangunRuangan). */
-  const sumberTekstur = useRef(new Map<string, string>());
-  const gambarTekstur = useRef(new Map<string, HTMLImageElement>());
+  const { wadahRef, mesin, pasSetelahTemplate, teksturBayang, gambarLayar, sumberTekstur, gambarTekstur, modelImpor, inputGambar, inputModel,
+    inputLaptop } = useRefMesin();
   const [versiTekstur, setVersiTekstur] = useState(0);
-  /** Presisi (inti/presisi.ts): snap grid geser / putar - diingat per perangkat. */
-  const [snap, setSnapMentah] = useState<Snap>(() => { try { return snapSah(JSON.parse(localStorage.getItem('wm_desain3d_snap') ?? 'null')); } catch { return snapSah(null); } });
-  const setSnap = (s: Snap) => { setSnapMentah(s); try { localStorage.setItem('wm_desain3d_snap', JSON.stringify(s)); } catch { /* abaikan */ } };
-  /** Daftar benda mengambang di kanvas (pilih benda tanpa membuka panel samping) - diingat per perangkat. */
-  const [daftarKanvas, setDaftarKanvasMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_daftar') === '1'; } catch { return false; } });
-  const setDaftarKanvas = (v: boolean) => { setDaftarKanvasMentah(v); try { localStorage.setItem('wm_desain3d_daftar', v ? '1' : '0'); } catch { /* abaikan */ } };
-  /** Alat kanvas: pilih benda (bawaan) atau penggaris; titik pertama penggaris yang sedang dibuat. */
   const [alatKanvas, setAlatKanvas] = useState<'pilih' | 'ukur'>('pilih');
   const [titikUkur, setTitikUkur] = useState<Titik | null>(null);
-  /** Dipanggil engine saat kanvas diklik dalam mode penggaris (diisi useAlatKanvas). */
   const klikUkurRef = useRef<((p: Titik) => void) | null>(null);
-  /** Salinan terbaru untuk engine (magnet saat gizmo diseret) & sumbu geser terakhir (ketik jarak geser). */
   const snapRef = useRef(snap); snapRef.current = snap;
   const sumbuGeserRef = useRef<'x' | 'z'>('x');
-  /** Kelompok benda yang disembunyikan (inti/tata.ts Golongan) - hanya tampilan, desain tidak berubah. */
   const [sembunyiGolongan, setSembunyiGolongan] = useState<string[]>([]);
   const sembunyiRef = useRef(sembunyiGolongan); sembunyiRef.current = sembunyiGolongan;
-  const modelImpor = useRef(new Map<string, T.Object3D>());
   const [versiGambar, setVersiGambar] = useState(0);
-  const inputGambar = useRef<HTMLInputElement>(null);
-  const inputModel = useRef<HTMLInputElement>(null);
-  const inputLaptop = useRef<HTMLInputElement>(null);
   const [menuPusat, setMenuPusat] = useState(false);
   const bendaRef = useRef(benda); bendaRef.current = benda;
   const ruangRef = useRef(ruang); ruangRef.current = ruang;
 
-  //  Undo / redo seluruh desain (ruangan + benda).
   const potret = useMemo(() => ({ ruang, benda }), [ruang, benda]);
   const riwayat = useRiwayat(potret, v => { ruangRef.current = v.ruang; setRuang(v.ruang); setBenda(v.benda); });
 
@@ -242,7 +116,6 @@ export function useKeadaanDesain() {
   const adaPerubahan = dasar !== null && kunciKini !== dasar;
 
   const kotakRuang = useMemo(() => daftarRuang(ruang), [ruang]);
-  /** Objek dari luar: berkas 3D (desain3d/impor/berkas3d) & siluet dari gambar (ModalObjekGambar). */
   const [objekGambar, setObjekGambar] = useState<{ ganti?: Benda } | null>(null);
   const impor = useImporObjek({
     THREE: () => mesin.current?.THREE ?? null, modelImpor, gambarLayar,
@@ -257,37 +130,12 @@ export function useKeadaanDesain() {
   const plafonDi = (x: number) => kotakRuang[ruangDari(ruang, x)]?.t ?? ruang.t;
 
   useEffect(() => {
-    try { const s = localStorage.getItem(KUNCI_SIMPAN); if (s) setTersimpan(JSON.parse(s)); } catch { /* abaikan */ }
-  }, []);
-  useEffect(() => {
     if (!pesan) return;
     const t = setTimeout(() => setPesan(''), 4000);
     return () => clearTimeout(t);
   }, [pesan]);
 
-  // ── Analisis tampilan (penonton dihitung per ruang) ──
-  const analisis = useMemo(() => {
-    const penonton = titikPenonton(benda);
-    return benda.filter(b => DISPLAY.includes(b.jenis)).map(d => {
-      const ri = ruangDari(ruang, d.x);
-      const r = (d.rot * Math.PI) / 180;
-      const hadap = { x: Math.sin(r), z: Math.cos(r) };
-      const data = penonton.filter(p => ruangDari(ruang, p.x) === ri).map(p => {
-        const dx = p.x - d.x, dz = p.z - d.z;
-        const jarak = Math.hypot(dx, dz);
-        const sudut = jarak > 0 ? (Math.acos(Math.max(-1, Math.min(1, (dx * hadap.x + dz * hadap.z) / jarak))) * 180) / Math.PI : 0;
-        return { ...p, jarak, sudut };
-      });
-      const terjauhP = data.reduce<typeof data[number] | null>((m, x) => (!m || x.jarak > m.jarak ? x : m), null);
-      const terjauh = terjauhP?.jarak ?? 0;
-      const terdekat = data.reduce((m, x) => Math.min(m, x.jarak), Infinity);
-      const sudutMaks = data.reduce((m, x) => Math.max(m, x.sudut), 0);
-      const tinggiPerlu = terjauh / faktorPandang;
-      //  Dibandingkan dengan tinggi GAMBAR (tanpa bezel TV / IFP), bukan tinggi bodi.
-      const gambar = ukuranGambarDisplay(d);
-      return { d, ri, gambar, jumlah: data.length, terjauh, terjauhP, terdekat, sudutMaks, tinggiPerlu, cukup: gambar.h >= tinggiPerlu };
-    });
-  }, [benda, faktorPandang, ruang]);
+  const analisis = useAnalisisDisplay({ benda, ruang, faktorPandang });
   const terpilih = benda.find(b => b.id === pilih) ?? null;
   const gantiBenda = (baru: Benda) => setBenda(bs => bs.map(b => (b.id === baru.id ? baru : b)));
   const duaRuang = kotakRuang.length > 1;

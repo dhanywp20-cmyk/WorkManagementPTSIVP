@@ -2,25 +2,6 @@
 import React, { useEffect, useId, useState } from 'react';
 import { Modal, TombolModal } from './Modal';
 
-/**
- * Persetujuan - SATU pola Setujui / Tolak / Tugaskan untuk semua menu.
- *
- * KENAPA INI ADA
- *
- * Tiap menu dulu merakit alur persetujuannya sendiri: Ticketing memakai kepala modal bergradasi
- * merah/merah muda/oranye/kuning, Request Schedule & Request Design Project menyalin komponen yang
- * sama, Learning Center ungu, Tools biru-hijau, Akun Tertunda tombol inline. Labelnya ikut menyimpang:
- * "Approve" / "Setujui", "Reject" / "Tolak", "Assign To" / "Assign ke" / "Assign ke Handler" /
- * "Assign Tim", sebagian berawalan emoji. Satu perbuatan, banyak wujud - orang ragu apakah yang
- * terjadi memang sama.
- *
- * ATURANNYA
- *
- *  - Kata baku: "Setujui", "Tolak", "Tugaskan ke" (LABEL). Gabungan: "Setujui & Tugaskan".
- *  - Setujui = tombol utama (warna merek); Tolak = tombol bahaya (merah) dan SELALU minta alasan.
- *  - Popup memakai kerangka Modal bersama (Esc, kunci gulir, fokus, lapisan).
- *  - Pilihan petugas memakai PilihPenugasan - label & susunan yang sama di semua menu.
- */
 export const LABEL = {
   setujui: 'Setujui',
   tolak: 'Tolak',
@@ -43,7 +24,6 @@ function Ikon({ d }: { d: string }) {
 const dasarTombol = 'inline-flex items-center justify-center gap-1.5 rounded-kontrol font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed';
 const ukuranTombol = { kecil: 'px-2.5 py-1 text-xs', sedang: 'px-4 py-2 text-xs' } as const;
 
-/** Tombol Setujui untuk daftar / panel detail (di luar popup). */
 export function TombolSetujui({ children = LABEL.setujui, ukuran = 'sedang', className = '', ...sisa }:
   { ukuran?: keyof typeof ukuranTombol } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
@@ -54,7 +34,6 @@ export function TombolSetujui({ children = LABEL.setujui, ukuran = 'sedang', cla
   );
 }
 
-/** Tombol Tolak untuk daftar / panel detail. Klik-nya membuka ModalTolak (alasan wajib). */
 export function TombolTolak({ children = LABEL.tolak, ukuran = 'sedang', className = '', ...sisa }:
   { ukuran?: keyof typeof ukuranTombol } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
@@ -65,7 +44,6 @@ export function TombolTolak({ children = LABEL.tolak, ukuran = 'sedang', classNa
   );
 }
 
-/** Tombol Tugaskan untuk daftar / panel detail. */
 export function TombolTugaskan({ children = 'Tugaskan', ukuran = 'sedang', className = '', ...sisa }:
   { ukuran?: keyof typeof ukuranTombol } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
@@ -86,7 +64,6 @@ const NADA_INFO = {
   baik: 'border-emerald-200 bg-emerald-50 text-emerald-800',
 } as const;
 
-/** Kotak keterangan di dalam popup persetujuan (ringkasan pengaju, efek aksi, notifikasi WA). */
 export function KotakInfo({ nada = 'info', judul, children }: { nada?: keyof typeof NADA_INFO; judul?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className={`rounded-kontrol border px-3 py-2 text-xs leading-relaxed ${NADA_INFO[nada]}`}>
@@ -96,7 +73,6 @@ export function KotakInfo({ nada = 'info', judul, children }: { nada?: keyof typ
   );
 }
 
-/** Isian tanggal / jam / teks baku di popup persetujuan. */
 export const kelasIsianPersetujuan = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-300';
 export function LabelIsian({ htmlFor, children, wajib }: { htmlFor: string; children: React.ReactNode; wajib?: boolean }) {
   return <label htmlFor={htmlFor} className="block text-xs font-bold text-slate-700 mb-1.5">{children}{wajib && <span className="text-rose-600"> *</span>}</label>;
@@ -104,7 +80,6 @@ export function LabelIsian({ htmlFor, children, wajib }: { htmlFor: string; chil
 
 export interface PilihanPetugas { v: string; l: string; grup?: string; ket?: string }
 
-/** Pilihan petugas baku ("Tugaskan ke"). Pilihan bergrup (mis. per tim) tampil sebagai optgroup. */
 export function PilihPenugasan({ nilai, onUbah, pilihan, label = LABEL.tugaskan, wajib = true, kosong = '- Pilih petugas -', disabled }: {
   nilai: string; onUbah: (v: string) => void; pilihan: PilihanPetugas[];
   label?: string; wajib?: boolean; kosong?: string; disabled?: boolean;
@@ -128,10 +103,6 @@ export function PilihPenugasan({ nilai, onUbah, pilihan, label = LABEL.tugaskan,
   );
 }
 
-/**
- * Popup Setujui (dan/atau Tugaskan). Isi khusus menu (tanggal, petugas, catatan) masuk sebagai children;
- * kerangka, urutan tombol, & label aksi selalu sama.
- */
 export function ModalSetujui({ buka, onTutup, judul, keterangan, onSetujui, sibuk = false, bisaKirim = true, labelAksi = LABEL.setujui, ukuran = 'md', lapisan, children }: {
   buka: boolean; onTutup: () => void; judul: React.ReactNode; keterangan?: React.ReactNode;
   onSetujui: () => void; sibuk?: boolean; bisaKirim?: boolean; labelAksi?: string;
@@ -148,21 +119,15 @@ export function ModalSetujui({ buka, onTutup, judul, keterangan, onSetujui, sibu
   );
 }
 
-/**
- * Popup Tolak - alasan WAJIB (dicatat & dikirim ke pengaju). `onTolak(alasan)` menerima teks yang sudah
- * dirapikan. Isi tambahan (mis. lampiran) masuk sebagai children di bawah kolom alasan.
- */
 export function ModalTolak({ buka, onTutup, judul, keterangan, onTolak, sibuk = false, labelAksi = LABEL.tolak, alasanAwal = '', placeholder = 'Tulis alasan supaya pengaju tahu apa yang perlu diperbaiki', lapisan, alasan: alasanLuar, onAlasan, children }: {
   buka: boolean; onTutup: () => void; judul: React.ReactNode; keterangan?: React.ReactNode;
   onTolak: (alasan: string) => void; sibuk?: boolean; labelAksi?: string; alasanAwal?: string; placeholder?: string;
   lapisan?: 'dasar' | 'atas' | 'maks';
-  /** Opsional: alasan dikendalikan induk (state yang sudah ada di halaman). */
   alasan?: string; onAlasan?: (v: string) => void;
   children?: React.ReactNode;
 }) {
   const id = useId();
   const [alasanSendiri, setAlasanSendiri] = useState(alasanAwal);
-  //  Popup dipakai ulang untuk data lain: kosongkan alasan setiap kali dibuka.
   useEffect(() => { if (buka) setAlasanSendiri(alasanAwal); }, [buka, alasanAwal]);
   const alasan = alasanLuar ?? alasanSendiri;
   const setAlasan = onAlasan ?? setAlasanSendiri;

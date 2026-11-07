@@ -1,18 +1,6 @@
-/**
- * /api/asisten - Asisten "Tanya Platform".
- *
- * Model (Gemini) menjawab pertanyaan tim dengan memanggil ALAT baca yang
- * didefinisikan di sini - ia tidak pernah menulis kueri sendiri. Setiap alat
- * berjalan memakai klien Supabase yang membawa token DB milik penanya
- * (klienSebagaiUser), jadi RLS berlaku persis seperti di layarnya: asisten
- * tidak bisa membuka data yang orang itu tidak boleh lihat.
- *
- * Hemat kuota & egress: kolom dibatasi, baris dibatasi (<= 15 per alat),
- * riwayat obrolan dipotong 8 giliran, dan batas per user (lib/ai-server.ts).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { jatahAI, klienSebagaiUser, muatUser, panggilGemini, type IsiGemini, type UserLengkap } from '@/lib/ai-server';
 import { PANDUAN, cariPanduan, panduanTeks } from '@/lib/panduan';
 import { cariSolusiSerupa } from '@/lib/solusi-serupa';
@@ -27,13 +15,11 @@ const BARIS = 15;
 
 const STATUS_TIKET = ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Overdue', 'Solved', 'Rejected'];
 
-/** Tanggal hari ini di WIB, YYYY-MM-DD. */
 function hariIniWIB(offset = 0): string {
   const d = new Date(Date.now() + 7 * 3600_000 + offset * 86_400_000);
   return d.toISOString().slice(0, 10);
 }
 
-/** Bersihkan isian bebas sebelum masuk filter PostgREST (.or / ilike). */
 function bersih(v: unknown, maks = 60): string {
   return String(v ?? '').replace(/[%*,()\\"'`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maks);
 }
@@ -123,8 +109,6 @@ async function jalankanAlat(nama: string, a: Record<string, unknown>, db: Supaba
       return error ? { galat: error.message } : { rentang: `${dari} s/d ${sampai}`, jumlah: data?.length ?? 0, jadwal: data };
     }
     case 'progres_project': {
-      // Dibaca dengan token penanya: RLS (migrasi 025) hanya mengembalikan
-      // proyek/checklist yang memang boleh ia lihat.
       const k = bersih(a.kata);
       let qp = db.from('checklist_proyek').select('id, nama, client, sales_name, status, target_date').limit(BARIS);
       if (k) qp = qp.or(`nama.ilike.%${k}%,client.ilike.%${k}%`);
@@ -232,9 +216,6 @@ export async function POST(req: NextRequest) {
     modul ? `Penanya sedang membuka modul: ${modul.judul}.` : '',
     'Untuk data (tiket, jadwal, progres, daily report) SELALU panggil alat; jangan menebak angka atau nama. Bila alat mengembalikan kosong, katakan tidak ada data.',
     'Untuk pertanyaan "cara memakai" platform, panggil panduan_modul. Untuk "cara mengatasi" masalah teknis, panggil solusi_serupa dan sebutkan tiket/tech note sumbernya.',
-    //  Produk yang dipasang tim bukan LED saja. Banyak kasus (touch IFP,
-    //  proyektor, kontrol Extron/WyreStorm) belum pernah punya tiket Solved,
-    //  dan "tidak ada data" saja tidak menolong teknisi di lokasi.
     'Produk yang ditangani tim: LED videotron (receiving/sending card, modul, power supply), interactive display / IFP (touch, OPS, input), proyektor (lampu/laser, lensa, input, filter), serta sistem kontrol & distribusi sinyal WyreStorm dan Extron (HDBaseT extender, matrix switcher, control processor, touch panel, EDID/HDCP).',
     'Bila solusi_serupa kosong untuk masalah teknis, JANGAN berhenti di "tidak ada data": berikan 4-6 langkah pengecekan umum yang aman berurutan (daya & kabel, sumber/input, sinyal & EDID/HDCP, jaringan/kontrol, restart berurutan) di bawah judul "Langkah cek umum (belum ada tiket serupa)". Jangan mengarang nomor seri, firmware, atau menu spesifik merek; sarankan eskalasi ke Supervisor atau mencatat Tech Note bila belum beres.',
     'Kamu hanya bisa MEMBACA. Bila diminta mengubah data, jelaskan menu yang harus dibuka.',

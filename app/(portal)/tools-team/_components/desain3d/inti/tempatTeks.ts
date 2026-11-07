@@ -1,25 +1,15 @@
-/**
- * Tempat teks baru yang tidak tertutup benda lain. Teks dinding digeser sepanjang dinding depan (lalu
- * dinaikkan di atas benda dinding bila dinding penuh); teks lantai dicari di lantai kosong terdekat dari
- * tengah ruang. Teks melayang tidak dipindah (di atas kepala, selalu menghadap kamera).
- * Murni (diuji di uji/desain3d-teks.ts).
- */
 import { tapak } from './tata';
 import type { Benda } from './tipe';
 
-/** Kotak satu ruang (sama dengan inti/ruang daftarRuang). */
 export interface KotakTeks { x0: number; p: number; l: number; t: number }
 
-/** Jarak bebas di depan teks dinding (m): benda di dalamnya setinggi teks dianggap menutupi. */
 const DEPAN_DINDING = 0.6;
 const CELAH = 0.05, TEPI_RUANG = 0.1;
-/** Benda setinggi ini ke atas (speaker plafon, proyektor) tidak menutupi teks lantai. */
 const ATAS_KEPALA = 2;
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 const tumpang = (a0: number, a1: number, b0: number, b1: number) => a0 < b1 + CELAH && a1 > b0 - CELAH;
 
-/** Pusat lalu bergantian kiri-kanan menjauh, hanya yang masih di dalam [min, max]. */
 function urutDariPusat(pusat: number, langkah: number, min: number, maks: number): number[] {
   const hasil: number[] = [];
   const n = Math.ceil((maks - min) / langkah) + 1;
@@ -48,12 +38,10 @@ export function tempatTeksBebas(b: Benda, lain: Benda[], k: KotakTeks): Pick<Ben
     return bebas ? { x: r3(bebas.x), z: r3(bebas.z), elev: b.elev } : awal;
   }
 
-  //  Teks dinding (dinding depan, z ~ 0).
   const tertutup = (x: number, elev: number) => diRuang.some(({ o, t }) => t.z0 < DEPAN_DINDING
     && tumpang(x - b.w / 2, x + b.w / 2, t.x0, t.x1) && tumpang(elev, elev + b.h, o.elev, o.elev + o.h));
   const x = urutDariPusat(b.x, 0.25, xMin, xMaks).find(v => !tertutup(v, b.elev));
   if (x !== undefined) return { x: r3(x), z: b.z, elev: b.elev };
-  //  Dinding penuh setinggi mata: di atas benda dinding tertinggi di tengah, bila masih di bawah plafon.
   const puncak = Math.max(0, ...diRuang.filter(({ t }) => t.z0 < DEPAN_DINDING && tumpang(b.x - b.w / 2, b.x + b.w / 2, t.x0, t.x1)).map(({ o }) => o.elev + o.h));
   const naik = puncak + 0.1;
   return naik + b.h <= k.t - CELAH ? { x: b.x, z: b.z, elev: r3(naik) } : awal;

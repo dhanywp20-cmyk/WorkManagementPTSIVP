@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
+import { supabase, User, Material, Question, QuizSession, SearchInput, AppDialog, DialogState } from './shared';
 import { logAudit } from '@/lib/audit';
-import { ModalPortal } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { ModalAlihkanSesi } from './sesi/ModalAlihkanSesi';
 import { DaftarSesi } from './sesi/DaftarSesi';
 import { FormSesi } from './sesi/FormSesi';
@@ -26,24 +25,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     session_type: 'abcd' as 'abcd' | 'essay',
   });
   const [saving, setSaving] = useState(false);
-  // Pencarian target penerima. Daftar anggota memuat seluruh akun (74 dan terus
-  // bertambah); tanpa penyaring, memilih satu orang berarti menggulir kotak
-  // setinggi 13rem sampai ketemu.
   const [cariAnggota, setCariAnggota] = useState('');
   const [cariDivisi, setCariDivisi]   = useState('');
-  /*
-    Pencarian untuk modal Assign Ulang dipisah dari form Buat Sesi di atas.
-    Keduanya memilih dari daftar yang sama, tapi berbagi satu kotak pencarian
-    berarti membuka Assign Ulang menampilkan daftar yang sudah tersaring oleh
-    kata kunci yang diketik di layar lain - anggota yang "hilang" tanpa
-    penjelasan, padahal ia hanya tersaring.
-  */
   const [cariAnggotaUlang, setCariAnggotaUlang] = useState('');
   const [cariDivisiUlang, setCariDivisiUlang]   = useState('');
   const [search, setSearch] = useState('');
   const [dialog, setDialog] = useState<DialogState>(null);
 
-  // Re-Assign (assign quiz ke target berbeda tanpa buat quiz baru)
   const [showReassign, setShowReassign] = useState(false);
   const [reassignSource, setReassignSource] = useState<QuizSession | null>(null);
   const [reassignForm, setReassignForm] = useState({
@@ -61,15 +49,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   });
   const [reassigning, setReassigning] = useState(false);
 
-  /**
-   * Berapa orang sudah MEMULAI tiap sesi, dan berapa yang sudah submit.
-   *
-   * "Memulai" = punya baris lc_quiz_attempts (dibuat saat quiz dibuka), submit
-   * atau belum. Dua angka ini beda pertanyaan: yang pertama menjawab "sudah
-   * berapa orang yang mengaksesnya", yang kedua "berapa yang selesai". Tanpa
-   * yang pertama, sesi yang baru dibagikan terlihat sama persis dengan sesi
-   * yang tidak dibuka siapa pun.
-   */
   const [progresSesi, setProgresSesi] = useState<Record<string, { mulai: number; submit: number }>>({});
 
   const load = useCallback(async () => {
@@ -85,8 +64,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     setQuestions((q ?? []) as unknown as Question[]);
     setTeamUsers((u ?? []) as User[]);
 
-    //  Dihitung per ORANG, bukan per baris attempt: satu peserta yang mengulang
-    //  quiz 3x tetap satu orang yang mengaksesnya.
     type BarisAtt = { quiz_session_id: string; user_id: string; is_submitted: boolean };
     const mulai: Record<string, Set<string>> = {};
     const submit: Record<string, Set<string>> = {};
@@ -151,7 +128,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     const pool = questions.filter(q =>
       q.material_id === form.material_id &&
       (!form.batch_filter || (q as any).batch_name === form.batch_filter) &&
-      // Sesi essay hanya boleh berisi soal essay, sesi ABCD hanya boleh berisi soal ABCD
       ((q as any).question_type ?? 'abcd') === form.session_type
     );
     if (pool.length < form.question_count) {
@@ -194,8 +170,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    //  Diperiksa: kalau ditolak diam-diam, sesi yang admin kira sudah
-    //  dinonaktifkan tetap aktif dan peserta masih bisa mengerjakannya.
     const { data, error } = await supabase.from('lc_quiz_sessions').update({ is_active: !current }).eq('id', id).select('id');
     if (error || !data || data.length === 0) {
       setDialog({ type: 'error', message: 'Gagal mengubah status sesi.' });
@@ -204,7 +178,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     load();
   };
 
-  // Duplicate an existing session - re-sends the same quiz to the same targets
   const handleResend = (session: QuizSession) => {
     setDialog({
       type: 'confirm',
@@ -237,7 +210,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     });
   };
 
-  // Open re-assign modal - pre-fill from source session
   const openReassign = (session: QuizSession) => {
     setReassignSource(session);
     setReassignForm({
@@ -253,15 +225,10 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       open_at  : '',
       close_at : '',
     });
-    // Kata kunci dari pembukaan sebelumnya ikut dikosongkan bersama pilihannya.
-    // Kalau tidak, modal terbuka dengan daftar yang sudah tersaring tanpa ada
-    // yang mengetik apa pun - dan anggota yang tidak muncul akan dikira tidak
-    // terdaftar, bukan tersaring.
     setCariAnggotaUlang(''); setCariDivisiUlang('');
     setShowReassign(true);
   };
 
-  // Confirm re-assign - creates a new session row with new targets
   const handleReassign = async () => {
     if (!reassignSource) return;
     if (!reassignForm.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
@@ -315,27 +282,18 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       message: 'Sesi quiz dan semua jawaban akan dihapus permanen. Lanjutkan?',
       confirmLabel: 'Hapus',
       onConfirm: async () => {
-        // 1. Ambil semua attempt yang terkait sesi ini
         const { data: attempts } = await supabase
           .from('lc_quiz_attempts')
           .select('id')
           .eq('quiz_session_id', id);
 
-        // 2. Hapus jawaban untuk setiap attempt
-        //  H8 (audit): dulu menghapus dari 'lc_answer_records' - tabel itu
-        //  bukan tempat jawaban sungguhan disimpan (lihat runAiGrading di
-        //  TeamPage.tsx, semuanya menulis/membaca 'lc_answers'). Akibatnya
-        //  jawaban attempt yang dihapus TIDAK PERNAH ikut terhapus - baris
-        //  yatim menumpuk tiap kali sesi quiz dihapus.
         if (attempts && attempts.length > 0) {
           const attemptIds = attempts.map((a: any) => a.id);
           await supabase.from('lc_answers').delete().in('attempt_id', attemptIds);
         }
 
-        // 3. Hapus semua attempts terkait sesi ini
         await supabase.from('lc_quiz_attempts').delete().eq('quiz_session_id', id);
 
-        // 4. Baru hapus sesi-nya
         const { error } = await supabase.from('lc_quiz_sessions').delete().eq('id', id);
         if (error) {
           setDialog({ type: 'error', title: 'Gagal Menghapus', message: 'Error: ' + error.message });
@@ -390,7 +348,6 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           filtered={filtered} fmtDT={fmtDT} getSessionStatus={getSessionStatus} handleDelete={handleDelete} handleResend={handleResend} onViewResults={onViewResults} openReassign={openReassign} progresSesi={progresSesi} search={search} showForm={showForm} teamUsers={teamUsers} toggleActive={toggleActive}
         />
       </div>
-      {/* ════ Assign Ulang Modal ════ */}
       <ModalAlihkanSesi
         cariAnggotaUlang={cariAnggotaUlang} cariDivisiUlang={cariDivisiUlang} handleReassign={handleReassign} reassignForm={reassignForm} reassignSource={reassignSource} reassigning={reassigning} roleLabel={roleLabel} setCariAnggotaUlang={setCariAnggotaUlang} setCariDivisiUlang={setCariDivisiUlang} setReassignForm={setReassignForm} setShowReassign={setShowReassign} showReassign={showReassign} teamUsers={teamUsers} uniqueDivisions={uniqueDivisions} uniqueRoles={uniqueRoles}
       />

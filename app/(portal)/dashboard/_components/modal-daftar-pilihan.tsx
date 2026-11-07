@@ -1,12 +1,5 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
-/**
- * Admin Panel › Daftar Pilihan - isi dropdown yang dulu tertulis di kode: merek display/middleware
- * (Request Design, PIC Brand), kebutuhan/produk/kegiatan Piket Showroom, event Unit Movement.
- * Tambah, hapus, urutkan, kembalikan bawaan; satu tombol simpan untuk semua. Nilai terkunci (dipakai
- * logika kode) tidak bisa dihapus. Data lama yang memakai nilai yang dihapus tetap utuh dan tetap
- * tampil saat diedit (denganNilai). Aturan: lib/daftar-pilihan-bawaan.ts.
- */
 import React, { useEffect, useState } from 'react';
 import { DAFTAR_PILIHAN, type DefDaftar, type KunciDaftar, MAKS_ITEM, MAKS_PANJANG, muatDaftarPilihan, rapikanDaftar, semuaDaftarPilihan, simpanDaftarPilihan, type SemuaDaftar } from '@/lib/daftar-pilihan';
 

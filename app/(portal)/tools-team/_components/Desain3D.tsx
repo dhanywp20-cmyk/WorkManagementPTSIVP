@@ -24,8 +24,6 @@ import { BilahAlat } from './desain3d/panel/BilahAlat';
 import { KontrolKanvas } from './desain3d/panel/KontrolKanvas';
 import { PanelTambah } from './desain3d/panel/PanelTambah';
 import { PanelKategori } from './desain3d/panel/PanelKategori';
-import { DaftarBenda } from './desain3d/panel/DaftarBenda';
-import { BilahTerpilih } from './desain3d/panel/BilahTerpilih';
 import { KartuAnalisis } from './desain3d/panel/KartuAnalisis';
 import { KartuKabel } from './desain3d/panel/KartuKabel';
 import { KartuRuangGerak } from './desain3d/panel/KartuRuangGerak';
@@ -33,20 +31,6 @@ import { ModalSimpan } from './desain3d/panel/ModalSimpan';
 import { NavKamera } from './desain3d/panel/NavKamera';
 import type { AlatDesain } from './desain3d/panel/alat';
 
-/**
- * Desain 3D Ruang AV (Tools Team) - kerangka saja: merangkai keadaan, hook engine, dan panel.
- * Struktur lengkap: desain3d/README.md.
- *
- *   useKeadaanDesain   seluruh state & nilai turunan
- *   useMesin           engine three.js (renderer, kamera orbit, gizmo, klik-pilih)
- *   useKamera          arah pandang, pas ruangan, zoom, fokus
- *   useAdegan          ruangan, benda, alat bantu (sinar, kabel, ukuran), cahaya & bayangan
- *   useAksiDesain      edit desain (template, tambah, salin, tempel, ruang & bukaan)
- *   useProdukTim / useSimpanDesain / useEkspor   server tim, laptop, PNG & cetak
- *   panel/*            komponen UI (bilah, panel samping, kartu hasil, modal)
- *
- * three.js dimuat dinamis hanya saat alat ini dibuka.
- */
 export default function Desain3D() {
   const K = useKeadaanDesain();
   useMesin(K);
@@ -64,7 +48,6 @@ export default function Desain3D() {
   const { bukaDariLaptop, bukaTim } = simpan;
 
   const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template, objekSaya };
-  //  Layar penuh: Esc kembali ke tampilan biasa; halaman di belakangnya tidak ikut tergulir.
   useEffect(() => {
     if (!layarPenuh) return;
     const tekan = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('[role=dialog]')) setLayarPenuh(false); };
@@ -77,14 +60,11 @@ export default function Desain3D() {
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <div className={layarPenuh ? 'fixed inset-0 z-950 flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
-        {/* Satu bilah atas: nama berkas & status, Kategori / Ruangan / Benda, Buka / Simpan, sudut pandang, Ekspor. */}
         <BilahAlat a={a} />
 
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
         <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden select-none ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
-          {/* Perangkat yang belum mengenal default Admin: tutup kanvas sampai template awal pasti,
-              supaya versi pabrikan tidak sempat tampil lalu melompat (simpan/useTemplateKategori.ts). */}
           {template.menungguAwal && !galat && (
             <div role="status" className="absolute inset-0 z-30 grid place-items-center bg-white">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
@@ -105,7 +85,6 @@ export default function Desain3D() {
           )}
           <NavKamera a={a} />
         </div>
-        {/* Panel kanan: menempel di samping kanvas (layar lebar) atau di bawahnya (ponsel/tablet), jadi tampilan 3D tidak tertutup. */}
         {(sisi || (terpilih && panel)) && (
           <aside ref={asideRef} aria-label={sisi ? JUDUL_SISI[sisi].judul : 'Atur benda'}
             className={`flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-slate-200 bg-white w-full lg:w-[360px] lg:shrink-0 max-h-[70vh] lg:max-h-none h-auto ${layarPenuh ? 'lg:h-auto' : 'lg:h-[620px]'}`}>
@@ -126,13 +105,12 @@ export default function Desain3D() {
                     <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} peta={K} />
                   )}
                   <PanelKategori a={a} />
-                  <DaftarBenda a={a} />
                 </div>
               </>
             ) : terpilih && pilihLain.length > 0 ? (
               <PanelBanyak a={a} />
             ) : terpilih && (
-              <PanelBenda b={terpilih} semua={benda} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
+              <PanelBenda b={terpilih} semua={benda} ruang={ruang} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}
                 ekstra={terpilih.jenis === 'proyektor' ? <InfoProyektor p={terpilih} K={K} /> : undefined}
                 onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)}
@@ -145,7 +123,6 @@ export default function Desain3D() {
         <input ref={inputGambar} type="file" accept="image/*" className="hidden" onChange={e => { unggahGambar(e.target.files?.[0] ?? null); e.target.value = ''; }} />
         <input ref={inputLaptop} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={e => { void bukaDariLaptop(e.target.files?.[0] ?? null); e.target.value = ''; }} />
 
-        <BilahTerpilih a={a} />
         {galat && <p className="px-3 py-2 text-[12px] font-semibold text-rose-700 border-t border-rose-100 bg-rose-50">{galat}</p>}
       </div>
 
@@ -158,7 +135,6 @@ export default function Desain3D() {
       <ModalObjekGambar buka={!!objekGambar} onTutup={() => setObjekGambar(null)}
         onJadi={h => { impor.dariGambar(h, objekGambar?.ganti); setObjekGambar(null); }} />
 
-      {/* ── Modal: Buka desain tersimpan (seluruh tim) + riwayat versi ── */}
       <ModalBukaDesain buka={modal === 'buka'} onTutup={() => setModal(null)} aktifId={desainAktif?.id ?? null}
         onBuka={(id, versi) => void bukaTim(id, versi)} onLaptop={() => inputLaptop.current?.click()} />
 

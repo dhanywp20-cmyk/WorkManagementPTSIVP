@@ -1,5 +1,4 @@
 'use client';
-/** DashboardKPI-pita.tsx - dipecah dari DashboardKPI.tsx (scripts/pecah-modul.mjs); DashboardKPI.tsx tetap mengekspor ulang semuanya. */
 import { KPIData } from './DashboardKPI-tipe';
 import { CincinMini, LabelPita, Percik, PitaItem, RelSeksi } from './DashboardKPI-ubin';
 

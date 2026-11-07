@@ -1,7 +1,4 @@
-/** calc-tipe.ts - dipecah dari calc.ts (scripts/pecah-modul.mjs); calc.ts tetap mengekspor ulang semuanya. */
-import { SkemaInsentif } from '@/lib/incentive-scheme';
-
-// Types
+import { SkemaInsentif } from '@/lib/incentive/scheme';
 
 export interface IncentiveProjectRow {
   id: string;
@@ -12,21 +9,9 @@ export interface IncentiveProjectRow {
   status: string;
   requires_controller_automation: boolean;
   controller_automation_brand: string | null;
-  /** 'MVI' | 'IVP' | 'BOTH' — menentukan petugas Finance mana yang boleh melihatnya. */
   brand?: string | null;
-  /** true = sengaja dikeluarkan dari perhitungan insentif; jadwalnya tetap ada. */
   incentive_excluded?: boolean | null;
-  /**
-   * Pengikat jadwal multi-tanggal: lima hari berturut-turut = lima baris
-   * reminder dengan batch_id yang sama, tapi SATU proyek insentif.
-   * Lihat gabungkanPerBatch().
-   */
   batch_id?: string | null;
-  /**
-   * Beberapa jadwal terpisah yang merupakan SATU proyek (mis. Konfigurasi
-   * Senin + Training tiga hari kemudian). Hanya diisi lewat keputusan manusia -
-   * lihat lib/kelompok-insentif.ts dan sql/incentive-kelompok-proyek.sql.
-   */
   incentive_group_id?: string | null;
   pic_type: 'standard' | 'manager_pic';
   pic_id: string | null;
@@ -34,7 +19,6 @@ export interface IncentiveProjectRow {
   mode_penyelesaian: 'onsite' | 'remote' | null;
   installer_name: string | null;
   installer_daerah: string | null;
-  /** Akun PTS Cabang yang dipilih dari dropdown - null bila diketik manual. */
   installer_user_id: string | null;
   bast_date: string | null;
   incentive_value: number;
@@ -57,7 +41,6 @@ export interface IncentiveTranche {
   paid_at: string | null;
   created_at: string;
   project?: IncentiveProjectRow;
-  /** Salinan skema saat tahapan ini dibuat. Lihat sql/incentive-skema-versi.sql. */
   scheme_snapshot?: SkemaInsentif | null;
   scheme_label?: string | null;
 }
@@ -66,7 +49,6 @@ export interface IncentiveSplit {
   id: string;
   project_id: string;
   tranche_id: string | null;
-  /** Kunci peran; bebas karena peran baru bisa ditambah lewat Pengaturan. */
   role: string;
   user_id: string;
   user_name: string;
@@ -99,7 +81,6 @@ export interface LateTicketLink {
 }
 
 export interface SplitResult {
-  /** Kunci peran; bukan union tertutup karena peran baru bisa ditambah admin. */
   role: string;
   user_id: string;
   user_name: string;

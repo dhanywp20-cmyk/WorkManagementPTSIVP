@@ -4,18 +4,14 @@ import { Ikon } from '@/components/shared/Ikon';
 import type { Lembar } from '@/lib/lembar-cetak';
 import { SimpanKeProyek } from './SimpanKeProyek';
 
-/** Komponen form & hasil bersama untuk semua alat di Tools Team. */
-
 export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
-export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan }: {
+export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan, placeholder, onKosong }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
+   placeholder?: string;
+   onKosong?: () => void;
 }) {
-  //  Teks sementara supaya isian kosong / "1." tidak langsung jadi 0 saat diketik.
   const [teks, setTeks] = useState<string | null>(null);
-  //  Nilai berubah dari LUAR isian ini (tombol reset, undo, pilih model lain) -> buang teks
-  //  ketikan supaya isian tidak menampilkan angka basi. Perubahan dari ketikan sendiri dikenali
-  //  lewat `terkirim`; ketikan yang ditolak induk (di luar batas) tidak mengubah `nilai`, jadi tetap.
   const terkirim = useRef<number | null>(null);
   useEffect(() => {
     if (terkirim.current === null || nilai !== terkirim.current) setTeks(null);
@@ -27,9 +23,13 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
         {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-400 cursor-help" aria-hidden="true">ⓘ</span>}
       </span>
       <span className="relative block">
-        <input type="number" inputMode="decimal" min={min} step={step} title={bantuan}
+        <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}
           value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
-          onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } }}
+          onChange={e => {
+            setTeks(e.target.value);
+            const v = parseFloat(e.target.value.replace(',', '.'));
+            if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } else if (!e.target.value.trim()) onKosong?.();
+          }}
           onBlur={() => setTeks(null)}
           className={`${kelasInput} ${satuan ? (satuan.length <= 2 ? 'pr-7' : 'pr-12') : ''}`} />
         {satuan && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}
@@ -72,7 +72,6 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
 export function Kartu({ judul, children, aksi }: { judul: string; children: React.ReactNode; aksi?: React.ReactNode }) {
   return (
     <section className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
-      {/* Kartu sempit (kolom hasil di samping): baris tombol aksi pindah utuh ke bawah judul, bukan terjepit di sampingnya. */}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">{judul}</h2>
         {aksi && <div className="max-w-full">{aksi}</div>}
@@ -82,13 +81,12 @@ export function Kartu({ judul, children, aksi }: { judul: string; children: Reac
   );
 }
 
-/** Ubin angka hasil. `nada` mewarnai angka bila ada status (baik/peringatan). */
 export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nilai: React.ReactNode; satuan?: string; ket?: React.ReactNode; nada?: 'baik' | 'awas' | 'buruk' }) {
   const warna = nada === 'baik' ? 'text-emerald-700' : nada === 'awas' ? 'text-amber-700' : nada === 'buruk' ? 'text-rose-700' : 'text-slate-900';
   return (
     <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5 min-w-0">
       <p className="text-[11px] font-semibold text-slate-600 truncate">{label}</p>
-      <p className={`text-lg sm:text-xl font-extrabold leading-tight tabular-nums mt-0.5 ${warna}`}>
+      <p className={`text-lg sm:text-xl sm:leading-7 font-extrabold leading-tight tabular-nums mt-0.5 ${warna}`}>
         {nilai}{satuan && <span className="text-xs font-semibold text-slate-500 ml-1">{satuan}</span>}
       </p>
       {ket && <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{ket}</p>}
@@ -97,13 +95,13 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 }
 
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
+export const fTetap = (n: number, d = 3) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }) : '-');
 
-/** Tombol salin ringkasan hasil (untuk ditempel ke WA / penawaran). */
 export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   teks: () => string;
-  /** Lembar cetak tersendiri (lihat cetak.ts), bukan window.print(). */ onCetak?: () => void;
-  /** Lembar yang sama sebagai gambar PNG. */ onPng?: () => Promise<void> | void;
-  /** Simpan potret hasil (ringkasan + lembar) ke proyek Project Progress - Kalkulator AV. */ simpan?: { judul: string; lembar: () => Lembar };
+   onCetak?: () => void;
+   onPng?: () => Promise<void> | void;
+   simpan?: { judul: string; lembar: () => Lembar };
 }) {
   const [ok, setOk] = useState(false);
   const [simpanBuka, setSimpanBuka] = useState(false);
@@ -111,7 +109,7 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   return (
     <div className="flex gap-2 flex-wrap">
       <button type="button" onClick={async () => {
-        try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch { /* abaikan */ }
+        try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch {  }
       }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
         <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> <span className="sr-only sm:not-sr-only">{ok ? 'Tersalin' : 'Salin hasil'}</span>
       </button>
@@ -142,10 +140,6 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   );
 }
 
-/**
- * Keterangan tambahan: TIDAK ditampilkan sebagai paragraf (owner: layar tidak boleh penuh kalimat
- * penjelasan) - cukup ikon ⓘ kecil; isinya muncul saat kursor di atasnya atau saat disentuh / difokus.
- */
 export function Catatan({ children }: { children: React.ReactNode }) {
   return (
     <span className="group relative inline-flex align-middle mt-2 print:hidden">

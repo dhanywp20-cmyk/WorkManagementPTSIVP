@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWANotif } from '@/lib/wa';
-import '@/lib/wa-server';
+import { sendWANotif } from '@/lib/wa/inti';
+import '@/lib/wa/server';
 import { appLink } from '@/lib/app-url';
 import { catatCron } from '@/lib/cron-catat';
-import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
+import { kirimAlertKesehatan } from '@/lib/kesehatan/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,20 +19,12 @@ const DEFAULT_HOURS = 24;
 function isAuthorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  // Vercel Cron: Authorization: Bearer <secret>
   const auth = request.headers.get('authorization');
   if (auth === `Bearer ${secret}`) return true;
-  // Manual POST: X-Cron-Secret: <secret>
   if (request.headers.get('x-cron-secret') === secret) return true;
   return false;
 }
 
-/*
-  Klien SERVICE ROLE, bukan anon. Dulu memakai anon key TANPA sesi: RLS tickets mewajibkan
-  identitas login, jadi query di bawah selalu mengembalikan 0 ticket dan eskalasi TIDAK
-  PERNAH jalan (audit 6 Okt 2026: 0 ticket pernah dieskalasi). Sama seperti cron digest.
-  cache:'no-store' supaya Next tidak membekukan hasil fetch antar-jadwal.
-*/
 function klienCron() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,7 +33,6 @@ function klienCron() {
   );
 }
 
-/** Catatan percobaan login > 30 hari tidak dipakai penjaga brute-force (jendela 15 menit) - dibersihkan. */
 async function bersihkanLoginLama(supabase: ReturnType<typeof klienCron>) {
   const batas = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const { count } = await supabase.from('login_attempts').delete({ count: 'exact' }).lt('attempted_at', batas);
@@ -54,7 +45,6 @@ async function jalankanCron() {
     const hasil = await runEscalation(supabase);
     const dibersihkan = await bersihkanLoginLama(supabase).catch(() => 0);
     await catatCron(supabase, 'escalate', true, `${hasil.escalated} ticket dieskalasi · ${dibersihkan} catatan login lama dibersihkan`);
-    //  Setelah mencatat jejak sendiri: bila ada peringatan merah (mis. briefing pagi mati), kabari admin lewat Telegram.
     const alert = await kirimAlertKesehatan(supabase);
     return { ...hasil, loginDibersihkan: dibersihkan, alertKesehatan: alert };
   } catch (e) {
@@ -96,9 +86,6 @@ async function runEscalation(supabase: ReturnType<typeof klienCron>) {
       .eq('full_name', ticket.assign_name)
       .maybeSingle();
 
-    //  Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya role
-    //  admin - lihat lib/penerima-admin.ts. Eskalasi yang tidak sampai ke
-    //  pemegang kekuasaan platform adalah eskalasi yang tidak berguna.
     const { data: admins } = await supabase
       .from('users')
       .select('phone_number')
@@ -143,7 +130,6 @@ async function runEscalation(supabase: ReturnType<typeof klienCron>) {
   return { escalated: escalatedIds.length, ids: escalatedIds };
 }
 
-// GET - dipanggil Vercel Cron (Authorization: Bearer <CRON_SECRET>)
 export async function GET(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -156,7 +142,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - dipanggil manual atau external cron (X-Cron-Secret: <secret>)
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,9 +1,3 @@
-/**
- * uji/kpi-sumber.ts - pemilahan baris sumber KPI per periode harus sama persis dengan filter
- * .gte()/.lte() di query-nya, karena dua periode kini diambil sekali lalu dipilah di browser.
- *
- * Jalankan: npx tsx uji/kpi-sumber.ts
- */
 import { saringSumberKPI, type SumberKPI } from '../lib/kpi-sumber';
 
 let lulus = 0, gagal = 0;

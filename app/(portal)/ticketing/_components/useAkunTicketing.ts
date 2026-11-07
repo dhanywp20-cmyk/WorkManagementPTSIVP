@@ -1,6 +1,5 @@
 'use client';
 
-/** useAkunTicketing - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { adminCreateUser } from '@/lib/admin-users';
 import { User } from './shared';
 
@@ -27,7 +26,6 @@ export function useAkunTicketing(k: AkunTicketingKonteks) {
     try {
       const { id: newId, error: userError } = await adminCreateUser({ username: lowerUsername, full_name: newUser.full_name, role: newUser.role, team_type: finalTeamType });
       if (userError) throw userError;
-      // Password ke user_credentials via server route (dibaca login), bukan kolom legacy.
       if (newId && newUser.password) {
         const credRes = await fetch('/api/auth/set-credential', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -35,7 +33,6 @@ export function useAkunTicketing(k: AkunTicketingKonteks) {
         });
         if (!credRes.ok) { const j = await credRes.json().catch(() => ({})); throw new Error(j.error || 'Gagal set password'); }
       }
-      // team_members table tidak digunakan - data handler dari tabel users langsung
       setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });
       await fetchData();
       notify("success", "User created successfully!");

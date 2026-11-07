@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
   currentUser: User;
-  /** Diisi lewat tombol "Lihat Hasil" di kartu Sesi Quiz - langsung buka sesi ini. */
   initialSessionId?: string | null;
   onSessionConsumed?: () => void;
 }) {
@@ -37,16 +36,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
     let dibatalkan = false;
     (async () => {
       setLoading(true); setLoadErr(null);
-      // Peserta diambil TERPISAH, tidak lewat embed `users(...)`. Embed hanya
-      // jalan bila PostgREST mengenali relasi lc_quiz_attempts ke users; kalau
-      // relasi itu tidak ada, seluruh query gagal dan halaman tampak "belum ada
-      // peserta" padahal datanya ada.
-      //  Skor sama TIDAK berarti urutannya bebas - tanpa order kedua ini,
-      //  Postgres mengembalikan baris yang seri skornya dalam urutan yang
-      //  tidak ditentukan (bukan berdasar waktu pengerjaan sama sekali),
-      //  jadi peserta yang lebih LAMA bisa saja tampil di atas yang lebih
-      //  cepat padahal skornya identik - lencana 🥇/🥈/🥉 di bawah cuma
-      //  mengikuti posisi baris apa adanya. Waktu lebih singkat menang.
       const { data: attempts, error } = await supabase
         .from('lc_quiz_attempts')
         .select('*')
@@ -54,12 +43,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
         .eq('is_submitted', true)
         .order('score', { ascending: false })
         .order('time_taken_sec', { ascending: true })
-        //  Kunci KETIGA - penentu terakhir supaya urutannya tidak bisa
-        //  berubah sendiri. Kalau skor DAN waktu sama persis, tanpa ini
-        //  Postgres bebas mengembalikan baris dalam susunan apa pun, dan
-        //  susunan itu tidak dijamin sama antar permintaan: admin membuka
-        //  laporan yang sama dua kali bisa melihat dua urutan berbeda
-        //  padahal tidak ada satu data pun yang berubah.
         .order('id', { ascending: true });
       if (dibatalkan) return;
       if (error) {
@@ -95,20 +78,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
       )
     : data;
 
-  /*
-    Nomor peringkat dihitung dari SELURUH peserta (data), bukan dari posisi
-    baris di daftar yang sedang tampil (filtered).
-
-    Sebelumnya nomor & lencana diambil dari indeks hasil filter, jadi begitu
-    admin mengetik satu nama di kotak pencarian, peserta itu muncul sebagai
-    "#1" lengkap dengan 🥇 - siapa pun peringkat aslinya. Mencari seseorang
-    tidak boleh mengubah peringkatnya.
-
-    Sekaligus peringkat KEMBAR: dua peserta dengan skor DAN waktu sama persis
-    mendapat nomor yang sama. Urutan barisnya memang sudah dipatok stabil
-    lewat .order('id') di atas, tapi "stabil" bukan berarti "pantas" - tidak
-    ada alasan yang bisa dijelaskan kenapa yang satu #2 dan yang lain #3.
-  */
   const peringkatPerAttempt = new Map<string, number>();
   {
     let nomor = 0;
@@ -127,9 +96,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
         <div className="min-w-0">
           <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📋" />Laporan</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
-          {/* Lebar 320px sebelumnya dipatok tanpa pengecualian — lebih lebar
-              daripada layar ponsel 360px setelah dikurangi padding, jadi
-              halamannya bisa digeser ke samping. */}
           <div className="mt-2">
             <select aria-label="-- Pilih Sesi --" value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
               className="w-full sm:min-w-[320px] sm:w-auto border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 bg-white">
@@ -215,9 +181,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         {(() => {
-                          // Sama seperti deteksi di AdminDashboard/AnalyticsPage:
-                          // tab_switches (pindah tab saat quiz) + pengerjaan
-                          // tidak wajar cepat (< 5 detik/soal, min. 5 soal).
                           const tabSw = a.tab_switches ?? 0;
                           const tq = a.total_questions ?? 0;
                           const ts = a.time_taken_sec ?? Infinity;
@@ -242,10 +205,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                       <td className="px-5 py-3.5 text-center">
-                        {/* Tombol TIDAK bergantung pada data user berhasil termuat:
-                            penilaian hanya butuh user_id (UserAnswerReview mencari
-                            attempt lewat id itu). Sebelumnya tombol hilang saat data
-                            user kosong, sehingga essay tidak bisa dinilai sama sekali. */}
                         {(() => {
                           const peserta = (a.users ?? { id: a.user_id, full_name: a.user_id ? '(nama tidak termuat)' : '—', username: '', role: '' }) as User;
                           return a.grading_status === 'pending_review' ? (
@@ -287,8 +246,6 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
           </div>
         )}
 
-        {/* Gagal memuat ≠ belum ada peserta. Dulu keduanya tampil sama, jadi
-            kegagalan query terbaca sebagai "belum ada yang mengerjakan". */}
         {selectedSession && !loading && loadErr && (
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl max-w-md"

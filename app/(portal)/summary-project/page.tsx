@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
+import { useRouter } from 'next/navigation';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { getSession, startSessionWatcher } from '@/lib/auth';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import {
-  Toast, PageHeader, StatCardGrid, EmptyState, ViewIconBtn, LoadingScreen,
+  Toast, PageHeader, StatCardGrid, EmptyState, ListEmptyState, ErrorState, ViewIconBtn, LoadingScreen,
   MobileListCard, MobileCardBadge, Paginasi, usePaginasi, type Notif,
 } from '@/components/shared';
+import { hasFullAccess } from '@/lib/constants';
+import { diMasaDepan } from './_components/linimasa';
 import {
   hitungLingkupProject, daftarProject, ambilStatistikMapping, normalisasiNamaProject,
   type LingkupProject, type RingkasanProject,
@@ -25,6 +28,17 @@ const fontMono: CSSProperties = { fontFamily: "'JetBrains Mono', ui-monospace, m
 type FilterStatus = 'semua' | RingkasanProject['status'];
 type FilterTipe = 'semua' | AktivitasTipe;
 
+const STATUS_AWAL: FilterStatus = 'active';
+
+function bolehBukaMenu(u: User): boolean {
+  const izin = (u as { allowed_menus?: string[] | null }).allowed_menus;
+  return !izin || hasFullAccess(u) || izin.includes('summary-project');
+}
+
+const SUB_KARTU: Record<AktivitasTipe, string> = {
+  schedule: 'jadwal terhubung', ticket: 'ticket terhubung', design: 'request design terhubung', review: 'form review',
+};
+
 const KOLOM_JUMLAH: Record<AktivitasTipe, keyof RingkasanProject> = {
   schedule: 'schedule_count', ticket: 'ticket_count', design: 'design_count', review: 'review_count',
 };
@@ -38,13 +52,15 @@ function Jumlah({ n, tipe }: { n: number; tipe: AktivitasTipe }) {
 }
 
 export default function SummaryProjectPage() {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [lingkup, setLingkup] = useState<LingkupProject | null>(null);
   const [daftar, setDaftar] = useState<RingkasanProject[]>([]);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState<string | null>(null);
   const [cari, setCari] = useState('');
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>('active');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>(STATUS_AWAL);
+  const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [filterTipe, setFilterTipe] = useState<FilterTipe>('semua');
   const [dipilihId, setDipilihId] = useState<string | null>(null);
   const [showMapping, setShowMapping] = useState(false);
@@ -56,8 +72,6 @@ export default function SummaryProjectPage() {
     setTimeout(() => setToast(null), 3500);
   }, []);
 
-  // Hanya tampilan: penulisan ke projects/project_source_links dijaga RLS
-  // (projects_write/psl_write - admin/superadmin), bukan oleh tombol ini.
   const isAdmin = ['admin', 'superadmin'].includes((currentUser?.role ?? '').toLowerCase());
 
   useEffect(() => {
@@ -79,8 +93,11 @@ export default function SummaryProjectPage() {
   const muat = useCallback(async () => {
     if (!lingkup) return;
     setGalat(null);
-    try { setDaftar(await daftarProject(lingkup)); }
-    catch (e) { setGalat(e instanceof Error ? e.message : String(e)); }
+    try { setDaftar(await daftarProject(lingkup)); setDimuatPada(new Date()); }
+    catch (e) {
+      console.error('[summary-project] daftarProject:', e);
+      setGalat('Daftar project gagal dimuat.');
+    }
     finally { setMemuat(false); }
     if (isAdmin) {
       const s = await ambilStatistikMapping();
@@ -90,32 +107,32 @@ export default function SummaryProjectPage() {
 
   useEffect(() => { muat(); }, [muat]);
 
+  const cocokCari = useCallback((p: RingkasanProject) => {
+    const k = normalisasiNamaProject(cari);
+    return !k || [p.name, p.code, p.customer, p.location, p.sales_name].some(v => normalisasiNamaProject(v ?? '').includes(k));
+  }, [cari]);
+
   const statistik = useMemo(() => {
-    // Mengikuti filter status yang sedang dipilih - kartu dan tabel harus
-    // menunjukkan angka yang sama.
-    const aktif = daftar.filter(p => filterStatus === 'semua' || p.status === filterStatus);
+    const aktif = daftar.filter(p => (filterStatus === 'semua' || p.status === filterStatus) && cocokCari(p));
     const total = (k: keyof RingkasanProject) => aktif.reduce((n, p) => n + (p[k] as number), 0);
     return {
       project: aktif.length,
       schedule: total('schedule_count'), ticket: total('ticket_count'),
       design: total('design_count'), review: total('review_count'),
     };
-  }, [daftar, filterStatus]);
+  }, [daftar, filterStatus, cocokCari]);
 
-  const tersaring = useMemo(() => {
-    const k = normalisasiNamaProject(cari);
-    return daftar.filter(p => {
-      if (filterStatus !== 'semua' && p.status !== filterStatus) return false;
-      if (filterTipe !== 'semua' && !(p[KOLOM_JUMLAH[filterTipe]] as number)) return false;
-      if (!k) return true;
-      return [p.name, p.code, p.customer, p.location, p.sales_name]
-        .some(v => normalisasiNamaProject(v ?? '').includes(k));
-    });
-  }, [daftar, cari, filterStatus, filterTipe]);
+  const tersaring = useMemo(() => daftar.filter(p => {
+    if (filterStatus !== 'semua' && p.status !== filterStatus) return false;
+    if (filterTipe !== 'semua' && !(p[KOLOM_JUMLAH[filterTipe]] as number)) return false;
+    return cocokCari(p);
+  }), [daftar, cocokCari, filterStatus, filterTipe]);
+
+  const adaFilterAktif = !!cari.trim() || filterTipe !== 'semua' || filterStatus !== STATUS_AWAL;
+  const resetFilter = () => { setCari(''); setFilterTipe('semua'); setFilterStatus(STATUS_AWAL); };
 
   const hal = usePaginasi(tersaring);
 
-  /** Ekspor daftar project sesuai filter (Excel · Cetak · PNG). */
   const dataEkspor = (): Ekspor<RingkasanProject> => ({
     judul: 'Summary Project', menu: 'Summary Project', warna: [THEME.color, THEME.colorLight], baris: tersaring,
     filter: [['Cari', cari], ['Status', filterStatus === 'semua' ? '' : STATUS_PROJECT[filterStatus]], ['Jenis', filterTipe === 'semua' ? '' : TIPE_CFG[filterTipe].pendek]],
@@ -133,7 +150,34 @@ export default function SummaryProjectPage() {
 
   const dipilih = dipilihId ? daftar.find(p => p.project_id === dipilihId) ?? null : null;
 
+  const bukaProject = useCallback((id: string | null) => {
+    setDipilihId(id);
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('project', id); else url.searchParams.delete('project');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search);
+  }, []);
+  const [projectDariUrl, setProjectDariUrl] = useState<string | null>(
+    () => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('project')));
+  useEffect(() => {
+    if (!projectDariUrl || memuat || galat) return;
+    if (daftar.some(p => p.project_id === projectDariUrl)) setDipilihId(projectDariUrl);
+    else { beritahu('error', 'Project dari tautan tidak ditemukan atau di luar akses akun Anda.'); bukaProject(null); }
+    setProjectDariUrl(null);
+  }, [projectDariUrl, memuat, galat, daftar, beritahu, bukaProject]);
+
   if (!currentUser || !lingkup || memuat) return <LoadingScreen />;
+
+  if (!bolehBukaMenu(currentUser)) {
+    return (
+      <div className="h-screen flex items-center justify-center p-4" style={{ background: 'var(--latar-halaman)' }}>
+        <div className="max-w-md w-full rounded-md bg-white border border-slate-200">
+          <EmptyState icon="🔒" title="Menu Summary Project belum diaktifkan untuk akun Anda"
+            description="Minta admin menambahkan menu Summary Project di pengaturan akun Anda (Admin Panel › Akun)."
+            action={{ label: '← Ke Dashboard', onClick: () => router.push('/dashboard') }} />
+        </div>
+      </div>
+    );
+  }
 
   const pilihTipe = (t: FilterTipe) => setFilterTipe(prev => (prev === t ? 'semua' : t));
 
@@ -160,17 +204,15 @@ export default function SummaryProjectPage() {
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
 
-            {/* Ringkasan - kartu kategori sekaligus filter */}
             <StatCardGrid cols={5} items={[
               { label: 'Project', value: statistik.project, sub: filterStatus === 'semua' ? 'semua status' : STATUS_PROJECT[filterStatus], accent: THEME.color,
                 onClick: () => setFilterTipe('semua'), active: filterTipe === 'semua' },
               ...(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => ({
-                label: TIPE_CFG[t].pendek, value: statistik[t], sub: 'klik untuk saring',
+                label: TIPE_CFG[t].pendek, value: statistik[t], sub: filterTipe === t ? `${SUB_KARTU[t]} · klik lagi = semua` : `${SUB_KARTU[t]} · klik untuk saring`,
                 accent: TIPE_CFG[t].color, onClick: () => pilihTipe(t), active: filterTipe === t,
               })),
             ]} />
 
-            {/* Filter bar */}
             <div className="flex flex-wrap items-center gap-2">
               <input aria-label="Cari project" value={cari} onChange={e => setCari(e.target.value)}
                 placeholder="Cari nama project, kode PRJ, customer, lokasi, atau sales…"
@@ -187,29 +229,57 @@ export default function SummaryProjectPage() {
                   </button>
                 );
               })}
+              {adaFilterAktif && (
+                <button type="button" onClick={resetFilter}
+                  className="px-3.5 py-2 rounded-md text-xs font-bold bg-white border border-slate-300 text-slate-600 hover:bg-slate-50">
+                  Reset filter
+                </button>
+              )}
               <TombolEkspor jumlah={tersaring.length} data={dataEkspor} />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600">
+              <span className="font-semibold text-slate-700">{tersaring.length} dari {daftar.length} project</span>
+              {filterTipe !== 'semua' && (
+                <button type="button" onClick={() => setFilterTipe('semua')} className="px-2 py-0.5 rounded-full bg-slate-900 text-white font-bold">
+                  Punya {TIPE_CFG[filterTipe].pendek} ✕
+                </button>
+              )}
+              {!!cari.trim() && (
+                <button type="button" onClick={() => setCari('')} className="px-2 py-0.5 rounded-full bg-slate-900 text-white font-bold max-w-[16rem] truncate">
+                  &quot;{cari.trim()}&quot; ✕
+                </button>
+              )}
+              <span>
+                Angka = jumlah record Request Schedule / Ticket / Design / Form Review yang dihubungkan ke project (semua status).
+                Aktivitas terakhir = tanggal terbaru di antaranya - bisa tanggal jadwal yang akan datang.
+              </span>
+              {dimuatPada && <span className="text-slate-400">Dimuat {dimuatPada.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</span>}
             </div>
 
             {galat ? (
-              <div className="rounded-md bg-white border border-red-200 p-6 text-center text-sm text-red-600">Gagal memuat project: {galat}</div>
+              <div className="rounded-md bg-white border border-red-200">
+                <ErrorState message={galat} onRetry={() => { setMemuat(true); void muat(); }} />
+              </div>
             ) : tersaring.length === 0 ? (
               <div className="rounded-md bg-white/95 border border-slate-200">
-                <EmptyState icon="🗂️" title={daftar.length ? 'Tidak ada project yang cocok' : 'Belum ada project'}
-                  description={daftar.length ? 'Ubah kata kunci atau filter.' : 'Project terbentuk otomatis dari Request Schedule, Ticket, dan Design Project.'} />
+                <ListEmptyState adaFilterAktif={adaFilterAktif && daftar.length > 0} onReset={resetFilter} icon="🗂️"
+                  judulKosong="Belum ada project yang bisa Anda lihat"
+                  deskripsiKosong={isAdmin
+                    ? 'Project terbentuk dari Request Schedule, Ticket, dan Design Project. Hubungkan record yang belum terpeta lewat Mapping Center.'
+                    : 'Yang tampil hanya project dengan Sales / divisi Anda. Project terbentuk setelah jadwal, ticket, atau request design Anda dihubungkan admin.'} />
               </div>
             ) : (
               <div className="rounded-md overflow-hidden bg-white border border-slate-200">
 
-                {/* MOBILE: kartu */}
                 <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
                   {hal.potongan.map(p => {
                     const st = STATUS_PROJECT_WARNA[p.status];
                     return (
                       <MobileListCard key={p.project_id}
                         title={p.name}
-                        meta={<span style={fontMono}>{p.code} · {fmtTgl(p.last_activity)}</span>}
+                        meta={<span style={fontMono}>{p.code} · {fmtTgl(p.last_activity)}{diMasaDepan(p.last_activity) ? ' (akan datang)' : ''}</span>}
                         accent={THEME.color}
-                        onClick={() => setDipilihId(p.project_id)}
+                        onClick={() => bukaProject(p.project_id)}
                         badges={<MobileCardBadge style={{ background: st.bg, color: st.color }}>{STATUS_PROJECT[p.status]}</MobileCardBadge>}
                         fields={[
                           { label: 'Sales', value: p.sales_name || '—' },
@@ -222,7 +292,6 @@ export default function SummaryProjectPage() {
                   })}
                 </div>
 
-                {/* DESKTOP: tabel */}
                 <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
                   <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
@@ -248,7 +317,7 @@ export default function SummaryProjectPage() {
                           <th key={t} className="px-1 py-2.5 text-[11px] font-bold uppercase tracking-wide text-center" style={{ color: TIPE_CFG[t].color }}
                             title={TIPE_CFG[t].label}><Ikon nama={TIPE_CFG[t].icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {TIPE_CFG[t].pendek}</th>
                         ))}
-                        <th className="px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-left">Terakhir</th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-left" title="Tanggal terbaru dari jadwal, ticket, request design, atau form review project ini">Terakhir</th>
                         <th className="px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
                         <th className="px-1 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-center"><span className="sr-only">Aksi</span></th>
                       </tr>
@@ -257,7 +326,7 @@ export default function SummaryProjectPage() {
                       {hal.potongan.map((p, idx) => {
                         const st = STATUS_PROJECT_WARNA[p.status];
                         return (
-                          <tr key={p.project_id} className="cursor-pointer" {...bisaDiklik(() => setDipilihId(p.project_id), { peran: false })}
+                          <tr key={p.project_id} className="cursor-pointer" {...bisaDiklik(() => bukaProject(p.project_id), { peran: false })}
                             style={{ '--aksen-baris': THEME.color, '--bg-baris-sorot': '#eef2ff' } as CSSProperties}>
                             <td className="px-3 py-3 text-center align-middle">
                               <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>
@@ -286,6 +355,7 @@ export default function SummaryProjectPage() {
                             <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.review_count} tipe="review" /></td>
                             <td className="px-3 py-3 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600 whitespace-nowrap" style={fontMono}>{fmtTgl(p.last_activity)}</span>
+                              {diMasaDepan(p.last_activity) && <span className="block text-[10px] font-bold text-cyan-700" title="Tanggal jadwal Request Schedule yang akan datang">akan datang</span>}
                             </td>
                             <td className="px-3 py-3 align-middle">
                               <span className="px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap" style={{ background: st.bg, color: st.color }}>
@@ -293,7 +363,7 @@ export default function SummaryProjectPage() {
                               </span>
                             </td>
                             <td className="px-1 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
-                              <ViewIconBtn onClick={() => setDipilihId(p.project_id)} label={`Lihat ${p.name}`} />
+                              <ViewIconBtn onClick={() => bukaProject(p.project_id)} label={`Lihat ${p.name}`} />
                             </td>
                           </tr>
                         );
@@ -313,7 +383,7 @@ export default function SummaryProjectPage() {
         <ModalDetailProject key={dipilih.project_id}
           project={dipilih} lingkup={lingkup} isAdmin={isAdmin}
           currentUserName={currentUser.full_name}
-          onTutup={() => setDipilihId(null)} onBerubah={muat} beritahu={beritahu} />
+          onTutup={() => bukaProject(null)} onBerubah={muat} beritahu={beritahu} />
       )}
       {showMapping && (
         <ModalMappingCenter

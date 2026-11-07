@@ -1,24 +1,5 @@
 'use client';
 
-/**
- * Tombol penutup form: "Batal" dan tombol kirim.
- *
- * Kenapa satu komponen
- * Ketiga form pembuatan (Ticket, Request Schedule, Request Design Project)
- * menulis tombolnya sendiri-sendiri, dan labelnya ikut menyimpang: Ticket
- * memakai "Save Ticket", Request Schedule "Tambah Reminder", hanya Request
- * Design Project yang memakai "Submit Form". Tiga sebutan untuk satu perbuatan
- * yang sama membuat orang ragu apakah yang terjadi memang sama.
- *
- * Aturannya sekarang satu: MENGIRIM data baru selalu "Submit Form" dengan ikon
- * kirim; kata "Simpan" hanya dipakai saat mengubah data yang sudah ada - sebab
- * di situlah artinya memang menyimpan, bukan mengirim.
- *
- * Warnanya SATU untuk semua menu: warna merek (Admin Panel -> merek), sama dengan aksi utama
- * TombolModal. Dulu merah untuk Ticket, cyan untuk Schedule, teal untuk Design - tiap menu punya
- * temanya sendiri; permintaan pemilik: seragam di semua menu.
- */
-
 const IKON_KIRIM = 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8';
 const IKON_SIMPAN = 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4';
 
@@ -38,15 +19,10 @@ export function SubmitFormButton({
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
-  /** true = mengubah data yang sudah ada, bukan mengirim yang baru. */
   editing?: boolean;
-  /** Keterangan di belakang label, mis. jumlah baris yang akan dibuat. */
   suffix?: string;
-  /** Label saat tombol sengaja dikunci, supaya sebabnya terbaca di tombolnya. */
   blockedLabel?: string;
-  /** Usang - diabaikan. Warna tombol selalu warna merek (lihat catatan di atas). */
   gradient?: string;
-  /** Usang - diabaikan. */
   shadow?: string;
 }) {
   const terkunci = !!blockedLabel;
@@ -65,9 +41,6 @@ export function SubmitFormButton({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={editing ? IKON_SIMPAN : IKON_KIRIM} />
               </svg>
               {label}
-              {/* Jumlah baris tetap terbaca: mengirim 6 reminder sekaligus
-                  tanpa sadar jauh lebih mahal daripada label yang sedikit
-                  lebih panjang. */}
               {suffix && <span className="font-semibold opacity-80">· {suffix}</span>}
             </>
           )}

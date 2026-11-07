@@ -1,16 +1,10 @@
-/**
- * desain3d/bangun/konferensi.ts - Kamera & konferensi: kamera PTZ / AI / soundbar, paperless display lift.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import { blok, type Konteks, kotak, mat, papan } from './dasar';
 import { teksturKain, teksturLift } from './permukaan';
 
-/** kamera */
 export function bangunKamera({ THREE, g, b, W, WS }: Konteks) {
   const tipe = b.tipeKamera ?? 'ptz';
   const kaca = new THREE.MeshPhysicalMaterial({ color: 0x0c1730, metalness: 0.2, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 });
   const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.18, metalness: 0.35 });
-  /** Lensa: cincin hitam mengilap + kubah kaca, menghadap +z. */
   const lensa = (r: number, x: number, y: number, z: number) => {
     const l = new THREE.Group();
     const cincin = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.04, 0.012, 32), hitamKilap); cincin.rotation.x = Math.PI / 2; l.add(cincin);
@@ -19,7 +13,6 @@ export function bangunKamera({ THREE, g, b, W, WS }: Konteks) {
     l.position.set(x, y, z); return l;
   };
   if (tipe === 'xbar') {
-    //  Video bar: batang berlapis kain, modul kamera hitam di tengah.
     const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, WS('#4a4e55'), 0.05), roughness: 0.95 });
     g.add(blok(THREE, b.w, b.h, b.d, b.h * 0.42, kain, 0.01));
     const lebarModul = Math.min(0.16, b.w * 0.2);
@@ -28,7 +21,6 @@ export function bangunKamera({ THREE, g, b, W, WS }: Konteks) {
     const led = new THREE.Mesh(new THREE.SphereGeometry(0.0025, 8, 6), mat(THREE, 0x22c55e, { emissive: 0x22c55e, emissiveIntensity: 1 }));
     led.position.set(lebarModul * 0.38, b.h * 0.66, b.d / 2 + 0.008); g.add(led);
   } else if (tipe === 'ptz-ai') {
-    //  PTZ AI: bar sensor di bawah, lengan L, kepala kotak membulat.
     const badan = mat(THREE, W(0x25282d), { roughness: 0.4, metalness: 0.35 });
     const tAlas = b.h * 0.26, sKepala = Math.min(0.09, b.h * 0.55);
     g.add(blok(THREE, b.w, tAlas, b.d, tAlas * 0.3, badan, 0.004));
@@ -42,7 +34,6 @@ export function bangunKamera({ THREE, g, b, W, WS }: Konteks) {
     g.add(blok(THREE, sKepala, sKepala, sKepala * 0.95, sKepala * 0.22, badan, 0.006).translateY(b.h - sKepala).translateZ(0.005));
     g.add(lensa(sKepala * 0.32, 0, b.h - sKepala / 2, sKepala * 0.475 + 0.008));
   } else {
-    //  PTZ: alas kotak (strip depan hitam), garpu, kepala membulat, lensa besar.
     const abu = mat(THREE, W(0x50555d), { metalness: 0.55, roughness: 0.36 });
     const tAlas = b.h * 0.22, yKepala = tAlas + 0.03 + b.h * 0.08;
     g.add(blok(THREE, b.w, tAlas, b.d, 0.012, abu, 0.004));
@@ -54,7 +45,6 @@ export function bangunKamera({ THREE, g, b, W, WS }: Konteks) {
   }
 }
 
-/** lift */
 export function bangunLift({ THREE, g, b, W }: Konteks) {
   const hitam = mat(THREE, W(0x15171b), { metalness: 0.6, roughness: 0.32 });
   const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.3 });
@@ -80,7 +70,6 @@ export function bangunLift({ THREE, g, b, W }: Konteks) {
     const kepala = new THREE.Mesh(new THREE.SphereGeometry(0.016, 20, 14), hitamKilap);
     kepala.scale.set(1, 1.5, 1); kepala.position.set(xMic, b.h * 0.92, -b.d * 0.02); g.add(kepala);
   } else {
-    //  Layar turun = mic gooseneck ikut masuk ke meja (hide); tinggal lubang/tutup rata di tempatnya.
     g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.0015, 24), hitamKilap).translateX(xMic).translateY(0.0085).translateZ(b.d * 0.15));
   }
 }

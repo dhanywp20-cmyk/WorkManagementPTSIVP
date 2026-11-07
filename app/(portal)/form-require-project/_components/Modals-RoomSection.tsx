@@ -1,12 +1,8 @@
 'use client';
-/** Modals-RoomSection.tsx - dipecah dari Modals.tsx (scripts/pecah-modul.mjs); Modals.tsx tetap mengekspor ulang semuanya. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useEffect, useRef, useState } from 'react';
 import { BrandPicMapping, RoomDetail } from './shared';
-
-// RoomSection
-// Style matches Ruangan 1 exactly: larger buttons (px-3 py-2 text-sm), bold labels
 
 export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, photos, onAddPhotos, onRemovePhoto, toggleArr, boqFile, onSetBoq, isGuest }: {
   room: RoomDetail; rIdx: number;
@@ -30,7 +26,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
   const getBrandPic = (type: 'display'|'middleware', brand: string) =>
     brandPicMappings.find(m => m.brand_type === type && m.brand_name === brand);
 
-  // Same style as Ruangan 1 RadioGroup
   const YN = ({ label, field, value }: { label: string; field: keyof RoomDetail; value: string }) => (
     <div className="mb-4">
       <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
@@ -48,7 +43,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
     </div>
   );
 
-  // Same style as Ruangan 1 CheckGroup
   const Chips = ({ label, opts, value, field, multi=true }: { label:string; opts:string[]; value:string[]; field:keyof RoomDetail; multi?:boolean }) => (
     <div className="mb-4">
       <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
@@ -72,7 +66,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
 
   return (
     <div className="space-y-0">
-      {/* Room name header — matches Ruangan 1 style */}
       <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
         <span className="text-xs font-black text-teal-700 shrink-0">Ruangan {rIdx + 2}</span>
         <input value={room.room_name} onChange={e => onUpdate({ room_name: e.target.value })}
@@ -84,26 +77,18 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </button>
       </div>
 
-      {/* Kebutuhan */}
       {Chips({ label: "Kebutuhan *", opts: ['Signage','Immersive','Meeting Room','Mapping','Command Center','Hybrid Classroom'], value: room.kebutuhan, field: "kebutuhan", multi: false })}
       <div className="mb-4">
         <input value={room.kebutuhan_other} onChange={e => onUpdate({ kebutuhan_other: e.target.value })} placeholder="Other kebutuhan..."
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400" />
       </div>
 
-      {/* Solution Product */}
       {Chips({ label: "Solution Product *", opts: ['Videowall','Signage Display','Videotron','Projector','Kiosk','IFP'], value: room.solution_product, field: "solution_product" })}
       <div className="mb-4">
         <input value={room.solution_other} onChange={e => onUpdate({ solution_other: e.target.value })} placeholder="Other solution..."
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400" />
       </div>
 
-      {/* Brand Display 1 & 2 + Middleware.
-          Slot display KEDUA ada karena satu ruangan bisa memakai dua produk
-          display dari brand berbeda, dan tiap brand punya PIC-nya sendiri.
-          Sebelumnya brand yang satunya hanya bisa dititipkan di kolom
-          keterangan — dan PIC-nya tidak pernah ikut ter-mapping, jadi orang
-          yang seharusnya menangani tidak pernah tahu. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
         <div>
           <label htmlFor="f-form-require-project-components-modals-1" className="block text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-500 font-normal">(opsional)</span></label>
@@ -146,7 +131,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
       </div>
 
-      {/* Layout Signage — only if Signage selected */}
       {room.kebutuhan.includes('Signage') && (
         <div className="mb-4 pt-2 border-t border-gray-100">
           {Chips({ label: "Layout Signage", opts: ['Single Zone','Multi Zone','Full Screen','Custom Layout'], value: room.layout_signage, field: "layout_signage" })}
@@ -158,7 +142,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
       )}
 
-      {/* Source */}
       <div className="mb-4 pt-2 border-t border-gray-100">
         {Chips({ label: "Source", opts: ['PC / Mini PC','Laptop','URL Dashboard','NVR CCTV','Media Player','IPTV','Set Top Box'], value: room.source, field: "source" })}
         <div className="flex gap-3 mb-3">
@@ -168,12 +151,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         <input value={room.source_other} onChange={e=>onUpdate({source_other:e.target.value})} placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/>
       </div>
 
-      {/* Camera + Audio — 2 kolom.
-          Sebelumnya tiap Yes/No memakai satu baris penuh sendiri, KECUALI
-          Wallplate+Tabletop yang berdua. Hasilnya satu baris terlihat
-          berpasangan sementara sisanya menyisakan ruang kosong selebar
-          setengah kartu — terbaca seperti ada isian yang lupa dipasang.
-          Semua dipasangkan supaya ritmenya sama. */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
       <div>
         {YN({ label: "Camera Conference", field: "camera_conference", value: room.camera_conference })}
@@ -198,7 +175,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       </div>
       </div>
 
-      {/* Wallplate + Tabletop — 2 col */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3">
         <div>
           {YN({ label: "Wallplate Input", field: "wallplate_input", value: room.wallplate_input })}
@@ -216,7 +192,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
       </div>
 
-      {/* Wireless + Controller — 2 kolom, alasan sama dengan Camera+Audio di atas. */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
       <div>
         {YN({ label: "Wireless Presentation", field: "wireless_presentation", value: room.wireless_presentation })}
@@ -234,7 +209,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       </div>
       </div>
 
-      {/* Ukuran, Suggest, Keterangan */}
       <div className="pt-2 border-t border-gray-100 space-y-3 mb-4">
         <div>
           <label htmlFor="f-form-require-project-components-modals-12" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P×L×T)</label>
@@ -250,10 +224,8 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         </div>
       </div>
 
-      {/* Foto + BOQ — 2 col, same layout as Ruangan 1 */}
       {isGuest && (
         <div className="pt-2 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Foto Survey */}
           <div>
             <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📸" />Foto Survey Ruangan Ini</label>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
@@ -282,7 +254,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
               </div>
             )}
           </div>
-          {/* BOQ Excel */}
           <div>
             <label htmlFor="f-form-require-project-components-modals-15" className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📊" />BOQ Excel Ruangan Ini</label>
             <input id="f-form-require-project-components-modals-15" ref={boqRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
@@ -311,7 +282,6 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           </div>
         </div>
       )}
-      {/* Foto only (no BOQ) for team users */}
       {!isGuest && (
         <div className="pt-2 border-t border-gray-100">
           <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📸" />Foto Survey Ruangan Ini</label>

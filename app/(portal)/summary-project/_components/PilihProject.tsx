@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { cariProjectUntukPilih, type SaranProject } from '@/lib/summary-project';
 
-/** Kotak cari + daftar hasil untuk memilih satu project tujuan. */
 export function PilihProject({ kecuali, onPilih, sibuk, placeholder = 'Cari project tujuan (nama / PRJ-xxxx)...' }: {
   kecuali?: string;
   onPilih: (p: SaranProject) => void;
@@ -17,7 +16,6 @@ export function PilihProject({ kecuali, onPilih, sibuk, placeholder = 'Cari proj
   useEffect(() => {
     if (!kata.trim()) { setHasil([]); return; }
     setMencari(true);
-    // `batal` membuang jawaban ketikan lama yang datang belakangan.
     let batal = false;
     const t = setTimeout(async () => {
       try { const h = await cariProjectUntukPilih(kata, kecuali); if (!batal) setHasil(h); }

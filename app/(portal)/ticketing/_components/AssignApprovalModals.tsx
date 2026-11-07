@@ -2,14 +2,6 @@
 import { Modal, TombolModal, PilihPenugasan, TombolSetujui, TombolTolak, ModalSetujui } from '@/components/shared';
 import type { Ticket, TeamMember, User } from './shared';
 
-/**
- * Modal assign/approve "sedang" dari app/ticketing/page.tsx. State & handler tetap di page.tsx, komponen
- * di sini murni presentasional. Kerangka & tombol: Modal + pola persetujuan bersama
- * (components/shared/Persetujuan.tsx) - dulu kepala bergradasi merah / merah muda / kuning sendiri.
- */
-
-// ── BULK DELETE CONFIRM ──
-
 export function BulkDeleteConfirmModal({
   jumlah, onCancel, onConfirm,
 }: {
@@ -27,8 +19,6 @@ export function BulkDeleteConfirmModal({
     </Modal>
   );
 }
-
-// ── SERVICES APPROVAL (ticket masuk ke Team Services) ──
 
 export function ServicesApprovalModal({
   pendingServicesApprovalTickets, uploading, approveServicesTicket, rejectServicesTicket, onClose,
@@ -73,13 +63,6 @@ export function ServicesApprovalModal({
   );
 }
 
-// ── REMINDER SCHEDULE (cron WA) ──
-
-/**
- * Reminder harian handler. Dulu tombol ini menjadwalkan pg_cron `daily-reminder` (fitur lama) - kini
- * reminder dikirim cron Vercel /api/cron/digest (Briefing pagi). Menyimpan jadwal lama justru
- * menghidupkan job pg_cron itu lagi sehingga WA terkirim DOBEL, jadi modal ini hanya menjelaskan.
- */
 export function ReminderScheduleModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal buka onTutup={onClose} judul="Reminder Harian" keterangan="Dikirim otomatis lewat Briefing pagi"
@@ -93,8 +76,6 @@ export function ReminderScheduleModal({ onClose }: { onClose: () => void }) {
     </Modal>
   );
 }
-
-// ── SUPERVISOR ASSIGN TICKET ──
 
 export function SupervisorAssignModal({
   supAssignTicket, supAssignTo, setSupAssignTo, teamPTSMembers, currentUser,

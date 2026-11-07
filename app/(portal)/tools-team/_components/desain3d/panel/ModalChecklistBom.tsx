@@ -1,15 +1,9 @@
 'use client';
 
-/**
- * Jadikan BOM desain sebagai checklist lokasi di proyek Project Progress: satu bagian per perangkat
- * yang dipasang tim (pasang, kabel, setting, tes) + Persiapan (material sesuai BOM) & Serah Terima
- * (inti/bom.ts checklistDariBom). Dibuat lewat POST /api/project-progress/<id>/checklist (isi impor) -
- * hanya admin Project Progress, sama seperti membuat checklist dari halaman proyek.
- */
 import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
-import type { DraftChecklist } from '@/lib/checklist';
+import type { DraftChecklist } from '@/lib/checklist/inti';
 
 interface ProyekPilihan { id: string; nama: string; client: string | null; status: string }
 

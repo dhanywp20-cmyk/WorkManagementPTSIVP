@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Langkah kedua login (2FA). Muncul di kartu login sesudah password benar bila server menjawab
- * `tahap`: 'kode_2fa' (akun ber-2FA) atau 'daftar_2fa' (admin wajib 2FA tapi belum mendaftar).
- * Tiket `tantangan` berlaku 5 menit; sesudah itu kembali ke password.
- */
 import React, { useState } from 'react';
 import { DaftarKodeCadangan, InputKode2FA, PanelDaftar2FA } from '@/components/shared/DuaFaktor';
 
@@ -71,7 +66,7 @@ export function LangkahDuaFaktor({ tahap, tantangan, onBerhasil, onBatal }: {
       <InputKode2FA key={String(pakaiCadangan)} nilai={kode} ubah={setKode} kirim={kirimKode} cadangan={pakaiCadangan} />
       {galat && <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{galat}</div>}
       <button type="button" onClick={kirimKode} disabled={sibuk}
-        className="w-full text-white py-3.5 rounded-xl font-bold shadow-lg text-sm bg-slate-800 hover:bg-slate-700 disabled:opacity-60">
+        className="kaca-tombol w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-60">
         {sibuk ? 'Memverifikasi…' : 'Verifikasi'}
       </button>
       <p className="text-center text-xs text-slate-500">

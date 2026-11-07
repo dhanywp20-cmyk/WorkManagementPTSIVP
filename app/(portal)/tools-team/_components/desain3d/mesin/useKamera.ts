@@ -1,19 +1,12 @@
 'use client';
-/**
- * Kamera: arah pandang, pas ke layar, zoom, putar, fokus benda / kursi penonton.
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useEffect } from 'react';
 import { ruangDari } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { ARAH_SUDUT, type Sudut } from './tipe';
 import { posisiPas, terbangKe } from './kamera';
 
-
 export function useKamera(K: KeadaanDesain) {
   const { analisis, batas, benda, fokusRuang, kameraSiap, kotakRuang, mesin, pasSetelahTemplate, pilih, ruang, setTampilan, siap, sudutRef } = K;
-  // ── Kamera ──
-  /** Titik pusat & kotak batas untuk dipas ke kanvas: semua ruang atau satu ruang. */
   const fokusKotak = (fk: 'semua' | number) => {
     const { THREE } = mesin.current!;
     const k = fk === 'semua' ? null : kotakRuang[fk] ?? null;
@@ -25,7 +18,6 @@ export function useKamera(K: KeadaanDesain) {
     const m = mesin.current; if (!m) return;
     sudutRef.current = sudut;
     if (sudut === 'kursi') {
-      // Mata penonton (1,2 m) di kursi terpilih atau penonton terjauh, menatap display di ruang yang sama.
       const sel = benda.find(b => b.id === pilih && b.jenis === 'kursi');
       const ri = sel ? ruangDari(ruang, sel.x) : fk === 'semua' ? 0 : fk;
       const a = analisis.find(x => x.ri === ri) ?? analisis[0];
@@ -44,12 +36,6 @@ export function useKamera(K: KeadaanDesain) {
     kameraKe(sudut, fk);
   };
 
-  /**
-   * Pas seluruh ruangan (atau ruang terfokus) ke kanvas dari arah kamera sekarang. `tidakLandai` (setelah template
-   * dipasang): arah yang terlalu landai - sisa "Dari kursi" setinggi mata / kamera yang diputar rendah - dinaikkan
-   * ke sudut standar (arah mendatar tetap), supaya ruangan baru tidak terlihat dari samping datar & tertutup benda
-   * tinggi (tribun auditorium menutupi panggung & LED).
-   */
   const pasKeLayar = (fk: 'semua' | number = fokusRuang, langsung = false, tidakLandai = false) => {
     const m = mesin.current; if (!m) return;
     const { target, kotak } = fokusKotak(fk);
@@ -76,7 +62,6 @@ export function useKamera(K: KeadaanDesain) {
     terbangKe(m, m.orbit.target.clone().add(jauh), m.orbit.target.clone());
   };
 
-  /** Dekatkan kamera ke benda terpilih (arah pandang tetap). */
   const fokusBenda = () => {
     const m = mesin.current; const o = pilih ? m?.cache.get(pilih)?.obj : null;
     if (!m || !o) return;
@@ -86,17 +71,12 @@ export function useKamera(K: KeadaanDesain) {
     terbangKe(m, posisiPas(m, target, m.kamera.position.clone().sub(m.orbit.target).normalize(), kotak, 1.15), target);
   };
 
-  //  Pertama kali: perspektif seluruh ruangan. Ukuran ruang berubah: pas ulang
-  //  dari arah kamera yang sedang dipakai (sudut pilihan pengguna tidak hilang).
   useEffect(() => {
     if (!siap) return;
     if (!kameraSiap.current) { kameraSiap.current = true; kameraKe('iso', 'semua', true); return; }
     if (sudutRef.current === 'kursi') kameraKe('kursi'); else pasKeLayar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batas.x, batas.z, batas.t, siap]);
-  //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
-  //  Sengaja SESUDAH efek ukuran ruang di atas: efek berjalan berurutan, jadi pas templat ini yang menang (dulu efek
-  //  ukuran ruang menimpanya dengan arah kamera lama yang landai).
   useEffect(() => {
     if (!pasSetelahTemplate.current || !siap) return;
     const langsung = pasSetelahTemplate.current === 'langsung';

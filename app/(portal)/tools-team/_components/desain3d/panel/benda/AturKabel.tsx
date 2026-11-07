@@ -1,12 +1,7 @@
 'use client';
-/**
- * Atur kabel ke rack satu perangkat: otomatis (aturan inti/kabel.ts) atau diatur sendiri - jenis
- * kabel (warna legend) & jumlah tarikan. Jalurnya tetap otomatis (siku-siku lewat plafon / lantai).
- */
 import { GOLONGAN_SINYAL, kabelOtomatis, MAKS_TARIKAN, type GolonganKabelSinyal, type Jenis, type KabelCustom } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
-/** Benda pasif / bidang: tidak punya kabel sinyal. */
 const TANPA_KABEL: Jenis[] = ['kursi', 'tribun', 'panggung', 'bidang', 'objek', 'model', 'rak', 'teks'];
 
 const hex = (w: number) => `#${w.toString(16).padStart(6, '0')}`;

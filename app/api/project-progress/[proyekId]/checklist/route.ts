@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, akunAdmin, ambilAkun, buatChecklist, galat, muatChecklist } from '@/lib/checklist-server';
-import { daftarId, tanggal, teks } from '@/lib/checklist-isian';
-import { BATAS, validasiDraft, type DraftChecklist, type SumberChecklist } from '@/lib/checklist';
+import { NO_STORE, akunAdmin, ambilAkun, buatChecklist, galat, muatChecklist } from '@/lib/checklist/server';
+import { daftarId, tanggal, teks } from '@/lib/checklist/isian';
+import { BATAS, validasiDraft, type DraftChecklist, type SumberChecklist } from '@/lib/checklist/inti';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/**
- * POST /api/project-progress/<proyekId>/checklist - admin membuat checklist
- * lokasi baru di proyek ini.
- *   { judul, keterangan?, start_date?, target_date?, anggota: userId[],
- *     isi: 'kosong' | 'impor' | 'salin',
- *     sumber?: 'teks'|'excel', draft?            (isi = impor)
- *     salinDari?: checklistId }                  (isi = salin - centang dikosongkan)
- */
 export async function POST(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
   const params = await ctx.params;
   const s = await ambilAkun(request);

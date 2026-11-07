@@ -1,5 +1,3 @@
-// Replika rapikanPengaturanAI - menjaga isian admin tidak bisa mengubah alamat
-// yang dipanggil server lewat nama model.
 const BAWAAN = { model: 'gemini-2.5-flash', arahan: '', suhu: 0.7 };
 const rapikan = (r = {}) => {
   const suhu = Number(r.suhu);

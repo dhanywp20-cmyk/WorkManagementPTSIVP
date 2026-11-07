@@ -1,14 +1,9 @@
 'use client';
-/**
- * Sub menu Bandingkan Pitch: 2-4 modul dari referensi pada ukuran target yang sama - resolusi, jarak
- * pandang, daya, berat & port berdampingan, plus saran pitch dari jarak penonton terdekat.
- * "Pakai" memindahkan modul & ukuran itu ke Calculator LED. Rumus: lib/led-banding.ts.
- */
 import { useMemo, useState } from 'react';
 import { Angka, Catatan, f, Kartu, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { bukaCetak, type Lembar, namaBerkas, unduhLembarPNG } from '../../bersama/cetak';
-import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av-hitung';
-import { bandingPitch, saranPitch } from '@/lib/led-banding';
+import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av/hitung';
+import { bandingPitch, saranPitch } from '@/lib/av/led-banding';
 import { BULAT, LINGKUNGAN_TIPE, PER_M2 } from '../data';
 import { BarSub } from '../panel/BarSub';
 import { ModalBersama } from '../panel/ModalBersama';
@@ -21,7 +16,6 @@ const labelModul = (m: ModulLED) => [brandModul(m) !== BRAND_UMUM && brandModul(
 export function TampilanBanding({ a }: { a: AlatLED }) {
   const K = a.K;
   const semua = K.daftarModul;
-  //  Awal: modul aktif + tetangga pitch-nya di brand yang sama.
   const [pilihan, setPilihan] = useState<string[]>(() => {
     const sebrand = K.modulBrand.length ? K.modulBrand : semua;
     const i = Math.max(0, sebrand.findIndex(m => kunciModul(m) === kunciModul(K.modul)));
@@ -48,7 +42,6 @@ export function TampilanBanding({ a }: { a: AlatLED }) {
     K.pindah('led');
   };
 
-  //  Tabel: baris = ukuran, kolom = modul (lebih mudah dibandingkan berdampingan).
   const metrik: [string, (i: number) => string][] = [
     ['Susunan', i => `${baris[i].kolom} × ${baris[i].baris} ${baris[i].modul.unit ?? 'modul'} (${baris[i].h.jumlahCab})`],
     ['Ukuran nyata', i => `${f(baris[i].h.lebarM)} × ${f(baris[i].h.tinggiM)} m`],

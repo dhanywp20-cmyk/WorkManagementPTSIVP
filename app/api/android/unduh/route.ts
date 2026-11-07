@@ -1,10 +1,5 @@
-/**
- * /api/android/unduh - unduh APK rilis terbaru (atau ?kode=N). Sesi wajib;
- * dialihkan ke signed URL Supabase berumur 10 menit, jadi berkasnya tidak
- * pernah publik dan tidak lewat bandwidth Vercel.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';
@@ -22,7 +17,6 @@ export async function GET(req: NextRequest) {
   if (!data?.path) return NextResponse.json({ ok: false, alasan: 'Belum ada rilis APK.' }, { status: 404 });
 
   const { data: url, error } = await db.storage.from('aplikasi-android')
-    //  Nama berkas di HP pengguna: Work-ManagementPTS-<versi>.apk (sama dengan hasil build CI).
     .createSignedUrl(data.path, 600, { download: `Work-ManagementPTS-${String(data.versi).replace(/^v/i, '')}.apk` });
   if (error || !url) return NextResponse.json({ ok: false, alasan: error?.message ?? 'Gagal membuat tautan.' }, { status: 500 });
   return NextResponse.redirect(url.signedUrl, 302);

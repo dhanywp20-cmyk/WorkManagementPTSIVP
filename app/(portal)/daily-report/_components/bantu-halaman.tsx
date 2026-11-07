@@ -1,14 +1,12 @@
 'use client';
 
-/** Deklarasi tingkat modul daily-report/page.tsx (scripts/pindah-tingkat-modul.mjs). */
 import { useState } from 'react';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, type TeamUser, type GuestUser } from '@/lib/jadwal/tampilan';
 import { type ManualActivity, type TeamEntry } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
 
-// Styles
 export const inp: React.CSSProperties = {
   background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(0,0,0,0.12)',
   borderRadius: '12px', color: '#1e293b', fontSize: '14px',
@@ -38,7 +36,6 @@ export const TD: React.CSSProperties = {
   borderRight: '1px solid rgba(0,0,0,0.04)',
 };
 
-// Helpers
 export const SB: Record<string, { label: string; bg: string; color: string; border: string }> = {
   done:          { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
   completed:     { label: 'Selesai',  bg: '#d1fae5', color: '#065f46', border: '#10b981' },
@@ -62,7 +59,6 @@ export function emptyTeamEntry(m: TeamUser): TeamEntry {
   return { _key: newTeamKey(), member_user_id: m.id, member_name: m.full_name, category: 'Internal', project_name: '', address: '', sales_name: '', sales_division: m.sales_division ?? '', supervisor_notes: '' };
 }
 
-// PageWrapper
 export function PW({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
@@ -70,18 +66,11 @@ export function PW({ children }: { children: React.ReactNode }) {
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
 
-      {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
-          stacking context, sehingga z-index SEMUA modal di dalamnya cuma
-          dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
-          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
-          aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
 
-// Category picker
 export function CatPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -101,7 +90,6 @@ export function CatPicker({ value, onChange }: { value: string; onChange: (v: st
   );
 }
 
-// Sales Dropdown
 export function SalesDrop({ value, division, guests, onChange }: { value: string; division: string; guests: GuestUser[]; onChange: (n: string, d: string) => void }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -140,12 +128,10 @@ export function SalesDrop({ value, division, guests, onChange }: { value: string
   );
 }
 
-// Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
 export function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
   return <ToastBersama notif={t} />;
 }
 
-/** Satu baris daftar gabungan (aktivitas otomatis, manual & entri tim). */
 export interface FlatRow {
   id: string;
   source: 'reminder' | 'ticket' | 'manual';

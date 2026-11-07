@@ -7,10 +7,7 @@ import { useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { InlineToast, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-// BrandPicSettingModal
-
 export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
-  //  Daftar merek: Admin Panel › Daftar Pilihan.
   const merekDisplay = useDaftarPilihan('merek-display');
   const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
@@ -61,9 +58,9 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 shrink-0">{brand}</span>
+        <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 shrink-0 wrap-break-word">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400 appearance-none">
+          className="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400 appearance-none text-ellipsis">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
@@ -114,9 +111,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// BrandPicSettingContent (reusable inline, no overlay)
 export function BrandPicSettingContent() {
-  //  Daftar merek: Admin Panel › Daftar Pilihan.
   const merekDisplay = useDaftarPilihan('merek-display');
   const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
@@ -167,9 +162,9 @@ export function BrandPicSettingContent() {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 shrink-0">{brand}</span>
+        <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 shrink-0 wrap-break-word">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-amber-400 appearance-none">
+          className="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-amber-400 appearance-none text-ellipsis">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
@@ -181,7 +176,6 @@ export function BrandPicSettingContent() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <InlineToast notif={notif} />
-      {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -189,7 +183,7 @@ export function BrandPicSettingContent() {
           <div className="flex justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
@@ -219,6 +213,5 @@ export function BrandPicSettingContent() {
 }
 
 export function BrandPicSettingInline() {
-  // Re-export BrandPicSettingModal content without the fixed-overlay wrapper
   return <BrandPicSettingContent />;
 }

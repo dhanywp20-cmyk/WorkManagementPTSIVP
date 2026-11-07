@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-/**
- * npm test - jalankan semua uji/*.ts (tsx) dan uji/*.mjs (node) dengan env Supabase dummy yang sama
- * seperti CI. Dulu hanya *.ts: 16 uji .mjs tidak pernah jalan, dan satu yang gagal tidak ketahuan.
- *
- * Beberapa modul membuat klien Supabase saat dimuat, jadi tanpa env ini uji gagal dengan
- * "supabaseUrl is required" walau logikanya benar. Tidak ada uji yang menghubungi server.
- */
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 

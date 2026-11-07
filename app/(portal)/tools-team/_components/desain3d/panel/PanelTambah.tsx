@@ -1,5 +1,4 @@
 'use client';
-/** Panel Tambah benda: Objek saya (pribadi), Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
 import { Angka, Segmen } from '../../bersama/ui';
 import { TERIMA_3D } from '../impor/berkas3d';
 import { KATALOG, LABEL, type OpsiKelas, ukuranSetKelas } from '../inti';
@@ -21,9 +20,7 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
             </div>
           )}
           <div className="space-y-4">
-            {/* Objek saya: objek pribadi akun ini (ekspor / impor antar akun). */}
             <BagianObjekSaya a={a} />
-            {/* Produk saya: template produk yang disimpan engineer, dipakai seluruh tim. */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-violet-700">⭐ Produk saya (tim)</p>

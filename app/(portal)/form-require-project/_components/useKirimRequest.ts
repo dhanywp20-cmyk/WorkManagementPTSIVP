@@ -1,12 +1,12 @@
 'use client';
 
-/** useKirimRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { supabase } from '@/lib/supabase';
 import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
+import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
 import { User, RoomDetail, fetchWACCTargets, sendWANotif } from './shared';
 import { InitialFormType } from './Modals';
@@ -53,21 +53,15 @@ export function useKirimRequest(k: KirimRequestKonteks) {
     if (!dueDateForm) { notify('error', 'Target Selesai wajib diisi!'); return; }
     setSubmitting(true);
     try {
-      // Routing: Sales External wajib direview Sales Internal (division_ivp_mappings)
-      // dulu, BARU Admin dapat notifikasi actionable. Sales Internal/Marketing yang
-      // request utk kebutuhan sendiri (project direct ke user) TIDAK kena gerbang ini
-      // - sama seperti Request Schedule. Admin/PTS yang submit langsung (isPTS) juga
-      // skip gerbang (dia sudah tahu/putuskan sendiri).
       let routingStatus: 'internal_review' | 'admin_review' = 'admin_review';
       let internalSalesId: string | null = null;
-      let internalSalesId2: string | null = null;   // reviewer kedua (IVP) saat brand BOTH
+      let internalSalesId2: string | null = null;
       const chosenBrand: Brand | null = (form.brand as Brand | undefined) ?? null;
       if (!isPTS) {
         const { data: freshSelf } = await supabase.from('users').select('is_internal_sales, team_type').eq('id', currentUser.id).maybeSingle();
         const isInternalOrMarketing = !!freshSelf?.is_internal_sales || freshSelf?.team_type === 'Marketing';
         const salesDivision = (currentUser.sales_division || form.sales_division || '').trim();
         if (!isInternalOrMarketing && salesDivision) {
-          // Sales External: WAJIB pilih Marketing Brand + ada PIC Sales Internal utk brand itu.
           if (!chosenBrand) { notify('error', 'Pilih Marketing Brand dulu (MVI / IVP / Kedua Brand)!'); setSubmitting(false); return; }
           const rb = await resolveBrandInternals(salesDivision, chosenBrand);
           if (rb.missing.length > 0) { notify('error', `Divisi ${salesDivision} belum punya PIC Sales Internal untuk brand: ${rb.missing.join(' & ')}. Hubungi Admin untuk mapping dulu.`); setSubmitting(false); return; }
@@ -77,31 +71,23 @@ export function useKirimRequest(k: KirimRequestKonteks) {
           if (chosenBrand === 'BOTH' && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) internalSalesId2 = rb.ivp.id;
         }
       }
-      const internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      const internalHandlers: { id: string; phone_number: string | null; full_name: string }[] = [];
       if (routingStatus === 'internal_review') {
         const ids = [internalSalesId, internalSalesId2].filter(Boolean) as string[];
         if (ids.length) {
-          const { data: hs } = await supabase.from('users').select('full_name, phone_number').in('id', ids);
-          (hs ?? []).forEach((h: any) => internalHandlers.push({ phone_number: h.phone_number, full_name: h.full_name }));
+          const { data: hs } = await supabase.from('users').select('id, full_name, phone_number').in('id', ids);
+          (hs ?? []).forEach((h: any) => internalHandlers.push({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
         }
       }
       const payload = {
         project_name: form.project_name.trim(), room_name: form.room_name.trim(),
         project_location: form.project_location.trim(),
-        // Guest biasa: pakai nama & divisi akun sendiri. TAPI Sales Internal yang
-        // pilih SBU (Sales External)  atasnamakan External tsb (form.sales_name).
-        // requester_id/name tetap akun Sales Internal (jejak pembuat).
         sales_name: (!isPTS
           ? ((myIsInternalSales && form.sales_name.trim()) ? form.sales_name.trim() : (currentUser.full_name || form.sales_name).trim())
           : form.sales_name.trim()),
         sales_division: (!isPTS
           ? ((myIsInternalSales && form.sales_name.trim()) ? (form.sales_division?.trim() || '') : (currentUser.sales_division || form.sales_division || '').trim())
           : (form.sales_division?.trim() || '')),
-        // uuid berdampingan dengan sales_name, mengikuti aturan yang sama persis
-        // seperti barisnya di atas. Saat Sales Internal mengatasnamakan Sales
-        // External (SBU), yang dicatat adalah uuid External itu; kalau namanya
-        // diketik dan tidak bisa dipastikan milik siapa, dibiarkan kosong.
-        // requester_id di bawah tetap jejak siapa yang menekan tombolnya.
         sales_user_id: (!isPTS
           ? ((myIsInternalSales && form.sales_name.trim()) ? idDariNama(salesGuestUsers, form.sales_name) : (currentUser.id ?? null))
           : idDariNama(salesGuestUsers, form.sales_name)),
@@ -122,15 +108,9 @@ export function useKirimRequest(k: KirimRequestKonteks) {
         rooms: rooms.length > 0 ? rooms : [],
         routing_status: routingStatus,
         internal_sales_id: internalSalesId,
-        // Kolom brand hanya ditulis kalau ada brand (Sales External) - supaya submit
-        // internal/admin tetap jalan walau sql/brand-multi-internal.sql belum di-run.
         ...(chosenBrand ? { internal_sales_id_2: internalSalesId2, brand: chosenBrand } : {}),
       };
 
-      // Brand Ruangan 1 dipisah dari payload utama supaya bisa dilepas kalau
-      // kolomnya belum ada. Ruangan ke-2 dst tersimpan di `rooms` (JSONB),
-      // sementara Ruangan 1 memakai kolom tabel tersendiri. Lihat
-      // sql/design-project-brand-display-2.sql.
       const brandRuangan1 = {
         brand_display: form.brand_display || null,
         brand_display_pic_id: form.brand_display_pic_id || null,
@@ -145,17 +125,11 @@ export function useKirimRequest(k: KirimRequestKonteks) {
       let { data, error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
         .insert([{ ...(pakaiUuid ? payload : tanpaIdentitas(payload)), ...brandRuangan1 }]).select().single());
       if (error) {
-        // PostgREST menolak SELURUH insert kalau satu kolom tak dikenal, bukan
-        // cuma kolom itu. Tanpa jalur mundur ini, submit gagal total di basis
-        // data yang migrasinya belum dijalankan.
         ({ data, error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
           .insert([pakaiUuid ? payload : tanpaIdentitas(payload)]).select().single()));
       }
       if (error) { notify('error', 'Gagal submit form: ' + error.message); setSubmitting(false); return; }
       if (data?.id) {
-        // Catat pembuatan ke audit trail supaya riwayat request punya pangkal.
-        // Saat Sales Internal mengajukan atas nama Sales External (SBU),
-        // keduanya disebut supaya jelas siapa penginput sebenarnya.
         {
           const atasNama = (payload.sales_name ?? '').trim();
           const bedaPenginput = atasNama && atasNama !== currentUser.full_name;
@@ -172,20 +146,6 @@ export function useKirimRequest(k: KirimRequestKonteks) {
           request_id: data.id, sender_id: currentUser.id, sender_name: 'System', sender_role: 'system',
           message: `📋 Request baru dari ${currentUser.full_name} telah masuk dan menunggu approval dari Superadmin.`,
         }]);
-        /*
-          M12 (docs/UX-WORKFLOW-AUDIT.md): request-nya SUDAH tersimpan (data.id
-          valid, pesan sistem "menunggu approval" sudah terkirim) di titik ini.
-          Dulu upload foto survey/BOQ awal di bawah ini TIDAK dibungkus
-          try/catch sendiri - kalau compressImage() atau storage.upload()
-          melontar exception (file korup, kuota browser penuh, dsb), yang
-          tertangkap adalah catch generik di akhir fungsi ini yang bilang
-          "Terjadi kesalahan tidak terduga. Coba lagi." - menyiratkan submit
-          gagal TOTAL padahal sudah tersimpan. User yang percaya pesan itu
-          submit ulang seluruh form -> request duplikat, notifikasi ganda ke
-          Admin & Sales Internal. Sekarang dibungkus try/catch sendiri: upload
-          lampiran awal boleh gagal, tapi TIDAK BOLEH terlihat seperti request-
-          nya sendiri gagal.
-        */
         if (surveyPhotos.length > 0) {
           try {
             for (const photo of surveyPhotos) {
@@ -221,12 +181,19 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             notify('error', 'Request berhasil dikirim, tapi file BOQ awal gagal diupload. Upload manual lewat detail request setelah ini.');
           }
         }
-        // Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya
-        // role admin - lihat lib/penerima-admin.ts.
+        const notifRef = { type: 'project' as const, action_url: '/form-require-project', ref_id: data.id, created_by: currentUser.full_name };
+        if (routingStatus === 'internal_review') {
+          for (const h of internalHandlers) {
+            void createNotification({ ...notifRef, user_id: h.id, title: '📩 Request design perlu review kamu',
+              body: `${currentUser.full_name} (${currentUser.sales_division || '-'}) — ${form.project_name.trim()}` });
+          }
+        } else {
+          void createNotificationForAdmins({ ...notifRef, title: '🏗️ Request design baru menunggu approval',
+            body: `${currentUser.full_name} — ${form.project_name.trim()}` });
+        }
         const adminUsersWA = await penerimaAdminBernomor();
         const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
         if (adminUsersWA && adminUsersWA.length > 0 && routingStatus === 'internal_review') {
-          // Sales External: WA WAJIB ke Sales Internal dulu (actionable), Admin cuma pengingat.
           const internalMsg =
             `📩 *REQUEST DESIGN BARU - PERLU REVIEW KAMU*\n\n` +
             `Sales External *${currentUser.full_name}* (${currentUser.sales_division || '-'}) mengajukan request design:\n\n` +
@@ -263,9 +230,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             )
           );
         }
-        // CC/upload/brand-PIC di bawah ini berlaku utk KEDUA jalur routing (internal_review & admin_review).
         if (adminUsersWA && adminUsersWA.length > 0) {
-          // CC ke atasan + IVP berdasarkan divisi requester
           try {
             const ccDiv = currentUser?.sales_division ?? '';
             if (ccDiv && ccDiv !== 'IVP' && currentUser?.id) {
@@ -285,7 +250,6 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             }
           } catch { }
 
-          // Upload foto per ruangan tambahan
           try {
             for (const [roomId, photos] of Object.entries(roomPhotoMap)) {
               const rIdx = rooms.findIndex(r => r.id === roomId);
@@ -305,7 +269,6 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             }
           } catch { }
 
-          // Upload BOQ per ruangan tambahan
           try {
             for (const [roomId, boqFile] of Object.entries(boqRoomMap)) {
               if (!boqFile) continue;
@@ -326,11 +289,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             }
           } catch { }
 
-          // WA notif ke Brand PIC dari rooms
           try {
-            // Ruangan 1 ikut: datanya ada di `form`, bukan di `rooms` - tanpa
-            // ini PIC Ruangan 1 tidak pernah dikabari sama sekali, padahal
-            // ruangan itulah yang paling sering diisi.
             const ruangan1 = {
               room_name: form.room_name || 'Ruangan 1',
               brand_display: form.brand_display, brand_display_pic_id: form.brand_display_pic_id,
@@ -340,9 +299,6 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             const allRooms = [ruangan1, ...rooms];
             const brandPicIds = new Set<string>();
             allRooms.forEach(r => {
-              // Ketiganya ikut: PIC display KEDUA harus dikabari juga, kalau
-              // tidak slot display keduanya cuma jadi catatan dan orang yang
-              // seharusnya menangani tidak pernah tahu.
               if (r.brand_display_pic_id) brandPicIds.add(r.brand_display_pic_id);
               if (r.brand_display_2_pic_id) brandPicIds.add(r.brand_display_2_pic_id);
               if (r.brand_middleware_pic_id) brandPicIds.add(r.brand_middleware_pic_id);

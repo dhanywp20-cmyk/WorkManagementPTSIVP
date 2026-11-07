@@ -1,30 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser, isAdminRole } from '@/lib/server-auth';
-import { issueDbToken } from '@/lib/db-token';
+import { getSessionUser, isAdminRole } from '@/lib/auth/server';
+import { issueDbToken } from '@/lib/auth/db-token';
 import { hasServiceRole, serviceRoleWajib } from '@/lib/supabase-admin';
 import { periksaKonfigurasiServices } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * /api/auth/db-token-check - apakah SUPABASE_JWT_SECRET yang dipasang benar?
- *
- * Ini pemeriksaan yang HARUS lolos sebelum sql/rls-project-progress.sql
- * dijalankan. Kalau rahasianya salah, PostgREST menolak setiap token, dan
- * begitu RLS menyala seluruh modul akan tampak kosong bagi semua orang.
- *
- * Cara kerjanya: terbitkan token untuk pemanggil, lalu pakai token itu untuk
- * memanggil PostgREST sungguhan. Yang diuji bukan bentuk tokennya, melainkan
- * apakah PostgREST MENERIMA tanda tangannya - dan itu hanya terjadi bila
- * rahasia di aplikasi sama persis dengan rahasia di Supabase.
- *
- * Kode status dari PostgREST dibaca begini:
- *   401   rahasia SALAH (tanda tangan ditolak)
- *   404   rahasia BENAR, tapi fungsi debug_jwt_claims belum dibuat
- *   200   rahasia benar dan fungsi sudah ada; klaim ikut dikembalikan
- *
- * Hanya admin yang boleh memanggil - hasilnya menyebut keadaan konfigurasi.
- */
 export async function GET(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) {
@@ -34,11 +15,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Hanya admin yang boleh menjalankan pemeriksaan ini.' }, { status: 403 });
   }
 
-  /**
-   * Kesiapan environment. Yang dilaporkan hanya ADA / TIDAK ADA - nilainya
-   * tidak pernah ikut, supaya endpoint ini tidak berubah jadi jalan membaca
-   * rahasia lewat browser.
-   */
   const env = {
     SUPABASE_JWT_SECRET: {
       ada: !!process.env.SUPABASE_JWT_SECRET,
@@ -65,10 +41,6 @@ export async function GET(request: NextRequest) {
     .filter(([k, v]) => !v.ada && k !== 'GEMINI_API_KEY')
     .map(([k]) => k);
 
-  /**
-   * Dua kondisi yang tidak terbaca dari daftar "ada / tidak ada" di atas,
-   * tapi diam-diam mengubah perilaku produksi.
-   */
   const svc = periksaKonfigurasiServices();
   const peringatan: string[] = [];
   if (!hasServiceRole()) {

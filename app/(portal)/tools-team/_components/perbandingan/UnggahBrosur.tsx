@@ -1,8 +1,7 @@
 'use client';
-/** Daftar brosur PDF: tambah (pilih / seret), nama produk manual, pilih produk unggulan, hapus. Teks dibaca di peramban. */
 import { useRef, useState } from 'react';
 import { CheckCircle2, FileText, Loader2, Star, Trash2, TriangleAlert, Upload } from 'lucide-react';
-import { MAKS_PRODUK } from '@/lib/perbandingan';
+import { MAKS_PRODUK } from '@/lib/perbandingan/inti';
 import type { HasilBaca } from './bacaPdf';
 
 export interface Brosur { id: string; file: File; nama: string; status: 'membaca' | 'siap' | 'galat'; hasil?: HasilBaca; galat?: string }

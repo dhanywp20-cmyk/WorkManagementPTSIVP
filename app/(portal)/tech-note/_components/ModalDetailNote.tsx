@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalDetailNote - dipecah dari app/(portal)/tech-note/_components/bagian-tech-note.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { TechNote, TechNoteHistory, STATUS_CONFIG, formatDate } from './shared';
 import React from 'react';

@@ -1,16 +1,8 @@
 'use client';
 
-import React from 'react';
 
-
-import type { RekapLCTahunan } from '@/lib/kpi-lc-tahunan';
+import type { RekapLCTahunan } from '@/lib/kuis/kpi-lc-tahunan';
 import { WARNA_STATUS_TICKET } from '@/lib/desain';
-
-/**
- * Tipe, konstanta, dan penolong KPI Team yang dipakai bersama halaman, popup rincian, dan ekspor Excel.
- */
-
-// Types
 
 export interface KPIUser {
   id: string; full_name: string; role: string;
@@ -29,7 +21,6 @@ export interface KPIMember {
   formReviewLowRating: number;
   techNotesApproved: number;
   monthlyTickets: number[];
-  /** Kelulusan sesi Learning Center setahun penuh - pengali KPI akhir. Lihat lib/kpi-lc-tahunan.ts. */
   lcTahunan?: RekapLCTahunan;
 }
 
@@ -64,7 +55,6 @@ export interface KPIPeriodSnapshot {
     formReviewTotal: number; formReviewLowRating: number; techNotesApproved: number;
     tickScore: number; bastScore: number; lcScore: number; rndScore: number;
     finalKPI: number;
-    /** Snapshot sejak 2026-09-24: KPI sebelum dikali faktor LC tahunan. */
     kpiDasar?: number; faktorLC?: number; lcSesiWajib?: number; lcSesiLulus?: number;
   }[];
   settings_json?: {
@@ -84,16 +74,6 @@ export type SortKey = 'name' | 'tickets' | 'solved' | 'solveRate' | 'avgDays' | 
 
 export type SortDir = 'asc' | 'desc';
 
-/**
- * Rumus skor KPI halaman KPI Team. Dulu disalin di empat tempat page.tsx
- * (simpan snapshot, kartu ringkas, popup detail, daftar periode).
- * Catatan: tabel "Ringkasan KPI Tim" di DashboardKPI.tsx masih punya
- * salinannya sendiri, tetapi datanya (kpiTeam.members) tidak pernah diisi
- * sehingga tabel itu tidak pernah tampil.
- *
- * finalKPI = KPI dasar (4 komponen berbobot) × faktor LC tahunan
- * (sesi Learning Center lulus ÷ sesi wajib di tahun itu).
- */
 export function hitungSkorKPI(m: KPIMember, s: KPISettings) {
   const lcFailed  = m.lcScores.filter(sc => sc < s.lcMinScore).length;
   const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
@@ -107,8 +87,6 @@ export function hitungSkorKPI(m: KPIMember, s: KPISettings) {
   return { lcFailed, tickScore, bastScore, lcScore, rndScore, kpiDasar, faktorLC, finalKPI, potonganLC: kpiDasar - finalKPI };
 }
 
-// Constants
-
 export const PERIODS: PeriodKey[] = ['Minggu Ini', 'Bulan Ini', '3 Bulan', '6 Bulan', '1 Tahun'];
 
 export const PERIOD_EMOJI: Record<PeriodKey, string> = {
@@ -119,19 +97,8 @@ export const TEAM_COLORS: Record<string, string> = {
   'Team PTS IVP': '#0284c7', 'Team PTS UMP': '#7c3aed', 'Team PTS MVI': '#0d9488',
 };
 
-/** Warna cadangan untuk kelompok yang tidak ada di TEAM_COLORS. */
 const WARNA_CADANGAN = ['#c2410c', '#4d7c0f', '#be185d', '#0f766e', '#4338ca', '#a16207'];
 
-/**
- * Warna sebuah kelompok - selalu memberi warna, tidak pernah kosong.
- *
- * TEAM_COLORS cuma mengenal tiga kelompok bawaan. Kelompok yang ditambahkan
- * admin lewat Admin Panel dulu jatuh ke abu-abu yang sama untuk semuanya,
- * jadi dua kelompok baru tidak bisa dibedakan di grafik maupun lencana.
- * Cadangannya dipilih dari nama kelompoknya (dijumlah kodenya), jadi satu
- * kelompok SELALU mendapat warna yang sama di seluruh layar dan di antara
- * sesi - bukan warna acak yang berubah tiap render.
- */
 export function warnaTim(teamType: string | null | undefined): string {
   const t = (teamType ?? '').trim();
   if (!t) return '#64748b';
@@ -147,9 +114,7 @@ export const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Ok
 
 export const MN     = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
 
-export const KPI_COLOR = '#0369a1'; // sky-700: teks putih di atasnya lolos AA (sky-600 hanya 4.1:1)
-
-// Helpers
+export const KPI_COLOR = '#0369a1';
 
 export function fmt(d: Date): string { return d.toISOString().split('T')[0]; }
 
@@ -184,7 +149,6 @@ export function getPeriodRange(period: PeriodKey) {
     const ps = new Date(pe.getFullYear(), pe.getMonth() - 5, 1);
     return { start: fmt(s), end: fmt(e), prevStart: fmt(ps), prevEnd: fmt(pe) };
   }
-  // 1 Tahun
   const s = new Date(now.getFullYear(), 0, 1);
   const e = new Date(now.getFullYear(), 11, 31);
   const ps = new Date(now.getFullYear() - 1, 0, 1);

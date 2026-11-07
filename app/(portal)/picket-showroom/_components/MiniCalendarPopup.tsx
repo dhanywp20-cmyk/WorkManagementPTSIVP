@@ -16,15 +16,12 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
   const gridStart=new Date(y,m,1-startOffset);
   const gridCells:Date[]=Array.from({length:42},(_,i)=>addDays(gridStart,i));
 
-  // Map actual DB rows by date key
   const rowMap:Record<string,PiketRow[]>={};
   allRows.forEach(r=>{
     if(!rowMap[r.day_date]) rowMap[r.day_date]=[];
     rowMap[r.day_date].push(r);
   });
 
-  // Holiday cascade: same algorithm as main table - non-holiday rows inherit
-  // PICs in sequence (pool index only advances for non-holiday rows)
   const gridStartKey = toKey(gridStart);
   const gridEndKey = toKey(addDays(gridStart, 42));
   const cascadedRowMap = useMemo(() => {
@@ -84,11 +81,9 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
             const dow=date.getDay();
             const isWeekend=dow===0||dow===6;
 
-            // Actual saved rows for this date (cascade-adjusted)
             const dayRows=cascadedRowMap[ds]||[];
             const hasDB=dayRows.length>0;
 
-            // Names to display from actual DB rows
             const dbPics=hasDB
               ? dayRows.flatMap(r=>[r.pic_ivp_name,r.pic_ump_name,r.pic_mvi_name].filter(Boolean) as string[])
               : [];
@@ -96,8 +91,6 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
             const isHoliday = holidays.includes(ds);
 
-            // Rolling projection - ONLY shown for weekdays in the current month
-            // that have NO actual DB row. Uses the holiday-aware rolling engine.
             const showRolling = !hasDB && !isWeekend && inMonth && !isHoliday;
             const rollingName = showRolling ? getRollingNameForDate(date, allRows, holidays) : '';
             const rollingDow = DAYS_OF_WEEK[dow-1] as DayOfWeek|undefined;
@@ -115,13 +108,11 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
                   {date.getDate()}
                 </div>
 
-                {/* Holiday marker */}
                 {isHoliday && inMonth && (
                   <div className="text-[10px] font-black px-1 py-0.5 rounded-full text-white mb-0.5 w-fit"
                     style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</div>
                 )}
 
-                {/* Actual DB PIC names — hidden on holiday */}
                 {hasDB && inMonth && !isHoliday && dbPics.map((name,pi)=>(
                   <div key={pi} className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded-sm mb-0.5"
                     style={{color:dc?.accent||'#374151',background:`${dc?.accent||'#dc2626'}18`}}>
@@ -129,13 +120,12 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
                   </div>
                 ))}
 
-                {/* Rolling projection — shown only when no DB row exists */}
                 {rollingName && (
                   <div className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded-sm mb-0.5"
                     style={{
                       color:rollingDc?.accent||'#94a3b8',
                       background:`${rollingDc?.accent||'#94a3b8'}12`,
-                      opacity: 0.75, // slightly faded to distinguish from confirmed rows
+                      opacity: 0.75,
                     }}>
                     {rollingName}
                   </div>
@@ -145,7 +135,6 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
           })}
         </div>
 
-        {/* Legend */}
         <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm" style={{background:'rgba(220,38,38,0.18)'}}/>

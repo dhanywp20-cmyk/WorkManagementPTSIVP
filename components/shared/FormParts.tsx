@@ -2,28 +2,7 @@
 
 import { Ikon } from './Ikon';
 
-/**
- * Shared form helpers - sama persis dipakai di reminder-schedule & form-review.
- */
-
-/**
- * Ukuran label & header sengaja kecil.
- *
- * Form create kini bertata letak tiga kolom dalam satu layar; tiap kolom cuma
- * selebar ~470px. Ukuran yang nyaman saat form masih satu kolom lebar membuat
- * isian di sini berdesakan dan justru memaksa gulir - yang persis ingin
- * dihindari oleh tata letak satu layar itu.
- */
 export function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  // Menautkan label ke isiannya
-  // <label> yang hanya berdiri di atas isian TIDAK menamainya: secara program
-  // keduanya tidak berhubungan, jadi isiannya terbaca tanpa nama sama sekali.
-  // Membungkus isian di DALAM <label> membuat tautannya berlaku tanpa perlu
-  // id - dan tanpa perlu menyentuh ratusan pemanggil untuk menambahkan id
-  // satu per satu, yang pasti menyisakan sebagian terlewat.
-  //
-  // Ini juga membuat label bisa diklik untuk memfokuskan isiannya, seperti
-  // yang sudah diharapkan orang dari sebuah label.
   return (
     <label className="block">
       <span className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</span>
@@ -35,8 +14,6 @@ export function FormField({ label, children }: { label: string; children: React.
 export function SectionHeader({ icon, title }: { icon: string; title: string }) {
   return (
     <div className="flex items-center gap-1.5 pb-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
-      {/* Emoji di sini murni hiasan judul: dibiarkan terbaca, pembaca layar
-          mengeja namanya ("wajah tersenyum", "map") sebelum judul aslinya. */}
       <Ikon nama={icon} ukuran={14} className="text-slate-500" />
       <span className="text-xs font-bold tracking-wide text-slate-700">{title}</span>
     </div>
@@ -64,9 +41,6 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
   );
 }
 
-/**
- * InfoLine - compact print-style row untuk detail popup (style dari ticketing)
- */
 export function InfoLine({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (

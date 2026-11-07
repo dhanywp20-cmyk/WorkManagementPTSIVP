@@ -1,19 +1,11 @@
 'use client';
-/**
- * Atur LED videotron - satuan dari referensi yang SAMA dengan menu LED Videotron:
- *   - Referensi: modul / cabinet per brand & model (pitch, ukuran unit, piksel per unit dari datasheet),
- *     dibaca dari referensi tim (/api/tools-team/referensi-led) lewat useReferensiLED.
- *   - Cabinet bebas: daftar cabinet & pitch umum menu LED Videotron (led/data.ts).
- * Ukuran layar selalu kelipatan unit utuh (inti/produk.ts susunanLED).
- */
-import { BRAND_UMUM, brandModul, cariModul, daftarBrand, kunciModul, type ModulLED } from '@/lib/av-hitung';
+import { BRAND_UMUM, brandModul, cariModul, daftarBrand, kunciModul, type ModulLED } from '@/lib/av/hitung';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { CABINET, PITCH } from '../../../led/data';
 import { useReferensiLED } from '../../../led/referensi/useReferensiLED';
 import { susunanLED } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
-/** Nama bawaan LED (belum diganti engineer) ikut produk yang dipilih. */
 const NAMA_BAWAAN = /^LED( videotron|\b)/i;
 
 export function AturLED({ c }: { c: KonteksAtur }) {

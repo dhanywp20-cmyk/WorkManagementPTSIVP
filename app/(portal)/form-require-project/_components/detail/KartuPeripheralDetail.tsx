@@ -1,6 +1,5 @@
 'use client';
 
-/** KartuPeripheralDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 
 export interface KartuPeripheralDetailProps {
@@ -20,15 +19,7 @@ export function KartuPeripheralDetail({ ChipDisplay, YNDisplay, dr }: KartuPerip
         <div className="space-y-4">
           <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Source</label><ChipDisplay items={[...(dr.source||[]), dr.source_other]} /></div>
 
-          {/* Enam pilihan Yes/No dalam SATU grid dua kolom.
-              Sebelumnya sebagian menumpuk penuh dan hanya Wallplate +
-              Tabletop yang dua kolom, sehingga Tabletop berdiri
-              sendirian di kanan sementara kirinya berderet penuh -
-              terbaca seperti ada isian yang hilang, padahal tidak.
-              items-start supaya kartu yang punya rincian lanjutan
-              tidak menarik tinggi pasangannya. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 items-start">
-          {/* Camera */}
           <div>
             <YNDisplay value={dr.camera_conference||'No'} label="Camera Conference" />
             {dr.camera_conference === 'Yes' && (
@@ -39,7 +30,6 @@ export function KartuPeripheralDetail({ ChipDisplay, YNDisplay, dr }: KartuPerip
             )}
           </div>
 
-          {/* Audio */}
           <div>
             <YNDisplay value={dr.audio_system||'No'} label="Audio System" />
             {dr.audio_system === 'Yes' && (
@@ -50,19 +40,16 @@ export function KartuPeripheralDetail({ ChipDisplay, YNDisplay, dr }: KartuPerip
             )}
           </div>
 
-          {/* Wallplate */}
           <div>
             <YNDisplay value={dr.wallplate_input||'No'} label="Wallplate Input" />
             {dr.wallplate_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.wallplate_jumlah||'—'}</p></div>}
           </div>
 
-          {/* Tabletop */}
           <div>
             <YNDisplay value={dr.tabletop_input||'No'} label="Tabletop Input" />
             {dr.tabletop_input === 'Yes' && <div className="ml-4 pl-4 border-l-2 border-teal-200 mt-1"><p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">{dr.tabletop_jumlah||'—'}</p></div>}
           </div>
 
-          {/* Wireless */}
           <div>
             <YNDisplay value={dr.wireless_presentation||'No'} label="Wireless Presentation" />
             {dr.wireless_presentation === 'Yes' && (
@@ -73,7 +60,6 @@ export function KartuPeripheralDetail({ ChipDisplay, YNDisplay, dr }: KartuPerip
             )}
           </div>
 
-          {/* Controller */}
           <div>
             <YNDisplay value={dr.controller_automation||'No'} label="Controller / Automation" />
             {dr.controller_automation === 'Yes' && (

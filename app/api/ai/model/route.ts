@@ -1,19 +1,6 @@
-/**
- * /api/ai/model - daftar model yang BENAR-BENAR tersedia untuk kunci ini.
- *
- * Ada karena satu kekeliruan yang terulang: nama model ditebak, tidak
- * diperiksa. Nama yang salah tidak gagal saat disimpan - ia gagal nanti, saat
- * seseorang menekan "Nilai", dengan pesan 404 yang tidak menyebut nama mana
- * yang keliru. Daftar model juga berbeda antar kunci dan antar wilayah, dan
- * Google mengganti maupun menghentikannya tanpa pemberitahuan.
- *
- * Jadi daftarnya ditanyakan, bukan ditulis di kode. Yang tampil di layar
- * adalah apa yang bisa dipakai kunci itu hari ini.
- *
- * Tokennya tetap di server. Yang dikirim ke peramban hanya nama-nama model.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import { bacaRahasia } from '@/lib/rahasia-server';
+import { bacaRahasia } from '@/lib/auth/rahasia-server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 
 interface ModelGoogle {
   name?: string;
@@ -23,12 +10,11 @@ interface ModelGoogle {
 }
 
 export async function GET(request: NextRequest) {
+  const jaga = await pastikanMasuk(request);
+  if (!jaga.ok) return NextResponse.json({ error: { message: jaga.alasan } }, { status: jaga.status });
   try {
     const penilai = request.nextUrl.searchParams.get('profil') === 'penilai';
 
-    // Sama seperti /api/ai/generate: token penilai yang kosong jatuh ke token
-    // pembuat soal, supaya daftarnya tetap muncul di pemasangan yang belum
-    // memisahkan tokennya.
     const [khusus, umum] = await Promise.all([
       penilai ? bacaRahasia('ai.gemini_token_koreksi') : Promise.resolve(null),
       bacaRahasia('ai.gemini_token'),
@@ -43,9 +29,6 @@ export async function GET(request: NextRequest) {
 
     const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', {
       headers: { 'x-goog-api-key': token },
-      // Daftar model jarang berubah dalam hitungan menit, tapi sering dalam
-      // hitungan minggu. Satu jam cukup menahan panggilan beruntun tanpa
-      // membuat model baru terasa tidak pernah muncul.
       next: { revalidate: 3600 },
     });
     const data = await res.json();
@@ -56,13 +39,8 @@ export async function GET(request: NextRequest) {
     }
 
     const model = ((data?.models ?? []) as ModelGoogle[])
-      // Hanya model yang bisa dipakai membuat teks. Daftar mentahnya juga
-      // memuat model penyematan dan pembuat gambar - memilihnya di sini akan
-      // gagal dengan pesan yang membingungkan.
       .filter(m => (m.supportedGenerationMethods ?? []).includes('generateContent'))
       .map(m => ({
-        // Google mengembalikan "models/gemini-2.5-flash"; yang dipakai di URL
-        // permintaan hanya bagian setelah garis miring.
         id: (m.name ?? '').replace(/^models\//, ''),
         nama: m.displayName || (m.name ?? '').replace(/^models\//, ''),
       }))

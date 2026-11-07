@@ -1,15 +1,9 @@
-/**
- * desain3d/bangun/lampu.ts - Lampu plafon: downlight, spot, panel, linear, gantung dekoratif.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import type * as T from 'three';
 import { sudutLampuDari, warnaKelvin } from '../inti';
 import { teksturKolamCahaya } from './tekstur';
 import { batang, type Konteks, kotak, mat } from './dasar';
 
-/** lampu */
 export function bangunLampu({ THREE, g, b, W }: Konteks) {
-  //  Lampu plafon: rumah lampu + permukaan menyala (emisif, ikut dimmer) + kolam cahaya di lantai.
   const tipe = b.tipeLampu ?? 'downlight', warnaC = warnaKelvin(b.kelvin);
   const nyala = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: warnaC, emissiveIntensity: 1.6, roughness: 0.4 });
   nyala.userData.dasar = 1.6;
@@ -26,7 +20,6 @@ export function bangunLampu({ THREE, g, b, W }: Konteks) {
     const muka = tandai(new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.03, b.d - 0.03), nyala));
     muka.rotation.x = Math.PI / 2; muka.position.y = -0.001; g.add(muka);
   } else if (tipe === 'gantung') {
-    //  Pendant dekoratif: kap kubah logam gelap (dalam keemasan), bohlam menyala, kabel ke plafon.
     const kap = mat(THREE, W(0x1f2328), { metalness: 0.7, roughness: 0.35, side: THREE.DoubleSide });
     const dalam = mat(THREE, 0xd4a35a, { metalness: 0.8, roughness: 0.3, side: THREE.BackSide });
     const rr = b.w / 2, profil: [number, number][] = [];
@@ -45,7 +38,6 @@ export function bangunLampu({ THREE, g, b, W }: Konteks) {
     const kawat = mat(THREE, 0x9ca3af, { metalness: 0.9, roughness: 0.3 });
     for (const sx of [-1, 1]) g.add(batang(THREE, 0.004, 0.004, kawat, sx * (b.w / 2 - 0.1), 0, 'tiang', 0, true));
   }
-  //  Kolam cahaya di lantai (aditif, tidak menghalangi sinar proyektor).
   const jari = Math.max(0.3, Math.min(3, b.elev * Math.tan((sudutLampuDari(b) / 2) * (Math.PI / 180))));
   const kolamTex = teksturKolamCahaya(THREE);
   const kolam = new THREE.Mesh(new THREE.PlaneGeometry(jari * 2 + (tipe === 'linear' ? b.w : 0), jari * 2),

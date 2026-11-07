@@ -1,7 +1,6 @@
 'use client';
 
-/** BarisTrenKPI - dipecah dari app/(portal)/kpi-team/_components/DashboardKPI.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { UBIN, BAYANG_UBIN, RelAksen } from '@/components/shared/ubin';
 import { Ikon } from '@/components/shared/Ikon';
 import { AKSEN, BAIK, Cincin, HATI, KRITIS, KepalaUbin, TrenBulanan, type KPIData, type Scope } from '../DashboardKPI';
 
@@ -16,7 +15,6 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
-        {/* TREND — area, lihat TrenBulanan */}
         <div className={`${UBIN} ${scope.kind==='admin'?'lg:col-span-6':'lg:col-span-12'} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="📈" judul={`Trend Ticket Bulanan ${new Date().getFullYear()}`} warna={AKSEN}
@@ -32,7 +30,6 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
         </div>
 
         {scope.kind==='admin' && <>
-          {/* LEARNING CENTER */}
           <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
             <RelAksen warna={BAIK}/>
             <KepalaUbin ikon="🎓" judul="Learning Center" warna={BAIK}/>
@@ -50,9 +47,6 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
                 </div>
               ))}
             </div>
-            {/*  Pass rate sebagai satu cincin - bagian-dari-keseluruhan
-                yang sesungguhnya, menggantikan dua donat yang dulu
-                menyatakan rasio yang sama dua kali. */}
             {!loading&&kpi&&(()=>{
               const gagal = Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0);
               const pct = kpi.learning.totalSessions>0
@@ -75,12 +69,6 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
             })()}
           </div>
 
-          {/*
-            Pengguna: satu bilah bertumpuk, bukan empat bilah terpisah.
-            Yang ditanyakan tentang peran akun adalah KOMPOSISI - berapa
-            bagian dari seluruh akun - dan itu justru hilang kalau tiap
-            peran diberi bilah sendiri dengan patokan panjang yang sama.
-          */}
           <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
             <RelAksen warna="#475569"/>
             <KepalaUbin ikon="👥" judul="Pengguna" warna="#475569"/>

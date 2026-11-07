@@ -1,17 +1,4 @@
-/**
- * uji/kpi-lc-tahunan.ts - rekapLCTahunan() & hitungSkorKPI().
- *
- * Aturan (keputusan pemilik platform 2026-09-24):
- *   KPI akhir = KPI dasar × (sesi LC lulus ÷ sesi LC wajib di tahun itu);
- *   sesi bertarget yang tidak dikerjakan sampai selesai = tidak lulus.
- *
- *   NEXT_PUBLIC_SUPABASE_URL=https://x.supabase.co \
- *   NEXT_PUBLIC_SUPABASE_ANON_KEY=dummy \
- *   NEXT_PUBLIC_SUPABASE_SERVICES_URL=https://y.supabase.co \
- *   NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY=dummy \
- *   npx tsx uji/kpi-lc-tahunan.ts
- */
-import { rekapLCTahunan, type SesiLC, type AttemptLC } from '../lib/kpi-lc-tahunan';
+import { rekapLCTahunan, type SesiLC, type AttemptLC } from '../lib/kuis/kpi-lc-tahunan';
 import { hitungSkorKPI, DEFAULT_KPI_SETTINGS, type KPIMember } from '../app/(portal)/kpi-team/_components/shared';
 
 let lulus = 0, gagal = 0;

@@ -1,31 +1,9 @@
 'use client';
-/** DashboardKPI-tren.tsx - dipecah dari DashboardKPI.tsx (scripts/pecah-modul.mjs); DashboardKPI.tsx tetap mengekspor ulang semuanya. */
 import { Ikon } from '@/components/shared/Ikon';
 import { SEVERITY_STYLE } from './DashboardKPI-bantu';
 import { AuditEntry, Scope } from './DashboardKPI-tipe';
 import { AKSEN } from './DashboardKPI-ubin';
 
-/**
- * Trend bulanan sebagai AREA, bukan 12 batang pucat.
- *
- * Batang membandingkan besaran antar kategori yang berdiri sendiri; yang
- * ditanyakan di sini adalah bentuk perjalanan sepanjang tahun, dan itu
- * dibaca dari kemiringan garis. Bulan yang belum terjadi tidak digambar
- * sebagai nol - digambar sebagai garis putus, karena "belum ada datanya"
- * bukan "nilainya nol".
- */
-/**
- * viewW/viewH beda per pemanggil, BUKAN satu proporsi tetap diregangkan
- * paksa (preserveAspectRatio="none" sempat dicoba - lingkaran titik datanya
- * jadi lonjong karena X dan Y diregangkan beda rasio, cacat yang lebih
- * mengganggu daripada masalah aslinya). viewBox tetap discale UNIFORM
- * (bawaan SVG) supaya lingkaran tetap bulat - yang berubah cuma proporsi
- * intrinsiknya sendiri, dipilih sesuai lebar kartu pemanggilnya:
- * 640x168 untuk kartu Admin (lg:col-span-6, ~720-770px - proporsi asli,
- * sudah pas di sana), 1400x220 untuk kartu Team (lg:col-span-12 - lebih
- * lebar, jadi rasionya dibuat lebih landai supaya tinggi hasil akhirnya
- * tidak ikut membengkak walau lebarnya jauh lebih besar).
- */
 export function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]; viewW?: number; viewH?: number }) {
   const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
   const cur = Math.min(new Date().getMonth(), 11);
@@ -68,7 +46,6 @@ export function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]
   );
 }
 
-/** Inisial nama untuk avatar papan peringkat. */
 export function inisial(nama: string) {
   return nama.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('') || '?';
 }

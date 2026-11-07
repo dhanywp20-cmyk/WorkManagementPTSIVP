@@ -1,17 +1,11 @@
 'use client';
-/**
- * Katalog "Produk saya" (template produk tim di server).
- * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
- */
 import { useEffect } from 'react';
 import { type Benda, bendaBaru, layarTerdekat, proyektorKeLayar } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { API_PRODUK, type ProdukTimC } from '../useKeadaanDesain';
 
-
 export function useProdukTim(K: KeadaanDesain) {
   const { benda, kotakRuang, produkTim, ruang, setBenda, setGalatProduk, setKonfirmasi, setPesan, setPilih, setProdukTim, sisi, targetRuang } = K;
-  // ── Katalog "Produk saya" (template tim) ──
   const muatProduk = async () => {
     setGalatProduk('');
     try {
@@ -22,7 +16,6 @@ export function useProdukTim(K: KeadaanDesain) {
     } catch { setGalatProduk('Tidak terhubung ke server.'); }
   };
   useEffect(() => { if (sisi === 'tambah' && !produkTim) void muatProduk(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sisi]);
-  /** Benda dari template: ukuran & tinggi pasang dari template, posisi bawaan di ruang tujuan. */
   const tambahProduk = (p: ProdukTimC) => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
     const atur = p.atur as Partial<Benda>;
@@ -33,7 +26,6 @@ export function useProdukTim(K: KeadaanDesain) {
     setBenda(bs => [...bs, b]); setPilih(b.id);
   };
   const simpanProduk = async (b: Benda, label: string, ket: string): Promise<string | null> => {
-    //  Posisi & id tidak ikut; konten 'gambar' (unggahan) tidak bisa jadi template.
     const { id: _id, x: _x, z: _z, rot: _r, modelKunci: _m, konten, ...atur } = b;
     void _id; void _x; void _z; void _r; void _m;
     try {

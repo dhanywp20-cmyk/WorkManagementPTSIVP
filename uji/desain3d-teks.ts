@@ -1,10 +1,3 @@
-/**
- * uji/desain3d-teks.ts - Teks / keterangan manual Desain 3D (inti/teks.ts): baris, ukuran kotak dari isi,
- * rebah di lantai, benda baru dari katalog, model dibangun ulang saat isinya berubah, dan teks baru
- * ditempatkan di tempat yang tidak tertutup benda lain (inti/tempatTeks.ts).
- *
- * Jalankan: npm test -- desain3d-teks
- */
 import {
   barisTeks, bendaBaru, KATALOG, MAKS_BARIS_TEKS, tandaBentuk, terapkanUkuran, TINGGI_HURUF_MAKS, TINGGI_HURUF_MIN, ukuranTeks,
   tempatTeksBebas, type Benda,

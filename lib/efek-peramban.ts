@@ -1,8 +1,4 @@
-/**
- * lib/efek-peramban.ts - EfekSamping untuk hook peramban: persis fungsi yang dulu
- * dipanggil langsung oleh hook (lihat lib/efek-samping.ts).
- */
-import { sendWA } from '@/lib/wa';
+import { sendWA } from '@/lib/wa/inti';
 import { createNotification } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import type { EfekSamping } from '@/lib/efek-samping';

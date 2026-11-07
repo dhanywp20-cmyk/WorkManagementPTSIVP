@@ -1,33 +1,15 @@
 import type * as T from 'three';
 
-/**
- * Impor objek 3D dari luar untuk Desain 3D (mapping patung, gedung, produk). Semua dibaca di
- * peramban - tidak ada yang diunggah ke server.
- *
- *   Format  : glTF (.glb/.gltf + .bin), OBJ (+ .mtl & tekstur), FBX, COLLADA (.dae) & .kmz
- *             (ekspor bawaan SketchUp), STL, 3DS, PLY, atau satu .zip berisi salah satunya.
- *   SketchUp: berkas .skp tertutup (tidak ada pembaca untuk peramban) - pengguna diarahkan
- *             mengekspor ke .dae / .obj / .fbx / .stl dari SketchUp.
- *
- * Loader three.js dimuat dinamis hanya untuk format yang dipakai. Hasilnya dirapikan: bahan
- * jadi MeshStandardMaterial dua sisi (model SketchUp sering punya muka terbalik - tanpa ini
- * sebagian permukaan tembus & sinar proyektor tidak mengenainya).
- */
-
 export type Satuan = 'mm' | 'cm' | 'm' | 'inci' | 'kaki';
 export const FAKTOR_SATUAN: Record<Satuan, number> = { mm: 0.001, cm: 0.01, m: 1, inci: 0.0254, kaki: 0.3048 };
 export const LABEL_SATUAN: Record<Satuan, string> = { mm: 'milimeter', cm: 'sentimeter', m: 'meter', inci: 'inci', kaki: 'kaki (feet)' };
 
 type Format = 'glb' | 'gltf' | 'obj' | 'fbx' | 'dae' | 'kmz' | 'stl' | '3ds' | 'ply';
-/** Urutan prioritas bila beberapa berkas model dipilih sekaligus. */
 const URUT_FORMAT: Format[] = ['glb', 'gltf', 'fbx', 'dae', 'kmz', 'obj', '3ds', 'stl', 'ply'];
-/** Atribut accept untuk <input type=file multiple>. */
 export const TERIMA_3D = '.glb,.gltf,.bin,.obj,.mtl,.fbx,.dae,.kmz,.stl,.3ds,.ply,.zip,.skp,.jpg,.jpeg,.png,.webp,.bmp,.tga';
 export const MAKS_BYTE_3D = 60 * 1024 * 1024;
 
-/** Berkas yang satuannya pasti meter (spesifikasi format): glTF, COLLADA/KMZ (unit dibaca loader). */
 const SATUAN_PASTI: Format[] = ['glb', 'gltf', 'dae', 'kmz'];
-/** Format yang lazim Z-up (STL & 3DS dari SketchUp / 3ds Max / printer 3D) - otomatis ditegakkan. */
 const LAZIM_Z_ATAS: Format[] = ['stl', '3ds'];
 
 export const PANDUAN_SKP =
@@ -38,18 +20,17 @@ export const PANDUAN_SKP =
 export class GalatImpor extends Error {}
 
 export interface HasilImpor3D {
-  /** Objek siap pakai (Y-up menurut berkasnya, satuan berkas). */ obj: T.Object3D;
+   obj: T.Object3D;
   nama: string; format: Format;
-  /** Ukuran kotak batas dalam satuan berkas (x, y, z). */ ukuranFile: [number, number, number];
-  /** Satuan awal: pasti (glTF/DAE) atau tebakan dari ukuran. */ satuan: Satuan; satuanPasti: boolean;
-  /** Putar tegak awal (derajat sumbu X): 90 untuk format yang lazim Z-up. */ putar: number;
+   ukuranFile: [number, number, number];
+   satuan: Satuan; satuanPasti: boolean;
+   putar: number;
   segitiga: number; catatan: string[];
 }
 
 const ekstensi = (nama: string) => (nama.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? '');
 const namaDasar = (p: string) => decodeURIComponent(p).split(/[\\/]/).pop()!.toLowerCase();
 
-/** Berkas model utama dari daftar nama (null bila tidak ada). Murni - diuji. */
 export function formatUtama(nama: string[]): { indeks: number; format: Format } | null {
   for (const f of URUT_FORMAT) {
     const i = nama.findIndex(n => ekstensi(n) === f);
@@ -58,11 +39,6 @@ export function formatUtama(nama: string[]): { indeks: number; format: Format } 
   return null;
 }
 
-/**
- * Tebakan satuan dari ukuran terbesar (satuan berkas), untuk format tanpa satuan baku (OBJ/STL/FBX/3DS/PLY).
- * Objek mapping umumnya 0,3-60 m: angka ratusan hampir pasti mm, puluhan pada FBX = cm (bawaan FBX).
- * Tetap bisa diganti di panel.
- */
 export function tebakSatuan(ukuranMaks: number, format: string): Satuan {
   if (ukuranMaks >= 300) return 'mm';
   if (format === 'fbx' && ukuranMaks >= 30) return 'cm';
@@ -70,7 +46,6 @@ export function tebakSatuan(ukuranMaks: number, format: string): Satuan {
   return 'm';
 }
 
-/** Ukuran nyata (m) model: ukuran berkas × satuan, ditegakkan `putar` derajat di sumbu X. Murni - diuji. */
 export function ukuranModel(ukuranFile: [number, number, number], satuan: Satuan, putar = 0): { w: number; h: number; d: number } {
   const k = FAKTOR_SATUAN[satuan];
   const [x, y, z] = ukuranFile.map(v => Math.max(0, v) * k);
@@ -79,7 +54,6 @@ export function ukuranModel(ukuranFile: [number, number, number], satuan: Satuan
   return { w: r(x), h: r(tegak ? z : y), d: r(tegak ? y : z) };
 }
 
-/** Isi .zip -> berkas (folder __MACOSX & berkas tersembunyi dilewati). */
 async function bukaZip(f: File): Promise<File[]> {
   const { unzipSync } = await import('three/examples/jsm/libs/fflate.module.js');
   let isi: Record<string, Uint8Array>;
@@ -89,7 +63,6 @@ async function bukaZip(f: File): Promise<File[]> {
     .map(([n, d]) => new File([d], n.split('/').pop()!));
 }
 
-/** Rapikan hasil loader: bahan PBR dua sisi, normal ada, hitung segitiga. */
 function rapikan(THREE: typeof T, obj: T.Object3D): number {
   let segitiga = 0;
   const jadikanPBR = (mt: T.Material): T.Material => {
@@ -113,7 +86,6 @@ function rapikan(THREE: typeof T, obj: T.Object3D): number {
   return Math.round(segitiga);
 }
 
-/** Mesh dari geometri tanpa bahan (STL / PLY): abu-abu muda, warna verteks bila ada. */
 function meshPolos(THREE: typeof T, geo: T.BufferGeometry, nama: string): T.Mesh {
   if (!geo.attributes.normal) geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.8, metalness: 0, vertexColors: !!geo.attributes.color }));
@@ -121,10 +93,6 @@ function meshPolos(THREE: typeof T, geo: T.BufferGeometry, nama: string): T.Mesh
   return m;
 }
 
-/**
- * Baca berkas yang dipilih pengguna (boleh beberapa: model + .mtl/.bin + tekstur, atau satu .zip).
- * Melempar GalatImpor dengan pesan yang bisa langsung ditampilkan.
- */
 export async function bacaBerkas3D(THREE: typeof T, pilihan: File[]): Promise<HasilImpor3D> {
   const total = pilihan.reduce((s, f) => s + f.size, 0);
   if (!pilihan.length) throw new GalatImpor('Tidak ada berkas dipilih.');
@@ -139,7 +107,6 @@ export async function bacaBerkas3D(THREE: typeof T, pilihan: File[]): Promise<Ha
   const { format } = utama, fUtama = berkas[utama.indeks];
   const nama = fUtama.name.replace(/\.[^.]+$/, '');
 
-  //  Berkas pendamping (tekstur, .bin, .mtl) dicari dari nama dasarnya - jalur folder di dalam model diabaikan.
   const alamat = new Map<string, string>();
   for (const f of berkas) alamat.set(namaDasar(f.name), URL.createObjectURL(f));
   const manajer = new THREE.LoadingManager();
@@ -150,7 +117,6 @@ export async function bacaBerkas3D(THREE: typeof T, pilihan: File[]): Promise<Ha
   let obj: T.Object3D;
   try {
     obj = await muat(THREE, format, fUtama, berkas, manajer, catatan);
-    //  Tekstur dimuat menyusul (async) - URL berkas dilepas setelah manajer selesai atau 2 menit.
     let selesai = false;
     manajer.onLoad = () => { if (!selesai) { selesai = true; lepas(); } };
     setTimeout(() => { if (!selesai) { selesai = true; lepas(); } }, 120_000);
@@ -183,7 +149,6 @@ async function muat(THREE: typeof T, format: Format, f: File, semua: File[], man
         import('three/examples/jsm/loaders/DRACOLoader.js'),
         import('three/examples/jsm/libs/meshopt_decoder.module.js'),
       ]);
-      //  Draco & meshopt: kompresi yang lazim pada model dari Sketchfab / produsen. Decoder Draco di /public/three/draco.
       const draco = new DRACOLoader(manajer).setDecoderPath('/three/draco/').setDecoderConfig({ type: 'wasm' });
       const loader = new GLTFLoader(manajer).setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
       const data = format === 'glb' ? await f.arrayBuffer() : await f.text();

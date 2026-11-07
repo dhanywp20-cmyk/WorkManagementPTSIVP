@@ -1,9 +1,3 @@
-/**
- * uji/desain3d-tata.ts - tata letak Desain 3D (inti/tata.ts): tapak ikut rotasi, ratakan & sebar, magnet,
- * larik, geser tepat, benda terkunci, dan kelompok sembunyikan.
- *
- * Jalankan: npm test -- desain3d-tata
- */
 import {
   type Benda, bendaBaru, geserTepat, golonganDari, LABEL, larik, magnet, pusatkanIsi, ratakan, sebar, tampilDi, tapak, kunciSembunyi, jumlahSembunyiSendiri,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
@@ -35,7 +29,7 @@ cek('benda terkunci tidak ikut diratakan', ratakan(kunci, ['a', 'b'], 'z', 'akhi
 
 console.log('\n3. Magnet');
 const mejaB = { ...bendaBaru('meja', K), id: 'm', x: 4, z: 3, w: 2, d: 1, rot: 0 };
-const k1 = kursi('k', 4.0, 3.78);   // tepi depan kursi 3,53 - 3 cm dari tepi belakang meja (3,5)
+const k1 = kursi('k', 4.0, 3.78);
 const t = magnet(k1, [mejaB]);
 cek('kursi menempel ke tepi meja (z)', t.tarikZ && dekat(tapak({ ...k1, z: t.z }).z0, 3.5));
 cek('sejajar tengah (x) ikut tertarik', t.tarikX && dekat(t.x, 4));

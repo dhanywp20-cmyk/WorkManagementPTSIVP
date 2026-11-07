@@ -1,18 +1,9 @@
 'use client';
-/**
- * app/reminder-schedule/_components/PopupRingkas.tsx
- *
- * Empat popup yang dipindahkan keluar dari page.tsx - keempatnya hanya menyentuh 4-7 nilai dari halaman
- * induknya. Syarat tampilnya ikut di dalam masing-masing komponen, sehingga page.tsx cukup memanggilnya.
- *
- * Kerangka: Modal bersama + pola persetujuan bersama (components/shared/Persetujuan.tsx) - dulu tiap popup
- * berkepala gradasi kuning / merah sendiri, berbeda dengan menu lain.
- */
 import { KotakInfo, Modal, ModalSetujui, TombolModal, kelasIsianPersetujuan as kelasIsian } from '@/components/shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
-import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { triggersProjectProgress } from '@/lib/checklist/sinkron-progress';
 
 function Baris({ label, children, tebal }: { label: string; children: React.ReactNode; tebal?: boolean }) {
   return (
@@ -43,8 +34,6 @@ export function KonfirmasiApproveInternal({
         {t.product && <Baris label="Product">{t.product}</Baris>}
         <Baris label="Lokasi">{t.address || '-'}</Baris>
         <Baris label="Tanggal">{formatDate(t.due_date)}{t.due_time ? ` · ${t.due_time}` : ''}</Baris>
-        {/* Usulan timeline dari Sales - ditampilkan supaya Sales Internal tahu rentang yang diajukan sebelum
-            meneruskan ke Admin. Penetapannya milik Admin saat menugaskan (draft Project Progress lahir di situ). */}
         {triggersProjectProgress(t.category) && (
           <Baris label="Timeline Pengerjaan">
             {t.progress_start_date || t.progress_target_date
@@ -56,7 +45,6 @@ export function KonfirmasiApproveInternal({
     </ModalSetujui>
   );
 }
-
 
 export function ModalHapus({
   showDeleteModal, deleteTarget, deleteConfirmText, setDeleteConfirmText, setShowDeleteModal, setDeleteTarget, handleDelete,
@@ -102,7 +90,6 @@ function KartuReminder({ r, onBuka, lencana, warnaGaris }: { r: Reminder; onBuka
             <CategoryBadge category={r.category} />
             {!lencana && <PriorityBadge priority={r.priority} />}
           </div>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <p className="font-bold text-sm text-slate-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
           {r.address && <p className="text-xs text-slate-500 mt-0.5">{r.address}</p>}
         </div>
@@ -114,7 +101,6 @@ function KartuReminder({ r, onBuka, lencana, warnaGaris }: { r: Reminder; onBuka
     </div>
   );
 }
-
 
 export function PopupNotifikasi({
   showNotificationPopup, myReminders, setShowNotificationPopup, setDetailReminder,
@@ -136,7 +122,6 @@ export function PopupNotifikasi({
   );
 }
 
-
 export function PopupLonceng({
   showBellPopup, myActiveReminders, perluAksiSaya, setShowBellPopup, setDetailReminder,
 }: {
@@ -148,8 +133,6 @@ export function PopupLonceng({
 }) {
   if (!(showBellPopup)) return null;
   const tutup = () => setShowBellPopup(false);
-  //  Dipecah per alasan: "5 aktif" tidak memberi tahu apakah ada yang menunggu diputuskan atau semuanya
-  //  tinggal dikerjakan - padahal itu bedanya mendesak dan tidak.
   const n = (a: string) => perluAksiSaya.filter(x => x.alasan === a).length;
   const ringkas = [
     n('Perlu kamu tugaskan ke tim') && `${n('Perlu kamu tugaskan ke tim')} perlu ditugaskan`,
@@ -164,7 +147,6 @@ export function PopupLonceng({
         {myActiveReminders.length === 0 ? (
           <p className="text-center py-10 text-slate-500 font-semibold">Tidak ada reminder aktif.</p>
         ) : perluAksiSaya.map(({ r, alasan, warna }) => (
-          //  Alasan ditaruh PALING DEPAN: yang dicari orang saat membuka lonceng adalah "saya harus apa".
           <KartuReminder key={r.id} r={r} warnaGaris={warna} onBuka={() => { setDetailReminder(r); tutup(); }}
             lencana={<span className="px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{ background: warna }}>{alasan}</span>} />
         ))}

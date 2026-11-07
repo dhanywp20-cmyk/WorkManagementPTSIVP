@@ -1,10 +1,5 @@
-/**
- * uji/kesehatan.ts - aturan peringatan halaman Admin Panel -> Sistem -> Kesehatan Sistem.
- *
- * Jalankan: npx tsx uji/kesehatan.ts
- */
 import { readFileSync } from 'fs';
-import { ringkasKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan';
+import { ringkasKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan/inti';
 import { KATALOG_EVENT, eventTersambung } from '../lib/notifikasi/katalog';
 import { kanalUntuk, BAWAAN } from '../lib/notifikasi/pengaturan';
 
@@ -50,7 +45,7 @@ cek('alert kesehatan terdaftar & tersambung ke saklar per-kejadian Admin Panel',
 const tgNyala = { ...BAWAAN, aktif: { ...BAWAAN.aktif, telegram: true } };
 cek('bawaan: alert lewat Telegram', kanalUntuk('system.health_alert', tgNyala).includes('telegram'));
 cek('dimatikan di Admin Panel -> tidak lewat Telegram', !kanalUntuk('system.health_alert', { ...tgNyala, perEvent: { 'system.health_alert': [] } }).includes('telegram'));
-cek('kirimAlertKesehatan memeriksa saklar per-kejadian', /kanalUntuk\('system\.health_alert', pengaturan\)\.includes\('telegram'\)/.test(readFileSync('lib/kesehatan-server.ts', 'utf8')));
+cek('kirimAlertKesehatan memeriksa saklar per-kejadian', /kanalUntuk\('system\.health_alert', pengaturan\)\.includes\('telegram'\)/.test(readFileSync('lib/kesehatan/server.ts', 'utf8')));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

@@ -1,10 +1,6 @@
 'use client';
 import { Modal, TombolModal } from '@/components/shared';
 
-/**
- * Konfirmasi hapus massal. State & handler tetap di page.tsx, komponen ini murni presentasional.
- * Kerangka: Modal bersama (sama dengan hapus massal Ticketing).
- */
 export function BulkDeleteConfirmModal({
   jumlah, onCancel, onConfirm,
 }: {

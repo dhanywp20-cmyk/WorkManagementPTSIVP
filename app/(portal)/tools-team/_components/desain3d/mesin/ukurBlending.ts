@@ -1,38 +1,21 @@
-/**
- * desain3d/mesin/ukurBlending.ts - Garis ukur satu area blending di kanvas, gaya gambar kerja:
- *   |<------ 49 cm ------>|   garis menyusuri permukaan dari tepi ke tepi area blending (ikut
- *            |                lengkung layar), panah di kedua ujung tepat di tepi gambar, kaki ukur
- *            .                tegak di kedua ujung, angka lebar di atas garis, lalu (centang "Detail
- *   [ kartu keterangan ]      blending") garis penunjuk tipis ke kartu detail (persen & piksel).
- * Kartu bisa dibuka / ditutup sendiri-sendiri di kanvas: klik ⓘ di angka lebar, atau klik kartunya.
- * Penanda dibuat tipis & kecil supaya tidak menutupi gambar proyeksi.
- * Garis & panah berupa mesh (ikut ke PNG / cetak), angka & kartu berupa label CSS2D (mesin/label.ts).
- */
 import type * as T from 'three';
 import { barisKeterangan, type Blending, type Lensa } from '../inti';
 import type { Mesin } from './tipe';
 
 const UNGU = 0x6d28d9;
 
-/**
- * Kartu yang dibuka / ditutup sendiri lewat klik, per area blending - menang atas centang "Keterangan
- * blending" dan bertahan saat kanvas digambar ulang (efek alat bantu jalan tiap benda berubah).
- */
 const pilihanKartu = new Map<string, boolean>();
 const kunciKartu = (b: Blending) => `${[b.a, b.b].sort().join('|')}|${b.arah}`;
-/** Centang "Keterangan blending" diubah: semua kartu kembali mengikuti centang. */
 export const lupakanPilihanKartu = () => pilihanKartu.clear();
 const batas = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa, nama: (n: string) => string, detail = true) {
   const { THREE, grupBantu, CSS2DObject } = m;
   if (b.garis.length < 2) return;
-  //  Diangkat 3 cm dari permukaan ke arah lensa supaya garis tidak tenggelam di layar.
   const titik = b.garis.map(t => { const v = new THREE.Vector3(t[0], t[1], t[2]); return v.addScaledVector(O.clone().sub(v).normalize(), 0.03); });
   const panjang = titik.slice(1).reduce((s, p, i) => s + p.distanceTo(titik[i]), 0);
   if (panjang < 0.01) return;
 
-  /** Titik sejauh `d` menyusuri garis dari ujung awal (atau dari ujung akhir bila `balik`). */
   const sepanjang = (d: number, balik = false) => {
     const t = balik ? [...titik].reverse() : titik;
     for (let i = 1; i < t.length; i++) {
@@ -44,7 +27,6 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
   };
   const tengah = sepanjang(panjang / 2);
   const jarak = tengah.distanceTo(O);
-  //  Ukuran penanda mengikuti besar gambar di titik itu, supaya terbaca di ruang kecil maupun besar.
   const kiriKanan = b.arah === 'kiri-kanan';
   const sisiTegak = jarak * (kiriKanan ? L.h1 : L.w1);
   const r = batas(jarak * L.w1 * 0.002, 0.003, 0.01);
@@ -60,17 +42,14 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
     if (len > 1e-4) tambah(new THREE.CylinderGeometry(rr, rr, len, 8), a.clone().addScaledVector(d, 0.5), d.normalize());
   };
 
-  //  Garis ukur.
   for (let i = 1; i < titik.length; i++) batang(titik[i - 1], titik[i]);
 
-  //  Arah "kaki" = tegak lurus garis di permukaan: sumbu atas gambar (blending kiri-kanan) / kanan (atas-bawah).
   const sumbuKaki = new THREE.Vector3(...(kiriKanan ? L.atas : L.kanan));
   const kakiDi = (singgung: T.Vector3) => sumbuKaki.clone().addScaledVector(singgung, -sumbuKaki.dot(singgung)).normalize();
   const tinggiPanah = Math.min(r * 12, panjang * 0.25), panjangKaki = batas(sisiTegak * 0.08, 0.08, 0.3);
   for (const balik of [false, true]) {
     const ujung = balik ? titik[titik.length - 1] : titik[0];
     const arah = ujung.clone().sub(sepanjang(Math.max(tinggiPanah, 0.02), balik)).normalize();
-    //  Panah: ujung kerucut tepat di tepi area blending, menghadap keluar.
     tambah(new THREE.ConeGeometry(tinggiPanah * 0.32, tinggiPanah, 12), ujung.clone().addScaledVector(arah, -tinggiPanah / 2), arah);
     const kaki = kakiDi(arah);
     batang(ujung.clone().addScaledVector(kaki, -panjangKaki / 2), ujung.clone().addScaledVector(kaki, panjangKaki / 2), r * 0.6);
@@ -78,9 +57,6 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
 
   const singgungTengah = sepanjang(panjang / 2 + 0.01).sub(sepanjang(Math.max(0, panjang / 2 - 0.01))).normalize();
   const kaki = kakiDi(singgungTengah);
-  //  data-penting: selalu tampil, label lain yang bertabrakan disembunyikan sementara (mesin/label.ts).
-  //  Titik tumpu label (center CSS2D) dipindah tiap frame ke sisi yang MENJAUHI `dari` di layar: kartu &
-  //  angka selalu berada di luar garis ukurnya, dari sudut kamera mana pun (PNG ikut, mesin/label.ts).
   const css = (el: HTMLElement, pos: T.Vector3, dari: T.Vector3) => {
     el.dataset.penting = '1';
     const o = new CSS2DObject(el) as T.Object3D & { center: T.Vector2 };
@@ -96,7 +72,6 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
     return o;
   };
 
-  //  Angka lebar di luar kaki ukur, seperti garis ukur gambar kerja. ⓘ = buka / tutup kartu keterangan area ini.
   const cm = `${Math.round(b.lebarM * 100)} cm`;
   const angka = document.createElement('div');
   angka.dataset.teks = cm;
@@ -107,8 +82,6 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
   angka.append(cm, ikon);
   css(angka, tengah.clone().addScaledVector(kaki, panjangKaki / 2 + 0.03), tengah);
 
-  //  Garis penunjuk setipis rambut (1 px, tidak ikut membesar saat di-zoom) dari titik kecil di garis
-  //  ukur ke kartu keterangan detail di sisi seberang angka. Selalu dibuat; tampil sesuai pilihan.
   const ujungPenunjuk = tengah.clone().addScaledVector(kaki, -batas(sisiTegak * 0.15, 0.2, 0.9));
   const titikTengah = new THREE.Mesh(new THREE.SphereGeometry(r * 1.4, 10, 6), bahan);
   titikTengah.position.copy(tengah); titikTengah.renderOrder = 4; grupBantu.add(titikTengah);
@@ -125,7 +98,6 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
     if (i === semua.length - 1) { baris.style.fontSize = '10px'; baris.style.opacity = '0.85'; }
     kartu.appendChild(baris);
   });
-  //  Disembunyikan lewat .visible objeknya: CSS2DRenderer menimpa style.display tiap frame dari .visible.
   const objKartu = css(kartu, ujungPenunjuk, tengah);
 
   const kunci = kunciKartu(b);
@@ -139,6 +111,5 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
     const buka = !objKartu.visible;
     pilihanKartu.set(kunci, buka); tampilkan(buka);
   };
-  //  pointerdown tidak diteruskan ke kanvas (memilih benda / memutar kamera).
   for (const el of [angka, kartu]) { el.addEventListener('pointerdown', e => e.stopPropagation()); el.addEventListener('click', balik); }
 }

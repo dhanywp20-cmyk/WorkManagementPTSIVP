@@ -1,21 +1,3 @@
-/**
- * lib/notifikasi/katalog.ts - daftar EVENT yang dikenal notification engine.
- *
- * Satu event = satu kejadian bisnis ("tiket di-assign", "request perlu
- * approval"), bukan satu pesan. Kanal mana yang dipakai untuk event itu -
- * in-app saja, WhatsApp saja, atau keduanya - ditentukan terpisah dari sini
- * (lihat `bawaanKanal` di bawah untuk nilai bawaan; Phase 6 akan
- * membuatnya bisa diubah dari Admin Panel -> Notifications).
- *
- * KENAPA KATALOG INI PENTING
- *
- * Sebelum ada ini, "kejadian apa saja yang mengirim notifikasi" hanya bisa
- * dijawab dengan membaca ulang seluruh kode - tersebar di 48 titik lintas
- * app/ticketing/page.tsx, app/reminder-schedule/page.tsx, dan
- * app/form-require-project/page.tsx. Daftar ini jadi SATU tempat yang
- * menjawab pertanyaan itu, dan jadi dasar UI Admin Panel -> Notifications
- * di Phase 6 (per kanal, per event - lihat master prompt bagian C).
- */
 
 export type KategoriEvent = 'assignment' | 'approval' | 'reminder' | 'schedule' | 'project' | 'ticket' | 'system';
 
@@ -23,57 +5,35 @@ export interface DefinisiEvent {
   key: string;
   label: string;
   kategori: KategoriEvent;
-  /** Kanal yang aktif kalau belum ada pengaturan admin untuk event ini. */
   bawaanKanal: Array<'in_app' | 'whatsapp' | 'telegram'>;
 }
 
-/**
- * Event yang saklarnya BENAR-BENAR BERLAKU.
- *
- * Ini pembedaan yang penting dan harus jujur. Setelan per-event hanya
- * berpengaruh pada titik pengiriman yang menyebutkan kunci event-nya - lewat
- * kirimNotifikasi() (lib/notifikasi/router.ts) atau lewat parameter `event`
- * pada sendWA/sendWANotif (lib/wa.ts). Titik yang belum menyebutkannya hanya
- * tunduk pada SAKLAR INDUK kanal, bukan pada centang per-event.
- *
- * Tanpa daftar ini, Admin Panel menampilkan 22 centang yang tampak setara
- * padahal sebagian tidak mengubah apa pun - admin mematikan sebuah kejadian,
- * centangnya tersimpan, lalu pesannya tetap terkirim. Itu lebih buruk
- * daripada tidak punya setelan sama sekali.
- *
- * Bertambah seiring titik pengirimannya dianotasi. Satu-satunya aturan:
- * JANGAN menambahkan kunci ke sini sebelum titik pengirimannya benar-benar
- * menyebutkan kunci itu.
- */
 export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
-  //  Lewat kirimNotifikasi() (router)
-  'system.account_created',      // modal-bersama.tsx - WA selamat datang
-  //  Lewat parameter `event` pada sendWA/sendWANotif/sendFonnteWA (lib/wa.ts)
-  'ticket.approval_needed',      // ticketing: ticket baru menunggu approval + CC atasan
-  'ticket.assigned',             // ticketing: assign ke handler (create, approve, supervisor)
-  'ticket.routed_supervisor',    // ticketing: diteruskan ke Supervisor
-  'ticket.updated',              // ticketing: koreksi/pengalihan lewat Admin Edit
-  'ticket.reopened',             // ticketing: ticket dibuka kembali
-  'reminder.new_schedule',       // reminder: request baru & pengingat jadwal
-  'reminder.assigned',           // reminder: jadwal di-assign ke pelaksana
-  'reminder.routed_supervisor',  // reminder: diteruskan ke Supervisor tim
-  'reminder.rescheduled',        // reminder: jadwal dipindah
-  'reminder.updated',            // reminder: detail diperbarui / selesai
-  'reminder.form_review_sent',   // reminder: form review dikirim ke Guest/Sales
-  'project.approval_needed',     // design project: menunggu approval Admin
-  'project.assigned',            // design project: di-assign ke handler
-  'project.routed_supervisor',   // design project: diteruskan ke Supervisor
-  'project.updated',             // design project: detail diperbarui
-  'project.internal_review',     // design project: menunggu review Sales Internal
-  'project.brand_cc',            // design project: CC ke PIC Brand & atasan
-  'system.digest',               // cron: ringkasan harian
-  'system.overdue_escalation',   // cron: eskalasi tiket/jadwal terlambat
-  'system.password_reset',       // forgot-password: kode OTP
-  'tools.perbandingan',          // Product Comparison: pengajuan verifikasi & hasilnya
-  'system.health_alert',         // cron escalate & digest: peringatan merah Kesehatan Sistem (lib/kesehatan-server.ts)
+  'system.account_created',
+  'ticket.approval_needed',
+  'ticket.assigned',
+  'ticket.routed_supervisor',
+  'ticket.updated',
+  'ticket.reopened',
+  'reminder.new_schedule',
+  'reminder.assigned',
+  'reminder.routed_supervisor',
+  'reminder.rescheduled',
+  'reminder.updated',
+  'reminder.form_review_sent',
+  'project.approval_needed',
+  'project.assigned',
+  'project.routed_supervisor',
+  'project.updated',
+  'project.internal_review',
+  'project.brand_cc',
+  'system.digest',
+  'system.overdue_escalation',
+  'system.password_reset',
+  'tools.perbandingan',
+  'system.health_alert',
 ]);
 
-/** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
 export function eventTersambung(key: string): boolean {
   return EVENT_TERSAMBUNG.has(key);
 }
@@ -102,7 +62,6 @@ export const KATALOG_EVENT: DefinisiEvent[] = [
   { key: 'tools.perbandingan',        label: 'Product Comparison: pengajuan & hasil verifikasi', kategori: 'approval', bawaanKanal: ['in_app', 'whatsapp'] },
   { key: 'system.digest',             label: 'Ringkasan harian (digest)',         kategori: 'system',      bawaanKanal: ['whatsapp'] },
   { key: 'system.overdue_escalation', label: 'Eskalasi tiket/jadwal terlambat',   kategori: 'system',      bawaanKanal: ['whatsapp'] },
-  //  Dulu alert ini hanya tunduk pada saklar induk Telegram - tidak ada baris di sini, jadi tidak bisa dimatikan sendiri.
   { key: 'system.health_alert',       label: 'Peringatan merah Kesehatan Sistem (ke admin)', kategori: 'system', bawaanKanal: ['telegram'] },
 ];
 
@@ -110,23 +69,3 @@ export function cariEvent(key: string): DefinisiEvent | undefined {
   return KATALOG_EVENT.find(e => e.key === key);
 }
 
-/*
-  ── MODUL YANG SENGAJA TIDAK MENGIRIM WHATSAPP/TELEGRAM ────────────────────
-
-    Project Progress
-    Daily Report
-    Unit Movement Log
-
-  Keputusan pemilik platform, bukan kelalaian. Ketiganya dicatat dan dibaca di
-  layar; tidak ada tahap yang menunggu tindakan orang lain, jadi pesan keluar
-  hanya akan jadi kebisingan yang membuat notifikasi yang benar-benar penting
-  ikut diabaikan.
-
-  Dicatat di sini karena audit kelengkapan notifikasi WAJAR menandai ketiganya
-  sebagai "modul tanpa notifikasi" - dan tanpa catatan ini, temuan itu akan
-  muncul lagi setiap kali seseorang menyisir platform, lalu "diperbaiki"
-  menjadi sesuatu yang justru tidak diinginkan.
-
-  Notifikasi in-app (lonceng) TIDAK termasuk larangan ini - ia tidak
-  mengganggu, dan ketiganya memang boleh memakainya bila kelak diperlukan.
-*/

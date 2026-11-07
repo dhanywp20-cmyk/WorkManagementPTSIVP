@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalMulaiKPI - dipecah dari app/(portal)/kpi-team/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { createPortal } from 'react-dom';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';

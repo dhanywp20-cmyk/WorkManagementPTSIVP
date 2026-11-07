@@ -15,11 +15,6 @@ export function RescheduleModal({
   const [newDate, setNewDate] = useState(reminder.due_date);
   const [newTime, setNewTime] = useState(reminder.due_time);
   const [reason, setReason] = useState('');
-  // M5 (docs/UX-WORKFLOW-AUDIT.md): dulu tombol ini tidak punya guard loading
-  // sama sekali - klik ganda pada koneksi lambat mengirim dua UPDATE + dua WA
-  // "JADWAL DIUBAH" ke handler yang sama. onSave di-await supaya tombol tetap
-  // terkunci sepanjang request berjalan, dan otomatis terbuka lagi kalau
-  // gagal (modal TIDAK ditutup parent saat error - lihat handleReschedule).
   const [saving, setSaving] = useState(false);
   const handleSave = async () => {
     if (!newDate || saving) return;
@@ -31,7 +26,6 @@ export function RescheduleModal({
     }
   };
   return (
-  //  Kerangka Modal bersama - dulu kepala bergradasi oranye sendiri.
   <Modal buka onTutup={() => { if (!saving) onClose(); }} judul="Re-Schedule Jadwal" lapisan="atas" tutupDiLuar={false}
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     keterangan={reminder.project_name || (reminder as any).title || '—'}

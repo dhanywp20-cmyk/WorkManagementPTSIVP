@@ -1,9 +1,8 @@
 'use client';
 
-/** useMuatLaporan - dipecah dari app/(portal)/daily-report/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
-import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
-import { type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { namaKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
+import { type TeamUser, type GuestUser } from '@/lib/jadwal/tampilan';
 import { useCallback } from 'react';
 import { fetchAllReminders, fetchAllTickets, fetchReports, type ReminderActivity, type TicketActivity, type DailyReport } from './shared';
 
@@ -35,7 +34,6 @@ export function useMuatLaporan(k: MuatLaporanKonteks) {
     if (data) setGuestUsers(data as GuestUser[]);
   };
 
-  // Load live data dari kedua platform
   const loadLiveData = useCallback(async () => {
     if (!currentUser) return;
     setLiveLoading(true);
@@ -46,7 +44,6 @@ export function useMuatLaporan(k: MuatLaporanKonteks) {
 
       const opts = {
         date: filterDate || undefined,
-        // Jika admin tapi belum ada teamUsers, kirim undefined agar fetch semua
         usernames: filterUser
           ? [teamUsers.find(u => u.id === filterUser)?.username ?? ''].filter(Boolean)
           : usernames.length > 0 ? usernames : undefined,
@@ -62,7 +59,6 @@ export function useMuatLaporan(k: MuatLaporanKonteks) {
     setLiveLoading(false);
   }, [currentUser, lihatSemua, teamUsers, filterDate, filterUser]);
 
-  // Load submitted reports
   const loadReports = useCallback(async () => {
     if (!currentUser) return;
     try {

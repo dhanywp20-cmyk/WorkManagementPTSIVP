@@ -1,41 +1,18 @@
-/**
- * /api/admin/kelas-eksternal - Learning Center -> Kelas Eksternal (pengelolaan).
- *  GET                 -> daftar kelas + jumlah peserta, selesai, rata-rata
- *  GET ?id=<kelas>     -> satu kelas + peserta & nilai terakhir
- *  POST { aksi:'simpan', id?, ...isian }  -> buat / ubah (token link dibuat sekali)
- *  POST { aksi:'hapus', id }              -> hapus kelas (peserta & hasil ikut terhapus)
- *  POST { aksi:'mulai', id }              -> mode admin: semua peserta mulai sekarang (batas waktu serentak)
- *  POST { aksi:'akhiri', id }             -> tutup sekarang; yang masih mengerjakan mengirim otomatis
- *  POST { aksi:'buka_lagi', id }          -> buka lagi (mode admin kembali ke ruang tunggu)
- *
- * Kuis Live (lib/kuis-live.ts):
- *  GET ?live=<kelas>                       -> status layar host (lobi, soal, jumlah menjawab, distribusi, papan)
- *  GET ?id=<kelas>&sesi=<n>                -> papan skor sesi itu (bawaan: sesi terakhir)
- *  POST { aksi:'live_mulai'|'live_lewati'|'live_akhiri'|'live_ulang', id, dari:{tahap,indeks} }
- *       (kuis berjalan sendiri mengikuti waktu; Lewati = maju satu tahap sekarang)
- *  POST { aksi:'live_keluarkan', id, peserta_id }  -> keluarkan pemain dari lobi (nama tidak pantas, salah masuk)
- * Ubah: admin / Full Access. Lihat: juga pimpinan (hanya baca).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { simpanSebentar } from '@/lib/simpan-sebentar';
 import { hasFullAccess } from '@/lib/constants';
-import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
-import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
-import { jalankanAksiLive, keadaanHost, muatPapan, type KelasLive } from '@/lib/kuis-live-server';
+import { rapikanKelas, type KelasEksternal } from '@/lib/kuis/kelas-eksternal';
+import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis/live';
+import { jalankanAksiLive, keadaanHost, muatPapan, type KelasLive } from '@/lib/kuis/live-server';
 
 export const dynamic = 'force-dynamic';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const jawab = (b: unknown, status = 200) => NextResponse.json(b, { status, headers: { 'Cache-Control': 'no-store' } });
 
-/**
- * Hak akun. Layar host Kuis Live membaca status berkala, jadi hasil cek sesi + peran disimpan 30 dtk per
- * token sesi (kunci = hash token - tidak pernah tertukar antar akun). Logout / ganti peran berlaku
- * paling lambat 30 dtk di endpoint ini. Tanpa ini: ±27 ribu query sesi & users di satu hari Kuis Live.
- */
 async function hak(req: NextRequest) {
   const token = req.cookies.get('ivp_session')?.value ?? '';
   const ambil = async () => {
@@ -83,11 +60,9 @@ export async function GET(req: NextRequest) {
       const { data: jml } = k.live_sesi > 0
         ? await db.from('lc_eks_live_jawaban').select('indeks').eq('kelas_id', k.id).eq('sesi', sesi).order('indeks', { ascending: false }).limit(1)
         : { data: [] };
-      //  Jumlah soal yang sempat dimainkan di sesi itu (bisa kurang dari total bila diakhiri lebih awal).
       const dimainkan = sesi === k.live_sesi && k.live_tahap !== 'lobi'
         ? jadwalLive(k).indeks + 1
         : (((jml ?? []) as { indeks: number }[])[0]?.indeks ?? -1) + 1;
-      //  Perusahaan & kontak (migrasi 054) ikut di papan supaya CSV Kuis Live lengkap untuk Sales.
       const data = new Map(((peserta ?? []) as DataPesertaAdmin[]).map(p => [p.id, p]));
       const papanLengkap = papan.map(b => {
         const d = data.get(b.peserta_id);
@@ -163,7 +138,6 @@ export async function POST(req: NextRequest) {
     if (!UUID.test(id)) return jawab({ error: 'Kelas tidak dikenal.' }, 400);
     const sekarang = new Date().toISOString();
     const ubahan = body.aksi === 'mulai'
-      //  Mulai = juga pastikan kelas aktif & tidak berjadwal tutup di masa lalu.
       ? { dimulai_pada: sekarang, aktif: true, tutup_pada: null }
       : body.aksi === 'akhiri'
         ? { tutup_pada: sekarang }

@@ -1,14 +1,3 @@
-/**
- * uji/pecah-berkas-aman.ts - penjaga hasil pemecahan berkas besar (Okt 2026) dan satu perbaikan simpan.
- *
- * 1. Tidak ada hook (use*.ts) yang memuat return milik komponen - ekstraksi sempat memindahkan
- *    `if (!appReady) return <LoadingScreen/>` ke dalam hook (ditangkap tsc, lalu alatnya diperbaiki).
- * 2. Impor dinamis relatif di hook/komponen pecahan menunjuk berkas yang benar-benar ada.
- * 3. Daily Report: isian tim (admin) disimpan lebih dulu dan hasilnya DIPERIKSA - dulu diabaikan,
- *    jadi kegagalannya tampil sebagai "berhasil" dan isiannya hilang diam-diam.
- *
- * Jalankan: npm test -- pecah-berkas-aman
- */
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { spawnSync } from 'child_process';

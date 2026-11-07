@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Simpan hasil Kalkulator AV ke satu proyek Project Progress (POST /api/tools-team/hasil-av).
- * Yang disimpan potret hasilnya: ringkasan teks + lembar A4 - tampil di detail proyek dan bisa
- * dicetak ulang di sana. Proyek yang bisa dipilih = proyek yang boleh dilihat akun ini.
- */
 import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
@@ -34,7 +29,6 @@ export function SimpanKeProyek({ judulAwal, ringkasan, lembar, onTutup }: {
       .then(({ ok, j }) => {
         if (batal) return;
         if (!ok) { setGalat(j.error || 'Daftar proyek tidak terbaca.'); setProyek([]); return; }
-        //  Proyek berjalan di atas - yang paling mungkin dipilih.
         const daftar = ((j.proyek ?? []) as ProyekPilihan[]).sort((a, b) => Number(b.status === 'in_progress') - Number(a.status === 'in_progress'));
         setProyek(daftar);
       })

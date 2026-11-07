@@ -1,8 +1,4 @@
 'use client';
-/**
- * Formulir tambah / ubah entri pustaka - bidangnya dibentuk dari registri (lib/pustaka.ts), jadi jenis
- * baru otomatis punya formulir. Validasi akhir tetap di server (periksaEntri).
- */
 import { useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
 import { type Bidang, type EntriPustaka, type JenisPustaka, periksaEntri } from '@/lib/pustaka';

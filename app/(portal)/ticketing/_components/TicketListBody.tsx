@@ -1,86 +1,33 @@
 'use client';
-import type { Dispatch, SetStateAction, RefObject, CSSProperties } from 'react';
+import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ListEmptyState, ErrorState, MobileListCard, MobileCardBadge,
   ViewIconBtn, DeleteIconBtn, FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from '@/components/shared';
 import { Ico } from './Ico';
-import type { Ticket, TeamMember, User, OverdueSetting } from './shared';
 import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { useKonteksTicket } from './konteks-ticket';
 
-/**
- * Isi "Ticket List": error/loading/kosong, kartu mobile, tabel desktop, dan
- * paginasi keduanya - dipindah dari app/ticketing/page.tsx apa adanya (JSX
- * identik). State & handler tetap di page.tsx, komponen ini murni
- * presentasional. Digabung satu berkas (bukan dipecah mobile/desktop
- * terpisah) karena keduanya berbagi cabang error/loading/kosong yang sama.
- */
-export function TicketListBody({
-  fetchError, setFetchError, fetchData, ticketsLoading,
-  searchProject, setSearchProject, searchSalesName, setSearchSalesName,
-  filterStatus, setFilterStatus, filterYear, setFilterYear,
-  filteredTickets, paginatedTickets, tickets, users, teamMembers,
-  isTicketOverdue, getOverdueSetting, getWarrantyInfo, bolehUpdateTicket,
-  canApproveAssign, canManageTickets, currentUserTeamType,
-  bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, cetakTicket,
-  bukaReopenTicket, bukaDeleteTicket, bukaOverdueSetting,
-  currentPage, setCurrentPage, totalPages, ITEMS_PER_PAGE,
-  selectMode, selectedIds, toggleSelectId, toggleSelectAll,
-  productFilter, setProductFilter, ticketListRef,
-}: {
-  fetchError: string | null;
-  setFetchError: Dispatch<SetStateAction<string | null>>;
-  fetchData: () => void;
-  ticketsLoading: boolean;
-  searchProject: string;
-  setSearchProject: Dispatch<SetStateAction<string>>;
-  searchSalesName: string;
-  setSearchSalesName: Dispatch<SetStateAction<string>>;
-  filterStatus: string;
-  setFilterStatus: Dispatch<SetStateAction<string>>;
-  filterYear: string;
-  setFilterYear: Dispatch<SetStateAction<string>>;
-  filteredTickets: Ticket[];
-  paginatedTickets: Ticket[];
-  tickets: Ticket[];
-  users: User[];
-  teamMembers: TeamMember[];
-  /*
-    Cetak diterima sebagai PROP, bukan diimpor langsung dari './cetak-ticket'
-    seperti sebelumnya. Daftar tiket kini cuma membawa log RINGKAS (tanpa notes
-    dan tautan berkas - lihat KOLOM_LOG_RINGKAS), sementara hasil cetak justru
-    menuliskan isi itu. Mengimpornya di sini berarti mencetak lembar dengan
-    kolom catatan kosong tanpa satu pun tanda ada yang salah. Induknya yang
-    memuat log penuh dulu, baru mencetak.
-  */
-  cetakTicket: (t: Ticket) => void;
-  isTicketOverdue: (t: Ticket) => boolean;
-  getOverdueSetting: (id: string) => OverdueSetting | undefined;
-  getWarrantyInfo: (projectName: string) => { isIn: boolean; diffDays: number; wy: number; expiryStr: string } | null;
-  bolehUpdateTicket: (t: Ticket) => boolean;
-  canApproveAssign: boolean;
-  canManageTickets: boolean;
-  currentUserTeamType: string;
-  bukaDetailTicket: (t: Ticket) => void;
-  bukaRingkasanAktivitas: (t: Ticket) => void;
-  bukaApprovalUntukTicket: (t: Ticket) => void;
-  bukaReopenTicket: (t: Ticket) => void;
-  bukaDeleteTicket: (t: Ticket) => void;
-  bukaOverdueSetting: (t: Ticket) => void;
-  currentPage: number;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  totalPages: number;
-  ITEMS_PER_PAGE: number;
-  selectMode: boolean;
-  selectedIds: Set<string>;
-  toggleSelectId: (id: string) => void;
-  toggleSelectAll: () => void;
-  productFilter: string | null;
-  setProductFilter: Dispatch<SetStateAction<string | null>>;
-  ticketListRef: RefObject<HTMLDivElement | null>;
-}) {
+export function TicketListBody() {
+  const k = useKonteksTicket();
+  const { teamMembers, currentUserTeamType } = k.sesi;
+  const { bolehUpdateTicket, canApproveAssign, canManageTickets } = k.izin;
+  const {
+    fetchError, setFetchError, fetchData, ticketsLoading, filteredTickets, paginatedTickets, tickets, isTicketOverdue, getOverdueSetting, getWarrantyInfo,
+    ticketListRef
+  } = k.data;
+  const {
+    searchProject, setSearchProject, searchSalesName, setSearchSalesName, filterStatus, setFilterStatus, filterYear, setFilterYear, productFilter,
+    setProductFilter
+  } = k.filter;
+  const { currentPage, setCurrentPage, totalPages, ITEMS_PER_PAGE } = k.halaman;
+  const { selectMode, selectedIds, toggleSelectId, toggleSelectAll } = k.pilih;
+  const {
+    bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, jalankanCetakTicket: cetakTicket, bukaReopenTicket, bukaDeleteTicket,
+    bukaOverdueSetting
+  } = k.aksi;
   const router = useRouter();
 
   if (fetchError) return <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchData(); }} />;
@@ -109,7 +56,6 @@ export function TicketListBody({
 
   return (
     <>
-      {/* ── MOBILE: Card view (hidden on md+) ── */}
       <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
         {paginatedTickets.map((ticket) => {
           const overdue = isTicketOverdue(ticket);
@@ -152,10 +98,6 @@ export function TicketListBody({
                 {canApproveAssign && ticket.status === "Waiting Approval" && (
                   <ApproveIconBtn onClick={() => bukaApprovalUntukTicket(ticket)} pulse />
                 )}
-                {/* M2: disamakan dengan detail popup - Reopen PTS ini bukan
-                    urusan Team Services (mereka punya Reopen Services sendiri,
-                    lihat C2), tanpa syarat ini tombol tampil di list tapi
-                    hilang begitu ticket yang sama dibuka di detail. */}
                 {ticket.status === "Solved" && bolehUpdateTicket(ticket) && currentUserTeamType !== "Team Services" && (
                   <ReopenIconBtn onClick={() => bukaReopenTicket(ticket)} />
                 )}
@@ -169,7 +111,6 @@ export function TicketListBody({
             />
           );
         })}
-        {/* Mobile pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
           <span className="text-xs text-gray-500">{filteredTickets.length} tiket</span>
           {totalPages > 1 && (
@@ -184,28 +125,21 @@ export function TicketListBody({
         </div>
       </div>
 
-      {/* ── DESKTOP: Table view (hidden on mobile) ── */}
-      {/* Latar abu-abu muda di belakang tabel: tanpa ini kartu putih tiap
-          baris menempel di atas putih dan bentuk kartunya tidak terbaca. */}
       <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
         <table className="w-full table-fixed tabel-kartu" style={{ background: "transparent", minWidth: '1100px' }}>
           <colgroup>
-            <col style={{ width: "3%" }} />   {/* No */}
-            <col style={{ width: "15%" }} />  {/* Project / Lokasi*/}
-            <col style={{ width: "9%" }} />   {/* Warranty */}
-            <col style={{ width: "16%" }} />  {/* Product */}
-            <col style={{ width: "12%" }} />   {/* SN Unit */}
-            <col style={{ width: "13%" }} />  {/* Issue */}
-            <col style={{ width: "9%" }} />   {/* Assigned */}
-            <col style={{ width: "7%" }} />   {/* Status */}
-            <col style={{ width: "7%" }} />   {/* Sales */}
-            <col style={{ width: "10%" }} />  {/* Action */}
+            <col style={{ width: "3%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "16%" }} />
+            <col style={{ width: "12%" }} />
+            <col style={{ width: "13%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "7%" }} />
+            <col style={{ width: "10%" }} />
           </colgroup>
-          {/* Header menempel saat digulir: daftar tiket bisa panjang, dan tanpa ini
-              pembaca kehilangan acuan kolom begitu baris pertama lewat layar. */}
           <thead className="sticky top-0 z-10">
-            {/* Latar & garis bawah header diatur .tabel-kartu di globals.css -
-                di sini cukup kolomnya. */}
             <tr>
               <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 {selectMode && canManageTickets
@@ -232,8 +166,6 @@ export function TicketListBody({
               const overdueSetting = getOverdueSetting(ticket.id);
               const isSolvedOverdue = overdue && ticket.status === "Solved";
               const isActiveOverdue = overdue && ticket.status !== "Solved";
-              // Warna kartu & pita aksen dioper lewat custom property - lihat
-              // .tabel-kartu di globals.css untuk alasannya.
               return (
                 <tr key={ticket.id} className="stagger-item"
                   style={{
@@ -263,7 +195,6 @@ export function TicketListBody({
                     <div className="text-[11px] text-gray-500 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
                     {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5"><IkonTeks nama="⏰" />OVERDUE</div>}
                   </td>
-                  {/* Warranty cell */}
                   <td className="px-3 py-3 align-middle">
                     {(() => {
                       const w = getWarrantyInfo(ticket.project_name);
@@ -289,15 +220,6 @@ export function TicketListBody({
                   </td>
                   <td className="px-3 py-3 align-middle">
                     {ticket.product && (
-                      /*
-                        text-left BUKAN gaya bawaan di sini: peramban memberi
-                        <button> text-align:center, jadi begitu nama produk
-                        cukup panjang untuk turun ke baris kedua, teksnya
-                        menengah sendiri sementara seluruh kolom lain rata
-                        kiri. Baris pendek tidak terlihat salah karena
-                        tombolnya sepas isinya - yang panjang yang membuka
-                        perbedaannya.
-                      */
                       <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
                         className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded-sm wrap-break-word leading-tight transition-all inline-block"
                         style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
@@ -309,7 +231,6 @@ export function TicketListBody({
                   <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-700 wrap-break-word leading-tight">{ticket.issue_case}</div></td>
                   <td className="px-3 py-3 align-middle py-4">
                     <div className="text-sm text-gray-700 wrap-break-word leading-tight">{ticket.assign_name}</div>
-                    {/* Tampilkan team handler (dari users), bukan current_team ticket */}
                     {(() => {
                       const handler = teamMembers.find(m => m.name === ticket.assign_name);
                       const handlerTeam = handler?.team_type || "Team PTS IVP";
@@ -330,15 +251,6 @@ export function TicketListBody({
                   </td>
                   <td className="px-3 py-3 align-middle py-4">
                     <div className="flex flex-col gap-1 items-start max-w-full">
-                      {/*  Gaya HIGHLIGHT, bukan pil: sudutnya tegas dan tanpa
-                          garis tepi - statusnya terbaca seperti teks yang
-                          distabilo, bukan tombol.
-
-                          TANPA whitespace-nowrap, dan itu bukan kelalaian:
-                          kolom Status cuma ~7% lebar tabel (sekitar 77px pada
-                          minWidth 1100px), jauh lebih sempit dari teks
-                          "Solved Overdue". Memaksa satu baris membuatnya
-                          meluber ke kolom sebelah. */}
                       <span className={`inline-block max-w-full px-1.5 py-0.5 text-[11px] font-bold leading-tight ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
                       {overdue && <span className={`inline-block max-w-full px-1.5 py-0.5 text-[11px] font-bold leading-tight ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
                       {ticket.services_status && <span className={`inline-block max-w-full px-1.5 py-0.5 text-[11px] font-bold leading-tight ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
@@ -355,30 +267,23 @@ export function TicketListBody({
                   <td className="px-2 py-3 align-middle"><div className="text-xs text-gray-600 wrap-break-word leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
                   <td className="px-1 py-2 align-middle">
                     <div className="flex flex-wrap items-center justify-center gap-1">
-                      {/* Activity log badge + View */}
                       <div className="relative inline-flex">
                         <ViewIconBtn onClick={() => bukaDetailTicket(ticket)} title="Detail" />
                         {ticket.activity_logs && ticket.activity_logs.length > 0 && (
                           <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">{ticket.activity_logs.length}</span>
                         )}
                       </div>
-                      {/* Flowchart */}
                       <FlowchartIconBtn onClick={() => bukaRingkasanAktivitas(ticket)} />
-                      {/* Print PDF */}
                       <PrintIconBtn onClick={() => cetakTicket(ticket)} />
-                      {/* Waiting Approval — admin only */}
                       {canApproveAssign && ticket.status === "Waiting Approval" && (
                         <ApproveIconBtn onClick={() => bukaApprovalUntukTicket(ticket)} pulse />
                       )}
-                      {/* Re-open */}
                       {ticket.status === "Solved" && bolehUpdateTicket(ticket) && (
                         <ReopenIconBtn onClick={() => bukaReopenTicket(ticket)} />
                       )}
-                      {/* Hapus — admin only */}
                       {canManageTickets && (
                         <DeleteIconBtn onClick={() => bukaDeleteTicket(ticket)} />
                       )}
-                      {/* Overdue Setting — admin only */}
                       {canManageTickets && (
                         <OverdueIconBtn onClick={() => bukaOverdueSetting(ticket)} active={!!overdueSetting} />
                       )}
@@ -423,7 +328,7 @@ export function TicketListBody({
             {filteredTickets.length > 0 ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}` : "0"} of {tickets.length}
           </span>
         </div>
-      </div>{/* end hidden md:block */}
+      </div>
     </>
   );
 }

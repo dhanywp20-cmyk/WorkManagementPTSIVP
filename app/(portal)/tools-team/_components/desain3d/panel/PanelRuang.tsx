@@ -5,7 +5,6 @@ import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUA
 import { PilihWarna } from './ModalBuka';
 import { PilihTekstur, type PetaTeksturPanel } from './PilihTekstur';
 
-/** Panel samping "Ruangan": ukuran, lantai, dinding, cahaya, bukaan, ruang tambahan & salin isi (dipisah dari Desain3D.tsx). */
 export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tambahBukaan, ubahBukaan, tambahRuang, hapusRuangTerakhir, ubahSambungan, pasangSambungan, gantiIsi, setGantiIsi, salinIsiRuang, duaRuang, peta }: {
   ruang: Ruang;
   setRuang: (fn: (r: Ruang) => Ruang) => void;
@@ -22,7 +21,7 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
   setGantiIsi: (v: boolean) => void;
   salinIsiRuang: (asal: number, ganti: boolean, ke?: number) => void;
   duaRuang: boolean;
-  /** Tekstur gambar lantai / dinding (PilihTekstur). */ peta: PetaTeksturPanel;
+   peta: PetaTeksturPanel;
 }) {
   return (
     <>

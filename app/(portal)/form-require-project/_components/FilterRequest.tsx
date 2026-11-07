@@ -1,6 +1,5 @@
 'use client';
 
-/** FilterRequest - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { Ikon } from '@/components/shared/Ikon';
 

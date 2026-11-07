@@ -2,14 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CircleX, X } from 'lucide-react';
-import { NAMA_EVENT_GALAT_TULIS, type GalatTulis } from '@/lib/galat-tulis';
+import { NAMA_EVENT_GALAT_TULIS, type GalatTulis } from '@/lib/galat/tulis';
 
-/**
- * Pemberitahuan "perubahan tidak tersimpan" untuk SEMUA modul (lihat lib/galat-tulis.ts).
- * Dipasang sekali di app/layout.tsx. Di bawah tengah supaya tidak bertumpuk dengan Toast halaman
- * yang tampil di kanan atas. Pesan sama dalam 6 detik tidak diulang (simpan beruntun / retry), dan
- * halaman yang sudah menampilkan Toast gagalnya sendiri tidak diberi pesan kedua.
- */
 export function PenjagaGalatTulis() {
   const [galat, setGalat] = useState<GalatTulis | null>(null);
   const terakhir = useRef<{ pesan: string; waktu: number } | null>(null);
@@ -22,8 +16,6 @@ export function PenjagaGalatTulis() {
       const sekarang = Date.now();
       if (terakhir.current && terakhir.current.pesan === g.pesan && sekarang - terakhir.current.waktu < 6000) return;
       terakhir.current = { pesan: g.pesan, waktu: sekarang };
-      //  Tunggu sebentar: halaman yang memeriksa `error`-nya sendiri sudah menampilkan Toast-nya
-      //  (role="status", fixed) - pesan kedua dari sini hanya menggandakan, jadi mengalah.
       setTimeout(() => {
         const toastHalaman = Array.from(document.querySelectorAll<HTMLElement>('[role="status"].fixed, [role="alert"].fixed'))
           .some(el => !el.hasAttribute('data-penjaga-galat') && el.innerText.trim() !== '');

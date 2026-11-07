@@ -1,33 +1,12 @@
-/**
- * /api/kelas/<token> - Kelas Eksternal Learning Center untuk customer (PUBLIK, tanpa login).
- *
- *  GET                              -> info kelas + status peserta (header x-peserta: token perangkat)
- *  POST { aksi:'daftar', nama, instansi?, kontak?, izin_kontak? } -> { token }
- *                                   (isian sesuai kelas.isian_peserta; perangkat sama = peserta sama)
- *  POST { aksi:'mulai' }            -> soal TANPA kunci jawaban (melanjutkan percobaan yang terbuka)
- *  POST { aksi:'kirim', jawaban, alasan? } -> { skor, benar, jumlah, lulus } - dinilai di server
- *  POST { aksi:'pelanggaran', jenis }        -> { total, batas, kirimOtomatis }
- *
- * Kuis Live (jenis 'live', ala Kahoot - lib/kuis-live.ts): GET berisi `live` (tahap, soal yang sedang
- * berjalan, posisi & papan skor) dan jawaban dikirim per soal:
- *  POST { aksi:'jawab', indeks, pilihan }  -> { pilihan } - poin dihitung server, dibuka setelah waktu habis
- * Peserta tidak bisa mulai sendiri: soal hanya muncul setelah admin menekan Mulai di layar host.
- *
- * Mode 'admin': peserta terdaftar menunggu (GET -> menunggu:true) sampai admin menekan Mulai; batas
- * waktu semua peserta = dimulai_pada + timer. Admin menekan Akhiri -> peserta yang masih mengerjakan
- * mengirim otomatis (alasan 'diakhiri').
- *
- * Kunci jawaban tidak pernah keluar dari server. Tabel lc_eks_* terkunci dari peramban (migrasi 050).
- */
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   PESAN_STATUS, acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban,
   rapikanDataPeserta, rapikanIsianPeserta, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
-} from '@/lib/kelas-eksternal';
-import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis-live';
-import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
+} from '@/lib/kuis/kelas-eksternal';
+import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis/live';
+import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis/live-server';
 import { hapusSimpanan, simpanSebentar } from '@/lib/simpan-sebentar';
 
 export const dynamic = 'force-dynamic';
@@ -51,12 +30,6 @@ async function muatKelas(db: Db, token: string): Promise<KelasLive | null> {
   return (data as KelasLive | null) ?? null;
 }
 
-/**
- * GET (dibaca 100+ HP berkala): kelas & jumlah peserta disimpan sebentar di memori, jadi HP yang
- * menyegarkan bersamaan berbagi satu query; peserta dari tokennya disimpan 60 dtk per token (hanya bila
- * ditemukan - yang baru mendaftar langsung dikenali). POST (daftar, jawab) selalu membaca langsung.
- * Tiap query = satu baris log Supabase (kuota Log Ingestion Free 1 GB) - lihat lib/simpan-sebentar.ts.
- */
 const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 2000, () => muatKelas(db, token));
 const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 5000, () => jumlahPeserta(db, kelasId));
 async function muatPesertaSebentar(db: Db, kelasId: string, req: NextRequest): Promise<Peserta | null> {
@@ -68,7 +41,6 @@ async function muatPesertaSebentar(db: Db, kelasId: string, req: NextRequest): P
   return p;
 }
 
-/** Status pendaftaran menurut format kelas. */
 function statusDaftar(kelas: KelasLive, jumlah: number): { status: string; pesan: string | null } {
   if (kelas.jenis === 'live') {
     const st = statusLive(kelas, jumlah);
@@ -96,7 +68,6 @@ async function hasilPeserta(db: Db, pesertaId: string): Promise<Hasil[]> {
   return (data ?? []) as Hasil[];
 }
 
-//  id ikut dikirim: dasar nomor sertifikat peserta yang lulus (tetap sama tiap diunduh).
 const ringkasHasil = (h: Hasil | undefined) => (h && h.selesai_pada
   ? { id: h.id, skor: h.skor, benar: h.benar, jumlah: h.jumlah, lulus: h.lulus, selesai_pada: h.selesai_pada, percobaan: h.percobaan }
   : null);
@@ -147,7 +118,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const aksi = String(body.aksi ?? '');
 
-    // ── Daftar: cukup nama ──
     if (aksi === 'daftar') {
       const sudah = await muatPeserta(db, kelas.id, req);
       if (sudah) return jawab({ token: req.headers.get('x-peserta'), nama: sudah.nama });
@@ -177,14 +147,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     const daftarHasil = await hasilPeserta(db, peserta.id);
     const terbuka = daftarHasil.find(h => !h.selesai_pada);
 
-    // ── Mulai / lanjutkan ──
     if (aksi === 'mulai') {
       let h = terbuka;
       if (!h) {
         const selesai = daftarHasil.find(x => x.selesai_pada);
         if (selesai && kelas.satu_kali) return jawab({ error: 'Anda sudah mengerjakan quiz ini.', hasil: ringkasHasil(selesai) }, 409);
         if (menungguAdmin(kelas)) return jawab({ error: 'Menunggu pengajar memulai.', menunggu: true }, 409);
-        //  Peserta lama boleh mulai walau kuota penuh; selain itu kelas harus buka.
         const status = statusKelas(kelas, 0);
         if (status !== 'buka') return galat(PESAN_STATUS[status], 403);
         const { data: q } = await db.from('lc_questions').select('id').in('id', kelas.question_ids).eq('question_type', 'abcd');
@@ -212,7 +180,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       });
     }
 
-    // ── Kirim: dinilai di server ──
     if (aksi === 'kirim') {
       if (!terbuka) {
         const selesai = daftarHasil.find(x => x.selesai_pada);
@@ -223,7 +190,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       const kunci = Object.fromEntries(((kunciRows ?? []) as { id: string; correct_answer: string }[]).map(r => [r.id, r.correct_answer]));
       const nilai = nilaiJawaban(kunci, terbuka.urutan_soal, jawaban, kelas.passing_grade);
       const sekarang = Date.now();
-      //  Syarat selesai_pada IS NULL: dua kiriman bersamaan tidak bisa menimpa nilai.
       const { data: tersimpan } = await db.from('lc_eks_hasil').update({
         jawaban, ...nilai,
         selesai_pada: new Date(sekarang).toISOString(),
@@ -235,7 +201,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       return jawab({ hasil: ringkasHasil(h), bolehUlang: !kelas.satu_kali });
     }
 
-    // ── Pelanggaran: dicatat atomik di basis data (lc_eks_catat_pelanggaran, migrasi 051) ──
     if (aksi === 'pelanggaran') {
       if (!terbuka) return jawab({ total: null });
       if (!jenisPelanggaranSah(body.jenis)) return galat('Jenis pelanggaran tidak dikenal.');
@@ -251,12 +216,6 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   }
 }
 
-
-/**
- * Kuis Live: satu jawaban per soal, dikunci begitu terkirim (seperti Kahoot). Poin dihitung dari
- * waktu server sejak pilihan dibuka. Bila semua peserta sudah menjawab, soal ditutup lebih awal
- * dan jadwal sesudahnya (hasil, papan, soal berikutnya) ikut maju.
- */
 async function jawabLive(db: Db, kelas: KelasLive, peserta: Peserta, body: Record<string, unknown>) {
   const cek = periksaJawab(kelas, body.indeks, body.pilihan);
   if (!cek.ok) return galat(cek.alasan, 409);
@@ -271,7 +230,6 @@ async function jawabLive(db: Db, kelas: KelasLive, peserta: Peserta, body: Recor
   });
   if (error) {
     if (error.code !== '23505') return galat('Jawaban belum terkirim. Coba lagi.', 500);
-    //  Sudah menjawab (klik ganda / kirim ulang): jawaban pertama yang berlaku.
     const { data: lama } = await db.from('lc_eks_live_jawaban').select('pilihan')
       .eq('peserta_id', peserta.id).eq('sesi', kelas.live_sesi).eq('indeks', indeks).maybeSingle();
     return jawab({ pilihan: (lama as { pilihan: string } | null)?.pilihan ?? cek.pilihan });

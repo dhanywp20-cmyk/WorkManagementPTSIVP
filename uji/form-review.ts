@@ -1,13 +1,3 @@
-/**
- * uji/form-review.ts - aturan Form Review Demo/BAST:
- *  - kategori reminder mana yang memicu review, dan jenis review-nya;
- *  - review "menggantung" (belum dinilai sama sekali) menahan Request Schedule baru.
- *
- * Tidak ada jaringan: fetch diganti mata-mata yang mencatat URL dan
- * mengembalikan baris palsu.
- *
- * Jalankan: npx tsx uji/form-review.ts
- */
 import { getCategoryType, REVIEW_TRIGGER_CATEGORIES } from '@/app/(portal)/form-review/_components/shared';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 
@@ -35,11 +25,11 @@ async function jalan() {
   cek('tanpa nama Sales: 0 dan tidak ada kueri', (await hitungReviewMenggantung(null)) === 0 && url.length === 0);
 
   baris = [
-    { id: 1, grade_product_knowledge: null, grade_product_knowledge_bast: null, grade_training_customer: null }, // menggantung
+    { id: 1, grade_product_knowledge: null, grade_product_knowledge_bast: null, grade_training_customer: null },
     { id: 2, grade_product_knowledge: 'A', grade_product_knowledge_bast: null, grade_training_customer: null },
     { id: 3, grade_product_knowledge: null, grade_product_knowledge_bast: 'B', grade_training_customer: null },
     { id: 4, grade_product_knowledge: null, grade_product_knowledge_bast: null, grade_training_customer: 'C' },
-    { id: 5, grade_product_knowledge: '', grade_product_knowledge_bast: '', grade_training_customer: '' },      // menggantung
+    { id: 5, grade_product_knowledge: '', grade_product_knowledge_bast: '', grade_training_customer: '' },
   ];
   const n = await hitungReviewMenggantung("Fajar O'Neil");
   cek('hanya review tanpa SATU pun nilai yang dihitung (2 dari 5)', n === 2);

@@ -4,20 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Merek, MEREK_BAWAAN, merek as merekSekarang, muatMerek, simpanMerek,
   unggahBerkasMerek, angkaTembus, gradasiPanelLogin,
-} from '@/lib/merek';
+} from '@/lib/merek/inti';
 
-/**
- * Bagian "Dashboard Setting" pada Admin Panel - identitas tampilan platform.
- *
- * Dua kelompok yang sengaja dipisah karena dilihat orang yang berbeda:
- * header di DALAM platform (dilihat tim yang sudah masuk) dan HALAMAN LOGIN
- * (dilihat semua orang, termasuk yang belum punya akun). Keduanya punya warna
- * sendiri - warna yang enak di atas foto latar belum tentu enak jadi warna
- * tombol, dan sebaliknya.
- *
- * Daftar divisi sales TIDAK di sini: tempatnya di User Management, karena yang
- * mengurusnya orang yang sama dengan yang mengurus akun.
- */
 export function MerekSettingInline() {
   const [form, setForm] = useState<Merek>(MEREK_BAWAAN);
   const [menyimpan, setMenyimpan] = useState(false);
@@ -49,8 +37,6 @@ export function MerekSettingInline() {
     const { url, error } = await unggahBerkasMerek(berkas, jenis);
     setMengunggah(null);
     if (error || !url) { beritahu('gagal', error ?? 'Unggahan gagal.'); return; }
-    // Hanya mengisi kolomnya - belum tersimpan. Supaya bisa dilihat dulu di
-    // pratinjau dan dibatalkan kalau ternyata tidak cocok.
     const kunci = jenis === 'logo' ? 'logoUrl' : jenis === 'latar' ? 'gambarLatar' : 'gambarLatarDasbor';
     ubah(kunci, url);
     beritahu('ok', 'Berhasil diunggah. Lihat pratinjaunya, lalu tekan Simpan.');
@@ -77,11 +63,9 @@ export function MerekSettingInline() {
         </div>
       )}
 
-      {/* ══ DASHBOARD ══ */}
       <section className="rounded-2xl border border-slate-200 overflow-hidden">
         <Kepala judul="Dashboard" catatan="Header yang dilihat tim setelah masuk." />
 
-        {/* Pratinjau header */}
         <div className="px-4 pt-4">
           <Label>Pratinjau</Label>
           <div className="mt-1.5 rounded-xl border border-slate-200 p-3.5 flex items-center gap-3 bg-white">
@@ -137,11 +121,9 @@ export function MerekSettingInline() {
         </div>
       </section>
 
-      {/* ══ HALAMAN LOGIN ══ */}
       <section className="rounded-2xl border border-slate-200 overflow-hidden">
         <Kepala judul="Halaman Login" catatan="Dilihat semua orang, termasuk yang belum punya akun." />
 
-        {/* Pratinjau login */}
         <div className="px-4 pt-4">
           <Label>Pratinjau</Label>
           <div className="mt-1.5 rounded-xl overflow-hidden border border-slate-200 flex h-44 bg-cover bg-center"
@@ -210,8 +192,6 @@ export function MerekSettingInline() {
   );
 }
 
-// Bagian kecil
-
 function Kepala({ judul, catatan }: { judul: string; catatan: string }) {
   return (
     <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
@@ -227,10 +207,6 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: string; tembus?: boolean; sisi: number }) {
   return (
-    /*  Latar mengikuti aturan yang sama dengan LogoMerek (lihat catatannya):
-        ada logo -> putih, belum ada -> gradasi warna merek. Pratinjau di sini
-        HARUS sama persis dengan hasil aslinya; kalau tidak, admin memilih warna
-        berdasarkan pratinjau yang bukan gambaran platformnya. */
     <div className="rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
       style={{ width: sisi, height: sisi,
         background: url ? (tembus ? 'rgba(255,255,255,0.92)' : '#ffffff')

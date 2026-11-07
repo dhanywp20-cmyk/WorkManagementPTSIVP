@@ -1,6 +1,5 @@
 'use client';
 
-/** KolomBarangKeluhan - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { type NewTicketForm } from '../NewTicketModal';
 
@@ -18,7 +17,6 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
         <h3 className="text-sm font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
       </div>
 
-      {/* Row 2: Product | SN Unit */}
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📦" />Product / Brand</label>
@@ -44,7 +42,6 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
         </div>
       </div>
 
-
       <div>
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
@@ -62,7 +59,6 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
         </div>
       </div>
 
-      {/* Issue Case */}
       <div>
         <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Issue Case *</label>
         <div className="relative">
@@ -86,7 +82,6 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
         </div>
       </div>
 
-      {/* Description */}
       <div>
         <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📝" />Detailed Description</label>
         <textarea id="f-ticketing-components-newticketmodal-1" value={form.description} onChange={e => set({ description: e.target.value })}

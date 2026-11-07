@@ -1,16 +1,3 @@
-/**
- * lib/daftar-pilihan-bawaan.ts - daftar pilihan dropdown yang bisa diubah Admin (Admin Panel ›
- * Daftar Pilihan) TANPA deploy: merek display/middleware, kebutuhan/produk/kegiatan Piket, event
- * Unit Movement. Murni (tanpa React/Supabase) - diuji di uji/daftar-pilihan.ts.
- *
- * Disimpan sebagai SATU baris app_settings (`daftar_pilihan` = { kunci: string[] }) supaya seluruh
- * platform memuatnya dengan satu query. Hanya daftar yang berbeda dari bawaan yang ditulis.
- *
- * `terkunci` = nilai yang dipakai LOGIKA kode (mis. "Demo Product" memunculkan isian tamu, "All
- * Product" disebar ke semua produk). Nilai itu tidak bisa dihapus - selalu dikembalikan ke daftar.
- * Nilai bawaan SAMA PERSIS dengan yang selama ini tertulis di kode, jadi selama pengaturannya belum
- * ada atau gagal dibaca, platform tampil tepat seperti sebelumnya.
- */
 
 export const KUNCI_DAFTAR_PILIHAN = 'daftar_pilihan';
 export const MAKS_ITEM = 100;
@@ -49,10 +36,6 @@ export type SemuaDaftar = Record<KunciDaftar, string[]>;
 export const bawaanSemua = (): SemuaDaftar =>
   Object.fromEntries(DAFTAR_PILIHAN.map(d => [d.k, [...d.bawaan]])) as SemuaDaftar;
 
-/**
- * Rapikan satu daftar: buang yang kosong & kembar (tanpa beda huruf besar), potong panjang, batasi
- * jumlah; nilai terkunci yang hilang dikembalikan di depan. Daftar kosong -> bawaan.
- */
 export function rapikanDaftar(isi: unknown, d: DefDaftar): string[] {
   const terlihat = new Set<string>();
   const hasil: string[] = [];
@@ -69,7 +52,6 @@ export function rapikanDaftar(isi: unknown, d: DefDaftar): string[] {
   return [...hilang, ...hasil];
 }
 
-/** Baca nilai app_settings (objek atau teks JSON) -> semua daftar, yang tidak diatur = bawaan. */
 export function bacaDaftarPilihan(nilai: unknown): SemuaDaftar {
   let o: unknown = nilai;
   if (typeof o === 'string') { try { o = JSON.parse(o); } catch { o = null; } }
@@ -77,7 +59,6 @@ export function bacaDaftarPilihan(nilai: unknown): SemuaDaftar {
   return Object.fromEntries(DAFTAR_PILIHAN.map(d => [d.k, d.k in obj ? rapikanDaftar(obj[d.k], d) : [...d.bawaan]])) as SemuaDaftar;
 }
 
-/** Yang ditulis ke database: hanya daftar yang berbeda dari bawaan. */
 export function ringkasDaftarPilihan(semua: Partial<SemuaDaftar>): Partial<SemuaDaftar> {
   const hasil: Partial<SemuaDaftar> = {};
   for (const d of DAFTAR_PILIHAN) {
@@ -89,10 +70,6 @@ export function ringkasDaftarPilihan(semua: Partial<SemuaDaftar>): Partial<Semua
   return hasil;
 }
 
-/**
- * Daftar untuk dropdown saat MENGUBAH data lama: nilai yang tersimpan tapi sudah dihapus dari daftar
- * tetap ditampilkan (di belakang) supaya isiannya tidak hilang diam-diam.
- */
 export function denganNilai(daftar: string[], ...nilai: (string | null | undefined | string[])[]): string[] {
   const ada = new Set(daftar.map(x => x.toLowerCase()));
   const tambah: string[] = [];
@@ -103,5 +80,4 @@ export function denganNilai(daftar: string[], ...nilai: (string | null | undefin
   return tambah.length ? [...daftar, ...tambah] : daftar;
 }
 
-/** Produk Piket selain "All Product" - sasaran distribusi "All Product" di ringkasan & Excel. */
 export const produkSpesifik = (produk: string[]) => produk.filter(p => p !== 'All Product');

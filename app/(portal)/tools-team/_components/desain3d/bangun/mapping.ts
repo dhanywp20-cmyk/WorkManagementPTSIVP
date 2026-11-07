@@ -1,20 +1,10 @@
-/**
- * desain3d/bangun/mapping.ts - Mapping: bidang / layar mapping, objek mapping (bentuk dasar & siluet gambar), model 3D impor.
- * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
- */
 import type * as T from 'three';
 import { type Benda, ukuranBidang } from '../inti';
 import { batang, type Konteks, kotak, mat } from './dasar';
 
-/**
- * Bidang mapping: potongan silinder tegak (jari-jari R, busur). Lengkung = cekung, pusat
- * kelengkungan di depan (sisi penonton, +z); cembung = pusat di belakang; busur 360 = pilar.
- * Permukaan putih doff dua sisi, lis atas-bawah, tiang penyangga dari lantai bila melayang.
- */
 function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   const lis = mat(THREE, 0x1f2227, { metalness: 0.4, roughness: 0.5 });
   if (b.bentukBidang === 'datar') {
-    //  Screen datar: permukaan doff + bingkai tipis + dua kaki penyangga di belakang.
     const { w } = ukuranBidang(b), muka = new THREE.Mesh(new THREE.PlaneGeometry(w, b.h), new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
     muka.position.set(0, b.h / 2, 0.02); g.add(muka);
     const r = 0.02;
@@ -41,7 +31,6 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
     const tutup = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshStandardMaterial({ color: warna, roughness: 0.9 }));
     tutup.rotation.x = -Math.PI / 2; tutup.position.set(0, b.h, zPusat); g.add(tutup);
   }
-  //  Tiang penyangga di belakang permukaan (sisi luar lengkung) bila tidak berdiri di lantai.
   if (busur < 360) {
     for (const f of [0.08, 0.5, 0.92]) {
       const a = mulai + t * f, luar = cembung ? -0.06 : 0.06;
@@ -51,11 +40,6 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   }
 }
 
-/**
- * Objek mapping (lihat model.ts BentukObjek): bentuk dasar mengisi kotak w×h×d, alas di y = 0.
- * 'gambar' = siluet dari kontur ternormalisasi, diekstrusi setebal d; foto (bila ada) hanya di
- * permukaan depan - samping & belakang polos supaya sinar proyektor tetap terbaca.
- */
 function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto: T.Texture | null) {
   const bahanPolos = new THREE.MeshStandardMaterial({ color: warna, roughness: 0.85, metalness: 0 });
   const pasang = (geo: T.BufferGeometry, m: T.Material = bahanPolos) => { g.add(new THREE.Mesh(geo, m)); return geo; };
@@ -71,7 +55,6 @@ function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto
       return;
     }
     case 'piramida': {
-      //  Kerucut 4 sisi diputar 45° -> alas persegi 1 × 1 sebelum diskala.
       pasang(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1)).rotateY(Math.PI / 4).scale(w, h, d).translate(0, h / 2, 0);
       return;
     }
@@ -83,11 +66,9 @@ function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto
     case 'gambar': {
       const bentuk = bentukDariKontur(THREE, b);
       if (!bentuk.length) { pasang(new THREE.BoxGeometry(w, h, d)).translate(0, h / 2, 0); return; }
-      //  Ekstrusi di ruang 0..1 lalu diskala ke ukuran nyata: tepi kontur = tepi kotak w×h.
       pasang(new THREE.ExtrudeGeometry(bentuk, { depth: 1, bevelEnabled: false, curveSegments: 1 }))
         .translate(-0.5, 0, -0.5).scale(w, h, d);
       if (foto) {
-        //  ShapeGeometry memberi UV = koordinat bentuk (0..1) = UV foto yang sudah dipotong ke kotak objek.
         const muka = new THREE.MeshStandardMaterial({ map: foto, roughness: 0.8, metalness: 0 });
         pasang(new THREE.ShapeGeometry(bentuk, 1), muka).translate(-0.5, 0, 0).scale(w, h, 1).translate(0, 0, d / 2 + 0.002);
       }
@@ -96,7 +77,6 @@ function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto
   }
 }
 
-/** THREE.Shape dari kontur tersimpan (koordinat 0..1). Kontur rusak = tanpa bentuk (jatuh ke kotak). */
 function bentukDariKontur(THREE: typeof T, b: Benda): T.Shape[] {
   const titik = (p: number[]) => { const v: T.Vector2[] = []; for (let i = 0; i + 1 < p.length; i += 2) v.push(new THREE.Vector2(p[i], p[i + 1])); return v; };
   return (b.kontur ?? []).filter(k => Array.isArray(k?.l) && k.l.length >= 6).map(k => {
@@ -106,26 +86,20 @@ function bentukDariKontur(THREE: typeof T, b: Benda): T.Shape[] {
   });
 }
 
-/** bidang */
 export function bangunBidang({ THREE, g, b, W }: Konteks) {
   bidangMapping(THREE, g, b, W(0xf3f4f6));
 }
 
-/** objek */
 export function bangunObjek({ THREE, g, b, bahan, W }: Konteks) {
   objekMapping(THREE, g, b, W(0xe5e7eb), b.konten === 'gambar' ? bahan.layar(b) : null);
 }
 
-/** model */
 export function bangunModel({ THREE, g, b, bahan }: Konteks) {
   const asli = b.modelKunci ? bahan.model(b.modelKunci) : null;
   if (asli) {
-    //  Putar tegak (file Z-up) lewat pembungkus, supaya model aslinya di memori tidak ikut berubah.
-    //  (Rotasi bawaan file - mis. koreksi Z-up dari ColladaLoader - tetap utuh di dalam pembungkus.)
     const salinan = new THREE.Group(), putar = new THREE.Group();
     putar.rotation.x = (-(b.putarModel ?? 0) * Math.PI) / 180;
     putar.add(asli.clone(true)); salinan.add(putar);
-    //  Skala agar muat di kotak w×h×d, alas di y = 0.
     const kotakB = new THREE.Box3().setFromObject(salinan);
     const s = kotakB.getSize(new THREE.Vector3());
     const k = Math.min(b.w / Math.max(1e-3, s.x), b.h / Math.max(1e-3, s.y), b.d / Math.max(1e-3, s.z));

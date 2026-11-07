@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { ListEmptyState } from '@/components/shared';
 import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { bolehSertifikat } from '@/lib/sertifikat';
+import { bolehSertifikat } from '@/lib/kuis/sertifikat';
 import { cetakSertifikat, unduhSertifikat } from './sertifikat';
 
 export function HistoryPage({ user }: { user: User }) {
@@ -22,9 +22,6 @@ export function HistoryPage({ user }: { user: User }) {
   }, [user.id]);
 
   if (viewingAttempt) {
-    //  autoOpenAttemptId: lihat catatan yang sama di ScorePage.tsx - tanpa
-    //  ini "Lihat Jawaban" pada satu baris membuka LIST attempt dari awal,
-    //  dan baris yang sama harus diklik SEKALI LAGI di dalamnya.
     return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} autoOpenAttemptId={viewingAttempt.id} />;
   }
 

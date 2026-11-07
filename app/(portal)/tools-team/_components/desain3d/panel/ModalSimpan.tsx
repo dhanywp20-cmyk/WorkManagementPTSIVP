@@ -1,5 +1,4 @@
 'use client';
-/** Modal simpan & buka: laptop (.glb), server tim (versi), salinan lokal lama. */
 import { ambilKunci, RUANG_AWAL } from '../useKeadaanDesain';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
@@ -11,7 +10,6 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
   const { bukaTim, hapusTim, simpanKeLaptop, simpanServer, tulisSimpanan, unggahLokal } = a.simpan;
   return (
     <>
-      {/* ── Modal: Simpan / buka (server, dibagikan ke tim) ── */}
       <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
         keterangan="Ke server: bisa dibuka seluruh tim; gambar layar unggahan ikut (dikompres, maks 6). Ke laptop: semuanya ikut termasuk model .glb impor, tanpa storage server.">
         {benda.some(b => b.jenis === 'model') && (

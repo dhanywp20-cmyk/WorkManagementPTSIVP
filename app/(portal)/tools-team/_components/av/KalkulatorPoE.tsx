@@ -1,12 +1,7 @@
 'use client';
-/**
- * Kalkulator PoE: perangkat (kamera, mic, panel sentuh, AP, encoder) → jumlah port, anggaran daya PoE
- * (+20%), kelas tertinggi, saran switch; menandai perangkat yang melebihi kelas port-nya.
- * Rumus: lib/av-audio-jaringan.ts (hitungPoE).
- */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
-import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av-audio-jaringan';
+import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av/audio-jaringan';
 import { useState } from 'react';
 import { angkaDari, teksDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../pustaka/PilihPustaka';

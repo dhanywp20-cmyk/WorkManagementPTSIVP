@@ -1,17 +1,6 @@
-/**
- * uji/proyektor-panasonic-data.ts - model Panasonic di Pustaka (migrasi 057) dibandingkan dengan rumus kalkulator
- * Panasonic sendiri (Throw Distance Calculator 2.79): L = A x diagonal(inci) - B di ujung wide & tele.
- *
- * Batas pemilik: simulasi kita tidak boleh selisih lebih dari 2 cm dari simulasi bawaan brand. Diperiksa di
- * Kalkulator Proyektor (lib/av-layar-proyektor.ts) DAN Desain 3D (inti/proyektor.ts lewat isiDariPustaka), untuk
- * seluruh rentang ukuran layar tiap lensa. Juga: kasus screenshot pemilik (PT-MZ882 127,71"), lens shift segi
- * delapan, proyektor tanpa lens shift, dan pergantian model.
- *
- * Jalankan: npx tsx uji/proyektor-panasonic-data.ts
- */
 import { readFileSync } from 'fs';
-import { lumenUntukKontras, rentangJarakLempar } from '../lib/av-layar-proyektor';
-import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { lumenUntukKontras, rentangJarakLempar } from '../lib/av/layar-proyektor';
+import { ukuranDariDiagonal } from '../lib/av/hitung';
 import type { EntriPustaka } from '../lib/pustaka';
 import {
   batasShift, bendaBaru, isiDariPustaka, jarakUntukLebar, koreksiJarakDari, offsetLensaDari, shiftMuat, type Benda,
@@ -24,7 +13,6 @@ function cek(nama: string, syarat: boolean, catatan = '') {
 }
 const BATAS = 0.02;
 
-/** Koefisien mentah kalkulator Panasonic (rasio native) & rentang layar lensa (inci) - acuan, terpisah dari migrasi. */
 const ACUAN: Record<string, { A1: number; B1: number; A2: number; B2: number; rasio: [number, number]; layar: [number, number] }> = {
   'Panasonic PT-MZ882 + lensa standar ET-ELS20': { A1: 0.035305, B1: 0.054882, A2: 0.060045, B2: 0.048228, rasio: [16, 10], layar: [40, 400] },
   'Panasonic PT-MZ882 + ET-ELU20 (ultra short throw)': { A1: 0.007286, B1: 0.029388, A2: 0.007844, B2: 0.034616, rasio: [16, 10], layar: [100, 400] },
@@ -37,7 +25,6 @@ const ACUAN: Record<string, { A1: number; B1: number; A2: number; B2: number; ra
   'Panasonic PT-TMZ400 (short throw)': { A1: 0.009586, B1: 0.0332, A2: 0.009586, B2: 0.0332, rasio: [16, 10], layar: [50, 105] },
 };
 
-//  Entri persis seperti yang akan ada di tabel tools_pustaka (dibaca dari berkas migrasinya).
 const sql = readFileSync('supabase/migrations/057_pustaka_proyektor_panasonic.sql', 'utf8');
 const entri: EntriPustaka[] = [...sql.matchAll(/\('proyektor', '((?:[^']|'')+)', '((?:[^']|'')+)'\)/g)]
   .map((m, i) => ({ id: `e${i}`, jenis: 'proyektor', nama: m[1].replace(/''/g, "'"), data: JSON.parse(m[2].replace(/''/g, "'")) }));
@@ -53,7 +40,6 @@ for (const e of entri) {
   const a = ACUAN[e.nama];
   const [w, h] = a.rasio;
   let maksKalk = 0, maks3D = 0;
-  //  Seluruh rentang layar lensa, 25 titik.
   for (let i = 0; i <= 24; i++) {
     const diag = a.layar[0] + ((a.layar[1] - a.layar[0]) * i) / 24;
     const lebar = ukuranDariDiagonal(diag, w, h).lebarM;
@@ -77,9 +63,8 @@ const lux = 8200 / (lebarSS * tinggiSS);
 cek(`iluminansi pusat 1.734 lux (kita ${lux.toFixed(0)})`, Math.abs(lux - 1734) < 1);
 const kontras = (lux + 200) / (lux / 3000000 + 200);
 cek(`kontras 9,7 : 1 dengan kontras asli 3.000.000:1 (kita ${kontras.toFixed(2)})`, Math.abs(kontras - 9.7) < 0.05);
-//  Lumen untuk kontras 9,67:1 di 200 lux harus kembali ke ±8.200 lm (rumus lumenUntukKontras dengan kontras asli).
-cek('lumenUntukKontras membalik rumus yang sama (±8.200 lm)', Math.abs(lumenUntukKontras(lebarSS * tinggiSS, 200, kontras, 1, 3000000) - 8200) < 1);
-cek('target melebihi kontras asli -> tidak tercapai (Infinity)', !Number.isFinite(lumenUntukKontras(4, 0.5, 2000, 1, 1500)));
+cek('lumenUntukKontras membalik rumus yang sama (±8.200 lm)', Math.abs(lumenUntukKontras(lebarSS * tinggiSS, 200, kontras, 3000000) - 8200) < 1);
+cek('target melebihi kontras asli -> tidak tercapai (Infinity)', !Number.isFinite(lumenUntukKontras(4, 0.5, 2000, 1500)));
 
 console.log('\n3. Lens shift segi delapan (cara kalkulator Panasonic: semua pojok gambar di dalam poligon)');
 const p = proyektor(mz);

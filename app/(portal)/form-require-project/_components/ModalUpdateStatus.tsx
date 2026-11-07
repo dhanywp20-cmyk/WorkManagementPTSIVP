@@ -1,6 +1,5 @@
 'use client';
 
-/** ModalUpdateStatus - ubah status request / ruangan. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 import { User, ProjectRequest, getRoomStatus, getRoomAssignName, statusConfig } from './shared';
 
@@ -20,12 +19,9 @@ export function ModalUpdateStatus({ bisaKelolaRequest, canSetInProgress, current
   if (!statusUpdateModal.open || !statusUpdateModal.req) return null;
   const req = statusUpdateModal.req;
   const tutup = () => setStatusUpdateModal({ open: false, req: null, roomIdx: 0 });
-  //  Pilihan status memakai label & warna status yang sama dengan daftar (statusConfig), bukan peta warna sendiri.
   const pilihan = ['pending', 'in_progress', 'completed', ...(bisaKelolaRequest ? ['approved', 'rejected'] : [])].filter(v => {
     if (v === getRoomStatus(req, statusUpdateModal.roomIdx)) return false;
-    //  in_progress hanya bisa diset oleh PTS yang ditugaskan (atau admin)
     if (v === 'in_progress' && !canSetInProgress(req, statusUpdateModal.roomIdx)) return false;
-    //  completed hanya admin/superadmin atau PTS yang ditugaskan
     if (v === 'completed' && isTeamPTS && getRoomAssignName(req, statusUpdateModal.roomIdx) !== currentUser.full_name) return false;
     return true;
   });

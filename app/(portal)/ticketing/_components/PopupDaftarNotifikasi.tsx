@@ -1,6 +1,5 @@
 'use client';
 
-/** PopupDaftarNotifikasi - daftar ticket yang perlu perhatian. Semua keadaan tetap milik induk. Kerangka: Modal bersama. */
 import { Modal, TombolModal } from '@/components/shared';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { Ticket, formatDateTime, statusColors } from './shared';
@@ -15,7 +14,6 @@ export interface PopupDaftarNotifikasiProps {
   showNotifications: boolean;
 }
 
-/** Satu baris ticket di daftar notifikasi (dipakai juga PopupNotifikasiBaru). */
 export function BarisNotifikasiTicket({ ticket, overdue, currentUserTeamType, onBuka, tanggal }: {
   ticket: Ticket; overdue: boolean; currentUserTeamType: string; onBuka: () => void; tanggal?: string;
 }) {

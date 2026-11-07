@@ -1,8 +1,3 @@
-/**
- * uji/simpan-sebentar.ts - simpanan singkat di memori server (dipakai Kuis Live untuk 100+ HP).
- *
- *   npx tsx uji/simpan-sebentar.ts
- */
 import { readFileSync } from 'fs';
 import { hapusSimpanan, kosongkanSimpanan, simpanSebentar } from '../lib/simpan-sebentar';
 
@@ -69,7 +64,7 @@ async function main() {
     const rute = readFileSync('app/api/kelas/[token]/route.ts', 'utf8');
     cek('GET peserta lewat simpanan per hash token, hanya bila ditemukan', /`peserta:\$\{kelasId\}:\$\{hash\(t\)\}`/.test(rute) && /if \(!p\) hapusSimpanan\(kunci\)/.test(rute) && /muatPesertaSebentar\(db, kelas\.id, req\)/.test(rute));
     cek('POST (daftar, jawab) tetap membaca peserta langsung', /const peserta = await muatPeserta\(db, kelas\.id, req\)/.test(rute));
-    const server = readFileSync('lib/kuis-live-server.ts', 'utf8');
+    const server = readFileSync('lib/kuis/live-server.ts', 'utf8');
     cek('jawaban saya: kunci memuat waktu mulai soal (ulang soal tidak membaca jawaban lama)', /`jwb:\$\{pesertaId\}:\$\{k\.live_sesi\}:\$\{indeks\}:\$\{k\.live_soal_mulai\}`/.test(server) && /if \(!j\) hapusSimpanan\(kunci\)/.test(server));
     const hp = readFileSync('app/kelas/[token]/_bagian/KuisLive.tsx', 'utf8');
     cek('HP peserta: berkala lobi 3 dtk, berjalan 5 dtk, selesai 15 dtk', /live\.tahap === 'selesai' \? 15_000 : live\.tahap === 'lobi' \? 3_000 : 5_000/.test(hp));

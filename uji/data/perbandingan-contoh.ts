@@ -1,8 +1,4 @@
-/**
- * Fixture Product Comparison: isi PDF contoh owner (LG 22SM3G-B vs DigiSIGN DSN-LAD-015, EN) - data datasheet
- * publik, tidak sensitif. Dipakai uji/perbandingan.ts untuk memeriksa struktur & kemiripan dengan template.
- */
-import type { KartuBanding, NilaiSpek } from '../../lib/perbandingan';
+import type { KartuBanding, NilaiSpek } from '../../lib/perbandingan/inti';
 
 const a = (teks: string, unggul = false): NilaiSpek => ({ teks, status: 'ada', ...(unggul ? { unggul } : {}), bukti: { kutipan: teks } });
 const x: NilaiSpek = { teks: '', status: 'tidak-disebut' };

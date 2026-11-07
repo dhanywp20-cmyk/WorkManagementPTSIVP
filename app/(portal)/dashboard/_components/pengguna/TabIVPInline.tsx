@@ -1,6 +1,5 @@
 'use client';
 
-/** TabIVPInline - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';
 import { User } from '../shared';
@@ -27,7 +26,6 @@ export function TabIVPInline({ activeTab, filteredIvpByUser, handleAddIvp, handl
     <>
       {activeTab === 'ivp' && (
         <div className="p-5 space-y-5">
-          {/* Add form */}
           <div className="p-4 rounded-xl border border-violet-200 bg-violet-50">
             <p className="text-xs font-bold text-violet-700 mb-2"><IkonTeks nama="➕" />Tambah Sales Handle (IVP / MVI) ke Divisi — <strong>per brand</strong></p>
             <div className="mb-3">
@@ -71,11 +69,9 @@ export function TabIVPInline({ activeTab, filteredIvpByUser, handleAddIvp, handl
               </div>
             </div>
           </div>
-          {/* List — grouped by person */}
           <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
             {filteredIvpByUser.map(([userId, { user, group, maps }]) => (
               <div key={userId} className="rounded-xl border border-violet-200 overflow-hidden">
-                {/* Card header — person name */}
                 <div className="px-3 py-2 bg-violet-50 border-b border-violet-100 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="font-bold text-violet-900 text-xs truncate">{user?.full_name ?? '—'}</span>
@@ -83,13 +79,11 @@ export function TabIVPInline({ activeTab, filteredIvpByUser, handleAddIvp, handl
                   </div>
                   <span className="text-[11px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full shrink-0">{maps.length}</span>
                 </div>
-                {/* Phone number row */}
                 <div className="px-3 py-1 bg-violet-50/60 border-b border-violet-100">
                   {user?.phone_number
                     ? <p className="text-[11px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
                     : <p className="text-[11px] text-rose-600"><IkonTeks nama="⚠" />No WA</p>}
                 </div>
-                {/* Division chips */}
                 <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white">
                   {maps.map(m => (
                     <div key={m.id} className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-0.5 group">

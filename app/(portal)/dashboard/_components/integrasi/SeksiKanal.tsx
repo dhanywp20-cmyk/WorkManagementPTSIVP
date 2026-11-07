@@ -1,6 +1,5 @@
 'use client';
 
-/** SeksiKanal - dipecah dari app/(portal)/dashboard/_components/modal-integrasi.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { KANAL, kanalUntuk, type Kanal, type PengaturanNotifikasi } from '@/lib/notifikasi/pengaturan';
 import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { JUDUL_KATEGORI, Saklar } from '../modal-integrasi';
@@ -72,13 +71,6 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
             </div>
           </div>
 
-          {/*
-            Matriks Event -> Kanal. Modelnya dipertahankan apa adanya -
-            inilah bagian yang memang sudah enak dipakai. Yang berubah:
-            ia tidak lagi disembunyikan di panel geser yang harus dibuka
-            dulu, dan dapat kolom pencarian karena 22 baris terlalu banyak
-            untuk dipindai dengan mata.
-          */}
           <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
               <div className="min-w-0">
@@ -97,15 +89,6 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
               </div>
             </div>
             <div className="p-3">
-              {/*
-                Pemberitahuan ini sengaja ada dan sengaja tidak dihaluskan.
-                Setelan per-kejadian baru berlaku untuk titik pengiriman
-                yang sudah menyebutkan kunci event-nya; sisanya cuma
-                tunduk pada saklar induk kanal di atas. Tanpa disebut,
-                admin mematikan sebuah kejadian, centangnya tersimpan,
-                lalu pesannya tetap terkirim - dan tidak ada satu pun
-                petunjuk kenapa.
-              */}
               {EVENT_TERSAMBUNG.size < KATALOG_EVENT.length && (
                 <div className="rounded-lg px-3 py-2.5 mb-2.5 text-[11px] leading-relaxed"
                   style={{ background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(245,158,11,0.35)', color: '#92400e' }}>

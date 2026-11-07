@@ -1,18 +1,5 @@
 'use client';
 
-/**
- * components/shared/Ikon.tsx - ikon garis (lucide) sebagai pengganti emoji.
- *
- * Emoji dipakai sebagai ikon di seluruh platform (judul halaman, kartu,
- * chart, menu): tampilannya berbeda per sistem operasi, ramai warna, dan
- * membuat aplikasi kerja terlihat seperti aplikasi obrolan. Mengganti ratusan
- * pemanggil satu per satu berisiko; jadi komponen bersama menerima `icon`
- * seperti biasa - string emoji - dan menerjemahkannya di sini.
- *
- * Emoji yang belum dipetakan tetap tampil apa adanya (tidak ada yang hilang),
- * jadi pemetaan bisa dilengkapi bertahap.
- */
-
 import type { LucideIcon } from 'lucide-react';
 import {
   ChartColumn, ClipboardList, Users, Target, Package, Building2, User, ChartPie, Store, Ticket,
@@ -50,7 +37,6 @@ const PETA: Record<string, LucideIcon> = {
   '📎': Paperclip, '💻': Laptop, '⏭': SkipForward, '🎲': Dices, '🗒': FileText, '📃': FileText, '🧾': FileText, '💬': MessageSquare, '📥': Inbox, '🎤': Presentation, '🎬': Theater, '⚖': Scale,
 };
 
-/** Buang variation selector & zero-width joiner supaya '⚠️' dan '⚠' sama. */
 function kunci(emoji: string): string {
   return emoji.replace(/[︎️‍]/g, '').trim();
 }
@@ -60,28 +46,17 @@ export function ikonUntuk(emoji: string | null | undefined): LucideIcon | null {
   return PETA[kunci(emoji)] ?? null;
 }
 
-/**
- * Tampilkan ikon garis untuk sebuah emoji; emoji yang belum dipetakan
- * dirender apa adanya. `ukuran` dalam px; warna mengikuti `currentColor`.
- */
 export function Ikon({ nama, ukuran = 16, tebal = 2, className = '' }: {
-  /** Emoji (diterjemahkan) atau elemen React yang sudah jadi (diteruskan apa adanya). */
-  /** px, atau string CSS seperti '1em' untuk ikon yang mengikuti ukuran teks di sekitarnya. */
   nama: React.ReactNode; ukuran?: number | string; tebal?: number; className?: string;
 }) {
   if (!nama) return null;
   if (typeof nama !== 'string') return <>{nama}</>;
   const K = ikonUntuk(nama);
   if (!K) return <span aria-hidden="true" className={className} style={{ fontSize: typeof ukuran === 'number' ? ukuran * 0.9 : ukuran, lineHeight: 1 }}>{nama}</span>;
-  //  K diambil dari PETA statis (komponen Lucide yang sama tiap render), bukan dibuat saat render.
   // eslint-disable-next-line react-hooks/static-components
   return <K aria-hidden="true" focusable="false" size={ukuran} strokeWidth={tebal} className={`shrink-0 ${className}`} />;
 }
 
-/**
- * Ikon di tengah kalimat/judul - ukuran mengikuti font di sekitarnya dan
- * duduk sejajar garis dasar teks. Dipakai codemod pengganti emoji dalam teks.
- */
 export function IkonTeks({ nama }: { nama: string }) {
   return <Ikon nama={nama} ukuran="1.1em" className="inline-block align-[-0.18em] mr-1 opacity-80" />;
 }

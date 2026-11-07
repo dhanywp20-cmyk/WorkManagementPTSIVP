@@ -1,6 +1,5 @@
 'use client';
 
-/** useAksiMassalJadwal - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { supabase } from '@/lib/supabase';
 import { Reminder } from './shared';
 

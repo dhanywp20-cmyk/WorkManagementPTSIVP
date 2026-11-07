@@ -5,16 +5,8 @@ import { type Benda, bendaBaru, idBaru, type Kotak } from '../inti';
 import { bacaBerkas3D, GalatImpor, ukuranModel } from './berkas3d';
 import type { HasilObjekGambar } from '../panel/ModalObjekGambar';
 
-/** Ukuran wajar objek di ruang (m) - di luar ini satuan berkas hampir pasti salah tebak. */
 const UKURAN_WAJAR = { min: 0.03, maks: 150 };
 
-/**
- * Menambah objek dari luar ke kanvas Desain 3D:
- *   - imporBerkas : model 3D (glTF/OBJ/FBX/DAE/KMZ/STL/3DS/PLY/ZIP) -> benda 'model'
- *   - dariGambar  : hasil ModalObjekGambar (siluet + foto) -> benda 'objek' bentuk 'gambar'
- * Geometri model & foto disimpan di peta memori milik Desain3D (modelImpor, gambarLayar) - sama
- * seperti gambar layar unggahan - jadi ikut tersimpan ke laptop (.glb) & server (foto).
- */
 export function useImporObjek(p: {
   THREE: () => typeof T | null;
   modelImpor: MutableRefObject<Map<string, T.Object3D>>;
@@ -37,7 +29,6 @@ export function useImporObjek(p: {
       const catatan = [...h.catatan];
       const maks = Math.max(u.w, u.h, u.d);
       if (maks > UKURAN_WAJAR.maks || maks < UKURAN_WAJAR.min) {
-        //  Satuan tidak masuk akal -> tinggi 2 m sebagai titik awal, ukuran nyata diisi di panel.
         const k = 2 / Math.max(1e-6, u.h || maks);
         u = { w: u.w * k, h: u.h * k, d: u.d * k };
         catatan.push('Ukuran berkas tidak wajar - objek diatur setinggi 2 m. Isi tinggi sebenarnya / satuan di panel.');

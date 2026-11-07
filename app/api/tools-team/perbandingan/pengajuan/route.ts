@@ -1,26 +1,10 @@
-/**
- * /api/tools-team/perbandingan/pengajuan - verifikasi Product Comparison oleh orang produk.
- *
- * Sales / Marketing bukan orang produk: PDF mereka baru boleh diunduh setelah diverifikasi. Siapa verifikator,
- * siapa mengunduh langsung, lama simpan & batas pengajuan diatur Admin Panel (app_settings 'tools.perbandingan',
- * lib/perbandingan-aturan.ts) - dibaca ulang tiap permintaan, tanpa nilai tertanam di kode.
- *
- *   GET                 daftar ringkas: verifikator = semua (menunggu dulu); pengaju = miliknya. + peran.
- *   GET ?id=            satu pengajuan lengkap (pengaju itu sendiri atau verifikator).
- *   POST { data }       ajukan (status menunggu) -> notifikasi in-app + WA ke verifikator.
- *   PATCH { id, aksi: 'setujui' | 'tolak', catatan?, data? }
- *                       verifikator; setujui boleh membawa data hasil koreksi (tanpa nilai 'cek').
- *
- * Yang disimpan hanya JSON hasil perbandingan (migrasi 045) - bukan brosur / PDF - dan dihapus otomatis
- * 30 hari setelah dibuat (dibersihkan di tiap permintaan). Isi tidak pernah ditulis ke log.
- */
 import { NextRequest, NextResponse } from 'next/server';
-import '@/lib/wa-server';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import '@/lib/wa/server';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { sendWA } from '@/lib/wa';
-import { bolehPerbandingan, jumlahCek, periksaKartu } from '@/lib/perbandingan';
-import { type AturanPerbandingan, bolehLangsungUnduh, bolehVerifikasi, KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan-aturan';
+import { sendWA } from '@/lib/wa/inti';
+import { bolehPerbandingan, jumlahCek, periksaKartu } from '@/lib/perbandingan/inti';
+import { type AturanPerbandingan, bolehLangsungUnduh, bolehVerifikasi, KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan/aturan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,12 +25,10 @@ async function akun(req: NextRequest): Promise<{ db: Db; u: Akun; aturan: Aturan
   if (!u || !bolehPerbandingan(u)) return gagal('Product Comparison hanya untuk akun yang diberi akses AV Solution Tools.', 403);
   const { data: setel } = await db.from('app_settings').select('value').eq('key', KUNCI_ATURAN_PERBANDINGAN).maybeSingle();
   const aturan = rapikanAturan(setel?.value);
-  //  Bersihkan pengajuan kedaluwarsa (hemat kuota) - murah, berindeks created_at.
   await db.from(TABEL).delete().lt('created_at', new Date(Date.now() - aturan.simpanHari * 86_400_000).toISOString());
   return { db, u, aturan };
 }
 
-/** Notifikasi in-app (+ push via trigger tabel) & WA - kegagalan satu kanal tidak menggagalkan permintaan. */
 async function beritahu(db: Db, penerima: { id: string; phone_number?: string | null }[], judul: string, isi: string, refId: string, oleh: string) {
   if (!penerima.length) return;
   await db.from('notifications').insert(penerima.map(p => ({
@@ -87,7 +69,6 @@ export async function POST(req: NextRequest) {
   const judul = k.data.judul || k.data.produk.map(p => p.nama).join(' vs ');
   const { data: baru, error } = await db.from(TABEL).insert({ dibuat_oleh: u.id, dibuat_nama: u.full_name, judul, data: k.data }).select('id').single();
   if (error || !baru) return gagal('Gagal menyimpan pengajuan.', 500);
-  //  Penerima = semua yang lolos bolehVerifikasi menurut aturan Admin Panel.
   const kutip = (xs: string[]) => xs.map(t => `"${t.replace(/"/g, '')}"`).join(',');
   const filter = [`role.in.(${kutip(aturan.verifikatorRole)})`, ...(aturan.verifikatorTim.length ? [`team_type.in.(${kutip(aturan.verifikatorTim)})`] : [])].join(',');
   const { data: calon } = await db.from('users').select('id, role, team_type, jabatan, phone_number').or(filter);

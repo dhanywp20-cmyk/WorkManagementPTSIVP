@@ -4,13 +4,6 @@ import type { Ticket, TeamMember } from './shared';
 import { bolehReroute, TICKET_ADMIN_FIELDS } from './shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-/**
- * Modal "Edit Detail & Re-route" (admin) - dipindah dari
- * app/ticketing/page.tsx apa adanya (JSX identik). State & handler tetap
- * di page.tsx, komponen ini murni presentasional.
- *
- * Z.overlayTop — dibuka DARI DALAM popup detail (Z.overlay).
- */
 export function AdminEditModal({
   adminEditTicket, adminRerouteTo, setAdminRerouteTo, adminEditSaving,
   supervisorMembers, teamPTSMembers, adminEditForm, setAdminEditForm,
@@ -34,7 +27,6 @@ export function AdminEditModal({
         <TombolModal jenis="utama" onClick={simpanAdminEdit} disabled={adminEditSaving}>{adminEditSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</TombolModal>
       </>}>
           <div className="space-y-5">
-            {/* ── Re-route ── */}
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
               <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2"><IkonTeks nama="🔀" />Alihkan Pekerjaan</p>
               {bolehReroute(adminEditTicket) ? (
@@ -67,7 +59,6 @@ export function AdminEditModal({
               )}
             </div>
 
-            {/* ── Edit detail ── */}
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="✏" />Detail Ticket</p>
               <AdminEditFields fields={TICKET_ADMIN_FIELDS} value={adminEditForm} disabled={adminEditSaving}

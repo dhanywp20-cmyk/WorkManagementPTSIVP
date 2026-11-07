@@ -1,15 +1,11 @@
 'use client';
-/**
- * Baca teks brosur PDF DI PERAMBAN (pdf.js) - berkas tidak pernah diunggah. Per halaman, baris dirapikan.
- * pdf.js hanya dimuat saat dibutuhkan (build legacy: aman untuk WebView APK lama).
- */
-import { MIN_KARAKTER_TEKS, periksaBerkas } from '@/lib/perbandingan';
+import { MIN_KARAKTER_TEKS, periksaBerkas } from '@/lib/perbandingan/inti';
 
 export interface HasilBaca { halaman: string[]; jumlahHalaman: number; karakter: number }
 
 type PdfJs = typeof import('pdfjs-dist');
 let muat: Promise<PdfJs> | null = null;
-function pdfjs(): Promise<PdfJs> {
+export function pdfjs(): Promise<PdfJs> {
   muat ??= import('pdfjs-dist/legacy/build/pdf.mjs').then(m => {
     const lib = m as unknown as PdfJs;
     lib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.min.mjs', import.meta.url).toString();
@@ -18,7 +14,6 @@ function pdfjs(): Promise<PdfJs> {
   return muat;
 }
 
-/** Maks halaman yang dibaca per brosur (brosur panjang cukup halaman awal - teks dipangkas lagi sebelum ke AI). */
 const MAKS_HALAMAN = 40;
 
 export async function bacaTeksPdf(berkas: File, sinyal?: AbortSignal): Promise<HasilBaca> {
@@ -27,7 +22,6 @@ export async function bacaTeksPdf(berkas: File, sinyal?: AbortSignal): Promise<H
   if (salah) throw new Error(salah);
   const lib = await pdfjs();
   let dok: Awaited<ReturnType<PdfJs['getDocument']>['promise']>;
-  //  Tanpa font sistem: brosur hanya dibaca teksnya (pdf.js 5+ tidak lagi memakai eval sama sekali).
   const tugas = lib.getDocument({ data: new Uint8Array(await berkas.arrayBuffer()), disableFontFace: true, useSystemFonts: false });
   try {
     dok = await tugas.promise;
@@ -51,7 +45,6 @@ export async function bacaTeksPdf(berkas: File, sinyal?: AbortSignal): Promise<H
       p.cleanup();
     }
   } finally {
-    //  pdf.js 6: dokumen tidak punya destroy() lagi - tutup lewat tugas pemuatnya.
     void tugas.destroy();
   }
   const karakter = halaman.join('').replace(/\s/g, '').length;

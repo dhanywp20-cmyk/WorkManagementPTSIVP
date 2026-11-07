@@ -2,17 +2,10 @@
 import { type GolonganKabel, LEGENDA_KABEL } from '../inti';
 import { esc } from '../../bersama/cetak';
 
-/**
- * Legend warna kabel. Aturannya satu: tampil HANYA saat "Jalur kabel" dicentang - di sisi kanvas,
- * di PNG (panel samping / baris bawah, tidak menutupi gambar ruangan), dan di lembar cetak.
- * Ketujuh warna standar selalu tercantum; yang tidak dipakai di desain ini dipudarkan.
- */
-
 const hex = (w: number) => `#${w.toString(16).padStart(6, '0')}`;
 const teks = (l: (typeof LEGENDA_KABEL)[number]) => `${l.nama} - ${l.label}`;
 const HURUF = 'Segoe UI, Arial, sans-serif';
 
-/** Overlay di sisi kanan bawah kanvas 3D. */
 export function LegendaKabel({ dipakai }: { dipakai: Set<GolonganKabel> }) {
   return (
     <div className="kontrol-kanvas absolute right-2 bottom-14 z-10 rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
@@ -30,7 +23,6 @@ export function LegendaKabel({ dipakai }: { dipakai: Set<GolonganKabel> }) {
   );
 }
 
-/** Satu butir legend (garis warna + teks) di kanvas; mengembalikan lebar yang dipakai. */
 function butir(g: CanvasRenderingContext2D, x: number, cy: number, l: (typeof LEGENDA_KABEL)[number], ada: boolean, k: number): number {
   const garis = 22 * k;
   g.globalAlpha = ada ? 1 : 0.45;
@@ -42,10 +34,6 @@ function butir(g: CanvasRenderingContext2D, x: number, cy: number, l: (typeof LE
   return garis + 7 * k + g.measureText(teks(l)).width;
 }
 
-/**
- * Foto + panel legend di SAMPING kanan (kanvas baru, lebih lebar) - legend tidak menutupi ruangan.
- * `k` = skala huruf (piksel foto per piksel layar).
- */
 export function denganLegendaSamping(foto: HTMLCanvasElement, dipakai: Set<GolonganKabel>, k: number): HTMLCanvasElement {
   const ukur = document.createElement('canvas').getContext('2d')!;
   ukur.font = `600 ${Math.round(12 * k)}px ${HURUF}`;
@@ -63,7 +51,6 @@ export function denganLegendaSamping(foto: HTMLCanvasElement, dipakai: Set<Golon
   return c;
 }
 
-/** Legend mendatar (dibungkus ke baris berikutnya bila tidak muat). Mengembalikan tinggi yang dipakai. */
 export function gambarLegendaBaris(g: CanvasRenderingContext2D | null, x: number, y: number, lebar: number, dipakai: Set<GolonganKabel>, k: number): number {
   const ukur = g ?? document.createElement('canvas').getContext('2d')!;
   ukur.font = `700 ${Math.round(12 * k)}px ${HURUF}`;
@@ -80,7 +67,6 @@ export function gambarLegendaBaris(g: CanvasRenderingContext2D | null, x: number
   return cy - y + baris / 2;
 }
 
-/** Bagian legend untuk lembar cetak A4 (HTML; teks di-escape). */
 export function htmlLegendaKabel(dipakai: Set<GolonganKabel>): string {
   const isi = LEGENDA_KABEL.map(l => {
     const ada = dipakai.has(l.golongan);

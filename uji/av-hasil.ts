@@ -1,12 +1,5 @@
-/**
- * uji/av-hasil.ts - hasil Kalkulator AV disimpan ke proyek (lib/av-hasil.ts, migrasi 055).
- * Lembar dari peramban dibersihkan sebelum disimpan & dicetak ulang orang lain: hanya seksi
- * info/tabel, tanpa HTML mentah, teks dibatasi. Plus pemasangan route, tombol, dan detail proyek.
- *
- * Jalankan: npm test -- av-hasil
- */
 import { readFileSync } from 'fs';
-import { BATAS_HASIL, bersihkanLembar, periksaHasilAV } from '../lib/av-hasil';
+import { BATAS_HASIL, bersihkanLembar, periksaHasilAV } from '../lib/av/hasil';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };

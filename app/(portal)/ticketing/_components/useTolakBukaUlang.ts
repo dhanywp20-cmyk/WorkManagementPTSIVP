@@ -1,6 +1,5 @@
 'use client';
 
-/** useTolakBukaUlang - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { sendWANotif, User, TeamMember, Ticket } from './shared';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { appLink } from '@/lib/app-url';
@@ -54,7 +53,6 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
         .eq("id", rejectTargetTicket.id);
       if (error) throw error;
 
-      // Notifikasi ke pembuat tiket
       if (rejectTargetTicket.created_by) {
         const creatorUser = users.find((u) => u.username === rejectTargetTicket.created_by);
         if (creatorUser?.id) {
@@ -70,13 +68,6 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
               created_by: currentUser?.full_name || 'Admin',
             });
           } catch { }
-          /*
-            Penolakan dulu HANYA badge in-app. Artinya Sales yang melaporkan
-            masalah baru tahu tiketnya ditolak kalau kebetulan membuka
-            platform - padahal penolakan justru kabar yang paling perlu
-            segera sampai, karena dialah yang harus menindaklanjuti.
-            sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
-          */
           if (creatorUser.phone_number) {
             void sendWANotif({
               type: 'reminder_wa',
@@ -97,9 +88,6 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
         }
       }
 
-      //  Ticket ditolak berarti pekerjaannya tidak jadi - jadwal onsite yang
-      //  terlanjur dibuat harus ikut dibatalkan, bukan dibiarkan menggantung
-      //  di Reminder Schedule seolah masih akan dikerjakan.
       void tutupJadwalTicket(rejectTargetTicket, 'cancelled');
 
       await fetchData();
@@ -129,9 +117,7 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
         assigned_to_services: false,
         file_url: "", file_name: "", photo_url: "", photo_name: ""
       }]);
-      // WA ke handler saat reopen
       try {
-        // Cari handler dari teamMembers state (sudah load dari users)
         const rhTM = teamMembers.find(m => m.name === reopenAssignee);
         const { data: reopenHandler } = rhTM?.username ? await supabase
           .from("users").select("phone_number, full_name")
@@ -170,14 +156,6 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
     }
   };
 
-  /**
-   * C2 - buka kembali sisi SERVICES saja (services_status kembali "Pending"),
-   * tanpa menyentuh status/assign_name utama PTS. Boleh dipakai Team Services
-   * sendiri (membetulkan salah klik "Solved" mereka) atau Admin/Superadmin
-   * sebagai pengawasan - bukan siapa pun yang login, dan bukan cuma Admin
-   * (kalau cuma Admin, Team Services tetap harus minta tolong orang lain
-   * untuk membetulkan kesalahannya sendiri).
-   */
   const reopenServicesTicket = async () => {
     if (!reopenServicesTarget) return;
     setReopeningServices(true);

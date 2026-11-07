@@ -1,5 +1,4 @@
 'use client';
-/** Sub menu Power Connection. */
 import { bukaCetak, namaBerkas, unduhLembarPNG } from '../../bersama/cetak';
 import { TombolSalin } from '../../bersama/ui';
 import { RuangDaya } from '../daya/RuangDaya';

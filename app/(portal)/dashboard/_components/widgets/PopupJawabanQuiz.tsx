@@ -3,18 +3,8 @@ import dynamic from 'next/dynamic';
 import { Modal } from '@/components/shared';
 import type { User } from '../shared';
 
-/**
- * Impor DINAMIS, bukan statis - dan itu bukan sekadar gaya penulisan.
- *
- * UserAnswerReview hidup di TeamPage.tsx bersama seluruh mesin penilaian AI
- * (gradeEssayWithAI, daftar model, pengaturan penilai) yang HANYA berguna
- * untuk admin/penilai. Impor statis menarik semuanya ke dalam bundel
- * dashboard yang dimuat SETIAP orang yang login - termasuk Guest yang cuma
- * ingin mengintip nilai quiznya sendiri. Dengan next/dynamic, kodenya baru
- * diunduh saat popup ini BENAR-BENAR dibuka.
- */
 const UserAnswerReview = dynamic(
-  () => import('@/app/(portal)/learning-center/_components/TeamPage').then(m => m.UserAnswerReview),
+  () => import('@/app/(portal)/learning-center/_components/UlasanJawaban').then(m => m.UserAnswerReview),
   {
     ssr: false,
     loading: () => (
@@ -26,21 +16,6 @@ const UserAnswerReview = dynamic(
   }
 );
 
-/**
- * Popup "lihat jawaban" dari kartu Learning Center di dashboard.
- *
- * Membungkus komponen review yang sama dengan yang dipakai halaman Riwayat
- * Quiz penuh (isAdminView=false di sana pun sudah berarti "lihat punya
- * sendiri, tanpa kontrol penilaian") - bukan menulis ulang tampilan soal dan
- * jawaban dari nol. `autoOpenAttemptId` melompat LANGSUNG ke detail attempt
- * yang diklik, melewati daftar - orangnya sudah menunjuk quiz yang mana.
- *
- * Modal bawaan platform (lihat catatan di Modal.tsx) menangani Esc, kunci
- * gulir, dan z-index sendiri. Isinya diberi margin negatif untuk membatalkan
- * padding standar Modal (px-5 py-4) - UserAnswerReview punya header sticky
- * dan padding sendiri yang dirancang menempel ke tepi wadahnya, bukan
- * berjarak dua kali lipat karena terjebak di dalam padding modal lagi.
- */
 export function PopupJawabanQuiz({ user, attemptId, onClose }: {
   user: User; attemptId: string; onClose: () => void;
 }) {

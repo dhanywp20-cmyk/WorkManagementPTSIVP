@@ -1,12 +1,3 @@
-/**
- * lib/daftar-pilihan.ts - daftar pilihan dropdown yang diatur Admin (Admin Panel › Daftar Pilihan),
- * dibaca dari app_settings. Aturan & nilai bawaan: lib/daftar-pilihan-bawaan.ts.
- *
- * Pola sama dengan lib/merek.ts: disimpan di module scope + sessionStorage (satu query per tab,
- * tanpa kedip nilai bawaan), pendengar memperbarui semua dropdown begitu Admin menyimpan.
- * Gagal memuat = nilai yang sedang berlaku dipertahankan; pengaturan tidak boleh menghalangi kerja.
- * Tulis dijaga RLS app_settings (boleh_tulis_pengaturan = Admin / lingkup semua).
- */
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
 import { bacaDaftarPilihan, bawaanSemua, KUNCI_DAFTAR_PILIHAN, type KunciDaftar, ringkasDaftarPilihan, type SemuaDaftar } from './daftar-pilihan-bawaan';
@@ -21,7 +12,7 @@ function bacaSimpanan(): SemuaDaftar | null {
 }
 function tulisSimpanan(v: SemuaDaftar) {
   if (typeof window === 'undefined') return;
-  try { window.sessionStorage.setItem(SIMPAN, JSON.stringify(v)); } catch { /* kuota penuh - abaikan */ }
+  try { window.sessionStorage.setItem(SIMPAN, JSON.stringify(v)); } catch {  }
 }
 
 let sekarang: SemuaDaftar = bacaSimpanan() ?? bawaanSemua();
@@ -29,7 +20,6 @@ const pendengar = new Set<() => void>();
 const beriTahu = () => { for (const f of pendengar) f(); };
 let pemuatan: Promise<void> | null = null;
 
-/** Muat dari database (sekali per tab; panggilan bersamaan menunggu yang sama). */
 export function muatDaftarPilihan(): Promise<void> {
   if (pemuatan) return pemuatan;
   pemuatan = (async () => {
@@ -39,16 +29,14 @@ export function muatDaftarPilihan(): Promise<void> {
       sekarang = bacaDaftarPilihan(data?.value ?? null);
       tulisSimpanan(sekarang);
       beriTahu();
-    } catch { /* pertahankan nilai yang sedang berlaku */ }
+    } catch {  }
   })();
   return pemuatan;
 }
 
-/** Semua daftar yang sedang berlaku (di luar React, mis. ekspor Excel). Tidak pernah kosong. */
 export const daftarPilihan = (k: KunciDaftar): string[] => sekarang[k];
 export const semuaDaftarPilihan = (): SemuaDaftar => sekarang;
 
-/** Simpan dari Admin Panel; hanya daftar yang berbeda dari bawaan yang ditulis. */
 export async function simpanDaftarPilihan(semua: SemuaDaftar): Promise<{ error: string | null }> {
   const ringkas = ringkasDaftarPilihan(semua);
   const { error } = await supabase.from('app_settings')
@@ -60,7 +48,6 @@ export async function simpanDaftarPilihan(semua: SemuaDaftar): Promise<{ error: 
   return { error: null };
 }
 
-/** Daftar pilihan untuk dropdown, ikut berubah saat Admin menyimpan. */
 export function useDaftarPilihan(k: KunciDaftar): string[] {
   const [nilai, setNilai] = useState<string[]>(() => sekarang[k]);
   useEffect(() => {

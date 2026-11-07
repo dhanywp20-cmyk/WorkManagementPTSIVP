@@ -1,27 +1,8 @@
 'use client';
-/** DashboardKPI-ubin.tsx - dipecah dari DashboardKPI.tsx (scripts/pecah-modul.mjs); DashboardKPI.tsx tetap mengekspor ulang semuanya. */
-import { BAYANG_UBIN, RelAksen, UBIN } from '@/app/(portal)/dashboard/_components/widgets/primitives';
+import { BAYANG_UBIN, RelAksen, UBIN } from '@/components/shared/ubin';
 import { Ikon } from '@/components/shared/Ikon';
 import React from 'react';
 
-/**
- * Bar mendatar ringkas.
- *
- * Bilahnya SENGAJA tipis (h-2.5, bukan h-4). Isi kartu ini sering cuma dua
- * atau tiga baris - mis. "Ticket Open per Handler" yang berisi dua orang
- * dengan satu tiket masing-masing. Bilah setebal 16px untuk data seperti itu
- * memakan sepertiga baris dashboard hanya untuk memberi tahu dua angka yang
- * sama besar, dan dua bilah sama panjang memang tidak menyampaikan apa pun -
- * yang dibaca orang di sana adalah angkanya, bukan panjangnya.
- */
-/*
-  Satu warna aksen untuk SETIAP deret tunggal di dashboard ini.
-
-  Sebelumnya tiap kartu memilih warnanya sendiri (teal, ungu, oranye, cyan,
-  indigo) tanpa arti apa pun - warna jadi hiasan, bukan informasi. Dengan satu
-  aksen, warna yang BERBEDA otomatis berarti sesuatu, dan itulah yang dipakai
-  tiga token status di bawahnya.
-*/
 export const AKSEN  = '#4f46e5';
 
 export const BAIK   = '#059669';
@@ -38,10 +19,6 @@ export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data
         <div key={i} className="flex items-center gap-2">
           <span title={d.label} className="text-[11px] font-semibold shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:lebarLabel, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
-            {/*  Opacity TETAP. Versi lama memudarkan tiap batang menurut
-                peringkatnya (0.85 - i*0.07), jadi warna ikut menyandikan
-                urutan - padahal panjang batang sudah melakukannya, dan
-                batang terbawah terbaca pudar seolah datanya kurang sahih. */}
             <div className="h-full rounded-full transition-all duration-700"
               style={{ width:`${(d.value/max)*100}%`, background: color ?? AKSEN }}/>
           </div>
@@ -52,7 +29,6 @@ export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data
   );
 }
 
-/** Satu baris rincian di kartu modul: label · bilah tipis · angka. */
 export function BarisRincian({ label, value, total, warna, teks }: {
   label:string; value?:number; total?:number; warna?:string; teks?:React.ReactNode;
 }) {
@@ -71,12 +47,6 @@ export function BarisRincian({ label, value, total, warna, teks }: {
   );
 }
 
-/**
- * Kartu modul: anatomi seragam (kepala berwarna modul, satu angka utama,
- * rincian di tepi bawah) TAPI tidak seragam sampai membosankan - rel aksen
- * di tepi atas, chip ikon, dan percikan opsional membuat sederet ubin putih
- * punya identitas masing-masing tanpa mengubah permukaannya.
- */
 export function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik, kaki, kelas, children }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
   angka: React.ReactNode; satuan: string; percik?: number[];
@@ -99,12 +69,6 @@ export function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik,
   );
 }
 
-/**
- * Garis percikan + bidang isi. SENGAJA hanya dipakai di tempat yang deret
- * aslinya memang ada (monthlyTickets). Sparkline hiasan di kartu yang tidak
- * punya riwayat adalah kebohongan grafis: bentuknya terbaca seperti tren
- * padahal tidak ada datanya.
- */
 export function Percik({ nilai, warna, lebar = 88, tinggi = 30 }: {
   nilai: number[]; warna: string; lebar?: number; tinggi?: number;
 }) {
@@ -131,12 +95,6 @@ export function Percik({ nilai, warna, lebar = 88, tinggi = 30 }: {
   );
 }
 
-/**
- * Cincin kemajuan. Bentuk lingkaran SAH di sini - tidak seperti donat yang
- * kemarin dilepas - karena yang diplot benar-benar bagian-dari-keseluruhan
- * (hari piket terisi dari total hari, attempt lulus dari total attempt),
- * bukan sekadar beberapa angka yang kebetulan berdampingan.
- */
 export function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
   nilai: number; dari: number; warna: string; ukuran?: number; teks: React.ReactNode;
 }) {
@@ -157,34 +115,15 @@ export function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
   );
 }
 
-/**
- * Rel judul seksi. Tanpa ini kisinya adalah 11 ubin seragam tanpa jeda sama
- * sekali - itulah yang terbaca "monoton": bukan karena tiap ubin jelek, tapi
- * karena mata tidak pernah diberi tempat berhenti.
- */
 export function RelSeksi({ judul }: { judul: string }) {
   return (
     <div className="lg:col-span-12 flex items-center gap-2.5 mt-1 -mb-0.5">
-      {/*
-        Keping putih, bukan teks telanjang.
-
-        Judul seksi ini adalah SATU-SATUNYA teks di halaman yang duduk langsung
-        di atas latar dashboard - semua yang lain ada di dalam ubin putih.
-        Latar itu foto (gambarLatarDasbor), jadi terangnya berubah-ubah sepanjang
-        gambar: abu-abu slate-500 yang terbaca di satu tempat hilang sama sekali
-        di tempat lain. Warna teks apa pun akan salah di sebagian gambar; yang
-        benar adalah membawa latarnya sendiri.
-      */}
-      {/* Keping putih tipis tetap dipakai: latar beranda bisa berupa foto
-          (setelan "Latar Dashboard" = Gambar), dan teks polos di atas foto
-          tidak terbaca. Di latar netral keping ini nyaris tak terlihat. */}
       <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 shrink-0 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-xs">{judul}</span>
       <span aria-hidden="true" className="flex-1 h-px bg-slate-200"/>
     </div>
   );
 }
 
-/** Kepala ubin seragam: chip ikon berwarna modul + judul + catatan kecil. */
 export function KepalaUbin({ ikon, judul, warna, catatan }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
 }) {
@@ -196,7 +135,6 @@ export function KepalaUbin({ ikon, judul, warna, catatan }: {
   );
 }
 
-/** Kaki ubin: satu keterangan kiri, satu angka kanan, dipisah garis putus. */
 export function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
   return (
     <div className="flex justify-between items-center mt-2.5 pt-2.5" style={{ borderTop: '1px dashed rgba(15,23,42,0.10)' }}>
@@ -206,28 +144,11 @@ export function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan:
   );
 }
 
-/**
- * Pita ringkas gelap di puncak halaman.
- *
- * Akar keluhan "monoton" bukan warna tiap ubin, tapi TIDAK ADANYA jangkar:
- * 11 kotak putih berukuran mirip di atas kanvas terang, tanpa satu pun titik
- * yang lebih berat dari yang lain, jadi mata tidak tahu harus mulai dari
- * mana. Satu bidang gelap melebar di atas menyelesaikan itu sekaligus
- * memberi tempat angka-angka yang memang paling sering ditanyakan.
- *
- * Semua angka di sini NYATA. Hanya tiket yang punya deret bulanan, jadi
- * hanya tiket yang memakai percikan dan selisih "vs bulan lalu"; empat
- * lainnya memakai meter rasio yang benar-benar bisa dihitung dari datanya.
- */
 export function PitaItem({ label, angka, satuan, ikon, warna, visual, children }: {
   label: string; angka: React.ReactNode; satuan?: string; ikon: string; warna: string;
-  /** Visual kecil di kanan (percikan / cincin) - opsional. */
   visual?: React.ReactNode; children?: React.ReactNode;
 }) {
   return (
-    /*  Tiap angka kini ubin sendiri (dulu enam kolom bergaris dalam satu
-        kartu - terbaca seperti tabel). Ikon berwarna lembut memberi
-        identitas cepat; angka tetap tinta gelap supaya kontrasnya aman. */
     <div className={`${UBIN} p-4! flex-row! items-center! gap-3 text-left`} style={{ boxShadow: BAYANG_UBIN }}>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500 truncate">
@@ -246,7 +167,6 @@ export function PitaItem({ label, angka, satuan, ikon, warna, visual, children }
   );
 }
 
-/** Cincin rasio kecil untuk ubin ringkasan. */
 export function CincinMini({ pct, warna }: { pct: number; warna: string }) {
   const r = 20, k = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
   return (
