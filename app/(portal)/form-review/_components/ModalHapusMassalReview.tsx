@@ -17,7 +17,7 @@ export function ModalHapusMassalReview({ selectedIds, setSelectedIds, setBulkCon
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+      <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1000 p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
         <div className="bg-white rounded-kartu shadow-modal max-w-sm w-full overflow-hidden">
           <KepalaModal judul={`Hapus ${selectedIds.size} Review?`} keterangan="Tindakan ini tidak dapat dibatalkan." onTutup={() => setBulkConfirm(false)} />
           <div className="p-6">
@@ -33,7 +33,7 @@ export function ModalHapusMassalReview({ selectedIds, setSelectedIds, setBulkCon
                 }
                 else notify('error', 'Gagal: ' + error.message);
                 setBulkDeleting(false);
-              }} className="tombol-bahaya flex-[2] py-2.5 rounded-kontrol font-bold text-sm">
+              }} className="tombol-bahaya flex-2 py-2.5 rounded-kontrol font-bold text-sm">
                 Ya, Hapus Permanen
               </button>
             </div>

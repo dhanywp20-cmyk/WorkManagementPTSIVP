@@ -60,7 +60,7 @@ export function TabLateTicket() {
   if (!aktif) return null;
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
           <h2 className="font-bold text-gray-800"><IkonTeks nama="🕐" />Late Ticket Queue</h2>
           <p className="text-xs text-gray-500 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
@@ -93,7 +93,7 @@ export function TabLateTicket() {
             )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-100">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sudah dilampirkan</p>
         </div>
@@ -119,7 +119,7 @@ export function TabLateTicket() {
                     </div>
                     <div className="flex items-center gap-3">
                       {lt.ticket_value > 0 && <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value)}</span>}
-                      {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
+                      {lt.is_sunset && <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
                       {bisaLepas
                         ? (
                           <button onClick={() => lepas(lt.id)} disabled={sibuk !== null}

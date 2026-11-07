@@ -184,10 +184,10 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
   return (
     <div className="flex flex-col overflow-hidden tinggi-materi-lc">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex-shrink-0"
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 shrink-0"
         style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-tight"><IkonTeks nama="📚" />Materi Training</h1>
+          <h1 className="text-base sm:text-lg sm:leading-7 font-bold text-slate-800 tracking-tight leading-tight"><IkonTeks nama="📚" />Materi Training</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {isAdmin ? 'Kelola & organisir materi training team' : 'Materi training tersedia untuk dipelajari'}
           </p>
@@ -213,7 +213,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
         </div>
       </div>
 
-      <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0 flex-wrap"
+      <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs shrink-0 flex-wrap"
         style={{ background: 'rgba(248,250,252,0.8)' }}>
         <span className="text-slate-500"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-400">|</span>
@@ -281,7 +281,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                                   className={`w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5
                                     ${isSelected ? 'shadow-lg -translate-y-0.5' : 'border-slate-200 bg-white'}`}
                                   style={isSelected ? { borderColor: col.icon, background: col.light } : {}}>
-                                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-sm transition-all"
+                                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-xs transition-all"
                                     style={{ background: isSelected ? col.gradient : col.light }}>
                                     <svg aria-hidden="true" focusable="false" width="22" height="22" viewBox="0 0 24 24" fill="none">
                                       <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
@@ -371,12 +371,12 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
           {panelOpen && panelCol && selectedFolderNode ? (
             <>
-              <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
+              <div className="flex items-center gap-3 px-5 py-4 shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${panelCol.light}cc, rgba(255,255,255,0.55))`,
                   borderBottom: `1px solid ${panelCol.icon}22`,
                 }}>
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0"
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-md shrink-0"
                   style={{ background: panelCol.gradient }}>
                   <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z"
@@ -406,7 +406,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                   </>
                 )}
                 <button aria-label="Tutup" onClick={() => setSelectedFolderKey(null)}
-                  className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all flex-shrink-0">✕</button>
+                  className="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg border border-slate-200 transition-all shrink-0">✕</button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4" style={{ background: 'transparent' }}>
@@ -443,7 +443,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
               <div>
                 <label htmlFor="f-learning-center-components-materipage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
                 <input id="f-learning-center-components-materipage-1" value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="contoh: Pengenalan Produk Microvision" autoFocus />
               </div>
               <div>
@@ -454,7 +454,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                   value={form.folder_path}
                   onChange={e => setForm(p => ({ ...p, folder_path: e.target.value }))}
                   list="folder-path-suggestions"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="contoh: Produk/Microvision" />
                 <datalist id="folder-path-suggestions">
                   {existingPaths.map(p => <option key={p} value={p} />)}
@@ -468,7 +468,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                   Link OneDrive <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <input id="f-learning-center-components-materipage-3" value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="https://1drv.ms/b/s!..." />
               </div>
               <div>
@@ -477,7 +477,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                 </label>
                 <textarea id="f-learning-center-components-materipage-4" value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
                   rows={3} placeholder="Paste ringkasan atau poin-poin materi..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
                 <p className="text-xs text-slate-500 mt-1">{form.content_text.length} karakter</p>
               </div>
             </div>
@@ -487,7 +487,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                 Batal
               </button>
               <button onClick={handleSave} disabled={uploading}
-                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all disabled:opacity-60">
                 {uploading ? '💾 Menyimpan...' : '💾 Simpan Materi'}
               </button>
             </div>
@@ -498,7 +498,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
 
       {tulis && renameFolder && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-sm border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -513,7 +513,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
                 value={renameFolder.newName}
                 onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
                 onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setRenameFolder(null); }}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-1"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-1"
                 autoFocus
                 placeholder="Nama folder baru..."
               />

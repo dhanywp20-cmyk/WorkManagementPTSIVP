@@ -233,7 +233,7 @@ export function AdminDashboard({ user }: { user: User }) {
           <RingkasanKuis o={overviewStats} />
 
           <div className="min-w-0">
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="px-5 py-3.5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap"
@@ -262,7 +262,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   <select aria-label="Filter divisi" value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
                     disabled={activeTeam !== 'Sales'}
                     aria-hidden={activeTeam !== 'Sales'}
-                    className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
+                    className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-hidden focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
                     <option value="">Semua Divisi</option>
                     {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
                   </select>
@@ -370,7 +370,7 @@ export function AdminDashboard({ user }: { user: User }) {
           return (
             <section>
               <SectionHeader><IkonTeks nama="📈" />Statistik Per Sesi Quiz</SectionHeader>
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
+              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-5">
                 <div className="flex flex-wrap items-start gap-8">
                   <div className="flex flex-col items-center gap-1.5">
                     <DonutChart size={92} strokeWidth={13}
@@ -445,7 +445,7 @@ export function AdminDashboard({ user }: { user: User }) {
         {divisionStats.length > 0 && (
           <section>
             <SectionHeader><IkonTeks nama="🏢" />Ranking Per Divisi / Jabatan</SectionHeader>
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
@@ -516,7 +516,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
         <section>
           <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru</SectionHeader>
-          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
+          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs" style={{ background: 'rgba(255,255,255,0.90)' }}>
             <div className="divide-y divide-slate-100">
               {filteredRecent.length === 0 && (
                 <div className="text-center text-slate-500 py-10 text-sm">
@@ -529,7 +529,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 const isFast = tq >= 5 && ts < tq * 5;
                 return (
                   <div key={a.id} className="stagger-item flex items-center gap-4 px-6 py-3.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
                       {a.users?.full_name?.[0] ?? '?'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -538,16 +538,16 @@ export function AdminDashboard({ user }: { user: User }) {
                     </div>
                     <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
                     {isFast && (
-                      <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shrink-0">
                         <Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.round(ts)}s
                       </span>
                     )}
                     {(a.tab_switches ?? 0) > 0 && (
-                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
                         <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.tab_switches}× tab
                       </span>
                     )}
-                    <span className="text-xs text-slate-500 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+                    <span className="text-xs text-slate-500 shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
                 );
               })}

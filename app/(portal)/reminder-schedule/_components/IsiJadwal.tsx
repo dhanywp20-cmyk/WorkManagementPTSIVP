@@ -91,7 +91,7 @@ export function IsiJadwal() {
               </div>
 
               {!isGuest && (
-                <div className="hidden lg:block flex-shrink-0">
+                <div className="hidden lg:block shrink-0">
                   <MiniCalendar
                     reminders={reminders}
                     calendarMonth={calendarMonth}

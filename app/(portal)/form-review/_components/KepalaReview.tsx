@@ -8,7 +8,7 @@ export function KepalaReview({ loadingBar, setShowBellPopup, jumlahAktif }: {
     <div className="sticky top-0 z-50 animate-slide-down anim-d0"
       style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #b45309' }}>
       {loadingBar > 0 && (
-        <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
+        <div className="absolute top-0 left-0 w-full h-0.5 z-60 overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
           <div
             className="h-full transition-all duration-300 ease-out"
             style={{

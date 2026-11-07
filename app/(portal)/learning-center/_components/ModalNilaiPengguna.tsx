@@ -13,12 +13,12 @@ export function ModalNilaiPengguna({ selectedUser, setSelectedUser, userAttempts
   if (!selectedUser) return null;
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
         onClick={() => setSelectedUser(null)}>
         <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col"
           onClick={e => e.stopPropagation()}>
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
             <div>
               <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
               <p className="text-xs text-slate-500 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
@@ -90,7 +90,7 @@ export function ModalNilaiPengguna({ selectedUser, setSelectedUser, userAttempts
                             {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full"><IkonTeks nama="🚨" />Submit terlalu cepat</span>}
                           </div>
                         </div>
-                        <div className="text-right flex-shrink-0 space-y-0.5">
+                        <div className="text-right shrink-0 space-y-0.5">
                           <p className="text-xs font-semibold text-slate-600">{a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar</p>
                           <p className="text-[11px] text-slate-500">KKM {passing}</p>
                           {a.submitted_at && <p className="text-[11px] text-slate-500">{new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}

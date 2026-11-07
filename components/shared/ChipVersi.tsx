@@ -4,7 +4,7 @@ import React from 'react';
 const VERSI    = process.env.NEXT_PUBLIC_VERSI_APP || '';
 const KOMIT    = process.env.NEXT_PUBLIC_KOMIT_APP || '';
 
-export function ChipVersi({ gaya = 'gelap', className = '' }: {
+export function ChipVersi({ gaya = 'gelap', className = 'inline-flex' }: {
   gaya?: 'gelap' | 'terang';
   className?: string;
 }) {
@@ -15,7 +15,7 @@ export function ChipVersi({ gaya = 'gelap', className = '' }: {
   return (
     <span
       title={`Versi ${VERSI}${KOMIT ? ` · commit ${KOMIT}` : ''}`}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide ${className}`}
+      className={`items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide ${className}`}
       style={terang
         ? { color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }
         : { color: '#64748b', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(15,23,42,0.08)' }}>

@@ -20,7 +20,7 @@ export function TabJadwalTranche() {
             <div className="flex gap-2 items-center">
               <label htmlFor="f-incentive-pts-page-1" className="text-xs font-bold text-gray-500">Tahun Bayar:</label>
               <select id="f-incentive-pts-page-1" value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
-                className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
+                className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-hidden focus:ring-2 focus:ring-rose-400">
                 {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                 {uniqueYears.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
               </select>
@@ -46,7 +46,7 @@ export function TabJadwalTranche() {
               </button>
             </div>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -87,7 +87,7 @@ export function TabJadwalTranche() {
                                 {menyimpang && (
                                   <span title={`Menurut skema seharusnya ${seharusnya} (BAST ${bast} + tahun ke-${tahunKe}). `
                                     + 'Tahapan ini kemungkinan dibuat sebelum aturannya diperbaiki — hapus tahapannya lalu Generate ulang.'}
-                                    className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
+                                    className="px-1.5 py-0.5 rounded-sm text-[11px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
                                     <IkonTeks nama="⚠" />harusnya {seharusnya}
                                   </span>
                                 )}

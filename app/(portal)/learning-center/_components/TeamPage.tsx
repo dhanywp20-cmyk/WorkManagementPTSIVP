@@ -45,7 +45,7 @@ export function TeamPage() {
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />
       </div>
       <div className="p-4 sm:p-8">
-        <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
+        <div className="rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto"
           style={{ background: '#ffffff' }}>
           <table className="w-full text-sm table-zebra">
             <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
@@ -80,7 +80,7 @@ export function TeamPage() {
                   <tr key={u.id} className="stagger-item hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
                           {u.full_name?.[0]?.toUpperCase()}
                         </div>
                         <div>

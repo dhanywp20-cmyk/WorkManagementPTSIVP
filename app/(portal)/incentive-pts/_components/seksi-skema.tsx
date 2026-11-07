@@ -4,7 +4,7 @@ import { SkemaInsentif, hitungPembagian, persenInstaller } from '@/lib/incentive
 import { IkonTeks } from '@/components/shared/Ikon';
 
 export const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
-export const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100';
+export const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-hidden focus:border-rose-400 focus:ring-2 focus:ring-rose-100';
 
 export const CONTOH = 5_000_000;
 
@@ -32,7 +32,7 @@ export function Seksi({ no, judul, ket, warna, children }: {
   return (
     <section className="rounded-2xl bg-slate-100 border border-slate-200 p-3 sm:p-4">
       <div className="flex items-start gap-2.5 mb-3">
-        <span className="flex-shrink-0 w-6 h-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center mt-0.5"
+        <span className="shrink-0 w-6 h-6 rounded-lg text-white text-[11px] font-black flex items-center justify-center mt-0.5"
           style={{ background: warna }} aria-hidden="true">{no}</span>
         <div className="min-w-0">
           <h3 className="font-bold text-gray-800 text-sm leading-tight">{judul}</h3>
@@ -119,7 +119,7 @@ export function SeksiDaerahRemote({ sk, ubah, pratinjau }: {
             dan ini ikut berubah.
           </p>
           </div>
-          <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer flex-shrink-0">
+          <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer shrink-0">
             <input type="checkbox" checked={sk.porsiRemote.aktif}
               onChange={e => ubah({ porsiRemote: { ...sk.porsiRemote, aktif: e.target.checked } })}
               aria-label="Atur porsi Remote sendiri" />
@@ -145,7 +145,7 @@ export function SeksiDaerahRemote({ sk, ubah, pratinjau }: {
                     {barisPeran.map(b => (
                       <div key={b.k} className="flex items-center gap-2">
                         <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
-                        <div className="relative w-24 flex-shrink-0">
+                        <div className="relative w-24 shrink-0">
                           <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
                             onChange={e => ubah({ porsiRemote: { ...sk.porsiRemote,
                               [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
@@ -272,7 +272,7 @@ export function SeksiAturanPencairan({ sk, ubah, totalTranche }: {
                   {[{ k: 'pic', l: 'Manager (sebagai PIC)' }, { k: 'support', l: 'Tim Support' }].map(b => (
                     <div key={b.k} className="flex items-center gap-2 mb-1.5 last:mb-0">
                       <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
-                      <div className="relative w-20 flex-shrink-0">
+                      <div className="relative w-20 shrink-0">
                         <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
                           onChange={e => ubah({ managerSebagaiPic: { ...sk.managerSebagaiPic,
                             [kunciPeta]: { ...peta, [b.k]: parseFloat(e.target.value) || 0 } } })}
@@ -291,7 +291,7 @@ export function SeksiAturanPencairan({ sk, ubah, totalTranche }: {
             <span className="text-[11px] font-black uppercase tracking-widest text-violet-700">
               Supervisor merangkap PIC — tabel porsi tersendiri
             </span>
-            <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer flex-shrink-0">
+            <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer shrink-0">
               <input type="checkbox" checked={sk.supervisorSebagaiPic.aktif}
                 onChange={e => ubah({ supervisorSebagaiPic: { ...sk.supervisorSebagaiPic, aktif: e.target.checked } })}
                 aria-label="Atur porsi Supervisor-sebagai-PIC sendiri" />
@@ -325,7 +325,7 @@ export function SeksiAturanPencairan({ sk, ubah, totalTranche }: {
                         {barisPeran.map(b => (
                           <div key={b.k} className="flex items-center gap-2">
                             <span className="text-xs text-gray-600 flex-1 truncate">{b.l}</span>
-                            <div className="relative w-20 flex-shrink-0">
+                            <div className="relative w-20 shrink-0">
                               <input type="number" min={0} max={100} step="0.01" value={peta[b.k] ?? 0}
                                 onChange={e => ubah({ supervisorSebagaiPic: { ...sk.supervisorSebagaiPic,
                                   [kunciMode]: { ...sk.supervisorSebagaiPic[kunciMode],

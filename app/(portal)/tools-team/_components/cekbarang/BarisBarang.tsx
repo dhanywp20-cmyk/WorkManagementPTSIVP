@@ -3,7 +3,7 @@ import { memo } from 'react';
 import { Check, Trash2, X } from 'lucide-react';
 import type { ItemBarang, StatusCek } from '@/lib/checklist/barang';
 
-const kelasIsian = 'min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-base sm:text-[13px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
+const kelasIsian = 'min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-base sm:text-[13px] text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
 export const GRID_CEK = 'grid grid-cols-[1.75rem_minmax(0,1fr)_auto] sm:grid-cols-[2rem_minmax(0,1fr)_6.5rem_5.75rem_minmax(0,15rem)] gap-x-3';
 
@@ -37,7 +37,7 @@ export const BarisBarang = memo(function BarisBarang({ it, no, ubah, onUbah, onH
   }
 
   if (it.grup) {
-    return <li className="px-3 py-2 bg-slate-100 text-[12px] font-bold uppercase tracking-wide text-slate-700 break-words">{it.nama}</li>;
+    return <li className="px-3 py-2 bg-slate-100 text-[12px] font-bold uppercase tracking-wide text-slate-700 wrap-break-word">{it.nama}</li>;
   }
 
   const jumlah = [it.qty, it.satuan].filter(Boolean).join(' ') || '-';
@@ -46,11 +46,11 @@ export const BarisBarang = memo(function BarisBarang({ it, no, ubah, onUbah, onH
     <li className={`${GRID_CEK} gap-y-1.5 items-center px-3 py-2.5 ${it.status === 'ok' ? 'bg-emerald-50/60' : it.status === 'tidak' ? 'bg-rose-50/70' : ''}`}>
       <span className="text-center text-[12px] tabular-nums text-slate-500">{no}</span>
       <div className="min-w-0">
-        <p className="text-[13.5px] font-semibold text-slate-900 break-words leading-snug">{it.nama || '-'}</p>
-        {it.spek && <p className="text-[11.5px] text-slate-500 break-words">{it.spek}</p>}
+        <p className="text-[13.5px] font-semibold text-slate-900 wrap-break-word leading-snug">{it.nama || '-'}</p>
+        {it.spek && <p className="text-[11.5px] text-slate-500 wrap-break-word">{it.spek}</p>}
         <p className="sm:hidden text-[11.5px] text-slate-600 tabular-nums">Qty: {jumlah}</p>
       </div>
-      <span className="hidden sm:block text-[13px] tabular-nums text-slate-700 break-words">{jumlah}</span>
+      <span className="hidden sm:block text-[13px] tabular-nums text-slate-700 wrap-break-word">{jumlah}</span>
       <div className="flex gap-1.5 justify-end sm:justify-center" role="group" aria-label={`Hasil cek ${it.nama}`}>
         <button type="button" onClick={() => atur('ok')} aria-pressed={it.status === 'ok'} title="Sesuai / ada"
           className={`w-10 h-10 sm:w-9 sm:h-9 grid place-items-center rounded-lg border transition-colors ${it.status === 'ok' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-400 hover:text-emerald-700 hover:border-emerald-300'}`}>

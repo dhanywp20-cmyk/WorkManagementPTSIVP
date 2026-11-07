@@ -59,7 +59,7 @@ export default function Desain3D() {
   return (
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
-      <div className={layarPenuh ? 'fixed inset-0 z-[950] flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
+      <div className={layarPenuh ? 'fixed inset-0 z-950 flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
         <BilahAlat a={a} />
 
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
@@ -76,7 +76,7 @@ export default function Desain3D() {
           {legendaKabel && <LegendaKabel dipakai={legendaKabel} />}
           <KontrolKanvas a={a} />
           {lihatVersi && (
-            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 max-w-[calc(100%-120px)] px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[12px] font-semibold shadow text-center">
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 max-w-[calc(100%-120px)] px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[12px] font-semibold shadow-sm text-center">
               <span title="Versi yang ditautkan. Menyimpan membuat versi baru dari isi ini; riwayat tidak berubah.">v{lihatVersi.versi} · terbaru v{lihatVersi.terbaru}</span>
             </div>
           )}

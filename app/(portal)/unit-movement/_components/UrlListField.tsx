@@ -14,12 +14,12 @@ export function UrlListField({ label, icon, value, onChange }: {
       <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
       <div className="flex gap-2">
         <input type="text"
-          className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+          className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-hidden transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
           placeholder="Paste link Google Drive / URL..."
           value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&(e.preventDefault(),add())}/>
         <button type="button" onClick={add}
-          className="tombol-utama px-3 py-2.5 rounded-kontrol text-xs font-bold flex-shrink-0">
+          className="tombol-utama px-3 py-2.5 rounded-kontrol text-xs font-bold shrink-0">
           + Tambah
         </button>
       </div>
@@ -31,7 +31,7 @@ export function UrlListField({ label, icon, value, onChange }: {
               <span className="text-sm"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-semibold text-blue-600 flex-1 truncate hover:underline">{url}</a>
-              <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-600 hover:text-red-700 font-bold text-xs flex-shrink-0">✕</button>
+              <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-600 hover:text-red-700 font-bold text-xs shrink-0">✕</button>
             </div>
           ))}
         </div>

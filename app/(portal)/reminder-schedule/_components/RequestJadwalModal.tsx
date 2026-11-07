@@ -40,7 +40,7 @@ interface RequestJadwalModalProps {
 }
 
 const inputCls =
-  'w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
+  'w-full rounded-lg px-3 py-2 text-xs outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
 const inputStyle = {
   background: '#ffffff',
   border: '1px solid rgba(0,0,0,0.12)',
@@ -101,7 +101,7 @@ export function RequestJadwalModal({
 
   return (
     <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-3 sm:p-4" style={LATAR_MODAL}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1100 p-3 sm:p-4" style={LATAR_MODAL}>
       <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
         <KepalaModal judul="Request Jadwal" keterangan="Permintaan dikirim ke Admin untuk disetujui & ditugaskan ke Team PTS" onTutup={onClose} />
 
@@ -115,7 +115,7 @@ export function RequestJadwalModal({
             style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
           >
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0"
               style={{ background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' }}
             >
               {salesName.charAt(0).toUpperCase()}
@@ -233,7 +233,7 @@ export function RequestJadwalModal({
 
           </div>
 
-          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
+          <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Kategori *
@@ -260,7 +260,7 @@ export function RequestJadwalModal({
                     <span className="text-xl"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
                     {sel && (
-                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -417,7 +417,7 @@ export function RequestJadwalModal({
             className="rounded-xl p-3 flex items-start gap-3"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
           >
-            <span className="text-lg flex-shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            <span className="text-lg shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-xs font-bold text-amber-700">Alur Approval</p>
               <p className="text-[11px] text-amber-700 leading-relaxed mt-0.5">
@@ -432,7 +432,7 @@ export function RequestJadwalModal({
           </div>
         </div>
 
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+        <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70">
           {formErr && (
             <div className="px-3 py-2 rounded-lg text-xs font-medium text-red-700 bg-red-50 border border-red-200 mb-2">{formErr}</div>
           )}

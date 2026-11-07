@@ -295,7 +295,7 @@ export function SchemeTab({ olehNama, notify }: {
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-gray-700">{labelSkema(v.scheme)}</span>
                     {i === 0 && (
-                      <span className="ml-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">BERLAKU</span>
+                      <span className="ml-2 text-[10px] font-black px-1.5 py-0.5 rounded-sm bg-emerald-100 text-emerald-700">BERLAKU</span>
                     )}
                   </div>
                   <span className="text-[11px] text-gray-500 whitespace-nowrap">

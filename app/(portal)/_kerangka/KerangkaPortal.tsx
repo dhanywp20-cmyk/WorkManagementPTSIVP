@@ -375,15 +375,15 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }
 
   const renderHeader = (withBackBtn = false) => (
-    <div className="kepala-3d bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
+    <div className="kepala-3d bg-white/80 backdrop-blur-md shadow-md shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
       <div className="w-full px-3 md:px-4 py-3 md:py-3.5">
         <div className="flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-            <LogoMerek ukuran="sm" className="md:hidden" />
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <LogoMerek ukuran="sm" className="flex md:hidden" />
             <LogoMerek ukuran="md" className="hidden md:flex" />
             <div>
               <div className="flex items-center gap-1.5 md:gap-2.5">
-                <h1 className="text-sm md:text-xl font-bold text-slate-800 tracking-tight leading-tight">
+                <h1 className="text-sm md:text-xl md:leading-7 font-bold text-slate-800 tracking-tight leading-tight">
                   <span className="hidden sm:inline">{merek.namaPlatform}</span>
                   <span className="sm:hidden">{merek.namaPlatformSingkat}</span>
                 </h1>
@@ -396,7 +396,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             {currentUser && (
               <GlobalSearch
                 currentUser={currentUser}
@@ -407,8 +407,8 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
             )}
             {!showSidebar && (
-              <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+              <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-xs">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
                   style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </div>
@@ -421,7 +421,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
             {currentUser && (
               <button type="button" onClick={() => setShowUserProfile(true)} aria-label={`Profil ${currentUser.full_name ?? ''}`}
-                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
                 style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                 {currentUser.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
               </button>
@@ -570,7 +570,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div ref={setIsiEl} className={layarPenuh
-                ? 'isi-portal fixed inset-0 z-[300] bg-white overflow-auto'
+                ? 'isi-portal fixed inset-0 z-300 bg-white overflow-auto'
                 : 'isi-portal w-full h-full overflow-auto relative'}>
                 {children}
               </div>

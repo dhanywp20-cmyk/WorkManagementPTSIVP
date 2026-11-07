@@ -57,7 +57,7 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   const t = 'h-9 grid place-items-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 active:bg-blue-100';
   return (
     <div className="flex items-stretch gap-2" role="group" aria-label="Geser cepat">
-      <div className="grid grid-cols-3 gap-1 w-[7.5rem]">
+      <div className="grid grid-cols-3 gap-1 w-30">
         <span />
         <button type="button" className={t} onClick={() => geser(0, 1, 0)} title="Maju / menjauh (↑)" aria-label="Maju"><ChevronUp size={16} /></button>
         <span />

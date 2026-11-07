@@ -382,7 +382,7 @@ export function FormReviewPageInner() {
     !r.grade_product_knowledge && !r.grade_product_knowledge_bast
   );
 
-  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
+  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   if (!appReady) return <LoadingScreen message={loadingMessage} accentColor="#7c3aed" />;
@@ -490,7 +490,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
@@ -499,7 +499,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari sales..." />
                 </div>
               </div>
@@ -508,7 +508,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari handler..." />
                 </div>
               </div>
@@ -517,7 +517,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>

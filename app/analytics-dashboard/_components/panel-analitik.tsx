@@ -7,7 +7,7 @@ export function Panel({ title, icon, color, borderClr, count, children }: {
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col"
       style={{ background: 'rgba(255,255,255,0.97)', border: `1px solid ${borderClr}`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0"
         style={{ background: `${color}10`, borderBottom: `1px solid ${borderClr}` }}>
         <span className="text-base select-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="font-bold text-sm flex-1" style={{ color }}>{title}</span>
@@ -38,13 +38,13 @@ export function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }
   return (
     <div className="flex items-start gap-3 px-3 py-2 rounded-xl"
       style={{ background: `${dot}0C`, border: `1px solid ${dot}20` }}>
-      <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ background: dot }} />
+      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: dot }} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-800 truncate">{title}</p>
         <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>
       </div>
       {badge && (
-        <span className="text-[11px] font-black px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 mt-0.5"
+        <span className="text-[11px] font-black px-1.5 py-0.5 rounded-sm whitespace-nowrap shrink-0 mt-0.5"
           style={{ background: badgeBg ?? '#f3f4f6', color: badgeColor ?? '#374151', border: `1px solid ${badgeBorder ?? '#d1d5db'}` }}>
           {badge}
         </span>

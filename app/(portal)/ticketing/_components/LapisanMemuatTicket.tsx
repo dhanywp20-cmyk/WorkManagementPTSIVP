@@ -7,7 +7,7 @@ export function LapisanMemuatTicket({ showLoadingPopup, loadingMessage, uploadin
 }) {
   if (showLoadingPopup) return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-[1100]" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+      <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-1100" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
         <div className="bg-white rounded-kartu shadow-modal p-8 max-w-sm w-full mx-4">
           <div className="flex flex-col items-center">
             {loadingMessage.includes("✅") ? (

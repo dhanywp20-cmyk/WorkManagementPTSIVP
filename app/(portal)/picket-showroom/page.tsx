@@ -359,12 +359,12 @@ function PiketShowroomPageInner() {
                 <div className="relative flex-1 min-w-[160px]">
                   <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   <input aria-label="Cari nama, instansi, kegiatan..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama, instansi, kegiatan..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-hidden" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
                 </div>
-                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
-                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Kegiatan</option>{denganNilai(daftarKegiatan, filterKegiatan).map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
@@ -452,7 +452,7 @@ function PiketShowroomPageInner() {
                                     const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
                                       <div className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
                                           <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{picBaris.name}</p>
                                           <span className="text-[10px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
@@ -479,7 +479,7 @@ function PiketShowroomPageInner() {
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
                                       const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
-                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded-sm text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}
                                   </div>
                                 )}
@@ -487,7 +487,7 @@ function PiketShowroomPageInner() {
                                   <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
                                       <span key={k} className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 leading-tight">
-                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
+                                        <span className="w-1 h-1 rounded-full shrink-0" style={{background:dc.accent}}/>
                                         {k}
                                       </span>
                                     ))}
@@ -499,8 +499,8 @@ function PiketShowroomPageInner() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>

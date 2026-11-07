@@ -255,7 +255,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
             {daftarModel.length > 0 ? (
               <select value={setelanPenilai.model} onChange={e => gantiModel(e.target.value)}
                 aria-label="Model AI penilai"
-                className="text-xs font-semibold text-indigo-800 bg-white border border-violet-200 rounded-lg px-2 py-1.5 max-w-[260px] outline-none focus:border-violet-400">
+                className="text-xs font-semibold text-indigo-800 bg-white border border-violet-200 rounded-lg px-2 py-1.5 max-w-[260px] outline-hidden focus:border-violet-400">
                 {!daftarModel.some(m => m.id === setelanPenilai.model) && (
                   <option value={setelanPenilai.model}>{setelanPenilai.model} — tidak ada di daftar</option>
                 )}
@@ -266,7 +266,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                 <input defaultValue={setelanPenilai.model}
                   onBlur={e => gantiModel(e.target.value)}
                   aria-label="Nama model AI penilai"
-                  className="text-xs font-semibold text-indigo-800 bg-white border border-amber-300 rounded-lg px-2 py-1.5 w-[220px] outline-none focus:border-violet-400" />
+                  className="text-xs font-semibold text-indigo-800 bg-white border border-amber-300 rounded-lg px-2 py-1.5 w-[220px] outline-hidden focus:border-violet-400" />
                 <span className="text-[11px] text-amber-700 max-w-[380px] leading-snug">
                   Daftar model tidak bisa dibaca ({galatModel}) — ketik nama modelnya.
                 </span>
@@ -282,7 +282,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                   setSetelanPenilai(baru);
                   await simpanPengaturanPenilai(baru);
                 }}
-                className="w-3.5 h-3.5 rounded accent-violet-600" />
+                className="w-3.5 h-3.5 rounded-sm accent-violet-600" />
               <span className="text-[11px] font-semibold text-violet-700 whitespace-nowrap">Nilai otomatis</span>
             </label>
 
@@ -312,7 +312,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
               },
               { label: 'Waktu', value: selectedAttempt.time_taken_sec ? `${Math.floor(selectedAttempt.time_taken_sec/60)}m ${selectedAttempt.time_taken_sec%60}s` : '—', color: 'from-indigo-500 to-indigo-600' },
             ].map(c => (
-              <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
+              <div key={c.label} className={`bg-linear-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
                 <div className="text-xl sm:text-2xl font-black">{c.value}</div>
                 <div className="text-white/80 text-xs font-medium mt-1">{c.label}</div>
               </div>
@@ -326,13 +326,13 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                 const ans = getAnswerFor(q.id);
                 if (q.question_type === 'essay') {
                   return (
-                    <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">
+                    <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-xs">
                       <div className="flex items-start gap-3 mb-3">
-                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500"><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 text-white bg-indigo-500"><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         <div className="flex-1">
                           <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · Essay · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                           <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="!mx-0 mt-2 border border-slate-200" />
+                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="mx-0! mt-2 border border-slate-200" />
                         </div>
                       </div>
                       <div className="ml-2 sm:ml-10 space-y-3">
@@ -404,7 +404,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                               <input aria-label="Nilai (0-100):" type="number" min={0} max={100}
                                 value={manualScores[q.id] ?? ''}
                                 onChange={e => setManualScores(p => ({ ...p, [q.id]: e.target.value }))}
-                                className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-indigo-400" />
+                                className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-hidden focus:border-indigo-400" />
                               {ans?.essay_text?.trim() && (
                                 <button type="button" disabled={aiGradingIds.has(q.id)}
                                   onClick={() => runAiGrading(selectedAttempt.id, q, ans.essay_text.trim())}
@@ -433,13 +433,13 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                   <div key={q.id}
                     className={`rounded-2xl border-2 p-5 ${notAnswered ? 'border-slate-200 bg-white' : isCorrect ? 'border-emerald-300 bg-emerald-50' : 'border-rose-300 bg-rose-50'}`}>
                     <div className="flex items-start gap-3 mb-3">
-                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                         {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
                       </span>
                       <div className="flex-1">
                         <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                         <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="!mx-0 mt-2 border border-slate-200" />
+                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="mx-0! mt-2 border border-slate-200" />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-2 sm:ml-10">
@@ -452,7 +452,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                         if (isUserChoice && !isCorrectOpt) style = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
                         return (
                           <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs transition-all ${style}`}>
-                            <span className={`w-5 h-5 rounded flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                            <span className={`w-5 h-5 rounded-sm flex items-center justify-center text-[11px] font-black shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                             <span className="flex-1">{optVal}</span>
                             {isCorrectOpt && <span className="text-emerald-700 font-bold">✓ Benar</span>}
                             {isUserChoice && !isCorrectOpt && <span className="text-rose-600 font-bold">← Pilihan</span>}
@@ -510,11 +510,11 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
           </div>
         )}
         {attempts.map(a => (
-          <div key={a.id} className="rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+          <div key={a.id} className="rounded-2xl border border-slate-200 shadow-xs p-5 flex items-center gap-5"
             style={{ background: '#ffffff' }}>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${
-              a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600'
-                : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shrink-0 ${
+              a.grading_status === 'pending_review' ? 'bg-linear-to-br from-amber-400 to-amber-600'
+                : a.passed ? 'bg-linear-to-br from-emerald-400 to-emerald-600' : 'bg-linear-to-br from-rose-400 to-rose-600'}`}>
               {a.grading_status === 'pending_review' ? '⏳' : (a.score?.toFixed(0) ?? '—')}
             </div>
             <div className="flex-1 min-w-0">
@@ -529,7 +529,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                 <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-3 shrink-0">
               <GradingStatusBadge attempt={a} />
               <BtnView onClick={() => handleViewDetail(a)}>Detail Jawaban</BtnView>
             </div>

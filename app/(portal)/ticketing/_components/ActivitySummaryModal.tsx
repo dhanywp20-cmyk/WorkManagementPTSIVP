@@ -179,7 +179,7 @@ export function ActivitySummaryModal({
                       <div className="flex-1" />
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="flex flex-col items-center flex-shrink-0">
+                      <div className="flex flex-col items-center shrink-0">
                         <div
                           className={`w-9 h-9 rounded-full ${nodeColor} flex items-center justify-center text-white text-xs font-bold shadow-md`}
                         >
@@ -196,7 +196,7 @@ export function ActivitySummaryModal({
                             </span>
                           </div>
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-bold border flex-shrink-0 ml-2 ${statusColors[log.new_status] || "bg-gray-100 text-gray-700 border-gray-300"}`}
+                            className={`text-xs px-2 py-0.5 rounded-full font-bold border shrink-0 ml-2 ${statusColors[log.new_status] || "bg-gray-100 text-gray-700 border-gray-300"}`}
                           >
                             {log.new_status}
                           </span>
@@ -271,7 +271,7 @@ export function ActivitySummaryModal({
             </div>
             <div className="flex items-center gap-3">
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base shadow-md flex-shrink-0 ${summaryTicket.status === "Solved" ? "bg-green-600" : "bg-gray-400"}`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base shadow-md shrink-0 ${summaryTicket.status === "Solved" ? "bg-green-600" : "bg-gray-400"}`}
               >
                 {summaryTicket.status === "Solved" ? "🏁" : "⏳"}
               </div>

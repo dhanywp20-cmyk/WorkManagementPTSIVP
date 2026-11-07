@@ -4,7 +4,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import type { Lembar } from '@/lib/lembar-cetak';
 import { SimpanKeProyek } from './SimpanKeProyek';
 
-export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
+export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
 export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan, placeholder, onKosong }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
@@ -60,7 +60,7 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
       <div role="radiogroup" className="flex gap-1 p-1 rounded-xl bg-slate-100">
         {opsi.map(o => (
           <button key={o.v} type="button" role="radio" aria-checked={nilai === o.v} onClick={() => onUbah(o.v)}
-            className={`flex-1 px-2 py-1.5 rounded-lg text-[12.5px] font-semibold ${nilai === o.v ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+            className={`flex-1 px-2 py-1.5 rounded-lg text-[12.5px] font-semibold ${nilai === o.v ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
             {o.l}
           </button>
         ))}
@@ -86,7 +86,7 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
   return (
     <div className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5 min-w-0">
       <p className="text-[11px] font-semibold text-slate-600 truncate">{label}</p>
-      <p className={`text-lg sm:text-xl font-extrabold leading-tight tabular-nums mt-0.5 ${warna}`}>
+      <p className={`text-lg sm:text-xl sm:leading-7 font-extrabold leading-tight tabular-nums mt-0.5 ${warna}`}>
         {nilai}{satuan && <span className="text-xs font-semibold text-slate-500 ml-1">{satuan}</span>}
       </p>
       {ket && <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{ket}</p>}

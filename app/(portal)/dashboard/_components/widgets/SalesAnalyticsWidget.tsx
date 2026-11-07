@@ -20,7 +20,7 @@ function AnalyticStat({ accent, label, value, subs }: {
     <div className="rounded-xl px-3 py-2.5 sm:px-4 sm:py-3.5 relative overflow-hidden"
       style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.10)', boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: 0.55 }} />
-      <div className="text-2xl sm:text-3xl font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
+      <div className="text-2xl sm:text-3xl sm:leading-9 font-black tabular-nums leading-none" style={{ color: '#0f172a' }}>{value}</div>
       <div className="text-[11px] sm:text-[13px] font-bold mt-1 leading-tight" style={{ color: '#1e293b' }}>{label}</div>
       <div className="flex gap-2 sm:gap-3 mt-2 sm:mt-2.5">
         {subs.map((s, i) => (

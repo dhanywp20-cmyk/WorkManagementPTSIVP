@@ -18,7 +18,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     document.addEventListener('keydown', saatEscape);
     return () => {
       document.removeEventListener('mousedown', handler);
-      window.removeEventListener('blur', tutup);
+      window.removeEventListener('blur-sm', tutup);
       document.removeEventListener('keydown', saatEscape);
     };
   }, []);
@@ -37,7 +37,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
   };
 
   return (
-    <div ref={ref} className="relative flex-shrink-0">
+    <div ref={ref} className="relative shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={`${label}: ${count} notifikasi`} title={label}
@@ -48,7 +48,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
           boxShadow: count > 0 ? `0 2px 12px ${borderColor}55` : 'none',
         }}
       >
-        <Icon className="w-4 h-4 flex-shrink-0" style={{ color: count > 0 ? color : '#64748b' }} />
+        <Icon className="w-4 h-4 shrink-0" style={{ color: count > 0 ? color : '#64748b' }} />
         <span className="text-xs font-bold hidden 2xl:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
           <span className="flex items-center justify-center rounded-full text-white font-black text-[11px] min-w-[18px] h-[18px] px-1 animate-pulse"
@@ -60,7 +60,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 right-0 z-[40] rounded-2xl shadow-2xl overflow-hidden"
+        <div className="absolute top-full mt-2 right-0 z-40 rounded-2xl shadow-2xl overflow-hidden"
           style={{
             width: 320,
             background: 'rgba(255,255,255,0.97)',
@@ -71,7 +71,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
           }}>
           <div className="px-4 py-3 flex items-center justify-between" style={{ background: bgColor, borderBottom: `1px solid ${borderColor}44` }}>
             <div className="flex items-center gap-2">
-              <Icon className="w-[18px] h-[18px] flex-shrink-0" style={{ color }} />
+              <Icon className="w-[18px] h-[18px] shrink-0" style={{ color }} />
               <span className="text-sm font-bold" style={{ color }}>{label}</span>
             </div>
             {count > 0 && (
@@ -99,7 +99,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
                     <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.title}</p>
                     <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.subtitle}</p>
                   </div>
-                  <span className="text-[11px] text-slate-500 flex-shrink-0 mt-0.5">{formatTime(item.time)}</span>
+                  <span className="text-[11px] text-slate-500 shrink-0 mt-0.5">{formatTime(item.time)}</span>
                 </button>
               ))
             )}

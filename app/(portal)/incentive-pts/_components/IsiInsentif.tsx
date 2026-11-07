@@ -28,7 +28,7 @@ export function IsiInsentif() {
 
         {tab === 'projects' && !loading && (<>
           {currentUser && (
-            <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
+            <div className="mb-4 rounded-xl border border-rose-200 bg-linear-to-br from-rose-50 via-white to-purple-50 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5"><IkonTeks nama="💰" />Insentif Saya
                   <span className="text-[11px] font-semibold text-gray-500">
@@ -66,7 +66,7 @@ export function IsiInsentif() {
               )}
             </div>
           )}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
             <FilterProyekInsentif />
             <DaftarProyekInsentifHP />
 

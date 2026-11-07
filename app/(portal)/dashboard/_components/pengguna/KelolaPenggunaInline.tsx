@@ -158,7 +158,7 @@ export function UserManagementInline() {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   const orgGroupOf = (u: User | undefined): 'Sales' | 'Marketing' | 'PTS' | 'Lainnya' => {
@@ -292,7 +292,7 @@ export function UserManagementInline() {
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${
           notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200'
             : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
@@ -301,8 +301,8 @@ export function UserManagementInline() {
       )}
 
       <div className="flex-1 min-h-0 p-4">
-        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 shrink-0 flex-wrap bg-slate-50/60">
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏛" />Struktur Organisasi
         </button>
@@ -338,12 +338,12 @@ export function UserManagementInline() {
             />
 
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
-              <div className="px-5 pt-4 flex-shrink-0">
+              <div className="px-5 pt-4 shrink-0">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi...'}
-                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
               </div>
             )}

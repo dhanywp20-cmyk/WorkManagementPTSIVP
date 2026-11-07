@@ -27,7 +27,7 @@ export function NavigasiMinggu({ wLabel, wLabel2, isCurrWeek, setWeekStart }: {
           <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
           <span className="text-[11px] text-red-600 leading-tight">{wLabel2}</span>
         </div>
-        {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
+        {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white shrink-0" style={{background:'#dc2626'}}>Ini</button>}
       </div>
       <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
       <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
