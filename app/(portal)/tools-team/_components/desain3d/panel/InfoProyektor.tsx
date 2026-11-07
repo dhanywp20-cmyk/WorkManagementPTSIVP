@@ -76,7 +76,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     );
     return (
       <div className="rounded-lg border border-blue-200 bg-white p-2 space-y-1 text-[12px] tabular-nums">
-        <span className="block text-[11px] font-bold uppercase tracking-wider text-blue-900">Hasil (rumus kalkulator Panasonic){p.sumberLensa ? ` · ${p.sumberLensa}` : ''}</span>
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-blue-900">Hasil kalkulator lensa{p.modelProduk || p.sumberLensa ? ` · ${p.modelProduk ?? p.sumberLensa}` : ' · lensa manual'}</span>
+        {!p.modelProduk && !p.sumberLensa && <span className="block text-[11px] text-amber-700">Throw ratio & koreksi b diisi manual, belum dari data pabrikan.</span>}
         <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">Projection size</span>
         {baris('Aspect ratio', `${h.rasio}${panel ? ` (${panel})` : ''}`)}
         {baris('Diagonal', `${m(h.diagonalM)} / ${fTetap(h.diagonalInci, 2)}"`)}

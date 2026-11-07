@@ -77,7 +77,7 @@ export function isiDariKatalog(p: Benda, m: ModelTdc, l: LensaTdc, rasio: RasioP
     koreksiJarak: bW || undefined, koreksiJarakTele: bT,
     poligonShift: l.pg ?? undefined, shiftAtasMaks: undefined, shiftBawahMaks: undefined, shiftHMaks: undefined,
     ...(l.pg ? { offsetTetap: undefined } : { offsetTetap: off, offsetLensa: off, geserLensaH: 0 }),
-    sumberLensa: `Panasonic TDC ${versi}`.trim(),
+    sumberLensa: `Panasonic TDC ${versi}`.trim(), modelProduk: undefined,
   };
 }
 export function resolusiPanel(m: ModelTdc): ResolusiProyektor | undefined {

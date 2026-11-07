@@ -120,7 +120,7 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const offset = Math.round(((elev + tinggiBadan / 2 - ruang.t / 2) / tinggiGambar) * 1000) / 1000;
     const dinding = (rot: number, x: number, z: number, nama: string) =>
       diLensa({ elev, rot, tilt: 0, offsetLensa: offset, nama: `PT-MZ882 ${nama}` }, x, z);
-    const lantai0 = diLensa({ elev: 3.3, rot: 0, tilt: -90, offsetLensa: 0, nama: 'PT-MZ882 lantai' }, 3, 3);
+    const lantai0 = diLensa({ elev: 3.3, rot: 180, tilt: -90, offsetLensa: 0, nama: 'PT-MZ882 lantai' }, 3, 3);
     const tinggiLensa = keDunia(lantai0, lensaProyektor(lantai0))[1];
     const trLantai = Math.round(Math.min(ELU.trMax, Math.max(ELU.trMin, (tinggiLensa + ELU.koreksiJarak) / (6.06 * 1.6))) * 10000) / 10000;
     const hasil: Benda[] = [

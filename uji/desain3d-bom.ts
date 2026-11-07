@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-  bomDesain, checklistDariBom, daftarBenda, jalurKabel, URUTAN_KATEGORI, type Benda, type Ruang,
+  bendaBaru, bomDesain, checklistDariBom, daftarBenda, daftarRuang, jalurKabel, templateRuang, URUTAN_KATEGORI, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { validasiDraft } from '../lib/checklist/inti';
 
@@ -57,7 +57,7 @@ cek('lolos validasi impor checklist server (validasiDraft)', !('galat' in v));
 console.log('\n4. Pemasangan');
 const ekspor = readFileSync('app/(portal)/tools-team/_components/desain3d/ekspor/useEkspor.ts', 'utf8');
 cek('lembar cetak memakai daftarBenda (satu logika dengan BOM)', /const baris = daftarBenda\(benda\)/.test(ekspor) && !/const urutKat = /.test(ekspor));
-cek('BOM Excel & draf checklist dari bomDesain', /const bom = bomDesain\(benda, kabel\)/.test(ekspor) && /checklistDariBom\(judul, bomDesain\(benda, kabel\)\)/.test(ekspor));
+cek('BOM Excel & draf checklist dari bomDesain', /const bom = bomDesain\(benda, kabelLengkap\(\)\)/.test(ekspor) && /checklistDariBom\(judul, bomDesain\(benda, kabelLengkap\(\)\)\)/.test(ekspor));
 const modal = readFileSync('app/(portal)/tools-team/_components/desain3d/panel/ModalChecklistBom.tsx', 'utf8');
 cek('checklist dibuat lewat API impor yang sudah ada (admin)', /\/api\/project-progress\/\$\{pilih\}\/checklist/.test(modal) && /isi: 'impor'/.test(modal) && /disabled=\{sibuk \|\| !admin/.test(modal));
 

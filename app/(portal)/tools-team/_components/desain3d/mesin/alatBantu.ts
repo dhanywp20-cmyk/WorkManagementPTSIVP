@@ -156,4 +156,8 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     }
   }
   if (garisUkur) gambarGarisUkurDisplay(m, benda);
+  m.penghalangLabel = benda.filter(b => DISPLAY.includes(b.jenis)).map(b => {
+    const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
+    return [-1, 1].flatMap(a => [-1, 1].flatMap(e => [0, b.h].map(y => new THREE.Vector3(b.x + a * (b.w / 2) * c + e * (b.d / 2) * s, b.elev + y, b.z - a * (b.w / 2) * s + e * (b.d / 2) * c))));
+  });
 }

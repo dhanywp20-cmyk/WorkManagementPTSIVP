@@ -2,6 +2,9 @@
 import { Angka, Catatan, f, Kartu, Nilai, Pilih } from '../../bersama/ui';
 import type { AlatDesain } from './alat';
 
+const TEKS_PROYEKSI = 'Analisis jarak pandang hanya untuk display tetap. Hasil proyeksi ada di panel tiap proyektor (pilih proyektor di kanvas).';
+const TEKS_KOSONG = 'Tambahkan display (videowall, LED, layar, atau interactive) untuk dianalisis.';
+
 export function KartuAnalisis({ a }: { a: AlatDesain }) {
   const { analisis, duaRuang, faktorCustom, jenisPandang, setFaktorCustom, setJenisPandang, setSudutNyaman, sudutNyaman } = a.K;
   return (
@@ -21,7 +24,7 @@ export function KartuAnalisis({ a }: { a: AlatDesain }) {
           <Angka label="Sudut nyaman" nilai={sudutNyaman} satuan="°" step={1} bantuan="dari sumbu layar"
             onUbah={v => v >= 5 && v <= 85 && setSudutNyaman(v)} />
         </div>
-        {analisis.length === 0 ? <p className="text-sm text-slate-600">Tambahkan display (videowall/LED/layar/interactive) untuk dianalisis.</p>
+        {analisis.length === 0 ? <p className="text-sm text-slate-600">{a.K.benda.some(b => b.jenis === 'bidang' || b.jenis === 'proyektor') ? TEKS_PROYEKSI : TEKS_KOSONG}</p>
           : analisis.map(a => (
             <div key={a.d.id} className="mb-3 last:mb-0">
               <p className="text-sm font-semibold text-slate-800 mb-1.5">{a.d.nama}{duaRuang ? ` · Ruang ${a.ri + 1}` : ''} · gambar {f(a.gambar.w)} × {f(a.gambar.h)} m</p>

@@ -67,6 +67,7 @@ export interface Benda {
   kontrasAsli?: number;
   koefRasio?: Partial<Record<RasioProyektor, [number, number, number, number]>>;
    sumberLensa?: string;
+   modelProduk?: string;
   shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
    poligonShift?: number[];
    gainLayar?: number;

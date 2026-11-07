@@ -46,7 +46,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
             const [zMin, zMax] = zoomLensa(b), tr = throwRatioDari(b), tetap = zMax - zMin < 0.005;
             const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
             const setZoom = (v: number) => set({ throwRatio: r6(Math.min(zMax, Math.max(zMin, v))) });
-            const manual = { koefRasio: undefined, sumberLensa: undefined };
+            const manual = { koefRasio: undefined, sumberLensa: undefined, modelProduk: undefined };
             return (
               <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
                 <PilihPanasonic rasio={b.rasioProyektor} sumber={b.sumberLensa} onPakai={(m, l, r, v) => set(isiDariKatalog(b, m, l, r, v))} />
