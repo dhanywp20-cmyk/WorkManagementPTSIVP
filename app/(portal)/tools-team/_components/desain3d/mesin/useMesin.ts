@@ -11,7 +11,7 @@ import { hindariTumpuk } from './label';
 import { pasangPatchProyektor } from './proyektorNyata';
 
 export function useMesin(K: KeadaanDesain) {
-  const { bendaRef, dariToggle, gambarLayar, klikUkurRef, sembunyiRef, snapRef, sumbuGeserRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
+  const { bukaAtur, bendaRef, dariToggle, gambarLayar, klikUkurRef, sembunyiRef, snapRef, sumbuGeserRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
   useEffect(() => {
     let hidup = true;
     let bersihkan = () => {};
@@ -174,7 +174,10 @@ export function useMesin(K: KeadaanDesain) {
               if (r.pilih !== pilihRef.current) dariToggle.current = true;
               setPilih(r.pilih); setPilihLain(r.lain);
             }
-          } else setPilih(idKena);
+          } else {
+            setPilih(idKena);
+            if (idKena) bukaAtur.current();
+          }
           const kini = performance.now();
           const ganda = !!ketukLalu && kini - ketukLalu.t < 350 && Math.hypot(e.clientX - ketukLalu.x, e.clientY - ketukLalu.y) < 30;
           ketukLalu = ganda ? null : { t: kini, x: e.clientX, y: e.clientY };

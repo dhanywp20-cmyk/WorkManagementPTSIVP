@@ -99,5 +99,12 @@ cek('kontras memakai lux terukur bila belum ada lampu', luxCahayaDi([], { ...rua
 cek('tampilan makin terang mengikuti lux', faktorCahayaRuang({ cahaya: 'gelap' }) < faktorCahayaRuang({ cahaya: 'redup' }) && faktorCahayaRuang({ cahaya: 'koridor' }) < faktorCahayaRuang({ cahaya: 'terang' }) && faktorCahayaRuang({ luxManual: 1000 }) === 1);
 cek('template mapping gelap: semua proyektor memenuhi kontras 15:1', ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'].every(id => proyektorTemplate(id as Parameters<typeof templateRuang>[0]).every(Boolean)));
 
+console.log('\nPanel atur benda');
+const keadaan = readFileSync('app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts', 'utf8');
+const aksiPilih = readFileSync('app/(portal)/tools-team/_components/desain3d/panel/AksiTerpilih.tsx', 'utf8');
+cek('memilih benda membuka panel atur, batal pilih menutupnya', /if \(!pilih\) \{ setPanel\(false\); return; \}/.test(keadaan) && /bukaAtur\.current\(\);\n?\r?\n?\s*\}, \[pilih\]\)/.test(keadaan));
+cek('menambah benda dari panel Tambah tidak menutup panel Tambah', /sisiLalu\.current === 'tambah' && !bendaLalu\.current\.some/.test(keadaan));
+cek('tombol atur tetap ada dan menyala saat panel terbuka', /aria-pressed=\{panel\}/.test(aksiPilih) && /kelas=\{panel \? 'bg-blue-700 text-white' : biasa\}/.test(aksiPilih));
+
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);
