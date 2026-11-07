@@ -4,7 +4,7 @@ import { createNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from './calc-format';
 import { UUID_RE, calculateIncentiveSplits, fetchOrgUsers, findUpline, generateTranches, resolveUserId, validateSplitTotal } from './calc-pembagian';
-import { fetchSupportFromTickets, jendelaSupportTahap } from './calc-support';
+import { fetchSupportFromTickets, idTiketLampiranTahap, jendelaSupportTahap } from './calc-support';
 import { IncentiveProjectRow, SplitResult } from './calc-tipe';
 
 export async function insertTranches(sk: SkemaInsentif, projectId: string, bastDate: string, modePenyelesaian?: 'onsite' | 'remote' | null) {
@@ -89,7 +89,8 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
     const tahunKe = sk.tranche.find(t => t.nomor === tranche.tranche_number)?.tahunKe
       ?? Math.max(1, (tranche.payment_year || 0) - new Date(project.bast_date || '').getFullYear());
     const rentangSupport = jendelaSupportTahap(project.bast_date, tahunKe);
-    const { data: supports } = await fetchSupportFromTickets(project, rentangSupport);
+    const lampiran = await idTiketLampiranTahap(project.id, tranche.tranche_number);
+    const { data: supports } = await fetchSupportFromTickets(project, rentangSupport, lampiran);
     const splits = calculateIncentiveSplits(
       sk, project, projManagerId, projManagerName,
       supervisorUserId, supervisorUserName,

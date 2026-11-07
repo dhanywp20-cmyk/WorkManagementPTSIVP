@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { IncentiveProjectRow, IncentiveTranche, IncentiveSplit, LateTicketLink, deteksiKandidatGabung, type KandidatGabung, insertSplits, validateSplitTotal, findUpline, resolveUserId, OrgUser, type SkemaInsentif, formatRupiah } from './_components/calc';
+import { fetchLateTickets } from './_components/calc';
 import { PageHeader, ConfirmDialog, type ConfirmState, usePaginasi } from '@/components/shared';
 import { Toast } from '@/components/shared/Toast';
 import { ModalKonfirmHapus } from './_components/ModalKonfirmHapus';
@@ -182,6 +183,11 @@ export default function IncentivePTSPage() {
     </div>
   );
 
+  const muatUlangLampiran = async () => {
+    const r = await fetchLateTickets();
+    if (!r.error) setLateTickets(r.data);
+  };
+
   const thCls = 'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
   const konteksInsentif: NilaiKonteksInsentif = {
@@ -190,7 +196,7 @@ export default function IncentivePTSPage() {
     saya: { exportingSaya, handleExportInsentifSaya, myPaidInsentif, myPendingInsentif, myProjectCount, mySplitsInYear, myTotalInsentif },
     proyek: { bastYearsProjects, brandEditFor, filterBastYear, filteredProjects, hal, kandidatBulkGenerate, kandidatGabung, pilihHapus, searchProject, setBrandEditFor,
       setBulkGenerateConfirm, setFilterBastYear, setKonfirmGabung, setPilihHapus, setSearchProject, togglePilih },
-    tahapan: { filteredTranches, konfirmasiMarkPaid, lateTickets, markingPaid, setBatalBatch, setBatchConfirm, setBatchYear, setFilterYear, setKetikBatalBatch, skema, totalPool,
+    tahapan: { allSplits, filteredTranches, konfirmasiMarkPaid, lateTickets, markingPaid, muatUlangLampiran, setBatalBatch, setBatchConfirm, setBatchYear, setFilterYear, setKetikBatalBatch, skema, totalPool,
       tranches, uniqueYears },
     akses: { cariUser, handleSetAkses, handleSetBrandScope, setCariUser },
     ekspor: { exporting, handleExportBatch, handleExportSummary, setSummaryExportYear, summaryExportYear },
