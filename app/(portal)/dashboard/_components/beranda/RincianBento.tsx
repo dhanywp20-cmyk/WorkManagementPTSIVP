@@ -91,13 +91,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
 
   return (
     <div className="bb-bento bb-naik" style={{ ['--d' as string]: 6 } as React.CSSProperties}>
-      <KartuAsalTiket kpi={kpi} kelas="bb-b5" onBuka={() => openMenu('ticket-troubleshooting')} />
-
-      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas="bb-b7"
-        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
-        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
-      </Kartu>
-
       {kartuTim && <div className={`bb-tim ${adaAntrean || adaUnit ? 'bb-b5' : 'bb-b12'} min-w-0`}>{kartuTim}</div>}
 
       {adaAntrean && (
@@ -131,6 +124,13 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
           <p className="bb-catatan mt-auto pt-2">Bulan ini: {kpi?.units.keluarThisMonth ?? 0} keluar · {kpi?.units.masukThisMonth ?? 0} masuk</p>
         </Kartu>
       )}
+
+      <KartuAsalTiket kpi={kpi} kelas="bb-b5" onBuka={() => openMenu('ticket-troubleshooting')} />
+
+      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas="bb-b7"
+        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
+        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
+      </Kartu>
 
       <Kartu judul="Tiket terlama" kelas={adaReview && adaBelajar ? 'bb-b5' : adaReview || adaBelajar ? 'bb-b7' : 'bb-b12'} onBuka={() => openMenu('ticket-troubleshooting')}
         kalimat={tua.length ? <>Tiket tertua sudah terbuka <span style={{ color: tua[0].hari > 7 ? MERAH : undefined }}>{tua[0].hari} hari</span>.</> : 'Tidak ada tiket terbuka.'}>
