@@ -44,7 +44,7 @@ export function RuangDaya({ d, s, onUbah, namaFile }: { d: DataDaya; s: Pengatur
           <div className="grid grid-cols-2 gap-3">
             <Pilih label="Mulai dari" nilai={s.mulai} onUbah={v => ubah({ mulai: v })}
               opsi={[{ v: 'kiri-bawah', l: 'Kiri bawah' }, { v: 'kanan-bawah', l: 'Kanan bawah' }, { v: 'kiri-atas', l: 'Kiri atas' }, { v: 'kanan-atas', l: 'Kanan atas' }]} />
-            <Pilih label="Pola" nilai={s.pola} onUbah={v => ubah({ pola: v })} opsi={[{ v: 'S', l: 'S · zig-zag' }, { v: 'Z', l: 'Z · balik ke awal' }]} />
+            <Pilih label="Pola" nilai={s.pola} onUbah={v => ubah({ pola: v })} opsi={[{ v: 'S', l: 'S · bolak-balik' }, { v: 'Z', l: 'Z · balik ke awal' }]} />
           </div>
           <Angka label="Panjang kabel panel → layar" nilai={s.panjang} satuan="m" onUbah={v => v >= 1 && ubah({ panjang: v })} bantuan="Untuk daftar material (BOM)" />
         </section>
