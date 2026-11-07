@@ -86,6 +86,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
   const persenLulus = lc?.totalSessions ? (lc.completedSessions / lc.totalSessions) * 100 : 0;
 
   const adaUnit = !!s.unit, adaReview = !!s.review;
+  const kelasBaris = ({ 2: 'bb-b6', 3: 'bb-b4', 4: 'bb-b3' } as Record<number, string>)[2 + Number(adaReview) + Number(adaBelajar)];
   const adaAntrean = s.antrean.length > 0;
   const adaTim = !!kartuTim;
 
@@ -132,7 +133,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
       </Kartu>
 
-      <Kartu judul="Tiket terlama" kelas={adaReview && adaBelajar ? 'bb-b5' : adaReview || adaBelajar ? 'bb-b7' : 'bb-b12'} onBuka={() => openMenu('ticket-troubleshooting')}
+      <Kartu judul="Tiket terlama" kelas={kelasBaris} onBuka={() => openMenu('ticket-troubleshooting')}
         kalimat={tua.length ? <>Tiket tertua sudah terbuka <span style={{ color: tua[0].hari > 7 ? MERAH : undefined }}>{tua[0].hari} hari</span>.</> : 'Tidak ada tiket terbuka.'}>
         <div className="flex flex-col">
           {tua.map(t => (
@@ -148,7 +149,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
       </Kartu>
 
       {adaReview && s.review && (
-        <Kartu judul="Nilai dari Sales" kelas={adaBelajar ? 'bb-b3' : 'bb-b5'} onBuka={() => openMenu('form-bast')}>
+        <Kartu judul="Nilai dari Sales" kelas={kelasBaris} onBuka={() => openMenu('form-bast')}>
           {s.review.jumlah === 0 ? <Kosong teks="Belum ada review." /> : (
             <>
               <div className="flex items-baseline gap-1.5 mb-2">
@@ -164,7 +165,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
       )}
 
       {adaBelajar && (
-        <Kartu judul="Pembelajaran tim" kelas={adaReview ? 'bb-b4' : 'bb-b5'} onBuka={() => openMenu('learning-center')}>
+        <Kartu judul="Pembelajaran tim" kelas={kelasBaris} onBuka={() => openMenu('learning-center')}>
           <div className="flex items-baseline gap-1.5 mb-2">
             <span className="text-[30px] font-black leading-none tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{fmtId(persenLulus, 0)}%</span>
             <span className="text-[12px] font-semibold text-slate-500">lulus quiz</span>
@@ -175,7 +176,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </Kartu>
       )}
 
-      <Kartu judul="Project Progress" kelas="bb-b12" onBuka={() => openMenu('project-progress')}
+      <Kartu judul="Project Progress" kelas={kelasBaris} onBuka={() => openMenu('project-progress')}
         sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
         <div className="bb-proyek-kisi">
         {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
