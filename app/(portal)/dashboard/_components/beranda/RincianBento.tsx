@@ -148,6 +148,22 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </div>
       </Kartu>
 
+      <Kartu judul="Project Progress" kelas={kelasBaris} onBuka={() => openMenu('project-progress')}
+        sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
+        <div className="bb-proyek-kisi">
+        {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
+          : s.proyek.length === 0 ? <Kosong teks="Belum ada proyek berjalan." />
+            : s.proyek.map(p => (
+              <button key={p.id} type="button" className="bb-proyek" onClick={() => openMenu('project-progress')}>
+                <span className="bb-proyek-nama" title={p.nama}>{p.nama}</span>
+                <span className="bb-proyek-angka">{p.persen}%</span>
+                <span className="bb-proyek-bilah"><Bilah persen={p.persen} warna={AKSEN_UTAMA} label={p.nama} /></span>
+                <span className="bb-proyek-info">Target {p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
+              </button>
+            ))}
+        </div>
+      </Kartu>
+
       {adaReview && s.review && (
         <Kartu judul="Nilai dari Sales" kelas={kelasBaris} onBuka={() => openMenu('form-bast')}>
           {s.review.jumlah === 0 ? <Kosong teks="Belum ada review." /> : (
@@ -176,21 +192,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </Kartu>
       )}
 
-      <Kartu judul="Project Progress" kelas={kelasBaris} onBuka={() => openMenu('project-progress')}
-        sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
-        <div className="bb-proyek-kisi">
-        {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
-          : s.proyek.length === 0 ? <Kosong teks="Belum ada proyek berjalan." />
-            : s.proyek.map(p => (
-              <button key={p.id} type="button" className="bb-proyek" onClick={() => openMenu('project-progress')}>
-                <span className="bb-proyek-nama" title={p.nama}>{p.nama}</span>
-                <span className="bb-proyek-angka">{p.persen}%</span>
-                <span className="bb-proyek-bilah"><Bilah persen={p.persen} warna={AKSEN_UTAMA} label={p.nama} /></span>
-                <span className="bb-proyek-info">Target {p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
-              </button>
-            ))}
-        </div>
-      </Kartu>
     </div>
   );
 }
