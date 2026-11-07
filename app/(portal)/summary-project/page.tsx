@@ -237,7 +237,7 @@ export default function SummaryProjectPage() {
               )}
               <TombolEkspor jumlah={tersaring.length} data={dataEkspor} />
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600 bg-white/90 rounded-lg border border-slate-200 px-3 py-1.5">
               <span className="font-semibold text-slate-700">{tersaring.length} dari {daftar.length} project</span>
               {filterTipe !== 'semua' && (
                 <button type="button" onClick={() => setFilterTipe('semua')} className="px-2 py-0.5 rounded-full bg-slate-900 text-white font-bold">

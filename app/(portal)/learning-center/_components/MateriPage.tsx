@@ -214,7 +214,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       </div>
 
       <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs shrink-0 flex-wrap"
-        style={{ background: 'rgba(248,250,252,0.8)' }}>
+        style={{ background: '#f8fafc' }}>
         <span className="text-slate-500"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-400">|</span>
         <span className="text-slate-500"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
