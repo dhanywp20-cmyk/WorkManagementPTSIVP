@@ -1,6 +1,6 @@
-import { type HasilKoneksi, hitungKoneksi, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
+import { type HasilKoneksi, hitungKoneksi, NAMA_RC_LAMA, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
 
-const rcTersimpan = (nama: unknown) => { const n = nama === 'A4s Plus' ? 'A4s' : nama; return RECEIVING_CARD.some(r => r.nama === n) ? (n as string) : null; };
+const rcTersimpan = (nama: unknown) => { const n = NAMA_RC_LAMA[nama as string] ?? nama; return RECEIVING_CARD.some(r => r.nama === n) ? (n as string) : null; };
 
 export interface PengaturanKoneksi {
   mode: 'template' | 'manual';

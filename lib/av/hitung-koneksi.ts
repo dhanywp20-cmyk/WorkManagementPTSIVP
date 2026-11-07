@@ -142,12 +142,27 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
 
 export interface ReceivingCard { nama: string;  w: number;  h: number; ket: string }
 
+export const NAMA_RC_LAMA: Readonly<Record<string, string>> = { 'A4s Plus': 'A4s', A8s: 'A8s-N', 'A10s Plus': 'A10s Plus-N' };
+
 export const RECEIVING_CARD: ReceivingCard[] = [
-  { nama: 'A4s', w: 256, h: 256, ket: 'Ekonomis; layar kecil / modul besar' },
-  { nama: 'A5s Plus', w: 512, h: 384, ket: 'Umum indoor & outdoor' },
-  { nama: 'A7s Plus', w: 512, h: 512, ket: 'Indoor fine pitch; 512×384 untuk driver IC biasa' },
-  { nama: 'A8s', w: 512, h: 384, ket: 'Fine pitch, kalibrasi & HDR dasar; sudah tidak diproduksi' },
-  { nama: 'A10s Plus', w: 512, h: 512, ket: 'Premium fine pitch, HDR, refresh tinggi' },
+  { nama: 'MRV208-1', w: 256, h: 256, ket: 'NovaStar; HUB75E ×8' },
+  { nama: 'MRV412-N', w: 512, h: 512, ket: 'NovaStar; HUB75E ×12' },
+  { nama: 'MRV416-N', w: 512, h: 512, ket: 'NovaStar; HUB75E ×16' },
+  { nama: 'MRV532', w: 512, h: 512, ket: 'NovaStar; HUB320F ×10' },
+  { nama: 'A4s', w: 256, h: 256, ket: 'NovaStar seri lama; tidak ada di daftar situs saat ini' },
+  { nama: 'A5s Plus', w: 512, h: 384, ket: 'NovaStar Armor' },
+  { nama: 'A7s Plus', w: 512, h: 512, ket: 'NovaStar Armor' },
+  { nama: 'A8s-N', w: 512, h: 384, ket: 'NovaStar Armor; HDR' },
+  { nama: 'A10s Plus-N', w: 512, h: 512, ket: 'NovaStar Armor; HDR' },
+  { nama: 'A10s Pro', w: 512, h: 512, ket: 'NovaStar Armor; HDR; 512×384 untuk video 12-bit' },
+  { nama: 'DS-D44R08-N', w: 256, h: 256, ket: 'Hikvision; HUB75E ×8' },
+  { nama: 'DS-D44R12-N', w: 512, h: 512, ket: 'Hikvision; HUB75E ×12' },
+  { nama: 'DS-D44R16-N', w: 512, h: 384, ket: 'Hikvision; HUB75E ×16' },
+  { nama: 'DS-D44R38-N', w: 512, h: 512, ket: 'Hikvision; HUB320 ×8' },
+  { nama: 'DS-DR31C-08', w: 512, h: 512, ket: 'Hikvision; HUB320 ×8' },
+  { nama: 'DS-DR31H-08', w: 512, h: 512, ket: 'Hikvision; HUB75E ×8' },
+  { nama: 'DS-DR31H-12', w: 512, h: 512, ket: 'Hikvision; HUB75E ×12' },
+  { nama: 'DS-DR31H-16', w: 512, h: 512, ket: 'Hikvision; HUB75E ×16' },
 ];
 
 export function unitPerRC(rc: ReceivingCard, pxX: number, pxY: number, usulKol: number, usulBaris: number) {

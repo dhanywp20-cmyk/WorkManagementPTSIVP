@@ -6,7 +6,7 @@ function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
 }
 
-const pilih = MODUL_LED.filter(m => ['P1.86', 'P2.5', 'P3.84'].includes(m.kode));
+const pilih = MODUL_LED.filter(m => !m.brand && ['P1.86', 'P2.5', 'P3.84'].includes(m.kode));
 const o = { lebarM: 4, tinggiM: 2.25, bulat: 'round' as const, perM2: () => ({ daya: 600, berat: 30 }), faktorRata: 0.33, refresh: 60 as const, bit: 8 as const, tegangan: 220, faktorDaya: 0.95 };
 const b = bandingPitch(pilih, o);
 const p25 = b.find(x => x.modul.kode === 'P2.5')!;
