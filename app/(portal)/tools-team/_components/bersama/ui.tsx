@@ -6,6 +6,8 @@ import { SimpanKeProyek } from './SimpanKeProyek';
 
 export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
+export const angkaIsian = (n: number) => (Number.isFinite(n) ? String(Math.round(n * 1000) / 1000) : '');
+
 export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan, placeholder, onKosong }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
    placeholder?: string;
@@ -24,7 +26,7 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
       </span>
       <span className="relative block">
         <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}
-          value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
+          value={teks ?? angkaIsian(nilai)}
           onChange={e => {
             setTeks(e.target.value);
             const v = parseFloat(e.target.value.replace(',', '.'));

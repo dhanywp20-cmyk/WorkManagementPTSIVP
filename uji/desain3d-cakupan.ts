@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, cakupanProyektor, daftarRuang, KATEGORI_RUANG, permukaanBenda, permukaanPersegi, permukaanRuang, proyektorKeLayar,
+  bendaBaru, cakupanProyektor, cekRuangGerak, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
   templateRuang, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
@@ -119,6 +119,27 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
   cek('putar gizmo > 90°: sudut dibaca dari arah muka benda (quaternion), bukan rotation.y',
     /new THREE\.Vector3\(0, 0, 1\)\.applyQuaternion\(o\.quaternion\)/.test(mesin) && !/o\.rotation\.y \* 180/.test(mesin));
   cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
+}
+
+console.log('\nCahaya keluar layar');
+{
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const layar = bendaBaru('layar', k, { diag: 120, rasio: '16:9' });
+  const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon', rasioProyektor: '16:10', trMin: 1.2, trMax: 2, throwRatio: 1.5 });
+  const pas = proyektorKeLayar(p0, layar, k, r);
+  const lb = luberLayar(pas, layar);
+  cek('sinyal 16:10 di layar 16:9: cahaya keluar ±17 cm total atas-bawah', Math.abs(lb.atas + lb.bawah - (layar.w * 0.625 - layar.h)) < 0.02, JSON.stringify(lb));
+  cek('notifikasi muncul di Cek ruang & proyeksi', cekRuangGerak([layar, pas], r).some(c => c.kode === 'proyeksi' && /cahaya keluar/.test(c.pesan)));
+  const hasil = masukkanKeLayar(pas, layar, k, r);
+  cek('Masukkan cahaya: rasio sinyal mengikuti layar, tidak ada cahaya keluar, tanpa mask', hasil.benda.rasioProyektor === '16:9' && hasil.sisa.maks <= 0.01 && !hasil.dimask, JSON.stringify(hasil.sisa));
+  cek('setelah dimasukkan: notifikasi hilang', !cekRuangGerak([layar, hasil.benda], r).some(c => c.kode === 'proyeksi'));
+  const lebar = sinarProyektor(hasil.benda, [layar, hasil.benda], r);
+  cek('gambar tetap menutup layar', Math.abs(lebar.lebar - layar.w) < 0.02 && Math.abs(lebar.tinggi - layar.h) < 0.02, `${lebar.lebar} ${lebar.tinggi}`);
+  const kaku = { ...p0, trMin: 1.2, trMax: 1.2, throwRatio: 1.2 };
+  const dipaksa = masukkanKeLayar({ ...kaku, x: 4, z: 5.5, rasioProyektor: '4:3', koefRasio: { '4:3': [1.2, 1.2, 0, 0] } }, layar, k, r);
+  cek('rasio layar tidak tersedia: gambar dikecilkan masuk layar atau di-mask', dipaksa.sisa.maks <= 0.01 || dipaksa.benda.maskBidang === true, JSON.stringify(dipaksa.sisa));
+  cek('mask aktif: tidak diberi notifikasi lagi', !cekRuangGerak([layar, { ...pas, maskBidang: true }], r).some(c => c.kode === 'proyeksi'));
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

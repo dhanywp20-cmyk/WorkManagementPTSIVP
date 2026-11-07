@@ -69,7 +69,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 )}
                 <Catatan>
                   {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
-                    : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 6)} - ${f(zMax, 6)} : 1, relatif lebar gambar rasio ${b.rasioProyektor ?? '16:9'}). − = gambar membesar (wide), + = gambar mengecil (tele).`}
+                    : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 3)} - ${f(zMax, 3)} : 1, relatif lebar gambar rasio ${b.rasioProyektor ?? '16:9'}). − = gambar membesar (wide), + = gambar mengecil (tele).`}
                 </Catatan>
                 <div className="grid grid-cols-2 gap-2">
                   <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-BATAS_B}
