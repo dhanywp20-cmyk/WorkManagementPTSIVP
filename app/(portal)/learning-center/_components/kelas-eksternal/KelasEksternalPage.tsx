@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Copy, ExternalLink, MonitorPlay, Pencil, Play, Plus, QrCode, RotateCcw, Square, Trash2, Users } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { appBaseUrl } from '@/lib/app-url';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { statusKelas, type KelasEksternal, type StatusKelas } from '@/lib/kuis/kelas-eksternal';
 import { WARNA_BAWAAN, jadwalLive, labelTahap, statusLive, type StatusLive } from '@/lib/kuis/live';
 import { FormKelas } from './FormKelas';
@@ -80,17 +81,21 @@ export function KelasEksternalPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 space-y-4">
-      <div className="flex items-center gap-3 flex-wrap bg-white/90 rounded-2xl border border-slate-200 shadow-xs px-4 py-3">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-[16px] font-bold text-slate-900">Kelas Eksternal</h2>
-          <p className="text-[12px] text-slate-500">Kuis live ala Kahoot & ujian untuk customer · cukup isi nama · tanpa akun</p>
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
+        <div>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="🌐" />Kelas Eksternal</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Kuis live ala Kahoot & ujian untuk customer · cukup isi nama · tanpa akun</p>
         </div>
         {ubah && (
-          <button type="button" onClick={() => setForm('baru')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-[13px] font-bold"><Plus size={15} />Buat baru</button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" onClick={() => setForm('baru')}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all flex items-center gap-2"><Plus size={15} />Buat Kelas</button>
+          </div>
         )}
       </div>
+      <div className="p-4 sm:p-8 space-y-4">
 
       {kabar && <p className="rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-[13px] font-semibold text-emerald-700 break-all">{kabar}</p>}
       {galat && <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[13px] font-semibold text-red-700">{galat}</p>}
@@ -195,6 +200,7 @@ export function KelasEksternalPage() {
         </Modal>
       )}
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
+      </div>
     </div>
   );
 }

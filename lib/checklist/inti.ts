@@ -141,9 +141,18 @@ export interface ChecklistRingkas extends ChecklistDaftar {
   saya: boolean;
 }
 
+export interface StatLokasi { selesai: number; berjalan: number; belum: number; kosong: number }
+
+export function statusLokasiDari(st: StatChecklist): keyof StatLokasi {
+  if (st.total === 0) return 'kosong';
+  if (st.selesai === st.total) return 'selesai';
+  return st.selesai > 0 ? 'berjalan' : 'belum';
+}
+
 export interface ProyekRingkas extends ChecklistProyek {
   jumlah_checklist: number;
   stat: StatChecklist;
+  lokasi: StatLokasi;
   target_terdekat: string | null;
   saya: boolean;
 }

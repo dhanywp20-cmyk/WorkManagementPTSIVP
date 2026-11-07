@@ -1,6 +1,6 @@
 import {
   hariIni, keadaanJadwal, statDari,
-  type ChecklistItem, type KeadaanJadwal, type ProyekRingkas, type StatChecklist,
+  type ChecklistItem, type KeadaanJadwal, type ProyekRingkas, type StatChecklist, type StatLokasi,
 } from '@/lib/checklist/inti';
 import { kontribusiHandler, lokasiPerHandler, selesaiPerHari, type AnggotaNama, type Kontribusi } from '@/lib/checklist/ringkasan';
 
@@ -100,7 +100,7 @@ export function hitungRingkasan(
 }
 
 export interface RingkasanDaftar {
-  item: StatChecklist;
+  lokasi: StatLokasi & { total: number };
   perDivisi: { label: string; value: number }[];
   perSales: { label: string; value: number }[];
 }
@@ -112,10 +112,14 @@ function hitungLabel(nilai: (string | null | undefined)[], kosong: string): { la
 }
 
 export function ringkasDaftarProyek(proyek: ProyekRingkas[]): RingkasanDaftar {
-  const item = { total: 0, selesai: 0, kendala: 0 };
-  for (const p of proyek) { item.total += p.stat.total; item.selesai += p.stat.selesai; item.kendala += p.stat.kendala; }
+  const lokasi = { total: 0, selesai: 0, berjalan: 0, belum: 0, kosong: 0 };
+  for (const p of proyek) {
+    const l = p.lokasi ?? { selesai: 0, berjalan: 0, belum: 0, kosong: 0 };
+    lokasi.selesai += l.selesai; lokasi.berjalan += l.berjalan; lokasi.belum += l.belum; lokasi.kosong += l.kosong;
+  }
+  lokasi.total = lokasi.selesai + lokasi.berjalan + lokasi.belum + lokasi.kosong;
   return {
-    item,
+    lokasi,
     perDivisi: hitungLabel(proyek.map(p => p.sales_division), 'Tanpa divisi'),
     perSales: hitungLabel(proyek.map(p => p.sales_name), 'Tanpa Sales'),
   };
