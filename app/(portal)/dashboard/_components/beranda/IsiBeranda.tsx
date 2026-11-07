@@ -6,7 +6,8 @@ import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitive
 import type { KPIData, Scope } from '@/lib/kpi-dasbor';
 import type { User } from '../shared';
 import { RincianBento } from './RincianBento';
-import { Angka, Bilah, GrafikKolom, IkonPanah, RuasTim, fmtId } from './grafik';
+import { Angka, Bilah, GrafikKolom, IkonPanah, fmtId } from './grafik';
+import { KartuJadwalTim } from './KartuJadwalTim';
 import { DAFTAR_PERIODE, hitungJadwal, hitungTiket, rentangPeriode, tanggalLokal, type KunciPeriode } from './periode';
 
 const MERAH = '#dc2626';
@@ -108,11 +109,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
             <p className="bb-catatan">{tiket.belum} belum selesai</p>
           </KartuAngka>
 
-          <KartuAngka d={1} judul="Daily Report" nilai={sudahLapor} satuan={`dari ${totalTim} anggota`}
-            kanan={totalTim ? `${fmtId((sudahLapor / totalTim) * 100, 0)}%` : '—'} onBuka={() => openMenu('daily-report')}>
-            <RuasTim anggota={tim.rows} warna={AKSEN_UTAMA} />
-            <p className="bb-catatan">{belumLapor ? `${belumLapor} anggota belum isi hari ini` : 'Semua sudah isi hari ini'}</p>
-          </KartuAngka>
+          <KartuJadwalTim kpi={kpi} d={1} onBuka={() => openMenu('reminder-schedule')} />
 
           <KartuAngka d={2} judul="Terlambat" nilai={terlambat} satuan={`dari ${aktif} aktif`} warnaNilai={terlambat > 0 ? MERAH : undefined}
             kanan={aktif ? `${fmtId((terlambat / aktif) * 100)}%` : '—'} onBuka={() => openMenu('reminder-schedule')}>

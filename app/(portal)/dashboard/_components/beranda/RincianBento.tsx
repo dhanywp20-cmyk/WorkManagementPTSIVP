@@ -36,13 +36,6 @@ function Kosong({ teks }: { teks: string }) {
   return <p className="flex-1 grid place-items-center text-[12px] text-slate-500 text-center py-5">{teks}</p>;
 }
 
-const inisial = (n: string) => n.trim().split(/\s+/).slice(0, 2).map(s => s[0]?.toUpperCase()).join('');
-
-function warnaOrang(n: string) {
-  const h = [...n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-  return { background: `hsl(${h} 70% 92%)`, color: `hsl(${h} 55% 32%)` };
-}
-
 type TabAsal = 'produk' | 'divisi' | 'handler' | 'status';
 
 function KartuAsalTiket({ kpi, kelas, onBuka }: { kpi: KPIData | null; kelas: string; onBuka: () => void }) {
@@ -79,8 +72,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
   kpi: KPIData | null; user: User; openMenu: (key: string) => void; kartuTim?: React.ReactNode; scope: Scope;
 }) {
   const s = useSorotanModul(user);
-  const jadwal = kpi?.jadwalDekat;
-  const hariIniStr = !!jadwal?.hariIni;
   const tua = kpi?.tiketTua ?? [];
   const menunggu = s.antrean.reduce((n, a) => n + a.jumlah, 0) + (kpi?.tickets.waitingApproval ?? 0);
 
@@ -100,41 +91,12 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
 
   return (
     <div className="bb-bento bb-naik" style={{ ['--d' as string]: 6 } as React.CSSProperties}>
-      <Kartu judul={hariIniStr ? 'Jadwal tim hari ini' : 'Jadwal tim berikutnya'} kelas="bb-b7" onBuka={() => openMenu('reminder-schedule')}
-        kalimat={!jadwal ? undefined : jadwal.hariIni
-          ? <>{jadwal.total} jadwal hari ini, {jadwal.selesai} sudah selesai.</>
-          : <>Tidak ada jadwal hari ini. Berikutnya {jadwal.label}: {jadwal.total} jadwal.</>}>
-        {!jadwal ? <Kosong teks="Belum ada jadwal mendatang." /> : (
-          <ul className="flex flex-col flex-1 min-h-0">
-            {jadwal.daftar.map(j => (
-              <li key={j.id} className={`bb-jadwal ${j.selesai ? 'bb-jadwal-selesai' : ''}`}>
-                <time>{j.jam || '—'}</time>
-                <span className="min-w-0 flex-1">
-                  <b title={j.proyek}>{j.proyek}</b>
-                  <small>{j.kategori}{j.selesai && ' · selesai'}</small>
-                </span>
-                <span className="bb-orang" title={j.pic} style={warnaOrang(j.pic)} aria-label={j.pic}>{inisial(j.pic) || '?'}</span>
-              </li>
-            ))}
-            {jadwal.total > jadwal.daftar.length && (
-              <li className="pt-2 mt-auto"><button type="button" className="text-[12px] font-semibold hover:underline" style={{ color: AKSEN_UTAMA }} onClick={() => openMenu('reminder-schedule')}>+{jadwal.total - jadwal.daftar.length} jadwal lainnya</button></li>
-            )}
-          </ul>
-        )}
-        {(kpi?.bebanHari?.length ?? 0) > 0 && (
-          <div className="bb-lima" role="img" aria-label={`Jadwal 5 hari ke depan: ${kpi?.bebanHari?.map(b => `${b.label} ${b.jumlah}`).join(', ')}`}>
-            {kpi?.bebanHari?.map(b => (
-              <div key={b.kunci}>
-                <b className={b.jumlah ? '' : 'text-slate-400'}>{b.jumlah}</b>
-                <i style={{ height: `${Math.max(4, (b.jumlah / Math.max(1, ...(kpi?.bebanHari ?? []).map(x => x.jumlah))) * 28)}px`, background: b.jumlah ? AKSEN_UTAMA : '#e2e8f0' }} />
-                <span>{b.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Kartu>
-
       <KartuAsalTiket kpi={kpi} kelas="bb-b5" onBuka={() => openMenu('ticket-troubleshooting')} />
+
+      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas="bb-b7"
+        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
+        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
+      </Kartu>
 
       {kartuTim && <div className={`bb-tim ${adaAntrean || adaUnit ? 'bb-b5' : 'bb-b12'} min-w-0`}>{kartuTim}</div>}
 
@@ -213,13 +175,9 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </Kartu>
       )}
 
-      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas="bb-b7"
-        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
-        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
-      </Kartu>
-
-      <Kartu judul="Project Progress" kelas="bb-b5" onBuka={() => openMenu('project-progress')}
+      <Kartu judul="Project Progress" kelas="bb-b12" onBuka={() => openMenu('project-progress')}
         sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
+        <div className="bb-proyek-kisi">
         {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
           : s.proyek.length === 0 ? <Kosong teks="Belum ada proyek berjalan." />
             : s.proyek.map(p => (
@@ -230,6 +188,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
                 <span className="bb-proyek-info">Target {p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
               </button>
             ))}
+        </div>
       </Kartu>
     </div>
   );

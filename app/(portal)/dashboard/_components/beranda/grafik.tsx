@@ -27,18 +27,6 @@ export function Bilah({ persen, warna, tik, label }: { persen: number; warna: st
   );
 }
 
-export function RuasTim({ anggota, warna }: { anggota: { id: string; name: string; reported: boolean }[]; warna: string }) {
-  const urut = [...anggota].sort((a, b) => Number(b.reported) - Number(a.reported));
-  return (
-    <div className="bb-ruas" role="img" aria-label={`${anggota.filter(a => a.reported).length} dari ${anggota.length} anggota sudah mengisi`}>
-      {urut.map((a, i) => (
-        <span key={a.id} title={`${a.name}: ${a.reported ? 'sudah isi' : 'belum isi'}`}
-          style={{ background: a.reported ? warna : undefined, ['--i' as string]: i } as React.CSSProperties} />
-      ))}
-    </div>
-  );
-}
-
 function skalaBulat(puncak: number) {
   if (puncak <= 4) return 4;
   const pangkat = 10 ** Math.floor(Math.log10(puncak));
