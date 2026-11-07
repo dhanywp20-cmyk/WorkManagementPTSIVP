@@ -10,6 +10,7 @@ import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-das
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
 import PanelAgenda, { type RingkasAgenda } from '../workcenter/PanelAgenda';
+import { IsiBeranda } from '../beranda/IsiBeranda';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -141,12 +142,12 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         {adaAnalytics ? (
           <AnalyticsPlatform embedded injectedUser={currentUser}
             controlledTab={tab} onTabChange={setTab} onCounts={setHitung}
-            opsiBeranda={{
+            renderIsiKpi={p => <IsiBeranda {...p} opsi={{
               user: currentUser,
               openMenu,
               panelSamping: panel,
               rincianAtas: monitor ? <monitor.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} /> : undefined,
-            }} />
+            }} />} />
         ) : (
           <>
             {ringkasAgenda && (

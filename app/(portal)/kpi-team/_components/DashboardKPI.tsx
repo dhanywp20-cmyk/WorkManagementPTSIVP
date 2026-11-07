@@ -12,11 +12,13 @@ import { AuditEntry, KPIData, KPITeamState, Scope } from './DashboardKPI-tipe';
 import { useAuditKPI } from './useAuditKPI';
 import { useMuatKPI } from './useMuatKPI';
 import { IsiDashboardKPI } from './IsiDashboardKPI';
-import { IsiBeranda, type OpsiBeranda } from '@/app/(portal)/dashboard/_components/beranda/IsiBeranda';
 
-interface DashboardKPIProps { currentUser: User; opsiBeranda?: OpsiBeranda; }
+interface DashboardKPIProps {
+  currentUser: User;
+  renderIsi?: (p: { kpi: KPIData | null; loading: boolean; scope: Scope }) => React.ReactNode;
+}
 
-export default function DashboardKPI({ currentUser: userProp, opsiBeranda }: DashboardKPIProps) {
+export default function DashboardKPI({ currentUser: userProp, renderIsi }: DashboardKPIProps) {
   const userKey = JSON.stringify(userProp);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const currentUser = useMemo(() => userProp, [userKey]);
@@ -174,8 +176,8 @@ export default function DashboardKPI({ currentUser: userProp, opsiBeranda }: Das
 
   return (
     <div className="w-full">
-        {opsiBeranda
-          ? <IsiBeranda kpi={kpi} loading={loading} scope={scope} opsi={opsiBeranda} />
+        {renderIsi
+          ? renderIsi({ kpi, loading, scope })
           : <IsiDashboardKPI auditFilter={auditFilter} auditLoading={auditLoading} auditSearch={auditSearch} filteredAudit={filteredAudit} kpi={kpi} loading={loading} scope={scope} setAuditFilter={setAuditFilter} setAuditSearch={setAuditSearch} tab={tab} />}
 
       <ModalPengaturanDasborKPI

@@ -62,11 +62,11 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
 }
 
 export function AnalyticsPlatform({
-  embedded = false, injectedUser, controlledTab, onTabChange, onCounts, opsiBeranda,
+  embedded = false, injectedUser, controlledTab, onTabChange, onCounts, renderIsiKpi,
 }: {
   embedded?: boolean; injectedUser?: User;
   controlledTab?: Tab; onTabChange?: (tab: Tab) => void;
-  onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void; opsiBeranda?: ComponentProps<typeof DashboardKPI>['opsiBeranda'];
+  onCounts?: (counts: { totalAlerts: number; auditCount: number }) => void; renderIsiKpi?: ComponentProps<typeof DashboardKPI>['renderIsi'];
 } = {}) {
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>(injectedUser ? 'ok' : 'checking');
@@ -342,7 +342,7 @@ export function AnalyticsPlatform({
       <div className={embedded ? 'space-y-4' : 'flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-4'}>
 
         {tab === 'kpi' && (
-          <DashboardKPI currentUser={user as unknown as DashUser} opsiBeranda={opsiBeranda} />
+          <DashboardKPI currentUser={user as unknown as DashUser} renderIsi={renderIsiKpi} />
         )}
 
         {tab === 'command' && (

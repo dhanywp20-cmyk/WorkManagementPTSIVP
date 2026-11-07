@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitives';
 import type { User } from '../shared';
-import type { KPIData, Scope } from '@/app/(portal)/kpi-team/_components/DashboardKPI-tipe';
-import { HBarChart } from '@/app/(portal)/kpi-team/_components/DashboardKPI-ubin';
-import { TrenBulanan } from '@/app/(portal)/kpi-team/_components/DashboardKPI-tren';
+import type { KPIData, Scope } from '@/lib/kpi-dasbor';
+import { HBarChart, TrenBulanan } from '@/components/shared/grafik-kpi';
 import { Angka, Bilah, IkonPanah, fmtId } from './grafik';
 import { useSorotanModul } from './useSorotanModul';
 
@@ -97,26 +96,11 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
 
   const adaUnit = !!s.unit, adaReview = !!s.review;
   const adaAntrean = s.antrean.length > 0;
-  const adaBarisDua = adaAntrean || adaUnit;
+  const adaTim = !!kartuTim;
 
   return (
     <div className="bb-bento bb-naik" style={{ ['--d' as string]: 6 } as React.CSSProperties}>
-      <Kartu judul="Project Progress" kelas="bb-b5" onBuka={() => openMenu('project-progress')}
-        sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
-        {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
-          : s.proyek.length === 0 ? <Kosong teks="Belum ada proyek berjalan." />
-            : s.proyek.map(p => (
-              <button key={p.id} type="button" className="bb-proyek" onClick={() => openMenu('project-progress')}>
-                <span className="bb-proyek-nama" title={p.nama}>{p.nama}</span>
-                <span className="bb-proyek-angka">{p.persen}%</span>
-                <span className="bb-proyek-bilah"><Bilah persen={p.persen} warna={AKSEN_UTAMA} label={p.nama} /></span>
-                <span className="bb-proyek-info">Target {p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
-              </button>
-            ))}
-      </Kartu>
-      {kartuTim && <div className="bb-b7 min-w-0">{kartuTim}</div>}
-
-      <Kartu judul={hariIniStr ? 'Jadwal tim hari ini' : 'Jadwal tim berikutnya'} kelas="bb-b5" onBuka={() => openMenu('reminder-schedule')}
+      <Kartu judul={hariIniStr ? 'Jadwal tim hari ini' : 'Jadwal tim berikutnya'} kelas="bb-b7" onBuka={() => openMenu('reminder-schedule')}
         kalimat={!jadwal ? undefined : jadwal.hariIni
           ? <>{jadwal.total} jadwal hari ini, {jadwal.selesai} sudah selesai.</>
           : <>Tidak ada jadwal hari ini. Berikutnya {jadwal.label}: {jadwal.total} jadwal.</>}>
@@ -150,8 +134,12 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         )}
       </Kartu>
 
+      <KartuAsalTiket kpi={kpi} kelas="bb-b5" onBuka={() => openMenu('ticket-troubleshooting')} />
+
+      {kartuTim && <div className={`bb-tim ${adaAntrean || adaUnit ? 'bb-b5' : 'bb-b12'} min-w-0`}>{kartuTim}</div>}
+
       {adaAntrean && (
-        <Kartu judul="Menunggu keputusan" kelas={adaUnit ? 'bb-b4' : 'bb-b7'}
+        <Kartu judul="Menunggu keputusan" kelas={adaTim ? (adaUnit ? 'bb-b4' : 'bb-b7') : (adaUnit ? 'bb-b7' : 'bb-b12')}
           kalimat={menunggu ? <><span className="tabular-nums"><Angka nilai={menunggu} /></span> hal menunggu keputusan.</> : 'Semua sudah diputuskan.'}>
           <div className="flex flex-col">
             {[{ kunci: 'tiket', label: 'Tiket Waiting Approval', jumlah: kpi?.tickets.waitingApproval ?? 0, menu: 'ticket-troubleshooting' }, ...s.antrean]
@@ -166,7 +154,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
       )}
 
       {adaUnit && s.unit && (
-        <Kartu judul="Unit di luar" kelas={adaAntrean ? 'bb-b3' : 'bb-b7'} onBuka={() => openMenu('unit-movement')}
+        <Kartu judul="Unit di luar" kelas={adaTim ? (adaAntrean ? 'bb-b3' : 'bb-b7') : (adaAntrean ? 'bb-b5' : 'bb-b12')} onBuka={() => openMenu('unit-movement')}
           kalimat={s.unit.total === 0 ? 'Semua unit pinjaman sudah kembali.'
             : s.unit.lewat > 0 ? <><span style={{ color: MERAH }}>{s.unit.lewat} unit</span> lewat tanggal kembali.</>
               : <>{s.unit.total} unit dipinjam, semua masih dalam tenggat.</>}>
@@ -182,9 +170,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </Kartu>
       )}
 
-      <KartuAsalTiket kpi={kpi} kelas={adaBarisDua ? 'bb-b5' : 'bb-b7'} onBuka={() => openMenu('ticket-troubleshooting')} />
-
-      <Kartu judul="Tiket terlama" kelas={adaBarisDua ? (adaReview ? 'bb-b4' : 'bb-b7') : (adaReview ? 'bb-b8' : 'bb-b12')} onBuka={() => openMenu('ticket-troubleshooting')}
+      <Kartu judul="Tiket terlama" kelas={adaReview && adaBelajar ? 'bb-b5' : adaReview || adaBelajar ? 'bb-b7' : 'bb-b12'} onBuka={() => openMenu('ticket-troubleshooting')}
         kalimat={tua.length ? <>Tiket tertua sudah terbuka <span style={{ color: tua[0].hari > 7 ? MERAH : undefined }}>{tua[0].hari} hari</span>.</> : 'Tidak ada tiket terbuka.'}>
         <div className="flex flex-col">
           {tua.map(t => (
@@ -200,7 +186,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
       </Kartu>
 
       {adaReview && s.review && (
-        <Kartu judul="Nilai dari Sales" kelas={adaBarisDua ? 'bb-b3' : 'bb-b4'} onBuka={() => openMenu('form-bast')}>
+        <Kartu judul="Nilai dari Sales" kelas={adaBelajar ? 'bb-b3' : 'bb-b5'} onBuka={() => openMenu('form-bast')}>
           {s.review.jumlah === 0 ? <Kosong teks="Belum ada review." /> : (
             <>
               <div className="flex items-baseline gap-1.5 mb-2">
@@ -215,13 +201,8 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
         </Kartu>
       )}
 
-      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas={adaBelajar ? 'bb-b8' : 'bb-b12'}
-        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
-        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={760} viewH={150} warna={AKSEN_UTAMA} /></div>
-      </Kartu>
-
       {adaBelajar && (
-        <Kartu judul="Pembelajaran tim" kelas="bb-b4 bb-tetap" onBuka={() => openMenu('learning-center')}>
+        <Kartu judul="Pembelajaran tim" kelas={adaReview ? 'bb-b4' : 'bb-b5'} onBuka={() => openMenu('learning-center')}>
           <div className="flex items-baseline gap-1.5 mb-2">
             <span className="text-[30px] font-black leading-none tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{fmtId(persenLulus, 0)}%</span>
             <span className="text-[12px] font-semibold text-slate-500">lulus quiz</span>
@@ -231,6 +212,25 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope }: {
           {s.techNote && <p className="bb-catatan mt-auto">Tech Note {new Date().getFullYear()}: {s.techNote.disetujui} disetujui · {s.techNote.menunggu} menunggu</p>}
         </Kartu>
       )}
+
+      <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kelas="bb-b7"
+        kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
+        <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
+      </Kartu>
+
+      <Kartu judul="Project Progress" kelas="bb-b5" onBuka={() => openMenu('project-progress')}
+        sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>}>
+        {s.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
+          : s.proyek.length === 0 ? <Kosong teks="Belum ada proyek berjalan." />
+            : s.proyek.map(p => (
+              <button key={p.id} type="button" className="bb-proyek" onClick={() => openMenu('project-progress')}>
+                <span className="bb-proyek-nama" title={p.nama}>{p.nama}</span>
+                <span className="bb-proyek-angka">{p.persen}%</span>
+                <span className="bb-proyek-bilah"><Bilah persen={p.persen} warna={AKSEN_UTAMA} label={p.nama} /></span>
+                <span className="bb-proyek-info">Target {p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
+              </button>
+            ))}
+      </Kartu>
     </div>
   );
 }

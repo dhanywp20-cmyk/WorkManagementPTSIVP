@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useDaftarTim } from '../widgets/daftar-tim';
 import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitives';
-import type { KPIData, Scope } from '@/app/(portal)/kpi-team/_components/DashboardKPI-tipe';
+import type { KPIData, Scope } from '@/lib/kpi-dasbor';
 import type { User } from '../shared';
 import { RincianBento } from './RincianBento';
 import { Angka, Bilah, GrafikKolom, IkonPanah, RuasTim, fmtId } from './grafik';

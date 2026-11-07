@@ -11,23 +11,7 @@ export const HATI   = '#d97706';
 
 export const KRITIS = '#e11d48';
 
-export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data:{label:string;value:number}[]; color?:string; maxItems?:number; lebarLabel?:string }) {
-  const top = data.slice(0, maxItems), max = Math.max(...top.map(d=>d.value), 1);
-  return (
-    <div className="flex flex-col gap-[7px]">
-      {top.map((d,i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span title={d.label} className="text-[11px] font-semibold shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:lebarLabel, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
-          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{ width:`${(d.value/max)*100}%`, background: color ?? AKSEN }}/>
-          </div>
-          <span className="text-[11px] font-bold w-5 text-right shrink-0 tabular-nums" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+export { HBarChart } from '@/components/shared/grafik-kpi';
 
 export function BarisRincian({ label, value, total, warna, teks }: {
   label:string; value?:number; total?:number; warna?:string; teks?:React.ReactNode;

@@ -1,4 +1,4 @@
-import type { DeretKPI } from '@/app/(portal)/kpi-team/_components/DashboardKPI-tipe';
+import type { DeretKPI } from '@/lib/kpi-dasbor';
 
 export type KunciPeriode = '7' | '30' | '90' | 'tahun' | 'semua';
 
