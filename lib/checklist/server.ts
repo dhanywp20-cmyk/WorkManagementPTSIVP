@@ -7,7 +7,7 @@ import { getSessionUser } from '../auth/server';
 import { bacaRahasia } from '../auth/rahasia-server';
 import { bacaPengaturan } from '../notifikasi/pengaturan';
 import {
-  BATAS, formatTanggal,
+  BATAS, formatTanggal, statusLokasiDari,
   type ChecklistAnggota, type ChecklistDetail, type ChecklistItem, type ChecklistProyek, type ChecklistRingkas,
   type ChecklistRiwayat, type DraftChecklist, type HakChecklist, type LewatCentang, type PerubahanItem,
   type ProyekDetail, type ProyekRingkas, type StatChecklist, type SumberChecklist,
@@ -144,6 +144,7 @@ export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingka
       share_token: admin ? p.share_token : null,
       jumlah_checklist: milik.length,
       stat: jumlahkan(milik.map(d => stat.get(d.id) ?? STAT_KOSONG)),
+      lokasi: milik.reduce((a, d) => { a[statusLokasiDari(stat.get(d.id) ?? STAT_KOSONG)]++; return a; }, { selesai: 0, berjalan: 0, belum: 0, kosong: 0 }),
       target_terdekat: terbuka[0] ?? null,
       saya,
     }];

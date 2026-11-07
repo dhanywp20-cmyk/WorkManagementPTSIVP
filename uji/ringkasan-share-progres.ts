@@ -68,10 +68,11 @@ cek('selesaiPerHari mengabaikan item belum selesai', Object.values(selesaiPerHar
 cek('kontribusiHandler tanpa anggota -> kosong', kontribusiHandler(items, []).length === 0);
 
 console.log('\n4. Daftar proyek & checklist');
-const pr = (id: string, div: string | null, sales: string | null, total: number, selesai: number, kendala = 0) =>
-  ({ id, nama: id, status: 'in_progress', sales_division: div, sales_name: sales, stat: { total, selesai, kendala } }) as unknown as Parameters<typeof ringkasDaftarProyek>[0][number];
-const rd = ringkasDaftarProyek([pr('A', 'Pegasus', 'Budi', 10, 5, 1), pr('B', 'Pegasus', 'Sari', 4, 4), pr('C', null, 'Budi', 0, 0)]);
-cek('daftar: item dijumlah', rd.item.total === 14 && rd.item.selesai === 9 && rd.item.kendala === 1);
+const pr = (id: string, div: string | null, sales: string | null, lokasi: [number, number, number, number]) =>
+  ({ id, nama: id, status: 'in_progress', sales_division: div, sales_name: sales, stat: { total: 0, selesai: 0, kendala: 0 },
+    lokasi: { selesai: lokasi[0], berjalan: lokasi[1], belum: lokasi[2], kosong: lokasi[3] } }) as unknown as Parameters<typeof ringkasDaftarProyek>[0][number];
+const rd = ringkasDaftarProyek([pr('A', 'Pegasus', 'Budi', [3, 1, 1, 0]), pr('B', 'Pegasus', 'Sari', [2, 0, 0, 1]), pr('C', null, 'Budi', [0, 0, 0, 0])]);
+cek('daftar: lokasi dijumlah', rd.lokasi.total === 8 && rd.lokasi.selesai === 5 && rd.lokasi.berjalan === 1 && rd.lokasi.belum === 1 && rd.lokasi.kosong === 1);
 cek('daftar: per divisi (kosong -> Tanpa divisi)', rd.perDivisi[0].label === 'Pegasus' && rd.perDivisi[0].value === 2 && rd.perDivisi.some(d => d.label === 'Tanpa divisi'));
 cek('daftar: per Sales', rd.perSales[0].label === 'Budi' && rd.perSales[0].value === 2);
 const rc = ringkasChecklist({ start_date: '2026-10-01', target_date: '2026-10-20' }, items.filter(i => i.daftar_id === 'a'), anggota, HARI);
