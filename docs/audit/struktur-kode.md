@@ -284,6 +284,7 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
   - `TeamUser`, `GuestUser`, `CATEGORY_CONFIG`, `DAILY_REPORT_CATEGORIES`, `PRODUCT_TYPES`, `PIE_COLORS`,
     `formatDatetime`, `Priority`, `RepeatType` → `lib/jadwal/tampilan.ts` (dipakai Daily Report & Dashboard)
   - `UBIN`, `BAYANG_UBIN`, `AKSEN_UTAMA`, `LABEL_UBIN`, `RelAksen` → `components/shared/ubin.tsx` (dipakai KPI)
+  - tipe `KPIData`, `Scope` & deret beranda → `lib/kpi-dasbor.ts`; `HBarChart`, `TrenBulanan` → `components/shared/grafik-kpi.tsx` (dipakai Dashboard & KPI). Isi beranda dikirim ke `DashboardKPI` lewat prop `renderIsi`, jadi `kpi-team` tidak mengimpor `dashboard`
 - Sisa yang memang komposisi fitur, dicatat di `uji/batas-modul.mjs` (daftar `BOLEH`):
   - `_kerangka` → `dashboard` (kerangka portal memakai pencarian, nav bawah, modal akun)
   - `checklist` → `project-progress` (halaman bagikan checklist memakai tampilan Project Progress)
