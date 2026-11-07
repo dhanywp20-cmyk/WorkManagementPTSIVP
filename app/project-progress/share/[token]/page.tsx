@@ -1,7 +1,7 @@
 'use client';
 
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
-import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist';
+import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist/inti';
 import { NETRAL } from '@/lib/desain';
 import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
@@ -80,7 +80,7 @@ export default function ProyekSharePage() {
               {data?.proyek.client ? `${data.proyek.client} · ` : ''}Tampilan hanya-baca
             </p>
           </div>
-          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 flex-shrink-0"
+          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 shrink-0"
             style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>
             <Eye size={13} /> View Only
           </span>
@@ -139,7 +139,7 @@ export default function ProyekSharePage() {
                       <MapPin size={15} style={{ color: TEMA.warna }} />
                       <span className="font-bold text-[14px] flex-1 min-w-0 truncate" style={{ color: NETRAL.tinta }}>{d.judul}</span>
                       <KepingKendala jumlah={s.kendala} />
-                      <ChevronRight size={16} className="flex-shrink-0" style={{ color: TEMA.samar }} />
+                      <ChevronRight size={16} className="shrink-0" style={{ color: TEMA.samar }} />
                     </div>
                     <div className="pl-6 flex items-center gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">

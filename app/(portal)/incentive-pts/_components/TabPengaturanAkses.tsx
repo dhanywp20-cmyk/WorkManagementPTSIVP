@@ -3,7 +3,7 @@
 import { bisaKonfig } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { KartuAturanNominal } from './KartuAturanNominal';
-import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES } from '@/lib/incentive-akses';
+import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES } from '@/lib/incentive/akses';
 import { useKonteksInsentif } from './konteks-insentif';
 
 export function TabPengaturanAkses() {
@@ -13,7 +13,7 @@ export function TabPengaturanAkses() {
   return (
     <>
       {tab === 'settings' && bisaKonfig(currentUser) && !loading && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05))' }}>
             <h2 className="font-bold text-gray-800"><IkonTeks nama="⚙" />Akses Incentive PTS</h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -30,7 +30,7 @@ export function TabPengaturanAkses() {
             </div>
             <input value={cariUser} onChange={e => setCariUser(e.target.value)}
               placeholder="Cari nama atau username…" aria-label="Cari pengguna"
-              className="mt-3 w-full sm:max-w-xs text-xs px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-indigo-300" />
+              className="mt-3 w-full sm:max-w-xs text-xs px-3 py-2 rounded-lg border border-gray-200 bg-white outline-hidden focus:ring-2 focus:ring-indigo-300" />
           </div>
           <KartuAturanNominal />
           <div className="divide-y divide-gray-100">

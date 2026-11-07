@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import { type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { type TeamUser, type GuestUser } from '@/lib/jadwal/tampilan';
 import { type ReminderActivity, type TicketActivity, type ManualActivity, type TeamEntry } from './shared';
 
 export interface NilaiKonteksFormLaporan {

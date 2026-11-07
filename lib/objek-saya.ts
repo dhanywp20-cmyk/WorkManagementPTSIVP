@@ -1,4 +1,4 @@
-import { bersihkanIsiRak } from '@/lib/perangkat-rak';
+import { bersihkanIsiRak } from '@/lib/av/perangkat-rak';
 import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
 export const FORMAT_OBJEK_SAYA = 'pts-objek-saya';

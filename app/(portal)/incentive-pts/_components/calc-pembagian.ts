@@ -1,4 +1,4 @@
-import { PenerimaPeran, SkemaInsentif, hitungManagerSebagaiPic, hitungPembagian } from '@/lib/incentive-scheme';
+import { PenerimaPeran, SkemaInsentif, hitungManagerSebagaiPic, hitungPembagian } from '@/lib/incentive/scheme';
 import { supabase } from '@/lib/supabase';
 import { IncentiveProjectRow, SplitResult } from './calc-tipe';
 

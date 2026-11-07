@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Angka, Catatan, f } from '../../bersama/ui';
-import { rencanaBlending } from '@/lib/av-layar-proyektor';
+import { rencanaBlending } from '@/lib/av/layar-proyektor';
 import { type Benda, rasioProyektorDari, resolusiProyektorDari, ruangDari, susunBlending, throwRatioDari } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 

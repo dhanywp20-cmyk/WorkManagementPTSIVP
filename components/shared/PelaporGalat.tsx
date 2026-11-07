@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { laporGalat } from '@/lib/lapor-galat';
+import { laporGalat } from '@/lib/galat/lapor';
 
 export function PelaporGalat() {
   useEffect(() => {

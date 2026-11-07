@@ -4,11 +4,11 @@ import { denganNilai, useDaftarPilihan, produkSpesifik } from '@/lib/daftar-pili
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
-import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket-akses';
+import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket/akses';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR,
@@ -16,8 +16,8 @@ import {
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
   bacaPicPiket, tulisPicPiket,
 } from './_components/shared';
-import { namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
-import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, ModalPortal, Toast, type Notif } from '@/components/shared';
+import { namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok/inti';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, Toast, type Notif } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -26,6 +26,9 @@ import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
 import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { DaftarPiketHp } from './_components/DaftarPiketHp';
+import { SpandukHariIni } from './_components/SpandukHariIni';
+import { LapisanMemuatPiket, NavigasiMinggu, ChipFilterAktif } from './_components/bilah-piket';
 
 function PiketShowroomPageInner() {
   const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
@@ -285,17 +288,7 @@ function PiketShowroomPageInner() {
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <Toast notif={toast} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
-      {loading&&rows.length===0&&(
-      <>
-        <div role="status" aria-busy="true" className="absolute inset-0 z-40 flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
-          <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
-          <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
-            <svg aria-hidden="true" focusable="false" className="w-16 h-16 animate-spin" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f1f5f9" strokeWidth="6"/><path d="M32 6 A26 26 0 0 1 58 32" stroke="#dc2626" strokeWidth="6" strokeLinecap="round"/></svg>
-            <p className="text-sm font-bold text-slate-700">Loading...</p>
-          </div>
-        </div>
-      </>
-      )}
+      {loading&&rows.length===0&&<LapisanMemuatPiket />}
 
       <div className="relative flex flex-col flex-1 overflow-hidden">
         <PageHeader icon="🏪" title="Piket Showroom" subtitle="IndoVisual Presentama · Jadwal Piket Tim PTS">
@@ -346,19 +339,7 @@ function PiketShowroomPageInner() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Schedule Piket</span>
                   <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{displayRows.length}</span>
-                  <div className="flex items-center gap-1">
-                    <button onClick={()=>setWeekStart(d=>addDays(d,-28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
-                    <button aria-label="Sebelumnya" onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{background:'rgba(220,38,38,0.07)',border:'1px solid rgba(220,38,38,0.2)'}}>
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
-                        <span className="text-[11px] text-red-600 leading-tight">{wLabel2}</span>
-                      </div>
-                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
-                    </div>
-                    <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
-                    <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
-                  </div>
+                  <NavigasiMinggu wLabel={wLabel} wLabel2={wLabel2} isCurrWeek={isCurrWeek} setWeekStart={setWeekStart} />
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={()=>setShowCalendar(true)}
@@ -378,12 +359,12 @@ function PiketShowroomPageInner() {
                 <div className="relative flex-1 min-w-[160px]">
                   <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   <input aria-label="Cari nama, instansi, kegiatan..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama, instansi, kegiatan..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-hidden" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
                 </div>
-                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
-                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Kegiatan</option>{denganNilai(daftarKegiatan, filterKegiatan).map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
@@ -391,104 +372,21 @@ function PiketShowroomPageInner() {
                   <IkonTeks nama="🏢" />Ada Tamu
                 </button>
               </div>
-              {(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)&&(
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[11px] font-bold text-sky-700"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span><button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[11px] ml-1">✕</button></div>)}
-                  {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}><span className="text-[11px] font-bold text-violet-600"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKebutuhan}</span><button aria-label="Tutup" onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[11px] ml-1">✕</button></div>)}
-                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[11px] font-bold text-amber-700"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span><button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[11px] ml-1">✕</button></div>)}
-                  {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}><span className="text-[11px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKegiatan}</span><button aria-label="Tutup" onClick={()=>setFilterKegiatan(null)} className="text-[11px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button></div>)}
-                </div>
-              )}
+              <ChipFilterAktif filterInstansi={filterInstansi} setFilterInstansi={setFilterInstansi} filterKebutuhan={filterKebutuhan}
+                setFilterKebutuhan={setFilterKebutuhan} filterDivision={filterDivision} setFilterDivision={setFilterDivision}
+                filterKegiatan={filterKegiatan} setFilterKegiatan={setFilterKegiatan} />
             </div>
 
-            {(()=>{
-              const now=new Date();
-              const todayDow=now.getDay();
-              const isWeekday=todayDow>=1&&todayDow<=5;
-              const todayName=DAYS_OF_WEEK[todayDow-1];
-              const todayDc=isWeekday&&todayName?DAY_COLOR[todayName]:null;
-              const todayInView=displayRows.find(r=>r.day_date===toKey(now));
-              const todayPIC=todayInView?(bacaPicPiket(todayInView)?.name||'Belum ada PIC'):null;
-              if(!isWeekday)return null;
-              return(
-                <div className="mx-4 mb-3 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{background:`${todayDc?.accent||'#dc2626'}10`,border:`1px solid ${todayDc?.accent||'#dc2626'}30`}}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0" style={{background:todayDc?.grad||'linear-gradient(135deg,#dc2626,#991b1b)'}}>
-                    {now.getDate()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}><IkonTeks nama="📍" />Hari ini: {todayName}</span>
-                      <span className="text-[11px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
-                      {todayInView&&todayPIC&&<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
-                      {!todayInView&&<span className="text-[11px] text-slate-500 italic">Jadwal hari ini tidak tampil di view ini</span>}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+            <SpandukHariIni displayRows={displayRows} />
             {fetchError?(
               <ErrorState message={fetchError} onRetry={()=>{setFetchError(null);fetchData();}} />
             ):loading?(
               <div className="flex justify-center py-16"><div className="flex flex-col items-center gap-3"><div className="w-8 h-8 rounded-full border-2 border-t-red-600 border-red-200 animate-spin"/><p className="text-sm text-slate-500">Memuat jadwal...</p></div></div>
             ):(
               <>
-              <div className="md:hidden divide-y divide-gray-100">
-                {displayRows.length===0?(
-                  <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada jadwal.</div>
-                ):displayRows.map((row)=>{
-                  const dc=DAY_COLOR[row.day_of_week];
-                  const todayRow=row.day_date===toKey(new Date());
-                  const isHoliday=holidays.includes(row.day_date);
-                  const picBaris=bacaPicPiket(row);
-                  const pics=picBaris?[{team:labelKelompokPTS(picBaris.team_type)||picBaris.team_type,name:picBaris.name}]:[];
-                  const isVirtual=row.id.startsWith('virtual-');
-                  const jumlahKg=kegiatanList.filter(k=>k.piket_id===row.id).length;
-                  return (
-                    <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
-                      <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
-                        <span className="text-lg font-black leading-none">{new Date(row.day_date+'T00:00:00').getDate()}</span>
-                        <span className="text-[11px] font-bold">{row.day_of_week}</span>
-                        {todayRow&&<span className="text-[11px] font-bold px-1 py-0.5 rounded text-white mt-0.5 text-center leading-tight" style={{background:dc.accent}}>Hari ini</span>}
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        {isHoliday?(
-                          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</span>
-                        ):pics.length===0?(
-                          <span className="text-xs text-gray-500 italic">Belum ada PIC</span>
-                        ):(
-                          <div className="space-y-1">
-                            {pics.map(p=>(
-                              <div key={p.team} className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
-                                <span className="text-[13px] font-semibold text-slate-800 truncate">{p.name}</span>
-                                <span className="text-[10px] text-slate-500 flex-shrink-0">{p.team.replace('PTS ','')}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        {jumlahKg>0&&<p className="text-[11px] text-slate-500 mt-1">{jumlahKg} kegiatan tercatat</p>}
-                      </div>
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <ActionGroup>
-                          {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
-                          {bolehIsi&&<EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />}
-                          {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
-                        </ActionGroup>
-                        {isAdmin&&(
-                          <button type="button" aria-label={isHoliday?'Batalkan libur':'Tandai sebagai hari libur'}
-                            onClick={()=>toggleHoliday(row.day_date)}
-                            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
-                            style={isHoliday
-                              ?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fca5a5'}
-                              :{background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}>
-                            {isHoliday?'Batal libur':'Libur'}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <DaftarPiketHp displayRows={displayRows} holidays={holidays} kegiatanList={kegiatanList} isAdmin={isAdmin} bolehIsi={bolehIsi}
+                setViewDetail={setViewDetail} setFillDetail={setFillDetail} handleFillVirtual={handleFillVirtual}
+                handleDeleteRow={handleDeleteRow} toggleHoliday={toggleHoliday} />
 
               <div className="hidden md:block overflow-x-auto animate-zoom-in">
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
@@ -554,7 +452,7 @@ function PiketShowroomPageInner() {
                                     const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
                                       <div className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
                                           <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{picBaris.name}</p>
                                           <span className="text-[10px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
@@ -581,7 +479,7 @@ function PiketShowroomPageInner() {
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
                                       const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
-                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded-sm text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}
                                   </div>
                                 )}
@@ -589,7 +487,7 @@ function PiketShowroomPageInner() {
                                   <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
                                       <span key={k} className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 leading-tight">
-                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
+                                        <span className="w-1 h-1 rounded-full shrink-0" style={{background:dc.accent}}/>
                                         {k}
                                       </span>
                                     ))}
@@ -601,8 +499,8 @@ function PiketShowroomPageInner() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>

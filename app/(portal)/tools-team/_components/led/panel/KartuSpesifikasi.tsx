@@ -1,6 +1,6 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
-import { kunciModul, pitchNyata } from '@/lib/av-hitung';
+import { kunciModul, pitchNyata } from '@/lib/av/hitung';
 import { CABINET, PITCH } from '../data';
 import { TombolRef } from './komponen';
 import type { AlatLED } from './alat';

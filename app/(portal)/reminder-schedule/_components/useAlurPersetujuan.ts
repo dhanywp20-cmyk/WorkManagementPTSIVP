@@ -1,17 +1,12 @@
 'use client';
 
-import { type JadwalRequest } from './RequestJadwalModal';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
-import { Reminder, TeamUser, GuestUser, formatDate, newBatchId, sendFonnteWA, type SupervisorCandidate, DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTargets } from './shared';
-import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
-import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { Reminder, TeamUser, GuestUser, formatDate, sendFonnteWA, type SupervisorCandidate } from './shared';
+import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
+import { type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { logAudit } from '@/lib/audit';
-import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { appLink } from '@/lib/app-url';
-import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
+import { createNotification } from '@/lib/notifications';
 import { usePersetujuanAdmin } from './usePersetujuanAdmin';
 import { useTinjauInternal } from './useTinjauInternal';
 import { useRequestJadwal } from './useRequestJadwal';

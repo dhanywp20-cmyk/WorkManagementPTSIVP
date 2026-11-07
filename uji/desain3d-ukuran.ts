@@ -4,7 +4,7 @@ import {
   permukaanBenda, proyektorKeLayar, salinIsi, barisKeterangan, bomDesain, daftarBenda, lensaDari, rapikanLED, susunanLED,
   sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Blending, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av-hitung';
+import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean, ket = '') => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}${ket ? ` - ${ket}` : ''}`); } };
@@ -74,7 +74,7 @@ console.log('\n4. Jarak pandang 4-6-8 memakai tinggi gambar');
   cek('layar proyektor & videowall: seluruh permukaan', ukuranGambarDisplay(layar).h === layar.h);
   const perlu = 6.79 / 6;
   cek('IFP 86" di penonton 6,79 m (aturan 6x, perlu 1,13 m): kurang, bukan "cukup" dari tinggi bodi', ukuranGambarDisplay(ifp).h < perlu && ifp.h >= perlu);
-  const keadaan = readFileSync(`${D3}/useKeadaanDesain.ts`, 'utf8');
+  const keadaan = readFileSync(`${D3}/useAnalisisDisplay.ts`, 'utf8');
   cek('analisis tampilan membandingkan tinggi gambar', /cukup: gambar\.h >= tinggiPerlu/.test(keadaan) && !/cukup: d\.h >= tinggiPerlu/.test(keadaan));
   cek('kartu analisis & lembar cetak menulis ukuran gambar', /a\.gambar\.h/.test(readFileSync(`${D3}/panel/KartuAnalisis.tsx`, 'utf8')) && /a\.gambar\.w/.test(readFileSync(`${D3}/ekspor/useEkspor.ts`, 'utf8')));
 }
@@ -131,7 +131,7 @@ console.log('\n7. Proyektor tertanam di plafon / dinding (hanya lensa di dalam r
 console.log('\n8. Keterangan blending tidak mengganggu');
 {
   const ukur = readFileSync(`${D3}/mesin/ukurBlending.ts`, 'utf8');
-  const keadaan = readFileSync(`${D3}/useKeadaanDesain.ts`, 'utf8');
+  const keadaan = readFileSync(`${D3}/usePreferensiKanvas.ts`, 'utf8');
   cek('bawaan tersembunyi & diingat per perangkat', /localStorage\.getItem\('wm_desain3d_detail_blending'\) === '1'/.test(keadaan));
   cek('zona & angka cm tetap tampil; kartu, garis penunjuk & titiknya disembunyikan lewat .visible', !/if \(!detail\) return;/.test(ukur) && /objKartu\.visible = buka; penunjuk\.visible = buka; titikTengah\.visible = buka;/.test(ukur));
   cek('klik ⓘ di angka cm / klik kartu = buka / tutup satu area (bertahan saat digambar ulang)', /angka\.append\(cm, ikon\)/.test(ukur) && /pilihanKartu\.set\(kunci, buka\)/.test(ukur) && /for \(const el of \[angka, kartu\]\)/.test(ukur));

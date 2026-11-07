@@ -32,7 +32,7 @@ export interface NotificationItem {
   menuTitle: string;
 }
 
-export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek/inti';
 
 export { JABATAN_LIST, JABATAN_CONFIG, JABATAN_CC_RULES, type JabatanType } from '@/lib/jabatan';
 

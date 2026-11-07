@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
 
-import type { RekapLCTahunan } from '@/lib/kpi-lc-tahunan';
+import type { RekapLCTahunan } from '@/lib/kuis/kpi-lc-tahunan';
 import { WARNA_STATUS_TICKET } from '@/lib/desain';
 
 export interface KPIUser {

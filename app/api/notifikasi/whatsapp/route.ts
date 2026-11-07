@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { cekKoneksiWA, kirimWA } from '@/lib/wa-kirim-server';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { cekKoneksiWA, kirimWA } from '@/lib/wa/kirim-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

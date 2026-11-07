@@ -8,16 +8,6 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      screens: {
-        satulayar: {
-          raw: '(min-width: 1280px), ((pointer: fine) and (min-width: 900px))',
-        },
-
-        formulir: {
-          raw: '(min-width: 900px), ((pointer: fine) and (min-width: 640px))',
-        },
-      },
-
       borderRadius: {
         kecil: '0.5rem',
         kontrol: '0.75rem',

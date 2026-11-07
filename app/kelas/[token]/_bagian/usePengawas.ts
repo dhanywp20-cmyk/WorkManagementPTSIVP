@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal';
+import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kuis/kelas-eksternal';
 import { laporPelanggaran, type HasilLapor } from './api';
 
 const JEDA_SALIN_MS = 2000;
@@ -61,7 +61,7 @@ export function usePengawas({ kelas, aktif, onBatasTercapai }: {
       window.clearTimeout(tundaBlur);
       window.clearTimeout(sembunyiPeringatan);
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('blur-sm', onBlur);
       for (const ev of ['copy', 'cut', 'paste', 'contextmenu'] as const) document.removeEventListener(ev, onSalin);
     };
   }, [kelas, aktif]);

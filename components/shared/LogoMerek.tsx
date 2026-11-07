@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 
 export function LogoMerek({
   ukuran = 'md',
   gaya = 'penuh',
-  className = '',
+  className = 'flex',
 }: {
   ukuran?: 'sm' | 'md' | 'lg';
   gaya?: 'penuh' | 'tembus';
@@ -29,7 +29,7 @@ export function LogoMerek({
 
   return (
     <div
-      className={`rounded-xl shadow-md flex items-center justify-center flex-shrink-0 overflow-hidden ${className}`}
+      className={`rounded-xl shadow-md items-center justify-center shrink-0 overflow-hidden ${className}`}
       style={{ width: sisi, height: sisi, ...latar }}
     >
       {adaLogo ? (

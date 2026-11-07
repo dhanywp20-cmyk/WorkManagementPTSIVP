@@ -21,10 +21,10 @@ export function FilterProyekInsentif() {
         <div className="flex flex-wrap gap-2 items-center justify-between">
           <input aria-label="Cari project atau handler..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
             placeholder="Cari project atau handler..."
-            className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
+            className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-hidden bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
           <select aria-label="Filter Tahun BAST" value={filterBastYear ?? ''}
             onChange={e => setFilterBastYear(e.target.value === '' ? null : Number(e.target.value))}
-            className="px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 focus:ring-2 focus:ring-rose-400">
+            className="px-3 py-2 rounded-lg text-sm outline-hidden bg-gray-50 border border-gray-200 text-gray-700 focus:ring-2 focus:ring-rose-400">
             <option value="">Semua Tahun BAST</option>
             {bastYearsProjects.map(y => <option key={y} value={y}>Tahun BAST {y}</option>)}
           </select>
@@ -35,7 +35,7 @@ export function FilterProyekInsentif() {
             {bisaInput(currentUser) && (<>
               <select aria-label="Tahun Export Summary" value={summaryExportYear ?? ''}
                 onChange={e => setSummaryExportYear(e.target.value === '' ? null : Number(e.target.value))}
-                className="px-2.5 py-1.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 outline-none">
+                className="px-2.5 py-1.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 outline-hidden">
                 <option value="">Semua Tahun</option>
                 {bastYearsProjects.map(y => <option key={y} value={y}>Tahun {y}</option>)}
               </select>
@@ -93,7 +93,7 @@ export function FilterProyekInsentif() {
                     </p>
                   </div>
                   <button type="button" onClick={() => setKonfirmGabung(k)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 flex-shrink-0">
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shrink-0">
                     Gabungkan
                   </button>
                 </div>

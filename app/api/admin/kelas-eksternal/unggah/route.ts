@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { hasFullAccess } from '@/lib/constants';
-import { FOLDER_GAMBAR } from '@/lib/kuis-live';
+import { FOLDER_GAMBAR } from '@/lib/kuis/live';
 
 export const dynamic = 'force-dynamic';
 

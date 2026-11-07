@@ -1,4 +1,4 @@
-import type { Pembulatan } from '@/lib/av-hitung';
+import type { Pembulatan } from '@/lib/av/hitung';
 
 export interface PengaturanBOM { cadanganUnit: number; cadanganRC: number; psuW: number; panjangLAN: number; ppn: number }
 

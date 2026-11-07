@@ -6,7 +6,7 @@ import { useAngkaNaik } from './AngkaNaik';
 
 const PERMUKAAN = NETRAL.permukaan;
 
-const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
+const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
@@ -68,7 +68,7 @@ export function MiniPieChart({
       <Kartu title={title} icon={icon}>
         {centerValue !== undefined && (
           <div className="flex items-baseline gap-1.5">
-            <span className="text-lg sm:text-2xl font-bold text-slate-900 leading-none">{centerValue}</span>
+            <span className="text-lg sm:text-2xl sm:leading-8 font-bold text-slate-900 leading-none">{centerValue}</span>
             <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 uppercase tracking-wide">{(centerLabel ?? '').toLowerCase()}</span>
           </div>
         )}
@@ -79,7 +79,7 @@ export function MiniPieChart({
                 className={`w-full text-left ${bisaKlik ? 'cursor-pointer' : 'cursor-default'}`}>
                 <div className="flex items-center justify-between gap-2 text-[10px] sm:text-[11px]">
                   <span className="truncate text-slate-600 font-medium">{s.label}</span>
-                  <span className="font-semibold text-slate-800 tabular-nums flex-shrink-0">{s.value}%</span>
+                  <span className="font-semibold text-slate-800 tabular-nums shrink-0">{s.value}%</span>
                 </div>
                 <div className="mt-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, s.value))}%`, background: s.color }} />
@@ -123,7 +123,7 @@ export function MiniPieChart({
     <Kartu title={title} icon={icon}>
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
-          className="flex-shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
+          className="shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
           {slices.map(s => s.penuh ? (
             <circle key={s.i} cx={cx} cy={cy} r={(r + ir) / 2} fill="none" stroke={s.color} strokeWidth={r - ir}
               opacity={redup(s.i) ? 0.3 : 1}

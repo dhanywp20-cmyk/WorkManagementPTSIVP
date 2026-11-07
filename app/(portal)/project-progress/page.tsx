@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link2, Plus, Search } from 'lucide-react';
-import { getSession, startSessionWatcher } from '@/lib/auth';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { supabase } from '@/lib/supabase';
 import { muatIdPimpinan } from '@/lib/pimpinan';
 import { bolehDitugaskanOleh } from '@/lib/teams';
-import type { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist';
+import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist/inti';
 import { ringkasDaftarProyek } from './_components/ringkasan/hitung';
 import { RingkasanDaftarProyek } from './_components/ringkasan/Ringkasan';
 import { BarProgres, KepingKendala, TEMA, progresDariStat } from './_components/tampilan';
@@ -171,7 +171,7 @@ export default function ProjectProgressPage() {
                 <div className="relative flex-1 max-w-sm">
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: TEMA.samar }} />
                   <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari proyek, client, atau Sales…" aria-label="Cari proyek"
-                    className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-none focus:ring-2"
+                    className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-hidden focus:ring-2"
                     style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
                 </div>
                 <span className="text-[12px] font-semibold ml-auto" style={{ color: TEMA.samar, fontVariantNumeric: 'tabular-nums' }}>
@@ -212,18 +212,18 @@ export default function ProjectProgressPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[14px] font-bold truncate" style={{ color: NETRAL.tinta }}>{p.nama}</p>
                             <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: st.tint, color: st.warna }}>{st.label}</span>
-                            {p.saya && <span className="px-1.5 py-0.5 rounded text-[11px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
+                            {p.saya && <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
                             {p.share_aktif && <Link2 size={13} aria-label="Link proyek aktif" style={{ color: TEMA.selesai }} />}
                           </div>
                           <p className="text-[11.5px] mt-0.5 truncate" style={{ color: TEMA.samar }}>
                             {[p.client, p.sales_name ? `Sales ${p.sales_name}` : null, `${p.jumlah_checklist} lokasi`].filter(Boolean).join(' · ')}
                           </p>
                         </div>
-                        <div className="md:w-[300px] flex-shrink-0 space-y-1">
+                        <div className="md:w-[300px] shrink-0 space-y-1">
                           {p.stat.total > 0 ? <BarProgres progres={progresDariStat(p.stat)} />
                             : <p className="text-[11.5px] font-semibold" style={{ color: TEMA.samar }}>Belum ada item checklist</p>}
                         </div>
-                        <div className="md:w-[200px] flex-shrink-0 flex items-center gap-2 flex-wrap">
+                        <div className="md:w-[200px] shrink-0 flex items-center gap-2 flex-wrap">
                           <span className="text-[11.5px] font-bold" style={{ color: warnaJ }}>{j.label}</span>
                           <KepingKendala jumlah={p.stat.kendala} />
                         </div>

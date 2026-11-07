@@ -1,10 +1,14 @@
 import type { AdminField } from '@/lib/admin-edit';
 import { supabase } from '@/lib/supabase';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { sendWA } from '@/lib/wa';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal-aturan';
+import { sendWA } from '@/lib/wa/inti';
+import { adalahKategoriInsentif } from '@/lib/incentive/scheme';
+import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal/aturan';
 export { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId };
+import { PRODUCT_TYPES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, PIE_COLORS, formatDatetime, type Priority, type RepeatType, type TeamUser,
+  type GuestUser } from '@/lib/jadwal/tampilan';
+export { PRODUCT_TYPES, DAILY_REPORT_CATEGORIES, CATEGORY_CONFIG, PIE_COLORS, formatDatetime };
+export type { Priority, RepeatType, TeamUser, GuestUser };
 
 export const DEFAULT_REQUEST_NOTE = 'Menunggu assignment dari Admin';
 
@@ -13,9 +17,7 @@ export function cleanRequestNotes(notes: string | null | undefined): string {
   return stripped === DEFAULT_REQUEST_NOTE ? '' : stripped;
 }
 
-export type Priority = 'low' | 'medium' | 'high' | 'urgent';
 export type Status = StatusJadwal;
-export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
 export type PicType = 'standard' | 'manager_pic';
 export type ControllerBrand = 'cue' | 'extron' | 'wyrestorm';
 
@@ -76,31 +78,6 @@ export interface Reminder {
   assign_user_id?: string | null;
 }
 
-export interface TeamUser {
-  id: string;
-  username: string;
-  full_name: string;
-  role: string;
-  team_type?: string;
-  sales_division?: string;
-  phone_number?: string;
-  allowed_menus?: string[];
-  jabatan?: string | null;
-  access_level?: string;
-  telegram_chat_id?: string | null;
-  bisa_ditugaskan?: boolean | null;
-}
-
-export interface GuestUser {
-  id: string;
-  username: string;
-  full_name: string;
-  role: string;
-  phone_number?: string;
-  sales_division?: string;
-  is_internal_sales?: boolean;
-}
-
 export const CONTROLLER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 export const CONTROLLER_BRANDS: { value: ControllerBrand; label: string }[] = [
@@ -122,28 +99,6 @@ export const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: s
   cancelled:   { label: 'Cancelled', color: '#374151', bg: '#f3f4f6', border: '#6b7280', icon: '❌' },
 };
 
-export const PRODUCT_TYPES = ['LED', 'LCD/Middleware', 'LED & LCD'] as const;
-
-export const DAILY_REPORT_CATEGORIES = [
-  ...CATEGORIES,
-  'Design Single Line Diagram',
-  'Research and Development',
-];
-
-export const CATEGORY_CONFIG: Record<string, { icon: string; color: string; bg: string; border: string; accent: string }> = {
-  'Demo Product':     { icon: '🖥️', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)', border: 'rgba(167,139,250,0.4)', accent: '#7c3aed' },
-  'Meeting & Survey': { icon: '🤝', color: '#38bdf8', bg: 'rgba(56,189,248,0.15)',   border: 'rgba(56,189,248,0.4)',   accent: '#0ea5e9' },
-  'Konfigurasi':      { icon: '⚙️', color: '#34d399', bg: 'rgba(52,211,153,0.15)',   border: 'rgba(52,211,153,0.4)',   accent: '#10b981' },
-  'Konfigurasi & Training':      { icon: '📌', color: '#34d399', bg: 'rgba(52,211,153,0.15)',   border: 'rgba(52,211,153,0.4)',   accent: '#10b981' },
-  'Troubleshooting':  { icon: '🔧', color: '#fb7185', bg: 'rgba(251,113,133,0.15)',   border: 'rgba(251,113,133,0.4)',  accent: '#e11d48' },
-  'Training':         { icon: '🎓', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)',    border: 'rgba(251,191,36,0.4)',   accent: '#d97706' },
-  'Maintenance':      { icon: '🛠️', color: '#fb923c', bg: 'rgba(251,146,60,0.15)',    border: 'rgba(251,146,60,0.4)',   accent: '#ea580c' },
-  'Standby Event':    { icon: '📡', color: '#22d3ee', bg: 'rgba(34,211,238,0.15)',    border: 'rgba(34,211,238,0.4)',   accent: '#0891b2' },
-  'Design Single Line Diagram': { icon: '📐', color: '#818cf8', bg: 'rgba(129,140,248,0.15)', border: 'rgba(129,140,248,0.4)', accent: '#4f46e5' },
-  'Research and Development':    { icon: '🔬', color: '#f472b6', bg: 'rgba(244,114,182,0.15)', border: 'rgba(244,114,182,0.4)', accent: '#db2777' },
-  'Internal':         { icon: '🕵🏻', color: '#16a34a', bg: 'rgba(22,163,74,0.15)',    border: 'rgba(22,163,74,0.4)',   accent: '#16a34a' },
-};
-
 export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
   { value: 'none',    label: 'Tidak Berulang' },
   { value: 'daily',   label: 'Setiap Hari' },
@@ -151,9 +106,7 @@ export const REPEAT_OPTIONS: { value: RepeatType; label: string }[] = [
   { value: 'monthly', label: 'Setiap Bulan' },
 ];
 
-export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
-
-export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6366f1','#14b8a6','#f97316','#8b5cf6','#06b6d4','#ec4899','#84cc16'];
+export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek/inti';
 
 export interface SupervisorCandidate {
   id: string;
@@ -189,13 +142,6 @@ export async function fetchManagerTargets(): Promise<{ id: string; full_name: st
     if (mgr) targets.set(mgr.id, mgr as { id: string; full_name: string; phone_number: string | null });
   }
   return [...targets.values()];
-}
-
-export function formatDatetime(createdAt: string) {
-  if (!createdAt) return '';
-  const d = new Date(createdAt);
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' +
-    d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 export function isDueToday(due_date: string) {

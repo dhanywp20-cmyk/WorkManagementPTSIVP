@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { BATAS_HASIL, bersihkanLembar, periksaHasilAV } from '../lib/av-hasil';
+import { BATAS_HASIL, bersihkanLembar, periksaHasilAV } from '../lib/av/hasil';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };

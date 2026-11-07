@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   catatPercobaan, getClientIp, muatUserMasuk, PESAN_TERKUNCI, sedangTerkunci, selesaikanMasuk,
-} from '@/lib/masuk-server';
-import { aktifkanDaftar2FA, baca2FA, mulaiDaftar2FA, periksaKode2FA } from '@/lib/dua-faktor-server';
-import { bacaTantangan } from '@/lib/tantangan-2fa';
+} from '@/lib/auth/masuk-server';
+import { aktifkanDaftar2FA, baca2FA, mulaiDaftar2FA, periksaKode2FA } from '@/lib/auth/dua-faktor-server';
+import { bacaTantangan } from '@/lib/auth/tantangan-2fa';
 
 export const dynamic = 'force-dynamic';
 

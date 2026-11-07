@@ -1,7 +1,7 @@
 'use client';
 import { f, kelasInput } from '../../bersama/ui';
 import { Ikon } from '@/components/shared/Ikon';
-import { type Hardware, kapasitasHardware } from '@/lib/av-hitung';
+import { type Hardware, kapasitasHardware } from '@/lib/av/hitung';
 
 export function Teks({ label, nilai, onUbah, tipe = 'text' }: { label: string; nilai: string; onUbah: (v: string) => void; tipe?: string }) {
   return (

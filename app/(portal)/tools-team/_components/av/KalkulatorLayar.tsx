@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import { aksiLembar, type Baris, lembarAV } from './lembar';
-import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av-hitung';
+import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av/hitung';
 import { useState } from 'react';
 import { PanelPasang } from './layar/PanelPasang';
 import { PanelVideowall } from './layar/PanelVideowall';

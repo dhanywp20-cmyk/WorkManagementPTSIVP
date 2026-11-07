@@ -1,21 +1,14 @@
 'use client';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { DEFAULT_KPI_SETTINGS, KPISettings } from '@/app/(portal)/kpi-team/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
-import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
+import { muatKelompok, namaKelompokPTS } from '@/lib/kelompok/inti';
 import { isPimpinan } from '@/lib/pimpinan';
 import { supabase } from '@/lib/supabase';
-import React,{ useCallback,useEffect,useMemo,useRef,useState } from 'react';
-import { BarisRingkasanKPI } from './dasbor/BarisRingkasanKPI';
-import { BarisTicketKPI } from './dasbor/BarisTicketKPI';
-import { BarisTrenKPI } from './dasbor/BarisTrenKPI';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ModalPengaturanDasborKPI } from './dasbor/ModalPengaturanDasborKPI';
-import { CATEGORY_COLORS, PiketPic, STATUS_COLORS, computeCascadedPiketToday, getMonday, monthStart, todayStr } from './DashboardKPI-bantu';
-import { PitaRingkas } from './DashboardKPI-pita';
 import { AuditEntry, KPIData, KPITeamState, Scope } from './DashboardKPI-tipe';
-import { AuditRow } from './DashboardKPI-tren';
-import { RelSeksi } from './DashboardKPI-ubin';
 import { useAuditKPI } from './useAuditKPI';
 import { useMuatKPI } from './useMuatKPI';
 import { IsiDashboardKPI } from './IsiDashboardKPI';
@@ -164,7 +157,7 @@ export default function DashboardKPI({ currentUser: userProp, opsiBeranda }: Das
 
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
-      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
+      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs border border-slate-200">
         <span><Ikon nama={icon} ukuran={14} /></span>{children}
       </h3>
     );

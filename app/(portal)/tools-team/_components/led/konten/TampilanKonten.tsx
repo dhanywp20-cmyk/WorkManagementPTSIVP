@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { namaBerkas, unduhKanvasPNG } from '../../bersama/cetak';
-import { polaUjiBisa } from '@/lib/led-banding';
+import { polaUjiBisa } from '@/lib/av/led-banding';
 import { BarSub } from '../panel/BarSub';
 import { KartuLayar } from '../panel/KartuLayar';
 import { ModalBersama } from '../panel/ModalBersama';

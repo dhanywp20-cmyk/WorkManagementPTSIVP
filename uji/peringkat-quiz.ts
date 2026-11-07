@@ -1,4 +1,4 @@
-import { hitungPeringkat, type BarisAttempt } from '../lib/learning-rank';
+import { hitungPeringkat, type BarisAttempt } from '../lib/kuis/peringkat';
 
 let lulus = 0, gagal = 0;
 function ok(nama: string, syarat: boolean, ket = '') {

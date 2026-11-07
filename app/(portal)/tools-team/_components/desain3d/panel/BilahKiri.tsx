@@ -65,11 +65,11 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
         <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => setMenuSnap(v => !v)}><Grid3x3 size={17} /></TombolNav>
       </div>
       {ukur && (
-        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-sm">
+        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-xs">
           <Ruler size={13} /> {titikUkur ? 'Titik kedua' : 'Titik pertama'}
           {jumlahGaris > 0 && (
             <button type="button" onClick={() => setRuang(r => ({ ...r, penggaris: [] }))} title="Hapus semua garis ukur"
-              className="ml-1 rounded bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
+              className="ml-1 rounded-sm bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
           )}
         </div>
       )}

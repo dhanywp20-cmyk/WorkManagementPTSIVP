@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase, User, Material, Question, DialogState } from './shared';
-import { nomorBerikutnya } from '@/lib/urutan-soal';
+import { nomorBerikutnya } from '@/lib/kuis/urutan-soal';
 
 export interface KelolaSoalKonteks {
   KOSONG_SOAL: { readonly question: ""; readonly option_a: ""; readonly option_b: ""; readonly option_c: ""; readonly option_d: ""; readonly correct_answer: "A"; readonly model_answer: ""; };

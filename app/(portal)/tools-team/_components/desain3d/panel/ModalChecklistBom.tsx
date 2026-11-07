@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
-import type { DraftChecklist } from '@/lib/checklist';
+import type { DraftChecklist } from '@/lib/checklist/inti';
 
 interface ProyekPilihan { id: string; nama: string; client: string | null; status: string }
 
-const isian = 'w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
+const isian = 'w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-100';
 const label = 'block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1';
 
 export function ModalChecklistBom({ judulAwal, buatDraft, onTutup }: {

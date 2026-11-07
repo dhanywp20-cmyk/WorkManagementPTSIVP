@@ -1,11 +1,11 @@
 'use client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck, FileDown, FileSpreadsheet, Pencil, Plus, RotateCcw, Search, Trash2, Upload } from 'lucide-react';
-import { getSession } from '@/lib/auth';
+import { getSession } from '@/lib/auth/sesi';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   bacaDraf, dokBaru, type DokChecklist, type ItemBarang, itemBaru, MAKS_ITEM, MAKS_PENANDA, type Penanda, ringkas,
-} from '@/lib/checklist-barang';
+} from '@/lib/checklist/barang';
 import { Catatan, Kartu, kelasInput, Nilai, Segmen } from './bersama/ui';
 import { BarisBarang, GRID_CEK } from './cekbarang/BarisBarang';
 import { PadTtd } from './cekbarang/PadTtd';
@@ -196,12 +196,12 @@ export function ChecklistBarang() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <label className="relative flex-1 min-w-[12rem]">
+              <label className="relative flex-1 min-w-48">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari barang…" aria-label="Cari barang" className={`${kelasInput} pl-9`} />
               </label>
               {!ubah && (
-                <div className="w-full sm:w-auto sm:min-w-[22rem]">
+                <div className="w-full sm:w-auto sm:min-w-88">
                   <Segmen<Saring> nilai={saring} onUbah={setSaring} opsi={[
                     { v: 'semua', l: 'Semua' }, { v: 'belum', l: `Belum ${r.belum}` }, { v: 'ok', l: `✓ ${r.ok}` }, { v: 'tidak', l: `✗ ${r.tidak}` },
                   ]} />
@@ -257,7 +257,7 @@ export function ChecklistBarang() {
             <div key={i} className="rounded-xl border border-slate-200 p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <input value={p.label} onChange={e => ubahPenanda(i, { label: e.target.value })} aria-label="Peran penanda tangan"
-                  className="flex-1 min-w-0 bg-transparent text-[13px] font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded px-1" />
+                  className="flex-1 min-w-0 bg-transparent text-[13px] font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-200 rounded-sm px-1" />
                 {d.penanda.length > 1 && (
                   <button type="button" onClick={() => setD(x => ({ ...x, penanda: x.penanda.filter((_, j) => j !== i) }))}
                     aria-label={`Hapus kolom ${p.label}`} title="Hapus kolom tanda tangan" className="w-8 h-8 grid place-items-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50">
@@ -278,7 +278,7 @@ export function ChecklistBarang() {
       </Kartu>
 
       <div className="sticky bottom-3 z-10">
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur px-3 py-2.5 shadow-lg">
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-sm px-3 py-2.5 shadow-lg">
           <p className="text-[13px] text-slate-700 tabular-nums mr-auto">
             <b>{dicek}</b> / {r.total} dicek{r.tidak ? <span className="text-rose-700"> · {r.tidak} tidak sesuai</span> : null}
           </p>
@@ -311,14 +311,14 @@ function PratinjauImpor({ impor, adaDaftar, onUbah, onPakai, onBatal }: {
       <p className="text-[13px] text-slate-700">
         Terbaca <b>{impor.items.filter(it => !it.grup).length} barang</b> dari <b className="break-all">{impor.nama}</b>. Hilangkan centang baris yang bukan barang.
       </p>
-      <ul className="max-h-[22rem] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+      <ul className="max-h-88 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
         {impor.items.map(it => (
           <li key={it.id}>
             <label className={`flex items-start gap-3 px-3 py-2 cursor-pointer ${it.grup ? 'bg-slate-100' : ''} ${impor.buang.has(it.id) ? 'opacity-45' : ''}`}>
               <input type="checkbox" checked={!impor.buang.has(it.id)} onChange={() => alih(it.id)} className="mt-0.5 w-4 h-4 accent-blue-700 shrink-0" />
               <span className="flex-1 min-w-0">
-                <span className={`block text-[13px] break-words ${it.grup ? 'font-bold uppercase tracking-wide text-slate-700 text-[12px]' : 'font-semibold text-slate-900'}`}>{it.nama}</span>
-                {it.spek && <span className="block text-[11.5px] text-slate-500 break-words">{it.spek}</span>}
+                <span className={`block text-[13px] wrap-break-word ${it.grup ? 'font-bold uppercase tracking-wide text-slate-700 text-[12px]' : 'font-semibold text-slate-900'}`}>{it.nama}</span>
+                {it.spek && <span className="block text-[11.5px] text-slate-500 wrap-break-word">{it.spek}</span>}
               </span>
               {!it.grup && <span className="shrink-0 text-[12.5px] tabular-nums text-slate-600">{[it.qty, it.satuan].filter(Boolean).join(' ') || '-'}</span>}
             </label>

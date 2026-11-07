@@ -47,7 +47,7 @@ function KartuAngka({ d, judul, nilai, satuan, kanan, warnaNilai, onBuka, childr
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span className="text-[30px] font-black leading-none tabular-nums" style={{ letterSpacing: '-0.03em', color: warnaNilai ?? '#0f172a' }}><Angka nilai={nilai} /></span>
         {satuan && <span className="text-[12px] font-semibold text-slate-500 truncate">{satuan}</span>}
-        {kanan && <span className="ml-auto text-[13px] font-bold text-slate-700 tabular-nums flex-shrink-0">{kanan}</span>}
+        {kanan && <span className="ml-auto text-[13px] font-bold text-slate-700 tabular-nums shrink-0">{kanan}</span>}
       </div>
       <div className="mt-3">{children}</div>
     </article>
@@ -125,10 +125,10 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
     <div>
       <div className="bb-baris-judul bb-naik">
         <p className="flex items-center gap-2 min-w-0 text-[13px] font-semibold text-slate-700">
-          <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: terlambat > 0 ? MERAH : '#16a34a' }} />
+          <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ background: terlambat > 0 ? MERAH : '#16a34a' }} />
           {temuan ?? <span className="bb-kerangka w-64" aria-hidden="true" />}
         </p>
-        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <span className="text-[12px] font-medium text-slate-500 tabular-nums whitespace-nowrap">{fmtRentang(mulai)} – {fmtRentang(akhir, true)}</span>
           <div className="bb-segmen" role="group" aria-label="Periode ringkasan">
             {DAFTAR_PERIODE.map(p => (

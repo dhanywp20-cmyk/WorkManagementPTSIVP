@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
-import { ambilBearer, verifikasiToken } from '@/lib/token-integrasi';
+import { ambilBearer, verifikasiToken } from '@/lib/integrasi/token';
 import { bolehDiwaypiDan2FA } from '@/lib/constants';
-import { AKSI_BACA, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi-aksi';
+import { AKSI_BACA, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi/aksi';
 import { buatEfekServer } from '@/lib/efek-server';
-import { muatKelompok } from '@/lib/kelompok-inti';
-import { muatKategoriInsentif } from '@/lib/incentive-scheme';
+import { muatKelompok } from '@/lib/kelompok/dasar';
+import { muatKategoriInsentif } from '@/lib/incentive/scheme';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

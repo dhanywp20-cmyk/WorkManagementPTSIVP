@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import type { KartuBanding } from '@/lib/perbandingan';
+import type { KartuBanding } from '@/lib/perbandingan/inti';
 
 export interface RingkasPengajuan {
   id: string; judul: string; status: 'menunggu' | 'disetujui' | 'ditolak'; dibuat_oleh: string; dibuat_nama: string | null;

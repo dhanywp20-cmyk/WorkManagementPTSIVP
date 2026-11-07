@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av-layar-proyektor';
+import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av/layar-proyektor';
 import { useState } from 'react';
 
 const RESOLUSI = [
@@ -275,8 +275,8 @@ function DiagramBlending({ b, modeTarget }: { b: RencanaBlending; modeTarget: bo
         </svg>
       </div>
       <figcaption className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-slate-600">
-        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-500/20 border border-blue-600" />gambar proyektor</span>
-        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-500/40 border border-blue-600" />area blending</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-xs bg-blue-500/20 border border-blue-600" />gambar proyektor</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded-xs bg-blue-500/40 border border-blue-600" />area blending</span>
         {modeTarget && <span className="inline-flex items-center gap-1.5"><span className="w-3 h-0 border-t-2 border-dashed border-emerald-600" />area konten (target)</span>}
         <span className="ml-auto tabular-nums">{b.kanvasX} × {b.kanvasY} px · {f(b.lebarM)} × {f(b.tinggiM)} m</span>
       </figcaption>

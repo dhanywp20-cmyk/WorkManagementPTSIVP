@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { lumenUntukKontras, rentangJarakLempar } from '../lib/av-layar-proyektor';
-import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { lumenUntukKontras, rentangJarakLempar } from '../lib/av/layar-proyektor';
+import { ukuranDariDiagonal } from '../lib/av/hitung';
 import type { EntriPustaka } from '../lib/pustaka';
 import {
   batasShift, bendaBaru, isiDariPustaka, jarakUntukLebar, koreksiJarakDari, offsetLensaDari, shiftMuat, type Benda,

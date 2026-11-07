@@ -14,7 +14,7 @@ export interface FormEditAkunInlineProps {
   editPtsDaerah: string;
   editPtsType: string;
   editingUser: User;
-  kelompokPTSList: import("@/lib/kelompok").Kelompok[];
+  kelompokPTSList: import("@/lib/kelompok/inti").Kelompok[];
   setEditAccessLevel: React.Dispatch<React.SetStateAction<"full" | "guest">>;
   setEditBisaDitugaskan: React.Dispatch<React.SetStateAction<boolean>>;
   setEditDivisi: React.Dispatch<React.SetStateAction<string>>;
@@ -29,26 +29,26 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
       <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-20" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-          <input id="f-dashboard-components-modal-akun-20" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+          <input id="f-dashboard-components-modal-akun-20" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-21" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-          <input id="f-dashboard-components-modal-akun-21" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+          <input id="f-dashboard-components-modal-akun-21" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-22" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-          <input id="f-dashboard-components-modal-akun-22" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+          <input id="f-dashboard-components-modal-akun-22" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-          <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+          <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
             <option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest / Sales</option>
           </select>
         </div>
         <div className="formulir:col-span-3">
           <label htmlFor="f-dashboard-components-modal-akun-24" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
           <select id="f-dashboard-components-modal-akun-24" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
             <option value="">-- Pilih Divisi --</option>
             <option value="PTS">PTS</option>
             <option value="Sales">Sales</option>
@@ -59,7 +59,7 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
           <div className="formulir:col-span-3">
             <label htmlFor="f-dashboard-components-modal-akun-25" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
             <select id="f-dashboard-components-modal-akun-25" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
               <option value="">-- Pilih Tipe PTS --</option>
               {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
             </select>
@@ -70,7 +70,7 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
             <label htmlFor="f-dashboard-components-modal-akun-26" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
             <input id="f-dashboard-components-modal-akun-26" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
               placeholder="Contoh: Surabaya, Bandung, Medan..."
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
             <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
           </div>
         )}
@@ -78,20 +78,20 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
           <div className="formulir:col-span-3">
             <label htmlFor="f-dashboard-components-modal-akun-27" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
             <select id="f-dashboard-components-modal-akun-27" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
               <option value="">-- Pilih Divisi Sales --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
             </select>
           </div>
         )}
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-28" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-          <select id="f-dashboard-components-modal-akun-28" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+          <select id="f-dashboard-components-modal-akun-28" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
             <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
           </select>
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-29" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
-          <input id="f-dashboard-components-modal-akun-29" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+          <input id="f-dashboard-components-modal-akun-29" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
         </div>
         {editingUser.role === 'team' && (
           <div className="formulir:col-span-3">

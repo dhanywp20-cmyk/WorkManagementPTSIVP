@@ -1,22 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { getSession, startSessionWatcher } from '@/lib/auth';
-import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
+import { PageHeader } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
-import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
-import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
-import { bacaPicPiket } from '@/app/(portal)/picket-showroom/_components/shared';
-import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
+import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok/inti';
+import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { bacaPicPiket } from '@/lib/piket/inti';
+import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kuis/kpi-lc-tahunan';
 import { ingat } from '@/lib/cache-singkat';
 import { saringSumberKPI, type SumberKPI } from '@/lib/kpi-sumber';
-import { DrillModal, ProgressBar } from './_components/DrillModal';
+import { DrillModal } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ModalPengaturanKPI } from './_components/ModalPengaturanKPI';
 import { ModalDetailSnapshot } from './_components/ModalDetailSnapshot';
@@ -520,7 +518,7 @@ export default function KPITeamPage() {
           calcKPI={calcKPI} currentUser={currentUser} fetchKPIMembers={fetchKPIMembers} filterTeam={filterTeam} kpiFiltered={kpiFiltered} kpiLoading={kpiLoading} kpiPeriodLabel={kpiPeriodLabel} kpiPeriodLen={kpiPeriodLen} kpiScoreColor={kpiScoreColor} kpiScoreLabel={kpiScoreLabel} kpiSettings={kpiSettings} kpiStartMonth={kpiStartMonth} kpiYear={kpiYear} setKpiPeriodLen={setKpiPeriodLen} setKpiStartMonth={setKpiStartMonth} setKpiYear={setKpiYear} setSelectedKPIMember={setSelectedKPIMember}
         />
 
-        <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-sm"
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-xs"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
           {PERIODS.map(p => (
@@ -538,12 +536,12 @@ export default function KPITeamPage() {
           <span className="ml-2 text-[11px] text-slate-500">{periodLabel}</span>
 
           {loading && (
-            <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />
+            <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin shrink-0" />
           )}
 
           {scope.kind === 'admin' && allTeamTypes.length > 1 && (
             <select aria-label="Semua Tim" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}
-              className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-sky-200">
+              className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-hidden focus:ring-2 focus:ring-sky-200">
               <option value="all">Semua Tim</option>
               {allTeamTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>

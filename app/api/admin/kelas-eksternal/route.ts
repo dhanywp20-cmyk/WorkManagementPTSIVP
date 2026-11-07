@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { simpanSebentar } from '@/lib/simpan-sebentar';
 import { hasFullAccess } from '@/lib/constants';
-import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
-import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
-import { jalankanAksiLive, keadaanHost, muatPapan, type KelasLive } from '@/lib/kuis-live-server';
+import { rapikanKelas, type KelasEksternal } from '@/lib/kuis/kelas-eksternal';
+import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis/live';
+import { jalankanAksiLive, keadaanHost, muatPapan, type KelasLive } from '@/lib/kuis/live-server';
 
 export const dynamic = 'force-dynamic';
 

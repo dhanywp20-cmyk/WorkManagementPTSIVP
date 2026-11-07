@@ -1,4 +1,4 @@
-import { sendWA } from '@/lib/wa';
+import { sendWA } from '@/lib/wa/inti';
 import { createNotification } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import type { EfekSamping } from '@/lib/efek-samping';

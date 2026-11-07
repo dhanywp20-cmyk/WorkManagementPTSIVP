@@ -3,9 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   kodeHotp, kodeTotp, cocokTotp, base32Encode, base32Decode, enkripsiRahasia, dekripsiRahasia,
   buatKodeCadangan, cocokKodeCadangan, buatRahasia,
-} from '../lib/totp';
-import { buatTantangan, bacaTantangan, MASA_TANTANGAN_MS } from '../lib/tantangan-2fa';
-import { periksaKode2FA, rapikanPengaturan2FA, type Baris2FA } from '../lib/dua-faktor-server';
+} from '../lib/auth/totp';
+import { buatTantangan, bacaTantangan, MASA_TANTANGAN_MS } from '../lib/auth/tantangan-2fa';
+import { periksaKode2FA, rapikanPengaturan2FA, type Baris2FA } from '../lib/auth/dua-faktor-server';
 
 let ok = 0, salah = 0;
 const cek = (n: string, s: boolean) => { if (s) { ok++; console.log(`  ok   ${n}`); } else { salah++; console.log(`  GAGAL ${n}`); } };
@@ -116,7 +116,7 @@ const db = dbTiruan(baris);
   const sql = readFileSync('supabase/migrations/049_user_2fa.sql', 'utf8');
   cek('049: tabel tanpa akses peramban', /FORCE ROW LEVEL SECURITY/.test(sql) && /REVOKE ALL ON public\.user_2fa FROM PUBLIC, anon, authenticated/.test(sql));
   cek('049: keamanan_2fa terkunci dari peramban (RESTRICTIVE)', /AS RESTRICTIVE FOR ALL TO anon, authenticated\s+USING \(key <> 'keamanan_2fa'\)/.test(sql));
-  const sesi = readFileSync('lib/masuk-server.ts', 'utf8');
+  const sesi = readFileSync('lib/auth/masuk-server.ts', 'utf8');
   cek('sesi: cookie httpOnly', /httpOnly: true/.test(sesi));
 
   console.log(`\n${salah ? 'GAGAL' : 'OK'}: ${ok} lulus, ${salah} gagal`);

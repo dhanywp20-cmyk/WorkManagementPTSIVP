@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { KUNCI_CRON_TERAKHIR, type JejakCron } from './cron-catat';
-import { CRON_VERCEL } from './kesehatan';
+import { CRON_VERCEL } from './kesehatan/inti';
 
 export const PANJANG_TOKEN_MIN = 32;
 export const BATAS_QUERY_MS = 5_000;

@@ -1,6 +1,6 @@
 'use client';
 import { Catatan, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
-import { KECERAHAN } from '@/lib/av-hitung';
+import { KECERAHAN } from '@/lib/av/hitung';
 import { ArrowRight, Cable, Zap } from 'lucide-react';
 import { KartuHw, TombolRef } from './komponen';
 import type { AlatLED } from './alat';

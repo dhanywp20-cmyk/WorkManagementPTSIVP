@@ -1,8 +1,8 @@
 'use client';
 
 import { supabase } from '@/lib/supabase';
-import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
-import { type TeamUser, type GuestUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { namaKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
+import { type TeamUser, type GuestUser } from '@/lib/jadwal/tampilan';
 import { useCallback } from 'react';
 import { fetchAllReminders, fetchAllTickets, fetchReports, type ReminderActivity, type TicketActivity, type DailyReport } from './shared';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { simpanNominal } from '@/lib/incentive-nominal-api';
+import { simpanNominal } from '@/lib/incentive/nominal-api';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { IncentiveProjectRow, IncentiveTranche, insertTranches, processYearlyBatch, batalkanBatchTahun, hapusTahapanProyek, type SkemaInsentif, formatRupiah } from './calc';

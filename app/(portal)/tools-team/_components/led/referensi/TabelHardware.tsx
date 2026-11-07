@@ -1,6 +1,6 @@
 'use client';
 import { Hapus, SelAngka, SelTeks, Tambah, td, th } from './komponen';
-import type { Hardware } from '@/lib/av-hitung';
+import type { Hardware } from '@/lib/av/hitung';
 
 export function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; data: Hardware[]; onUbah: (d: Hardware[]) => void; tampilSender: boolean }) {
   const set = (i: number, p: Partial<Hardware>) => onUbah(data.map((h, j) => (j === i ? { ...h, ...p } : h)));

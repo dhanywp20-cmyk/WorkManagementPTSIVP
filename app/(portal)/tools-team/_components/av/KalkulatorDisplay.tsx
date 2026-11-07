@@ -4,12 +4,12 @@ import { Angka, Catatan, f, Kartu, kelasInput, Nilai, Pilih, Segmen, TombolSalin
 import { bukaCetak, diagramSusunan, type Info, type Lembar, namaBerkas, unduhLembarPNG } from '../bersama/cetak';
 import { isiLembarBom, TabelBom, teksBarisBom } from '../bersama/TabelBom';
 import { usePustaka } from '../pustaka/usePustaka';
-import { PANEL_VIDEOWALL, videowallUntuk } from '@/lib/av-layar-proyektor';
-import { totalPenawaran, type JenisPandang, ukuranDariDiagonal } from '@/lib/av-hitung';
+import { PANEL_VIDEOWALL, videowallUntuk } from '@/lib/av/layar-proyektor';
+import { totalPenawaran, type JenisPandang, ukuranDariDiagonal } from '@/lib/av/hitung';
 import {
   bomIFP, bomVideowall, dayaIFP, dayaVideowall, IFP_BAWAAN, type MasukanIFP, type MasukanVideowall, PASANG_VIDEOWALL,
   type PasangVideowall, saranIFP, SINYAL_VIDEOWALL, type SinyalVideowall, USB_PASIF_MAKS_M, WATT_PANEL_BAWAAN,
-} from '@/lib/av-hitung-display';
+} from '@/lib/av/hitung-display';
 import { angkaDari, teksDari } from '@/lib/pustaka';
 
 const JENIS: { v: JenisPandang; l: string }[] = [

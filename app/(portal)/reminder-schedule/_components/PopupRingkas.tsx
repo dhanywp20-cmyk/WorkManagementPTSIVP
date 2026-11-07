@@ -3,7 +3,7 @@ import { KotakInfo, Modal, ModalSetujui, TombolModal, kelasIsianPersetujuan as k
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
-import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { triggersProjectProgress } from '@/lib/checklist/sinkron-progress';
 
 function Baris({ label, children, tebal }: { label: string; children: React.ReactNode; tebal?: boolean }) {
   return (
@@ -69,7 +69,7 @@ export function ModalHapus({
         <KotakInfo nada="bahaya"><strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini dihapus permanen dari database.</KotakInfo>
         <div>
           <label htmlFor="f-reminder-schedule-components-popupringkas-1" className="block text-xs font-bold text-slate-700 mb-1.5">
-            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-sm">HAPUS</span> untuk konfirmasi
           </label>
           <input id="f-reminder-schedule-components-popupringkas-1" type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
             placeholder="Ketik HAPUS di sini..." className={kelasIsian} />
@@ -93,7 +93,7 @@ function KartuReminder({ r, onBuka, lencana, warnaGaris }: { r: Reminder; onBuka
           <p className="font-bold text-sm text-slate-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
           {r.address && <p className="text-xs text-slate-500 mt-0.5">{r.address}</p>}
         </div>
-        <div className="flex-shrink-0 text-right">
+        <div className="shrink-0 text-right">
           <StatusBadge status={r.status} />
           <p className="text-[11px] text-slate-500 mt-1">{formatDate(r.due_date)}</p>
         </div>

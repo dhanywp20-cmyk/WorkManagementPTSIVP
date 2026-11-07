@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan-aturan';
+import { KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan/aturan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

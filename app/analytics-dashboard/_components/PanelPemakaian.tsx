@@ -15,7 +15,7 @@ const NAMA_ALAT: Record<string, string> = {
   '3d': 'Desain 3D Ruang', led: 'LED Videotron', av: 'Kalkulator AV', banding: 'Product Comparison', cekbarang: 'Checklist Barang', pustaka: 'Pustaka',
 };
 const tgl = (s: string | null) => s ? new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-const KARTU = 'rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden';
+const KARTU = 'rounded-2xl bg-white border border-slate-200 shadow-xs overflow-hidden';
 const JUDUL = 'text-xs font-bold text-slate-500 uppercase tracking-widest';
 
 function Bar({ nilai, maks, ket }: { nilai: number; maks: number; ket: string }) {

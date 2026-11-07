@@ -3,7 +3,7 @@
 import { type ManualActivity } from './shared';
 import { useEffect } from 'react';
 import { emptyManual } from './bantu-halaman';
-import { type TeamUser } from '@/app/(portal)/reminder-schedule/_components/shared';
+import { type TeamUser } from '@/lib/jadwal/tampilan';
 
 export interface DrafLaporanKonteks {
   currentUser: TeamUser | null;

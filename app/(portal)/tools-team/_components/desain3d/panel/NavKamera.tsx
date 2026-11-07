@@ -27,7 +27,7 @@ export function NavKamera({ a }: { a: AlatDesain }) {
       {menuSudut && (
         <>
           <div aria-hidden="true" className="fixed inset-0 z-10" onClick={() => setMenuSudut(false)} />
-          <div className="kontrol-kanvas absolute right-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-xl p-2.5">
+          <div className="kontrol-kanvas absolute right-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-xl p-2.5">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Putar kamera</p>
             <div className="grid grid-cols-2 gap-1">
               <button type="button" onClick={() => putarKamera(-45)} className={`${tombolSudut(false)} inline-flex items-center justify-center gap-1`}><RotateCcw size={14} /> 45° kiri</button>

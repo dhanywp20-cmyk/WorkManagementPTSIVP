@@ -1,7 +1,7 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 import { useCallback, useEffect, useState } from 'react';
-import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan';
+import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan/inti';
 
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
 const waktu = (iso: string | null | undefined) => (iso
@@ -142,7 +142,7 @@ export function KesehatanInline() {
                       {data.galatKlien.map((g, i) => (
                         <li key={i} className="py-1.5">
                           <div className="flex items-start justify-between gap-2">
-                            <span className="font-semibold text-slate-800 break-words">{g.pesan}</span>
+                            <span className="font-semibold text-slate-800 wrap-break-word">{g.pesan}</span>
                             <b className="shrink-0 text-rose-700" title="Jumlah kejadian hari itu">{g.jumlah}×</b>
                           </div>
                           <p className="text-[11px] text-slate-500">{g.jalur || '—'} · {g.sumber ?? '—'} · terakhir {waktu(g.terakhir)}</p>

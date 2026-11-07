@@ -1,4 +1,4 @@
-import { SkemaInsentif } from '@/lib/incentive-scheme';
+import { SkemaInsentif } from '@/lib/incentive/scheme';
 
 export interface IncentiveProjectRow {
   id: string;

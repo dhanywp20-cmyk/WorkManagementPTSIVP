@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { BarChart3, ChevronDown, ListChecks } from 'lucide-react';
 import { MiniPieChart } from '@/components/shared';
 import { NETRAL, BAYANG } from '@/lib/desain';
-import type { StatChecklist } from '@/lib/checklist';
-import type { Kontribusi } from '@/lib/checklist-ringkasan';
+import type { StatChecklist } from '@/lib/checklist/inti';
+import type { Kontribusi } from '@/lib/checklist/ringkasan';
 import { KepingKendala, TEMA, fontAngka } from '../tampilan';
 import type { Ringkasan, RingkasanChecklist as DataChecklist, RingkasanDaftar, TitikLaju, Waktu } from './hitung';
 
@@ -15,7 +15,7 @@ function Cincin({ persen }: { persen: number }) {
   const r = 42, k = 2 * Math.PI * r;
   const warna = persen >= 100 ? TEMA.selesai : TEMA.warna;
   return (
-    <svg viewBox="0 0 100 100" className="w-28 h-28 flex-shrink-0" role="img" aria-label={`Progres ${persen}%`}>
+    <svg viewBox="0 0 100 100" className="w-28 h-28 shrink-0" role="img" aria-label={`Progres ${persen}%`}>
       <circle cx="50" cy="50" r={r} fill="none" stroke={NETRAL.garis} strokeWidth="9" />
       <circle cx="50" cy="50" r={r} fill="none" stroke={warna} strokeWidth="9" strokeLinecap="round"
         strokeDasharray={`${(persen / 100) * k} ${k}`} transform="rotate(-90 50 50)" style={{ transition: 'stroke-dasharray .6s' }} />
@@ -98,7 +98,7 @@ function GrafikLaju({ laju }: { laju: TitikLaju[] }) {
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-[12.5px] font-semibold text-slate-700 flex items-center gap-1.5"><ListChecks size={14} className="text-slate-500" />Laju Penyelesaian Harian</p>
         <p className="text-[11px] font-bold flex items-center gap-3" style={{ color: TEMA.samar }}>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: TEMA.warna }} />Item/hari</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-xs" style={{ background: TEMA.warna }} />Item/hari</span>
           <span className="flex items-center gap-1"><span className="w-3 h-0.5" style={{ background: TEMA.selesai }} />Kumulatif</span>
         </p>
       </div>

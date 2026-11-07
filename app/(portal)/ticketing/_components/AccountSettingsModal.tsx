@@ -54,7 +54,7 @@ export function AccountSettingsModal({
               placeholder="Username"
               value={newUser.username}
               onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             />
             <input
@@ -63,7 +63,7 @@ export function AccountSettingsModal({
               placeholder="Password"
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             />
             <input
@@ -72,14 +72,14 @@ export function AccountSettingsModal({
               placeholder="Full Name"
               value={newUser.full_name}
               onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             />
             <select
               aria-label="Role"
               value={newUser.role}
               onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             >
               <option value="admin">Administrator</option>
@@ -91,7 +91,7 @@ export function AccountSettingsModal({
                 aria-label="Team"
                 value={newUser.team_type}
                 onChange={(e) => setNewUser({ ...newUser, team_type: e.target.value })}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
                 style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
               >
                 <option value="Team PTS IVP">Team PTS IVP</option>
@@ -100,7 +100,7 @@ export function AccountSettingsModal({
             )}
             <button
               onClick={createUser}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all"
+              className="w-full bg-linear-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all"
             >
               Buat Akun
             </button>
@@ -116,7 +116,7 @@ export function AccountSettingsModal({
                 setSelectedUserForPassword(e.target.value);
                 setChangePassword({ current: "", new: "", confirm: "" });
               }}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             >
               <option value="">Pilih pengguna</option>
@@ -134,7 +134,7 @@ export function AccountSettingsModal({
                   placeholder="Old Password"
                   value={changePassword.current}
                   onChange={(e) => setChangePassword({ ...changePassword, current: e.target.value })}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 <input
@@ -143,7 +143,7 @@ export function AccountSettingsModal({
                   placeholder="New Password"
                   value={changePassword.new}
                   onChange={(e) => setChangePassword({ ...changePassword, new: e.target.value })}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 <input
@@ -152,12 +152,12 @@ export function AccountSettingsModal({
                   placeholder="Confirm Password"
                   value={changePassword.confirm}
                   onChange={(e) => setChangePassword({ ...changePassword, confirm: e.target.value })}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 <button
                   onClick={updatePassword}
-                  className="w-full bg-gradient-to-r from-orange-600 to-orange-800 text-white py-3 rounded-xl hover:from-orange-700 hover:to-orange-900 font-bold transition-all"
+                  className="w-full bg-linear-to-r from-orange-600 to-orange-800 text-white py-3 rounded-xl hover:from-orange-700 hover:to-orange-900 font-bold transition-all"
                 >
                   Ganti Password
                 </button>
@@ -178,11 +178,11 @@ export function AccountSettingsModal({
                 </div>
                 <div className="flex gap-2">
                   <span
-                    className={`text-xs px-2 py-1 rounded ${u.role === "admin" ? "bg-red-100 text-red-800" : u.role === "team" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
+                    className={`text-xs px-2 py-1 rounded-sm ${u.role === "admin" ? "bg-red-100 text-red-800" : u.role === "team" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
                   >
                     {u.role === "admin" ? "Admin" : u.role === "team" ? "Team" : "Guest"}
                   </span>
-                  {u.team_type && <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">{u.team_type}</span>}
+                  {u.team_type && <span className="text-xs px-2 py-1 rounded-sm bg-purple-100 text-purple-800">{u.team_type}</span>}
                 </div>
               </div>
             ))}

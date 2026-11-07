@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, akunAdmin, ambilAkun, buatChecklist, galat, muatChecklist } from '@/lib/checklist-server';
-import { daftarId, tanggal, teks } from '@/lib/checklist-isian';
-import { BATAS, validasiDraft, type DraftChecklist, type SumberChecklist } from '@/lib/checklist';
+import { NO_STORE, akunAdmin, ambilAkun, buatChecklist, galat, muatChecklist } from '@/lib/checklist/server';
+import { daftarId, tanggal, teks } from '@/lib/checklist/isian';
+import { BATAS, validasiDraft, type DraftChecklist, type SumberChecklist } from '@/lib/checklist/inti';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

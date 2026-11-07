@@ -1,7 +1,7 @@
 import {
   gabungkanProyek, deteksiKandidatGabung, idUntukDigabung, kunciProyek, normalkanNama,
   type BarisKelompok,
-} from '../lib/kelompok-insentif';
+} from '../lib/incentive/kelompok';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, ok: boolean, c = '') => {

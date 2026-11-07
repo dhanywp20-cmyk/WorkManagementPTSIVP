@@ -5,7 +5,7 @@ import type { User } from '../shared';
 import { WIDGETS } from './Widgets';
 import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
-import { useKelompok } from '@/lib/kelompok';
+import { useKelompok } from '@/lib/kelompok/inti';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
@@ -99,7 +99,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
+            <h1 className="text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
             <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
           {adaAnalytics && (
@@ -117,7 +117,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         {ajakTelegram && !tutupAjakan && (
           <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3 mb-3 flex-wrap"
             style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-            <span className="w-9 h-9 rounded-lg grid place-items-center flex-shrink-0 text-white text-base"
+            <span className="w-9 h-9 rounded-lg grid place-items-center shrink-0 text-white text-base"
               style={{ background: '#f59e0b' }}>➤</span>
             <span className="flex-1 min-w-[220px]">
               <span className="block text-[13.5px] font-bold text-slate-800">Telegram Anda belum terhubung</span>
@@ -127,11 +127,11 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               </span>
             </span>
             <button type="button" onClick={() => setTutupAjakan(true)}
-              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 flex-shrink-0">
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 shrink-0">
               Nanti saja
             </button>
             <button type="button" onClick={onHubungkanTelegram}
-              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg text-white shrink-0"
               style={{ background: '#f59e0b' }}>
               Hubungkan sekarang →
             </button>
@@ -150,7 +150,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
           <>
             {ringkasAgenda && (
               <p className="flex items-center gap-2 mb-3 text-[13px] font-semibold text-slate-700 bb-naik">
-                <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ringkasAgenda.aksi ? '#dc2626' : '#16a34a' }} />
+                <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ background: ringkasAgenda.aksi ? '#dc2626' : '#16a34a' }} />
                 {ringkasAgenda.aksi ? `${ringkasAgenda.aksi} hal perlu tindakan Anda` : 'Tidak ada yang mendesak'}
                 {ringkasAgenda.hari > 0 && ` · ${ringkasAgenda.hari} agenda hari ini`}
                 {ringkasAgenda.nanti > 0 && ` · ${ringkasAgenda.nanti} agenda mendatang`}

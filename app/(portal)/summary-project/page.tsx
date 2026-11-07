@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
-import { getSession, startSessionWatcher } from '@/lib/auth';
-import { User } from '@/app/(portal)/dashboard/_components/shared';
+import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
+import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import {
   Toast, PageHeader, StatCardGrid, EmptyState, ListEmptyState, ErrorState, ViewIconBtn, LoadingScreen,
   MobileListCard, MobileCardBadge, Paginasi, usePaginasi, type Notif,
@@ -46,7 +46,7 @@ const KOLOM_JUMLAH: Record<AktivitasTipe, keyof RingkasanProject> = {
 function Jumlah({ n, tipe }: { n: number; tipe: AktivitasTipe }) {
   if (!n) return <span className="text-[11px] text-gray-400">—</span>;
   return (
-    <span className="inline-flex min-w-[28px] justify-center px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums"
+    <span className="inline-flex min-w-[28px] justify-center px-1.5 py-0.5 rounded-sm text-[11px] font-bold tabular-nums"
       style={{ background: TIPE_CFG[tipe].bg, color: TIPE_CFG[tipe].color }}>{n}</span>
   );
 }
@@ -216,7 +216,7 @@ export default function SummaryProjectPage() {
             <div className="flex flex-wrap items-center gap-2">
               <input aria-label="Cari project" value={cari} onChange={e => setCari(e.target.value)}
                 placeholder="Cari nama project, kode PRJ, customer, lokasi, atau sales…"
-                className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-md text-sm font-medium outline-none bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-indigo-400" />
+                className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-md text-sm font-medium outline-hidden bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-indigo-400" />
               {(['semua', 'active', 'done', 'archived'] as FilterStatus[]).map(s => {
                 const aktif = filterStatus === s;
                 return (
@@ -237,7 +237,7 @@ export default function SummaryProjectPage() {
               )}
               <TombolEkspor jumlah={tersaring.length} data={dataEkspor} />
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 -mt-1 text-[11.5px] text-slate-600 bg-white/90 rounded-lg border border-slate-200 px-3 py-1.5">
               <span className="font-semibold text-slate-700">{tersaring.length} dari {daftar.length} project</span>
               {filterTipe !== 'semua' && (
                 <button type="button" onClick={() => setFilterTipe('semua')} className="px-2 py-0.5 rounded-full bg-slate-900 text-white font-bold">
@@ -335,7 +335,7 @@ export default function SummaryProjectPage() {
                               <span className="text-[11px] font-bold text-indigo-600" style={fontMono}>{p.code}</span>
                             </td>
                             <td className="px-3 py-3 align-middle">
-                              <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
+                              <p className="text-xs font-bold text-gray-800 leading-snug wrap-break-word">{p.name}</p>
                               {p.customer && <p className="text-[11px] text-gray-500 font-semibold mt-0.5 truncate">{p.customer}</p>}
                             </td>
                             <td className="px-3 py-3 align-middle">

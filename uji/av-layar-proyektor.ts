@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { ukuranDariDiagonal } from '../lib/av-hitung';
-import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, tinggiLensaTetap, PANEL_VIDEOWALL, rencanaBlending, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, saranSusunanBlending, sudutKeAtasDerajat, teksRasio, videowallUntuk } from '../lib/av-layar-proyektor';
+import { ukuranDariDiagonal } from '../lib/av/hitung';
+import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, tinggiLensaTetap, PANEL_VIDEOWALL, rencanaBlending, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, saranSusunanBlending, sudutKeAtasDerajat, teksRasio, videowallUntuk } from '../lib/av/layar-proyektor';
 
 let lulus = 0, gagal = 0;
 const dekat = (a: number, b: number, t = 0.01) => Math.abs(a - b) <= t;

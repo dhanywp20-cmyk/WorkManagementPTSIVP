@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { jatahAI, klienSebagaiUser, muatUser, panggilGemini, type IsiGemini, type UserLengkap } from '@/lib/ai-server';
 import { PANDUAN, cariPanduan, panduanTeks } from '@/lib/panduan';
 import { cariSolusiSerupa } from '@/lib/solusi-serupa';

@@ -5,8 +5,8 @@ import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { IncentiveProjectRow, formatRupiah } from './calc';
 import { useState } from 'react';
-import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
-import { LABEL_AKSES, type TingkatAkses } from '@/lib/incentive-akses';
+import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive/akses-api';
+import { LABEL_AKSES, type TingkatAkses } from '@/lib/incentive/akses';
 import { type ConfirmState } from '@/components/shared';
 import { type CurrentUser } from './aturan-halaman';
 

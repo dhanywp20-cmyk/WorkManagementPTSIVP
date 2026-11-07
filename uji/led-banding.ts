@@ -1,5 +1,5 @@
-import { MODUL_LED } from '../lib/av-hitung';
-import { bandingPitch, garisCabinet, labelCabinet, polaUjiBisa, saranPitch } from '../lib/led-banding';
+import { MODUL_LED } from '../lib/av/hitung';
+import { bandingPitch, garisCabinet, labelCabinet, polaUjiBisa, saranPitch } from '../lib/av/led-banding';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

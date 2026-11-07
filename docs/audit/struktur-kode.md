@@ -55,7 +55,7 @@ perilaku sama persis).
 ### S4 — Berkas besar yang tersisa (600–964 baris)
 Terbesar: `_kerangka/KerangkaPortal.tsx` (964), `ticketing/page.tsx` (928), `reminder-schedule/page.tsx` (895),
 `incentive-pts/_components/SchemeTab.tsx` (845), `reminder-schedule/_components/ReminderDetailPopup.tsx` (836),
-`learning-center/_components/MyQuizPage.tsx` (818), `picket-showroom/page.tsx` (817), `lib/integrasi-tulis.ts` (806).
+`learning-center/_components/MyQuizPage.tsx` (818), `picket-showroom/page.tsx` (817), `lib/integrasi/tulis.ts` (806).
 Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 
 ### S5 — Arah ketergantungan antar modul
@@ -64,7 +64,7 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
   `summary-project`) mengimpor tipe `User` dari `dashboard/_components/shared`. Mengubah "shared" satu modul diam-diam
   memecah modul lain.
 - **`lib/` mengimpor `app/`** (terbalik — lib seharusnya lapisan paling bawah):
-  `lib/integrasi-aksi.ts` → `ticketing/_components/alur-status`, `lib/integrasi-tulis.ts` → `tech-note/_components/aturan-tech-note`,
+  `lib/integrasi/aksi.ts` → `ticketing/_components/alur-status`, `lib/integrasi/tulis.ts` → `tech-note/_components/aturan-tech-note`,
   `lib/objek-saya.ts` & `lib/tools-team.ts` → `tools-team/_components/desain3d/inti/rak`.
 - **Tipe pengguna ganda**: 11 definisi `User`/`TeamUser`/`KPIUser` — penyebab langsung bug sesi Full Access
   (PR #153): tiap modul punya bentuk `User` sendiri, jadi kolom `access_level` bisa hilang di satu jalur tanpa ketahuan.
@@ -99,9 +99,9 @@ Ini *gejala* S1/S2: page besar karena memegang state semua anak-anaknya.
 | 1b | Hapus komentar penjelasan: ±24.500 baris di 1.005 berkas (kode, konfigurasi, CSS, skrip, uji); direktif alat dipertahankan | rendah (tanpa perubahan perilaku) | **selesai** |
 | 2 | Konteks per modul untuk props drilling terburuk (S1/S2), satu modul per PR: Request Schedule → Request Design Project → Ticketing → Incentive → Daily Report | sedang — diuji per modul di Preview | **Request Schedule**, **Request Design Project**, **Ticketing**, **Incentive** & **Daily Report selesai** (§5) |
 | 3 | Arah ketergantungan (S5): tipe pengguna bersama; `CATEGORY_CONFIG`/`formatDate` & tipe `TeamUser` naik ke `lib/`; 4 impor `lib → app` dipindah ke `lib/` | rendah–sedang | — |
-| 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | — |
-| 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | berjalan |
-| 6 | `lib/` dikelompokkan ke subfolder per domain (`lib/incentive/`, `lib/av/`, `lib/wa/`, …) dengan ekspor ulang supaya impor lama tetap jalan | rendah | — |
+| 4 | Kantong state Tools Team (`useKeadaanDesain`, `useKeadaanLED`) dipecah per domain (kanvas, proyektor, ekspor, …) | sedang (Desain 3D sensitif) | **selesai** (§10) |
+| 5 | Berkas 600–964 baris yang tersisa dipecah per tanggung jawab saat modulnya disentuh | rendah | **selesai** (§7) |
+| 6 | `lib/` dikelompokkan ke subfolder per domain (`lib/incentive/`, `lib/av/`, `lib/wa/`, …) | rendah | **selesai** (§9) |
 
 Urutan Fase 2 dipilih dari ukuran props drilling (§S1) dan seberapa sering modulnya diubah.
 
@@ -218,13 +218,124 @@ Tambah Report), Form Review, Learning Center (Bank Soal) dan Request Design Proj
 
 - `lib/` dan `components/` tidak lagi mengimpor dari `app/` (sebelumnya 4 impor). Modul aturan murni dipindah:
   `ticketing/_components/alur-status.ts` → `lib/alur-status-ticket.ts`, `tech-note/_components/aturan-tech-note.ts` →
-  `lib/aturan-tech-note.ts`, katalog perangkat rak → `lib/perangkat-rak.ts` (`inti/rak.ts` mengekspor ulang).
+  `lib/aturan-tech-note.ts`, katalog perangkat rak → `lib/av/perangkat-rak.ts` (`inti/rak.ts` mengekspor ulang).
 - `lib/tipe-pengguna.ts` (`PenggunaDasar`): kolom bersama tipe `User` di Dashboard, Ticketing, Request Design Project dan
   Analytics; tiap modul hanya menambah kolom khususnya.
 - Dijaga `uji/batas-lib-app.mjs`: gagal bila ada berkas `lib/` atau `components/` yang mengimpor dari `app/`.
 
 ## 7. Fase 5 — berkas 600+ baris
 
-- `lib/integrasi-tulis.ts` (738 baris) dipecah per domain: `integrasi-tulis-bersama.ts` (pembantu: orang, WA, audit,
+- `lib/integrasi/tulis.ts` (738 baris) dipecah per domain: `integrasi-tulis-bersama.ts` (pembantu: orang, WA, audit,
   CC), `-tiket.ts`, `-desain.ts`, `-catatan.ts`, `-unit.ts` (unit & piket). `integrasi-tulis.ts` kini hanya peta
   `AKSI_MENU_TULIS` (21 baris). Tiap modul hanya mengekspor aksinya; pembantu internal tetap privat.
+- Komponen yang menumpang di satu berkas dipindah ke berkasnya sendiri (isi tidak diubah):
+  `UserManagementInline` → `dashboard/_components/pengguna/KelolaPenggunaInline.tsx` (`modal-user.tsx` 737 → 366 baris),
+  `UserAnswerReview` → `learning-center/_components/UlasanJawaban.tsx` (`TeamPage.tsx` 641 → 119),
+  `MaterialCard` + `FolderTreeView` → `learning-center/_components/KartuMateri.tsx` (`MateriPage.tsx` 748 → 609).
+- `SchemeTab.tsx` (716 → 345 baris): seksi 3 (PTS Daerah & Remote) dan 4 (Aturan Khusus & Pencairan) jadi komponen
+  `SeksiDaerahRemote` / `SeksiAturanPencairan` di `seksi-skema.tsx`, bersama pembantu `Seksi`, `TotalPersen`, `rp`.
+- `lib/integrasi/aksi.ts` (609 → 231 baris): aksi baca DIWAYPI ke `integrasi-aksi-baca.ts`, aksi jadwal ke
+  `integrasi-aksi-jadwal.ts`, konstanta & `akunChecklist` ke `integrasi-aksi-dasar.ts`. Dispatcher `jalankanAksi` dan
+  aksi tulis tiket/daily report/checklist tetap di `integrasi-aksi.ts`.
+- `AdminDashboard.tsx` (696 → 603 baris): modal riwayat nilai per pengguna jadi `ModalNilaiPengguna.tsx`. Pengambilan
+  data tetap di `AdminDashboard`; modal hanya menampilkan.
+- `MateriPage.tsx` (609 → 550 baris): modal Edit Materi jadi `ModalEditMateri.tsx`; simpan tetap lewat `handleEditMaterial`
+  di halaman.
+- `MyQuizPage.tsx` (617 → 554 baris): fungsi murni `terjemahkanGalatUnggah`, `acakDenganBenih`, `tenggatQuiz` dan tipe
+  `QuizQuestion` pindah ke `kuis/bantu-kuis.ts`. Komponen `kuis/*` kini mengimpor dari sana, bukan dari `MyQuizPage`
+  (impor melingkar hilang).
+- `GlobalSearch.tsx` (610 → 577 baris): tipe hasil, `TYPE_CONFIG` dan `ALL_TYPES` pindah ke `cari-global-tipe.ts`.
+- `ReminderDetailPopup.tsx` (641 → 490 baris): seksi Timeline Project Progress, Status Garansi dan Detail Pelaksanaan
+  jadi `SeksiPelaksanaan.tsx`; komponen itu membaca `useKonteksJadwal()` sendiri, jadi popup hanya mengoper
+  `detailReminder`.
+- `reminder-schedule/page.tsx` (641 → 591 baris): daftar "Perlu Tindakan Kamu" jadi fungsi murni `hitungPerluAksi`
+  (`_components/perlu-aksi.ts`), objek form kosong jadi `buatFormKosong()` (`_components/form-kosong.ts`, tetap dibuat
+  ulang tiap render seperti sebelumnya), dan blok CSS halaman jadi `GayaJadwal.tsx`.
+- `picket-showroom/page.tsx` (696 → 594 baris): daftar versi HP jadi `DaftarPiketHp.tsx`, spanduk "Hari ini" jadi
+  `SpandukHariIni.tsx`, lapisan memuat + navigasi minggu + chip filter aktif jadi `bilah-piket.tsx`.
+- `FormReviewPageInner.tsx` (698 → 591 baris): data diagram jadi `hitungPieReview` (`hitung-pie-review.ts`), kepala
+  halaman jadi `KepalaReview.tsx`, modal hapus massal jadi `ModalHapusMassalReview.tsx` (tetap mencatat `logAudit`),
+  CSS halaman jadi `GayaReview.tsx`.
+- `_kerangka/KerangkaPortal.tsx` (720 → 597 baris): `renderMenuCard` jadi komponen `KartuMenuPortal`, tiga grup kartu
+  menu jadi `GridMenuPortal` (keduanya di `KartuMenuPortal.tsx`), dan `AnalyticsIframe` pindah ke berkasnya sendiri.
+  Markup dicek sama persis dengan aslinya (dinormalisasi spasi); jalur portal biasa (sidebar, dashboard, pindah menu)
+  untuk admin dan guest identik sampai piksel.
+- `AdminDashboard.tsx` (603 → 563 baris): kartu "Analytics Overview" dan `SectionHeader` pindah ke `RingkasanKuis.tsx`.
+- `ticketing/page.tsx` (750 → 592 baris), dipindah ke `_components/`:
+  - nilai awal form → `form-awal-tiket.ts`
+  - simpan/hapus overdue setting → hook `usePengaturanOverdue`
+  - notifikasi tiket saya dan tiga memo tiket menunggu → `tiket-saya.ts`
+  - popup memuat → `LapisanMemuatTicket.tsx`
+  - CSS → `GayaTicketing.tsx`
+
+  Urutan hook tetap sama. Diverifikasi identik dengan main: daftar/detail (admin, full, sales), update status, eskalasi
+  overdue, serta simpan dan hapus overdue setting (isi request sama).
+- `analytics-dashboard/_components/AnalyticsPlatform.tsx` (606 → 530 baris): `Panel`, `Empty`, `Row`, `ACTION_STYLE`,
+  `MODULE_ICON` pindah ke `panel-analitik.tsx`.
+- Setelah langkah ini tidak ada lagi berkas `.ts`/`.tsx` di atas 600 baris.
+
+## 8. Batas antar modul (aturan 4)
+
+- Impor `_components` milik modul lain turun dari 51 ke 20. Yang dipakai bersama naik ke `lib/` atau
+  `components/shared/`; berkas lama hanya mengekspor ulang, jadi impor di dalam modulnya tidak berubah:
+  - `picket-showroom/_components/shared.ts` → `lib/piket/inti.ts` (jadwal & PIC piket, dipakai Dashboard, KPI, pencarian)
+  - `learning-center/_components/sertifikat.ts` → `lib/kuis/sertifikat-cetak.ts` (dipakai halaman Kelas)
+  - tipe `User` Dashboard → `PenggunaPortal` di `lib/tipe-pengguna.ts` (dipakai Tech Note, KPI, Summary, Progress, Analytics)
+  - `TeamUser`, `GuestUser`, `CATEGORY_CONFIG`, `DAILY_REPORT_CATEGORIES`, `PRODUCT_TYPES`, `PIE_COLORS`,
+    `formatDatetime`, `Priority`, `RepeatType` → `lib/jadwal/tampilan.ts` (dipakai Daily Report & Dashboard)
+  - `UBIN`, `BAYANG_UBIN`, `AKSEN_UTAMA`, `LABEL_UBIN`, `RelAksen` → `components/shared/ubin.tsx` (dipakai KPI)
+- Sisa yang memang komposisi fitur, dicatat di `uji/batas-modul.mjs` (daftar `BOLEH`):
+  - `_kerangka` → `dashboard` (kerangka portal memakai pencarian, nav bawah, modal akun)
+  - `checklist` → `project-progress` (halaman bagikan checklist memakai tampilan Project Progress)
+  - `dashboard` ↔ `analytics-dashboard` → `kpi-team` (widget Analytics & KPI tertanam)
+- `uji/batas-modul.mjs` menggagalkan uji bila ada impor lintas modul baru di luar daftar itu.
+
+## 9. Fase 6 — `lib/` per domain
+
+99 berkas berawalan sama dipindah ke subfolder; semua impor (alias `@/lib/…`, relatif, `import()` dinamis) dan
+path berkas di `uji/` ikut ditulis ulang otomatis, tanpa berkas ekspor-ulang. Berkas tunggal tetap di akar `lib/`.
+
+| Folder | Berkas asal (`lib/<nama>.ts`) |
+|---|---|
+| `lib/av/` | `av-audio-jaringan`, `av-hasil`, `av-hitung-bom`, `av-hitung-daya`, `av-hitung-display`, `av-hitung-koneksi`, `av-hitung-led`, `av-hitung-ruang`, `av-hitung`, `av-layar-proyektor`, `led-banding`, `perangkat-rak` |
+| `lib/incentive/` | `incentive-akses-api`, `incentive-akses`, `incentive-nominal-api`, `incentive-nominal`, `incentive-scheme-aturan`, `incentive-scheme-hitung`, `incentive-scheme-kategori-bawaan`, `incentive-scheme-kategori`, `incentive-scheme-simpan`, `incentive-scheme-tipe`, `incentive-scheme`, `kelompok-insentif` |
+| `lib/integrasi/` | `integrasi-aksi-baca`, `integrasi-aksi-dasar`, `integrasi-aksi-jadwal`, `integrasi-aksi`, `integrasi-analisa`, `integrasi-bantu`, `integrasi-menu`, `integrasi-tulis-bersama`, `integrasi-tulis-catatan`, `integrasi-tulis-desain`, `integrasi-tulis-tiket`, `integrasi-tulis-unit`, `integrasi-tulis`, `token-integrasi` |
+| `lib/checklist/` | `checklist-barang`, `checklist-isian`, `checklist-ringkasan`, `checklist-server`, `checklist`, `project-progress-sync`, `sinkron-progress-server` |
+| `lib/jadwal/` | `jadwal-aturan`, `jadwal-buat`, `jadwal-status`, `jadwal-tampilan`, `cari-reminder` |
+| `lib/wa/` | `wa`, `wa-batas`, `wa-kirim-server`, `wa-server` |
+| `lib/notifikasi/` | `telegram-pribadi`, `telegram-server`, `suara-notif`, `suara-notif-bawaan`, `notif-sound`, `push-client`, `web-push-server`, `fcm-server` |
+| `lib/perbandingan/` | `perbandingan-aturan`, `perbandingan-pdf`, `perbandingan-prompt`, `perbandingan-teks`, `perbandingan` |
+| `lib/kuis/` | `kuis-live`, `kuis-live-server`, `urutan-soal`, `learning-rank`, `kelas-eksternal`, `sertifikat`, `sertifikat-cetak`, `kpi-lc-tahunan` |
+| `lib/galat/` | `galat-berkas`, `galat-klien`, `galat-tulis`, `lapor-galat` |
+| `lib/merek/` | `merek`, `merek-bawaan`, `merek-server` |
+| `lib/kesehatan/` | `kesehatan`, `kesehatan-server` |
+| `lib/auth/` | `auth`, `server-auth`, `masuk-server`, `dua-faktor-server`, `totp`, `tantangan-2fa`, `akun-tertunda`, `penjaga-admin`, `db-token`, `rahasia-kunci`, `rahasia-server` |
+| `lib/piket/` | `piket`, `piket-akses` |
+| `lib/kelompok/` | `kelompok`, `kelompok-inti` |
+
+Diverifikasi: `tsc`, 124 uji, build, 19 halaman + layar masuk identik dengan main, dan kode status 65 rute API
+(GET & POST) identik dengan main. Komentar di `sql/` yang menyebut path lama dibiarkan (berkas SQL sudah diterapkan).
+
+## 10. Fase 4 — kantong state Tools Team
+
+Bentuk kembalian kedua hook tidak berubah (pemakai seperti `KalkulatorLED`, `Desain3D`, `useEksporLED`, `panel/alat.ts`
+tidak disentuh); isinya dipecah per domain:
+
+- `led/useKeadaanLED.ts` (163 → 52 baris):
+  - `useIsianLED` — semua isian form + `isian` & `terapkan` untuk riwayat undo
+  - `useTurunanLED(isian, data)` — modul aktif, hitungan LED, hardware, koneksi, daya, BOM & penawaran
+- `desain3d/useKeadaanDesain.ts` (214 → 146 baris):
+  - `usePilihanBenda` — pilihan tunggal/banyak + ref sinkronnya
+  - `usePreferensiKanvas` — preferensi tampilan yang diingat di `localStorage`
+  - `useStatusDesain(isiAwal)` — nama, asal, desain tersimpan/tim/aktif, status simpan; `KUNCI_SIMPAN` pindah ke sini
+    (diekspor ulang dari `useKeadaanDesain`)
+  - `useRefMesin` — ref mesin 3D, tekstur, model impor, input berkas
+  - `useAnalisisDisplay` — analisis jarak & sudut pandang per display
+
+Diverifikasi di browser (WebGL swiftshader), build main vs perubahan:
+- **LED:** teks, nilai isian setelah diubah, undo dua langkah, serta tab Screen & Power Connection identik.
+- **Desain 3D:**
+  - teks dan `localStorage` identik setelah alur berikut: tampilan 3D/atas, sembilan opsi tampilan, ubah ruang, undo,
+    pilih benda;
+  - tangkapan layar hanya berbeda derau render: sekitar 1% piksel, tanpa piksel yang berbeda warna nyata.
+

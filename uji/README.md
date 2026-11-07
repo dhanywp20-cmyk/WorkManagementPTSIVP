@@ -88,7 +88,7 @@ Ikut dijaga: suhu dijepit ke rentang 0–2, dan arahan dipotong di 4000 karakter
 
 ## urutan-soal.ts
 
-Aturan urutan soal di Bank Soal (lib/urutan-soal.ts). Yang dijaga: soal yang
+Aturan urutan soal di Bank Soal (lib/kuis/urutan-soal.ts). Yang dijaga: soal yang
 sudah diatur tangan tidak terselip oleh soal baru; pemasangan yang SQL-nya
 belum dijalankan tetap memakai urutan lama (created_at menurun) alih-alih
 berubah sendiri; menukar dua soal hanya menulis DUA baris, bukan seluruh isi

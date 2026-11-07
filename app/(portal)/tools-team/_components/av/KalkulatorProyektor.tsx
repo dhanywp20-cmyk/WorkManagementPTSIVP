@@ -12,8 +12,8 @@ import { PilihPustaka } from '../pustaka/PilihPustaka';
 import { RumusLensaPabrikan } from '../pustaka/RumusLensaPabrikan';
 import { usePustaka } from '../pustaka/usePustaka';
 import { angkaDari, type EntriPustaka, teksDari } from '@/lib/pustaka';
-import { KONTRAS_ANSI, type KategoriKontras, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, type Pemasangan, rentangJarakLempar, rentangTinggiLensa, tinggiLensaTetap } from '@/lib/av-layar-proyektor';
-import { ukuranDariDiagonal } from '@/lib/av-hitung';
+import { KONTRAS_ANSI, type KategoriKontras, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, type Pemasangan, rentangJarakLempar, rentangTinggiLensa, tinggiLensaTetap } from '@/lib/av/layar-proyektor';
+import { ukuranDariDiagonal } from '@/lib/av/hitung';
 import { useState } from 'react';
 
 const SUMBER = [

@@ -2,7 +2,7 @@ import {
   hitungKoneksi, hitungDayaLED, bomLED, totalPenawaran, cadangan, unitPerRC, RECEIVING_CARD, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
-} from '../lib/av-hitung';
+} from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

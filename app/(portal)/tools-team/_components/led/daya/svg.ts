@@ -3,7 +3,7 @@ import { f } from '../../bersama/ui';
 import { warnaPort } from '../koneksi/data';
 import { type DataDaya, type PengaturanDaya, susunDaya, WARNA_FASE } from './data';
 import { teksCara } from './teks';
-import type { HasilDayaLED } from '@/lib/av-hitung';
+import type { HasilDayaLED } from '@/lib/av/hitung';
 
 export function svgDaya(d: DataDaya, h: HasilDayaLED, arah: 'horizontal' | 'vertikal', judul?: string): string {
   const lebarM = (d.kolom * d.wUnit) / 1000, tinggiM = (d.baris * d.hUnit) / 1000;

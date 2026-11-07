@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWANotif } from '@/lib/wa';
-import '@/lib/wa-server';
+import { sendWANotif } from '@/lib/wa/inti';
+import '@/lib/wa/server';
 import { appLink } from '@/lib/app-url';
 import { catatCron } from '@/lib/cron-catat';
-import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
+import { kirimAlertKesehatan } from '@/lib/kesehatan/server';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,4 +1,4 @@
-import { bisaLihatSemuaTamu, bisaIsiKegiatan, adalahPTS } from '../lib/piket-akses';
+import { bisaLihatSemuaTamu, bisaIsiKegiatan, adalahPTS } from '../lib/piket/akses';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

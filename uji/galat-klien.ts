@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { abaikanGalat, rapikanLaporan, BATAS_PESAN } from '../lib/galat-klien';
+import { abaikanGalat, rapikanLaporan, BATAS_PESAN } from '../lib/galat/klien';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

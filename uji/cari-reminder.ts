@@ -1,4 +1,4 @@
-import { cariReminderByNama } from '@/lib/cari-reminder';
+import { cariReminderByNama } from '@/lib/jadwal/cari-reminder';
 
 const url: string[] = [];
 const FILTER = 'sales_name.eq."Fajar Setiawan"';

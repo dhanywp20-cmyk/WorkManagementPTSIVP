@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, akunLihatSemua, ambilAkun, galat } from '@/lib/checklist-server';
+import { NO_STORE, akunLihatSemua, ambilAkun, galat } from '@/lib/checklist/server';
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
 
 export const dynamic = 'force-dynamic';

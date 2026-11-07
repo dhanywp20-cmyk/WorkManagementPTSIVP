@@ -1,8 +1,8 @@
 import {
   hariIni, keadaanJadwal, statDari,
   type ChecklistItem, type KeadaanJadwal, type ProyekRingkas, type StatChecklist,
-} from '@/lib/checklist';
-import { kontribusiHandler, lokasiPerHandler, selesaiPerHari, type AnggotaNama, type Kontribusi } from '@/lib/checklist-ringkasan';
+} from '@/lib/checklist/inti';
+import { kontribusiHandler, lokasiPerHandler, selesaiPerHari, type AnggotaNama, type Kontribusi } from '@/lib/checklist/ringkasan';
 
 export type StatusLokasi = 'selesai' | 'berjalan' | 'belum' | 'kosong';
 

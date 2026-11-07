@@ -1,117 +1,279 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-:root {
+@config '../tailwind.config.ts';
 
-  --merek-utama:        #e11d48;
-  --merek-utama-2:      #be123c;
-  --merek-aksen:        #c8861d;
-  --merek-utama-tembus: rgba(225, 29, 72, 0.1);
-
-  --halaman:         #f3f5f8;
-
-  --latar-halaman:   var(--halaman);
-  --permukaan:       #ffffff;
-  --permukaan-redam: #f8fafc;
-  --garis:           #e2e8f0;
-  --garis-kuat:      #cbd5e1;
-  --tinta:           #0f172a;
-  --tinta-2:         #475569;
-  --tinta-3:         #94a3b8;
+@custom-variant satulayar {
+  @media (min-width: 1280px), ((pointer: fine) and (min-width: 900px)) { @slot; }
+}
+@custom-variant formulir {
+  @media (min-width: 900px), ((pointer: fine) and (min-width: 640px)) { @slot; }
 }
 
-html, body {
-  background: transparent;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
+@theme {
+  --text-xs--line-height: 1rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
 }
-
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; border-radius: 99px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 99px;
-  transition: background 0.2s;
-}
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.55); }
-::-webkit-scrollbar-corner { background: transparent; }
-
-* { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.25) transparent; }
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-.text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10px !important; }
-
-@media (max-width: 640px) {
-  html { font-size: 87.5%; }
-
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
-  select, textarea {
-    font-size: 16px !important;
+@layer base {
+  input:where(:not([type='button'], [type='reset'], [type='submit'], [type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'])),
+  select,
+  textarea {
+    background-color: Field;
   }
-  .text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10.5px !important; }
-  .text-\[10px\] { font-size: 11px !important; }
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+    color: #9ca3af;
+  }
 }
 
-@media (max-width: 639px) {
-  .filter-lipat-tutup > *:nth-child(n+2) { display: none !important; }
-  .filter-lipat-tutup > *:first-child { grid-column: 1 / -1; }
-}
-*, *::before, *::after {
-  box-sizing: border-box;
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-@keyframes lcPageIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.92); }
-  to   { opacity: 1; transform: none; }
-}
-.lc-page-enter { animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@layer utilities {
+  :root {
+    --merek-utama: #e11d48;
+    --merek-utama-2: #be123c;
+    --merek-aksen: #c8861d;
+    --merek-utama-tembus: rgba(225, 29, 72, 0.1);
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.75); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(60px); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-35px); }
-  to   { opacity: 1; transform: none; }
-}
+    --halaman: #f3f5f8;
 
-.animate-fade-in  { animation: fadeIn   0.65s ease-out both; }
-.animate-zoom-in  { animation: zoomIn   0.90s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slide-up { animation: slideUp  0.80s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slide-down { animation: slideDown 0.70s cubic-bezier(0.22, 1, 0.36, 1) both; }
+    --latar-halaman: var(--halaman);
+    --permukaan: #ffffff;
+    --permukaan-redam: #f8fafc;
+    --garis: #e2e8f0;
+    --garis-kuat: #cbd5e1;
+    --tinta: #0f172a;
+    --tinta-2: #475569;
+    --tinta-3: #94a3b8;
+  }
 
-.stagger-item { animation: slideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.stagger-item:nth-child(1)  { animation-delay:  0ms; }
-.stagger-item:nth-child(2)  { animation-delay: 75ms; }
-.stagger-item:nth-child(3)  { animation-delay:140ms; }
-.stagger-item:nth-child(4)  { animation-delay:195ms; }
-.stagger-item:nth-child(5)  { animation-delay:242ms; }
-.stagger-item:nth-child(6)  { animation-delay:283ms; }
-.stagger-item:nth-child(7)  { animation-delay:318ms; }
-.stagger-item:nth-child(8)  { animation-delay:348ms; }
-.stagger-item:nth-child(n+9){ animation-delay:373ms; }
+  html,
+  body {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
 
-.anim-d0   { animation-delay:   0ms !important; }
-.anim-d80  { animation-delay:  80ms !important; }
-.anim-d160 { animation-delay: 160ms !important; }
-.anim-d240 { animation-delay: 240ms !important; }
-.anim-d320 { animation-delay: 320ms !important; }
-.anim-d400 { animation-delay: 400ms !important; }
-.anim-d480 { animation-delay: 480ms !important; }
-.anim-d560 { animation-delay: 560ms !important; }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 99px;
+    transition: background 0.2s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.55);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.25) transparent;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .text-\[7px\],
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\],
+  .text-\[9\.5px\] {
+    font-size: 10px !important;
+  }
+
+  @media (max-width: 640px) {
+    html {
+      font-size: 87.5%;
+    }
+
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+        [type='color']
+      ),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+    .text-\[7px\],
+    .text-\[8px\],
+    .text-\[8\.5px\],
+    .text-\[9px\],
+    .text-\[9\.5px\] {
+      font-size: 10.5px !important;
+    }
+    .text-\[10px\] {
+      font-size: 11px !important;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .filter-lipat-tutup > *:nth-child(n + 2) {
+      display: none !important;
+    }
+    .filter-lipat-tutup > *:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  @keyframes lcPageIn {
+    from {
+      opacity: 0;
+      transform: translateY(50px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .lc-page-enter {
+    animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes zoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.75);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-35px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.65s ease-out both;
+  }
+  .animate-zoom-in {
+    animation: zoomIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-slide-down {
+    animation: slideDown 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .stagger-item {
+    animation: slideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stagger-item:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-item:nth-child(2) {
+    animation-delay: 75ms;
+  }
+  .stagger-item:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .stagger-item:nth-child(4) {
+    animation-delay: 195ms;
+  }
+  .stagger-item:nth-child(5) {
+    animation-delay: 242ms;
+  }
+  .stagger-item:nth-child(6) {
+    animation-delay: 283ms;
+  }
+  .stagger-item:nth-child(7) {
+    animation-delay: 318ms;
+  }
+  .stagger-item:nth-child(8) {
+    animation-delay: 348ms;
+  }
+  .stagger-item:nth-child(n + 9) {
+    animation-delay: 373ms;
+  }
+
+  .anim-d0 {
+    animation-delay: 0ms !important;
+  }
+  .anim-d80 {
+    animation-delay: 80ms !important;
+  }
+  .anim-d160 {
+    animation-delay: 160ms !important;
+  }
+  .anim-d240 {
+    animation-delay: 240ms !important;
+  }
+  .anim-d320 {
+    animation-delay: 320ms !important;
+  }
+  .anim-d400 {
+    animation-delay: 400ms !important;
+  }
+  .anim-d480 {
+    animation-delay: 480ms !important;
+  }
+  .anim-d560 {
+    animation-delay: 560ms !important;
+  }
+}
 
 @layer base {
   .table-zebra tbody tr:nth-child(even) {
@@ -176,9 +338,11 @@ html {
   max-height: none;
 }
 
-:where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
-  max-height: 100dvh;
-  overflow-y: auto;
+@layer base {
+  :where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
 }
 
 .lc-kartu { position: relative; z-index: 5; }

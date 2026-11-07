@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { setSession } from '@/lib/auth';
+import { setSession } from '@/lib/auth/sesi';
 
 import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE } from './shared';
 import { ModalPortal, formatUsername } from '@/components/shared';
@@ -10,7 +10,7 @@ import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
 import { bolehDiwaypiDan2FA, hasFullAccess } from '@/lib/constants';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
-import { useMerek } from '@/lib/merek';
+import { useMerek } from '@/lib/merek/inti';
 import { InstallGuideModal } from './InstallGuideModal';
 import { UnduhApk } from './UnduhApk';
 import { Profil2FA } from './profil-2fa';
@@ -285,10 +285,10 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-slate-50 rounded-kartu shadow-modal w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
 
-        <div className="flex-shrink-0 px-6 py-5 relative overflow-hidden"
+        <div className="shrink-0 px-6 py-5 relative overflow-hidden"
           style={{ background: 'linear-gradient(120deg,#be123c,#9f1239 55%,#881337)' }}>
           <button aria-label="Tutup" onClick={onClose}
             className="absolute top-4 right-4 bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all z-10">
@@ -299,12 +299,12 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-200/90 mb-1.5">
                 {salam} · <span className="text-white/70 normal-case tracking-normal font-medium">{formatUsername(userData.username)}</span>
               </p>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight truncate">
+              <h2 className="text-2xl sm:text-3xl sm:leading-9 font-black text-white tracking-tight leading-tight truncate">
                 {userData.full_name}
               </h2>
               <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                 {jabatanCfg && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur-sm">
                     <Ikon nama={jabatanCfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {userData.jabatan}
                   </span>
                 )}
@@ -312,15 +312,15 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   <span className="text-white/40 text-xs">›</span>
                 )}
                 {(userData.team_type || userData.sales_division) && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur-sm">
                     {userData.team_type || userData.sales_division}
                   </span>
                 )}
               </div>
             </div>
-            <div className="flex gap-2.5 flex-shrink-0">
+            <div className="flex gap-2.5 shrink-0">
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(0,0,0,0.22)' }}>
-                <p className="text-lg sm:text-2xl font-black text-white leading-none">{menuAktif.length}</p>
+                <p className="text-lg sm:text-2xl sm:leading-8 font-black text-white leading-none">{menuAktif.length}</p>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
               </div>
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(250,204,21,0.9)' }}>
@@ -332,7 +332,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
         </div>
 
         {notification && (
-          <div className={`mx-5 mt-4 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <div className={`mx-5 mt-4 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
             {notification.type === 'success' ? '✅' : '❌'} {notification.msg}
           </div>
         )}
@@ -418,7 +418,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       <div className="flex items-center gap-2">
                         <input value={phoneInput} onChange={e => setPhoneInput(e.target.value)}
                           placeholder="08xxxxxxxxxx"
-                          className="w-40 rounded-lg border border-slate-300 px-2.5 py-1 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                          className="w-40 rounded-lg border border-slate-300 px-2.5 py-1 text-sm outline-hidden focus:ring-2 focus:ring-rose-200" />
                         <button onClick={handleSavePhone} disabled={saving}
                           className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold disabled:opacity-40">Simpan</button>
                         <button onClick={() => { setEditPhone(false); setPhoneInput(userData.phone_number || ''); }}
@@ -473,7 +473,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                     <div className="space-y-2 pt-1">
                       <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)}
                         placeholder="Password baru (min. 8 karakter, 1 kapital, 1 angka)"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200" />
                       {passwordInput && (() => {
                         const { score, label, color } = getPasswordStrength(passwordInput);
                         return (
@@ -487,7 +487,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       })()}
                       <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                         placeholder="Ulangi password baru"
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200" />
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200" />
                       {confirmPassword && passwordInput !== confirmPassword && (
                         <p className="text-[11px] text-red-500 font-semibold">Password tidak cocok</p>
                       )}
@@ -568,7 +568,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                 <div className="p-4 space-y-2.5">
                   <input aria-label="Cari modul..." value={cariIzin} onChange={e => setCariIzin(e.target.value)}
                     placeholder="Cari modul..."
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-rose-200" />
+                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-hidden focus:ring-2 focus:ring-rose-200" />
                   <div className="flex flex-wrap gap-1.5">
                     {menuTersaring.length === 0 ? (
                       <p className="text-xs text-slate-500 py-2">Tidak ada modul yang cocok.</p>

@@ -1,5 +1,5 @@
 
-import { type SkemaInsentif, persenPicBerlaku, petaPorsiBerlaku } from '../lib/incentive-scheme';
+import { type SkemaInsentif, persenPicBerlaku, petaPorsiBerlaku } from '../lib/incentive/scheme';
 import { generateTranches } from '../app/(portal)/incentive-pts/_components/calc';
 
 let lulus = 0, gagal = 0;

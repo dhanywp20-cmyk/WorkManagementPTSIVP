@@ -2,8 +2,8 @@ import {
   HASIL_MS, HITUNG_MUNDUR_MS, PAPAN_MS, TOLERANSI_MS, anulirDari, distribusi, indeksTerhitung, jadwalLive, periksaJawab, poinKahoot,
   posisiSaya, rapikanDetik, rapikanUrlGambar, rapikanWarna, semuaMenjawab, statusLive, susunPapan, tahapEfektif, transisiLive,
   wujudkanLive, type StatusLive, type UbahanLive,
-} from '../lib/kuis-live';
-import { rapikanKelas } from '../lib/kelas-eksternal';
+} from '../lib/kuis/live';
+import { rapikanKelas } from '../lib/kuis/kelas-eksternal';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, ok: boolean, c = '') => {

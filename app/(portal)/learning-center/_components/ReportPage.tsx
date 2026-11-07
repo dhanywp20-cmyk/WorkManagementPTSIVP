@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
-import { UserAnswerReview } from './TeamPage';
+import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
@@ -98,7 +98,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
           <div className="mt-2">
             <select aria-label="-- Pilih Sesi --" value={selectedSession} onChange={e => setSelectedSession(e.target.value)}
-              className="w-full sm:min-w-[320px] sm:w-auto border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 bg-white">
+              className="w-full sm:min-w-[320px] sm:w-auto border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 bg-white">
               <option value="">-- Pilih Sesi --</option>
               {sessions.map(s => <option key={s.id} value={s.id}>{s.session_type === 'essay' ? '📝 ' : ''}{s.session_name}</option>)}
             </select>
@@ -123,7 +123,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                   {cards.map(c => (
-                    <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
+                    <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs text-center">
                       <div className="text-lg sm:text-2xl font-black text-slate-800">{c.value}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{c.label}</div>
                     </div>
@@ -132,7 +132,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
               );
             })()}
 
-            <div className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto"
+            <div className="rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto"
               style={{ background: '#ffffff' }}>
               <table className="w-full text-sm table-zebra" style={{ minWidth: '680px' }}>
                 <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
@@ -252,7 +252,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
               <div className="text-5xl mb-3"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-rose-700">Gagal memuat hasil</p>
-              <p className="text-sm mt-1 text-slate-500 break-words">{loadErr}</p>
+              <p className="text-sm mt-1 text-slate-500 wrap-break-word">{loadErr}</p>
             </div>
           </div>
         )}

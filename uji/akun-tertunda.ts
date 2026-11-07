@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { NextRequest } from 'next/server';
-import { akunTertunda, TIM_TERTUNDA } from '../lib/akun-tertunda';
-import { selesaikanMasuk } from '../lib/masuk-server';
+import { akunTertunda, TIM_TERTUNDA } from '../lib/auth/akun-tertunda';
+import { selesaikanMasuk } from '../lib/auth/masuk-server';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -28,8 +28,8 @@ function cek(nama: string, syarat: boolean) {
   const jalur: [string, RegExp][] = [
     ['app/api/auth/login/route.ts', /if \(akunTertunda\(user\)\)[\s\S]*?status: 403[\s\S]*?baca2FA/],
     ['app/api/auth/session/route.ts', /akunTertunda\(user\)[\s\S]*?user_sessions'\)\.delete\(\)[\s\S]*?issueDbToken/],
-    ['lib/server-auth.ts', /team_type'\)[\s\S]*?akunTertunda\(user\)\) return null/],
-    ['lib/penjaga-admin.ts', /team_type'\)[\s\S]*?akunTertunda\(user\)\) return \{ ok: false, status: 403/],
+    ['lib/auth/server.ts', /team_type'\)[\s\S]*?akunTertunda\(user\)\) return null/],
+    ['lib/auth/penjaga-admin.ts', /team_type'\)[\s\S]*?akunTertunda\(user\)\) return \{ ok: false, status: 403/],
   ];
   for (const [p, re] of jalur) cek(p, re.test(readFileSync(p, 'utf8')));
 

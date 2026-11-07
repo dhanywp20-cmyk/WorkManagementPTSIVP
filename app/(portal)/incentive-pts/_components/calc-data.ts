@@ -1,7 +1,7 @@
-import { tempelkanNominal } from '@/lib/incentive-nominal';
-import { ambilPetaNominal, lengkapiNominal } from '@/lib/incentive-nominal-api';
-import { kategoriInsentif, muatKategoriInsentif } from '@/lib/incentive-scheme';
-import { gabungkanProyek } from '@/lib/kelompok-insentif';
+import { tempelkanNominal } from '@/lib/incentive/nominal';
+import { ambilPetaNominal, lengkapiNominal } from '@/lib/incentive/nominal-api';
+import { kategoriInsentif, muatKategoriInsentif } from '@/lib/incentive/scheme';
+import { gabungkanProyek } from '@/lib/incentive/kelompok';
 import { supabase } from '@/lib/supabase';
 import { IncentiveProjectRow, IncentiveSplit, IncentiveTranche } from './calc-tipe';
 

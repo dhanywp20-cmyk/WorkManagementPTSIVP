@@ -2,8 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanAdmin } from '@/lib/penjaga-admin';
-import { bacaRahasia, lupakanRahasia } from '@/lib/rahasia-server';
+import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
+import { bacaRahasia, lupakanRahasia } from '@/lib/auth/rahasia-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

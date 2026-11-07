@@ -28,12 +28,12 @@ function tglPendek(iso: string | null): string {
 function BarisAgenda({ item, onClick }: { item: ActionItem; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="bb-agenda-baris">
-      <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[7px]" style={{ background: WARNA_URGENSI[item.urgency] }} />
+      <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full shrink-0 mt-[7px]" style={{ background: WARNA_URGENSI[item.urgency] }} />
       <span className="min-w-0 flex-1">
         <b className="block text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</b>
         <small className="block text-[11px] text-slate-500 truncate">{item.subtitle}</small>
       </span>
-      {item.date && <time className="text-[11px] font-semibold text-slate-500 flex-shrink-0 mt-0.5 tabular-nums">{tglPendek(item.date)}</time>}
+      {item.date && <time className="text-[11px] font-semibold text-slate-500 shrink-0 mt-0.5 tabular-nums">{tglPendek(item.date)}</time>}
     </button>
   );
 }
@@ -62,14 +62,14 @@ const PanelAgenda: React.FC<WidgetProps & { onRingkas?: (r: RingkasAgenda) => vo
   return (
     <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
       <h3 className={`${LABEL_UBIN} mb-3`}>Agenda Saya</h3>
-      <div role="tablist" aria-label="Agenda" className="flex gap-1 p-1 rounded-xl bg-slate-100 mb-3 flex-shrink-0">
+      <div role="tablist" aria-label="Agenda" className="flex gap-1 p-1 rounded-xl bg-slate-100 mb-3 shrink-0">
         {TAB.map(t => {
           const on = t.k === aktif;
           return (
             <button key={t.k} type="button" role="tab" aria-selected={on} onClick={() => setPilihanTab(t.k)}
               className={`flex-1 min-w-0 flex items-center justify-center gap-1 px-1 py-1.5 rounded-lg text-[11.5px] font-semibold transition-colors ${on ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
               <span className="truncate">{t.label}</span>
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0"
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0"
                 style={t.items.length > 0 ? { background: t.warna, color: '#fff' } : { background: '#e2e8f0', color: '#475569' }}>{t.items.length}</span>
             </button>
           );
@@ -92,7 +92,7 @@ const PanelAgenda: React.FC<WidgetProps & { onRingkas?: (r: RingkasAgenda) => vo
           <div key={aktif} className="bb-geser">
             <div className="bb-fokus">
               <div className="flex items-start gap-2">
-                <span aria-hidden="true" className="w-2 h-2 rounded-full flex-shrink-0 mt-[6px]" style={{ background: WARNA_URGENSI[utama.urgency] }} />
+                <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0 mt-[6px]" style={{ background: WARNA_URGENSI[utama.urgency] }} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-bold text-slate-900 leading-snug">{utama.title}</p>
                   <p className="text-[12px] text-slate-600 mt-0.5">{utama.subtitle}</p>
@@ -106,11 +106,11 @@ const PanelAgenda: React.FC<WidgetProps & { onRingkas?: (r: RingkasAgenda) => vo
       </div>
 
       {aksiCepat.length > 0 && (
-        <div className="grid grid-cols-2 gap-1.5 pt-3 mt-3 border-t border-slate-100 flex-shrink-0">
+        <div className="grid grid-cols-2 gap-1.5 pt-3 mt-3 border-t border-slate-100 shrink-0">
           {aksiCepat.map(a => (
             <button key={a.key} type="button" className="bb-aksi"
               onClick={() => (a.url ? openUrl(a.url, a.judul ?? a.label) : openMenu(a.key))}>
-              <span aria-hidden="true" className="text-slate-500 flex-shrink-0"><Ikon nama={a.icon} ukuran={14} /></span>
+              <span aria-hidden="true" className="text-slate-500 shrink-0"><Ikon nama={a.icon} ukuran={14} /></span>
               <span className="truncate">{a.label}</span>
             </button>
           ))}

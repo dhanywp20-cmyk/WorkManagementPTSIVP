@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av-audio-jaringan';
+import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';

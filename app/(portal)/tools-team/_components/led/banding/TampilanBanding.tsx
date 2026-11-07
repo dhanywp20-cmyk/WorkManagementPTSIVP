@@ -2,8 +2,8 @@
 import { useMemo, useState } from 'react';
 import { Angka, Catatan, f, Kartu, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { bukaCetak, type Lembar, namaBerkas, unduhLembarPNG } from '../../bersama/cetak';
-import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av-hitung';
-import { bandingPitch, saranPitch } from '@/lib/led-banding';
+import { BRAND_UMUM, brandModul, kunciModul, type ModulLED, type Pembulatan } from '@/lib/av/hitung';
+import { bandingPitch, saranPitch } from '@/lib/av/led-banding';
 import { BULAT, LINGKUNGAN_TIPE, PER_M2 } from '../data';
 import { BarSub } from '../panel/BarSub';
 import { ModalBersama } from '../panel/ModalBersama';
@@ -84,7 +84,7 @@ export function TampilanBanding({ a }: { a: AlatLED }) {
             <span key={kunciModul(m)} className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[12.5px] font-semibold text-blue-900">
               {labelModul(m)}
               <button type="button" aria-label={`Hapus ${labelModul(m)}`} disabled={modul.length <= 1}
-                onClick={() => setPilihan(p => p.filter(k => k !== kunciModul(m)))} className="px-1.5 rounded hover:bg-blue-100 disabled:opacity-40">✕</button>
+                onClick={() => setPilihan(p => p.filter(k => k !== kunciModul(m)))} className="px-1.5 rounded-sm hover:bg-blue-100 disabled:opacity-40">✕</button>
             </span>
           ))}
           {modul.length < MAKS && sisa.length > 0 && (

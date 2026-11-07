@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { TeamUser, GuestUser } from './shared';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import { muatIdPimpinan } from '@/lib/pimpinan';
-import { namaKelompokCabang } from '@/lib/kelompok';
+import { namaKelompokCabang } from '@/lib/kelompok/inti';
 
 export interface MuatPenggunaKonteks {
   setGuestUsers: import("react").Dispatch<import("react").SetStateAction<GuestUser[]>>;

@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
-import { type Bahasa, type KartuBanding, MAKS_PRODUK, MIN_PRODUK, periksaDaftarBerkas, periksaHasil } from '@/lib/perbandingan';
-import { ambilJson, promptSalin, type SumberProduk, teksBertanda } from '@/lib/perbandingan-prompt';
+import { type Bahasa, type KartuBanding, MAKS_PRODUK, MIN_PRODUK, periksaDaftarBerkas, periksaHasil } from '@/lib/perbandingan/inti';
+import { ambilJson, promptSalin, type SumberProduk, teksBertanda } from '@/lib/perbandingan/prompt';
 import { bacaTeksPdf } from './bacaPdf';
 import type { Brosur } from './UnggahBrosur';
 

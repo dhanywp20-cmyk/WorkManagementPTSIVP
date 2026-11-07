@@ -5,10 +5,10 @@ import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
-import { clearSession, getSession } from '@/lib/auth';
+import { clearSession, getSession } from '@/lib/auth/sesi';
 import { logAudit } from '@/lib/audit';
-import { muatKategoriInsentif } from '@/lib/incentive-scheme';
-import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/project-progress-sync';
+import { muatKategoriInsentif } from '@/lib/incentive/scheme';
+import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { kutipNilai, cobaIdentitas } from '@/lib/identitas';
 
 import { Status, Reminder, TeamUser, GuestUser, resolveSupervisorsForProductType, diluarIncentive } from './_components/shared';
@@ -37,6 +37,9 @@ import { KepalaJadwal } from './_components/KepalaJadwal';
 import { KonteksJadwal, type NilaiKonteksJadwal } from './_components/konteks-jadwal';
 import { useStateApproval } from './_components/useStateApproval';
 import { useStateModePenyelesaian } from './_components/useStateModePenyelesaian';
+import { hitungPerluAksi } from './_components/perlu-aksi';
+import { GayaJadwal } from './_components/GayaJadwal';
+import { buatFormKosong } from './_components/form-kosong';
 
 function ReminderSchedulePageInner() {
   const router = useRouter();
@@ -152,19 +155,7 @@ function ReminderSchedulePageInner() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const emptyForm: Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'> = {
-    project_name: '', description: '', assigned_to: '', assign_name: '',
-    sales_user_id: null, assign_user_id: null,
-    due_date: new Date().toISOString().split('T')[0],
-    due_time: '09:00', priority: 'medium', status: 'pending',
-    repeat: 'none', category: 'Demo Product',
-    sales_name: '', sales_division: '', address: '', pic_name: '', pic_phone: '',
-    progress_start_date: '', progress_target_date: '',
-    notes: '', product: '', warranty_years: null,
-    requires_controller_automation: false, controller_automation_brand: null,
-    pic_type: 'standard', pic_id: null, incentive_value: 0, bast_date: null,
-    product_type: '',
-  };
+  const emptyForm = buatFormKosong();
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
 
@@ -344,29 +335,7 @@ function ReminderSchedulePageInner() {
 
   const { handleRequestJadwal, handleInternalApprove, handleInternalReject, handleInternalRejectConfirm, handleAdminReject, handleAdminRejectConfirm, handleApproveRoute, handleApproveAssign, openSupervisorAssign, handleSupervisorAssignConfirm } = useAlurPersetujuan({ adminRejectReason, adminRejectTarget, approveAssignTo, approveBatchSiblings, approveDate, approveStart, approveSupervisors, approveTarget, approveTarget2, approveTime, currentUser, fetchRemindersQuiet, guestUsers, internalRejectReason, internalRejectTarget, notify, proyekLamaTerpilih, resolveGrupInsentif, setAdminRejectReason, setAdminRejectSaving, setAdminRejectTarget, setApproveAssignTo, setApproveBatchSiblings, setApproveDate, setApproveRouteSaving, setApproveSaving, setApproveSupervisors, setApproveTarget, setApproveTime, setCurrentUser, setDetailReminder, setInternalApproveSaving, setInternalApproveTarget, setInternalRejectReason, setInternalRejectSaving, setInternalRejectTarget, setProyekLamaTerpilih, setSaving, setShowRequestModal, setSupervisorAssignBatchSiblings, setSupervisorAssignSaving, setSupervisorAssignTarget, setSupervisorAssignTo, supervisorAssignBatchSiblings, supervisorAssignTarget, supervisorAssignTo, syncNewRemindersToProgress, teamUsers });
 
-  const perluAksiSaya: { r: Reminder; alasan: string; warna: string }[] = (() => {
-    if (!currentUser) return [];
-    const hasil: { r: Reminder; alasan: string; warna: string }[] = [];
-    const sudah = new Set<string>();
-    const tambah = (r: Reminder, alasan: string, warna: string) => {
-      if (sudah.has(r.id)) return;
-      sudah.add(r.id);
-      hasil.push({ r, alasan, warna });
-    };
-    for (const r of reminders) {
-      if (r.status === 'done' || r.status === 'cancelled') continue;
-      if (r.routing_status === 'supervisor_assign' && r.assigned_supervisor_id === currentUser.id) {
-        tambah(r, 'Perlu kamu tugaskan ke tim', '#f59e0b');
-      } else if (r.routing_status === 'admin_review' && (isAdmin || isManager)) {
-        tambah(r, 'Menunggu persetujuan kamu', '#dc2626');
-      } else if (isMyReviewStage(r)) {
-        tambah(r, 'Perlu review kamu', '#8b5cf6');
-      } else if (r.assigned_to === currentUser.username) {
-        tambah(r, 'Dikerjakan kamu', '#0891b2');
-      }
-    }
-    return hasil;
-  })();
+  const perluAksiSaya = hitungPerluAksi(reminders, currentUser, isAdmin, isManager, isMyReviewStage);
 
   const myActiveReminders = perluAksiSaya.map(x => x.r);
 
@@ -606,26 +575,7 @@ function ReminderSchedulePageInner() {
 
       </div>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform: none; }
-        }
-        @keyframes scale-in {
-          from { opacity:0; transform:scale(0.92); }
-          to   { opacity:1; transform: none; }
-        }
-        @keyframes bounce {
-          0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
-          40% { transform: scale(1); opacity: 1; }
-        }
-        select option { background: #ffffff; color: #1e293b; }
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.3); cursor: pointer; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.25); border-radius: 4px; }
-      `}</style>
+      <GayaJadwal />
 
     </div>
     </KonteksJadwal.Provider>

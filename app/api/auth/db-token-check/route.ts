@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionUser, isAdminRole } from '@/lib/server-auth';
-import { issueDbToken } from '@/lib/db-token';
+import { getSessionUser, isAdminRole } from '@/lib/auth/server';
+import { issueDbToken } from '@/lib/auth/db-token';
 import { hasServiceRole, serviceRoleWajib } from '@/lib/supabase-admin';
 import { periksaKonfigurasiServices } from '@/lib/supabase';
 

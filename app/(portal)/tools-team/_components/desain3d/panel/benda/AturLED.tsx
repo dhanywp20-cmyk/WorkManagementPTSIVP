@@ -1,5 +1,5 @@
 'use client';
-import { BRAND_UMUM, brandModul, cariModul, daftarBrand, kunciModul, type ModulLED } from '@/lib/av-hitung';
+import { BRAND_UMUM, brandModul, cariModul, daftarBrand, kunciModul, type ModulLED } from '@/lib/av/hitung';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { CABINET, PITCH } from '../../../led/data';
 import { useReferensiLED } from '../../../led/referensi/useReferensiLED';

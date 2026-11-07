@@ -62,7 +62,7 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
 
   return (
     <div className="relative" role="toolbar" aria-orientation="vertical" aria-label={banyak ? `Aksi ${ids.length} benda terpilih` : `Aksi ${terpilih.nama}`}>
-      <div className="flex flex-col rounded-xl bg-white/95 backdrop-blur border border-blue-300 shadow-md overflow-hidden divide-y divide-slate-100">
+      <div className="flex flex-col rounded-xl bg-white/95 backdrop-blur-sm border border-blue-300 shadow-md overflow-hidden divide-y divide-slate-100">
         {banyak && <span className="h-6 grid place-items-center bg-blue-700 text-white text-[11px] font-bold" title={`${ids.length} benda terpilih`}>{ids.length}</span>}
         <Ikon judul={`Atur ${banyak ? `${ids.length} benda` : terpilih.nama}: ukuran, posisi & pilihan`} aria-pressed={panel} onClick={() => { setSisi(null); setPanel(p => !p); }}
           kelas={panel ? 'bg-blue-700 text-white' : biasa}><Settings2 size={17} /></Ikon>

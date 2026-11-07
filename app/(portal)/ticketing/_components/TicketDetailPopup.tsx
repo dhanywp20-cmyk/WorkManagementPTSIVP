@@ -66,13 +66,13 @@ export function TicketDetailPopup({
 
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-3" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1000 p-3" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
         onClick={e => { if (e.target === e.currentTarget) { onClose(); setShowUpdateForm(false); } }}>
         <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
           <div className={`bg-white rounded-kartu shadow-modal overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
             style={{ maxHeight: "94vh" }}>
-            <div className="px-5 py-4 pr-12 flex-shrink-0 relative border-b border-slate-100">
+            <div className="px-5 py-4 pr-12 shrink-0 relative border-b border-slate-100">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-slate-600">
                 <span><IkonTeks nama="🎫" />Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
                 <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
@@ -104,7 +104,7 @@ export function TicketDetailPopup({
                     <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu tugaskan ke tim</p>
                     <p className="text-[11px] text-amber-700">Sudah disetujui Admin — pilih anggota tim atau kerjakan sendiri.</p>
                   </div>
-                  <TombolTugaskan ukuran="kecil" className="flex-shrink-0" onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}>Tugaskan Tim</TombolTugaskan>
+                  <TombolTugaskan ukuran="kecil" className="shrink-0" onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}>Tugaskan Tim</TombolTugaskan>
                 </div>
               )}
               {canManageTickets && (
@@ -119,7 +119,7 @@ export function TicketDetailPopup({
                     </p>
                   </div>
                   <button onClick={() => bukaAdminEdit(selectedTicket)}
-                    className="tombol-kedua flex-shrink-0 px-3 py-2 rounded-kontrol text-xs font-bold">
+                    className="tombol-kedua shrink-0 px-3 py-2 rounded-kontrol text-xs font-bold">
                     <IkonTeks nama="🛠" />Edit &amp; Re-route
                   </button>
                 </div>
@@ -269,7 +269,7 @@ export function TicketDetailPopup({
               </div>
 
             </div>
-            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
+            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 shrink-0">
                 <button onClick={() => cetakTicket(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="📄" />PDF</button>
                 {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
                   <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open</button>
@@ -292,12 +292,12 @@ export function TicketDetailPopup({
           </div>
 
           {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-            <div className="bg-white rounded-kartu shadow-modal overflow-hidden flex-shrink-0 w-full md:w-[340px]"
+            <div className="bg-white rounded-kartu shadow-modal overflow-hidden shrink-0 w-full md:w-[340px]"
               style={{ maxHeight: "94vh" }}>
               <div className="px-4 py-3 border-b border-slate-100">
                 <div className="flex items-center justify-between gap-2">
                   <button type="button" onClick={() => setShowUpdateForm(false)} aria-label="Kembali ke detail ticket"
-                    className="tombol-kedua md:hidden flex-shrink-0 inline-flex items-center gap-0.5 -ml-1 pl-1 pr-2.5 py-1.5 rounded-kontrol text-xs font-bold">
+                    className="tombol-kedua md:hidden shrink-0 inline-flex items-center gap-0.5 -ml-1 pl-1 pr-2.5 py-1.5 rounded-kontrol text-xs font-bold">
                     <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                     Detail
                   </button>
@@ -308,7 +308,7 @@ export function TicketDetailPopup({
                   </div>
                   <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:flex w-8 h-8 rounded-kecil items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-xs">✕</button>
                   <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
-                    className="md:hidden flex-shrink-0 self-start w-8 h-8 rounded-kecil bg-black/5 text-slate-500 flex items-center justify-center font-bold text-sm">✕</button>
+                    className="md:hidden shrink-0 self-start w-8 h-8 rounded-kecil bg-black/5 text-slate-500 flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
               </div>
 
@@ -316,7 +316,7 @@ export function TicketDetailPopup({
                 <div>
                   <label htmlFor="f-ticketing-components-ticketdetailpopup-1" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="🔢" />SN Unit</label>
                   <input id="f-ticketing-components-ticketdetailpopup-1" type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
-                    placeholder="Update SN Unit..." className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40"
+                    placeholder="Update SN Unit..." className="w-full rounded-lg px-3 py-2 text-xs outline-hidden focus:ring-2 focus:ring-red-500/40"
                     style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                 </div>
 
@@ -347,7 +347,7 @@ export function TicketDetailPopup({
                                     <div className="space-y-1.5">
                                       <input aria-label="Tanggal jadwal onsite" type="date" value={newActivity.onsite_schedule_date}
                                         onChange={e => setNewActivity({ ...newActivity, onsite_schedule_date: e.target.value })}
-                                        className="w-full rounded-lg px-2.5 py-1.5 text-xs border border-purple-200 outline-none" style={{ background: 'white' }} />
+                                        className="w-full rounded-lg px-2.5 py-1.5 text-xs border border-purple-200 outline-hidden" style={{ background: 'white' }} />
                                       <div className="flex gap-1.5 items-center">
                                         <select aria-label="Jam jadwal onsite" value={newActivity.onsite_schedule_hour} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_hour: e.target.value })}
                                           className="flex-1 rounded-lg px-2 py-1.5 text-xs border border-purple-200" style={{ background: 'white' }}>
@@ -364,7 +364,7 @@ export function TicketDetailPopup({
                                         <span className="text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                         <p className="text-[10px] text-purple-700 font-semibold flex-1">Otomatis buat jadwal Troubleshooting di Reminder Schedule</p>
                                         <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
-                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded text-purple-700 hover:text-purple-900"
+                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm text-purple-700 hover:text-purple-900"
                                             style={{ background: 'rgba(124,58,237,0.15)' }}>Buka</button>
                                       </div>
                                     </div>
@@ -380,7 +380,7 @@ export function TicketDetailPopup({
                       <label htmlFor="f-ticketing-components-ticketdetailpopup-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="🔧" />Action Taken</label>
                       <textarea id="f-ticketing-components-ticketdetailpopup-2" value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
                         placeholder="Cek kabel HDMI, restart sistem..." rows={2}
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-hidden focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
                     <div>
@@ -389,7 +389,7 @@ export function TicketDetailPopup({
                       </label>
                       <textarea id="f-ticketing-components-ticketdetailpopup-3" value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
                         placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : catatanSaja ? "Perkembangan terbaru..." : "Detail penanganan..."} rows={3}
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-hidden focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
                     {newActivity.new_status === "Pending Action" && (
@@ -398,7 +398,7 @@ export function TicketDetailPopup({
                         <div className="flex items-center gap-2">
                           <input type="number" min={0} value={newActivity.extend_days}
                             onChange={e => setNewActivity({ ...newActivity, extend_days: e.target.value })}
-                            placeholder="0" className="w-20 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-orange-500/40"
+                            placeholder="0" className="w-20 rounded-lg px-2.5 py-1.5 text-xs outline-hidden focus:ring-2 focus:ring-orange-500/40"
                             style={{ background: 'white', border: '1px solid rgba(0,0,0,0.12)' }} />
                           <span className="text-[11px] font-semibold text-orange-700">hari dari sekarang</span>
                         </div>

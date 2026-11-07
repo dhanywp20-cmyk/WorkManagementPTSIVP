@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
+import { supabase, User, Material, Question, QuizSession, SearchInput, AppDialog, DialogState } from './shared';
 import { logAudit } from '@/lib/audit';
-import { ModalPortal } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { ModalAlihkanSesi } from './sesi/ModalAlihkanSesi';
 import { DaftarSesi } from './sesi/DaftarSesi';
 import { FormSesi } from './sesi/FormSesi';
@@ -335,7 +334,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
         <div className="flex items-center gap-2 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi..." />
           <button data-tulis onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
             + Buat Sesi Quiz
           </button>
         </div>

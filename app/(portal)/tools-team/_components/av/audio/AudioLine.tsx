@@ -1,7 +1,7 @@
 'use client';
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { amplifierLine, rugiKabel, saranKabel } from '@/lib/av-audio-jaringan';
+import { amplifierLine, rugiKabel, saranKabel } from '@/lib/av/audio-jaringan';
 import { useState } from 'react';
 import { tapPertama } from '@/lib/pustaka';
 import { PilihPustaka } from '../../pustaka/PilihPustaka';

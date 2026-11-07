@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { modulSah, ringkasPemakaian, subSah, type AkunPemakaian, type BarisPemakaian } from '@/lib/pemakaian';
 

@@ -4,16 +4,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
-import { clearSession, getSession } from '@/lib/auth';
-import { sendWANotif } from '@/lib/wa';
+import { clearSession, getSession } from '@/lib/auth/sesi';
+import { sendWANotif } from '@/lib/wa/inti';
 import { createNotification } from '@/lib/notifications';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';
-import { ReviewForm, GuestUser, PIE_COLORS } from './shared';
-import { LoadingScreen, MiniPieChart, usePaginasi, ConfirmDialog, type ConfirmState, StatCard, ModalPortal, KepalaModal } from '@/components/shared';
+import { ReviewForm, GuestUser } from './shared';
+import { LoadingScreen, MiniPieChart, usePaginasi, ConfirmDialog, type ConfirmState, StatCard } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
 import { PopupLonceng } from './PopupLonceng';
@@ -23,6 +23,10 @@ import { ModalFormReview } from './ModalFormReview';
 import { ModalHapusReview } from './ModalHapusReview';
 import { DaftarReview } from './DaftarReview';
 import { KonteksDaftarReview } from './konteks-daftar-review';
+import { GayaReview } from './GayaReview';
+import { KepalaReview } from './KepalaReview';
+import { hitungPieReview } from './hitung-pie-review';
+import { ModalHapusMassalReview } from './ModalHapusMassalReview';
 
 export function FormReviewPageInner() {
   const searchParams = useSearchParams();
@@ -365,32 +369,7 @@ export function FormReviewPageInner() {
 
   const totalDemo = reviews.filter(r => r.review_category === 'Demo Product').length;
 
-  const categoryPieData = (() => {
-    const map: Record<string, number> = {};
-    reviews.forEach(r => { map[r.reminder_category] = (map[r.reminder_category] || 0) + 1; });
-    return Object.entries(map).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-  })();
-
-  const salesDivisionPieData = (() => {
-    const map: Record<string, number> = {};
-    reviews.forEach(r => { if (r.sales_division) map[r.sales_division] = (map[r.sales_division] || 0) + 1; });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-  })();
-
-  const handlerPieData = (() => {
-    const map: Record<string, number> = {};
-    reviews.forEach(r => { if (r.assign_name) map[r.assign_name] = (map[r.assign_name] || 0) + 1; });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-  })();
-
-  const productPieData = (() => {
-    const map: Record<string, number> = {};
-    reviews.forEach(r => {
-      const prod = r.review_category === 'Demo Product' ? r.product_demo : r.product_bast;
-      if (prod) map[prod] = (map[prod] || 0) + 1;
-    });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-  })();
+  const { categoryPieData, salesDivisionPieData, handlerPieData, productPieData } = hitungPieReview(reviews);
 
   const myActivePendingReviews = reviews.filter(r =>
     currentUser && (
@@ -403,7 +382,7 @@ export function FormReviewPageInner() {
     !r.grade_product_knowledge && !r.grade_product_knowledge_bast
   );
 
-  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
+  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   if (!appReady) return <LoadingScreen message={loadingMessage} accentColor="#7c3aed" />;
@@ -441,50 +420,7 @@ export function FormReviewPageInner() {
           isTeam={isTeam} myActivePendingReviews={myActivePendingReviews} setDetailReview={setDetailReview} setShowBellPopup={setShowBellPopup} showBellPopup={showBellPopup}
         />
 
-        <div className="sticky top-0 z-50 animate-slide-down anim-d0"
-          style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #b45309' }}>
-          {loadingBar > 0 && (
-            <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
-              <div
-                className="h-full transition-all duration-300 ease-out"
-                style={{
-                  width: `${loadingBar}%`,
-                  background: 'linear-gradient(90deg,#d97706,#fbbf24,#d97706)',
-                  backgroundSize: '200% 100%',
-                  animation: loadingBar < 100 ? 'shimmer 1.2s infinite' : 'none',
-                  opacity: loadingBar === 100 ? 0 : 1,
-                  transition: 'width 0.3s ease-out, opacity 0.3s ease-out',
-                }}
-              />
-            </div>
-          )}
-          <div className="px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: '#b4530914', color: '#b45309', border: '1px solid #b4530926' }}>
-              <Ikon nama="⭐" ukuran={18} />
-            </div>
-            <div>
-              <h1 className="font-bold text-base leading-tight tracking-tight text-slate-900">Form Review Demo &amp; BAST</h1>
-              <p className="text-[11px] font-medium text-slate-600">Penilaian pelanggan untuk demo & serah terima</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setShowBellPopup(true)} aria-label="Notifikasi form review"
-              className="relative p-2 rounded-xl transition-all hover:bg-amber-50 border-2 border-transparent hover:border-amber-200">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {myActivePendingReviews.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
-                  style={{ background: '#f59e0b' }}>
-                  {myActivePendingReviews.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-        </div>
+        <KepalaReview loadingBar={loadingBar} setShowBellPopup={setShowBellPopup} jumlahAktif={myActivePendingReviews.length} />
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
@@ -554,7 +490,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
@@ -563,7 +499,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari sales..." />
                 </div>
               </div>
@@ -572,7 +508,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari handler..." />
                 </div>
               </div>
@@ -581,7 +517,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>
@@ -645,53 +581,10 @@ export function FormReviewPageInner() {
 
       </div>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform: none; }
-        }
-        @keyframes scale-in {
-          from { opacity:0; transform:scale(0.92); }
-          to   { opacity:1; transform: none; }
-        }
-        @keyframes shimmer {
-          0% { background-position: 200% center; }
-          100% { background-position: -200% center; }
-        }
-        select option { background: #ffffff; color: #1e293b; }
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.3); cursor: pointer; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.25); border-radius: 4px; }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-      `}</style>
+      <GayaReview />
       {bulkConfirm && (
-      <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white rounded-kartu shadow-modal max-w-sm w-full overflow-hidden">
-            <KepalaModal judul={`Hapus ${selectedIds.size} Review?`} keterangan="Tindakan ini tidak dapat dibatalkan." onTutup={() => setBulkConfirm(false)} />
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-5">Kamu akan menghapus <strong>{selectedIds.size} review</strong> yang dipilih secara permanen.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setBulkConfirm(false)} className="tombol-kedua flex-1 py-2.5 rounded-kontrol font-bold text-sm">Batal</button>
-                <button onClick={async () => {
-                  setBulkConfirm(false); setBulkDeleting(true);
-                  const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
-                  if (!error) {
-                    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.username ?? '', action: 'delete', module: 'form-review', notes: `Bulk delete ${selectedIds.size} review` });
-                    setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false);
-                  }
-                  else notify('error', 'Gagal: ' + error.message);
-                  setBulkDeleting(false);
-                }} className="tombol-bahaya flex-[2] py-2.5 rounded-kontrol font-bold text-sm">
-                  Ya, Hapus Permanen
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
+        <ModalHapusMassalReview selectedIds={selectedIds} setSelectedIds={setSelectedIds} setBulkConfirm={setBulkConfirm} setBulkDeleting={setBulkDeleting}
+          setSelectMode={setSelectMode} setReviews={setReviews} currentUser={currentUser} notify={notify} />
       )}
     </div>
   );

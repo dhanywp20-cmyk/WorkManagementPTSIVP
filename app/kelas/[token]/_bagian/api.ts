@@ -1,5 +1,5 @@
-import { kunciPeserta, type IsianPeserta } from '@/lib/kelas-eksternal';
-import type { KeadaanPeserta } from '@/lib/kuis-live-server';
+import { kunciPeserta, type IsianPeserta } from '@/lib/kuis/kelas-eksternal';
+import type { KeadaanPeserta } from '@/lib/kuis/live-server';
 
 export interface InfoKelas {
   kelas: {

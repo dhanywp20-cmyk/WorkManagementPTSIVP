@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken, SESI_HABIS } from '@/lib/supabase';
-import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth';
+import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth/sesi';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import type { User, MenuItem } from '../dashboard/_components/shared';
@@ -18,11 +18,13 @@ import { LayarMasuk } from './LayarMasuk';
 import { tujuanLanjutAman } from '@/lib/tujuan-lanjut';
 import { SidebarPortal } from './SidebarPortal';
 import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
-import { useMerek, latarDasbor } from '@/lib/merek';
+import { useMerek, latarDasbor } from '@/lib/merek/inti';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { catatPemakaian } from '@/lib/pemakaian';
 import { pasangMiring3D } from '@/lib/miring3d';
+import { AnalyticsIframe } from './AnalyticsIframe';
+import { GridMenuPortal } from './KartuMenuPortal';
 
 export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -345,47 +347,6 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const internalMenuItems = visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key));
   const learningMenuItems = visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key));
 
-  const renderMenuCard = (menu: MenuItem, index: number, accentColor: string) => {
-    const isSingleInternal = menu.items.length === 1 && menu.items[0].internal;
-    return (
-      <div key={menu.key}
-        className={`rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white ${isSingleInternal ? 'cursor-pointer group' : ''}`}
-        style={{ animation: `fadeInUp 0.5s ease forwards`, animationDelay: `${index * 80}ms`, opacity: 0 }}
-        onClick={isSingleInternal ? () => handleMenuClick(menu.items[0], menu.title) : undefined}
-      >
-        <div className={`bg-gradient-to-br ${menu.gradient} ${isSingleInternal ? 'p-6 md:p-8' : 'p-5 md:p-6'} relative overflow-hidden`}>
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white" />
-            <div className="absolute -left-2 -bottom-2 w-16 h-16 rounded-full bg-white" />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="text-4xl"><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
-              <h3 className="text-xl font-bold tracking-tight text-white leading-tight">{menu.title}</h3>
-            </div>
-            <p className="text-white/90 text-sm font-medium line-clamp-2">{menu.description}</p>
-          </div>
-        </div>
-        {!isSingleInternal && (
-          <div className="p-5 space-y-3">
-            {menu.items.map((item, itemIndex) => (
-              <button key={itemIndex} onClick={e => { e.stopPropagation(); handleMenuClick(item, menu.title); }}
-                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-800 px-5 py-4 rounded-md font-semibold shadow-sm hover:shadow-md transition-all text-right flex items-center justify-end gap-4 group/item">
-                {item.external && !item.embed ? (
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                ) : (
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                )}
-                <span className="flex-1 text-sm tracking-wide text-right">{item.name}</span>
-                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 text-slate-600 group-hover/item:scale-110 transition-transform flex-shrink-0"><Ikon nama={item.icon} ukuran={20} /></div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center" style={{ background: 'var(--latar-halaman)', minHeight: '100dvh' }} aria-busy="true">
@@ -414,15 +375,15 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }
 
   const renderHeader = (withBackBtn = false) => (
-    <div className="kepala-3d bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
+    <div className="kepala-3d bg-white/80 backdrop-blur-md shadow-md shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
       <div className="w-full px-3 md:px-4 py-3 md:py-3.5">
         <div className="flex items-center justify-between gap-2 md:gap-4">
-          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
-            <LogoMerek ukuran="sm" className="md:hidden" />
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+            <LogoMerek ukuran="sm" className="flex md:hidden" />
             <LogoMerek ukuran="md" className="hidden md:flex" />
             <div>
               <div className="flex items-center gap-1.5 md:gap-2.5">
-                <h1 className="text-sm md:text-xl font-bold text-slate-800 tracking-tight leading-tight">
+                <h1 className="text-sm md:text-xl md:leading-7 font-bold text-slate-800 tracking-tight leading-tight">
                   <span className="hidden sm:inline">{merek.namaPlatform}</span>
                   <span className="sm:hidden">{merek.namaPlatformSingkat}</span>
                 </h1>
@@ -435,7 +396,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
           <div className="flex-1" />
 
-          <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             {currentUser && (
               <GlobalSearch
                 currentUser={currentUser}
@@ -446,8 +407,8 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
               <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
             )}
             {!showSidebar && (
-              <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-sm">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+              <div className="hidden md:flex items-center gap-2.5 px-4 py-2 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur-xs">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
                   style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                   {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
                 </div>
@@ -460,7 +421,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
             {currentUser && (
               <button type="button" onClick={() => setShowUserProfile(true)} aria-label={`Profil ${currentUser.full_name ?? ''}`}
-                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
                 style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
                 {currentUser.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
               </button>
@@ -544,56 +505,8 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
                 {canAccessKPI && currentUser && (
                   <AnalyticsIframe />
                 )}
-                {learningMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease 0.2s forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #60a5fa, #4338ca)' }}>
-                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Learning Center</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      {learningMenuItems.map((menu, i) => renderMenuCard(menu, i, '#4338ca'))}
-                    </div>
-                  </div>
-                )}
-                {projectMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)' }}>
-                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Project</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                      {projectMenuItems.map((menu, i) => renderMenuCard(menu, i, '#0ea5e9'))}
-                    </div>
-                  </div>
-                )}
-
-                {internalMenuItems.length > 0 && (
-                  <div style={{ animation: 'fadeInUp 0.45s ease 0.1s forwards', opacity: 0 }}>
-                    <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(15,23,42,0.72)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.25)' }}>
-                      <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #34d399, #059669)' }}>
-                        <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span className="text-white font-bold text-sm tracking-wide">Internal Daily</span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {internalMenuItems.map((menu, i) => renderMenuCard(menu, i, '#10b981'))}
-                    </div>
-                  </div>
-                )}
+                <GridMenuPortal learningMenuItems={learningMenuItems} projectMenuItems={projectMenuItems}
+                  internalMenuItems={internalMenuItems} onMenuClick={handleMenuClick} />
 
               </>
             )}
@@ -657,7 +570,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div ref={setIsiEl} className={layarPenuh
-                ? 'isi-portal fixed inset-0 z-[300] bg-white overflow-auto'
+                ? 'isi-portal fixed inset-0 z-300 bg-white overflow-auto'
                 : 'isi-portal w-full h-full overflow-auto relative'}>
                 {children}
               </div>
@@ -679,42 +592,6 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
           100% { transform: translateX(200%); }
         }
       `}</style>
-    </div>
-  );
-}
-
-function AnalyticsIframe() {
-  const [iframeState, setIframeState] = useState<'loading' | 'ready' | 'error'>('loading');
-  return (
-    <div style={{ animation: 'fadeInUp 0.35s ease forwards', opacity: 0, height: '85vh', position: 'relative' }}>
-      {iframeState === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/10 rounded-3xl z-10">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.3)', borderTopColor: '#e2a84b' }} />
-            <p className="text-white/70 text-sm">Memuat analytics...</p>
-          </div>
-        </div>
-      )}
-      {iframeState === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl z-10">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <span className="text-4xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-            <p className="text-white/80 font-semibold">Analytics tidak dapat dimuat</p>
-            <p className="text-white/50 text-sm">Coba refresh halaman</p>
-            <button onClick={() => setIframeState('loading')} className="mt-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
-              Coba Lagi
-            </button>
-          </div>
-        </div>
-      )}
-      <iframe
-        src="/analytics-dashboard"
-        className="w-full h-full border-0 rounded-3xl overflow-hidden"
-        style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.12)', opacity: iframeState === 'ready' ? 1 : 0, transition: 'opacity 0.3s' }}
-        title="Analytics Dashboard"
-        onLoad={() => setIframeState('ready')}
-        onError={() => setIframeState('error')}
-      />
     </div>
   );
 }
