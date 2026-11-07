@@ -11,7 +11,7 @@ import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } fro
 import { NETRAL } from '@/lib/desain';
 import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist/inti';
 import { ringkasDaftarProyek } from './_components/ringkasan/hitung';
-import { RingkasanDaftarProyek } from './_components/ringkasan/Ringkasan';
+import { LABEL_STATUS_LOKASI, RingkasanDaftarProyek, type SaringRingkasan } from './_components/ringkasan/Ringkasan';
 import { BarProgres, KepingKendala, TEMA, progresDariStat } from './_components/tampilan';
 import { DetailProyek } from './_components/DetailProyek';
 import { DetailChecklist } from './_components/DetailChecklist';
@@ -20,6 +20,13 @@ import type { CalonAnggota } from './_components/PilihAnggota';
 import { panggil, pesanGalat } from './_components/api';
 
 type Saring = 'semua' | 'berjalan' | 'kendala' | 'terlambat' | 'saya' | 'selesai';
+
+function cocokSaringPie(p: ProyekRingkas, s: SaringRingkasan): boolean {
+  if (s.jenis === 'lokasi') { const k = LABEL_STATUS_LOKASI[s.label]; return !!k && (p.lokasi?.[k] ?? 0) > 0; }
+  if (s.jenis === 'divisi') return ((p.sales_division ?? '').trim() || 'Tanpa divisi') === s.label;
+  if (s.jenis === 'sales') return ((p.sales_name ?? '').trim() || 'Tanpa Sales') === s.label;
+  return true;
+}
 
 function terlambat(p: ProyekRingkas): boolean {
   const target = p.target_terdekat ?? p.target_date;
@@ -34,6 +41,7 @@ export default function ProjectProgressPage() {
   const [galat, setGalat] = useState('');
   const [cari, setCari] = useState('');
   const [saring, setSaring] = useState<Saring>('semua');
+  const [saringPie, setSaringPie] = useState<SaringRingkasan | null>(null);
   const [proyekId, setProyekId] = useState<string | null>(null);
   const [checklistId, setChecklistId] = useState<string | null>(null);
   const [baruBuka, setBaruBuka] = useState(false);
@@ -110,11 +118,12 @@ export default function ProjectProgressPage() {
         || (saring === 'terlambat' && terlambat(p))
         || (saring === 'saya' && p.saya)
         || (saring === 'selesai' && p.status === 'done'))
+      .filter(p => !saringPie || cocokSaringPie(p, saringPie))
       .sort((a, b) => Number(b.stat.kendala > 0) - Number(a.stat.kendala > 0)
         || Number(terlambat(b)) - Number(terlambat(a))
         || Number(a.status === 'done') - Number(b.status === 'done')
         || b.updated_at.localeCompare(a.updated_at));
-  }, [proyek, cari, saring]);
+  }, [proyek, cari, saring, saringPie]);
 
   const buatProyek = async (f: IsianProyek) => {
     const { id } = await panggil<{ id: string }>('/api/project-progress', { method: 'POST', body: JSON.stringify(f) });
@@ -164,7 +173,7 @@ export default function ProjectProgressPage() {
               { label: 'Selesai', value: statistik.selesai, accent: '#16a34a', onClick: saringKartu('selesai'), active: saring === 'selesai' },
             ]} />
 
-            {proyek.length > 0 && <RingkasanDaftarProyek r={ringkasanDaftar} />}
+            {proyek.length > 0 && <RingkasanDaftarProyek r={ringkasanDaftar} saring={saringPie} onSaring={x => setSaringPie(l => (l?.jenis === x.jenis && l.label === x.label ? null : x))} />}
 
             <div className="rounded-xl overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
               <div className="flex items-center gap-2 px-3 sm:px-4 py-3" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>
@@ -174,8 +183,14 @@ export default function ProjectProgressPage() {
                     className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-hidden focus:ring-2"
                     style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
                 </div>
+                {saringPie && (
+                  <button type="button" onClick={() => setSaringPie(null)} className="shrink-0 px-2.5 py-1 rounded-full text-[11.5px] font-bold text-white max-w-[14rem] truncate"
+                    style={{ background: TEMA.warna }} title="Hapus saringan">
+                    {{ lokasi: 'Lokasi', tenggat: 'Tenggat', divisi: 'Divisi', sales: 'Sales' }[saringPie.jenis]}: {saringPie.label} ✕
+                  </button>
+                )}
                 <span className="text-[12px] font-semibold ml-auto" style={{ color: TEMA.samar, fontVariantNumeric: 'tabular-nums' }}>
-                  {tampil.length} proyek{saring !== 'semua' ? ' · tersaring' : ''}
+                  {tampil.length} proyek{saring !== 'semua' || saringPie ? ' · tersaring' : ''}
                 </span>
               </div>
 
