@@ -176,10 +176,11 @@ export function RingkasanProyek({ r }: { r: Ringkasan }) {
 export function RingkasanDaftarProyek({ r }: { r: RingkasanDaftar }) {
   return (
     <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5">
-      <MiniPieChart title="Item Checklist Semua Proyek" icon="✅" data={pie([
-        { label: 'Selesai', value: r.item.selesai, color: TEMA.selesai },
-        { label: 'Kendala', value: r.item.kendala, color: TEMA.kendala },
-        { label: 'Belum', value: r.item.total - r.item.selesai - r.item.kendala, color: '#cbd5e1' },
+      <MiniPieChart title="Lokasi Selesai Semua Proyek" icon="📍" centerValue={r.lokasi.selesai} centerLabel={`dari ${r.lokasi.total} lokasi`} data={pie([
+        { label: 'Selesai', value: r.lokasi.selesai, color: TEMA.selesai },
+        { label: 'Berjalan', value: r.lokasi.berjalan, color: TEMA.warna },
+        { label: 'Belum mulai', value: r.lokasi.belum, color: '#94a3b8' },
+        { label: 'Belum ada item', value: r.lokasi.kosong, color: '#e2e8f0' },
       ])} />
       <MiniPieChart title="Proyek per Divisi" icon="🏢" data={berwarna(r.perDivisi)} />
       <div className="col-span-2 xl:col-span-1">
