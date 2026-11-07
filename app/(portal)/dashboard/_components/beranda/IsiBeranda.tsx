@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { statDari } from '@/lib/checklist';
+import React, { useMemo, useState } from 'react';
 import { useDaftarTim } from '../widgets/daftar-tim';
 import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitives';
 import type { KPIData, Scope } from '@/app/(portal)/kpi-team/_components/DashboardKPI-tipe';
-import { BarisTicketKPI } from '@/app/(portal)/kpi-team/_components/dasbor/BarisTicketKPI';
-import { BarisRingkasanKPI } from '@/app/(portal)/kpi-team/_components/dasbor/BarisRingkasanKPI';
-import { BarisTrenKPI } from '@/app/(portal)/kpi-team/_components/dasbor/BarisTrenKPI';
+import type { User } from '../shared';
+import { RincianBento } from './RincianBento';
 import { Angka, Bilah, GrafikKolom, IkonPanah, RuasTim, fmtId } from './grafik';
 import { DAFTAR_PERIODE, hitungJadwal, hitungTiket, rentangPeriode, tanggalLokal, type KunciPeriode } from './periode';
 
@@ -16,6 +13,7 @@ const MERAH = '#dc2626';
 const KARTU = `${UBIN} bb-naik`;
 
 export interface OpsiBeranda {
+  user: User;
   openMenu: (key: string) => void;
   panelSamping?: React.ReactNode;
   rincianAtas?: React.ReactNode;
@@ -54,50 +52,13 @@ function KartuAngka({ d, judul, nilai, satuan, kanan, warnaNilai, onBuka, childr
   );
 }
 
-interface BarisProyek { id: string; nama: string; target: string; kendala: number; persen: number }
-
-function useProyekTerdekat(): { loading: boolean; daftar: BarisProyek[] } {
-  const [hasil, setHasil] = useState<{ loading: boolean; daftar: BarisProyek[] }>({ loading: true, daftar: [] });
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      let daftar: BarisProyek[] = [];
-      try {
-        const { data: proyek, error } = await supabase.from('checklist_proyek')
-          .select('id, nama, target_date, status').neq('status', 'done')
-          .order('target_date', { ascending: true, nullsFirst: false }).limit(3);
-        if (!error && proyek?.length) {
-          const { data: dftr } = await supabase.from('checklist_daftar').select('id, proyek_id').in('proyek_id', proyek.map((p: { id: string }) => p.id));
-          const idDaftar = (dftr ?? []).map((d: { id: string }) => d.id);
-          const { data: items } = idDaftar.length
-            ? await supabase.from('checklist_item').select('daftar_id, selesai, kendala').in('daftar_id', idDaftar).limit(5000)
-            : { data: [] };
-          const milik = new Map((dftr ?? []).map((d: { id: string; proyek_id: string }) => [d.id, d.proyek_id]));
-          daftar = proyek.map((p: { id: string; nama: string; target_date: string | null }) => {
-            const stat = statDari((items ?? []).filter((i: { daftar_id: string }) => milik.get(i.daftar_id) === p.id));
-            return {
-              id: p.id, nama: p.nama, kendala: stat.kendala,
-              target: p.target_date ? new Date(`${p.target_date}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '—',
-              persen: stat.total ? Math.round((stat.selesai / stat.total) * 100) : 0,
-            };
-          });
-        }
-      } catch {  }
-      if (alive) setHasil({ loading: false, daftar });
-    })();
-    return () => { alive = false; };
-  }, []);
-  return hasil;
-}
-
 export function IsiBeranda({ kpi, loading, scope, opsi }: {
   kpi: KPIData | null; loading: boolean; scope: Scope; opsi: OpsiBeranda;
 }) {
-  const { openMenu, panelSamping, rincianAtas } = opsi;
+  const { user, openMenu, panelSamping, rincianAtas } = opsi;
   const [periode, setPeriode] = useState<KunciPeriode>('30');
   const [seri, setSeri] = useState<'tiket' | 'jadwal'>('tiket');
   const tim = useDaftarTim();
-  const proyek = useProyekTerdekat();
 
   const hariIni = tanggalLokal(new Date());
   const { mulai, akhir } = useMemo(() => rentangPeriode(periode, kpi?.deret), [periode, kpi]);
@@ -119,6 +80,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
   ].filter(Boolean).join(' · ');
 
   const dataSeri = seri === 'tiket' ? tiket : jadwal;
+  const akhirPekan = [0, 6].includes(new Date().getDay());
   const piket = [{ tim: 'IVP', nama: kpi?.piket.todayIVP }, { tim: 'UMP', nama: kpi?.piket.todayUMP }, { tim: 'MVI', nama: kpi?.piket.todayMvi }];
 
   return (
@@ -188,37 +150,18 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
                 <div key={p.tim} className="bb-piket-baris">
                   <span>{p.tim}</span>
                   {loading ? <i className="bb-kerangka w-20" aria-hidden="true" />
-                    : p.nama ? <b title={p.nama}>{p.nama}</b> : <em>Belum diisi</em>}
+                    : p.nama ? <b title={p.nama}>{p.nama}</b> : <em>{akhirPekan ? 'Akhir pekan' : 'Belum diisi'}</em>}
                 </div>
               ))}
             </div>
             <p className="bb-catatan mt-3">{kpi?.piket.weekFilled ?? 0} dari {kpi?.piket.weekTotal ?? 0} hari terisi · {kpi?.piket.kegiatanToday ?? 0} tamu hari ini</p>
-          </article>
-
-          <article className={`${KARTU} bb-sel-proyek`} style={urutan(5)}>
-            <KepalaKartu judul="Project Progress" onBuka={() => openMenu('project-progress')} sisi={<span className="text-[11px] font-semibold text-slate-500">Target terdekat</span>} />
-            {proyek.loading ? <span className="bb-kerangka w-full h-12" aria-hidden="true" />
-              : proyek.daftar.length === 0 ? <p className="text-[12px] text-slate-500 py-3">Belum ada proyek berjalan.</p>
-                : proyek.daftar.map(p => (
-                  <button key={p.id} type="button" className="bb-proyek" onClick={() => openMenu('project-progress')}>
-                    <span className="bb-proyek-nama" title={p.nama}>{p.nama}</span>
-                    <span className="bb-proyek-info">{p.target}{p.kendala > 0 && <em> · {p.kendala} kendala</em>}</span>
-                    <span className="bb-proyek-bilah"><Bilah persen={p.persen} warna={AKSEN_UTAMA} label={p.nama} /></span>
-                    <span className="bb-proyek-angka">{p.persen}%</span>
-                  </button>
-                ))}
           </article>
         </div>
 
         {panelSamping && <aside className="bb-samping bb-naik" style={{ ['--d' as string]: 2 } as React.CSSProperties}>{panelSamping}</aside>}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch mt-3 md:mt-4 bb-rincian">
-        {rincianAtas && <div className="lg:col-span-12">{rincianAtas}</div>}
-        <BarisTicketKPI kpi={kpi} loading={loading} scope={scope} tanpaPiket />
-        <BarisRingkasanKPI kpi={kpi} loading={loading} />
-        <BarisTrenKPI kpi={kpi} loading={loading} scope={scope} />
-      </div>
+      <RincianBento kpi={kpi} user={user} openMenu={openMenu} kartuTim={rincianAtas} scope={scope} />
     </div>
   );
 }

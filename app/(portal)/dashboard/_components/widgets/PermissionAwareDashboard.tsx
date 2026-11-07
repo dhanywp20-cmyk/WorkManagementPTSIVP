@@ -142,6 +142,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
           <AnalyticsPlatform embedded injectedUser={currentUser}
             controlledTab={tab} onTabChange={setTab} onCounts={setHitung}
             opsiBeranda={{
+              user: currentUser,
               openMenu,
               panelSamping: panel,
               rincianAtas: monitor ? <monitor.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} /> : undefined,

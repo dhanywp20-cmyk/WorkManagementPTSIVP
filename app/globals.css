@@ -663,7 +663,7 @@
 .bb-tab button[aria-current="page"] .bb-tab-lencana { background: rgba(255, 255, 255, .28); }
 
 /* Baris temuan + periode */
-.bb-baris-judul { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.bb-baris-judul { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 16px; padding: 8px 8px 8px 14px; border-radius: 14px; background: #fff; border: 1px solid rgba(226, 232, 240, .8); }
 .bb-segmen { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: #e8edf3; }
 .bb-segmen button { padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 600; color: #475569; white-space: nowrap; transition: color .18s ease, background-color .18s ease; }
 .bb-segmen button:hover { color: #0f172a; }
@@ -677,8 +677,11 @@
 .bb-sel-angka { grid-column: span 2; }
 .bb-sel-grafik { grid-column: span 4; }
 .bb-sel-piket { grid-column: span 2; }
-.bb-sel-proyek { grid-column: span 6; }
 .bb-samping { min-width: 0; height: 0; min-height: max(100%, 460px); }
+.bb-bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: stretch; margin-top: 16px; }
+.bb-b3 { grid-column: span 3; } .bb-b4 { grid-column: span 4; } .bb-b5 { grid-column: span 5; } .bb-b7 { grid-column: span 7; } .bb-b8 { grid-column: span 8; } .bb-b12 { grid-column: span 12; }
+.bb-b7 > .rounded-2xl { height: 100%; }
+.bb-bento .flex-col.gap-\[7px\] { justify-content: space-between; }
 .bb-kisi-lain { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
 .bb-catatan { margin: 8px 0 0; font-size: 11.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bb-panah { flex-shrink: 0; transition: transform .3s var(--bb-pegas); }
@@ -718,14 +721,40 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 .bb-piket-baris em { font-size: 11.5px; color: #64748b; }
 
 /* Daftar proyek */
-.bb-proyek { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(70px, 1.2fr) 40px; align-items: center; gap: 12px; width: calc(100% + 12px); margin: 0 -6px; padding: 7px 6px; border-radius: 8px; text-align: left; transition: background-color .15s ease; }
+.bb-proyek { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 3px 10px; width: calc(100% + 12px); margin: 0 -6px; padding: 8px 6px; border-radius: 8px; text-align: left; transition: background-color .15s ease; }
 .bb-proyek:hover { background: #f1f5f9; }
 .bb-proyek + .bb-proyek { border-top: 1px solid #f1f5f9; }
 .bb-proyek-nama { font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bb-proyek-info { font-size: 11.5px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .bb-proyek-info em { font-style: normal; color: #dc2626; font-weight: 600; }
 .bb-proyek-angka { font-size: 13px; font-weight: 700; color: #0f172a; text-align: right; font-variant-numeric: tabular-nums; }
+.bb-proyek-bilah { grid-column: 1 / -1; }
+.bb-proyek-info { grid-column: 1 / -1; }
 .bb-proyek-bilah .bb-bilah { height: 6px; }
+
+/* Kartu sorotan */
+.bb-jadwal { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #f1f5f9; }
+.bb-jadwal:last-child { border-bottom: 0; }
+.bb-jadwal time { width: 40px; flex-shrink: 0; font-size: 12px; font-weight: 700; color: #334155; font-variant-numeric: tabular-nums; }
+.bb-jadwal b { display: block; font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-jadwal small { display: block; font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-jadwal-selesai b { color: #64748b; text-decoration: line-through; text-decoration-color: #cbd5e1; }
+.bb-lima { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; align-items: end; margin-top: auto; padding-top: 12px; }
+.bb-lima > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 68px; }
+.bb-lima b { font-size: 12px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
+.bb-lima i { display: block; width: 100%; border-radius: 3px 3px 0 0; transform-origin: 50% 100%; animation: bbTumbuhY .6s var(--bb-halus) .3s backwards; }
+.bb-lima span { font-size: 11px; color: #64748b; }
+.bb-orang { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; font-size: 10.5px; font-weight: 700; }
+.bb-antre { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: calc(100% + 12px); margin: 0 -6px; padding: 6px; border-radius: 8px; font-size: 12.5px; color: #334155; text-align: left; transition: background-color .15s ease; }
+.bb-antre:not(:disabled):hover { background: #f1f5f9; }
+.bb-antre b { flex-shrink: 0; font-weight: 700; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.bb-antre-ada, .bb-antre-dua b { color: #0f172a; }
+.bb-antre-dua b.text-red-600 { color: #dc2626; }
+.bb-unit { padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+.bb-unit:last-child { border-bottom: 0; }
+.bb-unit b { display: block; font-size: 12.5px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-unit small { display: block; font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-unit em { font-style: normal; font-weight: 600; color: #dc2626; }
 
 /* Panel agenda */
 .bb-fokus { padding: 12px; margin-bottom: 4px; border-radius: 12px; background: #f1f5f9; }
@@ -739,10 +768,6 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 .bb-aksi:hover { border-color: #cbd5e1; background: #f8fafc; }
 .bb-geser { animation: bbGeser .35s var(--bb-halus); }
 
-/* Rincian: baris grafik merata setinggi kartu; label panjang tidak terpotong. */
-.bb-rincian .rounded-2xl > .flex-col.gap-\[7px\]:last-child { flex: 1; justify-content: space-between; }
-.bb-rincian [style*="4.5rem 1fr auto"] { grid-template-columns: 6.5rem 1fr auto !important; }
-
 /* Grafik tidak ikut condong: kursor sedang membaca batangnya. */
 .tema-beranda .bb-sel-grafik.kartu-miring { transform: none !important; background-image: none; }
 
@@ -753,11 +778,11 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 @container (max-width: 1060px) {
   .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr) 280px; }
   .bb-sel-grafik { grid-column: span 6; }
-  .bb-sel-piket, .bb-sel-proyek { grid-column: span 3; }
-  .bb-proyek { grid-template-columns: minmax(0, 1fr) 40px; gap: 2px 8px; }
-  .bb-proyek-info, .bb-proyek-bilah { grid-column: 1 / -1; }
-  .bb-proyek-info { grid-row: 2; }
-  .bb-proyek-angka { grid-row: 1; grid-column: 2; }
+  .bb-sel-piket { grid-column: span 6; }
+  .bb-b5, .bb-b7 { grid-column: span 6; }
+  .bb-b4 { grid-column: span 6; }
+  .bb-b3 { grid-column: span 6; }
+  .bb-b4.bb-tetap { grid-column: span 4; }
 }
 @container (max-width: 800px) {
   .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr); }
@@ -765,7 +790,8 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 }
 @container (max-width: 560px) {
   .bb-kiri { gap: 12px; }
-  .bb-sel-angka, .bb-sel-grafik, .bb-sel-piket, .bb-sel-proyek { grid-column: span 6; }
+  .bb-sel-angka, .bb-sel-grafik, .bb-sel-piket { grid-column: span 6; }
+  .bb-b3, .bb-b4, .bb-b4.bb-tetap, .bb-b5, .bb-b7, .bb-b8 { grid-column: span 12; }
 }
 
 @keyframes bbNaik { from { opacity: 0; transform: translateY(12px); } }

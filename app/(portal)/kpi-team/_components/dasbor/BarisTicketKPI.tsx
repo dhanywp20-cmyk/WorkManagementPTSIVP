@@ -7,17 +7,15 @@ export interface BarisTicketKPIProps {
   kpi: KPIData | null;
   loading: boolean;
   scope: Scope;
-  tanpaPiket?: boolean;
 }
 
-export function BarisTicketKPI({ kpi, loading, scope, tanpaPiket }: BarisTicketKPIProps) {
-  const lebar = tanpaPiket ? 'lg:col-span-4' : 'lg:col-span-3';
+export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
         <KartuModul
-          kelas={lebar} ikon="🎫" judul="Ticket" warna="#e11d48"
+          kelas="lg:col-span-3" ikon="🎫" judul="Ticket" warna="#e11d48"
           catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
           angka={loading?'—':(kpi?.tickets.total??0)}
           satuan="tiket"
@@ -36,7 +34,7 @@ export function BarisTicketKPI({ kpi, loading, scope, tanpaPiket }: BarisTicketK
         </KartuModul>
 
         <KartuModul
-          kelas={lebar} ikon="📅" judul="Reminder Schedule" warna="#7c3aed"
+          kelas="lg:col-span-3" ikon="📅" judul="Reminder Schedule" warna="#7c3aed"
           angka={loading?'—':(kpi?.reminders.total??0)}
           satuan="jadwal"
           kaki={!loading&&kpi
@@ -52,7 +50,7 @@ export function BarisTicketKPI({ kpi, loading, scope, tanpaPiket }: BarisTicketK
               </>}
         </KartuModul>
 
-        {!tanpaPiket && <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+        <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna="#0891b2"/>
           <KepalaUbin ikon="🏪" judul="Piket Showroom" warna="#0891b2"
             catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}/>
@@ -81,10 +79,10 @@ export function BarisTicketKPI({ kpi, loading, scope, tanpaPiket }: BarisTicketK
             {!loading&&kpi&&<KakiUbin kiri={`${kpi.piket.kegiatanToday} tamu hari ini`} warna="#0891b2"
               kanan={`${Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi`}/>}
           </div>
-        </div>}
+        </div>
 
         <KartuModul
-          kelas={lebar} ikon="🚚" judul="Unit Movement" warna="#d97706"
+          kelas="lg:col-span-3" ikon="🚚" judul="Unit Movement" warna="#d97706"
           catatan="Bulan ini"
           angka={loading?'—':(kpi?.units.totalLogs??0)}
           satuan="log tercatat"

@@ -5,8 +5,16 @@ export interface DeretKPI {
   jadwal: { t: string; s: string }[];
 }
 
+export interface JadwalTim { id: string; proyek: string; kategori: string; pic: string; jam: string; selesai: boolean }
+export interface JadwalDekat { hariIni: boolean; label: string; total: number; selesai: number; daftar: JadwalTim[] }
+export interface BebanHari { kunci: string; label: string; jumlah: number }
+export interface TiketTua { id: string; proyek: string; handler: string; status: string; hari: number }
+
 export interface KPIData {
   deret?: DeretKPI;
+  jadwalDekat?: JadwalDekat | null;
+  bebanHari?: BebanHari[];
+  tiketTua?: TiketTua[];
   tickets: {
     total: number; open: number; solved: number; waitingApproval: number;
     byHandler: { name: string; count: number }[];

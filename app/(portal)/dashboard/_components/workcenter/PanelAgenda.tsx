@@ -13,10 +13,10 @@ export interface RingkasAgenda { aksi: number; hari: number; nanti: number }
 const WARNA_URGENSI: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
 
 const AKSI_CEPAT: { key: string; label: string; icon: string; url?: string; judul?: string }[] = [
-  { key: 'daily-report', label: 'Isi Daily Report', icon: '📈' },
+  { key: 'daily-report', label: 'Daily Report', icon: '📈' },
   { key: 'reminder-schedule', label: 'Jadwal Saya', icon: '🗓️' },
   { key: 'ticket-troubleshooting', label: 'Buat Ticket', icon: '🎫', url: '/ticketing?buat=1', judul: 'Ticket Troubleshooting' },
-  { key: 'project-progress', label: 'Project Progress', icon: '📊' },
+  { key: 'project-progress', label: 'Progress', icon: '📊' },
 ];
 
 function tglPendek(iso: string | null): string {

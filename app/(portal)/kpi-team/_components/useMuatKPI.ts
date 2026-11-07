@@ -52,9 +52,9 @@ export function useMuatKPI(k: MuatKPIKonteks) {
 
       const [ticketsRes, actLogsRes, remindersRes, piketHolidaysRes, piketWeekRes, kegiatanRes, movRes, usersRes, lcSessionsRes] =
         await Promise.all([
-          scopeTickets(supabase.from('tickets').select('id,status,assign_name,sales_division,date,created_at,product')),
+          scopeTickets(supabase.from('tickets').select('id,project_name,status,assign_name,sales_division,date,created_at,product')),
           supabase.from('activity_logs').select('id,ticket_id,new_status,created_at,handler_name').order('created_at',{ascending:false}).limit(500),
-          scopeReminders(supabase.from('reminders').select('id,status,category,due_date,product')),
+          scopeReminders(supabase.from('reminders').select('id,project_name,assign_name,status,category,due_date,due_time,product')),
           supabase.from('picket_holidays').select('date'),
           supabase.from('piket_schedules').select('id,day_date,pic_ivp_name,pic_ump_name,pic_mvi_name').gte('day_date', getMonday()).lte('day_date', todayStr()).order('day_date'),
           supabase.from('piket_tamu_detail').select('id,created_at').gte('created_at', today),
@@ -157,7 +157,30 @@ export function useMuatKPI(k: MuatKPIKonteks) {
         return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       };
 
+      const kiniLokal = tglLokal(new Date().toISOString());
+      const jadwalAktif = reminders.filter((r:any)=>r.status!=='cancelled' && r.due_date>=kiniLokal && (r.due_date===kiniLokal || r.status!=='done'));
+      const tglDekat = jadwalAktif.reduce((m:string,r:any)=>(!m||r.due_date<m?r.due_date:m),'');
+      const jadwalTgl = jadwalAktif.filter((r:any)=>r.due_date===tglDekat).sort((a:any,b:any)=>String(a.due_time??'').localeCompare(String(b.due_time??'')));
+      const jadwalDekat = !tglDekat ? null : {
+        hariIni: tglDekat===kiniLokal,
+        label: new Date(`${tglDekat}T00:00:00`).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'short'}),
+        total: jadwalTgl.length,
+        selesai: jadwalTgl.filter((r:any)=>r.status==='done').length,
+        daftar: jadwalTgl.slice(0,6).map((r:any)=>({ id:r.id as string, proyek:(r.project_name as string)||'—', kategori:(r.category as string)||'—', pic:(r.assign_name as string)||'Belum di-assign', jam:String(r.due_time??'').slice(0,5), selesai:r.status==='done' })),
+      };
+      const bebanHari = Array.from({length:5},(_,i)=>{
+        const d = new Date(); d.setDate(d.getDate()+i+1);
+        const kunci = tglLokal(d.toISOString());
+        return { kunci, label:d.toLocaleDateString('id-ID',{weekday:'short'}), jumlah:reminders.filter((r:any)=>r.due_date===kunci&&!['cancelled','done'].includes(r.status)).length };
+      });
+      const tiketTua = tickets.filter((t:any)=>!['Solved','Cancelled'].includes(t.status)&&t.created_at)
+        .sort((a:any,b:any)=>String(a.created_at).localeCompare(String(b.created_at))).slice(0,4)
+        .map((t:any)=>({ id:t.id as string, proyek:(t.project_name as string)||'—', handler:(t.assign_name as string)||'Belum di-assign', status:t.status as string, hari:Math.max(0,Math.floor((Date.now()-new Date(t.created_at).getTime())/86400000)) }));
+
       setKpi({
+        jadwalDekat,
+        bebanHari,
+        tiketTua,
         deret:{
           tiket:tickets.map((t:any)=>({ t:tglLokal(t.created_at), s:t.status as string })),
           jadwal:reminders.map((r:any)=>({ t:r.due_date as string, s:r.status as string })),

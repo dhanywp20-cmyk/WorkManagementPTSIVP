@@ -162,7 +162,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 h-full">
-          <div className="flex items-center gap-4 lg:w-[320px] flex-shrink-0">
+          <div className="flex items-center gap-3 lg:w-[210px] shrink-0 lg:self-start">
             <CincinProgres pct={pct} sudah={sudah} total={total} />
             <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
@@ -176,10 +176,16 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
             ) : (
               <>
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
-                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
+                <div className="grid gap-y-2.5 max-h-[190px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>
+            )}
+            {sudah > 0 && (
+              <div className="mt-3 pt-2.5 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Sudah isi ({sudah})</div>
+                <p className="text-[12px] font-medium text-slate-600 leading-relaxed">{rows.filter(r => r.reported).map(r => r.name).join(' · ')}</p>
+              </div>
             )}
           </div>
         </div>
