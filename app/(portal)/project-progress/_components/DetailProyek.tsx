@@ -12,7 +12,7 @@ import { ModalShare } from './ModalShare';
 import { ModalChecklistBaru, ModalProyek, type IsianProyek } from './FormProyek';
 import type { CalonAnggota } from './PilihAnggota';
 import { ringkasDariLokasi } from './ringkasan/hitung';
-import { RingkasanProyek } from './ringkasan/Ringkasan';
+import { LABEL_STATUS_LOKASI, LABEL_TENGGAT, RingkasanProyek, type SaringRingkasan } from './ringkasan/Ringkasan';
 import { HitunganAV } from './HitunganAV';
 import { panggil, pesanGalat } from './api';
 
@@ -73,6 +73,7 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
   const [baruBuka, setBaruBuka] = useState(false);
   const [shareBuka, setShareBuka] = useState(false);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
+  const [saringPie, setSaringPie] = useState<SaringRingkasan | null>(null);
 
   const muat = useCallback(async () => {
     try { setData(await panggil<ProyekDetail>(`/api/project-progress/${proyekId}`)); setGalat(''); }
@@ -126,7 +127,12 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
     total: a.total + c.stat.total, selesai: a.selesai + c.stat.selesai, kendala: a.kendala + c.stat.kendala,
   }), { total: 0, selesai: 0, kendala: 0 });
   const j = keadaanJadwal(proyek.target_date, proyek.status === 'done');
-  const urut = [...checklist].sort((a, b) => (b.stat.kendala > 0 ? 1 : 0) - (a.stat.kendala > 0 ? 1 : 0) || a.urutan - b.urutan);
+  const ringkasan = ringkasDariLokasi(proyek, checklist.map(c => ({ id: c.id, judul: c.judul, target_date: c.target_date, stat: c.stat })), data.aktivitas ?? null);
+  const lolos = new Set(ringkasan.lokasi.filter(l => !saringPie
+    || (saringPie.jenis === 'lokasi' && l.status === LABEL_STATUS_LOKASI[saringPie.label])
+    || (saringPie.jenis === 'tenggat' && l.jadwal === LABEL_TENGGAT[saringPie.label])).map(l => l.id));
+  const urut = [...checklist].filter(c => lolos.has(c.id))
+    .sort((a, b) => (b.stat.kendala > 0 ? 1 : 0) - (a.stat.kendala > 0 ? 1 : 0) || a.urutan - b.urutan);
 
   return (
     <div className="space-y-4">
@@ -178,14 +184,21 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
       </div>
 
       {checklist.length > 0 && (
-        <RingkasanProyek r={ringkasDariLokasi(proyek, checklist.map(c => ({ id: c.id, judul: c.judul, target_date: c.target_date, stat: c.stat })), data.aktivitas ?? null)} />
+        <RingkasanProyek r={ringkasan} saring={saringPie}
+          onSaring={x => setSaringPie(l => (l?.jenis === x.jenis && l.label === x.label ? null : x))} />
       )}
 
       <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-xs"
         style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: NETRAL.tinta2 }}>
-          Checklist per lokasi · {checklist.length}
+          Checklist per lokasi · {saringPie ? `${urut.length} dari ${checklist.length}` : checklist.length}
         </p>
+        {saringPie && (
+          <button type="button" onClick={() => setSaringPie(null)} className="mr-auto px-2.5 py-1 rounded-full text-[11.5px] font-bold text-white truncate"
+            style={{ background: TEMA.warna }} title="Hapus saringan">
+            {saringPie.jenis === 'tenggat' ? 'Tenggat' : 'Status'}: {saringPie.label} ✕
+          </button>
+        )}
         {admin && (
           <button onClick={() => setBaruBuka(true)} className={kecil} style={{ background: TEMA.warna, color: '#fff' }}>
             <Plus size={14} /> Checklist lokasi
