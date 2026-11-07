@@ -79,7 +79,7 @@ export function TampilanBanding({ a }: { a: AlatLED }) {
           <Angka label="Penonton terdekat" nilai={jarak} onUbah={v => v > 0 && setJarak(v)} satuan="m" bantuan="baris kursi / posisi berdiri terdekat" />
           <Segmen label="Pembulatan" nilai={bulat} onUbah={setBulat} opsi={BULAT} />
         </div>
-        <div className="flex flex-wrap items-end gap-2 mt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           {modul.map(m => (
             <span key={kunciModul(m)} className="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[12.5px] font-semibold text-blue-900">
               {labelModul(m)}

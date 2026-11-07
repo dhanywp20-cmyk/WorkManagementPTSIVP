@@ -1,5 +1,5 @@
 'use client';
-import { type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { SusunBlending } from './SusunBlending';
@@ -149,7 +149,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
             ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
-            : <>Belum ada lampu di desain: memakai perkiraan &quot;Cahaya ruangan {ruang.cahaya ?? 'terang'}&quot; ±{LUX_PRESET[ruang.cahaya ?? 'terang']} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
+            : <>Belum ada lampu di desain: memakai {typeof ruang.luxManual === 'number' ? 'lux terukur' : <>perkiraan cahaya ruangan &quot;{ruang.cahaya ?? 'terang'}&quot;</>} ±{luxRuangDari(ruang)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
         </p>
         {kp.cukup
           ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>

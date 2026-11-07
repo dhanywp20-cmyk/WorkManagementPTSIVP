@@ -201,7 +201,7 @@ export function KalkulatorProyektor() {
       </Kartu>
 
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <Kartu judul="Satu proyektor · ukuran & kecerahan">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">

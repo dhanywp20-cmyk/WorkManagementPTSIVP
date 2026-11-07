@@ -2,6 +2,7 @@ import { bendaBaru, contohAwal, setRuangKelas } from './katalog';
 import { LENSA_MZ882, type LensaPanasonic, lensaMZ882 } from './lensaPanasonic';
 import { lengkungDari } from './produk';
 import { arahkanKe, keDunia, lensaProyektor } from './proyektor';
+import { isiRakTemplate } from './rak';
 import { daftarRuang } from './ruang';
 import type { Benda, Kotak, Ruang, Titik } from './tipe';
 
@@ -11,10 +12,10 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'auditorium', judul: 'Auditorium', ket: 'Panggung, LED videotron, line array, podium & tribun bertingkat', ikon: '🎭' },
   { id: 'control-room', judul: 'Control room', ket: 'Videowall 4 × 3 (grafik + CCTV), meja operator multi monitor, rack server, kredensa', ikon: '🖥️' },
   { id: 'kelas', judul: 'Smart Classroom', ket: 'Interactive display, meja dosen di depan, kamera tracking, meja mahasiswa', ikon: '🎓' },
-  { id: 'mapping-lengkung', judul: 'Mapping - layar cekung', ket: 'Screen melengkung ke dalam + 3 proyektor blending; bentuk & warna bisa diganti', ikon: '🌙' },
-  { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending; bentuk & warna bisa diganti', ikon: '🏛️' },
+  { id: 'mapping-lengkung', judul: 'Mapping - layar cekung', ket: 'Screen melengkung ke dalam + 3 proyektor blending, media server di rack; bentuk & warna bisa diganti', ikon: '🌙' },
+  { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending, media server di rack; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
-  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20 (bisa ditambah)', ikon: '🌐' },
+  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20, rack di ruang teknis (bisa ditambah)', ikon: '🌐' },
 ];
 
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
@@ -42,7 +43,7 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const tribun = bendaBaru('tribun', k, { baris: 12, kursiBaris: 18, tinggiAnak: 0.3 });
     const podium = { ...bendaBaru('meja', k, { bentukMeja: 'podium' }), x: 11.5, z: 2.6, elev: 0.8, rot: 0 };
     const kam = { ...bendaBaru('kamera', k, { tipeKamera: 'ptz' }), x: 8, z: 19.8, elev: 4.2, rot: 180 };
-    return { nama: 'Auditorium', ruang, benda: [panggung, led, la(1.6, 'Line array kiri'), la(14.4, 'Line array kanan'), { ...tribun, x: 8, z: 20 - tribun.d / 2 - 0.4 }, podium, kam] };
+    return { nama: 'Auditorium', ruang, benda: [panggung, led, la(1.6, 'Line array kiri'), la(14.4, 'Line array kanan'), { ...tribun, x: 8, z: 20 - tribun.d / 2 - 0.4 }, podium, kam, bendaBaru('rak', k, { rakU: 20, tipeRak: 'tertutup', ...isiRakTemplate('auditorium') })] };
   }
   if (id === 'kelas') {
     const ruang: Ruang = { p: 10, l: 8, t: 3.2, lantai: 'keramik', r2: null };
@@ -56,7 +57,7 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const kam = { ...bendaBaru('kamera', k, { tipeKamera: 'ptz-ai' }), x: 5, z: 7.88, elev: 2.2, rot: 180, nama: 'Kamera PTZ AI (tracking dosen)' };
     const spk = [[2.5, 2.2], [7.5, 2.2], [2.5, 5.8], [7.5, 5.8]].map(([x, z]) => ({ ...bendaBaru('speaker-plafon', k), x, z }));
     const kelas = setRuangKelas(k, { kolom: 4, baris: 4, pengajar: false });
-    return { nama: 'Smart Classroom', ruang, benda: [ifp, signage, dosen, podium, mic, tp, kam, ...spk, ...kelas] };
+    return { nama: 'Smart Classroom', ruang, benda: [ifp, signage, dosen, podium, mic, tp, kam, ...spk, ...kelas, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('kelas') })] };
   }
   if (id === 'control-room') {
     const ruang: Ruang = { p: 10, l: 9, t: 3.4, lantai: 'karpet', cahaya: 'redup', r2: null };
@@ -70,43 +71,43 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
         for (const dx of [-0.45, 0.45]) kursi.push({ ...bendaBaru('kursi', k, { tipeKursi: 'kantor' }), x: x + dx, z: z + 0.75, rot: 180 });
       }
     }
-    const rak = [8.3, 9.0].map(x => ({ ...bendaBaru('rak', k, { rakU: 42, tipeRak: 'kaca' as const }), x, z: 8.4, rot: 180 }));
+    const rak = [8.3, 9.0].map((x, i) => ({ ...bendaBaru('rak', k, { rakU: 42, tipeRak: 'kaca' as const, ...isiRakTemplate(i ? 'control-b' : 'control-a') }), x, z: 8.4, rot: 180 }));
     const lampu: Benda[] = [];
     for (const x of [2.6, 5, 7.4]) for (const z of [3.2, 5.6, 7.6]) lampu.push({ ...bendaBaru('lampu', k, { tipeLampu: 'linear', dimmer: 60 }), x, z, nama: `Lampu linear ${lampu.length + 1}` });
     return { nama: 'Control room', ruang: { ...ruang, dimmer: 100 }, benda: [vw, kredensa, ...meja, ...kursi, ...rak, ...lampu] };
   }
   if (id === 'mapping-lengkung') {
-    const ruang: Ruang = { p: 14, l: 12, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
+    const ruang: Ruang = { p: 14, l: 12, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
     const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'lengkung', jariBidang: 7, busur: 100 }), x: 7, h: 3.5, elev: 0.3 };
     bidang.z = bidang.d / 2 + 0.2;
     const pusatZ = bidang.z + (7 - bidang.d / 2), yT = bidang.elev + bidang.h / 2 + 0.15;
     const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [7 + 7 * Math.sin(a), yT, pusatZ - 7 * Math.cos(a)]; };
     const proj = [-30, 0, 30].map((deg, i) => proyektorKe(k, [7 + (i - 1) * 0.8, 4.3, pusatZ - 1], titik(deg), LENSA_MZ882.ELW22, 1, `Proyektor ${i + 1} (blending)`));
-    return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj] };
+    return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
   }
   if (id === 'mapping-cembung') {
-    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
+    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
     const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'cembung', ...lengkungDari(6, 0.6) }), x: 6, h: 2.2, elev: 0.8 };
     bidang.z = bidang.d / 2 + 0.5;
     const R = bidang.jariBidang ?? 5, pusatZ = bidang.z + bidang.d / 2 - R, yT = bidang.elev + bidang.h / 2;
     const titik = (deg: number, y = yT): Titik => { const a = (deg * Math.PI) / 180; return [6 + R * Math.sin(a), y, pusatZ + R * Math.cos(a)]; };
     const proj = [-1, 1].map((s, i) => proyektorKe(k, [6 + s * 1.9, 4.3, 6.2], titik(s * 10, yT + 0.1), LENSA_MZ882.ELW20, 1.55, `Proyektor ${i + 1} (blending)`));
-    return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj] };
+    return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
   }
   if (id === 'mapping-objek') {
-    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
+    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
     const alas = { ...bendaBaru('panggung', k), nama: 'Alas objek', x: 6, z: 5, w: 1.8, d: 1.8, h: 0.4 };
     const proj = [0, 120, 240].map((deg, i) => {
       const a = (deg * Math.PI) / 180;
       return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], LENSA_MZ882.ELW20, 1.39, `Proyektor ${i + 1}`);
     });
-    return { nama: 'Mapping objek', ruang, benda: [alas, ...proj] };
+    return { nama: 'Mapping objek', ruang, benda: [alas, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
   }
   if (id === 'immersive') {
-    const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: null };
+    const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: { aktif: true, p: 2.5, l: 6, t: 3.5, lantai: 'polos', pintu: false, sekat: 'tembok' } };
     const k = daftarRuang(ruang)[0];
     const ELU = LENSA_MZ882.ELU20;
     const diLensa = (atur: Partial<Benda>, x: number, z: number): Benda => {
@@ -129,7 +130,8 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
       { ...lantai0, throwRatio: trLantai },
     ];
     hasil.forEach((p, i) => { p.nama = `${p.nama} ${i + 1}`; });
-    return { nama: 'Immersive room', ruang, benda: hasil };
+    const rakTeknis = bendaBaru('rak', daftarRuang(ruang)[1], { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') });
+    return { nama: 'Immersive room', ruang, benda: [...hasil, rakTeknis] };
   }
   const ruang: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
   return { nama: 'Ruang Meeting', ruang, benda: contohAwal(ruang) };

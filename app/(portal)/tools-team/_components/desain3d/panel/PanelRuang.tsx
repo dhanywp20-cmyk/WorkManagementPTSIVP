@@ -1,7 +1,8 @@
 'use client';
 import { Copy } from 'lucide-react';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../bersama/ui';
-import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUAR, luxBidangKerja, luxSiang, MAKS_RUANG, panjangDinding, pintuSekat, type Ruang, ruangDari, type RuangSambung, sambungan, sambunganKe, type Siang, type SisiDinding, sisiLuar, ukuranPintu } from '../inti';
+import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUAR, luxBidangKerja, luxRuangDari, luxSiang,
+  PILIHAN_CAHAYA, MAKS_RUANG, panjangDinding, pintuSekat, type Ruang, ruangDari, type RuangSambung, sambungan, sambunganKe, type Siang, type SisiDinding, sisiLuar, ukuranPintu } from '../inti';
 import { PilihWarna } from './ModalBuka';
 import { PilihTekstur, type PetaTeksturPanel } from './PilihTekstur';
 
@@ -49,9 +50,12 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
         <Segmen label="Dinding depan (feature wall)" nilai={ruang.dindingDepan ?? 'polos'} onUbah={(v: 'polos' | 'marmer' | 'kayu') => setRuang(r => ({ ...r, dindingDepan: v }))}
           opsi={[{ v: 'polos', l: 'Polos' }, { v: 'marmer', l: 'Marmer' }, { v: 'kayu', l: 'Panel kayu' }]} />
         <div>
-          <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v }))}
-            opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
-          <Catatan>Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</Catatan>
+          <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v, luxManual: undefined }))} opsi={PILIHAN_CAHAYA} />
+          <div className="mt-2">
+            <Angka label="Lux terukur di lokasi" nilai={ruang.luxManual ?? NaN} satuan="lux" step={1} placeholder={`±${luxRuangDari(ruang)} (perkiraan)`}
+              onUbah={v => v >= 0 && v <= 5000 && setRuang(r => ({ ...r, luxManual: Math.round(v) }))} onKosong={() => setRuang(r => ({ ...r, luxManual: undefined }))} />
+          </div>
+          <Catatan>Perkiraan: gelap ±5 lux (mapping, immersive), redup ±80, koridor berlampu ±150, terang ±300 (meeting room). Isi lux terukur bila sudah diukur di lokasi. Bila ada lampu di desain, kontras dihitung dari lampu tersebut.</Catatan>
         </div>
         {(ruang.bukaan ?? []).some(b => b.jenis === 'jendela') && (
           <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3 space-y-2">

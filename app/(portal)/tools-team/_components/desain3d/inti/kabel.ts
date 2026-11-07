@@ -50,7 +50,8 @@ function kebutuhan(b: Benda, semua: Benda[]): Butuh[] {
     case 'led': return ['data'];
     case 'proyektor': return ['video', 'data'];
     case 'kamera': return ['video', 'data'];
-    case 'speaker': case 'speaker-plafon': return ['speaker'];
+    case 'speaker': return b.tipeSpeaker === 'kolom' || b.tipeSpeaker === 'linearray' ? ['audio'] : ['speaker'];
+    case 'speaker-plafon': return ['speaker'];
     case 'mic': return ['audio'];
     case 'touchpanel': return ['data'];
     case 'perangkat': return b.tipePerangkat === 'pc' ? ['video', 'data'] : [];

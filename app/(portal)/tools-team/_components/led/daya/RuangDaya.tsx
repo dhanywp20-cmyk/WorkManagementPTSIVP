@@ -41,7 +41,7 @@ export function RuangDaya({ d, s, onUbah, namaFile }: { d: DataDaya; s: Pengatur
           <Angka label="Beban maks per sirkuit" nilai={s.beban} satuan="%" step={1} onUbah={v => v >= 10 && v <= 100 && ubah({ beban: Math.round(v) })}
             bantuan={`80% = aturan beban kontinu · maks ${f(h.kapasitasW, 0)} W = ${h.unitPerSirkuitMaks} ${d.satuan}`} />
           <Segmen label="Arah kabel power" nilai={s.arah} onUbah={v => ubah({ arah: v })} opsi={[{ v: 'vertikal', l: 'Tegak per kolom' }, { v: 'horizontal', l: 'Mendatar per baris' }]} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
             <Pilih label="Mulai dari" nilai={s.mulai} onUbah={v => ubah({ mulai: v })}
               opsi={[{ v: 'kiri-bawah', l: 'Kiri bawah' }, { v: 'kanan-bawah', l: 'Kanan bawah' }, { v: 'kiri-atas', l: 'Kiri atas' }, { v: 'kanan-atas', l: 'Kanan atas' }]} />
             <Pilih label="Pola" nilai={s.pola} onUbah={v => ubah({ pola: v })} opsi={[{ v: 'S', l: 'S · bolak-balik' }, { v: 'Z', l: 'Z · balik ke awal' }]} />

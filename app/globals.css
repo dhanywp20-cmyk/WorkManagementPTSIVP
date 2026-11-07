@@ -800,3 +800,4 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 /* Kisi hasil kalkulator AV: baris terakhir merata, tidak menyisakan sel kosong. */
 .kisi-nilai { display: flex; flex-wrap: wrap; gap: .625rem; }
 .kisi-nilai > * { flex: 1 1 11rem; min-width: 0; }
+.kisi-nilai-rapat > * { flex-basis: 9.5rem; }

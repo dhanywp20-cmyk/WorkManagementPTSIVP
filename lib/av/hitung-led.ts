@@ -157,7 +157,7 @@ export const MODUL_LED: ModulLED[] = [
   ...MODUL_HIKVISION,
 ];
 
-export interface Hardware { nama: string; maksPx: number; port: number; ket: string; senderBawaan: boolean }
+export interface Hardware { nama: string; maksPx: number; port: number; ket: string; senderBawaan: boolean; merek?: string }
 
 export const SENDING_CARD: Hardware[] = [
   { nama: 'MCTRL300', maksPx: 1_300_000, port: 2, senderBawaan: true, ket: 'Entry-level; 2x Gigabit LAN' },
@@ -166,6 +166,9 @@ export const SENDING_CARD: Hardware[] = [
   { nama: 'MCTRL660 PRO', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Mid-range+; 6x LAN + 2x fiber' },
   { nama: 'MCTRL700', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Input DVI & HDMI; 6x Gigabit LAN' },
   { nama: 'MCTRL4K', maksPx: 8_800_000, port: 16, senderBawaan: true, ket: 'Input 4K; 16x LAN + fiber' },
+  { nama: 'DS-DT20C-01HI02NO', maksPx: 1_300_000, port: 2, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 2x RJ45' },
+  { nama: 'DS-DT20C-01HI04NO', maksPx: 2_600_000, port: 4, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 4x RJ45' },
+  { nama: 'DS-DT20C-01HI06NO', maksPx: 3_900_000, port: 6, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 6x RJ45' },
 ];
 
 export const NAMA_VP_LAMA: Readonly<Record<string, string>> = { VX400: 'VX400 Pro', VX600: 'VX600 Pro', VX1000: 'VX1000 Pro' };
@@ -205,7 +208,8 @@ export interface SaranHardware {
 export function saranHardware(totalPx: number, portLAN: number, kartu = SENDING_CARD, vp = VIDEO_PROCESSOR): SaranHardware {
   const pilih = (daftar: Hardware[]) => {
     if (!daftar.length) return null;
-    const urut = [...daftar].sort((a, b) => a.maksPx - b.maksPx);
+    const urut = daftar.filter(h => !h.merek).sort((a, b) => a.maksPx - b.maksPx);
+    if (!urut.length) return null;
     const cukup = urut.find(h => h.maksPx >= totalPx && h.port >= portLAN);
     if (cukup) return { hw: cukup, qty: 1 };
     const besar = urut.find(h => h.maksPx === urut[urut.length - 1].maksPx)!;

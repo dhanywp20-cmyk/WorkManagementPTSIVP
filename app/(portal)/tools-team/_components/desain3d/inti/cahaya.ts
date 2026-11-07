@@ -61,14 +61,28 @@ export function luxSiang(r: Ruang, ri: number): { lux: number; df: number; luasJ
   const tutup = Math.min(100, Math.max(0, r.tirai ?? 0)) / 100;
   return { lux: (LUX_LUAR[r.siang ?? 'malam'] * df) / 100 * (1 - tutup), df, luasJendela: Aw };
 }
-export const LUX_PRESET: Record<'terang' | 'redup' | 'gelap', number> = { terang: 300, redup: 80, gelap: 5 };
+export const LUX_PRESET: Record<'terang' | 'koridor' | 'redup' | 'gelap', number> = { terang: 300, koridor: 150, redup: 80, gelap: 5 };
+export const PILIHAN_CAHAYA: { v: keyof typeof LUX_PRESET; l: string }[] = [
+  { v: 'gelap', l: 'Gelap' }, { v: 'redup', l: 'Redup' }, { v: 'koridor', l: 'Koridor' }, { v: 'terang', l: 'Terang' },
+];
+export const luxRuangDari = (r: Pick<Ruang, 'cahaya' | 'luxManual'>) => (typeof r.luxManual === 'number' && r.luxManual >= 0 ? r.luxManual : LUX_PRESET[r.cahaya ?? 'terang']);
+export function faktorCahayaRuang(r: Pick<Ruang, 'cahaya' | 'luxManual'>): number {
+  const lux = luxRuangDari(r);
+  const titik: [number, number][] = [[5, 0.12], [80, 0.45], [150, 0.7], [300, 1]];
+  if (lux <= titik[0][0]) return titik[0][1];
+  for (let i = 1; i < titik.length; i++) {
+    const [x0, y0] = titik[i - 1], [x1, y1] = titik[i];
+    if (lux <= x1) return y0 + ((lux - x0) / (x1 - x0)) * (y1 - y0);
+  }
+  return 1;
+}
 export function luxCahayaDi(semua: Benda[], r: Ruang, P: Titik, n: Titik) {
   const ri = ruangDari(r, P[0]);
   const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
   const lampu = semua.filter(b => b.jenis === 'lampu' && ruangDari(r, b.x) === ri);
   const siang = luxSiang(r, ri).lux;
   if (!lampu.length) {
-    const preset = LUX_PRESET[r.cahaya ?? 'terang'];
+    const preset = luxRuangDari(r);
     return { langsung: preset, pantul: 0, siang, total: preset + siang, dariLampu: false, jumlahLampu: 0 };
   }
   const langsung = lampu.reduce((a, l) => a + luxLampuLangsung(l, r, P, n), 0);

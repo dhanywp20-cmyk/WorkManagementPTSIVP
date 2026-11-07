@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, bomDesain, checklistDariBom, daftarBenda, daftarRuang, jalurKabel, templateRuang, URUTAN_KATEGORI, type Benda, type Ruang,
+  bendaBaru, bomDesain, checklistDariBom, daftarBenda, daftarRuang, faktorCahayaRuang, jalurKabel, KATEGORI_RUANG, kontrasProyektor, luxCahayaDi, luxRuangDari, templateRuang,
+  URUTAN_KATEGORI, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { validasiDraft } from '../lib/checklist/inti';
 
@@ -60,6 +61,43 @@ cek('lembar cetak memakai daftarBenda (satu logika dengan BOM)', /const baris = 
 cek('BOM Excel & draf checklist dari bomDesain', /const bom = bomDesain\(benda, kabelLengkap\(\)\)/.test(ekspor) && /checklistDariBom\(judul, bomDesain\(benda, kabelLengkap\(\)\)\)/.test(ekspor));
 const modal = readFileSync('app/(portal)/tools-team/_components/desain3d/panel/ModalChecklistBom.tsx', 'utf8');
 cek('checklist dibuat lewat API impor yang sudah ada (admin)', /\/api\/project-progress\/\$\{pilih\}\/checklist/.test(modal) && /isi: 'impor'/.test(modal) && /disabled=\{sibuk \|\| !admin/.test(modal));
+
+console.log('\nAudit BOM dari template');
+const bomTemplate = (id: Parameters<typeof templateRuang>[0]) => { const t = templateRuang(id); return bomDesain(t.benda, jalurKabel(t.benda, t.ruang, { power: true })); };
+const proyektorTemplate = (id: Parameters<typeof templateRuang>[0]) => { const t = templateRuang(id); return t.benda.filter(x => x.jenis === 'proyektor').map(p => kontrasProyektor(p, t.benda, t.ruang, 15).cukup); };
+const ruangPolos: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+const kotakUji = daftarRuang(ruangPolos)[0];
+const crBom = bomTemplate('control-room');
+const lampuCr = crBom.filter(r => r.kategori === 'Interior & pencahayaan');
+cek('lampu bernomor jadi satu baris (Lampu linear × 9)', lampuCr.length === 1 && lampuCr[0].item === 'Lampu linear' && lampuCr[0].jumlah === 9);
+cek('bracket videowall dihitung per panel (4 × 3 = 12 set)', crBom.find(r => r.item === 'Wall bracket pop-up')?.jumlah === 12);
+cek('rack masuk kategori Rack & jaringan', crBom.find(r => r.item === 'Rack 42U')?.kategori === 'Rack & jaringan');
+cek('isi rack template ditandai saran & tanpa amplifier di control room', crBom.filter(r => r.item === 'UPS').every(r => /saran isi template/.test(r.catatan)) && !crBom.some(r => r.item === 'Power amplifier'));
+cek('rack tambahan pengguna ditandai contoh', bomDesain([bendaBaru('rak', kotakUji)], []).some(r => /contoh isi bawaan/.test(r.catatan)));
+const imBom = bomTemplate('immersive').filter(r => r.kategori === 'Display');
+cek('proyektor sama model jadi satu baris (PT-MZ882 + ET-ELU20 × 5)', imBom.length === 1 && imBom[0].item === 'Panasonic PT-MZ882 + ET-ELU20' && imBom[0].jumlah === 5);
+cek('catatan proyektor memuat lumen & throw ratio', /8\.200 lm · TR 0,34-0,36/.test(imBom[0].catatan));
+const auBom = bomTemplate('auditorium');
+cek('line array dihitung per modul', auBom.find(r => r.item === 'Line array kiri')?.jumlah === 8 && auBom.find(r => r.item === 'Line array kiri')?.satuan === 'modul');
+cek('semua template punya rack: kabel sinyal terhitung', KATEGORI_RUANG.every(k => !bomTemplate(k.id).some(r => r.ukuran === 'belum dihitung') && bomTemplate(k.id).some(r => /LAN/.test(r.item))));
+const tvSaja = [bendaBaru('tv', kotakUji)];
+const tanpaRack = bomDesain(tvSaja, jalurKabel(tvSaja, ruangPolos, { power: true }));
+cek('tanpa rack: kabel sinyal ditandai belum dihitung, power tetap dihitung', tanpaRack.some(r => r.item === 'Kabel sinyal' && r.ukuran === 'belum dihitung') && tanpaRack.some(r => /Kabel power/.test(r.item)));
+const dua = daftarBenda([bendaBaru('led', kotakUji, { w: 4, h: 2, nama: 'LED lobi' }), bendaBaru('led', kotakUji, { w: 4, h: 3, nama: 'LED lobi' })]);
+cek('dua LED beda tinggi tidak dijumlah jadi satu baris', dua.length === 2 && dua.some(r => r.jumlah === 32) && dua.some(r => r.jumlah === 48));
+
+const tAud = templateRuang('auditorium');
+const jalurLa = jalurKabel(tAud.benda, tAud.ruang).filter(j => j.dari.startsWith('Line array'));
+cek('line array aktif memakai kabel sinyal audio, bukan kabel speaker', jalurLa.length === 2 && jalurLa.every(j => j.kabel.golongan === 'audio'));
+const bangunRuang = readFileSync('app/(portal)/tools-team/_components/desain3d/bangun/ruangan.ts', 'utf8');
+cek('dinding sekat menahan cahaya proyektor ke ruang sebelah', /d\.castShadow = !!opsi\.penyekat/.test(bangunRuang) && /penyekat: adaKanan/.test(bangunRuang) && /shadowSide: THREE\.DoubleSide/.test(bangunRuang));
+
+console.log('\nCahaya ruangan');
+const ruangKoridor: Ruang = { ...ruangPolos, cahaya: 'koridor' };
+cek('cahaya koridor ±150 lux, lux terukur mengalahkan perkiraan', luxRuangDari(ruangKoridor) === 150 && luxRuangDari({ ...ruangKoridor, luxManual: 220 }) === 220 && luxRuangDari({ ...ruangKoridor, luxManual: 0 }) === 0);
+cek('kontras memakai lux terukur bila belum ada lampu', luxCahayaDi([], { ...ruangKoridor, luxManual: 220 }, [4, 1.5, 0.1], [0, 0, 1]).total === 220);
+cek('tampilan makin terang mengikuti lux', faktorCahayaRuang({ cahaya: 'gelap' }) < faktorCahayaRuang({ cahaya: 'redup' }) && faktorCahayaRuang({ cahaya: 'koridor' }) < faktorCahayaRuang({ cahaya: 'terang' }) && faktorCahayaRuang({ luxManual: 1000 }) === 1);
+cek('template mapping gelap: semua proyektor memenuhi kontras 15:1', ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'].every(id => proyektorTemplate(id as Parameters<typeof templateRuang>[0]).every(Boolean)));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

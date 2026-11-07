@@ -87,7 +87,7 @@ export function bomDesain(benda: Benda[], kabel: JalurKabel[]): BarisBom[] {
   for (const b of benda.filter(x => x.jenis === 'rak')) {
     for (const p of isiRakDari(b)) {
       if (p.jenis === 'kosong') continue;
-      const catatan = `Di ${b.nama}${b.isiRak?.length ? '' : ' · contoh isi bawaan, sesuaikan'}`;
+      const catatan = `Di ${b.nama}${!b.isiRak?.length ? ' · contoh isi bawaan, sesuaikan' : b.isiSaran ? ' · saran isi template, sesuaikan' : ''}`;
       tambah(rak, `${p.nama}|${p.u}|${catatan}`, () => ({ kategori: 'Rack & jaringan', item: p.nama, ukuran: `${p.u}U`, jumlah: 1, satuan: 'unit', catatan, pasang: true }));
     }
   }

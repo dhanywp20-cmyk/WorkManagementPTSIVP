@@ -40,7 +40,8 @@ function bersihkanHardware(x: unknown): Hardware | null {
   const nama = teks(hw.nama, 60), ket = teks(hw.ket ?? '', 200);
   const maksPx = bulat(hw.maksPx, 1, 1e9), port = bulat(hw.port, 0, 200);
   if (!nama || ket === null || maksPx === null || port === null || typeof hw.senderBawaan !== 'boolean') return null;
-  return { nama, ket, maksPx, port, senderBawaan: hw.senderBawaan };
+  const merek = teks(hw.merek ?? '', 60);
+  return { nama, ket, maksPx, port, senderBawaan: hw.senderBawaan, ...(merek ? { merek } : {}) };
 }
 
 export function bersihkanReferensiLED(x: unknown): RefLED | null {
