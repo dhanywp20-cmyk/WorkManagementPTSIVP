@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { periksaJawabanTulis } from './galat/tulis';
+import { denganUnggahTahan } from './unggah-tahan';
 
 const TOKEN_KEY = 'ivp_db_token';
 
@@ -89,7 +90,7 @@ async function tokenAkses(): Promise<string | null> {
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { accessToken: tokenAkses, global: { fetch: fetchWithToken } },
+  { accessToken: tokenAkses, global: { fetch: denganUnggahTahan(fetchWithToken) } },
 );
 
 pasangTokenRealtime(dbToken);
@@ -127,7 +128,7 @@ const fetchServices: typeof fetch = async (input, init) => {
 export const supabaseServices = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY!,
-  { global: { fetch: fetchServices } },
+  { global: { fetch: denganUnggahTahan(fetchServices) } },
 );
 
 export function periksaKonfigurasiServices(): {

@@ -1,4 +1,5 @@
 'use client';
+import { salinBerkas } from '@/lib/unggah-tahan';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModalPortal, TombolTugaskan } from '@/components/shared';
@@ -427,7 +428,7 @@ export function TicketDetailPopup({
                 <div>
                   <label htmlFor="f-ticketing-components-ticketdetailpopup-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="📷" />Foto Bukti</label>
                   <input id="f-ticketing-components-ticketdetailpopup-4" type="file" accept="image/jpeg,image/jpg,image/png"
-                    onChange={e => setNewActivity({ ...newActivity, photo: e.target.files?.[0] || null })}
+                    onChange={async e => { const photo = await salinBerkas(e.target.files?.[0]); setNewActivity(a => ({ ...a, photo })); }}
                     className="w-full border rounded-lg px-2.5 py-1.5 text-xs bg-white file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-red-50 file:text-red-700"
                     style={{ borderColor: "rgba(0,0,0,0.12)" }} />
                 </div>
