@@ -45,6 +45,8 @@ cek('Lite: AV Tools, Learning Center, Incentive terkunci', !menuBoleh('tools-tea
 cek('Lite: menu lain tetap terbuka', menuBoleh('ticket-troubleshooting', lite) && menuBoleh('project-progress', lite) && menuBoleh('kpi-team', lite));
 cek('Pro: menu Pro terbuka, Database PTS tetap tertutup', menuBoleh('tools-team', { ...lite, edisi: 'pro' }) && !menuBoleh('database-pts', { ...lite, edisi: 'pro' }));
 cek('Database PTS hanya untuk lisensi pemilik', menuBoleh('database-pts', { sah: true, edisi: 'pro', pemilik: true }));
+cek('status belum terbaca: menu biasa tetap tampil (penjaga sebenarnya di proxy), Database PTS tidak', menuBoleh('ticket-troubleshooting', null) && menuBoleh('tools-team', null) && !menuBoleh('database-pts', null));
+cek('status lisensi bisa dibaca tanpa cookie sesi', readFileSync('proxy.ts', 'utf8').split('const BEBAS_LISENSI')[0].includes("'/api/lisensi/status',"));
 cek('lisensi tidak sah: semua menu tertutup', !menuBoleh('ticket-troubleshooting', { sah: false, edisi: 'pro', pemilik: true }));
 cek('jalur Pro dikenali (halaman & API)', jalurPro('/tools-team') && jalurPro('/api/incentive/splits') && jalurPro('/kelas/abc') && !jalurPro('/ticketing') && !jalurPro('/tools-teamx'));
 

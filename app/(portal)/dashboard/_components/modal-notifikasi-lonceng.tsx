@@ -41,16 +41,22 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
       <button
         onClick={() => setOpen(o => !o)}
         aria-label={`${label}: ${count} notifikasi`} title={label}
-        className="relative flex items-center gap-2 px-3 py-2 rounded-xl transition-colors duration-200 hover:bg-slate-50 active:scale-95"
-        style={{ background: 'rgba(255,255,255,0.85)', border: '1px solid #e2e8f0' }}
+        className="relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+        style={{
+          background: count > 0 ? bgColor : 'rgba(255,255,255,0.55)',
+          border: `1.5px solid ${count > 0 ? borderColor : 'rgba(0,0,0,0.1)'}`,
+          boxShadow: count > 0 ? `0 2px 12px ${borderColor}55` : 'none',
+        }}
       >
-        <Icon className="w-4 h-4 shrink-0" style={{ color: count > 0 ? color : '#94a3b8' }} />
-        <span className="text-xs font-bold hidden 2xl:block text-slate-700">{label}</span>
+        <Icon className="w-4 h-4 shrink-0" style={{ color: count > 0 ? color : '#64748b' }} />
+        <span className="text-xs font-bold hidden 2xl:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
-          <span className="flex items-center justify-center rounded-full text-white font-bold text-[11px] min-w-[18px] h-[18px] px-1 bg-slate-700">
+          <span className="flex items-center justify-center rounded-full text-white font-black text-[11px] min-w-[18px] h-[18px] px-1 animate-pulse"
+            style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}88` }}>
             {count > 99 ? '99+' : count}
           </span>
         )}
+        {count === 0 && <span className="text-[11px] font-semibold text-slate-500">0</span>}
       </button>
 
       {open && (

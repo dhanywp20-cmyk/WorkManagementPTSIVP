@@ -22,6 +22,7 @@ const PUBLIC_EXACT = [
   '/manifest.webmanifest',
   '/sw.js',
   '/api/health',
+  '/api/lisensi/status',
   '/api/galat',
   '/api/auth/login',
   '/api/auth/login-2fa',
