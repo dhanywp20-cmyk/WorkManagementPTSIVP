@@ -47,6 +47,8 @@ if (skema) {
   for (const f of fs.readdirSync(skema).filter(x => x.endsWith('.sql')).sort()) {
     fs.writeFileSync(path.join(tujuanSkema, f), bersihkanSql(fs.readFileSync(path.join(skema, f), 'utf8')));
   }
+  const demo = path.join(akar, 'scripts/master/demo');
+  for (const f of fs.readdirSync(demo).filter(x => x.endsWith('.sql'))) fs.copyFileSync(path.join(demo, f), path.join(tujuanSkema, f));
 }
 
 fs.writeFileSync(path.join(tahap, 'VERSI.txt'), [

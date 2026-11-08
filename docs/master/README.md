@@ -7,7 +7,7 @@ Paket ini berisi seluruh yang dibutuhkan untuk memasang Work Management Platform
 | Folder / file | Isi |
 |---|---|
 | `app/`, `components/`, `lib/`, `public/` … | Kode aplikasi (Next.js 16, React 19) |
-| `skema/` | SQL untuk membangun basis data dari nol: `00-ekstensi`, `01-skema-public`, `02-storage`, `03-realtime`, `04-cron` |
+| `skema/` | SQL untuk membangun basis data dari nol: `00-ekstensi`, `01-skema-public`, `02-storage`, `03-realtime`, `04-cron`, lalu opsional `05-data-demo` (akun & data contoh, hapus dengan `06-hapus-data-demo`) |
 | `scripts/master/buat-admin.mjs` | Membuat akun admin pertama |
 | `.env.example` | Daftar environment variable |
 | `PANDUAN/` | Panduan instalasi, lisensi, backup, dan pembaruan |

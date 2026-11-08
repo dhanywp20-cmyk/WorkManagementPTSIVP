@@ -25,7 +25,8 @@ Yang dibutuhkan: akun Supabase, akun Vercel, akun GitHub (disarankan), dan kompu
    Tanpa `psql`: buka **SQL Editor**, tempel isi tiap berkas, **Run** — urutan sama.
 
 5. **Jadwal pg_cron** (`skema/04-cron.sql`): buka berkasnya, ganti setiap `<GANTI_SERVICE_ROLE_KEY>` dan `<GANTI_PROJECT_REF>` dengan nilai project baru, lalu jalankan seperti di atas. Lewati bila berkasnya kosong.
-6. Catat dari **Settings → API**: Project URL, `anon` key, `service_role` key, dan **JWT Secret**.
+6. **Data demo (opsional)** — untuk presentasi atau uji coba: `psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/05-data-demo.sql`. Isinya fiktif (PT Demo, 5 jadwal, 5 tiket, 2 request desain, progress project, piket, tech note) dengan 6 akun: `admin.demo`, `manager.demo`, `supervisor.demo`, `teknisi1.demo`, `teknisi2.demo`, `sales.demo` — password semua `Demo#2026`. Sebelum dipakai sungguhan, hapus dengan `skema/06-hapus-data-demo.sql` lalu buat admin asli (`npm run buat-admin`).
+7. Catat dari **Settings → API**: Project URL, `anon` key, `service_role` key, dan **JWT Secret**.
 
 > Platform memakai login sendiri (tabel `users`), bukan Supabase Auth. Tidak perlu mengatur Auth provider.
 

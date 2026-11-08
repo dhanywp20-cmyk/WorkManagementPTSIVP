@@ -14,6 +14,12 @@ const menu = buangMenuPemilik(readFileSync('app/(portal)/_kerangka/daftar-menu.t
 cek('menu & tautan OneDrive pemilik hilang', !menu.includes('Database PTS') && !menu.includes('1drv.ms/f/') && !menu.includes('database-pts'));
 cek('menu lain utuh', menu.includes("key: 'unit-movement'") && menu.includes("key: 'daily-report'") && /INTERNAL_DAILY_KEYS = \['picket-showroom', 'daily-report', 'unit-movement'\]/.test(menu));
 
+console.log('\nData demo');
+const demo = readFileSync('scripts/master/demo/05-data-demo.sql', 'utf8');
+const hapusDemo = readFileSync('scripts/master/demo/06-hapus-data-demo.sql', 'utf8');
+cek('data demo fiktif: tanpa menu Database, password di-hash bcrypt, bisa dihapus', !demo.includes('database-pts') && /extensions\.crypt\('Demo#2026', extensions\.gen_salt\('bf', 12\)\)/.test(demo) && /DELETE FROM public\.users/.test(hapusDemo));
+cek('semua id demo memakai awalan yang dihapus 06-hapus-data-demo', (demo.match(/'[0-9a-f]{8}-[0-9a-f]{4}-4000-8000-[0-9a-f]{12}'/g) || []).every(x => x.startsWith("'d0000000-0000-4000-8000-")));
+
 console.log('\npackage.json');
 const paket = JSON.parse(rapikanPaket(readFileSync('package.json', 'utf8')));
 cek('skrip uji internal dibuang, skrip buat-admin ditambah', !paket.scripts.test && paket.scripts['buat-admin'] === 'node scripts/master/buat-admin.mjs' && paket.scripts.build === 'next build');
