@@ -674,12 +674,13 @@
 .bb-utama { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr) 310px; }
 .bb-kiri { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; align-content: start; min-width: 0; }
-.bb-sel-angka { grid-column: span 2; }
-.bb-sel-grafik { grid-column: span 4; }
-.bb-sel-piket { grid-column: span 2; }
+.bb-sel-angka { grid-column: span var(--kol, 2); }
+.bb-sel-grafik { grid-column: span var(--kol, 4); }
+.bb-sel-piket { grid-column: span var(--kol, 2); }
 .bb-samping { min-width: 0; height: 0; min-height: max(100%, 460px); }
 .bb-bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; align-items: stretch; margin-top: 16px; }
 .bb-b3 { grid-column: span 3; } .bb-b4 { grid-column: span 4; } .bb-b5 { grid-column: span 5; } .bb-b6 { grid-column: span 6; } .bb-b7 { grid-column: span 7; } .bb-b8 { grid-column: span 8; } .bb-b12 { grid-column: span 12; }
+.bb-bv { grid-column: span var(--kol, 12); }
 .bb-tim > .rounded-2xl { height: 100%; }
 .bb-bento .flex-col.gap-\[7px\] { justify-content: space-between; }
 .bb-kisi-lain { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
@@ -776,7 +777,7 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
   .bb-sel-piket { grid-column: span 6; }
   .bb-b5, .bb-b7 { grid-column: span 6; }
   .bb-b4 { grid-column: span 6; }
-  .bb-b3 { grid-column: span 6; }
+  .bb-b3, .bb-bv { grid-column: span 6; }
 }
 @container (max-width: 800px) {
   .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr); }
@@ -785,7 +786,7 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 @container (max-width: 560px) {
   .bb-kiri { gap: 12px; }
   .bb-sel-angka, .bb-sel-grafik, .bb-sel-piket { grid-column: span 6; }
-  .bb-b3, .bb-b4, .bb-b5, .bb-b6, .bb-b7, .bb-b8 { grid-column: span 12; }
+  .bb-b3, .bb-b4, .bb-b5, .bb-b6, .bb-b7, .bb-b8, .bb-bv { grid-column: span 12; }
 }
 
 @keyframes bbNaik { from { opacity: 0; transform: translateY(12px); } }

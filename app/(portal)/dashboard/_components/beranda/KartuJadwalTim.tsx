@@ -28,14 +28,14 @@ function BebanMini({ beban }: { beban: NonNullable<KPIData['bebanHari']> }) {
   );
 }
 
-export function KartuJadwalTim({ kpi, d, onBuka }: { kpi: KPIData | null; d: number; onBuka: () => void }) {
+export function KartuJadwalTim({ kpi, d, kol, onBuka }: { kpi: KPIData | null; d: number; kol?: number; onBuka: () => void }) {
   const jadwal = kpi?.jadwalDekat;
   const judul = jadwal && !jadwal.hariIni ? 'Jadwal tim berikutnya' : 'Jadwal tim hari ini';
   const keterangan = !jadwal ? 'mendatang' : jadwal.hariIni ? `${jadwal.selesai} selesai` : jadwal.label;
   const tampil = jadwal?.daftar.slice(0, BARIS_MAKS) ?? [];
   const sisa = (jadwal?.total ?? 0) - tampil.length;
   return (
-    <article className={`${UBIN} bb-naik bb-sel-angka`} style={{ boxShadow: BAYANG_UBIN, ['--d' as string]: d } as React.CSSProperties}>
+    <article className={`${UBIN} bb-naik bb-sel-angka`} style={{ boxShadow: BAYANG_UBIN, ['--d' as string]: d, ...(kol ? { ['--kol' as string]: kol } : {}) } as React.CSSProperties}>
       <header className="flex items-center gap-2 min-h-[22px] mb-2">
         <h3 className={`${LABEL_UBIN} flex-1 truncate`}>{judul}</h3>
         <button type="button" onClick={onBuka} aria-label={`Buka ${judul}`} title={`Buka ${judul}`}
