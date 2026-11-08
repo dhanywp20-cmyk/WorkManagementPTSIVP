@@ -1,8 +1,9 @@
 import { createPrivateKey, createPublicKey, randomUUID, sign, verify, type KeyObject } from 'node:crypto';
 import {
-  type IsianTerbit, type KlaimLisensi, nilaiKlaim, pesanKunci, type StatusLisensi, statusKosong, statusPengembangan, susunKunci, uraiKunci,
+  type IsianTerbit, type KlaimLisensi, nilaiKlaim, pesanKunci, type StatusLisensi, statusKosong, statusPengembangan, statusServerPemilik, susunKunci, uraiKunci,
 } from './inti';
 import { KUNCI_PUBLIK_LISENSI } from './kunci-publik';
+import { WAJIB_LISENSI } from './mode';
 
 const kunciDari = (teks: string, jenis: 'publik' | 'privat'): KeyObject => {
   const t = teks.trim();
@@ -32,7 +33,8 @@ export function periksaKunci(teks: string, host: string, sekarang = Date.now(), 
 const SIMPAN_MS = 10 * 60_000;
 const simpanan = new Map<string, { status: StatusLisensi; waktu: number }>();
 
-export function statusLisensi(host: string): StatusLisensi {
+export function statusLisensi(host: string, wajib = WAJIB_LISENSI): StatusLisensi {
+  if (!wajib) return statusServerPemilik();
   const teks = process.env.LISENSI_KUNCI ?? '';
   if (!teks.trim() && process.env.NODE_ENV === 'development') return statusPengembangan();
   const kunci = `${host}|${teks.length}`;
@@ -44,12 +46,10 @@ export function statusLisensi(host: string): StatusLisensi {
   return status;
 }
 
-export const adaKunciPrivat = () => !!process.env.LISENSI_KUNCI_PRIVAT?.trim();
-
 export function terbitkanKunci(isian: IsianTerbit, privat: string, sekarang = new Date()): { kunci: string; klaim: KlaimLisensi } {
   const klaim: KlaimLisensi = {
     v: 1, id: randomUUID(), pelanggan: isian.pelanggan, edisi: isian.edisi, domain: isian.domain,
-    terbit: sekarang.toISOString(), kedaluwarsa: isian.kedaluwarsa, ...(isian.pemilik ? { pemilik: true } : {}),
+    terbit: sekarang.toISOString(), kedaluwarsa: isian.kedaluwarsa, ...(isian.pemilik ? { pemilik: true } : {}), ...(isian.demo ? { demo: true } : {}),
   };
   const pesan = pesanKunci(klaim);
   const tanda = sign(null, Buffer.from(pesan), kunciDari(privat, 'privat'));

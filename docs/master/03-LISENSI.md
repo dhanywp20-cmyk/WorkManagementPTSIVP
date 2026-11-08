@@ -9,7 +9,8 @@ Platform hanya berjalan dengan **kunci lisensi** dari penyedia. Kunci ditandatan
 | Edisi | **Lite** atau **Pro** (lihat tabel menu di `README.md`) |
 | Pelanggan | Nama perusahaan pemegang lisensi |
 | Domain | Alamat tempat platform boleh berjalan, mis. `wm.perusahaan.com`, `192.168.1.20`, `*.perusahaan.com`. Kosong = semua alamat |
-| Berlaku sampai | Tanggal akhir; kosong = seumur hidup |
+| Jenis | **Penuh** atau **Demo** (uji coba dengan batas waktu; admin selalu melihat sisa hari demo) |
+| Berlaku sampai | Tanggal akhir (pukul 23.59 WIB); kosong = seumur hidup |
 
 Kunci tidak bisa diubah sendiri — perubahan satu huruf pun membuatnya tidak sah.
 

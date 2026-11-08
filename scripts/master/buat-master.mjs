@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { berkasMasuk, buangKunciPemilik, buangMenuPemilik, bersihkanSql, cariRahasia, rapikanPaket } from './inti.mjs';
+import { berkasMasuk, buangKunciPemilik, buangMenuPemilik, bersihkanSql, cariRahasia, nyalakanLisensi, rapikanPaket } from './inti.mjs';
 
 const arg = (nama, awal = null) => { const i = process.argv.indexOf(`--${nama}`); return i > 0 ? process.argv[i + 1] : awal; };
 const ada = nama => process.argv.includes(`--${nama}`);
@@ -25,6 +25,7 @@ const daftar = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8', cwd: 
 const UBAH = {
   'app/(portal)/_kerangka/daftar-menu.tsx': buangMenuPemilik,
   'package.json': rapikanPaket,
+  'lib/lisensi/mode.ts': nyalakanLisensi,
 };
 for (const f of daftar) {
   const asal = path.join(akar, f), tujuan = path.join(tahap, f);

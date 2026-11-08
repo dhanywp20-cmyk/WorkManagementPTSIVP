@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { berkasMasuk, bersihkanSql, buangKunciPemilik, buangMenuPemilik, cariRahasia, rapikanPaket } from '../scripts/master/inti.mjs';
+import { berkasMasuk, bersihkanSql, buangKunciPemilik, buangMenuPemilik, cariRahasia, nyalakanLisensi, rapikanPaket } from '../scripts/master/inti.mjs';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -22,6 +22,8 @@ cek('semua id demo memakai awalan yang dihapus 06-hapus-data-demo', (demo.match(
 
 const daftarKunci = buangKunciPemilik("export const A = [\n  'daily-report',\n  'database-pts',\n  'unit-movement',\n];\nconst B = { 'daily-report': 'X',\n  'database-pts': { label: 'Database PTS', icon: 'x' },\n};\nconst C = ['tech-note', 'unit-movement', 'database-pts',\n];\n");
 cek('pilihan menu Database PTS dibuang dari kode lain (User Management, nav)', !daftarKunci.includes('database-pts') && daftarKunci.includes("'unit-movement',\n];") && daftarKunci.includes("'daily-report': 'X',\n};"));
+
+cek('lisensi dinyalakan hanya di paket pelanggan', nyalakanLisensi(readFileSync('lib/lisensi/mode.ts', 'utf8')).includes('WAJIB_LISENSI: boolean = true'));
 
 console.log('\npackage.json');
 const paket = JSON.parse(rapikanPaket(readFileSync('package.json', 'utf8')));

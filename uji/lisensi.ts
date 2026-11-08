@@ -1,7 +1,7 @@
 import { generateKeyPairSync } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { cocokDomain, jalurPro, menuBoleh, periksaIsianTerbit, uraiKunci } from '../lib/lisensi/inti';
-import { periksaKunci, terbitkanKunci } from '../lib/lisensi/server';
+import { periksaKunci, statusLisensi, terbitkanKunci } from '../lib/lisensi/server';
 import { KUNCI_PUBLIK_LISENSI } from '../lib/lisensi/kunci-publik';
 
 let lulus = 0, gagal = 0;
@@ -34,6 +34,9 @@ cek('tanpa domain = berlaku di semua alamat', periksa(terbit({}), 'apa.saja.id')
 const habis = terbit({ kedaluwarsa: '2026-11-07' });
 cek('lewat tanggal berakhir -> kedaluwarsa', periksa(habis, 'x.com').alasan === 'kedaluwarsa');
 cek('masih berlaku sampai akhir hari tanggal berakhir (WIB)', periksa(habis, 'x.com', Date.parse('2026-11-07T16:00:00Z')).sah);
+const demo = periksa(terbit({ domain: ['wm.contoh.com'], kedaluwarsa: '2026-12-07', demo: true }), 'wm.contoh.com');
+cek('lisensi demo terbaca sebagai demo, lisensi biasa tidak', demo.sah && demo.demo && !periksa(pro, 'wm.contoh.com').demo);
+cek('isian demo tanpa tanggal berakhir ditolak', !periksaIsianTerbit({ pelanggan: 'PT A', edisi: 'pro', domain: [], demo: true }, '2026-11-08').ok);
 cek('sisa hari dihitung', periksa(terbit({ kedaluwarsa: '2026-11-20' }), 'x.com').sisaHari === 13);
 
 console.log('\nEdisi & menu');
@@ -54,8 +57,18 @@ cek('isian sah dirapikan (huruf kecil, kosong dibuang)', isian.ok && isian.isian
 console.log('\nPenjagaan');
 const proxy = readFileSync('proxy.ts', 'utf8');
 cek('proxy menolak semua jalur bila lisensi tidak sah dan jalur Pro untuk Lite', /!lisensi\.sah\) return tolakLisensi/.test(proxy) && /edisi !== 'pro' && jalurPro\(pathname\)/.test(proxy));
-const rute = readFileSync('app/api/admin/lisensi/route.ts', 'utf8');
-cek('License Manager hanya untuk server pemilik & tidak bisa menerbitkan lisensi pemilik', /status\.pemilik/.test(rute) && /pemilik: undefined/.test(rute));
+cek('platform tidak bisa menerbitkan lisensi (License Manager terpisah)', !existsSync('app/api/admin/lisensi/route.ts')
+  && !/LISENSI_KUNCI_PRIVAT|terbitkanKunci/.test(readFileSync('app/(portal)/dashboard/_components/modal-lisensi.tsx', 'utf8') + readFileSync('proxy.ts', 'utf8')));
+
+console.log('\nServer pemilik vs paket pelanggan');
+const pemilik = statusLisensi('work-management-ptsivp.vercel.app', false);
+cek('server pemilik: tanpa kunci tetap Pro + menu Database, tidak pernah terkunci', pemilik.sah && pemilik.edisi === 'pro' && pemilik.pemilik && menuBoleh('database-pts', pemilik));
+cek('saklar di repo mati (server pemilik)', /WAJIB_LISENSI: boolean = false/.test(readFileSync('lib/lisensi/mode.ts', 'utf8')));
+const lamaEnv = process.env.LISENSI_KUNCI;
+delete process.env.LISENSI_KUNCI;
+const paket = statusLisensi('wm.pelanggan.com', true);
+if (lamaEnv !== undefined) process.env.LISENSI_KUNCI = lamaEnv;
+cek('paket pelanggan tanpa kunci -> terkunci', !paket.sah && paket.alasan === 'tidak-ada');
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

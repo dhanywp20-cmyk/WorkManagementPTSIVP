@@ -22,6 +22,12 @@ export function buangKunciPemilik(teks) {
   return s;
 }
 
+export function nyalakanLisensi(teks) {
+  const s = teks.replace(/WAJIB_LISENSI: boolean = false/, 'WAJIB_LISENSI: boolean = true');
+  if (!s.includes('WAJIB_LISENSI: boolean = true')) throw new Error('Saklar lisensi di lib/lisensi/mode.ts tidak ditemukan');
+  return s;
+}
+
 export function rapikanPaket(teks) {
   const p = JSON.parse(teks);
   if (p.scripts) {

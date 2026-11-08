@@ -9,6 +9,7 @@ export interface KlaimLisensi {
   terbit: string;
   kedaluwarsa: string | null;
   pemilik?: boolean;
+  demo?: boolean;
 }
 
 export type AlasanLisensi = 'tidak-ada' | 'format' | 'tanda-tangan' | 'domain' | 'kedaluwarsa' | 'kunci-publik';
@@ -24,6 +25,7 @@ export interface StatusLisensi {
   sisaHari: number | null;
   alasan: AlasanLisensi | null;
   pengembangan: boolean;
+  demo: boolean;
 }
 
 export const AWALAN_KUNCI = 'WM1';
@@ -70,7 +72,7 @@ export function klaimSah(x: unknown): x is KlaimLisensi {
   return !!k && k.v === 1 && typeof k.id === 'string' && k.id.length > 0 && typeof k.pelanggan === 'string' && k.pelanggan.trim().length > 0
     && (k.edisi === 'lite' || k.edisi === 'pro') && Array.isArray(k.domain) && k.domain.every(d => typeof d === 'string' && POLA_DOMAIN.test(d))
     && typeof k.terbit === 'string' && (k.kedaluwarsa === null || (typeof k.kedaluwarsa === 'string' && TANGGAL.test(k.kedaluwarsa)))
-    && (k.pemilik === undefined || typeof k.pemilik === 'boolean');
+    && (k.pemilik === undefined || typeof k.pemilik === 'boolean') && (k.demo === undefined || typeof k.demo === 'boolean');
 }
 
 export function uraiKunci(teks: string): { klaim: KlaimLisensi; pesan: string; tanda: Uint8Array } | null {
@@ -108,7 +110,7 @@ export function sisaHariLisensi(kedaluwarsa: string | null, sekarang: number): n
 export function nilaiKlaim(klaim: KlaimLisensi, host: string, sekarang: number): StatusLisensi {
   const dasar: StatusLisensi = {
     sah: false, edisi: klaim.edisi, pemilik: !!klaim.pemilik, pelanggan: klaim.pelanggan, id: klaim.id, domain: klaim.domain,
-    kedaluwarsa: klaim.kedaluwarsa, sisaHari: sisaHariLisensi(klaim.kedaluwarsa, sekarang), alasan: null, pengembangan: false,
+    kedaluwarsa: klaim.kedaluwarsa, sisaHari: sisaHariLisensi(klaim.kedaluwarsa, sekarang), alasan: null, pengembangan: false, demo: !!klaim.demo,
   };
   if (klaim.domain.length && !klaim.domain.some(d => cocokDomain(host, d))) return { ...dasar, alasan: 'domain' };
   if (dasar.sisaHari !== null && Date.parse(`${klaim.kedaluwarsa}${AKHIR_HARI_WIB}`) < sekarang) return { ...dasar, alasan: 'kedaluwarsa' };
@@ -116,14 +118,18 @@ export function nilaiKlaim(klaim: KlaimLisensi, host: string, sekarang: number):
 }
 
 export const statusKosong = (alasan: AlasanLisensi): StatusLisensi => ({
-  sah: false, edisi: null, pemilik: false, pelanggan: null, id: null, domain: [], kedaluwarsa: null, sisaHari: null, alasan, pengembangan: false,
+  sah: false, edisi: null, pemilik: false, pelanggan: null, id: null, domain: [], kedaluwarsa: null, sisaHari: null, alasan, pengembangan: false, demo: false,
 });
 
 export const statusPengembangan = (): StatusLisensi => ({
-  sah: true, edisi: 'pro', pemilik: false, pelanggan: 'Mode pengembangan', id: null, domain: [], kedaluwarsa: null, sisaHari: null, alasan: null, pengembangan: true,
+  sah: true, edisi: 'pro', pemilik: false, pelanggan: 'Mode pengembangan', id: null, domain: [], kedaluwarsa: null, sisaHari: null, alasan: null, pengembangan: true, demo: false,
 });
 
-export interface IsianTerbit { pelanggan: string; edisi: Edisi; domain: string[]; kedaluwarsa: string | null; pemilik?: boolean }
+export const statusServerPemilik = (): StatusLisensi => ({
+  sah: true, edisi: 'pro', pemilik: true, pelanggan: 'Server pemilik', id: null, domain: [], kedaluwarsa: null, sisaHari: null, alasan: null, pengembangan: false, demo: false,
+});
+
+export interface IsianTerbit { pelanggan: string; edisi: Edisi; domain: string[]; kedaluwarsa: string | null; pemilik?: boolean; demo?: boolean }
 
 export function periksaIsianTerbit(x: unknown, hariIni: string): { ok: true; isian: IsianTerbit } | { ok: false; galat: string } {
   const a = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
@@ -136,5 +142,6 @@ export function periksaIsianTerbit(x: unknown, hariIni: string): { ok: true; isi
   if (salah) return { ok: false, galat: `Domain tidak valid: ${salah}. Tulis tanpa http:// dan tanpa garis miring.` };
   const kedaluwarsa = typeof a.kedaluwarsa === 'string' && a.kedaluwarsa ? a.kedaluwarsa : null;
   if (kedaluwarsa && (!TANGGAL.test(kedaluwarsa) || kedaluwarsa < hariIni)) return { ok: false, galat: 'Tanggal kedaluwarsa harus hari ini atau sesudahnya.' };
-  return { ok: true, isian: { pelanggan, edisi: a.edisi, domain, kedaluwarsa, ...(a.pemilik === true ? { pemilik: true } : {}) } };
+  if (a.demo === true && !kedaluwarsa) return { ok: false, galat: 'Lisensi demo wajib punya tanggal berakhir.' };
+  return { ok: true, isian: { pelanggan, edisi: a.edisi, domain, kedaluwarsa, ...(a.pemilik === true ? { pemilik: true } : {}), ...(a.demo === true ? { demo: true } : {}) } };
 }

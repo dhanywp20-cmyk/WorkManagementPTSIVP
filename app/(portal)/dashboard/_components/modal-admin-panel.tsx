@@ -212,7 +212,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
                 {activeSection === 'kesehatan' && 'Cron, kuota paket Free, keamanan basis data, pemakaian AI & WA'}
                 {activeSection === 'keamanan' && 'Verifikasi 2 langkah (authenticator)'}
-                {activeSection === 'lisensi' && 'Edisi, masa berlaku & License Manager'}
+                {activeSection === 'lisensi' && 'Edisi & masa berlaku lisensi'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}

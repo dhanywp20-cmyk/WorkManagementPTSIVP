@@ -34,7 +34,7 @@ const PUBLIC_EXACT = [
   '/api/auth/register',
 ];
 
-const BEBAS_LISENSI = ['/api/lisensi/status', '/api/admin/lisensi', '/api/auth/session', '/api/auth/logout'];
+const BEBAS_LISENSI = ['/api/lisensi/status', '/api/auth/session', '/api/auth/logout'];
 
 const CRON_PREFIX = '/api/cron/';
 const MONITOR_PATH = '/api/monitor';

@@ -35,10 +35,10 @@ export function BannerLisensi({ s, admin }: { s: StatusLisensiKlien | null; admi
       </div>
     );
   }
-  if (admin && s.sisaHari !== null && s.sisaHari <= HARI_PERINGATAN) {
+  if (admin && s.sisaHari !== null && (s.demo || s.sisaHari <= HARI_PERINGATAN)) {
     return (
       <div role="status" className="mx-3 sm:mx-5 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-[13px] text-amber-900">
-        Lisensi {s.edisi === 'pro' ? 'Pro' : 'Lite'} berakhir dalam <b>{s.sisaHari} hari</b> ({s.kedaluwarsa}). Hubungi penyedia platform untuk perpanjangan.
+        Lisensi {s.demo ? 'DEMO ' : ''}{s.edisi === 'pro' ? 'Pro' : 'Lite'} berakhir dalam <b>{s.sisaHari} hari</b> ({s.kedaluwarsa}). Hubungi penyedia platform untuk perpanjangan.
       </div>
     );
   }
