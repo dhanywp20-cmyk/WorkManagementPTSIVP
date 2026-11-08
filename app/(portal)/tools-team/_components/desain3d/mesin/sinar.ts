@@ -4,7 +4,7 @@ import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
 import { gambarCahayaBenda, type SumberCahaya } from './cahayaBenda';
-import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks } from './teksCahaya';
+import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks, geserKeTerlihat, kotakTerlihat } from './teksCahaya';
 import { aturLampuProyektor, batasProyektorNyata, kontenProyektor, type MasukanLampu } from './proyektorNyata';
 import type { Mesin } from './tipe';
 
@@ -375,8 +375,11 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         pojok(2, tepi, 1 - tepi - hs, false, !kiri && !bawah),
         pojok(3, 1 - tepi - ws, 1 - tepi - hs, true, !kanan && !bawah),
         { x: Math.min(0.5, tepi + kiri), y: Math.min(0.5, (kiriAtas ? tepi + hs : tepi) + atas), w: 0.24, h: hl * bg.teks.info.length + 0.012, baris: bg.teks.info, tebalPertama: true },
-      ].filter((b): b is BlokTeks => !!b);
-      gambarTeksCahaya(m, bg.teks.pos, bg.teks.uv, blok);
+      ];
+      const kotak = kotakTerlihat(bg.teks.uv);
+      const ARAH: [1 | -1, 1 | -1][] = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 1]];
+      const terlihat = blok.map((b, i) => (b ? geserKeTerlihat(b, kotak, ARAH[i][0], ARAH[i][1]) : null)).filter((b): b is BlokTeks => !!b);
+      gambarTeksCahaya(m, bg.teks.pos, bg.teks.uv, terlihat);
     }
   }
   if (nyata) aturLampuProyektor(m, lampu);
