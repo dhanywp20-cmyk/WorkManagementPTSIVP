@@ -19,6 +19,8 @@ cek('tepi atas di bawah mata -> jarak 0', jarakTerdekatNyamanM(1.6, 0.5, 0.8) ==
 console.log('\nVideowall');
 const vw = videowallUntuk(2.44, 1.37, PANEL_VIDEOWALL[2]);
 cek('target 2,44 × 1,37 m dengan 55" bezel 3,5 mm -> 2 × 2', vw.kolom === 2 && vw.baris === 2 && vw.jumlah === 4);
+const lebihKecil = videowallUntuk(1.78, 1, PANEL_VIDEOWALL[2]);
+cek('alternatif videowall tidak lebih kecil dari ukuran minimum: 1,78 × 1 m -> 2 × 2', lebihKecil.kolom === 2 && lebihKecil.baris === 2 && lebihKecil.lebarM >= 1.78 && lebihKecil.tinggiM >= 1);
 cek('ukuran nyata 2×2 55" ±2,44 m lebar, resolusi 3840×2160', dekat(vw.lebarM, 2.4387, 0.005) && vw.resX === 3840 && vw.resY === 2160);
 
 console.log('\nProyektor');

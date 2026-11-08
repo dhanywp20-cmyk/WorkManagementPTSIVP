@@ -1,8 +1,10 @@
+import { BATAS_LUBER, luberLayar, teksLuber } from './cakupanProyektor';
 import { sudutTapak, type P2 } from './denah';
+import { sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sambunganKe, sisiLuar } from './ruang';
 import type { Benda, Kotak, Ruang, SisiDinding } from './tipe';
 
-export type KodeRuangGerak = 'tumpang' | 'keluar' | 'plafon' | 'pintu' | 'meja' | 'rak';
+export type KodeRuangGerak = 'tumpang' | 'keluar' | 'plafon' | 'pintu' | 'meja' | 'rak' | 'proyeksi';
 export interface CatatanRuangGerak { kode: KodeRuangGerak; id: string; pesan: string }
 
 export const JARAK_MEJA_MIN = 0.9, SERVIS_RAK_MIN = 0.8;
@@ -92,6 +94,13 @@ export function cekRuangGerak(benda: Benda[], ruang: Ruang): CatatanRuangGerak[]
     const diLuar = area.some(([x, z]) => x < k.x0 - TOLERANSI || x > k.x0 + k.p + TOLERANSI || z < -TOLERANSI || z > k.l + TOLERANSI);
     const halang = isi.filter(o => o.b.id !== b.id && o.b.jenis !== 'kursi' && o.b.elev < 1.8 && poligonTumpang(o.s, area));
     if (diLuar || halang.length) hasil.push({ kode: 'rak', id: b.id, pesan: `Depan ${b.nama} kurang ${cm(SERVIS_RAK_MIN)} untuk servis${halang.length ? ` (terhalang ${halang[0].b.nama})` : ' (dinding)'}` });
+  }
+  for (const p of benda) {
+    if (p.jenis !== 'proyektor' || p.maskBidang) continue;
+    const l = sinarProyektor(p, benda, ruang).layar;
+    if (!l) continue;
+    const x = luberLayar(p, l);
+    if (x.maks > BATAS_LUBER) hasil.push({ kode: 'proyeksi', id: p.id, pesan: `${p.nama}: cahaya keluar dari ${l.nama} (${teksLuber(x)})` });
   }
   return hasil;
 }

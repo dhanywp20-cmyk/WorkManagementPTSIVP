@@ -1,21 +1,21 @@
 'use client';
 import { useDeferredValue, useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, DoorOpen, Layers, Maximize2, Server, Table2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, DoorOpen, Layers, Maximize2, Projector, Server, Table2 } from 'lucide-react';
 import { cekRuangGerak, JARAK_MEJA_MIN, type KodeRuangGerak, SERVIS_RAK_MIN } from '../inti';
 import { Kartu } from '../../bersama/ui';
 import type { AlatDesain } from './alat';
 
-const IKON: Record<KodeRuangGerak, typeof Layers> = { tumpang: Layers, keluar: Maximize2, plafon: Maximize2, pintu: DoorOpen, meja: Table2, rak: Server };
-const ATURAN = `Benda bertumpuk · menembus dinding / plafon · ayunan pintu · meja ↔ dinding ≥ ${JARAK_MEJA_MIN * 100} cm · depan rack ≥ ${SERVIS_RAK_MIN * 100} cm`;
+const IKON: Record<KodeRuangGerak, typeof Layers> = { tumpang: Layers, keluar: Maximize2, plafon: Maximize2, pintu: DoorOpen, meja: Table2, rak: Server, proyeksi: Projector };
+const ATURAN = `Benda bertumpuk · menembus dinding / plafon · ayunan pintu · meja ↔ dinding ≥ ${JARAK_MEJA_MIN * 100} cm · depan rack ≥ ${SERVIS_RAK_MIN * 100} cm · cahaya proyektor di dalam layar`;
 
 export function KartuRuangGerak({ a }: { a: AlatDesain }) {
   const { benda, ruang, pilih, setPilih } = a.K;
   const bendaTunda = useDeferredValue(benda), ruangTunda = useDeferredValue(ruang);
   const catatan = useMemo(() => cekRuangGerak(bendaTunda, ruangTunda), [bendaTunda, ruangTunda]);
   return (
-    <Kartu judul={`Cek ruang gerak${catatan.length ? ` · ${catatan.length}` : ''}`}>
+    <Kartu judul={`Cek ruang & proyeksi${catatan.length ? ` · ${catatan.length}` : ''}`}>
       {catatan.length === 0
-        ? <p className="flex items-center gap-2 text-[13px] font-semibold text-emerald-700" title={ATURAN}><CheckCircle2 size={16} /> Semua jarak aman</p>
+        ? <p className="flex items-center gap-2 text-[13px] font-semibold text-emerald-700" title={ATURAN}><CheckCircle2 size={16} /> Semua jarak aman, cahaya proyektor di dalam layar</p>
         : (
           <ul className="space-y-1">
             {catatan.map((c, i) => {

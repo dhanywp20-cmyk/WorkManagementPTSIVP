@@ -49,6 +49,6 @@ export function isiDariKatalogLain(p: Benda, k: Pick<KatalogLain, 'merek' | 'ver
     koreksiJarak: bW || undefined, koreksiJarakTele: bT,
     poligonShift: l.pg ?? undefined, shiftAtasMaks: undefined, shiftBawahMaks: undefined, shiftHMaks: undefined,
     ...(l.pg ? { offsetTetap: undefined } : { offsetTetap: off, offsetLensa: off, geserLensaH: 0 }),
-    sumberLensa: `${SUMBER_LAIN[k.merek].singkat} ${k.versi}`.trim(),
+    sumberLensa: `${SUMBER_LAIN[k.merek].singkat} ${k.versi}`.trim(), modelProduk: undefined,
   };
 }

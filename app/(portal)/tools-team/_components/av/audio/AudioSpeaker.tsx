@@ -60,13 +60,13 @@ export function AudioSpeaker() {
           [['SPL maks @1 m', `${f(maks, 1)} dB`], [`SPL @${f(jarak)} m`, `${f(diJarak, 1)} dB`, true], [`Daya untuk ${target} dB (+${headroom} dB)`, `${f(dayaPerlu, 1)} W`, true]],
           'Medan bebas: turun 6 dB tiap jarak 2×. Pantulan ruang menambah SPL namun menurunkan kejelasan (STI).')), 'Audio')} />}>
         {mode === 'plafon' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Diameter cakupan" nilai={f(sp.diameterM)} satuan="m" ket="di ketinggian telinga" />
             <Nilai label="Jarak antar speaker" nilai={f(sp.jarakM)} satuan="m" />
             <Nilai label="Jumlah speaker" nilai={sp.jumlah} ket={`${sp.kolom} × ${sp.baris} titik`} nada="baik" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="SPL maks @1 m" nilai={f(maks, 1)} satuan="dB" />
             <Nilai label={`SPL @${jarak} m`} nilai={f(diJarak, 1)} satuan="dB"
               ket={diJarak >= 85 ? 'cukup untuk musik/event' : diJarak >= 70 ? 'cukup untuk percakapan/paging' : 'kurang - tambah speaker/daya'}

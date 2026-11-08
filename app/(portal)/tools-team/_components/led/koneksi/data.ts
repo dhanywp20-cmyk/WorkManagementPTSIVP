@@ -1,4 +1,6 @@
-import { type HasilKoneksi, hitungKoneksi, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
+import { type HasilKoneksi, hitungKoneksi, NAMA_RC_LAMA, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
+
+const rcTersimpan = (nama: unknown) => { const n = NAMA_RC_LAMA[nama as string] ?? nama; return RECEIVING_CARD.some(r => r.nama === n) ? (n as string) : null; };
 
 export interface PengaturanKoneksi {
   mode: 'template' | 'manual';
@@ -41,7 +43,7 @@ export function bersihkanKoneksi(x: unknown): PengaturanKoneksi {
     kosong: daftarSel(o.kosong, 4096),
     manual: Array.isArray(o.manual) ? o.manual.slice(0, 256).map(r => daftarSel(r, 4096)) : null,
     pxPort: bulat(o.pxPort, 1000, 20_000_000),
-    rcModel: RECEIVING_CARD.some(r => r.nama === o.rcModel) ? (o.rcModel as string) : null,
+    rcModel: rcTersimpan(o.rcModel),
     cadangan: pilih(o.cadangan, ['tidak', 'loop', 'controller'] as const, A.cadangan),
   };
 }

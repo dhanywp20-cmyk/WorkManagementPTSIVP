@@ -13,6 +13,7 @@ import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
 import { aturTeksTersembunyi } from './label';
 import { aturCahayaRuang } from './proyektorNyata';
+import { faktorCahayaRuang } from '../inti';
 
 export function useAdegan(K: KeadaanDesain) {
   const { sinarNyata, sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
@@ -101,8 +102,8 @@ export function useAdegan(K: KeadaanDesain) {
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    aturCahayaRuang(m, { f: { terang: 1, redup: 0.45, gelap: 0.12 }[ruang.cahaya ?? 'terang'] });
-  }, [ruang.cahaya, siap]);
+    aturCahayaRuang(m, { f: faktorCahayaRuang(ruang) });
+  }, [ruang.cahaya, ruang.luxManual, siap]);
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;

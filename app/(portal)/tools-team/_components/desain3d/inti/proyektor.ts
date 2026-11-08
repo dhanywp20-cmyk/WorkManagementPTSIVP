@@ -1,4 +1,4 @@
-import { bulat2, daftarRuang, ruangDari } from './ruang';
+import { daftarRuang, ruangDari } from './ruang';
 import { type Benda, type Kotak, type RasioProyektor, type ResolusiProyektor, type Ruang, type Titik, warnaSah } from './tipe';
 
 export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
@@ -343,7 +343,8 @@ export function pasangKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang, sasara
     const [ox, , oz] = keDunia({ ...q, rot, x: 0, z: 0, elev: 0 }, lensaProyektor(q));
     return { ...q, rot, x: S[0] + n[0] * jarakLensa - ox, z: S[2] + n[1] * jarakLensa - oz };
   };
-  let q = taruh({ ...p, elev: bulat2(elev), tilt: 0, throwRatio: Math.round(tr * 1e6) / 1e6, offsetLensa: Math.round(off * 1000) / 1000, geserLensaH: 0 }, jarak);
+  const bulatMm = (v: number) => Math.round(v * 1000) / 1000;
+  let q = taruh({ ...p, elev: bulatMm(elev), tilt: 0, throwRatio: Math.round(tr * 1e6) / 1e6, offsetLensa: Math.round(off * 1000) / 1000, geserLensaH: 0 }, jarak);
   if (Math.abs((sinarProyektor(q, [l, q], ruang).selisihV ?? 0) - dv) > 0.01) {
     let jarakTegak = jarak;
     for (let i = 0; i < 4; i++) {
@@ -355,7 +356,10 @@ export function pasangKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang, sasara
     }
     q = tiltKeLayar(q, l, ruang, dv);
   }
-  const benda = { ...q, x: bulat2(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, q.x))), z: bulat2(Math.min(k.l - 0.1, Math.max(0.1, q.z))) };
+  const diRuang = { ...q, x: bulatMm(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, q.x))), z: bulatMm(Math.min(k.l - 0.1, Math.max(0.1, q.z))) };
+  const akhir = sinarProyektor(diRuang, [l, diRuang], ruang);
+  const trPas = akhir.layar ? Math.min(trHi, Math.max(trLo, trUntukLebar(diRuang, akhir.jarak, lebarPerlu))) : throwRatioDari(diRuang);
+  const benda = { ...diRuang, throwRatio: Math.round(trPas * 1e6) / 1e6 };
   const bs = batasShift(benda);
   return { benda, kurangJarakM: Math.max(0, jarakPerlu - jarak), tiltDerajat: tiltDari(benda), lewatShift: bs.lewatV || bs.lewatH || bs.lewatGabungan, jarakPerluM: jarakPerlu };
 }

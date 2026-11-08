@@ -1,6 +1,7 @@
 import { setLampuGrid, SPEK_LAMPU } from './cahaya';
 import { SPEK_PERANGKAT } from './perangkat';
 import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
+import { isiRakTemplate } from './rak';
 import { daftarRuang } from './ruang';
 import { TINGGI_HURUF_AWAL } from './teks';
 import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Ruang } from './tipe';
@@ -155,7 +156,7 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       if (bentuk === 'bulat') return { ...dasar, nama: 'Meja bundar', z: k.l * 0.55, w: 1.2, h: 0.75, d: 1.2, elev: 0, bentukMeja: 'bulat', finish: 'walnut', ...atur };
       if (bentuk === 'kelas') return { ...dasar, nama: 'Meja kelas', z: k.l * 0.5, w: 1.2, h: 0.75, d: 0.5, elev: 0, bentukMeja: 'kelas', finish: 'oak', ...atur };
       if (bentuk === 'dosen') return { ...dasar, nama: 'Meja dosen', x: k.x0 + Math.min(1.8, k.p * 0.25), z: 1.5, w: 1.6, h: 0.75, d: 0.75, elev: 0, bentukMeja: 'dosen', finish: 'oak', ...atur };
-      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.786, h: 1.1, d: 0.42, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
+      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.786, h: 1.01, d: 0.42, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
       if (bentuk === 'kredensa') return { ...dasar, nama: 'Kredensa', z: 0.25, w: Math.min(2.4, k.p * 0.5), h: 0.75, d: 0.45, elev: 0, bentukMeja: 'kredensa', finish: 'walnut', ...atur };
       if (bentuk === 'operator') return { ...dasar, nama: 'Meja operator', z: Math.min(k.l - 1, k.l * 0.55), w: 1.8, h: 0.75, d: 0.8, elev: 0, bentukMeja: 'operator', monitorMeja: 4, finish: 'walnut', ...atur };
       return { ...dasar, nama: 'Meja rapat', z: k.l * 0.55, w: 1.2, h: 0.75, d: 3.6, elev: 0, bentukMeja: 'rapat', finish: 'walnut', ...atur };
@@ -249,7 +250,7 @@ export function contohAwal(r: Ruang): Benda[] {
     { ...bendaBaru('mic', k), x: k.p / 2 - 0.3, z: meja.z - 0.6, rot: 270 }, { ...bendaBaru('mic', k), x: k.p / 2 + 0.3, z: meja.z + 0.6, rot: 90 },
     { ...bendaBaru('touchpanel', k), z: meja.z + meja.d / 2 - 0.2 },
     { ...bendaBaru('speaker-plafon', k), z: k.l / 3 }, { ...bendaBaru('speaker-plafon', k), z: (k.l * 2) / 3 },
-    bendaBaru('rak', k)];
+    bendaBaru('rak', k, isiRakTemplate('meeting'))];
 }
 export interface OpsiKelas { kolom?: number; baris?: number; jarakBaris?: number; celah?: number; kursiPerMeja?: number; pengajar?: boolean }
 export function ukuranSetKelas(k: Kotak, o: OpsiKelas = {}) {

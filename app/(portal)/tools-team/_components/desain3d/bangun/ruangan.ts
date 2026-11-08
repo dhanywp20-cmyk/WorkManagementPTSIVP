@@ -24,8 +24,8 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang,
   const tL = teksturSah(ruang.teksturLantai, UBIN_AWAL_LANTAI), gambarLantai = tL ? gambarTekstur?.(tL.kunci) : undefined;
   const tD = teksturSah(ruang.teksturDinding, UBIN_AWAL_DINDING), gambarDinding = tD ? gambarTekstur?.(tD.kunci) : undefined;
   const bahanDinding = gambarDinding && tD
-    ? new THREE.MeshStandardMaterial({ map: teksturGambar(gambarDinding, 1, 1), roughness: 0.9, side: THREE.FrontSide })
-    : new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
+    ? new THREE.MeshStandardMaterial({ map: teksturGambar(gambarDinding, 1, 1), roughness: 0.9, side: THREE.FrontSide, shadowSide: THREE.DoubleSide })
+    : new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide, shadowSide: THREE.DoubleSide });
   const aksen = ruang.dindingDepan && ruang.dindingDepan !== 'polos' ? teksturDindingAksen(THREE, ruang.dindingDepan) : null;
   const bahanAksen = aksen ? new THREE.MeshStandardMaterial({ map: aksen.tex, roughness: ruang.dindingDepan === 'marmer' ? 0.25 : 0.7, metalness: ruang.dindingDepan === 'marmer' ? 0.05 : 0, side: THREE.FrontSide }) : null;
   const garis = new THREE.LineBasicMaterial({ color: 0xa8a29e });
@@ -43,7 +43,7 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang,
   const bahanGagang = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.9, roughness: 0.25, side: THREE.FrontSide });
   const lubangLuar = (i: number, sisi: SisiDinding, panjang: number): Lubang[] =>
     bukaanDinding(ruang, i, sisi).map(x => ({ x0: x.x0 - panjang / 2, x1: x.x1 - panjang / 2, y0: x.y0, y1: x.y1, jenis: x.b.jenis, luar: true }));
-  const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: Lubang[] = [], opsi: { tembus?: boolean; pasangKaca?: boolean; aksen?: boolean } = {}) => {
+  const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: Lubang[] = [], opsi: { tembus?: boolean; pasangKaca?: boolean; aksen?: boolean; penyekat?: boolean } = {}) => {
     const tembus = !!opsi.tembus;
     const gw = new THREE.Group(); gw.position.set(x, 0, z); gw.rotation.y = rotY;
     const bidang = (x0: number, x1: number, y0: number, y1: number) => {
@@ -55,7 +55,7 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang,
         for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + uv.getX(i) * (x1 - x0) + panjang / 2) / ubin.w, (y0 + uv.getY(i) * (y1 - y0)) / ubin.h);
       }
       const d = new THREE.Mesh(geo, tembus ? bahanKaca : opsi.aksen && bahanAksen ? bahanAksen : bahanDinding);
-      d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; gw.add(d);
+      d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; d.castShadow = !!opsi.penyekat && !tembus; gw.add(d);
     };
     const balok = (w: number, h: number, bx: number, by: number, m: T.Material = bahanRangkaGelap, tebal = 0.07) => {
       const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, tebal), m); o.position.set(bx, by, 0); gw.add(o);
@@ -153,8 +153,8 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang,
     dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, lubangLuar(i, 'depan', k.p), { aksen: true });
     dinding(k.p, k.t, k.x0 + k.p / 2, k.l, Math.PI, lubangLuar(i, 'belakang', k.p));
     const adaKanan = i < daftar.length - 1;
-    if (!(i > 0 && jenisSekat(i) === 'kaca')) dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, [...lubangSekat(i, false, k), ...lubangLuar(i, 'kiri', k.l)]);
+    if (!(i > 0 && jenisSekat(i) === 'kaca')) dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, [...lubangSekat(i, false, k), ...lubangLuar(i, 'kiri', k.l)], { penyekat: i > 0 });
     dinding(k.l, k.t, k.x0 + k.p, k.l / 2, -Math.PI / 2, [...(adaKanan ? lubangSekat(i + 1, true, k) : []), ...lubangLuar(i, 'kanan', k.l)],
-      { tembus: adaKanan && jenisSekat(i + 1) === 'kaca', pasangKaca: adaKanan });
+      { tembus: adaKanan && jenisSekat(i + 1) === 'kaca', pasangKaca: adaKanan, penyekat: adaKanan });
   });
 }

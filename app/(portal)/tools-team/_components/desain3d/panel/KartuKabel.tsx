@@ -1,26 +1,35 @@
 'use client';
 import { Catatan, f, Kartu, TombolSalin } from '../../bersama/ui';
-import { AOC_MAKS, HDMI_MAKS, rekapKabel } from '../inti';
+import { AOC_MAKS, HDMI_MAKS, perluKabelSinyal, rekapKabel } from '../inti';
 import type { AlatDesain } from './alat';
+
+const TEKS_TANPA_PERANGKAT = 'Belum ada perangkat ber-kabel (display, proyektor, kamera, speaker, mic, touch panel).';
+const TEKS_POWER = 'Kabel power tampil setelah opsi kabel power di menu Tampilan dinyalakan.';
 
 export function KartuKabel({ a }: { a: AlatDesain }) {
   const { benda, kabel, namaDesain } = a.K;
+  const adaRak = benda.some(b => b.jenis === 'rak');
   return (
     <>
-      {(benda.some(b => b.jenis === 'rak') || kabel.length > 0) && (
+      {(adaRak || kabel.length > 0 || perluKabelSinyal(benda)) && (
         <Kartu judul="Jalur & panjang kabel" aksi={kabel.length ? <TombolSalin teks={() => [
           `*Jadwal kabel ${namaDesain || 'desain'}*`,
           ...rekapKabel(kabel).map(r => `- ${r.kabel.nama}: ${r.tarikan} tarikan, ±${f(r.meter, 1)} m (${r.gulungan})`),
           '', ...kabel.map(k => `${k.dari} → ${k.ke}: ${k.kabel.nama} ±${f(k.panjang, 1)} m lewat ${k.lewat}`),
         ].join('\n')} /> : undefined}>
-          {!kabel.length ? <p className="text-sm text-slate-600">Belum ada perangkat ber-kabel (display, proyektor, kamera, speaker, mic, touch panel).</p> : (
+          {!adaRak && perluKabelSinyal(benda) && (
+            <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[12.5px] font-semibold text-amber-800">
+              Belum ada rack di desain, jadi jalur kabel sinyal belum dihitung dan belum masuk BOM. Tambah rack lewat Tambah → Audio &amp; kontrol.
+            </p>
+          )}
+          {!kabel.length ? <p className="text-sm text-slate-600">{adaRak ? TEKS_TANPA_PERANGKAT : TEKS_POWER}</p> : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+              <div className="kisi-nilai mb-3">
                 {rekapKabel(kabel).map(r => (
                   <div key={r.kabel.kunci} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
                     <p className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-xs" style={{ background: `#${r.kabel.warna.toString(16).padStart(6, '0')}` }} />{r.kabel.nama}</p>
                     <p className="text-lg font-extrabold text-slate-900 tabular-nums">±{f(r.meter, 0)} m</p>
-                    <Catatan>{r.tarikan} tarikan · {r.gulungan}</Catatan>
+                    <p className="text-[11px] text-slate-500">{r.tarikan} tarikan · {r.gulungan}</p>
                   </div>
                 ))}
               </div>

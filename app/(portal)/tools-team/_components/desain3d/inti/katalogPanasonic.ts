@@ -77,9 +77,30 @@ export function isiDariKatalog(p: Benda, m: ModelTdc, l: LensaTdc, rasio: RasioP
     koreksiJarak: bW || undefined, koreksiJarakTele: bT,
     poligonShift: l.pg ?? undefined, shiftAtasMaks: undefined, shiftBawahMaks: undefined, shiftHMaks: undefined,
     ...(l.pg ? { offsetTetap: undefined } : { offsetTetap: off, offsetLensa: off, geserLensaH: 0 }),
-    sumberLensa: `Panasonic TDC ${versi}`.trim(),
+    sumberLensa: `Panasonic TDC ${versi}`.trim(), modelProduk: undefined,
   };
 }
+const POLA_IDENTITAS = /^(?:Panasonic\s+)?(PT-[A-Z0-9/-]+)\s*\+\s*(.+)$/i;
+
+export function identitasPanasonic(b: Pick<Benda, 'modelProduk' | 'nama'>): { model: string; lensa: string } | null {
+  const m = (b.modelProduk ?? b.nama ?? '').trim().match(POLA_IDENTITAS);
+  return m ? { model: m[1].toUpperCase(), lensa: m[2].trim() } : null;
+}
+
+export const perluDataResmi = (b: Benda) => b.jenis === 'proyektor' && !!identitasPanasonic(b) && (!b.koefRasio || !b.resolusiProyektor);
+
+export function lengkapiDariKatalog(benda: Benda[], k: KatalogTdc): Benda[] {
+  return benda.map(b => {
+    const id = perluDataResmi(b) ? identitasPanasonic(b) : null;
+    if (!id) return b;
+    const m = k.model.find(x => x.n.toUpperCase() === id.model || x.n.toUpperCase().split('/')[0] === id.model);
+    const l = m?.l.find(x => x.n === id.lensa || x.n.split('/').includes(id.lensa));
+    if (!m || !l) return b;
+    const rasio = b.rasioProyektor && l.ar[b.rasioProyektor] ? b.rasioProyektor : m.a;
+    return { ...b, ...isiDariKatalog(b, m, l, rasio, k.versi), nama: b.nama, modelProduk: b.modelProduk };
+  });
+}
+
 export function resolusiPanel(m: ModelTdc): ResolusiProyektor | undefined {
   return m.r ?? ({ '16:10': 'WUXGA', '16:9': 'FHD', '4:3': 'XGA', '17:9': '4KDCI' } as Partial<Record<RasioProyektor, ResolusiProyektor>>)[m.a];
 }

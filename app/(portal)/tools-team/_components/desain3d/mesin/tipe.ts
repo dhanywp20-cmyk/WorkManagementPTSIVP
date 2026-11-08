@@ -15,6 +15,7 @@ export type Mesin = {
   GLTFExporter: new () => { parse: (o: T.Object3D, ok: (r: ArrayBuffer | object) => void, err: (e: unknown) => void, opsi: object) => void };
   GLTFLoader: new () => { parse: (data: ArrayBuffer, path: string, ok: (g: { scene: T.Group }) => void, err: (e: unknown) => void) => void };
   cache: Map<string, { obj: T.Object3D; tanda: string }>;
+   penghalangLabel?: T.Vector3[][];
 };
 
 export type Sisi = 'depan' | 'belakang' | 'kiri' | 'kanan';

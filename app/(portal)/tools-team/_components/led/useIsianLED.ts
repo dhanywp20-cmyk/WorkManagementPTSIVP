@@ -5,6 +5,7 @@ import { bersihkanKoneksi, KONEKSI_AWAL, type PengaturanKoneksi } from './koneks
 import { getSession } from '@/lib/auth/sesi';
 import { type Pembulatan } from '@/lib/av/hitung';
 import { bersihkanBOM, bersihkanHarga, BOM_AWAL, type Lingkungan, type PengaturanBOM } from './data';
+import { NAMA_VP_LAMA } from '@/lib/av/hitung';
 
 export function useIsianLED() {
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
@@ -53,7 +54,7 @@ export function useIsianLED() {
   type Isian = typeof isian;
   const terapkan = (v: Partial<Isian>) => {
     const pasang = <K extends keyof Isian>(k: K, setel: (x: Isian[K]) => void) => { if (k in v) setel(v[k] as Isian[K]); };
-    pasang('modeHw', setModeHw); pasang('vpPilih', setVpPilih); pasang('kartuPilih', setKartuPilih);
+    pasang('modeHw', setModeHw); pasang('vpPilih', v => setVpPilih(NAMA_VP_LAMA[v] ?? v)); pasang('kartuPilih', setKartuPilih);
     pasang('project', setProject); pasang('customer', setCustomer); pasang('tanggal', setTanggal); pasang('pembuat', setPembuat);
     pasang('mode', setMode); pasang('satuan', setSatuan); pasang('modulKode', setModulKode); pasang('lingkungan', setLingkungan);
     pasang('pitch', setPitch); pasang('cabKey', setCabKey); pasang('cabW', setCabW); pasang('cabH', setCabH); pasang('pxIn', setPxIn);

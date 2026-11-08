@@ -6,7 +6,7 @@ Data mentah dari kalkulator / simulator resmi pabrikan, disimpan supaya katalog 
 |---|---|---|
 | `panasonic-2.79/` | Panasonic Throw Distance Calculator 2.79 | `node scripts/impor-panasonic-tdc.mjs arsip/tdc/panasonic-2.79 2.79` |
 | `epson-2.7.2/` | Epson Projector Throw Distance Simulator 2.7.2 | `node scripts/impor-epson-tdc.mjs arsip/tdc/epson-2.7.2` |
-| `vivitek-2026-11-02/` | Vivitek Projection Simulator (diambil 2026-11-02) | `node scripts/impor-vivitek-tdc.mjs arsip/tdc/vivitek-2026-11-02` |
+| `vivitek-2026-11-07/` | Vivitek Projection Simulator (diambil 2026-11-07) | `node scripts/impor-vivitek-tdc.mjs arsip/tdc/vivitek-2026-11-07` |
 
 Saat diarsipkan (2026-11-02), ketiga perintah di atas menghasilkan katalog yang **sama persis byte demi byte** dengan `lib/data/*-tdc.json` yang dipakai aplikasi.
 

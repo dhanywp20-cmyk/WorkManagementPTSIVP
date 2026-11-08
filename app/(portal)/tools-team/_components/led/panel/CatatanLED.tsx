@@ -15,7 +15,7 @@ export function CatatanLED({ a }: { a: AlatLED }) {
           <li>Jarak pandang minimum (m) ≈ pitch (mm); nyaman ≈ 3 × pitch. Estimasi.</li>
           <li>Daya bawaan = {PER_M2[lingkungan].daya} W/m² maks ({lingkungan}); rata-rata = {faktorRata}% dari maks. Arus = W ÷ ({tegangan} V × PF {f(faktorDaya)}); MCB ≥ 1,25 × arus maks.</li>
           <li>Panas = daya rata-rata × 3,412 BTU/jam; 1 PK AC ≈ 9.000 BTU/jam.</li>
-          <li>Port LAN = total pixel ÷ (655.360 × 60/refresh × 8/bit).</li>
+          <li>Port LAN = total pixel ÷ kapasitas port NovaStar: 650.000 px (8-bit, 60 Hz), 325.000 px (10/12-bit); berbanding terbalik dengan refresh.</li>
           <li>Hardware dipilih yang terkecil dengan kapasitas pixel & port cukup; bila tidak ada, jumlah unit dihitung dari yang terbesar.</li>
         </ul>
       </details>

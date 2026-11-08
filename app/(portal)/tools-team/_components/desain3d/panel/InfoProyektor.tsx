@@ -1,8 +1,11 @@
 'use client';
-import { type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { BATAS_LUBER, luberLayar, masukkanKeLayar, teksLuber, type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { SusunBlending } from './SusunBlending';
+
+const TEKS_ILUMINANSI = 'Sama dengan kalkulator Panasonic: lumen dibagi luas gambar, tanpa cahaya ruangan (setara ruang gelap 0 lux). Pengaruh lampu ruangan dihitung di bagian Kontras.';
+const TEKS_TANPA_PANEL = 'Resolusi panel (native) belum diisi, jadi lumen dihitung penuh. Panel 16:10 (WUXGA) dengan sinyal 16:9 hanya memakai 90% lumen; isi resolusi panel agar sama dengan kalkulator Panasonic.';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
   const { benda, gantiBenda, gridSinar, infoBlending, kotakRuang, ruang, setGridSinar, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
@@ -76,7 +79,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     );
     return (
       <div className="rounded-lg border border-blue-200 bg-white p-2 space-y-1 text-[12px] tabular-nums">
-        <span className="block text-[11px] font-bold uppercase tracking-wider text-blue-900">Hasil (rumus kalkulator Panasonic){p.sumberLensa ? ` · ${p.sumberLensa}` : ''}</span>
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-blue-900">Hasil kalkulator lensa{p.modelProduk || p.sumberLensa ? ` · ${p.modelProduk ?? p.sumberLensa}` : ' · lensa manual'}</span>
+        {!p.modelProduk && !p.sumberLensa && <span className="block text-[11px] text-amber-700">Throw ratio & koreksi b diisi manual, belum dari data pabrikan.</span>}
         <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">Projection size</span>
         {baris('Aspect ratio', `${h.rasio}${panel ? ` (${panel})` : ''}`)}
         {baris('Diagonal', `${m(h.diagonalM)} / ${fTetap(h.diagonalInci, 2)}"`)}
@@ -84,7 +88,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">Projection distance</span>
         {baris(`L ke ${h.sasaran?.nama ?? 'dinding / lantai'}${h.cara === 'sumbu' ? ' (sepanjang sumbu)' : ''}`, m(h.L))}
         {baris('L zoom wide – tele (gambar ini)', Math.abs(h.rentangL[1] - h.rentangL[0]) > 5e-4 ? `${fTetap(h.rentangL[0])} – ${m(h.rentangL[1])}` : m(h.rentangL[0]))}
-        {baris('Throw ratio · b sekarang', `${f(h.tr, 4)} : 1 · ${fTetap(h.b, 4)} m`)}
+        {baris('Throw ratio · b sekarang', `${f(h.tr, 3)} : 1 · ${fTetap(h.b, 3)} m`)}
         {(h.vsAtas !== null || h.hs !== null) && (
           <>
             <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">
@@ -97,6 +101,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">Brightness</span>
         {baris('Projector output', `${Math.round(h.lumenGambar).toLocaleString('id-ID')} lm${h.lumenGambar < h.lumen - 0.5 ? ` (dari ${h.lumen.toLocaleString('id-ID')})` : ''}`)}
         {baris('Screen illuminance', `${Math.round(h.lux ?? 0).toLocaleString('id-ID')} lx`)}
+        <p className="pt-1 text-[11px] leading-relaxed text-slate-500">{TEKS_ILUMINANSI}</p>
+        {!p.resolusiProyektor && <p className="text-[11px] leading-relaxed font-semibold text-amber-700">{TEKS_TANPA_PANEL}</p>}
       </div>
     );
   };
@@ -148,7 +154,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
             ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
-            : <>Belum ada lampu di desain: memakai perkiraan &quot;Cahaya ruangan {ruang.cahaya ?? 'terang'}&quot; ±{LUX_PRESET[ruang.cahaya ?? 'terang']} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
+            : <>Belum ada lampu di desain: memakai {typeof ruang.luxManual === 'number' ? 'lux terukur' : <>perkiraan cahaya ruangan &quot;{ruang.cahaya ?? 'terang'}&quot;</>} ±{luxRuangDari(ruang)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
         </p>
         {kp.cukup
           ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>
@@ -203,17 +209,27 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
     const pasTinggi = Math.abs(sv) <= 0.03, pasSamping = Math.abs(sh) <= 0.05;
     const cm = (m: number) => `${f(Math.abs(m) * 100, 0)} cm`;
+    const luber = luberLayar(p, lyr), keluarLayar = luber.maks > BATAS_LUBER && !p.maskBidang;
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 space-y-2">
         {blokHasilPanasonic()}
+        {keluarLayar && (
+          <div role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-2 space-y-1.5">
+            <p className="text-[12.5px] font-bold text-amber-900">Cahaya keluar dari layar: {teksLuber(luber)}.</p>
+            {p.rasioProyektor !== lyr.rasio && <p className="text-[12px] text-amber-800">Rasio sinyal {p.rasioProyektor ?? '16:9'} tidak sama dengan layar {lyr.rasio}.</p>}
+            <button type="button" onClick={() => gantiBenda(masukkanKeLayar(p, lyr, k, ruang).benda)}
+              title="Menyamakan rasio sinyal dengan layar, mengatur jarak, zoom & lens shift; bila masih tersisa, cahaya di-mask"
+              className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-blue-700 bg-blue-700 text-white hover:bg-blue-800">Masukkan cahaya ke layar</button>
+          </div>
+        )}
         <p className="text-[12px] text-slate-700 leading-relaxed">
-          Tilt {f(tiltDari(p), 1)}°. Agar pas selebar layar {lyr.nama} ({fTetap(lyr.w)} m) perlu throw ratio <b>{f(sn.trPas ?? 0, 4)} : 1</b>.
-          {' '}L untuk gambar pas: <b>{fTetap(jMin)}{Math.abs(jMax - jMin) > 0.0005 ? `–${fTetap(jMax)}` : ''} m</b> (zoom TR {f(zMin, 4)}{zMax - zMin > 0.005 ? `–${f(zMax, 4)}` : ''}{kj ? `, b ${fTetap(kj, 4)} m` : ''}).
+          Tilt {f(tiltDari(p), 1)}°. Agar pas selebar {lyr.nama} ({fTetap(lyr.w)} m) perlu throw ratio <b>{f(sn.trPas ?? 0, 3)} : 1</b>.
+          {' '}L untuk gambar pas: <b>{fTetap(jMin)}{Math.abs(jMax - jMin) > 0.0005 ? `–${fTetap(jMax)}` : ''} m</b> (zoom TR {f(zMin, 3)}{zMax - zMin > 0.005 ? `–${f(zMax, 3)}` : ''}{kj ? `, b ${fTetap(kj, 3)} m` : ''}).
         </p>
         {blokSinarSebenarnya(lyr)}
         {!pasLebar && (zoomBisa ? (
           <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1e6) / 1e6 })}>
-            Zoom pas ke layar (TR {f(trPas, 4)} : 1)
+            Zoom pas ke layar (TR {f(trPas, 3)} : 1)
           </button>
         ) : (
           <p className="text-[12px] font-semibold text-amber-700">
@@ -230,16 +246,17 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             {pasLebar ? 'Lebar gambar pas.' : selisih > 0 ? `Gambar melebihi lebar layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}
           </li>
           <li className={pasTinggi ? 'text-emerald-700' : 'text-amber-700'}>
-            {pasTinggi ? 'Tinggi gambar pas di tengah layar.' : sv > 0
+            {pasTinggi ? 'Gambar di tengah tinggi layar.' : sv > 0
               ? `Gambar ${cm(sv)} terlalu tinggi - turunkan proyektor (drop pole) / lens shift; menunduk membuat gambar trapesium.`
               : `Gambar ${cm(sv)} terlalu rendah - naikkan proyektor / lens shift.`}
           </li>
+          {sn.tinggi > lyr.h + BATAS_LUBER && <li className="text-amber-700">Tinggi gambar {f(sn.tinggi)} m lebih besar dari layar {f(lyr.h)} m.</li>}
           {!pasSamping && <li className="text-amber-700">Gambar bergeser {cm(sh)} ke {sh > 0 ? 'kanan' : 'kiri'} - atur pan.</li>}
         </ul>
-        {!(pasLebar && pasTinggi && pasSamping && Math.abs(tiltDari(p)) <= 1) && (
+        {!(pasLebar && pasTinggi && pasSamping && Math.abs(tiltDari(p)) <= 1 && !keluarLayar) && (
           <div className="flex gap-1.5 flex-wrap">
             {!pasTinggi && <button type="button" className={tombolKecil} onClick={() => gantiBenda(tiltKeLayar(p, lyr, ruang))}>Atur tilt otomatis</button>}
-            {!pasLebar && zoomBisa && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1e6) / 1e6 })}>Pakai throw ratio {f(trPas, 4)}</button>}
+            {!pasLebar && zoomBisa && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1e6) / 1e6 })}>Pakai throw ratio {f(trPas, 3)}</button>}
             <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, lyr, k, ruang))}
               title="Proyektor lurus (tanpa keystone), jarak & zoom sesuai lensa, tinggi diatur (drop pole)">Posisikan otomatis (lurus, tanpa keystone)</button>
           </div>

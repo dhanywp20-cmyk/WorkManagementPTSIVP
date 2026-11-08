@@ -1,3 +1,4 @@
+import { MODUL_HIKVISION } from './modul-hikvision';
 
 
 export interface MasukanLED {
@@ -27,7 +28,7 @@ export interface HasilLED {
   pxPerPort: number; portLAN: number;
 }
 
-export const PX_PER_PORT_DASAR = 655_360;
+export const PX_PER_PORT_DASAR = 650_000;
 
 export const PITCH_NYATA: Readonly<Record<string, number>> = {
   '0.9': 0.9375, '1.2': 1.25, '1.5': 1.5625, '1.56': 1.5625, '1.8': 1.875, '1.87': 1.875, '1.9': 1.953125,
@@ -153,24 +154,32 @@ export const MODUL_LED: ModulLED[] = [
   { kode: 'P6', pitch: 6, w: 192, h: 192, pxW: 32, pxH: 32, tipe: 'Outdoor', guna: 'Billboard outdoor (min 6 m)' },
   { kode: 'P8', pitch: 8, w: 256, h: 128, pxW: 32, pxH: 16, tipe: 'Outdoor', guna: 'Outdoor format besar (min 8 m)' },
   { kode: 'P10', pitch: 10, w: 320, h: 160, pxW: 32, pxH: 16, tipe: 'Outdoor', guna: 'Billboard outdoor besar (min 10 m)' },
+  ...MODUL_HIKVISION,
 ];
 
-export interface Hardware { nama: string; maksPx: number; port: number; ket: string; senderBawaan: boolean }
+export interface Hardware { nama: string; maksPx: number; port: number; ket: string; senderBawaan: boolean; merek?: string }
 
 export const SENDING_CARD: Hardware[] = [
   { nama: 'MCTRL300', maksPx: 1_300_000, port: 2, senderBawaan: true, ket: 'Entry-level; 2x Gigabit LAN' },
   { nama: 'MCTRL600', maksPx: 2_300_000, port: 4, senderBawaan: true, ket: 'Entry-level enhanced; 4x Gigabit LAN' },
   { nama: 'MCTRL660', maksPx: 2_300_000, port: 4, senderBawaan: true, ket: 'Mid-range; 4x Gigabit LAN' },
-  { nama: 'MCTRL660 PRO', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Mid-range+; 6x LAN + fiber optic' },
+  { nama: 'MCTRL660 PRO', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Mid-range+; 6x LAN + 2x fiber' },
+  { nama: 'MCTRL700', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Input DVI & HDMI; 6x Gigabit LAN' },
   { nama: 'MCTRL4K', maksPx: 8_800_000, port: 16, senderBawaan: true, ket: 'Input 4K; 16x LAN + fiber' },
+  { nama: 'DS-DT20C-01HI02NO', maksPx: 1_300_000, port: 2, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 2x RJ45' },
+  { nama: 'DS-DT20C-01HI04NO', maksPx: 2_600_000, port: 4, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 4x RJ45' },
+  { nama: 'DS-DT20C-01HI06NO', maksPx: 3_900_000, port: 6, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 6x RJ45' },
 ];
 
+export const NAMA_VP_LAMA: Readonly<Record<string, string>> = { VX400: 'VX400 Pro', VX600: 'VX600 Pro', VX1000: 'VX1000 Pro' };
+
 export const VIDEO_PROCESSOR: Hardware[] = [
-  { nama: 'VX400', maksPx: 2_600_000, port: 4, senderBawaan: true, ket: 'All-in-one compact; layar kecil-menengah' },
-  { nama: 'VX600', maksPx: 3_900_000, port: 6, senderBawaan: true, ket: 'All-in-one compact; 4K; single screen' },
-  { nama: 'VX1000', maksPx: 6_500_000, port: 10, senderBawaan: true, ket: 'Mid-high all-in-one; input 4K' },
-  { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; input 4K; layar besar' },
-  { nama: 'V1260', maksPx: 7_680_000, port: 0, senderBawaan: false, ket: 'VP saja - perlu sending card terpisah' },
+  { nama: 'VX400 Pro', maksPx: 2_600_000, port: 4, senderBawaan: true, ket: 'All-in-one; 4x LAN; lebar maks 10.240 px' },
+  { nama: 'VX600 Pro', maksPx: 3_900_000, port: 6, senderBawaan: true, ket: 'All-in-one; 6x LAN; lebar maks 10.240 px' },
+  { nama: 'VX1000 Pro', maksPx: 6_500_000, port: 10, senderBawaan: true, ket: 'All-in-one; 10x LAN; lebar maks 10.240 px' },
+  { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; 16x LAN + 4x fiber; input 4K' },
+  { nama: 'V1260', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: '2-in-1; 16x LAN + 4 fiber; data distributor, tidak ada di novastar.tech' },
+  { nama: 'VX2000 Pro', maksPx: 13_000_000, port: 20, senderBawaan: true, ket: 'All-in-one; 20x LAN; lebar maks 16.384 px' },
 ];
 
 export interface Kapasitas {
@@ -199,10 +208,11 @@ export interface SaranHardware {
 export function saranHardware(totalPx: number, portLAN: number, kartu = SENDING_CARD, vp = VIDEO_PROCESSOR): SaranHardware {
   const pilih = (daftar: Hardware[]) => {
     if (!daftar.length) return null;
-    const urut = [...daftar].sort((a, b) => a.maksPx - b.maksPx);
+    const urut = daftar.filter(h => !h.merek).sort((a, b) => a.maksPx - b.maksPx);
+    if (!urut.length) return null;
     const cukup = urut.find(h => h.maksPx >= totalPx && h.port >= portLAN);
     if (cukup) return { hw: cukup, qty: 1 };
-    const besar = urut[urut.length - 1];
+    const besar = urut.find(h => h.maksPx === urut[urut.length - 1].maksPx)!;
     return { hw: besar, qty: kapasitasHardware(besar, totalPx, portLAN).qty };
   };
   return { vp: pilih(vp.filter(v => v.senderBawaan && v.port > 0)), kartu: pilih(kartu) };

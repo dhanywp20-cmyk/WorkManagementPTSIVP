@@ -1,10 +1,13 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Ikon } from '@/components/shared/Ikon';
 import type { Lembar } from '@/lib/lembar-cetak';
 import { SimpanKeProyek } from './SimpanKeProyek';
 
 export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
+
+export const angkaIsian = (n: number) => (Number.isFinite(n) ? String(Math.round(n * 1000) / 1000) : '');
 
 export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan, placeholder, onKosong }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
@@ -24,7 +27,7 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
       </span>
       <span className="relative block">
         <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}
-          value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
+          value={teks ?? angkaIsian(nilai)}
           onChange={e => {
             setTeks(e.target.value);
             const v = parseFloat(e.target.value.replace(',', '.'));
@@ -97,6 +100,8 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
 export const fTetap = (n: number, d = 3) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }) : '-');
 
+const KELAS_MENU_EKSPOR = 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-[13px] font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60';
+
 export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   teks: () => string;
    onCetak?: () => void;
@@ -104,36 +109,52 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
    simpan?: { judul: string; lembar: () => Lembar };
 }) {
   const [ok, setOk] = useState(false);
+  const [buka, setBuka] = useState(false);
   const [simpanBuka, setSimpanBuka] = useState(false);
   const [png, setPng] = useState<'siap' | 'proses' | 'gagal'>('siap');
-  return (
-    <div className="flex gap-2 flex-wrap">
-      <button type="button" onClick={async () => {
-        try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch {  }
-      }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
-        <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> <span className="sr-only sm:not-sr-only">{ok ? 'Tersalin' : 'Salin hasil'}</span>
+  const akar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!buka) return;
+    const luar = (e: MouseEvent) => { if (!akar.current?.contains(e.target as Node)) setBuka(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setBuka(false); };
+    document.addEventListener('mousedown', luar);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', luar); document.removeEventListener('keydown', esc); };
+  }, [buka]);
+  const salin = async () => {
+    try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch {  }
+    setBuka(false);
+  };
+  if (!onCetak && !onPng && !simpan) {
+    return (
+      <button type="button" onClick={salin} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
+        <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> {ok ? 'Tersalin' : 'Salin hasil'}
       </button>
-      {onCetak && (
-        <button type="button" onClick={onCetak}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
-          <Ikon nama="🖨" ukuran={14} /> <span className="sr-only sm:not-sr-only">Cetak</span>
-        </button>
-      )}
-      {onPng && (
-        <button type="button" disabled={png === 'proses'} title="Unduh lembar ini sebagai gambar PNG"
-          onClick={async () => {
-            setPng('proses');
-            try { await onPng(); setPng('siap'); } catch { setPng('gagal'); setTimeout(() => setPng('siap'), 2500); }
-          }}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border print:hidden disabled:opacity-60 ${png === 'gagal' ? 'border-rose-200 text-rose-700 bg-rose-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-          <Ikon nama="🖼" ukuran={14} /> {png === 'proses' ? '...' : png === 'gagal' ? 'Gagal' : 'PNG'}
-        </button>
-      )}
-      {simpan && (
-        <button type="button" onClick={() => setSimpanBuka(true)} title="Simpan hasil ini ke proyek Project Progress"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 print:hidden">
-          <Ikon nama="📁" ukuran={14} /> <span className="sr-only sm:not-sr-only">Simpan ke proyek</span>
-        </button>
+    );
+  }
+  return (
+    <div ref={akar} className="relative print:hidden">
+      <button type="button" aria-haspopup="menu" aria-expanded={buka} onClick={() => setBuka(b => !b)}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
+        <Ikon nama={ok ? '✅' : png === 'gagal' ? '⚠' : '⬇'} ukuran={14} />
+        {ok ? 'Tersalin' : png === 'proses' ? 'Membuat PNG...' : png === 'gagal' ? 'PNG gagal' : 'Ekspor'}
+        <span aria-hidden="true" className={`text-[9px] transition-transform ${buka ? 'rotate-180' : ''}`}>▼</span>
+      </button>
+      {buka && (
+        <div role="menu" className="absolute right-0 top-full mt-1 z-50 w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-dropdown">
+          <button type="button" role="menuitem" onClick={salin} className={KELAS_MENU_EKSPOR}><Ikon nama="📋" ukuran={15} /> Salin hasil</button>
+          {onCetak && <button type="button" role="menuitem" onClick={() => { setBuka(false); onCetak(); }} className={KELAS_MENU_EKSPOR}><Ikon nama="🖨" ukuran={15} /> Cetak</button>}
+          {onPng && (
+            <button type="button" role="menuitem" disabled={png === 'proses'} className={KELAS_MENU_EKSPOR}
+              onClick={async () => {
+                setBuka(false); setPng('proses');
+                try { await onPng(); setPng('siap'); } catch { setPng('gagal'); setTimeout(() => setPng('siap'), 2500); }
+              }}>
+              <Ikon nama="🖼" ukuran={15} /> Unduh PNG
+            </button>
+          )}
+          {simpan && <button type="button" role="menuitem" onClick={() => { setBuka(false); setSimpanBuka(true); }} className={`${KELAS_MENU_EKSPOR} text-blue-700`}><Ikon nama="📁" ukuran={15} /> Simpan ke proyek</button>}
+        </div>
       )}
       {simpan && simpanBuka && <SimpanKeProyek judulAwal={simpan.judul} ringkasan={teks} lembar={simpan.lembar} onTutup={() => setSimpanBuka(false)} />}
     </div>
@@ -141,14 +162,33 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
 }
 
 export function Catatan({ children }: { children: React.ReactNode }) {
+  const tombol = useRef<HTMLButtonElement>(null);
+  const [posisi, setPosisi] = useState<React.CSSProperties | null>(null);
+  const buka = () => {
+    const r = tombol.current?.getBoundingClientRect();
+    if (!r) return;
+    const lebar = Math.min(288, window.innerWidth * 0.8);
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - lebar - 8));
+    setPosisi(r.bottom > window.innerHeight * 0.6 ? { left, bottom: window.innerHeight - r.top + 6, width: lebar } : { left, top: r.bottom + 6, width: lebar });
+  };
+  const tutup = () => setPosisi(null);
+  useEffect(() => {
+    if (!posisi) return;
+    window.addEventListener('scroll', tutup, true);
+    window.addEventListener('resize', tutup);
+    return () => { window.removeEventListener('scroll', tutup, true); window.removeEventListener('resize', tutup); };
+  }, [posisi]);
   return (
-    <span className="group relative inline-flex align-middle mt-2 print:hidden">
-      <button type="button" aria-label="Keterangan"
+    <span className="relative inline-flex align-middle mt-2 print:hidden" onMouseEnter={buka} onMouseLeave={tutup}>
+      <button ref={tombol} type="button" aria-label="Keterangan" aria-expanded={!!posisi} onFocus={buka} onBlur={tutup} onClick={buka}
         className="w-5 h-5 grid place-items-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:border-slate-400">i</button>
-      <span role="tooltip"
-        className="pointer-events-none absolute left-0 top-6 z-40 hidden group-hover:block group-focus-within:block w-[min(18rem,80vw)] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
-        {children}
-      </span>
+      {posisi && createPortal(
+        <span role="tooltip" style={{ position: 'fixed', ...posisi }}
+          className="pointer-events-none z-[100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
+          {children}
+        </span>,
+        document.body,
+      )}
     </span>
   );
 }

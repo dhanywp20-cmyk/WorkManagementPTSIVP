@@ -163,7 +163,7 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
 
         <div className="space-y-4 min-w-0">
           <DiagramBlending b={b} modeTarget={modeTarget} />
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
+          <div className="kisi-nilai kisi-nilai-rapat">
             <Nilai label="Proyektor" nilai={b.jumlah} ket={`${b.kolom} kolom × ${b.baris} baris`} />
             <Nilai label="Resolusi kanvas" nilai={px(b.kanvasX, b.kanvasY)} ket={`${teksRasio(b.kanvasX, b.kanvasY)} · output media server`} />
             {modeTarget && (

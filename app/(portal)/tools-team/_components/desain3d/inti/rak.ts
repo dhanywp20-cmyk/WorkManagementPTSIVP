@@ -19,6 +19,19 @@ export function susunRak(b: Pick<Benda, 'rakU' | 'isiRak'>) {
   return { U, posisi, terpakai: Math.min(U, terpakai), sisa: Math.max(0, atas), lewat: Math.max(0, -atas) };
 }
 
+type BarisIsi = [PerangkatRak['jenis'], number, string?];
+const ISI_TEMPLATE: Record<'meeting' | 'control-a' | 'control-b' | 'auditorium' | 'kelas' | 'mapping', BarisIsi[]> = {
+  meeting: [['patch', 1], ['kabel', 1], ['switch', 1, 'Network switch PoE'], ['matrix', 2], ['server', 2, 'Videowall controller'], ['codec', 1], ['dsp', 1], ['amp', 2], ['pdu', 1], ['ups', 3]],
+  'control-a': [['patch', 1], ['kabel', 1], ['switch', 1], ['matrix', 4, 'Matrix switcher KVM'], ['server', 4, 'Videowall controller'], ['pdu', 1], ['ups', 3]],
+  'control-b': [['patch', 1], ['kabel', 1], ['switch', 1], ['server', 2, 'Server VMS / CCTV'], ['server', 2, 'Server VMS / CCTV'], ['nas', 4], ['pdu', 1], ['ups', 3]],
+  auditorium: [['patch', 1], ['kabel', 1], ['switch', 1], ['matrix', 2, 'LED video processor'], ['matrix', 2], ['dsp', 1], ['shelf', 1, 'Receiver wireless mic'], ['server', 2, 'PC presentasi'], ['pdu', 1], ['ups', 3]],
+  kelas: [['patch', 1], ['switch', 1, 'Network switch PoE'], ['server', 2, 'Mini PC / recorder kuliah'], ['dsp', 1], ['amp', 2], ['pdu', 1], ['ups', 3]],
+  mapping: [['patch', 1], ['switch', 1], ['server', 4, 'Media server'], ['pdu', 1], ['ups', 3]],
+};
+export const isiRakTemplate = (kunci: keyof typeof ISI_TEMPLATE): Pick<Benda, 'isiRak' | 'isiSaran'> => ({
+  isiRak: ISI_TEMPLATE[kunci].map(([jenis, u, nama]) => ({ jenis, u, nama: nama ?? PERANGKAT_RAK[jenis].label })), isiSaran: true,
+});
+
 const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 export function svgElevasiRak(b: Pick<Benda, 'rakU' | 'isiRak' | 'nama'>, judul = true): string {

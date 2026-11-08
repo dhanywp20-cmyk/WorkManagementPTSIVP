@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, cakupanProyektor, daftarRuang, KATEGORI_RUANG, permukaanBenda, permukaanPersegi, permukaanRuang, proyektorKeLayar,
+  bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, lengkapiDariKatalog, perluDataResmi, type KatalogTdc, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
   templateRuang, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
@@ -119,6 +119,70 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
   cek('putar gizmo > 90°: sudut dibaca dari arah muka benda (quaternion), bukan rotation.y',
     /new THREE\.Vector3\(0, 0, 1\)\.applyQuaternion\(o\.quaternion\)/.test(mesin) && !/o\.rotation\.y \* 180/.test(mesin));
   cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
+}
+
+console.log('\nCahaya keluar layar');
+{
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const layar = bendaBaru('layar', k, { diag: 120, rasio: '16:9' });
+  const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon', rasioProyektor: '16:10', trMin: 1.2, trMax: 2, throwRatio: 1.5 });
+  const pas = proyektorKeLayar(p0, layar, k, r);
+  const lb = luberLayar(pas, layar);
+  cek('sinyal 16:10 di layar 16:9: cahaya keluar ±17 cm total atas-bawah', Math.abs(lb.atas + lb.bawah - (layar.w * 0.625 - layar.h)) < 0.02, JSON.stringify(lb));
+  cek('notifikasi muncul di Cek ruang & proyeksi', cekRuangGerak([layar, pas], r).some(c => c.kode === 'proyeksi' && /cahaya keluar/.test(c.pesan)));
+  const hasil = masukkanKeLayar(pas, layar, k, r);
+  cek('Masukkan cahaya: rasio sinyal mengikuti layar, tidak ada cahaya keluar, tanpa mask', hasil.benda.rasioProyektor === '16:9' && hasil.sisa.maks <= 0.01 && !hasil.dimask, JSON.stringify(hasil.sisa));
+  cek('setelah dimasukkan: notifikasi hilang', !cekRuangGerak([layar, hasil.benda], r).some(c => c.kode === 'proyeksi'));
+  const lebar = sinarProyektor(hasil.benda, [layar, hasil.benda], r);
+  cek('gambar tetap menutup layar', Math.abs(lebar.lebar - layar.w) < 0.02 && Math.abs(lebar.tinggi - layar.h) < 0.02, `${lebar.lebar} ${lebar.tinggi}`);
+  const kaku = { ...p0, trMin: 1.2, trMax: 1.2, throwRatio: 1.2 };
+  const dipaksa = masukkanKeLayar({ ...kaku, x: 4, z: 5.5, rasioProyektor: '4:3', koefRasio: { '4:3': [1.2, 1.2, 0, 0] } }, layar, k, r);
+  cek('rasio layar tidak tersedia: gambar dikecilkan masuk layar atau di-mask', dipaksa.sisa.maks <= 0.01 || dipaksa.benda.maskBidang === true, JSON.stringify(dipaksa.sisa));
+  cek('mask aktif: tidak diberi notifikasi lagi', !cekRuangGerak([layar, { ...pas, maskBidang: true }], r).some(c => c.kode === 'proyeksi'));
+}
+
+console.log('\nUkuran gambar = ukuran layar setelah Posisikan otomatis');
+{
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const ok = [100, 120, 135, 150].every(diag => {
+    const layar = bendaBaru('layar', k, { diag, rasio: '16:9' });
+    const p = proyektorKeLayar(bendaBaru('proyektor', k, { pasangProyektor: 'plafon', trMin: 1.09, trMax: 1.77, throwRatio: 1.4, koreksiJarak: 0.03 }), layar, k, r);
+    const s = sinarProyektor(p, [layar, p], r);
+    return Math.abs(s.lebar - layar.w) < 0.001 && Math.abs(s.tinggi - layar.h) < 0.001;
+  });
+  cek('lebar & tinggi gambar sama dengan layar (selisih < 1 mm) untuk 100", 120", 135", 150"', ok);
+}
+
+console.log('\nIluminansi sama dengan kalkulator Panasonic (PT-VMZ61 + Supplied lens, 16:9)');
+{
+  const data = JSON.parse(readFileSync('lib/data/panasonic-tdc.json', 'utf8')) as { model: ModelTdc[] };
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const m = data.model.find(x => x.n === 'PT-VMZ61')!, l = m.l.find(x => x.n === 'Supplied lens')!;
+  const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' });
+  const p = { ...p0, ...isiDariKatalog(p0, m, l, '16:9', '2.79') };
+  const h = hasilPadaJarak(p, 3);
+  cek('projector output 16:9 = 5.580 lm (90% dari 6.200 lm panel 16:10), sama dengan kalkulator resmi', Math.round(h.lumenGambar) === 5580);
+  const resmi = 5580 / (2.741 * 1.542);
+  cek('gambar 2,741 × 1,542 m: 1.320 lx, sama dengan kalkulator resmi', Math.round(resmi) === 1320 && Math.abs(5580 / (h.lebar * h.tinggi) - h.lux!) < 1);
+}
+
+console.log('\nDesain tersimpan lama dilengkapi data resmi (Immersive ET-ELU20 16:9)');
+{
+  const katalog = JSON.parse(readFileSync('lib/data/panasonic-tdc.json', 'utf8')) as KatalogTdc;
+  const r: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', r2: null };
+  const lama: Benda = { ...bendaBaru('proyektor', daftarRuang(r)[0], { pasangProyektor: 'plafon' }), nama: 'PT-MZ882 dinding kiri 3', modelProduk: 'Panasonic PT-MZ882 + ET-ELU20',
+    rasioProyektor: '16:9', throwRatio: 0.304, trMin: 0.304, trMax: 0.3277, koreksiJarak: 0.029388, lumen: 8200, resolusiProyektor: undefined, koefRasio: undefined };
+  const [baru] = lengkapiDariKatalog([lama], katalog);
+  const h = hasilPadaJarak(baru, 1.771);
+  cek('data resmi terisi: panel WUXGA, koefisien per rasio, nama tetap', baru.resolusiProyektor === 'WUXGA' && !!baru.koefRasio && baru.nama === lama.nama);
+  cek('hasil sama dengan kalkulator: L 1,771 m -> 5,323 × 2,994 m, 7.380 lm, 463 lx',
+    Math.abs(h.lebar - 5.323) < 0.002 && Math.abs(h.tinggi - 2.994) < 0.002 && Math.round(h.lumenGambar) === 7380 && Math.round(h.lux!) === 463, `${h.lebar} ${h.tinggi} ${h.lumenGambar} ${h.lux}`);
+  cek('proyektor dengan data lengkap tidak diubah', lengkapiDariKatalog([baru], katalog)[0] === baru);
+  const tpl = templateRuang('immersive').benda.find(b => b.jenis === 'proyektor')!;
+  cek('template baru sudah membawa koefisien resmi, tidak perlu dilengkapi', !!tpl.koefRasio && !perluDataResmi(tpl));
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

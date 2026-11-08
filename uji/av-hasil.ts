@@ -47,5 +47,8 @@ cek('detail proyek menampilkan Hitungan AV', /<HitunganAV proyekId=\{proyekId\}/
 const sql = readFileSync('supabase/migrations/055_tools_av_hasil.sql', 'utf8');
 cek('055: terkunci dari peramban & ikut terhapus bersama proyek', /REVOKE ALL ON public\.tools_av_hasil FROM PUBLIC, anon, authenticated/.test(sql) && /REFERENCES public\.checklist_proyek\(id\) ON DELETE CASCADE/.test(sql));
 
+const uiBersama = readFileSync('app/(portal)/tools-team/_components/bersama/ui.tsx', 'utf8');
+cek('kolom angka menampilkan maksimal 3 desimal tanpa mengubah nilai tersimpan', /value=\{teks \?\? angkaIsian\(nilai\)\}/.test(uiBersama) && /Math\.round\(n \* 1000\) \/ 1000/.test(uiBersama) && !/onBlur=\{\(\) => \{?[^}]*onUbah/.test(uiBersama));
+
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

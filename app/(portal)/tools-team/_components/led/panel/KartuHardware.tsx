@@ -9,7 +9,7 @@ export function KartuHardware({ a }: { a: AlatLED }) {
   const { daftarKartu, daftarVP, dayaLED, h, hDaya, hw, kartuM, lingkungan, modeHw, pindah, refLED, setBukaRef, setKartuPilih, setModeHw, setVpPilih, tKon, vpAio, vpM, vpPilih, vpSaja } = a.K;
   return (
     <>
-      <Kartu judul="Hardware Novastar (per screen)" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
+      <Kartu judul="Hardware controller (per screen)" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
         <div className="space-y-3">
           <Segmen label="Pemilihan" nilai={modeHw} onUbah={setModeHw}
             opsi={[{ v: 'otomatis', l: 'Otomatis (terkecil yang cukup)' }, { v: 'manual', l: 'Pilih model' }]} />

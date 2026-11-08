@@ -40,7 +40,7 @@ export function PanelPasang({ lebarM, tinggiM }: { lebarM: number; tinggiM: numb
           <Angka label="Penonton terdekat" nilai={terdekat} onUbah={v => v > 0 && setTerdekat(v)} satuan="m" />
         </div>
         <div className="space-y-2.5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Tepi atas gambar" nilai={f(atas)} satuan="m" nada={sisaPlafon < 0.05 ? 'buruk' : sisaPlafon < 0.2 ? 'awas' : 'baik'}
               ket={sisaPlafon < 0.05 ? 'melewati plafon - turunkan / kecilkan' : `sisa ${f(sisaPlafon)} m ke plafon`} />
             <Nilai label="Sudut penonton terdekat" nilai={f(sudut, 1)} satuan="°" nada={sudut > 35 ? 'buruk' : sudut > 30 ? 'awas' : 'baik'} ket="batas nyaman 30°" />

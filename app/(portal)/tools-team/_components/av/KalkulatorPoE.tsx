@@ -14,7 +14,8 @@ const AWAL: PerangkatPoE[] = [
   { nama: 'Wireless AP', watt: 20, jumlah: 1, kelas: 'at' },
 ];
 const namaKelas = (k: KodePoE) => KELAS_POE.find(x => x.v === k)!.l;
-const CATATAN = 'Watt = konsumsi maksimum perangkat dari datasheet (bukan kelasnya). Anggaran PoE switch ≥ total + 20%. Tiap port harus mendukung kelas perangkatnya (af 15,4 W · at 30 W · bt 60/90 W di sisi switch); kabel ≤ 100 m.';
+const CATATAN = 'Watt = konsumsi maksimum perangkat dari datasheet. Batas daya di perangkat: af 12,95 W, at 25,5 W, bt tipe 3 51 W, bt tipe 4 71,3 W. '
+  + 'Anggaran PoE switch memakai yang terbesar antara total + 20% dan reservasi daya per kelas port (15,4 / 30 / 60 / 90 W), karena switch memesan daya sesuai kelas.';
 
 export function KalkulatorPoE() {
   const [daftar, setDaftar] = useState<PerangkatPoE[]>(AWAL);
@@ -27,7 +28,7 @@ export function KalkulatorPoE() {
   ].join('\n');
   const lembar = () => lembarAV('Kebutuhan PoE',
     [['Jumlah perangkat', String(h.port)]],
-    [['Total daya', `${f(h.totalW, 1)} W`], ['Anggaran PoE minimum (+20%)', `${f(h.butuhW, 0)} W`, true], ['Switch saran', `${h.portSwitch ?? '> 48'} port · PoE ${h.anggaranW ?? '> 740'} W`, true],
+    [['Total daya', `${f(h.totalW, 1)} W`], ['Anggaran PoE minimum', `${f(h.butuhW, 0)} W`, true], ['Switch saran', `${h.portSwitch ?? '> 48'} port · PoE ${h.anggaranW ?? '> 740'} W`, true],
       ['Kelas tertinggi', h.kelasTertinggi ? namaKelas(h.kelasTertinggi) : '-']],
     CATATAN,
     [{ judul: 'Daftar perangkat', jenis: 'tabel', kepala: ['Perangkat', 'Watt', 'Jumlah', 'Kelas port', 'Subtotal'], rataKanan: [1, 2, 4],
@@ -37,16 +38,16 @@ export function KalkulatorPoE() {
       <Kartu judul="Perangkat PoE">
         <div className="space-y-2">
           {daftar.map((d, i) => {
-            const lewat = d.watt > KELAS_POE.find(k => k.v === d.kelas)!.w;
+            const lewat = d.watt > KELAS_POE.find(k => k.v === d.kelas)!.pd;
             return (
-              <div key={i} className="grid grid-cols-[minmax(0,1fr)_64px_52px_minmax(0,150px)_32px] gap-1.5 items-end">
+              <div key={i} className="grid grid-cols-[minmax(0,1fr)_68px_56px_minmax(0,210px)_32px] gap-1.5 items-end">
                 <label className="block min-w-0">
                   {i === 0 && <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Perangkat</span>}
                   <input value={d.nama} onChange={e => ubah(i, { nama: e.target.value })} className={`w-full rounded-xl border px-3 py-2 text-base sm:text-sm ${lewat ? 'border-rose-400' : 'border-slate-200'}`} />
                 </label>
                 <Angka label={i === 0 ? 'Watt' : ''} nilai={d.watt} onUbah={v => ubah(i, { watt: v })} />
                 <Angka label={i === 0 ? 'Jml' : ''} nilai={d.jumlah} onUbah={v => ubah(i, { jumlah: Math.round(v) })} step={1} />
-                <Pilih label={i === 0 ? 'Kelas port' : ''} nilai={d.kelas} onUbah={v => ubah(i, { kelas: v })} opsi={KELAS_POE.map(k => ({ v: k.v as KodePoE, l: `${k.l} ${k.w} W` }))} />
+                <Pilih label={i === 0 ? 'Kelas port' : ''} nilai={d.kelas} onUbah={v => ubah(i, { kelas: v })} opsi={KELAS_POE.map(k => ({ v: k.v as KodePoE, l: `${k.l} · ${k.pd} W` }))} />
                 <button type="button" aria-label={`Hapus ${d.nama}`} onClick={() => setDaftar(a => a.filter((_, j) => j !== i))}
                   className="h-[38px] rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-700">✕</button>
               </div>
@@ -61,10 +62,10 @@ export function KalkulatorPoE() {
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Kebutuhan PoE')} />}>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Port PoE" nilai={h.port} ket={`switch ${h.portSwitch ?? '> 48'} port`} />
           <Nilai label="Total daya" nilai={f(h.totalW, 1)} satuan="W" />
-          <Nilai label="Anggaran PoE" nilai={h.anggaranW ?? '> 740'} satuan="W" ket={`min ${f(h.butuhW, 0)} W (+20%)`} nada={h.anggaranW ? 'baik' : 'awas'} />
+          <Nilai label="Anggaran PoE" nilai={h.anggaranW ?? '> 740'} satuan="W" ket={`min ${f(h.butuhW, 0)} W`} nada={h.anggaranW ? 'baik' : 'awas'} />
           <Nilai label="Kelas tertinggi" nilai={h.kelasTertinggi ? namaKelas(h.kelasTertinggi) : '-'} />
         </div>
         {h.melebihi.length > 0 && (

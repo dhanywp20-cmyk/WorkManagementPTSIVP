@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth/sesi';
@@ -13,8 +13,9 @@ import { gambarLabel } from '../mesin/label';
 import { posisiPas } from '../mesin/kamera';
 
 export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamera>, 'fokusKotak'>) {
-  const { analisis, benda, duaRuang, faktorCustom, infoBlending, jenisPandang, kabel, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, tampilBlending, targetKontras } = K;
+  const { analisis, benda, duaRuang, faktorCustom, infoBlending, jenisPandang, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, tampilBlending, targetKontras } = K;
   const { fokusKotak } = dep;
+  const kabelLengkap = () => jalurKabel(benda, ruang, { power: true });
   const fotoKanvas = (arah: 'sekarang' | Sudut, skala = 2): HTMLCanvasElement | null => {
     const m = mesin.current; if (!m) return null;
     const posLama = m.kamera.position.clone(), targetLama = m.orbit.target.clone(), rasioLama = m.renderer.getPixelRatio();
@@ -95,7 +96,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
       return (d.length ? `menjangkau ${fm(Math.min(...d), 1)}–${fm(Math.max(...d), 1)} m` : 'sumbu belum turun ke penonton') + (n ? ` · ${n} modul ke dinding/plafon` : '');
     };
     const baris = daftarBenda(benda);
-    const jumlahItem = baris.reduce((n, r) => n + r.jumlah, 0);
+    const kabel = kabelLengkap();
     const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
@@ -125,8 +126,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             ...rekapKabel(kabel).map(r => ['TOTAL', '', r.kabel.nama, `±${fm(r.meter)} m`, r.gulungan])] }] : []),
         ...(benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
           html: `<div class="gambar dua">${benda.filter(b => b.jenis === 'rak').map(b => `<div>${svgElevasiRak(b)}</div>`).join('')}</div>` }] : []),
-        { judul: `Daftar perangkat & furnitur (${jumlahItem} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
-          isi: baris.map(r => [r.kategori, r.item, r.ukuran, String(r.jumlah)]) },
+        { judul: `Daftar perangkat & furnitur (${baris.length} jenis)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah', 'Catatan'], rataKanan: [3],
+          isi: baris.map(r => [r.kategori, r.item, r.ukuran, `${r.jumlah} ${r.satuan}`, r.catatan]) },
         ...(analisis.length ? [{
           judul: `Analisis jarak pandang · konten ${label}`, jenis: 'tabel' as const,
           kepala: ['Display', ...(duaRuang ? ['Ruang'] : []), 'Ukuran gambar', 'Penonton terjauh', 'Tinggi minimal', 'Sudut maks', 'Status'],
@@ -138,7 +139,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
           rataKanan: [3, 5, 6],
-          isi: proyektor.map(({ p, sn }) => [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
+          isi: proyektor.map(({ p, sn }) => [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
             sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
@@ -193,7 +194,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   const pngLembar = () => unduhLembarPNG(lembar3D(), namaGambar('lembar'));
   const unduhBomExcel = () => {
     setMenuPng(false);
-    const bom = bomDesain(benda, kabel);
+    const bom = bomDesain(benda, kabelLengkap());
     loadXLSX(XLSX => {
       const rows: (string | number)[][] = [
         [`BOM - ${namaDesain || 'Desain AV'}`], [`Desain 3D Ruang AV · ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`], [],
@@ -208,7 +209,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
       XLSX.writeFile(wb, `${namaGambar('BOM')}.xlsx`);
     }, () => setGalat('Excel gagal dibuat - periksa koneksi.'));
   };
-  const draftChecklist = (judul: string) => checklistDariBom(judul, bomDesain(benda, kabel));
+  const draftChecklist = (judul: string) => checklistDariBom(judul, bomDesain(benda, kabelLengkap()));
   const ringkasan = () => [
     `*Desain ruang: ${namaDesain}*`,
     ...kotakRuang.map((k, i) => `Ruang ${i + 1}: ${f(k.p)} × ${f(k.l)} m, plafon ${f(k.t)} m`),

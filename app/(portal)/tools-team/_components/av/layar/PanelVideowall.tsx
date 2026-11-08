@@ -25,7 +25,7 @@ export function PanelVideowall({ lebarM, tinggiM }: { lebarM: number; tinggiM: n
     <Kartu judul="Alternatif videowall LCD" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Videowall LCD')} />}>
       <div className="grid gap-3 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)] items-start">
         <Pilih label="Panel" nilai={String(Math.min(i, daftar.length - 1))} onUbah={v => setI(Number(v))} opsi={daftar.map((p, j) => ({ v: String(j), l: p.nama }))} />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Susunan" nilai={`${vw.kolom} × ${vw.baris}`} ket={`${vw.jumlah} panel`} />
           <Nilai label="Ukuran" nilai={`${f(vw.lebarM)} × ${f(vw.tinggiM)}`} satuan="m" />
           <Nilai label="Diagonal" nilai={f(vw.diagonalInci, 0)} satuan="inci" />

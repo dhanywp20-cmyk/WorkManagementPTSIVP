@@ -50,7 +50,8 @@ function kebutuhan(b: Benda, semua: Benda[]): Butuh[] {
     case 'led': return ['data'];
     case 'proyektor': return ['video', 'data'];
     case 'kamera': return ['video', 'data'];
-    case 'speaker': case 'speaker-plafon': return ['speaker'];
+    case 'speaker': return b.tipeSpeaker === 'kolom' || b.tipeSpeaker === 'linearray' ? ['audio'] : ['speaker'];
+    case 'speaker-plafon': return ['speaker'];
     case 'mic': return ['audio'];
     case 'touchpanel': return ['data'];
     case 'perangkat': return b.tipePerangkat === 'pc' ? ['video', 'data'] : [];
@@ -126,14 +127,15 @@ function daftarKabel(b: Benda, semua: Benda[]): ((panjang: number) => JenisKabel
   return kebutuhan(b, semua).map(k => (panjang: number) => pilihKabel(k, panjang));
 }
 
+export const perluKabelSinyal = (benda: Benda[]) => benda.some(b => daftarKabel(b, benda).length > 0);
+
 export function jalurKabel(benda: Benda[], ruang: Ruang, opsi: { power?: boolean } = {}): JalurKabel[] {
   const rak = benda.filter(b => b.jenis === 'rak');
-  if (!rak.length) return [];
   const kotak = daftarRuang(ruang);
   const hasil: JalurKabel[] = [];
   let urut = 0;
   for (const b of benda) {
-    const butuh = daftarKabel(b, benda);
+    const butuh = rak.length ? daftarKabel(b, benda) : [];
     const ri = ruangDari(ruang, b.x);
     if (butuh.length) {
       const sama = rak.filter(r => ruangDari(ruang, r.x) === ri);

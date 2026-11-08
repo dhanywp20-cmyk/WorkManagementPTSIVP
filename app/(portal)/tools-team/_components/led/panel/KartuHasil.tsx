@@ -42,14 +42,14 @@ export function KartuHasil({ a }: { a: AlatLED }) {
             )}
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Resolusi" nilai={`${h.resX} × ${h.resY}`} ket={`${f(h.totalPx / 1e6, 2)} MP · per ${namaUnit} ${h.pxCabX}×${h.pxCabY}`} nada={lewat4K ? 'awas' : undefined} />
           <Nilai label="Rasio" nilai={h.rasioTerdekat} ket={`tepat ${h.rasio}`} />
           <Nilai label="Luas / diagonal" nilai={f(h.luasM2)} satuan="m²" ket={`${f(h.diagonalInci, 0)} inci`} />
           <Nilai label="Jarak pandang min" nilai={f(h.jarakMinM, 1)} satuan="m" ket={`ideal ±${f(h.jarakIdealM, 1)} m (estimasi)`} />
           <Nilai label="Daya maks" nilai={f(h.dayaMaksW / 1000)} satuan="kW" ket={`rata-rata ${f(h.dayaRataW / 1000)} kW`} />
           <Nilai label={`Arus maks @${tegangan}V`} nilai={f(h.arusMaksA, 1)} satuan="A"
-            ket={`MCB ${h.mcbSaranA} A${h.arusMaksA > 32 ? ' · pertimbangkan 3 fase' : ''}`} nada={h.arusMaksA > 63 ? 'awas' : undefined} />
+            ket={h.arusMaksA > 32 ? `3 fase: ±${f(h.arusMaksA / 3, 1)} A/fase · 1 fase MCB ${h.mcbSaranA} A` : `MCB ${h.mcbSaranA} A`} nada={h.arusMaksA > 63 ? 'awas' : undefined} />
           <Nilai label="Panas (rata-rata)" nilai={f(h.panasBTU, 0)} satuan="BTU/h" ket={`±${f(h.panasBTU / 9000, 1)} PK AC`} />
           <Nilai label="Berat" nilai={f(h.beratKg, 0)} satuan="kg" ket="belum termasuk rangka" />
           <Nilai label="Port LAN" nilai={h.portLAN} ket={`±${f(h.pxPerPort / 1000, 0)} rb px/port`} />
@@ -62,7 +62,7 @@ export function KartuHasil({ a }: { a: AlatLED }) {
         {n > 1 && (
           <div className="mt-4 pt-3 border-t border-slate-100">
             <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-2">Total {n} screen</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="kisi-nilai">
               <Nilai label={`Total ${namaUnit}`} nilai={h.jumlahCab * n} />
               <Nilai label="Total luas" nilai={f(h.luasM2 * n)} satuan="m²" />
               <Nilai label="Total daya maks" nilai={f((h.dayaMaksW * n) / 1000)} satuan="kW" />

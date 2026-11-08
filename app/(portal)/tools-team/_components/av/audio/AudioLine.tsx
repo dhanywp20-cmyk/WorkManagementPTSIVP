@@ -60,7 +60,7 @@ export function AudioLine() {
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, `Line ${v}V`)} />}>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Total tap" nilai={f(h.totalW, 0)} satuan="W" ket={`${h.jumlahSpeaker} speaker`} />
           <Nilai label="Amplifier saran" nilai={h.ampW ?? '> 2000'} satuan="W" ket={`min ${f(h.butuhW, 0)} W (+25%)`} nada={h.ampW ? 'baik' : 'awas'} />
           <Nilai label="Impedansi line" nilai={f(h.bebanOhm, 1)} satuan="Ω" />

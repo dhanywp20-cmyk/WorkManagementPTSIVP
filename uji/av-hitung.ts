@@ -1,7 +1,7 @@
 import {
   hitungKoneksi, hitungDayaLED, bomLED, totalPenawaran, cadangan, unitPerRC, RECEIVING_CARD, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
-  jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
+  jarakLempar, bandwidthGbps, kebutuhanAntarmuka, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
@@ -27,17 +27,22 @@ console.log('\n1. LED Videotron');
   const hPf = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 8, tegangan: 220, faktorDaya: 0.95 });
   cek('PF 0,95: arus ~34,4 A, MCB tetap 50 A', dekat(hPf.arusMaksA, 34.45) && hPf.mcbSaranA === 50, `${hPf.arusMaksA} ${hPf.mcbSaranA}`);
   const h10 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 10, tegangan: 220 });
-  cek('10-bit: kapasitas port separuh 8-bit (327.680 px) -> 6 port', h10.pxPerPort === 327_680 && h10.portLAN === 6, `${h10.pxPerPort} ${h10.portLAN}`);
-  cek('12-bit sama dengan 10-bit', pxPerPortPada(60, 12) === 327_680);
+  cek('10-bit: kapasitas port sesuai NovaStar (325.000 px) -> 6 port', h10.pxPerPort === 325_000 && h10.portLAN === 6, `${h10.pxPerPort} ${h10.portLAN}`);
+  cek('12-bit sama dengan 10-bit', pxPerPortPada(60, 12) === 325_000);
   cek('port dihitung per cabinet utuh: 13 cabinet besar -> 4 port', portDibutuhkan(13, 384 * 384, 655_360) === 4, String(portDibutuhkan(13, 384 * 384, 655_360)));
   cek('cabinet melebihi kapasitas 1 port memakai beberapa port', portDibutuhkan(3, 800_000, 655_360) === 6);
   const s = saranHardware(h.totalPx, h.portLAN);
-  cek('1.92 MP/3 port -> MCTRL600 & VX400', s.kartu?.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400', `${s.kartu?.hw.nama} ${s.vp?.hw.nama}`);
+  cek('1.92 MP/3 port -> MCTRL600 & VX400 Pro', s.kartu?.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400 Pro', `${s.kartu?.hw.nama} ${s.vp?.hw.nama}`);
   const besar = saranHardware(20_000_000, 31);
-  cek('20 MP melebihi 1 unit -> 2x UHD Jr / 3x MCTRL4K', besar.vp?.hw.nama === 'NovaPro UHD Jr' && besar.vp.qty === 2 && besar.kartu?.qty === 3, `${besar.vp?.qty} ${besar.kartu?.qty}`);
+  cek('20 MP melebihi 1 unit -> 2x VX2000 Pro / 3x MCTRL4K', besar.vp?.hw.nama === 'VX2000 Pro' && besar.vp.qty === 2 && besar.kartu?.qty === 3, `${besar.vp?.qty} ${besar.kartu?.qty}`);
+  const hikP25 = MODUL_LED.find(x => x.model === 'DS-D41Q25CA-1PH')!;
+  cek('katalog Hikvision: P2.5 indoor 320×160 mm, 128×64 px', hikP25.brand === 'Hikvision' && hikP25.w === 320 && hikP25.pxW === 128 && hikP25.pxH === 64);
+  const luarPotong = MODUL_LED.find(x => x.model === 'DS-D4360CA-1PHT')!;
+  cek('katalog Hikvision: edge-cut P6.6 160×160 mm, 24×24 px', luarPotong.w === 160 && luarPotong.pxW === 24);
+  cek('pixel tiap modul Hikvision konsisten dengan pitch (selisih di bawah 2%)', MODUL_LED.filter(x => x.brand === 'Hikvision').every(x => Math.abs(x.w / x.pxW - x.pitch) / x.pitch < 0.02));
   const v1260 = VIDEO_PROCESSOR.find(v => v.nama === 'V1260')!;
   const k = kapasitasHardware(v1260, 9_000_000, 14);
-  cek('V1260 (tanpa port) dihitung dari pixel saja: 9 MP -> 2 unit', k.qty === 2 && k.pembatas === 'pixel' && k.pakaiPort === 0, JSON.stringify(k));
+  cek('V1260 sesuai spesifikasi: 10,4 MP & 16 port, 9 MP / 14 port cukup 1 unit', v1260.senderBawaan && k.qty === 1 && k.pembatas === null, JSON.stringify(k));
   const m300 = kapasitasHardware(SENDING_CARD[0], 1_000_000, 3);
   cek('MCTRL300 1 MP / 3 port -> 2 kartu karena port', m300.qty === 2 && m300.pembatas === 'port');
 }
@@ -67,7 +72,6 @@ console.log('\n2. Layar & jarak pandang');
 console.log('\n3. Proyektor');
 {
   cek('throw 1.5 x lebar 3 m = 4.5 m', jarakLempar(1.5, 3) === 4.5);
-  cek('lumen naik saat ruangan lebih terang', lumenDibutuhkan(4, 300) > lumenDibutuhkan(4, 100));
 }
 
 console.log('\n4. Bandwidth sinyal');
@@ -77,7 +81,15 @@ console.log('\n4. Bandwidth sinyal');
   const uhd = bandwidthGbps(3840, 2160, 60, 8, '4:4:4');
   cek('4K60 4:4:4 8-bit ~ 14.26 Gbps (pas untuk HDMI 2.0)', dekat(uhd.dataGbps, 14.256) && uhd.dataGbps <= 14.4, `${uhd.dataGbps}`);
   const uhd420 = bandwidthGbps(3840, 2160, 60, 8, '4:2:0');
-  cek('4K60 4:2:0 muat HDBaseT 10.2', uhd420.dataGbps <= 10.2, `${uhd420.dataGbps}`);
+  cek('4K60 4:2:0 8-bit muat HDBaseT 2.0 (payload 8,16)', uhd420.dataGbps <= 8.16, `${uhd420.dataGbps}`);
+  const uhd422 = bandwidthGbps(3840, 2160, 60, 8, '4:2:2');
+  cek('4K60 4:2:2 HDMI selalu wadah 24 bit: butuh HDMI 2.0 penuh, tidak muat HDBaseT 2.0', dekat(uhd422.dataGbps, 14.256) && uhd422.dataGbps > 8.16, `${uhd422.dataGbps}`);
+  cek('4K30 4:4:4 10-bit tidak muat HDBaseT 2.0', bandwidthGbps(3840, 2160, 30, 10, '4:4:4').dataGbps > 8.16);
+  cek('pixel clock resmi: 4K50 594 MHz, 4K24 297 MHz, 1080p24 74,25 MHz, 8K60 2376 MHz',
+    dekat(bandwidthGbps(3840, 2160, 50, 8, '4:4:4').pixelClockMHz, 594) && dekat(bandwidthGbps(3840, 2160, 24, 8, '4:4:4').pixelClockMHz, 297)
+    && dekat(bandwidthGbps(1920, 1080, 24, 8, '4:4:4').pixelClockMHz, 74.25) && dekat(bandwidthGbps(7680, 4320, 60, 8, '4:4:4').pixelClockMHz, 2376));
+  cek('DisplayPort 1.4 memuat 4K120 8-bit 4:4:4 (timing reduced blanking)', kebutuhanAntarmuka('dp', 3840, 2160, 120, 8, '4:4:4') <= 25.92);
+  cek('SDI 12G memuat 4K60 4:2:2 10-bit, tidak memuat 4:4:4', dekat(kebutuhanAntarmuka('sdi', 3840, 2160, 60, 10, '4:2:2'), 11.88) && kebutuhanAntarmuka('sdi', 3840, 2160, 60, 10, '4:4:4') > 11.88);
 }
 
 console.log('\n5. Audio');
@@ -151,8 +163,8 @@ console.log('\nBrand modul LED (referensi dipilah per brand)');
   cek('hitungan lama (kode "P2.5") tetap menemukan modul Umum, bukan brand lain', cariModul(daftar, 'P2.5') === MODUL_LED[4]);
   cek('kunci brand|kode|model membedakan P2.5 Hikvision dari P2.5 Umum', cariModul(daftar, kunciModul(hik)) === hik && kunciModul(hik) !== kunciModul(MODUL_LED[4]));
   const br = daftarBrand([...BRAND_LED, { nama: 'IVP Vision', sendiri: true }], daftar);
-  cek('brand sendiri tampil paling atas, brand dari baris modul ikut terdaftar', br[0].nama === 'IVP Vision' && br.some(b => b.nama === 'Hikvision' && b.jumlah === 1));
-  cek('pilihan kalkulator hanya brand yang punya modul', daftarBrand(BRAND_LED, MODUL_LED, true).map(b => b.nama).join(',') === 'Umum');
+  cek('brand sendiri tampil paling atas, brand dari baris modul ikut terdaftar', br[0].nama === 'IVP Vision' && br.find(b => b.nama === 'Hikvision')?.jumlah === daftar.filter(m => m.brand === 'Hikvision').length);
+  cek('pilihan kalkulator hanya brand yang punya modul', daftarBrand(BRAND_LED, MODUL_LED, true).map(b => b.nama).join(',') === 'Umum,Hikvision');
 }
 
 console.log('\nReceiving card, power connection & BOM');

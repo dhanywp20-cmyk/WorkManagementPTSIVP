@@ -153,7 +153,7 @@ export function KalkulatorProyektor() {
         <div className="space-y-3">
           <PilihPanasonic rasio={rasioK as RasioProyektor} sumber={panasonic ? `${panasonic.m.n} + ${panasonic.l.n}` : undefined} onPakai={pakaiPanasonic} />
           <PilihMerekLain rasio={rasioK as RasioProyektor} sumber={lain ? `${lain.k.merek} ${lain.m.n} + ${lain.l.n}` : undefined} onPakai={pakaiLain} />
-          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 items-end">
+          <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 items-end">
             {adaPustaka && (
               <div className="col-span-2">
                 <PilihPustaka jenis="proyektor" label="Model dari Pustaka" onPilih={pakaiModel} />
@@ -165,12 +165,8 @@ export function KalkulatorProyektor() {
               opsi={[{ v: '', l: 'Sama dengan sinyal' }, ...RASIO_PROYEKTOR.map(x => ({ v: x.v, l: x.v }))]} />
             <Angka label="Throw ratio min" nilai={throwMin} step={0.01} onUbah={v => { if (v > 0) { setThrowMin(r6(v)); setPanasonic(null); } }} />
             <Angka label="Throw ratio maks" nilai={throwMax} step={0.01} onUbah={v => { if (v > 0) { setThrowMax(r6(v)); setPanasonic(null); } }} />
-            <Angka label="Kontras asli" nilai={kontrasAsli} onUbah={v => v >= 0 && setKontrasAsli(v)} satuan=":1" bantuan="Full on / full off dari datasheet; 0 = abaikan" />
             <Angka label="Koreksi b wide" nilai={koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksi(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terlebar × lebar − b" />
             <Angka label="Koreksi b tele" nilai={koreksiTele ?? koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksiTele(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terpanjang × lebar − b (kalkulator Panasonic menyimpan b wide & tele terpisah)" />
-            <div className="col-span-2">
-              <Segmen label="Pemasangan" nilai={pasang} onUbah={setPasang} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Meja / lantai' }]} />
-            </div>
             {offsetTetap === null ? (
               <>
                 <Angka label="Lens shift atas" nilai={shiftAtas} onUbah={v => v >= 0 && setShiftAtas(v)} satuan="%" />
@@ -182,6 +178,12 @@ export function KalkulatorProyektor() {
                 <button type="button" onClick={() => setOffsetTetap(null)} className="font-bold text-blue-700 hover:underline">Pakai lens shift</button>
               </p>
             )}
+            <div className="col-span-2">
+              <Segmen label="Pemasangan" nilai={pasang} onUbah={setPasang} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Meja / lantai' }]} />
+            </div>
+            <div className="col-span-2">
+              <Angka label="Kontras asli" nilai={kontrasAsli} onUbah={v => v >= 0 && setKontrasAsli(v)} satuan=":1" bantuan="Full on / full off dari datasheet; 0 = abaikan" />
+            </div>
           </div>
           {potong && (
             <p className="text-[12px] leading-snug text-slate-700">
@@ -190,18 +192,16 @@ export function KalkulatorProyektor() {
           )}
           {!koreksi && !koreksiTele && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-relaxed text-amber-800">
-              Koreksi jarak b lensa belum diisi - jarak dihitung L = TR × lebar dan bisa selisih beberapa cm hingga puluhan cm dari
-              kalkulator pabrikan. Pilih model dari Pustaka, isi b dari rumus lensa di datasheet, atau hitung dari dua hasil kalkulator Panasonic di bawah.
+              Koreksi b lensa belum diisi, jarak lempar masih estimasi.{' '}
+              <Catatan>Jarak dihitung L = TR × lebar dan bisa selisih beberapa cm hingga puluhan cm dari kalkulator pabrikan. Pilih model, isi b dari rumus lensa di datasheet, atau hitung dari dua hasil kalkulator pabrikan di bawah.</Catatan>
             </p>
           )}
           <RumusLensaPabrikan onPakai={pakaiRumus} />
         </div>
       </Kartu>
 
-      <PanelBlending lebarSatuAwal={lebar} resolusiModel={resolusiModel}
-        lensa={{ trMin: throwMin, trMaks: throwMax, bWide: koreksi, bTele: koreksiTele ?? koreksi }} />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <Kartu judul="Satu proyektor · ukuran & kecerahan">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
@@ -220,7 +220,7 @@ export function KalkulatorProyektor() {
           </div>
         </Kartu>
         <Kartu judul="Hasil satu proyektor" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Proyektor')} />}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Gambar 1 proyektor" nilai={`${fTetap(lebar)} × ${fTetap(tinggi)}`} satuan="m" ket={`${fTetap(diag, 2)} inci · ${f(luas)} m²`} />
             <Nilai label="Jarak lempar" nilai={`${fTetap(lempar.dekatM)}-${fTetap(lempar.jauhM)}`} satuan="m" nada={koreksi || koreksiTele ? undefined : 'awas'} ket={koreksi || koreksiTele ? 'ujung lensa ke layar' : 'tanpa koreksi b lensa'} />
             <Nilai label="Tinggi pusat lensa" nilai={offsetTetap !== null ? f(lensa.terendahM) : `${f(lensa.terendahM)}-${f(lensa.tertinggiM)}`} satuan="m"
@@ -244,6 +244,9 @@ export function KalkulatorProyektor() {
           <Catatan>{CATATAN}</Catatan>
         </Kartu>
       </div>
+
+      <PanelBlending lebarSatuAwal={lebar} resolusiModel={resolusiModel}
+        lensa={{ trMin: throwMin, trMaks: throwMax, bWide: koreksi, bTele: koreksiTele ?? koreksi }} />
     </div>
   );
 }

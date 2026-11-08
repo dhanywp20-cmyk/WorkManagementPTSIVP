@@ -19,8 +19,8 @@ export function hindariTumpuk(wadah: HTMLElement, m: Mesin) {
       el.style.visibility = 'visible';
       const r = el.getBoundingClientRect();
       if (!r.width) return;
-      const lama = Number(el.dataset.geserY || 0), langkah = r.height + 3;
-      for (const k of [0, -1, 1, -2, 2]) {
+      const lama = Number(el.dataset.geserY || 0), langkah = Math.min(8, r.height + 3);
+      for (const k of [0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7, -8, 8]) {
         const dy = k * langkah, c = new DOMRect(r.left, r.top - lama + dy, r.width, r.height);
         if (tabrak(c, terpakai)) continue;
         el.style.marginTop = dy ? `${dy}px` : ''; el.dataset.geserY = String(dy);

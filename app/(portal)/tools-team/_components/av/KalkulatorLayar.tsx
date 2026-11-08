@@ -55,7 +55,7 @@ export function KalkulatorLayar() {
           : [['Lebar × tinggi', `${f(ukuran.lebarM)} × ${f(ukuran.tinggiM)} m`, true], ...(Object.keys(FAKTOR_PANDANG) as JenisPandang[]).map(j => [`Jarak maks · ${j}`, `${f(jarakMaksDariLayar(ukuran.tinggiM, j), 1)} m`] as Baris)],
         'Aturan 4-6-8 (praktik AVIXA): penonton terjauh maksimal 8× tinggi gambar untuk tontonan umum, 6× analitis, 4× detail.'), 'Ukuran Layar')} />}>
         {mode === 'dariJarak' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Tinggi gambar min" nilai={f(dariJarak.tinggiM)} satuan="m" />
             <Nilai label="Lebar gambar" nilai={f(dariJarak.lebarM)} satuan="m" />
             <Nilai label="Diagonal min" nilai={f(dariJarak.diagonalInci, 0)} satuan="inci" />
@@ -63,7 +63,7 @@ export function KalkulatorLayar() {
               ket={tvCocok ? 'ukuran standar terdekat ke atas' : 'pertimbangkan LED videotron / proyektor'} nada={tvCocok ? 'baik' : 'awas'} />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="kisi-nilai">
             <Nilai label="Lebar × tinggi" nilai={`${f(ukuran.lebarM)} × ${f(ukuran.tinggiM)}`} satuan="m" />
             {(Object.keys(FAKTOR_PANDANG) as JenisPandang[]).map(j => (
               <Nilai key={j} label={`Jarak maks · ${j}`} nilai={f(jarakMaksDariLayar(ukuran.tinggiM, j), 1)} satuan="m" />

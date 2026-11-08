@@ -68,7 +68,7 @@ export function KalkulatorRak() {
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Kebutuhan Rak')} />}>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="U dibutuhkan" nilai={h.uButuh} satuan="U" ket={`${h.uPerangkat}U + ${h.uVentilasi}U vent + ${cadangan}%`} />
           <Nilai label="Ukuran rak" nilai={h.rakU ?? '> 47'} satuan="U" nada={h.rakU ? 'baik' : 'awas'} ket={h.rakU ? 'standar terdekat' : 'bagi ke 2 rak'} />
           <Nilai label="Berat isi" nilai={f(h.beratKg, 0)} satuan="kg" />

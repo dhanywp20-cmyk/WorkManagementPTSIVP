@@ -22,6 +22,15 @@ export function pilihTempatLabel(ax: number, ay: number, w: number, h: number, a
     if (kenaLabel === 0 && biaya === j * 0.5) return { dx, dy };
     if (kenaLabel === 0 && (!terbaik || biaya < terbaik.biaya)) terbaik = { dx, dy, biaya };
   }
+  for (const x of benda) {
+    if (ax < x.l || ax > x.r || ay < x.t || ay > x.b) continue;
+    for (const [dx, dy] of [[0, x.t - ay - h / 2 - 3], [0, x.b - ay + h / 2 + 3], [x.l - ax - w / 2 - 3, 0], [x.r - ax + w / 2 + 3, 0]]) {
+      const k = { l: ax + dx - w / 2, r: ax + dx + w / 2, t: ay + dy - h / 2, b: ay + dy + h / 2 };
+      if (label.some(y => tumpang(k, y) > 0)) continue;
+      const biaya = benda.reduce((s, y) => s + tumpang(k, y), 0) + Math.hypot(dx, dy) * 0.5;
+      if (!terbaik || biaya < terbaik.biaya) terbaik = { dx, dy, biaya };
+    }
+  }
   return terbaik ? { dx: terbaik.dx, dy: terbaik.dy } : null;
 }
 
@@ -46,7 +55,14 @@ const tertata = new WeakSet<HTMLElement>();
 export function tataLabelProduk(m: Mesin, wadah: HTMLElement, terpakai: KotakLayar[]) {
   const daftar = [...wadah.querySelectorAll<HTMLElement>('[data-produk]')].filter(el => el.style.display !== 'none');
   const kv = m.renderer.domElement;
-  const tanda = `${m.kamera.matrixWorld.elements.map(x => x.toFixed(3)).join()}|${kv.clientWidth}x${kv.clientHeight}|${daftar.length}|${m.cache.size}`;
+  const kanvas = kv.getBoundingClientRect();
+  const v = new m.THREE.Vector3();
+  const penghalang = (m.penghalangLabel ?? []).map((sudut): KotakLayar => {
+    const xs: number[] = [], ys: number[] = [];
+    for (const p of sudut) { v.copy(p).project(m.kamera); xs.push(kanvas.left + ((v.x + 1) / 2) * kanvas.width); ys.push(kanvas.top + ((1 - v.y) / 2) * kanvas.height); }
+    return { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) };
+  });
+  const tanda = `${m.kamera.matrixWorld.elements.map(x => x.toFixed(3)).join()}|${kv.clientWidth}x${kv.clientHeight}|${daftar.length}|${m.cache.size}|${penghalang.map(p => Math.round(p.l + p.t)).join()}`;
   if (tanda === tandaLalu && daftar.every(el => tertata.has(el))) return;
   tandaLalu = tanda;
   const label = [...terpakai];
@@ -55,7 +71,7 @@ export function tataLabelProduk(m: Mesin, wadah: HTMLElement, terpakai: KotakLay
     if (!isi || !garis) continue;
     tertata.add(el);
     const a = el.getBoundingClientRect(), w = isi.offsetWidth, h = isi.offsetHeight;
-    const t = pilihTempatLabel(a.left, a.top, w, h, el.dataset.arah === '1' ? 1 : -1, [], label);
+    const t = pilihTempatLabel(a.left, a.top, w, h, el.dataset.arah === '1' ? 1 : -1, penghalang, label);
     el.style.visibility = t ? 'visible' : 'hidden';
     if (!t) continue;
     isi.style.left = `${t.dx}px`; isi.style.top = `${t.dy}px`;

@@ -63,7 +63,7 @@ export function KalkulatorDaya() {
         'Gunakan daya maksimum dari datasheet. Kebutuhan AC ruangan juga dipengaruhi jumlah orang, kaca, dan luas ruang.',
         [{ judul: 'Daftar perangkat', jenis: 'tabel', kepala: ['Perangkat', 'Watt', 'Jumlah', 'Subtotal'], rataKanan: [1, 2, 3],
           isi: beban.map(b => [b.nama, `${b.watt} W`, String(b.jumlah), `${f(b.watt * b.jumlah, 0)} W`]) }]), 'Daya AV')} />}>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Total daya" nilai={f(h.totalW, 0)} satuan="W" ket={`${f(h.va, 0)} VA`} />
           <Nilai label={`Arus @${tegangan}V`} nilai={f(h.arusA, 1)} satuan="A" ket={`MCB ${h.mcbA} A`} />
           <Nilai label="UPS saran" nilai={f(h.upsVA, 0)} satuan="VA" ket="+25% cadangan" />

@@ -76,7 +76,7 @@ export function AudioAkustik() {
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Akustik Ruang')} />}>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Volume" nilai={f(volume, 0)} satuan="m³" />
           <Nilai label="Serapan total" nilai={f(h.serapanM2, 1)} satuan="m²" ket="Sabin" />
           <Nilai label="RT60" nilai={f(h.rt60, 2)} satuan="s" nada={status === 'sesuai target' ? 'baik' : h.rt60 > tg.maks * 1.5 ? 'buruk' : 'awas'} ket={status} />

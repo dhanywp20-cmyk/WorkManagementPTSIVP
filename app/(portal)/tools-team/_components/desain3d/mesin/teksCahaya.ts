@@ -5,6 +5,40 @@ export interface BlokTeks { x: number; y: number; w: number; h: number; baris: s
 
 export const TINGGI_HURUF = 0.018;
 
+export function kotakTerlihat(uv: number[]): [number, number, number, number][] {
+  const hasil: [number, number, number, number][] = [];
+  for (let q = 0; q < uv.length / 12; q++) {
+    let uMin = 1, uMaks = 0, vMin = 1, vMaks = 0;
+    for (let k = 0; k < 6; k++) {
+      const uu = uv[q * 12 + k * 2], vv = uv[q * 12 + k * 2 + 1];
+      uMin = Math.min(uMin, uu); uMaks = Math.max(uMaks, uu); vMin = Math.min(vMin, vv); vMaks = Math.max(vMaks, vv);
+    }
+    hasil.push([uMin, uMaks, vMin, vMaks]);
+  }
+  return hasil;
+}
+
+export function blokTerlihat(b: BlokTeks, kotak: [number, number, number, number][]): boolean {
+  const e = 1e-6;
+  for (let i = 0; i <= 4; i++) for (let j = 0; j <= 2; j++) {
+    const u = b.x + (b.w * i) / 4, v = 1 - b.y - b.h + (b.h * j) / 2;
+    if (!kotak.some(([u0, u1, v0, v1]) => u >= u0 - e && u <= u1 + e && v >= v0 - e && v <= v1 + e)) return false;
+  }
+  return true;
+}
+
+export function geserKeTerlihat(b: BlokTeks, kotak: [number, number, number, number][], arahX: 1 | -1, arahY: 1 | -1): BlokTeks | null {
+  const LANGKAH = 0.02;
+  for (let n = 0; n <= 30; n++) {
+    for (let a = 0; a <= n; a++) {
+      const c = { ...b, x: b.x + arahX * a * LANGKAH, y: b.y + arahY * (n - a) * LANGKAH };
+      if (c.x < 0 || c.y < 0 || c.x + c.w > 1 || c.y + c.h > 1) continue;
+      if (blokTerlihat(c, kotak)) return c;
+    }
+  }
+  return null;
+}
+
 function tekstur(THREE: Mesin['THREE'], b: BlokTeks): T.CanvasTexture {
   const W = b.baris.length > 1 ? 1024 : 512, H = Math.max(16, Math.round((W * b.h * 9) / (b.w * 16)));
   const kv = document.createElement('canvas'); kv.width = W; kv.height = H;

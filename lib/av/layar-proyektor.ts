@@ -40,11 +40,13 @@ export const PANEL_VIDEOWALL: PanelVideowall[] = [
   { nama: '55" · bezel 0,88 mm', diagonalInci: 55, bezelMm: 0.88 },
 ];
 
+const TOLERANSI_TARGET = 0.02;
+
 export function videowallUntuk(lebarTargetM: number, tinggiTargetM: number, panel: PanelVideowall) {
   const p = ukuranDariDiagonal(panel.diagonalInci, 16, 9);
   const b = panel.bezelMm / 1000;
-  const kolom = Math.max(1, Math.round((lebarTargetM + b) / (p.lebarM + b)));
-  const baris = Math.max(1, Math.round((tinggiTargetM + b) / (p.tinggiM + b)));
+  const kolom = Math.max(1, Math.ceil((lebarTargetM + b) / (p.lebarM + b) - TOLERANSI_TARGET));
+  const baris = Math.max(1, Math.ceil((tinggiTargetM + b) / (p.tinggiM + b) - TOLERANSI_TARGET));
   const lebarM = kolom * p.lebarM + (kolom - 1) * b;
   const tinggiM = baris * p.tinggiM + (baris - 1) * b;
   return { kolom, baris, jumlah: kolom * baris, lebarM, tinggiM, diagonalInci: (Math.hypot(lebarM, tinggiM) * 1000) / 25.4, resX: kolom * 1920, resY: baris * 1080 };

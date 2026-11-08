@@ -15,6 +15,7 @@ import { usePreferensiKanvas } from './usePreferensiKanvas';
 import { useStatusDesain } from './useStatusDesain';
 import { useRefMesin } from './useRefMesin';
 import { useAnalisisDisplay } from './useAnalisisDisplay';
+import { lengkapiDariKatalog, muatKatalogPanasonic, perluDataResmi } from './inti/katalogPanasonic';
 
 export { KUNCI_SIMPAN } from './useStatusDesain';
 
@@ -142,5 +143,21 @@ export function useKeadaanDesain() {
   const adaProyektor = benda.some(b => b.jenis === 'proyektor');
   const jumlahProyektor = benda.filter(b => b.jenis === 'proyektor').length;
 
-  return { sinarNyata, setSinarNyata, sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, daftarKanvas, setDaftarKanvas, ukuranCahaya, setUkuranCahaya, snapRef, sumbuGeserRef, sembunyiGolongan, setSembunyiGolongan, sembunyiRef, snap, setSnap, alatKanvas, setAlatKanvas, titikUkur, setTitikUkur, klikUkurRef, ingatanAwal, sumberTekstur, gambarTekstur, versiTekstur, setVersiTekstur, setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
+  const sudahDilengkapi = useRef(new Set<string>());
+  useEffect(() => {
+    const perlu = benda.filter(b => perluDataResmi(b) && !sudahDilengkapi.current.has(b.id));
+    if (!perlu.length) return;
+    perlu.forEach(b => sudahDilengkapi.current.add(b.id));
+    muatKatalogPanasonic().then(k => setBenda(bs => lengkapiDariKatalog(bs, k))).catch(() => {});
+  }, [benda]);
+  const bukaAtur = useRef(() => { setSisi(null); setPanel(true); });
+  const sisiLalu = useRef(sisi), bendaLalu = useRef(benda);
+  useEffect(() => {
+    if (!pilih) { setPanel(false); return; }
+    if (sisiLalu.current === 'tambah' && !bendaLalu.current.some(b => b.id === pilih)) return;
+    bukaAtur.current();
+  }, [pilih]);
+  useEffect(() => { sisiLalu.current = sisi; bendaLalu.current = benda; }, [sisi, benda]);
+
+  return { bukaAtur, sinarNyata, setSinarNyata, sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, daftarKanvas, setDaftarKanvas, ukuranCahaya, setUkuranCahaya, snapRef, sumbuGeserRef, sembunyiGolongan, setSembunyiGolongan, sembunyiRef, snap, setSnap, alatKanvas, setAlatKanvas, titikUkur, setTitikUkur, klikUkurRef, ingatanAwal, sumberTekstur, gambarTekstur, versiTekstur, setVersiTekstur, setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
 }

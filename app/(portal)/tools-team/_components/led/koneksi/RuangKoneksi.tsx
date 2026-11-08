@@ -22,7 +22,7 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
       </div>
 
       <div className="space-y-3 min-w-0">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="kisi-nilai">
           <Nilai label="Receiving card" nilai={k.sel.length + k.tanpaPort.length} ket={`${t.K} × ${t.B}${t.kosong.size ? ` · ${t.kosong.size} kosong` : ''}`} />
           <Nilai label="Port LAN dipakai" nilai={t.portTerpakai} ket={`perkiraan pixel: ${d.portIdeal}`} nada={t.portTerpakai > d.portIdeal ? 'awas' : undefined} />
           <Nilai label="Controller" nilai={t.ppk > 0 ? t.controller + t.controllerCadangan : '-'}

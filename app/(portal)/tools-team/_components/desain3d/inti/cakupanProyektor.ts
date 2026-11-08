@@ -1,6 +1,7 @@
 import { keGambar, lensaDari, arahSinar, type Lensa } from './blending';
 import { ukuranBidang } from './produk';
-import type { Benda, Kotak, Titik } from './tipe';
+import { gantiRasioProyektor, pasangKeLayar, RASIO_PROYEKTOR, rasioGambarProyektor } from './proyektor';
+import type { Benda, Kotak, RasioProyektor, Ruang, Titik } from './tipe';
 
 interface Sampel { p: Titik; n: Titik; s: number; t: number }
 export interface Permukaan {
@@ -88,6 +89,42 @@ export function permukaanRuang(k: Kotak, sisi: 'depan' | 'belakang' | 'kiri' | '
     case 'kanan': return permukaanPersegi('Dinding kanan', [k.x0 + k.p, k.t / 2, k.l / 2], [0, 0, 1], [0, 1, 0], [-1, 0, 0], k.l, k.t);
     case 'lantai': return permukaanPersegi('Lantai', [cx, 0, k.l / 2], [1, 0, 0], [0, 0, 1], [0, 1, 0], k.p, k.l);
   }
+}
+
+export const BATAS_LUBER = 0.01;
+export interface LuberLayar { atas: number; bawah: number; kiri: number; kanan: number; maks: number }
+
+export function luberLayar(p: Benda, l: Benda): LuberLayar {
+  const L = lensaDari(p), F = kerangka(l);
+  const C = F.keDunia([0, l.h / 2, l.d / 2]), kanan = F.arahKeDunia([1, 0, 0]), n = F.arahKeDunia([0, 0, 1]);
+  const x: LuberLayar = { atas: 0, bawah: 0, kiri: 0, kanan: 0, maks: 0 };
+  for (const u of [-0.5, 0.5]) for (const v of [-0.5, 0.5]) {
+    const d = arahSinar(L, u, v), dn = dot(d, n);
+    if (dn >= -1e-6) return { ...x, maks: Infinity };
+    const t = dot(kurang(C, L.O), n) / dn;
+    const w0 = kurang([L.O[0] + d[0] * t, L.O[1] + d[1] * t, L.O[2] + d[2] * t], C);
+    const gx = dot(w0, kanan), gy = w0[1];
+    x.kanan = Math.max(x.kanan, gx - l.w / 2); x.kiri = Math.max(x.kiri, -gx - l.w / 2);
+    x.atas = Math.max(x.atas, gy - l.h / 2); x.bawah = Math.max(x.bawah, -gy - l.h / 2);
+  }
+  return { ...x, maks: Math.max(x.atas, x.bawah, x.kiri, x.kanan) };
+}
+
+export function teksLuber(x: LuberLayar): string {
+  if (!Number.isFinite(x.maks)) return 'sebagian cahaya tidak mengarah ke layar';
+  return (['atas', 'bawah', 'kiri', 'kanan'] as const).filter(s => x[s] > BATAS_LUBER).map(s => `${s} ${Math.round(x[s] * 100)} cm`).join(', ');
+}
+
+export function masukkanKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): { benda: Benda; sisa: LuberLayar; dimask: boolean } {
+  const r = l.rasio as RasioProyektor | undefined;
+  const bisaRasio = !!r && r !== (p.rasioProyektor ?? '16:9') && !!RASIO_PROYEKTOR[r] && (!p.koefRasio || !!p.koefRasio[r]);
+  const q: Benda = bisaRasio ? { ...p, ...gantiRasioProyektor(p, r) } : p;
+  let hasil = pasangKeLayar(q, l, k, ruang).benda;
+  if (luberLayar(hasil, l).maks > BATAS_LUBER) {
+    hasil = pasangKeLayar(hasil, l, k, ruang, { du: 0, dv: 0, lebar: Math.min(l.w, l.h / rasioGambarProyektor(hasil)) }).benda;
+  }
+  const sisa = luberLayar(hasil, l), dimask = sisa.maks > BATAS_LUBER;
+  return { benda: dimask ? { ...hasil, maskBidang: true } : hasil, sisa, dimask };
 }
 
 export interface Cakupan {

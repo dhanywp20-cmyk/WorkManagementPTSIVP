@@ -1,4 +1,5 @@
 'use client';
+import { Ikon } from '@/components/shared/Ikon';
 import { KATEGORI_RUANG } from '../inti';
 import type { AlatDesain } from './alat';
 
@@ -15,7 +16,7 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
     <>
       <p className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
         title="Isi template sama untuk semua pengguna. Perubahan di kanvas hanya mengubah salinan; Simpan membuat file baru milik Anda.">
-        <span aria-hidden="true">🔒</span> Terkunci
+        <Ikon nama="🔒" ukuran={13} /> Terkunci
       </p>
       {statusSimpan && (
         <p role="status" className={`mb-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${statusSimpan.nada === 'galat' ? 'bg-rose-50 text-rose-700' : statusSimpan.nada === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-600'}`}>
@@ -32,7 +33,7 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
               className={`rounded-xl border overflow-hidden transition-colors ${aktif ? 'border-blue-300 bg-blue-50/70' : t ? 'border-amber-300 bg-white' : 'border-slate-200 bg-white hover:border-blue-200'}`}>
               <button type="button" onClick={() => void pilihKategori(k.id)} disabled={memuat} aria-busy={memuat} aria-current={aktif || undefined}
                 className={`w-full flex items-start gap-3 text-left px-3 py-2.5 disabled:opacity-60 ${aktif ? '' : 'hover:bg-blue-50/50'}`}>
-                <span className="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">{k.ikon}</span>
+                <span className="w-8 h-8 mt-0.5 rounded-lg bg-blue-50 text-blue-700 grid place-items-center shrink-0"><Ikon nama={k.ikon} ukuran={18} /></span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
                     <span className="text-[13.5px] font-bold text-slate-900">{k.judul}</span>

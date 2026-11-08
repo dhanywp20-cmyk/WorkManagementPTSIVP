@@ -90,7 +90,7 @@ export function AturRak({ c }: { c: KonteksAtur }) {
           )}
         </div>
       )}
-      {b.jenis === 'rak' && <EditorRak b={b} onUbah={isiRak => set({ isiRak })} />}
+      {b.jenis === 'rak' && <EditorRak b={b} onUbah={isiRak => set({ isiRak, isiSaran: undefined })} />}
     </>
   );
 }

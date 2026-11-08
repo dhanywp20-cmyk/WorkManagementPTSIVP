@@ -33,7 +33,7 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
     const lensa: Partial<Benda> = {
       koreksiJarak: angka('koreksiJarak'), koreksiJarakTele: angka('koreksiJarakTele'),
       shiftAtasMaks: angka('shiftAtas', 100), shiftBawahMaks: angka('shiftBawah', 100), shiftHMaks: angka('shiftHorizontal', 100),
-      offsetTetap: angka('offsetTetap', 100), kontrasAsli: ada('kontras') ? angkaDari(e, 'kontras') : undefined, koefRasio: undefined, sumberLensa: undefined,
+      offsetTetap: angka('offsetTetap', 100), kontrasAsli: ada('kontras') ? angkaDari(e, 'kontras') : undefined, koefRasio: undefined, sumberLensa: undefined, modelProduk: undefined,
       poligonShift: bacaPoligonShift(teksDari(e, 'poligonShift')),
       ...(ada('offsetTetap') ? { offsetLensa: angka('offsetTetap', 100), geserLensaH: 0 } : {}),
     };

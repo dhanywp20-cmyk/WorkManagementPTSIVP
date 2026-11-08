@@ -334,20 +334,20 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
   const k = { x0: 0, p: 16, l: 20, t: 7 };
   for (const kat of KATEGORI_RUANG) {
     const t = templateRuang(kat.id);
-    const luar = t.benda.filter(b => !(b.x >= -0.01 && b.x <= t.ruang.p + 0.01 && b.z >= -0.01 && b.z <= t.ruang.l + 0.01 && b.elev + b.h <= t.ruang.t + 0.05));
+    const luar = t.benda.filter(b => !M3.daftarRuang(t.ruang).some(r => b.x >= r.x0 - 0.01 && b.x <= r.x0 + r.p + 0.01 && b.z >= -0.01 && b.z <= r.l + 0.01 && b.elev + b.h <= r.t + 0.05));
     cek(`template ${kat.judul}: ${t.benda.length} benda, semua di dalam ruangan`, t.benda.length > 0 && luar.length === 0,
       luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
   }
   const imm = templateRuang('immersive');
   cek('immersive: 4 proyektor dinding + 1 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 5
     && imm.benda.filter(b => tiltDari(b) === -90).length === 1 && imm.ruang.cahaya === 'gelap');
-  cek('immersive: ET-ELU20 dinding zoom terlebar, lensa 2,05 m dari dinding -> gambar 6,15 m menutup dinding 6 m', imm.benda.filter(b => tiltDari(b) !== -90).every(b => {
+  cek('immersive: ET-ELU20 dinding zoom terlebar, lensa 2,05 m dari dinding -> gambar 6,15 m menutup dinding 6 m', imm.benda.filter(b => b.jenis === 'proyektor' && tiltDari(b) !== -90).every(b => {
     const l = keDunia(b, lensaProyektor(b));
     return dekat(b.throwRatio ?? 0, 0.33827, 1e-6) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 2.05, 0.002) && dekat((2.05 + 0.029388) / 0.33827, 6.147, 0.001);
   }));
   for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'] as const) {
     const t = templateRuang(id);
-    cek(`${id}: ruang abu-abu & redup (bukan hitam)`, t.ruang.warnaDinding === '#9ca3af' && t.ruang.cahaya === 'redup');
+    cek(`${id}: dinding abu-abu & cahaya ruangan gelap`, t.ruang.warnaDinding === '#9ca3af' && t.ruang.cahaya === 'gelap');
   }
   const cbg = templateRuang('mapping-cembung').benda.find(b => b.jenis === 'bidang')!;
   cek('mapping cembung = layar cembung lebar 6 m melengkung 60 cm (bukan pilar)', cbg.bentukBidang === 'cembung' && dekat(cbg.w, 6, 0.01) && dekat(cbg.d, 0.6, 0.01) && (cbg.busur ?? 0) < 180);

@@ -67,6 +67,8 @@ export interface Benda {
   kontrasAsli?: number;
   koefRasio?: Partial<Record<RasioProyektor, [number, number, number, number]>>;
    sumberLensa?: string;
+   modelProduk?: string;
+   isiSaran?: boolean;
   shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
    poligonShift?: number[];
    gainLayar?: number;
@@ -109,7 +111,8 @@ export interface Ruang {
   teksturLantai?: TeksturRuang; teksturDinding?: TeksturRuang;
   penggaris?: { id: string; a: Titik; b: Titik }[];
   dindingDepan?: 'polos' | 'marmer' | 'kayu';
-   cahaya?: 'terang' | 'redup' | 'gelap';
+   cahaya?: 'terang' | 'koridor' | 'redup' | 'gelap';
+   luxManual?: number;
    dimmer?: number;
   siang?: Siang; tirai?: number;
    bukaan?: Bukaan[];
