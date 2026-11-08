@@ -1,0 +1,389 @@
+html.gelap {
+  color-scheme: dark;
+  --wm-hal: oklch(16.5% 0.025 264);
+  --wm-kartu: oklch(22.5% 0.03 262);
+  --wm-kartu-2: oklch(25.5% 0.03 262);
+  --wm-isi: oklch(28.5% 0.03 260);
+  --wm-garis: oklch(33% 0.025 260);
+  --wm-garis-kuat: oklch(40% 0.025 258);
+  --wm-tinta: oklch(95% 0.01 255);
+  --wm-tinta-2: oklch(80% 0.02 255);
+  --wm-tinta-3: oklch(64% 0.03 257);
+
+  --halaman: var(--wm-hal);
+  --latar-halaman: var(--wm-hal);
+  --permukaan: var(--wm-kartu);
+  --permukaan-redam: var(--wm-kartu-2);
+  --garis: var(--wm-garis);
+  --garis-kuat: var(--wm-garis-kuat);
+  --tinta: var(--wm-tinta);
+  --tinta-2: var(--wm-tinta-2);
+  --tinta-3: var(--wm-tinta-3);
+
+  --gb-ffffff: var(--wm-kartu);
+  --gb-fdfdfe: var(--wm-kartu);
+  --gb-f8fafc: var(--wm-kartu-2);
+  --gb-f4f6fa: var(--wm-kartu-2);
+  --gb-f1f5f9: var(--wm-isi);
+  --gb-e8edf3: var(--wm-isi);
+  --gg-e2e8f0: var(--wm-garis);
+  --gg-f1f5f9: var(--wm-garis);
+  --gg-cbd5e1: var(--wm-garis-kuat);
+  --gs-ffffff: rgba(255, 255, 255, .04);
+  --gs-e2e8f0: rgba(0, 0, 0, .35);
+  --gs-dfe5ee: rgba(0, 0, 0, .35);
+  --gs-edf0f5: rgba(0, 0, 0, .25);
+  --gs-e6eaf0: rgba(0, 0, 0, .3);
+  --gs-e8ecf2: rgba(0, 0, 0, .3);
+  --gt-0f172a: var(--wm-tinta);
+  --gt-1e293b: var(--wm-tinta);
+  --gt-334155: var(--wm-tinta-2);
+  --gt-475569: var(--wm-tinta-2);
+}
+html.gelap body { background-color: var(--wm-hal); color: var(--wm-tinta); }
+
+html.gelap .bg-white { background-color: var(--wm-kartu); }
+html.gelap [class*="bg-white/"] { background-color: color-mix(in srgb, var(--wm-kartu) 88%, transparent); }
+html.gelap .hover\:bg-white:hover { background-color: var(--wm-kartu-2); }
+
+html.gelap :is([style*="background: rgb(255, 255, 255)"], [style*="background-color: rgb(255, 255, 255)"],
+  [style*="background: rgb(248, 250, 252)"], [style*="background-color: rgb(248, 250, 252)"],
+  [style*="background: rgb(250, 251, 252)"], [style*="background: rgb(243, 245, 248)"]) { background: var(--wm-kartu) !important; }
+html.gelap :is([style*="background: rgba(255, 255, 255"], [style*="background-color: rgba(255, 255, 255"]) {
+  background: color-mix(in srgb, var(--wm-kartu) 92%, transparent) !important;
+}
+html.gelap :is([style*="background: rgb(241, 245, 249)"], [style*="background-color: rgb(241, 245, 249)"], [style*="background: rgb(226, 232, 240)"]) { background: var(--wm-isi) !important; }
+html.gelap :is([style*="background: rgba(0, 0, 0, 0.0"], [style*="background-color: rgba(0, 0, 0, 0.0"]) { background: rgba(255, 255, 255, .05) !important; }
+html.gelap :is([style^="color: rgb(15, 23, 42)"], [style*="; color: rgb(15, 23, 42)"], [style^="color: rgb(30, 41, 59)"], [style*="; color: rgb(30, 41, 59)"],
+  [style^="color: rgb(2, 6, 23)"], [style*="; color: rgb(2, 6, 23)"]) { color: var(--wm-tinta) !important; }
+html.gelap :is([style^="color: rgb(51, 65, 85)"], [style*="; color: rgb(51, 65, 85)"], [style^="color: rgb(71, 85, 105)"], [style*="; color: rgb(71, 85, 105)"]) { color: var(--wm-tinta-2) !important; }
+html.gelap :is([style*="solid rgb(226, 232, 240)"], [style*="solid rgb(241, 245, 249)"], [style*="solid rgba(0, 0, 0, 0."], [style*="solid rgba(15, 23, 42, 0."]) { border-color: var(--wm-garis) !important; }
+
+html.gelap .sidebar-3d { box-shadow: 1px 0 0 var(--wm-garis), 10px 0 22px -10px rgba(0, 0, 0, .5) !important; }
+html.gelap :is(.isi-portal, .dasbor-3d) :is(.rounded-2xl, .rounded-xl).bg-white { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 0 var(--wm-garis), 0 10px 24px -12px rgba(0, 0, 0, .6) !important; }
+html.gelap .kartu-miring { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 0 var(--wm-garis), 0 14px 30px -14px rgba(0, 0, 0, .65) !important; }
+html.gelap .dasbor-3d[style*="background: rgba(241, 245, 249"] { background: color-mix(in srgb, var(--wm-hal) 92%, transparent) !important; }
+html.gelap .bb-tab-geser { background: #2563eb; }
+html.gelap img:not([src$=".svg"]) { filter: brightness(.92); }
+html.gelap ::-webkit-scrollbar-thumb { background-color: var(--wm-garis-kuat); }
+html.gelap input::placeholder, html.gelap textarea::placeholder { color: var(--wm-tinta-3); }
+
+html.gelap {
+  --color-red-50: oklch(25.8% 0.092 26.042);
+  --color-red-100: oklch(39.6% 0.141 25.723);
+  --color-red-200: oklch(44.4% 0.177 26.899);
+  --color-red-300: oklch(50.5% 0.213 27.518);
+  --color-red-700: oklch(80.8% 0.114 19.571);
+  --color-red-800: oklch(88.5% 0.062 18.334);
+  --color-red-900: oklch(93.6% 0.032 17.717);
+  --color-red-950: oklch(97.1% 0.013 17.38);
+  --color-orange-50: oklch(26.6% 0.079 36.259);
+  --color-orange-100: oklch(40.8% 0.123 38.172);
+  --color-orange-200: oklch(47% 0.157 37.304);
+  --color-orange-300: oklch(55.3% 0.195 38.402);
+  --color-orange-700: oklch(83.7% 0.128 66.29);
+  --color-orange-800: oklch(90.1% 0.076 70.697);
+  --color-orange-900: oklch(95.4% 0.038 75.164);
+  --color-orange-950: oklch(98% 0.016 73.684);
+  --color-amber-50: oklch(27.9% 0.077 45.635);
+  --color-amber-100: oklch(41.4% 0.112 45.904);
+  --color-amber-200: oklch(47.3% 0.137 46.201);
+  --color-amber-300: oklch(55.5% 0.163 48.998);
+  --color-amber-700: oklch(87.9% 0.169 91.605);
+  --color-amber-800: oklch(92.4% 0.12 95.746);
+  --color-amber-900: oklch(96.2% 0.059 95.617);
+  --color-amber-950: oklch(98.7% 0.022 95.277);
+  --color-yellow-50: oklch(28.6% 0.066 53.813);
+  --color-yellow-100: oklch(42.1% 0.095 57.708);
+  --color-yellow-200: oklch(47.6% 0.114 61.907);
+  --color-yellow-300: oklch(55.4% 0.135 66.442);
+  --color-yellow-700: oklch(90.5% 0.182 98.111);
+  --color-yellow-800: oklch(94.5% 0.129 101.54);
+  --color-yellow-900: oklch(97.3% 0.071 103.193);
+  --color-yellow-950: oklch(98.7% 0.026 102.212);
+  --color-lime-50: oklch(27.4% 0.072 132.109);
+  --color-lime-100: oklch(40.5% 0.101 131.063);
+  --color-lime-200: oklch(45.3% 0.124 130.933);
+  --color-lime-300: oklch(53.2% 0.157 131.589);
+  --color-lime-700: oklch(89.7% 0.196 126.665);
+  --color-lime-800: oklch(93.8% 0.127 124.321);
+  --color-lime-900: oklch(96.7% 0.067 122.328);
+  --color-lime-950: oklch(98.6% 0.031 120.757);
+  --color-green-50: oklch(26.6% 0.065 152.934);
+  --color-green-100: oklch(39.3% 0.095 152.535);
+  --color-green-200: oklch(44.8% 0.119 151.328);
+  --color-green-300: oklch(52.7% 0.154 150.069);
+  --color-green-700: oklch(87.1% 0.15 154.449);
+  --color-green-800: oklch(92.5% 0.084 155.995);
+  --color-green-900: oklch(96.2% 0.044 156.743);
+  --color-green-950: oklch(98.2% 0.018 155.826);
+  --color-emerald-50: oklch(26.2% 0.051 172.552);
+  --color-emerald-100: oklch(37.8% 0.077 168.94);
+  --color-emerald-200: oklch(43.2% 0.095 166.913);
+  --color-emerald-300: oklch(50.8% 0.118 165.612);
+  --color-emerald-700: oklch(84.5% 0.143 164.978);
+  --color-emerald-800: oklch(90.5% 0.093 164.15);
+  --color-emerald-900: oklch(95% 0.052 163.051);
+  --color-emerald-950: oklch(97.9% 0.021 166.113);
+  --color-teal-50: oklch(27.7% 0.046 192.524);
+  --color-teal-100: oklch(38.6% 0.063 188.416);
+  --color-teal-200: oklch(43.7% 0.078 188.216);
+  --color-teal-300: oklch(51.1% 0.096 186.391);
+  --color-teal-700: oklch(85.5% 0.138 181.071);
+  --color-teal-800: oklch(91% 0.096 180.426);
+  --color-teal-900: oklch(95.3% 0.051 180.801);
+  --color-teal-950: oklch(98.4% 0.014 180.72);
+  --color-cyan-50: oklch(30.2% 0.056 229.695);
+  --color-cyan-100: oklch(39.8% 0.07 227.392);
+  --color-cyan-200: oklch(45% 0.085 224.283);
+  --color-cyan-300: oklch(52% 0.105 223.128);
+  --color-cyan-700: oklch(86.5% 0.127 207.078);
+  --color-cyan-800: oklch(91.7% 0.08 205.041);
+  --color-cyan-900: oklch(95.6% 0.045 203.388);
+  --color-cyan-950: oklch(98.4% 0.019 200.873);
+  --color-sky-50: oklch(29.3% 0.066 243.157);
+  --color-sky-100: oklch(39.1% 0.09 240.876);
+  --color-sky-200: oklch(44.3% 0.11 240.79);
+  --color-sky-300: oklch(50% 0.134 242.749);
+  --color-sky-700: oklch(82.8% 0.111 230.318);
+  --color-sky-800: oklch(90.1% 0.058 230.902);
+  --color-sky-900: oklch(95.1% 0.026 236.824);
+  --color-sky-950: oklch(97.7% 0.013 236.62);
+  --color-blue-50: oklch(28.2% 0.091 267.935);
+  --color-blue-100: oklch(37.9% 0.146 265.522);
+  --color-blue-200: oklch(42.4% 0.199 265.638);
+  --color-blue-300: oklch(48.8% 0.243 264.376);
+  --color-blue-700: oklch(80.9% 0.105 251.813);
+  --color-blue-800: oklch(88.2% 0.059 254.128);
+  --color-blue-900: oklch(93.2% 0.032 255.585);
+  --color-blue-950: oklch(97% 0.014 254.604);
+  --color-indigo-50: oklch(25.7% 0.09 281.288);
+  --color-indigo-100: oklch(35.9% 0.144 278.697);
+  --color-indigo-200: oklch(39.8% 0.195 277.366);
+  --color-indigo-300: oklch(45.7% 0.24 277.023);
+  --color-indigo-700: oklch(78.5% 0.115 274.713);
+  --color-indigo-800: oklch(87% 0.065 274.039);
+  --color-indigo-900: oklch(93% 0.034 272.788);
+  --color-indigo-950: oklch(96.2% 0.018 272.314);
+  --color-violet-50: oklch(28.3% 0.141 291.089);
+  --color-violet-100: oklch(38% 0.189 293.745);
+  --color-violet-200: oklch(43.2% 0.232 292.759);
+  --color-violet-300: oklch(49.1% 0.27 292.581);
+  --color-violet-700: oklch(81.1% 0.111 293.571);
+  --color-violet-800: oklch(89.4% 0.057 293.283);
+  --color-violet-900: oklch(94.3% 0.029 294.588);
+  --color-violet-950: oklch(96.9% 0.016 293.756);
+  --color-purple-50: oklch(29.1% 0.149 302.717);
+  --color-purple-100: oklch(38.1% 0.176 304.987);
+  --color-purple-200: oklch(43.8% 0.218 303.724);
+  --color-purple-300: oklch(49.6% 0.265 301.924);
+  --color-purple-700: oklch(82.7% 0.119 306.383);
+  --color-purple-800: oklch(90.2% 0.063 306.703);
+  --color-purple-900: oklch(94.6% 0.033 307.174);
+  --color-purple-950: oklch(97.7% 0.014 308.299);
+  --color-fuchsia-50: oklch(29.3% 0.136 325.661);
+  --color-fuchsia-100: oklch(40.1% 0.17 325.612);
+  --color-fuchsia-200: oklch(45.2% 0.211 324.591);
+  --color-fuchsia-300: oklch(51.8% 0.253 323.949);
+  --color-fuchsia-700: oklch(83.3% 0.145 321.434);
+  --color-fuchsia-800: oklch(90.3% 0.076 319.62);
+  --color-fuchsia-900: oklch(95.2% 0.037 318.852);
+  --color-fuchsia-950: oklch(97.7% 0.017 320.058);
+  --color-pink-50: oklch(28.4% 0.109 3.907);
+  --color-pink-100: oklch(40.8% 0.153 2.432);
+  --color-pink-200: oklch(45.9% 0.187 3.815);
+  --color-pink-300: oklch(52.5% 0.223 3.958);
+  --color-pink-700: oklch(82.3% 0.12 346.018);
+  --color-pink-800: oklch(89.9% 0.061 343.231);
+  --color-pink-900: oklch(94.8% 0.028 342.258);
+  --color-pink-950: oklch(97.1% 0.014 343.198);
+  --color-rose-50: oklch(27.1% 0.105 12.094);
+  --color-rose-100: oklch(41% 0.159 10.272);
+  --color-rose-200: oklch(45.5% 0.188 13.697);
+  --color-rose-300: oklch(51.4% 0.222 16.935);
+  --color-rose-700: oklch(81% 0.117 11.638);
+  --color-rose-800: oklch(89.2% 0.058 10.001);
+  --color-rose-900: oklch(94.1% 0.03 12.58);
+  --color-rose-950: oklch(96.9% 0.015 12.422);
+  --color-slate-50: oklch(21% 0.003 247.858);
+  --color-slate-100: oklch(19% 0.007 247.896);
+  --color-slate-200: oklch(32% 0.013 255.508);
+  --color-slate-300: oklch(38% 0.022 252.894);
+  --color-slate-400: oklch(56% 0.04 256.788);
+  --color-slate-500: oklch(64% 0.046 257.417);
+  --color-slate-600: oklch(73% 0.043 257.281);
+  --color-slate-700: oklch(83% 0.044 257.287);
+  --color-slate-800: oklch(90% 0.041 260.031);
+  --color-slate-900: oklch(95% 0.042 265.755);
+  --color-slate-950: oklch(98% 0.042 264.695);
+  --color-gray-50: oklch(21% 0.002 247.839);
+  --color-gray-100: oklch(19% 0.003 264.542);
+  --color-gray-200: oklch(32% 0.006 264.531);
+  --color-gray-300: oklch(38% 0.01 258.338);
+  --color-gray-400: oklch(56% 0.022 261.325);
+  --color-gray-500: oklch(64% 0.027 264.364);
+  --color-gray-600: oklch(73% 0.03 256.802);
+  --color-gray-700: oklch(83% 0.034 259.733);
+  --color-gray-800: oklch(90% 0.033 256.848);
+  --color-gray-900: oklch(95% 0.034 264.665);
+  --color-gray-950: oklch(98% 0.028 261.692);
+  --color-zinc-100: oklch(19% 0.001 286.375);
+  --color-zinc-200: oklch(32% 0.004 286.32);
+  --color-zinc-300: oklch(38% 0.006 286.286);
+  --color-zinc-400: oklch(56% 0.015 286.067);
+  --color-zinc-500: oklch(64% 0.016 285.938);
+  --color-zinc-600: oklch(73% 0.017 285.786);
+  --color-zinc-700: oklch(83% 0.013 285.805);
+  --color-zinc-800: oklch(90% 0.006 286.033);
+  --color-zinc-900: oklch(95% 0.006 285.885);
+  --color-zinc-950: oklch(98% 0.005 285.823);
+  --color-stone-50: oklch(21% 0.001 106.423);
+  --color-stone-100: oklch(19% 0.001 106.424);
+  --color-stone-200: oklch(32% 0.003 48.717);
+  --color-stone-300: oklch(38% 0.005 56.366);
+  --color-stone-400: oklch(56% 0.01 56.259);
+  --color-stone-500: oklch(64% 0.013 58.071);
+  --color-stone-600: oklch(73% 0.011 73.639);
+  --color-stone-700: oklch(83% 0.01 67.558);
+  --color-stone-800: oklch(90% 0.007 34.298);
+  --color-stone-900: oklch(95% 0.006 56.043);
+  --color-stone-950: oklch(98% 0.004 49.25);
+  --color-mauve-50: oklch(14.5% 0.008 326);
+  --color-mauve-100: oklch(21.2% 0.019 322.12);
+  --color-mauve-200: oklch(26.3% 0.024 320.12);
+  --color-mauve-300: oklch(36.4% 0.029 323.89);
+  --color-mauve-700: oklch(86.5% 0.012 325.68);
+  --color-mauve-800: oklch(92.2% 0.005 325.62);
+  --color-mauve-900: oklch(96% 0.003 325.6);
+  --color-mauve-950: oklch(98.5% 0 none);
+  --color-olive-50: oklch(15.3% 0.006 107.1);
+  --color-olive-100: oklch(22.8% 0.013 107.4);
+  --color-olive-200: oklch(28.6% 0.016 107.4);
+  --color-olive-300: oklch(39.4% 0.023 107.4);
+  --color-olive-700: oklch(88% 0.011 106.6);
+  --color-olive-800: oklch(93% 0.007 106.5);
+  --color-olive-900: oklch(96.6% 0.005 106.5);
+  --color-olive-950: oklch(98.8% 0.003 106.5);
+  --color-mist-50: oklch(14.8% 0.004 228.8);
+  --color-mist-100: oklch(21.8% 0.008 223.9);
+  --color-mist-200: oklch(27.5% 0.011 216.9);
+  --color-mist-300: oklch(37.8% 0.015 216);
+  --color-mist-700: oklch(87.2% 0.007 219.6);
+  --color-mist-800: oklch(92.5% 0.005 214.3);
+  --color-mist-900: oklch(96.3% 0.002 197.1);
+  --color-mist-950: oklch(98.7% 0.002 197.1);
+  --color-taupe-50: oklch(14.7% 0.004 49.3);
+  --color-taupe-100: oklch(21.4% 0.009 43.1);
+  --color-taupe-200: oklch(26.8% 0.011 36.5);
+  --color-taupe-300: oklch(36.7% 0.016 35.7);
+  --color-taupe-700: oklch(86.8% 0.007 39.5);
+  --color-taupe-800: oklch(92.2% 0.005 34.3);
+  --color-taupe-900: oklch(96% 0.002 17.2);
+  --color-taupe-950: oklch(98.6% 0.002 67.8);
+}
+
+html.gelap :is([style*="background: white"], [style*="background-color: white"]) { background: var(--wm-kartu) !important; }
+html.gelap :is([style^="color: rgba(0, 0, 0, 0."], [style*="; color: rgba(0, 0, 0, 0."]) { color: var(--wm-tinta-3) !important; }
+html.gelap :is([style^="color: rgb(29, 78, 216)"], [style*="; color: rgb(29, 78, 216)"], [style^="color: rgb(30, 64, 175)"], [style*="; color: rgb(30, 64, 175)"]) { color: #60a5fa !important; }
+html.gelap :is([style*="background: rgba(254, 205, 211"], [style*="background: rgba(233, 213, 255"], [style*="background: rgba(207, 250, 254"],
+  [style*="background: rgba(254, 243, 199"], [style*="background: rgba(224, 231, 255"]) { background: rgba(255, 255, 255, .06) !important; }
+
+@layer base {
+  html.gelap :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"]), select, textarea) {
+    background-color: var(--wm-kartu-2);
+    color: var(--wm-tinta);
+  }
+}
+
+html.gelap .kaca-login :is(input:not([type='checkbox']):not([type='radio']), select) { background: rgba(255, 255, 255, .06); border-color: var(--wm-garis); }
+html.gelap .kaca-login :is(input:not([type='checkbox']):not([type='radio']), select):focus { background: var(--wm-kartu-2); }
+
+html.gelap :is([style^="color: rgb(180, 83, 9)"], [style*="; color: rgb(180, 83, 9)"]) { color: #fcd34d !important; }
+html.gelap :is([style^="color: rgb(146, 64, 14)"], [style*="; color: rgb(146, 64, 14)"]) { color: #fcd34d !important; }
+html.gelap :is([style^="color: rgb(120, 53, 15)"], [style*="; color: rgb(120, 53, 15)"]) { color: #fde68a !important; }
+html.gelap :is([style^="color: rgb(146, 96, 10)"], [style*="; color: rgb(146, 96, 10)"]) { color: #fcd34d !important; }
+html.gelap :is([style^="color: rgb(161, 98, 7)"], [style*="; color: rgb(161, 98, 7)"]) { color: #fde047 !important; }
+html.gelap :is([style^="color: rgb(133, 77, 14)"], [style*="; color: rgb(133, 77, 14)"]) { color: #fde047 !important; }
+html.gelap :is([style^="color: rgb(113, 63, 18)"], [style*="; color: rgb(113, 63, 18)"]) { color: #fde047 !important; }
+html.gelap :is([style^="color: rgb(194, 65, 12)"], [style*="; color: rgb(194, 65, 12)"]) { color: #fdba74 !important; }
+html.gelap :is([style^="color: rgb(154, 52, 18)"], [style*="; color: rgb(154, 52, 18)"]) { color: #fdba74 !important; }
+html.gelap :is([style^="color: rgb(4, 120, 87)"], [style*="; color: rgb(4, 120, 87)"]) { color: #6ee7b7 !important; }
+html.gelap :is([style^="color: rgb(6, 95, 70)"], [style*="; color: rgb(6, 95, 70)"]) { color: #6ee7b7 !important; }
+html.gelap :is([style^="color: rgb(6, 78, 59)"], [style*="; color: rgb(6, 78, 59)"]) { color: #a7f3d0 !important; }
+html.gelap :is([style^="color: rgb(15, 118, 110)"], [style*="; color: rgb(15, 118, 110)"]) { color: #5eead4 !important; }
+html.gelap :is([style^="color: rgb(17, 94, 89)"], [style*="; color: rgb(17, 94, 89)"]) { color: #5eead4 !important; }
+html.gelap :is([style^="color: rgb(21, 128, 61)"], [style*="; color: rgb(21, 128, 61)"]) { color: #86efac !important; }
+html.gelap :is([style^="color: rgb(22, 101, 52)"], [style*="; color: rgb(22, 101, 52)"]) { color: #86efac !important; }
+html.gelap :is([style^="color: rgb(20, 83, 45)"], [style*="; color: rgb(20, 83, 45)"]) { color: #bbf7d0 !important; }
+html.gelap :is([style^="color: rgb(153, 27, 27)"], [style*="; color: rgb(153, 27, 27)"]) { color: #fca5a5 !important; }
+html.gelap :is([style^="color: rgb(185, 28, 28)"], [style*="; color: rgb(185, 28, 28)"]) { color: #fca5a5 !important; }
+html.gelap :is([style^="color: rgb(127, 29, 29)"], [style*="; color: rgb(127, 29, 29)"]) { color: #fecaca !important; }
+html.gelap :is([style^="color: rgb(190, 18, 60)"], [style*="; color: rgb(190, 18, 60)"]) { color: #fda4af !important; }
+html.gelap :is([style^="color: rgb(159, 18, 57)"], [style*="; color: rgb(159, 18, 57)"]) { color: #fda4af !important; }
+html.gelap :is([style^="color: rgb(14, 116, 144)"], [style*="; color: rgb(14, 116, 144)"]) { color: #67e8f9 !important; }
+html.gelap :is([style^="color: rgb(21, 94, 117)"], [style*="; color: rgb(21, 94, 117)"]) { color: #67e8f9 !important; }
+html.gelap :is([style^="color: rgb(3, 105, 161)"], [style*="; color: rgb(3, 105, 161)"]) { color: #7dd3fc !important; }
+html.gelap :is([style^="color: rgb(7, 89, 133)"], [style*="; color: rgb(7, 89, 133)"]) { color: #7dd3fc !important; }
+html.gelap :is([style^="color: rgb(30, 58, 138)"], [style*="; color: rgb(30, 58, 138)"]) { color: #93c5fd !important; }
+html.gelap :is([style^="color: rgb(30, 64, 175)"], [style*="; color: rgb(30, 64, 175)"]) { color: #93c5fd !important; }
+html.gelap :is([style^="color: rgb(29, 78, 216)"], [style*="; color: rgb(29, 78, 216)"]) { color: #93c5fd !important; }
+html.gelap :is([style^="color: rgb(55, 48, 163)"], [style*="; color: rgb(55, 48, 163)"]) { color: #a5b4fc !important; }
+html.gelap :is([style^="color: rgb(67, 56, 202)"], [style*="; color: rgb(67, 56, 202)"]) { color: #a5b4fc !important; }
+html.gelap :is([style^="color: rgb(91, 33, 182)"], [style*="; color: rgb(91, 33, 182)"]) { color: #c4b5fd !important; }
+html.gelap :is([style^="color: rgb(109, 40, 217)"], [style*="; color: rgb(109, 40, 217)"]) { color: #c4b5fd !important; }
+html.gelap :is([style^="color: rgb(124, 58, 237)"], [style*="; color: rgb(124, 58, 237)"]) { color: #c4b5fd !important; }
+html.gelap :is([style^="color: rgb(126, 34, 206)"], [style*="; color: rgb(126, 34, 206)"]) { color: #d8b4fe !important; }
+html.gelap :is([style^="color: rgb(107, 33, 168)"], [style*="; color: rgb(107, 33, 168)"]) { color: #d8b4fe !important; }
+html.gelap :is([style^="color: rgb(134, 25, 143)"], [style*="; color: rgb(134, 25, 143)"]) { color: #f0abfc !important; }
+html.gelap :is([style^="color: rgb(190, 24, 93)"], [style*="; color: rgb(190, 24, 93)"]) { color: #f9a8d4 !important; }
+html.gelap :is([style^="color: rgb(157, 23, 77)"], [style*="; color: rgb(157, 23, 77)"]) { color: #f9a8d4 !important; }
+html.gelap :is([style*="background: rgb(255, 251, 235)"], [style*="background-color: rgb(255, 251, 235)"]) { background: color-mix(in srgb, #f59e0b 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 243, 199)"], [style*="background-color: rgb(254, 243, 199)"]) { background: color-mix(in srgb, #f59e0b 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(253, 230, 138)"], [style*="background-color: rgb(253, 230, 138)"]) { background: color-mix(in srgb, #f59e0b 26%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(255, 247, 237)"], [style*="background-color: rgb(255, 247, 237)"]) { background: color-mix(in srgb, #f97316 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(255, 237, 213)"], [style*="background-color: rgb(255, 237, 213)"]) { background: color-mix(in srgb, #f97316 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 242, 242)"], [style*="background-color: rgb(254, 242, 242)"]) { background: color-mix(in srgb, #ef4444 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 226, 226)"], [style*="background-color: rgb(254, 226, 226)"]) { background: color-mix(in srgb, #ef4444 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 202, 202)"], [style*="background-color: rgb(254, 202, 202)"]) { background: color-mix(in srgb, #ef4444 26%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(255, 241, 242)"], [style*="background-color: rgb(255, 241, 242)"]) { background: color-mix(in srgb, #f43f5e 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(255, 228, 230)"], [style*="background-color: rgb(255, 228, 230)"]) { background: color-mix(in srgb, #f43f5e 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(236, 253, 245)"], [style*="background-color: rgb(236, 253, 245)"]) { background: color-mix(in srgb, #10b981 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(209, 250, 229)"], [style*="background-color: rgb(209, 250, 229)"]) { background: color-mix(in srgb, #10b981 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(240, 253, 244)"], [style*="background-color: rgb(240, 253, 244)"]) { background: color-mix(in srgb, #22c55e 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(220, 252, 231)"], [style*="background-color: rgb(220, 252, 231)"]) { background: color-mix(in srgb, #22c55e 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(240, 253, 250)"], [style*="background-color: rgb(240, 253, 250)"]) { background: color-mix(in srgb, #14b8a6 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(204, 251, 241)"], [style*="background-color: rgb(204, 251, 241)"]) { background: color-mix(in srgb, #14b8a6 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(236, 254, 255)"], [style*="background-color: rgb(236, 254, 255)"]) { background: color-mix(in srgb, #06b6d4 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(207, 250, 254)"], [style*="background-color: rgb(207, 250, 254)"]) { background: color-mix(in srgb, #06b6d4 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(240, 249, 255)"], [style*="background-color: rgb(240, 249, 255)"]) { background: color-mix(in srgb, #0ea5e9 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(224, 242, 254)"], [style*="background-color: rgb(224, 242, 254)"]) { background: color-mix(in srgb, #0ea5e9 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(239, 246, 255)"], [style*="background-color: rgb(239, 246, 255)"]) { background: color-mix(in srgb, #3b82f6 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(219, 234, 254)"], [style*="background-color: rgb(219, 234, 254)"]) { background: color-mix(in srgb, #3b82f6 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(238, 242, 255)"], [style*="background-color: rgb(238, 242, 255)"]) { background: color-mix(in srgb, #6366f1 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(224, 231, 255)"], [style*="background-color: rgb(224, 231, 255)"]) { background: color-mix(in srgb, #6366f1 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(245, 243, 255)"], [style*="background-color: rgb(245, 243, 255)"]) { background: color-mix(in srgb, #8b5cf6 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(237, 233, 254)"], [style*="background-color: rgb(237, 233, 254)"]) { background: color-mix(in srgb, #8b5cf6 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(250, 245, 255)"], [style*="background-color: rgb(250, 245, 255)"]) { background: color-mix(in srgb, #a855f7 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(243, 232, 255)"], [style*="background-color: rgb(243, 232, 255)"]) { background: color-mix(in srgb, #a855f7 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(253, 242, 248)"], [style*="background-color: rgb(253, 242, 248)"]) { background: color-mix(in srgb, #ec4899 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(252, 231, 243)"], [style*="background-color: rgb(252, 231, 243)"]) { background: color-mix(in srgb, #ec4899 18%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 252, 232)"], [style*="background-color: rgb(254, 252, 232)"]) { background: color-mix(in srgb, #eab308 12%, var(--wm-kartu)) !important; }
+html.gelap :is([style*="background: rgb(254, 249, 195)"], [style*="background-color: rgb(254, 249, 195)"]) { background: color-mix(in srgb, #eab308 18%, var(--wm-kartu)) !important; }
+
+html.gelap :is(
+  [style*="background: linear-gradient(135deg, rgb(255, 241, 242)"],
+  [style*="background: linear-gradient(135deg, rgb(239, 246, 255)"],
+  [style*="background: linear-gradient(135deg, rgb(253, 242, 248)"],
+  [style*="background: linear-gradient(135deg, rgb(240, 253, 250)"],
+  [style*="background: linear-gradient(135deg, rgb(245, 243, 255)"],
+  [style*="background: linear-gradient(135deg, rgb(255, 251, 235)"],
+  [style*="background: linear-gradient(135deg, rgb(240, 253, 244)"],
+  [style*="background: linear-gradient(135deg, rgb(248, 250, 252)"],
+  [style*="background: linear-gradient(135deg, rgb(241, 245, 249)"],
+  [style*="background: linear-gradient(135deg, rgb(255, 255, 255)"],
+  [style*="background: linear-gradient(135deg, rgb(236, 253, 245)"],
+  [style*="background: linear-gradient(135deg, rgb(254, 242, 242)"],
+  [style*="background: linear-gradient(135deg, rgb(255, 247, 237)"],
+  [style*="background: linear-gradient(135deg, rgb(238, 242, 255)"],
+  [style*="background: linear-gradient(135deg, rgb(250, 245, 255)"],
+  [style*="background: linear-gradient(135deg, rgb(240, 249, 255)"]) { background: color-mix(in srgb, var(--wm-kartu-2) 100%, transparent) !important; }

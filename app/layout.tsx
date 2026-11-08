@@ -1,6 +1,8 @@
 import './globals.css';
+import './tema-gelap.css';
 import type { Metadata, Viewport } from 'next';
 import { PwaBootstrap, PembaruanAndroid, PantauVersiWeb, PenjagaGalatTulis, PenjagaDialog, PelaporGalat } from '@/components/shared';
+import { PenyelarasTema, SKRIP_TEMA_AWAL } from '@/components/shared/Tema';
 
 export const metadata: Metadata = {
   title: { default: 'Dashboard PTS IVP - IndoVisual', template: '%s · PTS IVP' },
@@ -29,7 +31,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SKRIP_TEMA_AWAL }} />
+      </head>
       <body className="antialiased">
+        <PenyelarasTema />
         <PwaBootstrap />
         <PenjagaGalatTulis />
         <PelaporGalat />
