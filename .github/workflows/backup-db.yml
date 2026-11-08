@@ -3,7 +3,8 @@ name: Backup basis data mingguan
 # Paket Supabase Free tidak menyediakan backup yang bisa di-restore sendiri. Workflow ini
 # membuat dump skema public tiap Senin 02:00 WIB (+ bisa dijalankan manual), MENGENKRIPSINYA
 # (repo ini publik - artifact tanpa enkripsi bisa diunduh orang lain), lalu menyimpannya
-# sebagai artifact GitHub 90 hari. File di Storage (foto, PDF) tidak ikut.
+# sebagai artifact GitHub 90 hari, bersama salinan kode sumber pada komit yang sama (juga
+# terenkripsi) - jadi satu artifact = backup platform penuh. File di Storage (foto, PDF) tidak ikut.
 #
 # Perlu 2 secret (Settings -> Secrets and variables -> Actions):
 #   SUPABASE_DB_URL     connection string "Session pooler" (Supabase -> Connect), IPv4
@@ -45,6 +46,9 @@ jobs:
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y -qq postgresql-client-17
 
+      - uses: actions/checkout@v4
+        if: steps.cek.outputs.jalan == 'true'
+
       - name: Dump & enkripsi
         if: steps.cek.outputs.jalan == 'true'
         env:
@@ -57,6 +61,9 @@ jobs:
           ls -la "$NAMA.dump"
           gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 --passphrase "$SANDI" -o "$NAMA.dump.gpg" "$NAMA.dump"
           rm -f "$NAMA.dump"
+          git archive --format=tar.gz -o "$NAMA-kode.tar.gz" HEAD
+          gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 --passphrase "$SANDI" -o "$NAMA-kode.tar.gz.gpg" "$NAMA-kode.tar.gz"
+          rm -f "$NAMA-kode.tar.gz"
           echo "NAMA=$NAMA" >> "$GITHUB_ENV"
 
       - name: Simpan artifact (90 hari)
@@ -64,6 +71,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.NAMA }}
-          path: ${{ env.NAMA }}.dump.gpg
+          path: |
+            ${{ env.NAMA }}.dump.gpg
+            ${{ env.NAMA }}-kode.tar.gz.gpg
           retention-days: 90
           if-no-files-found: error

@@ -13,7 +13,7 @@ const PUBLIK: Record<string, string> = {
   'auth/forgot-password': 'minta OTP (dibatasi per username)', 'auth/verify-otp': 'ganti password dengan OTP (dibatasi)',
   'auth/register': 'pendaftaran akun tamu (Pending Approval)', 'auth/session': 'cek sesi milik cookie sendiri',
   'auth/2fa': 'tantangan 2FA', 'health': 'tanda hidup tanpa DB', 'galat': 'laporan galat klien (dibatasi)',
-  'push/vapid-public-key': 'kunci publik', 'android': 'info rilis aplikasi', 'android/unduh': 'unduh APK',
+  'push/vapid-public-key': 'kunci publik', 'lisensi/status': 'edisi & masa berlaku lisensi, tanpa kunci', 'android': 'info rilis aplikasi', 'android/unduh': 'unduh APK',
   'kelas/[token]': 'kelas eksternal: token kelas (TOKEN_SAH) + token peserta (x-peserta, di-hash)',
 };
 

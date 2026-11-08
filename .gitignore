@@ -60,3 +60,7 @@ __pycache__/
 /e2e/playwright-report/
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# File master hasil scripts/master/buat-master.mjs
+hasil-master/
+skema-ekspor/
