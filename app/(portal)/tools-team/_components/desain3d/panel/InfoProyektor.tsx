@@ -4,6 +4,9 @@ import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { SusunBlending } from './SusunBlending';
 
+const TEKS_ILUMINANSI = 'Sama dengan kalkulator Panasonic: lumen dibagi luas gambar, tanpa cahaya ruangan (setara ruang gelap 0 lux). Pengaruh lampu ruangan dihitung di bagian Kontras.';
+const TEKS_TANPA_PANEL = 'Resolusi panel (native) belum diisi, jadi lumen dihitung penuh. Panel 16:10 (WUXGA) dengan sinyal 16:9 hanya memakai 90% lumen; isi resolusi panel agar sama dengan kalkulator Panasonic.';
+
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
   const { benda, gantiBenda, gridSinar, infoBlending, kotakRuang, ruang, setGridSinar, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
   const blokSinarSebenarnya = (layar: Benda | null) => {
@@ -98,6 +101,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <span className="block text-[10.5px] font-bold uppercase tracking-wider text-slate-500 pt-0.5">Brightness</span>
         {baris('Projector output', `${Math.round(h.lumenGambar).toLocaleString('id-ID')} lm${h.lumenGambar < h.lumen - 0.5 ? ` (dari ${h.lumen.toLocaleString('id-ID')})` : ''}`)}
         {baris('Screen illuminance', `${Math.round(h.lux ?? 0).toLocaleString('id-ID')} lx`)}
+        <p className="pt-1 text-[11px] leading-relaxed text-slate-500">{TEKS_ILUMINANSI}</p>
+        {!p.resolusiProyektor && <p className="text-[11px] leading-relaxed font-semibold text-amber-700">{TEKS_TANPA_PANEL}</p>}
       </div>
     );
   };

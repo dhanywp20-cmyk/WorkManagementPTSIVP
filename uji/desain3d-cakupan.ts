@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, cakupanProyektor, cekRuangGerak, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
+  bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
   templateRuang, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
@@ -153,6 +153,20 @@ console.log('\nUkuran gambar = ukuran layar setelah Posisikan otomatis');
     return Math.abs(s.lebar - layar.w) < 0.001 && Math.abs(s.tinggi - layar.h) < 0.001;
   });
   cek('lebar & tinggi gambar sama dengan layar (selisih < 1 mm) untuk 100", 120", 135", 150"', ok);
+}
+
+console.log('\nIluminansi sama dengan kalkulator Panasonic (PT-VMZ61 + Supplied lens, 16:9)');
+{
+  const data = JSON.parse(readFileSync('lib/data/panasonic-tdc.json', 'utf8')) as { model: ModelTdc[] };
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const m = data.model.find(x => x.n === 'PT-VMZ61')!, l = m.l.find(x => x.n === 'Supplied lens')!;
+  const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' });
+  const p = { ...p0, ...isiDariKatalog(p0, m, l, '16:9', '2.79') };
+  const h = hasilPadaJarak(p, 3);
+  cek('projector output 16:9 = 5.580 lm (90% dari 6.200 lm panel 16:10), sama dengan kalkulator resmi', Math.round(h.lumenGambar) === 5580);
+  const resmi = 5580 / (2.741 * 1.542);
+  cek('gambar 2,741 × 1,542 m: 1.320 lx, sama dengan kalkulator resmi', Math.round(resmi) === 1320 && Math.abs(5580 / (h.lebar * h.tinggi) - h.lux!) < 1);
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
