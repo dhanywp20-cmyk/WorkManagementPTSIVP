@@ -9,24 +9,19 @@ Yang dibutuhkan: akun Supabase, akun Vercel, akun GitHub (disarankan), dan kompu
 ## 1. Basis data Supabase (baru & kosong)
 
 1. Buat project di <https://supabase.com/dashboard> → **New project**. Pilih region terdekat (mis. Singapore), simpan **Database password** di password manager.
-2. **Database → Extensions**: aktifkan `pg_cron` dan `pg_net` (dipakai jadwal otomatis & notifikasi).
-3. Ambil connection string: tombol **Connect** → **Session pooler** → salin, ganti `[YOUR-PASSWORD]`.
-4. Pasang skema, berurutan (dari folder paket):
+2. Ambil connection string: tombol **Connect** → **Session pooler** → salin, ganti `[YOUR-PASSWORD]`.
+3. **Pasang database — SATU file, sekali jalan** (dari folder paket):
 
    ```bash
-   export DB_URL="postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
-   psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/00-ekstensi.sql
-   psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/01-skema-public.sql
-   psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/02-storage.sql
-   psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/03-realtime.sql
+   psql "postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres" -v ON_ERROR_STOP=1 -f database/INSTAL-DATABASE-LENGKAP.sql
    ```
 
-   Windows (PowerShell): ganti `export DB_URL=...` dengan `$env:DB_URL="..."` dan `"$DB_URL"` dengan `$env:DB_URL`.
-   Tanpa `psql`: buka **SQL Editor**, tempel isi tiap berkas, **Run** — urutan sama.
+   Isinya lengkap: ekstensi, seluruh tabel, fungsi, trigger, index, RLS, bucket Storage, dan Realtime. Bila ada galat, semuanya dibatalkan otomatis — perbaiki penyebabnya, lalu jalankan ulang file yang sama.
+   Tanpa `psql`: **SQL Editor** → **New query** → buka `INSTAL-DATABASE-LENGKAP.sql` dengan Notepad, salin semua, tempel → **Run**. Bila editor menolak karena file terlalu besar, pakai `psql`.
 
-5. **Jadwal pg_cron** (`skema/04-cron.sql`): buka berkasnya, ganti setiap `<GANTI_SERVICE_ROLE_KEY>` dan `<GANTI_PROJECT_REF>` dengan nilai project baru, lalu jalankan seperti di atas. Lewati bila berkasnya kosong.
-6. **Data demo (opsional)** — untuk presentasi atau uji coba: `psql "$DB_URL" -v ON_ERROR_STOP=1 -f skema/05-data-demo.sql`. Isinya fiktif (PT Demo, 5 jadwal, 5 tiket, 2 request desain, progress project, piket, tech note) dengan 6 akun: `admin.demo`, `manager.demo`, `supervisor.demo`, `teknisi1.demo`, `teknisi2.demo`, `sales.demo` — password semua `Demo#2026`. Sebelum dipakai sungguhan, hapus dengan `skema/06-hapus-data-demo.sql` lalu buat admin asli (`npm run buat-admin`).
-7. Catat dari **Settings → API**: Project URL, `anon` key, `service_role` key, dan **JWT Secret**.
+4. **Jadwal pg_cron**: hanya bila paket berisi `database/JADWAL-CRON.sql` — ganti setiap `<GANTI_SERVICE_ROLE_KEY>` dan `<GANTI_PROJECT_REF>` dengan nilai project baru, lalu jalankan dengan cara yang sama.
+5. **Data demo (opsional)** — untuk presentasi atau uji coba, jalankan `database/DATA-DEMO.sql` dengan cara yang sama. Isinya fiktif (PT Demo, 5 jadwal, 5 tiket, 2 request desain, progress project, piket, tech note) dengan 6 akun: `admin.demo`, `manager.demo`, `supervisor.demo`, `teknisi1.demo`, `teknisi2.demo`, `sales.demo` — password semua `Demo#2026`. Sebelum dipakai sungguhan, jalankan `database/HAPUS-DATA-DEMO.sql` lalu buat admin asli (`npm run buat-admin`).
+6. Catat dari **Settings → API**: Project URL, `anon` key, `service_role` key, dan **JWT Secret**.
 
 > Platform memakai login sendiri (tabel `users`), bukan Supabase Auth. Tidak perlu mengatur Auth provider.
 

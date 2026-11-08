@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { berkasMasuk, bersihkanSql, buangKunciPemilik, buangMenuPemilik, cariRahasia, nyalakanLisensi, rapikanPaket } from '../scripts/master/inti.mjs';
+import { berkasMasuk, bersihkanSql, buangKunciPemilik, buangMenuPemilik, cariRahasia, gabungSkema, nyalakanLisensi, rapikanPaket } from '../scripts/master/inti.mjs';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -8,6 +8,21 @@ console.log('\nIsi paket');
 cek('kode aplikasi ikut', berkasMasuk('app/(portal)/layout.tsx') && berkasMasuk('lib/lisensi/inti.ts') && berkasMasuk('vercel.json') && berkasMasuk('.env.example'));
 cek('berkas internal pemilik tidak ikut', !berkasMasuk('docs/BACKUP-DB.md') && !berkasMasuk('sql/cek-rls.sql') && !berkasMasuk('.github/workflows/ci.yml') && !berkasMasuk('scripts/lisensi/terbitkan.ts') && !berkasMasuk('scripts/terbitkan-apk.mjs') && !berkasMasuk('scripts/pemilik/buat-file-lokal.mjs') && berkasMasuk('scripts/master/buat-admin.mjs'));
 cek('berkas .env asli tidak ikut', !berkasMasuk('.env') && !berkasMasuk('.env.local') && !berkasMasuk('sub/.env.production'));
+cek('migrasi bertahap supabase/migrations & License Manager tidak ikut', !berkasMasuk('supabase/migrations/001_platform_improvements.sql') && !berkasMasuk('scripts/lisensi/License-Manager-WM.html'));
+
+console.log('\nDatabase satu file');
+const gabung = gabungSkema({
+  '00-ekstensi.sql': '-- Diekspor x. Jalankan berurutan: 00, 01\ncreate extension if not exists pgcrypto with schema extensions;\n',
+  '01-skema-public.sql': "SELECT pg_catalog.set_config('search_path', '', false);\nCREATE TABLE public.a (id int);\n",
+  '02-storage.sql': 'create policy p on storage.objects using (jwt_claim(1));\n',
+  '03-realtime.sql': 'alter publication supabase_realtime add table public.a;\n',
+  '04-cron.sql': '-- Jadwal pg_cron\n-- Diekspor x\n\n',
+});
+const iStorage = gabung.lengkap.indexOf('create policy p'), iReset = gabung.lengkap.lastIndexOf("'\"$user\", public, extensions'");
+cek('satu file: BEGIN/COMMIT, urutan ekstensi -> tabel -> storage -> realtime', /\nBEGIN;\n/.test(gabung.lengkap) && gabung.lengkap.trimEnd().endsWith('COMMIT;')
+  && gabung.lengkap.indexOf('create extension') < gabung.lengkap.indexOf('CREATE TABLE') && iStorage < gabung.lengkap.indexOf('alter publication'));
+cek('search_path dipulihkan sebelum bagian storage (pg_dump mengosongkannya)', iReset > 0 && iReset < iStorage);
+cek('tanpa komentar "jalankan berurutan" & cron kosong tidak dibuat', !gabung.lengkap.includes('Jalankan berurutan') && gabung.cron === null);
 
 console.log('\nMenu Database PTS');
 const menu = buangMenuPemilik(readFileSync('app/(portal)/_kerangka/daftar-menu.tsx', 'utf8'));
@@ -15,10 +30,10 @@ cek('menu & tautan OneDrive pemilik hilang', !menu.includes('Database PTS') && !
 cek('menu lain utuh', menu.includes("key: 'unit-movement'") && menu.includes("key: 'daily-report'") && /INTERNAL_DAILY_KEYS = \['picket-showroom', 'daily-report', 'unit-movement'\]/.test(menu));
 
 console.log('\nData demo');
-const demo = readFileSync('scripts/master/demo/05-data-demo.sql', 'utf8');
-const hapusDemo = readFileSync('scripts/master/demo/06-hapus-data-demo.sql', 'utf8');
+const demo = readFileSync('scripts/master/demo/DATA-DEMO.sql', 'utf8');
+const hapusDemo = readFileSync('scripts/master/demo/HAPUS-DATA-DEMO.sql', 'utf8');
 cek('data demo fiktif: tanpa menu Database, password di-hash bcrypt, bisa dihapus', !demo.includes('database-pts') && /extensions\.crypt\('Demo#2026', extensions\.gen_salt\('bf', 12\)\)/.test(demo) && /DELETE FROM public\.users/.test(hapusDemo));
-cek('semua id demo memakai awalan yang dihapus 06-hapus-data-demo', (demo.match(/'[0-9a-f]{8}-[0-9a-f]{4}-4000-8000-[0-9a-f]{12}'/g) || []).every(x => x.startsWith("'d0000000-0000-4000-8000-")));
+cek('semua id demo memakai awalan yang dihapus HAPUS-DATA-DEMO', (demo.match(/'[0-9a-f]{8}-[0-9a-f]{4}-4000-8000-[0-9a-f]{12}'/g) || []).every(x => x.startsWith("'d0000000-0000-4000-8000-")));
 
 const daftarKunci = buangKunciPemilik("export const A = [\n  'daily-report',\n  'database-pts',\n  'unit-movement',\n];\nconst B = { 'daily-report': 'X',\n  'database-pts': { label: 'Database PTS', icon: 'x' },\n};\nconst C = ['tech-note', 'unit-movement', 'database-pts',\n];\n");
 cek('pilihan menu Database PTS dibuang dari kode lain (User Management, nav)', !daftarKunci.includes('database-pts') && daftarKunci.includes("'unit-movement',\n];") && daftarKunci.includes("'daily-report': 'X',\n};"));

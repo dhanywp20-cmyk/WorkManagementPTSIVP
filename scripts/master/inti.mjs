@@ -1,6 +1,32 @@
 export const KECUALI_AWALAN = [
-  '.github/', '.claude/', 'docs/', 'arsip/', 'android/', 'sql/', 'hasil/', 'hasil-master/', 'e2e/', 'uji/',
+  '.github/', '.claude/', 'docs/', 'arsip/', 'android/', 'sql/', 'hasil/', 'hasil-master/', 'e2e/', 'uji/', 'supabase/',
 ];
+
+const isiSql = teks => teks.split('\n').filter(b => b.trim() && !b.trim().startsWith('--')).join('\n').trim();
+
+export function gabungSkema(berkas) {
+  const ambil = awal => bersihkanSql(berkas[Object.keys(berkas).find(n => n.startsWith(awal)) ?? ''] ?? '')
+    .split('\n').filter(b => !b.startsWith('-- Diekspor ')).join('\n');
+  const cron = ambil('04');
+  const bagian = [
+    '-- Work Management - INSTAL DATABASE LENGKAP',
+    '-- Jalankan SEKALI di project Supabase yang masih kosong (SQL Editor -> tempel -> Run, atau psql -f).',
+    '-- Berisi: ekstensi, seluruh tabel, fungsi, trigger, index, RLS, bucket Storage, Realtime.',
+    '-- Bila ada galat, semua dibatalkan otomatis - perbaiki penyebabnya lalu jalankan ulang file ini.',
+    '',
+    'BEGIN;',
+    '',
+    ambil('00'),
+    ambil('01'),
+    "SELECT pg_catalog.set_config('search_path', '\"$user\", public, extensions', false);",
+    '',
+    ambil('02'),
+    ambil('03'),
+    'COMMIT;',
+    '',
+  ];
+  return { lengkap: bagian.join('\n'), cron: isiSql(cron) ? cron : null };
+}
 export const KECUALI_PERSIS = ['LICENSE', 'README.md', 'DEPLOYMENT.md'];
 
 export const berkasMasuk = f => !KECUALI_AWALAN.some(a => f.startsWith(a)) && (!f.startsWith('scripts/') || f.startsWith('scripts/master/')) && !KECUALI_PERSIS.includes(f) && !/(^|\/)\.env(\.|$)/.test(f.replace(/\.env\.example$/, ''));

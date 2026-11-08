@@ -58,7 +58,7 @@ pg_restore --list wm.dump | head            # cek isi tanpa mengubah apa pun
 
 | Kebutuhan | Perintah |
 |---|---|
-| Server baru yang kosong | Aktifkan ekstensi (`skema/00-ekstensi.sql`), lalu `pg_restore --no-owner --no-privileges -d "$DB_URL" wm.dump`, kemudian `skema/02-storage.sql`, `03-realtime.sql`, `04-cron.sql` |
+| Server baru yang kosong | Aktifkan ekstensi (`database/untuk-pemulihan-backup/00-ekstensi.sql`), lalu `pg_restore --no-owner --no-privileges -d "$DB_URL" wm.dump`, kemudian `02-storage.sql`, `03-realtime.sql` dari folder yang sama (dan `database/JADWAL-CRON.sql` bila ada) |
 | Satu tabel yang rusak | Pulihkan dulu ke project/basis data uji: `pg_restore --no-owner --no-privileges -t <tabel> -d "<URL_UJI>" wm.dump`, ambil baris yang diperlukan |
 | Seluruh data di server yang sama | `pg_restore --no-owner --no-privileges --clean --if-exists -d "$DB_URL" wm.dump` — **menghapus data setelah tanggal backup**, hentikan aplikasi dulu |
 

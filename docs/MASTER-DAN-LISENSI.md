@@ -64,8 +64,8 @@ gpg --decrypt -o work-management-master-<versi>.zip work-management-master-<vers
 
 | Ikut | Tidak ikut |
 |---|---|
-| Kode aplikasi (saklar lisensi menyala), `public/`, `scripts/master/`, `vercel.json`, `.env.example` | `.github/`, `docs/` (audit internal), `sql/`, `arsip/`, `android/`, `e2e/`, `uji/`, `scripts/` selain `scripts/master/` (termasuk License Manager) |
-| `skema/` hasil ekspor (tanpa data, kunci & ref project diganti placeholder) + `05-data-demo.sql` | Data basis data, file `.env*`, kunci privat |
+| Kode aplikasi (saklar lisensi menyala), `public/`, `scripts/master/`, `vercel.json`, `.env.example` | `.github/`, `docs/` (audit internal), `sql/`, `arsip/`, `android/`, `e2e/`, `uji/`, `scripts/` selain `scripts/master/` (termasuk License Manager), `supabase/migrations/` |
+| `database/INSTAL-DATABASE-LENGKAP.sql` (satu file, tanpa data, kunci & ref project diganti placeholder) + `DATA-DEMO.sql` | Data basis data, file `.env*`, kunci privat |
 | `PANDUAN/` dari `docs/master/` | Menu **Database PTS** beserta tautan OneDrive pemilik |
 
 Pembuatan dibatalkan otomatis bila masih ditemukan JWT, kunci rahasia Supabase, kunci privat, atau tautan OneDrive pemilik.

@@ -1,4 +1,4 @@
--- Menghapus seluruh data demo dari 05-data-demo.sql (id berawalan d0000000-0000-4000-8000-).
+-- Menghapus seluruh data demo dari DATA-DEMO.sql (id berawalan d0000000-0000-4000-8000-).
 -- Data asli pelanggan tidak tersentuh.
 
 BEGIN;

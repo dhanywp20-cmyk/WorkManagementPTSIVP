@@ -7,7 +7,9 @@ Paket ini berisi seluruh yang dibutuhkan untuk memasang Work Management Platform
 | Folder / file | Isi |
 |---|---|
 | `app/`, `components/`, `lib/`, `public/` … | Kode aplikasi (Next.js 16, React 19) |
-| `skema/` | SQL untuk membangun basis data dari nol: `00-ekstensi`, `01-skema-public`, `02-storage`, `03-realtime`, `04-cron`, lalu opsional `05-data-demo` (akun & data contoh, hapus dengan `06-hapus-data-demo`) |
+| `database/INSTAL-DATABASE-LENGKAP.sql` | **Satu file** untuk membangun seluruh basis data dari nol (tabel, fungsi, RLS, Storage, Realtime) |
+| `database/DATA-DEMO.sql` | Opsional: akun & data contoh untuk presentasi (hapus dengan `HAPUS-DATA-DEMO.sql`) |
+| `database/untuk-pemulihan-backup/` | Hanya dipakai saat memulihkan backup ke server baru — tidak perlu saat instalasi |
 | `scripts/master/buat-admin.mjs` | Membuat akun admin pertama |
 | `.env.example` | Daftar environment variable |
 | `PANDUAN/` | Panduan instalasi, lisensi, backup, dan pembaruan |
@@ -15,7 +17,7 @@ Paket ini berisi seluruh yang dibutuhkan untuk memasang Work Management Platform
 
 ## Urutan pemasangan
 
-1. Siapkan basis data Supabase dan jalankan SQL di `skema/` → [PANDUAN/01-INSTALASI-CLOUD.md](PANDUAN/01-INSTALASI-CLOUD.md) bagian 1.
+1. Siapkan basis data Supabase dan jalankan `database/INSTAL-DATABASE-LENGKAP.sql` (sekali jalan) → [PANDUAN/01-INSTALASI-CLOUD.md](PANDUAN/01-INSTALASI-CLOUD.md) bagian 1.
 2. Pilih tempat menjalankan aplikasi:
    - **Vercel (cloud)** → [PANDUAN/01-INSTALASI-CLOUD.md](PANDUAN/01-INSTALASI-CLOUD.md)
    - **Server sendiri (lokal / VPS)** → [PANDUAN/02-INSTALASI-LOKAL.md](PANDUAN/02-INSTALASI-LOKAL.md)

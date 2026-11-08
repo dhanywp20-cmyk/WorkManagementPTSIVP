@@ -1,6 +1,6 @@
--- Data demo fiktif untuk pelanggan baru. Opsional: jalankan sesudah 00-04.
+-- Data demo fiktif untuk pelanggan baru. Opsional: jalankan sesudah INSTAL-DATABASE-LENGKAP.sql.
 -- Semua akun demo memakai password: Demo#2026  (ganti segera setelah login pertama)
--- Hapus data demo kapan saja: jalankan 06-hapus-data-demo.sql
+-- Hapus data demo kapan saja: jalankan HAPUS-DATA-DEMO.sql
 
 BEGIN;
 

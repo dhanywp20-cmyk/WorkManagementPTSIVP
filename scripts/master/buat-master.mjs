@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { berkasMasuk, buangKunciPemilik, buangMenuPemilik, bersihkanSql, cariRahasia, nyalakanLisensi, rapikanPaket } from './inti.mjs';
+import { berkasMasuk, buangKunciPemilik, buangMenuPemilik, bersihkanSql, cariRahasia, gabungSkema, nyalakanLisensi, rapikanPaket } from './inti.mjs';
 
 const arg = (nama, awal = null) => { const i = process.argv.indexOf(`--${nama}`); return i > 0 ? process.argv[i + 1] : awal; };
 const ada = nama => process.argv.includes(`--${nama}`);
@@ -44,20 +44,23 @@ for (const f of fs.readdirSync(panduan)) {
 }
 
 if (skema) {
-  const tujuanSkema = path.join(tahap, 'skema');
-  fs.mkdirSync(tujuanSkema, { recursive: true });
-  for (const f of fs.readdirSync(skema).filter(x => x.endsWith('.sql')).sort()) {
-    fs.writeFileSync(path.join(tujuanSkema, f), bersihkanSql(fs.readFileSync(path.join(skema, f), 'utf8')));
-  }
+  const db = path.join(tahap, 'database');
+  const pulih = path.join(db, 'untuk-pemulihan-backup');
+  fs.mkdirSync(pulih, { recursive: true });
+  const berkas = Object.fromEntries(fs.readdirSync(skema).filter(x => x.endsWith('.sql')).map(f => [f, fs.readFileSync(path.join(skema, f), 'utf8')]));
+  const { lengkap, cron } = gabungSkema(berkas);
+  fs.writeFileSync(path.join(db, 'INSTAL-DATABASE-LENGKAP.sql'), lengkap);
+  if (cron) fs.writeFileSync(path.join(db, 'JADWAL-CRON.sql'), cron);
+  for (const f of Object.keys(berkas).filter(n => /^0[023]-/.test(n))) fs.writeFileSync(path.join(pulih, f), bersihkanSql(berkas[f]));
   const demo = path.join(akar, 'scripts/master/demo');
-  for (const f of fs.readdirSync(demo).filter(x => x.endsWith('.sql'))) fs.copyFileSync(path.join(demo, f), path.join(tujuanSkema, f));
+  for (const f of fs.readdirSync(demo).filter(x => x.endsWith('.sql'))) fs.copyFileSync(path.join(demo, f), path.join(db, f));
 }
 
 fs.writeFileSync(path.join(tahap, 'VERSI.txt'), [
   `Work Management Platform - file master ${versi}`,
   `Komit sumber: ${komit}`,
   `Dibuat: ${new Date().toISOString()}`,
-  `Skema database: ${skema ? 'ada di folder skema/' : 'TIDAK disertakan (paket uji)'}`,
+  `Database: ${skema ? 'database/INSTAL-DATABASE-LENGKAP.sql' : 'TIDAK disertakan (paket uji)'}`,
   '',
 ].join('\n'));
 
