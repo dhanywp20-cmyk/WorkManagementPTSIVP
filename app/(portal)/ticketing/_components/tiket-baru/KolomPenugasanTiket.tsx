@@ -1,5 +1,6 @@
 'use client';
 
+import { salinBerkas } from '@/lib/unggah-tahan';
 import { Ikon } from '@/components/shared/Ikon';
 import { SalesPicker } from '@/components/shared';
 import { User, TeamMember } from '../shared';
@@ -117,7 +118,7 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
           Upload Foto <span className="text-gray-500 font-normal">(Optional)</span>
         </label>
         <p className="text-xs text-gray-500 mb-3">Foto pendukung kondisi awal / bukti masalah</p>
-        <input type="file" accept="image/*" aria-label="Foto pendukung ticket" onChange={e => set({ photo: e.target.files?.[0] || null })}
+        <input type="file" accept="image/*" aria-label="Foto pendukung ticket" onChange={async e => set({ photo: await salinBerkas(e.target.files?.[0]) })}
           className="w-full border rounded-xl px-4 py-2.5 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 transition-all text-sm"
           style={{ borderColor: "rgba(0,0,0,0.12)" }} />
         {form.photo && (
