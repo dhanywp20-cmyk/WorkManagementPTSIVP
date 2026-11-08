@@ -12,10 +12,27 @@ const tgl = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10).replace
 const keluar = path.join(akar, 'hasil-master');
 
 const tanya = (teks, rahasia) => new Promise(selesai => {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+  const stdin = process.stdin;
+  if (!rahasia || !stdin.isTTY) {
+    const rl = readline.createInterface({ input: stdin, output: process.stdout });
+    rl.question(teks, j => { rl.close(); selesai(j.trim()); });
+    return;
+  }
   process.stdout.write(teks);
-  if (rahasia) rl._writeToOutput = () => {};
-  rl.question('', j => { rl.close(); if (rahasia) process.stdout.write('\n'); selesai(j.trim()); });
+  let isi = '';
+  const baca = potong => {
+    for (const c of potong) {
+      if (c === '\r' || c === '\n') {
+        stdin.off('data', baca); stdin.setRawMode(false); stdin.pause();
+        process.stdout.write(`[${isi.length} karakter diterima]\n`);
+        return selesai(isi.trim());
+      }
+      if (c === '\u0003') { stdin.setRawMode(false); process.exit(130); }
+      if (c === '\u007f' || c === '\b') isi = isi.slice(0, -1);
+      else if (c >= ' ') isi += c;
+    }
+  };
+  stdin.setRawMode(true); stdin.setEncoding('utf8'); stdin.resume(); stdin.on('data', baca);
 });
 
 const jalankan = (perintah, argumen, opsi = {}) => execFileSync(perintah, argumen, { encoding: 'utf8', maxBuffer: 1 << 30, ...opsi });
