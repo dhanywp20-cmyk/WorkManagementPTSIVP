@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Ikon } from '@/components/shared/Ikon';
 import type { Lembar } from '@/lib/lembar-cetak';
 import { SimpanKeProyek } from './SimpanKeProyek';
@@ -161,14 +162,33 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
 }
 
 export function Catatan({ children }: { children: React.ReactNode }) {
+  const tombol = useRef<HTMLButtonElement>(null);
+  const [posisi, setPosisi] = useState<React.CSSProperties | null>(null);
+  const buka = () => {
+    const r = tombol.current?.getBoundingClientRect();
+    if (!r) return;
+    const lebar = Math.min(288, window.innerWidth * 0.8);
+    const left = Math.max(8, Math.min(r.left, window.innerWidth - lebar - 8));
+    setPosisi(r.bottom > window.innerHeight * 0.6 ? { left, bottom: window.innerHeight - r.top + 6, width: lebar } : { left, top: r.bottom + 6, width: lebar });
+  };
+  const tutup = () => setPosisi(null);
+  useEffect(() => {
+    if (!posisi) return;
+    window.addEventListener('scroll', tutup, true);
+    window.addEventListener('resize', tutup);
+    return () => { window.removeEventListener('scroll', tutup, true); window.removeEventListener('resize', tutup); };
+  }, [posisi]);
   return (
-    <span className="group relative inline-flex align-middle mt-2 print:hidden">
-      <button type="button" aria-label="Keterangan"
+    <span className="relative inline-flex align-middle mt-2 print:hidden" onMouseEnter={buka} onMouseLeave={tutup}>
+      <button ref={tombol} type="button" aria-label="Keterangan" aria-expanded={!!posisi} onFocus={buka} onBlur={tutup} onClick={buka}
         className="w-5 h-5 grid place-items-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:border-slate-400">i</button>
-      <span role="tooltip"
-        className="pointer-events-none absolute left-0 top-6 z-40 hidden group-hover:block group-focus-within:block w-[min(18rem,80vw)] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
-        {children}
-      </span>
+      {posisi && createPortal(
+        <span role="tooltip" style={{ position: 'fixed', ...posisi }}
+          className="pointer-events-none z-[100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
+          {children}
+        </span>,
+        document.body,
+      )}
     </span>
   );
 }

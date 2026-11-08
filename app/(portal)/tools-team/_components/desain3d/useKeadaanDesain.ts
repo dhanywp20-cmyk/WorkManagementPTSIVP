@@ -15,6 +15,7 @@ import { usePreferensiKanvas } from './usePreferensiKanvas';
 import { useStatusDesain } from './useStatusDesain';
 import { useRefMesin } from './useRefMesin';
 import { useAnalisisDisplay } from './useAnalisisDisplay';
+import { lengkapiDariKatalog, muatKatalogPanasonic, perluDataResmi } from './inti/katalogPanasonic';
 
 export { KUNCI_SIMPAN } from './useStatusDesain';
 
@@ -142,6 +143,13 @@ export function useKeadaanDesain() {
   const adaProyektor = benda.some(b => b.jenis === 'proyektor');
   const jumlahProyektor = benda.filter(b => b.jenis === 'proyektor').length;
 
+  const sudahDilengkapi = useRef(new Set<string>());
+  useEffect(() => {
+    const perlu = benda.filter(b => perluDataResmi(b) && !sudahDilengkapi.current.has(b.id));
+    if (!perlu.length) return;
+    perlu.forEach(b => sudahDilengkapi.current.add(b.id));
+    muatKatalogPanasonic().then(k => setBenda(bs => lengkapiDariKatalog(bs, k))).catch(() => {});
+  }, [benda]);
   const bukaAtur = useRef(() => { setSisi(null); setPanel(true); });
   const sisiLalu = useRef(sisi), bendaLalu = useRef(benda);
   useEffect(() => {

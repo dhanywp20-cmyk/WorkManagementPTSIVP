@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
+  bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, lengkapiDariKatalog, perluDataResmi, type KatalogTdc, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
   templateRuang, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
@@ -167,6 +167,22 @@ console.log('\nIluminansi sama dengan kalkulator Panasonic (PT-VMZ61 + Supplied 
   cek('projector output 16:9 = 5.580 lm (90% dari 6.200 lm panel 16:10), sama dengan kalkulator resmi', Math.round(h.lumenGambar) === 5580);
   const resmi = 5580 / (2.741 * 1.542);
   cek('gambar 2,741 × 1,542 m: 1.320 lx, sama dengan kalkulator resmi', Math.round(resmi) === 1320 && Math.abs(5580 / (h.lebar * h.tinggi) - h.lux!) < 1);
+}
+
+console.log('\nDesain tersimpan lama dilengkapi data resmi (Immersive ET-ELU20 16:9)');
+{
+  const katalog = JSON.parse(readFileSync('lib/data/panasonic-tdc.json', 'utf8')) as KatalogTdc;
+  const r: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', r2: null };
+  const lama: Benda = { ...bendaBaru('proyektor', daftarRuang(r)[0], { pasangProyektor: 'plafon' }), nama: 'PT-MZ882 dinding kiri 3', modelProduk: 'Panasonic PT-MZ882 + ET-ELU20',
+    rasioProyektor: '16:9', throwRatio: 0.304, trMin: 0.304, trMax: 0.3277, koreksiJarak: 0.029388, lumen: 8200, resolusiProyektor: undefined, koefRasio: undefined };
+  const [baru] = lengkapiDariKatalog([lama], katalog);
+  const h = hasilPadaJarak(baru, 1.771);
+  cek('data resmi terisi: panel WUXGA, koefisien per rasio, nama tetap', baru.resolusiProyektor === 'WUXGA' && !!baru.koefRasio && baru.nama === lama.nama);
+  cek('hasil sama dengan kalkulator: L 1,771 m -> 5,323 × 2,994 m, 7.380 lm, 463 lx',
+    Math.abs(h.lebar - 5.323) < 0.002 && Math.abs(h.tinggi - 2.994) < 0.002 && Math.round(h.lumenGambar) === 7380 && Math.round(h.lux!) === 463, `${h.lebar} ${h.tinggi} ${h.lumenGambar} ${h.lux}`);
+  cek('proyektor dengan data lengkap tidak diubah', lengkapiDariKatalog([baru], katalog)[0] === baru);
+  const tpl = templateRuang('immersive').benda.find(b => b.jenis === 'proyektor')!;
+  cek('template baru sudah membawa koefisien resmi, tidak perlu dilengkapi', !!tpl.koefRasio && !perluDataResmi(tpl));
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
