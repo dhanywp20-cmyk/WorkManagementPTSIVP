@@ -14,6 +14,14 @@ export function buangMenuPemilik(teks) {
   return s;
 }
 
+export function buangKunciPemilik(teks) {
+  let s = teks.replace(/\r\n/g, '\n');
+  s = s.replace(/\n[ \t]*'database-pts'\s*:[^\n]*,(?=\n)/g, '');
+  s = s.replace(/\n[ \t]*'database-pts',(?=\n)/g, '');
+  s = s.replace(/'database-pts',[ \t]*/g, '').replace(/,[ \t]*'database-pts'/g, '');
+  return s;
+}
+
 export function rapikanPaket(teks) {
   const p = JSON.parse(teks);
   if (p.scripts) {

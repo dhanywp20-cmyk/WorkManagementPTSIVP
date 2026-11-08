@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { berkasMasuk, buangMenuPemilik, bersihkanSql, cariRahasia, rapikanPaket } from './inti.mjs';
+import { berkasMasuk, buangKunciPemilik, buangMenuPemilik, bersihkanSql, cariRahasia, rapikanPaket } from './inti.mjs';
 
 const arg = (nama, awal = null) => { const i = process.argv.indexOf(`--${nama}`); return i > 0 ? process.argv[i + 1] : awal; };
 const ada = nama => process.argv.includes(`--${nama}`);
@@ -31,6 +31,7 @@ for (const f of daftar) {
   if (!fs.existsSync(asal)) continue;
   fs.mkdirSync(path.dirname(tujuan), { recursive: true });
   if (UBAH[f]) fs.writeFileSync(tujuan, UBAH[f](fs.readFileSync(asal, 'utf8')));
+  else if (/\.(ts|tsx)$/.test(f) && !f.startsWith('lib/lisensi/') && fs.readFileSync(asal, 'utf8').includes('database-pts')) fs.writeFileSync(tujuan, buangKunciPemilik(fs.readFileSync(asal, 'utf8')));
   else fs.copyFileSync(asal, tujuan);
 }
 

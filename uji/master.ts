@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { berkasMasuk, bersihkanSql, buangMenuPemilik, cariRahasia, rapikanPaket } from '../scripts/master/inti.mjs';
+import { berkasMasuk, bersihkanSql, buangKunciPemilik, buangMenuPemilik, cariRahasia, rapikanPaket } from '../scripts/master/inti.mjs';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -19,6 +19,9 @@ const demo = readFileSync('scripts/master/demo/05-data-demo.sql', 'utf8');
 const hapusDemo = readFileSync('scripts/master/demo/06-hapus-data-demo.sql', 'utf8');
 cek('data demo fiktif: tanpa menu Database, password di-hash bcrypt, bisa dihapus', !demo.includes('database-pts') && /extensions\.crypt\('Demo#2026', extensions\.gen_salt\('bf', 12\)\)/.test(demo) && /DELETE FROM public\.users/.test(hapusDemo));
 cek('semua id demo memakai awalan yang dihapus 06-hapus-data-demo', (demo.match(/'[0-9a-f]{8}-[0-9a-f]{4}-4000-8000-[0-9a-f]{12}'/g) || []).every(x => x.startsWith("'d0000000-0000-4000-8000-")));
+
+const daftarKunci = buangKunciPemilik("export const A = [\n  'daily-report',\n  'database-pts',\n  'unit-movement',\n];\nconst B = { 'daily-report': 'X',\n  'database-pts': { label: 'Database PTS', icon: 'x' },\n};\nconst C = ['tech-note', 'unit-movement', 'database-pts',\n];\n");
+cek('pilihan menu Database PTS dibuang dari kode lain (User Management, nav)', !daftarKunci.includes('database-pts') && daftarKunci.includes("'unit-movement',\n];") && daftarKunci.includes("'daily-report': 'X',\n};"));
 
 console.log('\npackage.json');
 const paket = JSON.parse(rapikanPaket(readFileSync('package.json', 'utf8')));
