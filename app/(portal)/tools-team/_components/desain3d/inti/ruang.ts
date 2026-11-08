@@ -89,6 +89,7 @@ export function jendelaSekat(r: Ruang, ke = 1): { z0: number; z1: number; y0: nu
 }
 
 export const bulat2 = (v: number) => Math.round(v * 100) / 100;
+const bulatMm = (v: number) => Math.round(v * 1000) / 1000;
 export function salinKeRuang(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
   return { ...petakanKeKotak(b, asal, tujuan), id: idBaru() };
 }
@@ -133,9 +134,9 @@ function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak, ruan
     const atas = tertanam ? tujuan.t - lensaDatar(p)[1] - JARAK_LENSA_PERMUKAAN : tujuan.t - p.h - 0.06;
     const q: Benda = {
       ...baru[i], rot: (((p.rot - layar.rot + ke.rot) % 360) + 360) % 360,
-      x: bulat2(Math.min(tujuan.x0 + tujuan.p - 0.1, Math.max(tujuan.x0 + 0.1, x))),
-      z: bulat2(Math.min(tujuan.l - 0.1, Math.max(0.1, z))),
-      elev: bulat2(Math.max(0.3, Math.min(atas, elev))),
+      x: bulatMm(Math.min(tujuan.x0 + tujuan.p - 0.1, Math.max(tujuan.x0 + 0.1, x))),
+      z: bulatMm(Math.min(tujuan.l - 0.1, Math.max(0.1, z))),
+      elev: bulatMm(Math.max(0.3, Math.min(atas, elev))),
     };
     baru[i] = elev > atas + 0.005 ? proyektorKeLayar(q, ke, tujuan, ruangTujuan) : q;
   });

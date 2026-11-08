@@ -142,5 +142,18 @@ console.log('\nCahaya keluar layar');
   cek('mask aktif: tidak diberi notifikasi lagi', !cekRuangGerak([layar, { ...pas, maskBidang: true }], r).some(c => c.kode === 'proyeksi'));
 }
 
+console.log('\nUkuran gambar = ukuran layar setelah Posisikan otomatis');
+{
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  const ok = [100, 120, 135, 150].every(diag => {
+    const layar = bendaBaru('layar', k, { diag, rasio: '16:9' });
+    const p = proyektorKeLayar(bendaBaru('proyektor', k, { pasangProyektor: 'plafon', trMin: 1.09, trMax: 1.77, throwRatio: 1.4, koreksiJarak: 0.03 }), layar, k, r);
+    const s = sinarProyektor(p, [layar, p], r);
+    return Math.abs(s.lebar - layar.w) < 0.001 && Math.abs(s.tinggi - layar.h) < 0.001;
+  });
+  cek('lebar & tinggi gambar sama dengan layar (selisih < 1 mm) untuk 100", 120", 135", 150"', ok);
+}
+
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);
