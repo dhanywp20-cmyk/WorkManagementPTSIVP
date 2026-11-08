@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>License Manager WM</title>
+<style>
+:root {
+  --bg: #f4f6fb; --kartu: #ffffff; --garis: #e3e7f0; --teks: #172033; --redup: #5b6478; --utama: #4338ca; --utama-teks: #ffffff;
+  --utama-lembut: #eef0ff; --hijau: #047857; --hijau-lembut: #ecfdf5; --merah: #b91c1c; --merah-lembut: #fef2f2; --kuning: #92400e; --kuning-lembut: #fffbeb;
+  --input: #ffffff; --bayang: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1320; --kartu: #171c2c; --garis: #2a3147; --teks: #e7eaf3; --redup: #9aa3b8; --utama: #818cf8; --utama-teks: #0f1320;
+    --utama-lembut: #23284a; --hijau: #34d399; --hijau-lembut: #0f2a22; --merah: #f87171; --merah-lembut: #2d1517; --kuning: #fbbf24; --kuning-lembut: #2b2210;
+    --input: #11162a; --bayang: none;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--teks); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { background: var(--kartu); border-bottom: 1px solid var(--garis); padding: 14px 16px; }
+.lebar { max-width: 1080px; margin: 0 auto; }
+header .lebar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+h1 { font-size: 18px; margin: 0; letter-spacing: -.01em; }
+h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--redup); }
+h2 { font-size: 15px; margin: 0 0 10px; }
+main { padding: 16px; }
+.kartu { background: var(--kartu); border: 1px solid var(--garis); border-radius: 14px; padding: 16px; box-shadow: var(--bayang); margin-bottom: 16px; }
+.kisi { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+label, .label { display: block; font-size: 12px; font-weight: 700; color: var(--redup); }
+input[type=text], input[type=number], textarea, input[type=search] {
+  width: 100%; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--garis); border-radius: 9px; background: var(--input); color: var(--teks); font: inherit;
+}
+textarea { resize: vertical; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--utama); outline-offset: 1px; }
+.pilih { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--bg); border: 1px solid var(--garis); border-radius: 10px; margin-top: 4px; }
+.pilih button { border: 0; background: transparent; color: var(--redup); padding: 6px 12px; border-radius: 7px; font: inherit; font-weight: 700; cursor: pointer; }
+.pilih button[aria-pressed="true"] { background: var(--kartu); color: var(--utama); box-shadow: var(--bayang); }
+.pilih button:disabled { opacity: .4; cursor: not-allowed; }
+.tombol { border: 1px solid var(--garis); background: var(--kartu); color: var(--teks); padding: 8px 14px; border-radius: 9px; font: inherit; font-weight: 700; cursor: pointer; }
+.tombol.utama { background: var(--utama); border-color: var(--utama); color: var(--utama-teks); }
+.tombol.kecil { padding: 4px 9px; font-size: 12px; }
+.tombol:disabled { opacity: .5; cursor: not-allowed; }
+.baris { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lencana { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
+.l-ok { background: var(--hijau-lembut); color: var(--hijau); }
+.l-galat { background: var(--merah-lembut); color: var(--merah); }
+.l-demo { background: var(--kuning-lembut); color: var(--kuning); }
+.l-netral { background: var(--utama-lembut); color: var(--utama); }
+.pesan { margin-top: 10px; padding: 10px 12px; border-radius: 10px; font-weight: 600; }
+.pesan.ok { background: var(--hijau-lembut); color: var(--hijau); }
+.pesan.galat { background: var(--merah-lembut); color: var(--merah); }
+.redup { color: var(--redup); font-size: 12.5px; }
+.tabel-bungkus { overflow-x: auto; border: 1px solid var(--garis); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; background: var(--bg); color: var(--redup); font-size: 12px; padding: 8px 10px; white-space: nowrap; }
+td { padding: 8px 10px; border-top: 1px solid var(--garis); vertical-align: top; }
+td.mono { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.kosong { text-align: center; color: var(--redup); padding: 18px; }
+.sembunyi { display: none !important; }
+#hasil textarea { min-height: 90px; }
+.detail { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin-top: 10px; font-size: 13px; }
+.detail dt { color: var(--redup); }
+.detail dd { margin: 0; font-weight: 600; word-break: break-word; }
+</style>
+</head>
+<body>
+<header>
+  <div class="lebar">
+    <h1>License Manager <small>Work Management · penerbit kunci lisensi pelanggan (offline)</small></h1>
+    <span id="statusKunci" class="lencana l-galat">Kunci privat belum dimuat</span>
+  </div>
+</header>
+<main class="lebar">
+  <section class="kartu" id="kartuKunci">
+    <h2>1. Muat kunci privat</h2>
+    <p class="redup">Pilih file <b>kunci-privat-lisensi.txt</b> dari folder RAHASIA-LISENSI-WM. Kunci hanya disimpan di memori selama halaman ini terbuka, tidak dikirim ke mana pun.</p>
+    <div class="baris">
+      <input type="file" id="berkasPrivat" accept=".txt,.pem,.key" aria-label="File kunci privat">
+      <span class="redup">atau</span>
+      <button class="tombol kecil" type="button" id="tempelBuka">Tempel teks kunci</button>
+    </div>
+    <div id="tempelArea" class="sembunyi" style="margin-top:8px">
+      <textarea id="teksPrivat" rows="2" placeholder="Tempel isi kunci privat di sini" aria-label="Teks kunci privat"></textarea>
+      <button class="tombol kecil" type="button" id="tempelMuat" style="margin-top:6px">Muat</button>
+    </div>
+    <div id="pesanKunci"></div>
+  </section>
+
+  <section class="kartu">
+    <h2>2. Terbitkan lisensi</h2>
+    <div class="kisi">
+      <div><span class="label">Jenis lisensi</span>
+        <div class="pilih" id="pilihJenis"><button type="button" data-v="penuh" aria-pressed="true">Penuh</button><button type="button" data-v="demo" aria-pressed="false">Demo</button></div></div>
+      <div><span class="label">Edisi</span>
+        <div class="pilih" id="pilihEdisi"><button type="button" data-v="lite" aria-pressed="false">Lite</button><button type="button" data-v="pro" aria-pressed="true">Pro</button></div></div>
+      <label>Nama pelanggan<input type="text" id="pelanggan" maxlength="80" placeholder="PT Contoh Sejahtera"></label>
+    </div>
+    <div class="kisi" style="margin-top:12px">
+      <label>Domain server pelanggan (satu per baris)
+        <textarea id="domain" rows="3" placeholder="wm.perusahaan.com&#10;192.168.1.20"></textarea>
+        <span class="redup">Tanpa http:// dan tanpa garis miring. Kosong = berlaku di semua alamat (tidak disarankan).</span></label>
+      <div>
+        <span class="label">Masa berlaku</span>
+        <div class="pilih" id="pilihMasa">
+          <button type="button" data-v="hari" aria-pressed="false">Custom hari</button>
+          <button type="button" data-v="1" aria-pressed="true">1 tahun</button>
+          <button type="button" data-v="3" aria-pressed="false">3 tahun</button>
+          <button type="button" data-v="selamanya" aria-pressed="false">Seumur hidup</button>
+        </div>
+        <label id="bungkusHari" class="sembunyi" style="margin-top:8px">Jumlah hari<input type="number" id="jumlahHari" min="1" max="3650" value="30"></label>
+        <p class="redup" id="ringkasMasa" style="margin:8px 0 0"></p>
+      </div>
+      <label>Catatan (opsional)<input type="text" id="catatan" maxlength="120" placeholder="No. kontrak / invoice / PIC"></label>
+    </div>
+    <div class="baris" style="margin-top:14px">
+      <button class="tombol utama" type="button" id="terbitkan" disabled>Terbitkan kunci</button>
+      <span class="redup" id="alasanNonaktif">Muat kunci privat dulu.</span>
+    </div>
+    <div id="pesanTerbit"></div>
+    <div id="hasil" class="sembunyi" style="margin-top:12px">
+      <label>Kunci lisensi (berikan ke pelanggan)<textarea id="kunciHasil" readonly rows="4"></textarea></label>
+      <div class="baris" style="margin-top:8px">
+        <button class="tombol" type="button" id="salinKunci">Salin kunci</button>
+        <button class="tombol" type="button" id="salinInstruksi">Salin pesan untuk pelanggan</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="kartu">
+    <div class="baris" style="justify-content:space-between">
+      <h2 style="margin:0">3. Riwayat lisensi</h2>
+      <div class="baris">
+        <input type="search" id="cari" placeholder="Cari pelanggan / domain" aria-label="Cari riwayat" style="width:220px;margin:0">
+        <button class="tombol kecil" type="button" id="eksporCsv">Ekspor Excel (CSV)</button>
+        <button class="tombol kecil" type="button" id="eksporJson">Backup riwayat</button>
+        <label class="tombol kecil" style="display:inline-block;color:var(--teks);font-size:12px">Pulihkan backup<input type="file" id="imporJson" accept=".json" class="sembunyi"></label>
+      </div>
+    </div>
+    <p class="redup">Riwayat tersimpan di browser laptop ini. Klik <b>Backup riwayat</b> secara berkala dan simpan bersama folder RAHASIA-LISENSI-WM.</p>
+    <div class="tabel-bungkus">
+      <table>
+        <thead><tr><th>Pelanggan</th><th>Jenis</th><th>Edisi</th><th>Domain</th><th>Terbit</th><th>Berakhir</th><th>Status</th><th></th></tr></thead>
+        <tbody id="isiRiwayat"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="kartu">
+    <h2>4. Periksa kunci</h2>
+    <p class="redup">Tempel kunci dari pelanggan untuk melihat isinya dan memastikan kunci asli.</p>
+    <textarea id="kunciPeriksa" rows="3" placeholder="WM1...." aria-label="Kunci yang diperiksa"></textarea>
+    <div class="baris" style="margin-top:8px">
+      <input type="text" id="domainPeriksa" placeholder="Domain server (opsional), mis. wm.perusahaan.com" style="max-width:340px;margin:0" aria-label="Domain yang diperiksa">
+      <button class="tombol" type="button" id="periksa">Periksa</button>
+    </div>
+    <div id="hasilPeriksa"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const PUBLIK_PLATFORM = 'MCowBQYDK2VwAyEAGzIjW4eY8OBfRcQzN9zgQCaaqBi6LZSbuFcaKzIQL3E=';
+  const publikB64 = new URLSearchParams(location.hash.slice(1)).get('publik') || PUBLIK_PLATFORM;
+  const SIMPAN = 'wm-lisensi-riwayat-v1';
+  const POLA_DOMAIN = /^[a-z0-9*.-]{1,253}$/;
+  const $ = id => document.getElementById(id);
+  const keadaan = { privat: null, jenis: 'penuh', edisi: 'pro', masa: '1' };
+
+  const b64keByte = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const byteKeB64url = b => { let s = ''; b.forEach(x => { s += String.fromCharCode(x); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+  const b64urlKeByte = s => { const t = s.replace(/-/g, '+').replace(/_/g, '/'); return b64keByte(t + '='.repeat((4 - t.length % 4) % 4)); };
+  const bersihPem = t => t.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  const hariIniWib = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const tambahHari = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const tambahTahun = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCFullYear(d.getUTCFullYear() + n); return d.toISOString().slice(0, 10); };
+  const tgl = iso => (iso ? new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Seumur hidup');
+  const sisaHari = iso => (iso ? Math.ceil((Date.parse(`${iso}T23:59:59+07:00`) - Date.now()) / 864e5) : null);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const pesan = (el, ok, teks) => { $(el).innerHTML = teks ? `<div class="pesan ${ok ? 'ok' : 'galat'}">${esc(teks)}</div>` : ''; };
+
+  let publikKunci = null;
+  const kunciPublik = async () => publikKunci || (publikKunci = await crypto.subtle.importKey('spki', b64keByte(publikB64), { name: 'Ed25519' }, false, ['verify']));
+
+  const bacaRiwayat = () => { try { return JSON.parse(localStorage.getItem(SIMPAN) || '[]'); } catch { return []; } };
+  const tulisRiwayat = r => { try { localStorage.setItem(SIMPAN, JSON.stringify(r)); } catch { pesan('pesanTerbit', false, 'Riwayat tidak bisa disimpan di browser ini. Segera salin kuncinya.'); } };
+
+  function pasangPilihan(id, kunci, setelah) {
+    $(id).addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      keadaan[kunci] = b.dataset.v;
+      $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      if (setelah) setelah();
+      perbarui();
+    });
+  }
+  const setPilihan = (id, kunci, v) => { keadaan[kunci] = v; $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === v))); };
+
+  pasangPilihan('pilihJenis', 'jenis', () => {
+    const selamanya = $('pilihMasa').querySelector('[data-v="selamanya"]');
+    selamanya.disabled = keadaan.jenis === 'demo';
+    if (keadaan.jenis === 'demo') { setPilihan('pilihMasa', 'masa', 'hari'); $('jumlahHari').value = 30; }
+    else if (keadaan.masa === 'hari') setPilihan('pilihMasa', 'masa', '1');
+  });
+  pasangPilihan('pilihEdisi', 'edisi');
+  pasangPilihan('pilihMasa', 'masa');
+  ['jumlahHari', 'pelanggan', 'domain'].forEach(id => $(id).addEventListener('input', perbarui));
+
+  function kedaluwarsa() {
+    const hari = hariIniWib();
+    if (keadaan.masa === 'selamanya') return null;
+    if (keadaan.masa === 'hari') { const n = Math.floor(Number($('jumlahHari').value)); return n >= 1 && n <= 3650 ? tambahHari(hari, n - 1) : undefined; }
+    return tambahHari(tambahTahun(hari, Number(keadaan.masa)), -1);
+  }
+
+  function isian() {
+    const pelanggan = $('pelanggan').value.trim();
+    const domain = $('domain').value.split(/[\s,]+/).map(d => d.trim().toLowerCase()).filter(Boolean);
+    const sampai = kedaluwarsa();
+    if (!keadaan.privat) return { galat: 'Muat kunci privat dulu.' };
+    if (pelanggan.length < 2) return { galat: 'Isi nama pelanggan.' };
+    if (domain.length > 10) return { galat: 'Maksimal 10 domain.' };
+    const salah = domain.find(d => !POLA_DOMAIN.test(d) || d.startsWith('http') || d.includes('/'));
+    if (salah) return { galat: `Domain tidak valid: ${salah}` };
+    if (sampai === undefined) return { galat: 'Jumlah hari harus 1 sampai 3650.' };
+    if (keadaan.jenis === 'demo' && !sampai) return { galat: 'Lisensi demo wajib punya masa berlaku.' };
+    return { pelanggan, domain, sampai };
+  }
+
+  function perbarui() {
+    $('bungkusHari').classList.toggle('sembunyi', keadaan.masa !== 'hari');
+    const sampai = kedaluwarsa();
+    $('ringkasMasa').textContent = sampai === undefined ? 'Jumlah hari harus 1 sampai 3650.'
+      : sampai ? `Berlaku sampai ${tgl(sampai)} (${sisaHari(sampai)} hari), pukul 23.59 WIB.` : 'Tanpa tanggal berakhir.';
+    const i = isian();
+    $('terbitkan').disabled = !!i.galat;
+    $('alasanNonaktif').textContent = i.galat || '';
+  }
+
+  async function muatPrivat(teks) {
+    pesan('pesanKunci', true, '');
+    try {
+      const der = b64keByte(bersihPem(teks));
+      const privat = await crypto.subtle.importKey('pkcs8', der, { name: 'Ed25519' }, false, ['sign']);
+      const uji = new TextEncoder().encode(`uji-${Date.now()}`);
+      const tanda = new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, privat, uji));
+      const cocok = await crypto.subtle.verify({ name: 'Ed25519' }, await kunciPublik(), tanda, uji);
+      if (!cocok) {
+        keadaan.privat = null;
+        $('statusKunci').className = 'lencana l-galat'; $('statusKunci').textContent = 'Kunci privat tidak cocok';
+        pesan('pesanKunci', false, 'Kunci privat ini BUKAN pasangan kunci publik platform. Lisensi yang dibuat dengannya akan ditolak. Pilih file yang benar.');
+      } else {
+        keadaan.privat = privat;
+        $('statusKunci').className = 'lencana l-ok'; $('statusKunci').textContent = 'Siap · kunci cocok dengan platform';
+        pesan('pesanKunci', true, 'Kunci privat dimuat dan cocok dengan platform.');
+      }
+    } catch (e) {
+      keadaan.privat = null;
+      const tidakDidukung = e && (e.name === 'NotSupportedError' || /Ed25519|Algorithm/i.test(String(e.message)));
+      pesan('pesanKunci', false, tidakDidukung ? 'Browser ini belum mendukung Ed25519. Buka dengan Chrome atau Edge versi terbaru.' : 'File bukan kunci privat yang valid.');
+    }
+    $('teksPrivat').value = '';
+    perbarui();
+  }
+
+  $('berkasPrivat').addEventListener('change', async e => { const f = e.target.files[0]; if (f) await muatPrivat(await f.text()); e.target.value = ''; });
+  $('tempelBuka').addEventListener('click', () => $('tempelArea').classList.toggle('sembunyi'));
+  $('tempelMuat').addEventListener('click', () => muatPrivat($('teksPrivat').value));
+
+  let terakhir = null;
+  $('terbitkan').addEventListener('click', async () => {
+    const i = isian(); if (i.galat) return pesan('pesanTerbit', false, i.galat);
+    const klaim = { v: 1, id: crypto.randomUUID(), pelanggan: i.pelanggan, edisi: keadaan.edisi, domain: i.domain, terbit: new Date().toISOString(), kedaluwarsa: i.sampai };
+    if (keadaan.jenis === 'demo') klaim.demo = true;
+    const isi = `WM1.${byteKeB64url(new TextEncoder().encode(JSON.stringify(klaim)))}`;
+    const tanda = new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, keadaan.privat, new TextEncoder().encode(isi)));
+    const kunci = `${isi}.${byteKeB64url(tanda)}`;
+    const cek = await periksaKunci(kunci, i.domain.find(d => !d.includes('*')) || '');
+    if (!cek.sah) return pesan('pesanTerbit', false, `Kunci gagal diverifikasi: ${cek.alasan}`);
+    terakhir = { ...klaim, jenis: keadaan.jenis, catatan: $('catatan').value.trim(), kunci };
+    tulisRiwayat([terakhir, ...bacaRiwayat()]);
+    $('kunciHasil').value = kunci; $('hasil').classList.remove('sembunyi');
+    pesan('pesanTerbit', true, `Lisensi ${keadaan.jenis === 'demo' ? 'DEMO ' : ''}${keadaan.edisi === 'pro' ? 'Pro' : 'Lite'} untuk ${klaim.pelanggan} berhasil dibuat.`);
+    tampilkanRiwayat();
+  });
+
+  const salin = (teks, tombol) => navigator.clipboard.writeText(teks).then(() => { const a = tombol.textContent; tombol.textContent = 'Tersalin'; setTimeout(() => { tombol.textContent = a; }, 1400); });
+  const instruksi = r => [
+    `Kunci lisensi Work Management - ${r.pelanggan}`,
+    `Edisi: ${r.edisi === 'pro' ? 'Pro' : 'Lite'}${r.demo ? ' (DEMO)' : ''}`,
+    `Berlaku sampai: ${tgl(r.kedaluwarsa)}`,
+    `Domain: ${r.domain.length ? r.domain.join(', ') : 'semua alamat'}`,
+    '',
+    'Cara memasang:',
+    '1. Vercel: Settings > Environment Variables > tambah LISENSI_KUNCI (Production), isi dengan kunci di bawah, lalu Redeploy.',
+    '   Server lokal: tambahkan baris LISENSI_KUNCI=<kunci> di .env.local, lalu jalankan ulang aplikasi.',
+    '2. Cek di Admin Panel > Lisensi.',
+    '',
+    r.kunci,
+  ].join('\n');
+  $('salinKunci').addEventListener('click', e => terakhir && salin(terakhir.kunci, e.target));
+  $('salinInstruksi').addEventListener('click', e => terakhir && salin(instruksi(terakhir), e.target));
+
+  function tampilkanRiwayat() {
+    const q = $('cari').value.trim().toLowerCase();
+    const semua = bacaRiwayat();
+    const r = semua.filter(x => !q || `${x.pelanggan} ${x.domain.join(' ')} ${x.catatan || ''}`.toLowerCase().includes(q));
+    if (!r.length) { $('isiRiwayat').innerHTML = `<tr><td colspan="8" class="kosong">${semua.length ? 'Tidak ada yang cocok.' : 'Belum ada lisensi yang diterbitkan.'}</td></tr>`; return; }
+    $('isiRiwayat').innerHTML = r.map(x => {
+      const s = sisaHari(x.kedaluwarsa);
+      const status = s === null ? '<span class="lencana l-ok">Aktif</span>' : s < 0 ? '<span class="lencana l-galat">Berakhir</span>'
+        : s <= 14 ? `<span class="lencana l-demo">${s} hari lagi</span>` : `<span class="lencana l-ok">${s} hari lagi</span>`;
+      return `<tr>
+        <td><b>${esc(x.pelanggan)}</b>${x.catatan ? `<div class="redup">${esc(x.catatan)}</div>` : ''}</td>
+        <td>${x.demo ? '<span class="lencana l-demo">Demo</span>' : '<span class="lencana l-netral">Penuh</span>'}</td>
+        <td>${x.edisi === 'pro' ? 'Pro' : 'Lite'}</td>
+        <td class="mono">${x.domain.length ? x.domain.map(esc).join('<br>') : 'Semua'}</td>
+        <td style="white-space:nowrap">${tgl(x.terbit)}</td>
+        <td style="white-space:nowrap">${tgl(x.kedaluwarsa)}</td>
+        <td>${status}</td>
+        <td style="white-space:nowrap"><button class="tombol kecil" data-salin="${esc(x.id)}" type="button">Salin kunci</button>
+          <button class="tombol kecil" data-ulang="${esc(x.id)}" type="button">Perpanjang</button></td>
+      </tr>`;
+    }).join('');
+  }
+  $('cari').addEventListener('input', tampilkanRiwayat);
+  $('isiRiwayat').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const x = bacaRiwayat().find(r => r.id === (b.dataset.salin || b.dataset.ulang)); if (!x) return;
+    if (b.dataset.salin) return salin(x.kunci, b);
+    $('pelanggan').value = x.pelanggan; $('domain').value = x.domain.join('\n'); $('catatan').value = x.catatan || '';
+    setPilihan('pilihEdisi', 'edisi', x.edisi);
+    setPilihan('pilihJenis', 'jenis', x.demo ? 'demo' : 'penuh');
+    $('pilihMasa').querySelector('[data-v="selamanya"]').disabled = !!x.demo;
+    setPilihan('pilihMasa', 'masa', x.demo ? 'hari' : '1');
+    perbarui(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  const unduh = (nama, isi, tipe) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([isi], { type: tipe })); a.download = nama; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+  $('eksporJson').addEventListener('click', () => unduh(`riwayat-lisensi-${hariIniWib()}.json`, JSON.stringify(bacaRiwayat(), null, 2), 'application/json'));
+  $('eksporCsv').addEventListener('click', () => {
+    const kol = r => [r.pelanggan, r.demo ? 'Demo' : 'Penuh', r.edisi, r.domain.join(' '), r.terbit.slice(0, 10), r.kedaluwarsa || 'Seumur hidup', r.catatan || '', r.id, r.kunci];
+    const baris = [['Pelanggan', 'Jenis', 'Edisi', 'Domain', 'Terbit', 'Berakhir', 'Catatan', 'ID', 'Kunci'], ...bacaRiwayat().map(kol)];
+    unduh(`riwayat-lisensi-${hariIniWib()}.csv`, '﻿' + baris.map(b => b.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n'), 'text/csv');
+  });
+  $('imporJson').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!Array.isArray(data)) throw new Error();
+      const ada = bacaRiwayat(), id = new Set(ada.map(x => x.id));
+      const baru = data.filter(x => x && x.id && x.kunci && !id.has(x.id));
+      tulisRiwayat([...ada, ...baru].sort((a, b) => String(b.terbit).localeCompare(String(a.terbit))));
+      tampilkanRiwayat(); alert(`${baru.length} lisensi dipulihkan.`);
+    } catch { alert('File backup tidak valid.'); }
+    e.target.value = '';
+  });
+
+  function cocokDomain(host, pola) {
+    const h = host.trim().toLowerCase().split(':')[0], p = pola.trim().toLowerCase();
+    if (!p.includes('*')) return h === p;
+    return new RegExp(`^${p.split('*').map(x => x.replace(/[.+?^${}()|[\]\\-]/g, '\\$&')).join('[a-z0-9-]+')}$`).test(h);
+  }
+
+  async function periksaKunci(teks, host) {
+    const b = teks.trim().split('.');
+    if (b.length !== 3 || b[0] !== 'WM1') return { sah: false, alasan: 'Format kunci salah atau terpotong' };
+    let klaim;
+    try { klaim = JSON.parse(new TextDecoder().decode(b64urlKeByte(b[1]))); } catch { return { sah: false, alasan: 'Isi kunci rusak' }; }
+    let asli = false;
+    try { asli = await crypto.subtle.verify({ name: 'Ed25519' }, await kunciPublik(), b64urlKeByte(b[2]), new TextEncoder().encode(`${b[0]}.${b[1]}`)); } catch { asli = false; }
+    if (!asli) return { sah: false, alasan: 'Tanda tangan tidak sah (kunci palsu atau diubah)', klaim };
+    if (host && klaim.domain.length && !klaim.domain.some(d => cocokDomain(host, d))) return { sah: false, alasan: `Bukan untuk domain ${host}`, klaim };
+    const s = sisaHari(klaim.kedaluwarsa);
+    if (s !== null && s < 0) return { sah: false, alasan: 'Masa lisensi sudah habis', klaim };
+    return { sah: true, klaim };
+  }
+
+  $('periksa').addEventListener('click', async () => {
+    const r = await periksaKunci($('kunciPeriksa').value, $('domainPeriksa').value);
+    const k = r.klaim;
+    $('hasilPeriksa').innerHTML = `<div class="pesan ${r.sah ? 'ok' : 'galat'}">${r.sah ? 'Kunci asli dan berlaku' : esc(r.alasan)}</div>` + (k ? `<dl class="detail">
+      <dt>Pelanggan</dt><dd>${esc(k.pelanggan)}</dd>
+      <dt>Jenis</dt><dd>${k.demo ? 'Demo' : 'Penuh'}</dd>
+      <dt>Edisi</dt><dd>${k.edisi === 'pro' ? 'Pro' : 'Lite'}</dd>
+      <dt>Domain</dt><dd>${k.domain.length ? k.domain.map(esc).join(', ') : 'Semua alamat'}</dd>
+      <dt>Terbit</dt><dd>${tgl(k.terbit)}</dd>
+      <dt>Berakhir</dt><dd>${tgl(k.kedaluwarsa)}${k.kedaluwarsa ? ` (${sisaHari(k.kedaluwarsa)} hari)` : ''}</dd>
+      <dt>ID</dt><dd style="font-family:ui-monospace,monospace;font-size:12px">${esc(k.id)}</dd></dl>` : '');
+  });
+
+  if (!window.isSecureContext || !crypto.subtle) pesan('pesanKunci', false, 'Browser tidak mendukung kriptografi di halaman ini. Buka file dengan Chrome atau Edge.');
+  perbarui();
+  tampilkanRiwayat();
+})();
+</script>
+</body>
+</html>

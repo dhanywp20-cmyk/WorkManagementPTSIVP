@@ -11,7 +11,7 @@ const css = readFileSync('app/globals.css', 'utf8');
 console.log('\n1. Menu tanpa penundaan buatan');
 cek('tidak ada state/penanda menuLoading', !/menuLoading/.test(portal) && !/menuLoading/.test(sidebar));
 cek('tidak ada setTimeout 400 ms untuk menu', !/setTimeout\([\s\S]{0,400}\}, 400\)/.test(portal));
-cek('daftar menu dihitung dengan useMemo dari isi menu', /const visibleMenuItems: MenuItem\[\] = useMemo\(/.test(portal) && /\[kunciMenu\]/.test(portal));
+cek('daftar menu dihitung dengan useMemo dari isi menu', /const visibleMenuItems: MenuItem\[\] = useMemo\(/.test(portal) && /\[kunciMenu(, lisensi)?\]/.test(portal));
 cek('Full Access / tanpa allowed_menus -> semua menu', /!allowedMenus \|\| hasFullAccess\(currentUser\)/.test(portal));
 cek('urutan menu mengikuti DAFTAR_MENU', /DAFTAR_MENU\.filter\(m => izin\.includes\(m\.key\)\)/.test(portal));
 

@@ -25,6 +25,8 @@ import { catatPemakaian } from '@/lib/pemakaian';
 import { pasangMiring3D } from '@/lib/miring3d';
 import { AnalyticsIframe } from './AnalyticsIframe';
 import { GridMenuPortal } from './KartuMenuPortal';
+import { BannerLisensi, useLisensi } from '@/components/shared/Lisensi';
+import { menuBoleh } from '@/lib/lisensi/inti';
 
 export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -100,12 +102,12 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const allowedMenus = currentUser?.allowed_menus ?? null;
   const semuaMenu = !!currentUser && (!allowedMenus || hasFullAccess(currentUser));
   const kunciMenu = !currentUser ? '' : semuaMenu ? '*' : (allowedMenus ?? []).join(',');
+  const lisensi = useLisensi();
   const visibleMenuItems: MenuItem[] = useMemo(() => {
     if (!kunciMenu) return [];
-    if (kunciMenu === '*') return DAFTAR_MENU;
     const izin = kunciMenu.split(',');
-    return DAFTAR_MENU.filter(m => izin.includes(m.key));
-  }, [kunciMenu]);
+    return (kunciMenu === '*' ? DAFTAR_MENU : DAFTAR_MENU.filter(m => izin.includes(m.key))).filter(m => menuBoleh(m.key, lisensi));
+  }, [kunciMenu, lisensi]);
 
   const sesiBerakhir = useCallback(() => {
     autoNavigatedRef.current = false;
@@ -572,6 +574,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
               <div ref={setIsiEl} className={layarPenuh
                 ? 'isi-portal fixed inset-0 z-300 bg-white overflow-auto'
                 : 'isi-portal w-full h-full overflow-auto relative'}>
+                <BannerLisensi s={lisensi} admin={hasFullAccess(currentUser)} />
                 {children}
               </div>
             )}

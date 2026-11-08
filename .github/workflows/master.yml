@@ -1,0 +1,75 @@
+name: Buat file master
+
+# Membuat ZIP file master untuk dijual / dipindahkan ke server baru:
+#   kode tanpa rahasia & tanpa menu Database PTS, skema database lengkap (server kosong),
+#   dan panduan instalasi lokal / Supabase / Vercel serta backup.
+# Repo ini publik, jadi ZIP dienkripsi AES-256 dengan BACKUP_PASSPHRASE sebelum diunggah.
+# Secret yang dipakai sama dengan backup mingguan: SUPABASE_DB_URL dan BACKUP_PASSPHRASE.
+# Panduan pemilik: docs/MASTER-DAN-LISENSI.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      versi:
+        description: 'Label versi file master (mis. 2026.11)'
+        required: true
+        default: 'rilis'
+
+permissions:
+  contents: read
+
+jobs:
+  master:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Periksa secret
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SANDI: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$SANDI" ]; then
+            echo "::error::SUPABASE_DB_URL / BACKUP_PASSPHRASE belum diisi."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Pasang klien PostgreSQL 17
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common zip
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Ekspor skema database
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PSQL: /usr/lib/postgresql/17/bin/psql
+          PG_DUMP: /usr/lib/postgresql/17/bin/pg_dump
+        run: bash scripts/master/ekspor-skema.sh skema-ekspor
+
+      - name: Susun ZIP & enkripsi
+        env:
+          SANDI: ${{ secrets.BACKUP_PASSPHRASE }}
+          VERSI: ${{ inputs.versi }}
+        run: |
+          set -euo pipefail
+          LABEL="$(echo "$VERSI" | tr -c 'A-Za-z0-9._-' '-')"
+          node scripts/master/buat-master.mjs --skema skema-ekspor --versi "$LABEL" --keluar hasil-master
+          ZIP="hasil-master/work-management-master-$LABEL.zip"
+          gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 --passphrase "$SANDI" -o "$ZIP.gpg" "$ZIP"
+          rm -f "$ZIP"
+          echo "BERKAS=$ZIP.gpg" >> "$GITHUB_ENV"
+          echo "LABEL=$LABEL" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: work-management-master-${{ env.LABEL }}
+          path: ${{ env.BERKAS }}
+          retention-days: 30
+          if-no-files-found: error

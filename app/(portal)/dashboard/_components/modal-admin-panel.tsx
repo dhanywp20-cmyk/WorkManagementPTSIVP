@@ -20,12 +20,13 @@ import { IntegrasiInline } from './modal-integrasi';
 import { AplikasiAndroidInline } from './modal-aplikasi-android';
 import { KesehatanInline } from './modal-kesehatan';
 import { KeamananInline } from './modal-keamanan';
+import { LisensiInline } from './modal-lisensi';
 import { BriefingPagiKartu } from './modal-briefing';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'>(initialTab);
 
 const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system'; label: string }[] = [
   { key: 'organization',  label: 'Organisasi' },
@@ -34,7 +35,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system
   { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -53,7 +54,8 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       key: 'kodeAcara',
       group: 'organization',
       label: 'Kode Acara',
-      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
       color: '#9333ea', activeBg: 'rgba(147,51,234,0.1)', activeBorder: 'rgba(147,51,234,0.4)', activeText: '#7e22ce',
     },
     {
@@ -111,6 +113,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'Product Comparison',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 006 0L7 7zm10 0l-3 7a3 3 0 006 0l-3-7z" /></svg>,
       color: '#1d4ed8', activeBg: 'rgba(29,78,216,0.1)', activeBorder: 'rgba(29,78,216,0.4)', activeText: '#1d4ed8',
+    },
+    {
+      key: 'lisensi',
+      group: 'system',
+      label: 'Lisensi',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+      color: '#4338ca', activeBg: 'rgba(99,102,241,0.1)', activeBorder: 'rgba(99,102,241,0.4)', activeText: '#4338ca',
     },
     {
       key: 'keamanan',
@@ -203,6 +212,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
                 {activeSection === 'kesehatan' && 'Cron, kuota paket Free, keamanan basis data, pemakaian AI & WA'}
                 {activeSection === 'keamanan' && 'Verifikasi 2 langkah (authenticator)'}
+                {activeSection === 'lisensi' && 'Edisi & masa berlaku lisensi'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -232,6 +242,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'android' && <AplikasiAndroidInline />}
             {activeSection === 'kesehatan' && <KesehatanInline />}
             {activeSection === 'keamanan' && <KeamananInline />}
+            {activeSection === 'lisensi' && <LisensiInline />}
             {activeSection === 'perbandingan' && <AturanPerbandinganInline />}
           </div>
         </div>
