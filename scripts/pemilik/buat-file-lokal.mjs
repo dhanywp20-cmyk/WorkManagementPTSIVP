@@ -25,7 +25,7 @@ const tanya = (teks, rahasia) => new Promise(selesai => {
       if (c === '\r' || c === '\n') {
         stdin.off('data', baca); stdin.setRawMode(false); stdin.pause();
         process.stdout.write(`[${isi.length} karakter diterima]\n`);
-        return selesai(isi.trim());
+        return selesai(isi);
       }
       if (c === '\u0003') { stdin.setRawMode(false); process.exit(130); }
       if (c === '\u007f' || c === '\b') isi = isi.slice(0, -1);
@@ -35,25 +35,58 @@ const tanya = (teks, rahasia) => new Promise(selesai => {
   stdin.setRawMode(true); stdin.setEncoding('utf8'); stdin.resume(); stdin.on('data', baca);
 });
 
-const jalankan = (perintah, argumen, opsi = {}) => execFileSync(perintah, argumen, { encoding: 'utf8', maxBuffer: 1 << 30, ...opsi });
+function uraiKoneksi(teks) {
+  const awal = teks.indexOf('postgres');
+  if (awal < 0) return null;
+  let s = teks.slice(awal).replace(/^postgres(ql)?:\/\//, '');
+  const ulang = s.search(/postgres(ql)?:\/\//);
+  if (ulang > 0) s = s.slice(0, ulang);
+  s = s.trim();
+  const at = s.lastIndexOf('@');
+  if (at < 0) return null;
+  const info = s.slice(0, at);
+  const m = s.slice(at + 1).match(/^([^:/?]+)(?::(\d+))?\/([^?\s]+)/);
+  if (!m) return null;
+  const titik = info.indexOf(':');
+  const user = titik < 0 ? info : info.slice(0, titik);
+  let sandi = titik < 0 ? '' : info.slice(titik + 1);
+  if (/^\[.*\]$/.test(sandi)) sandi = '';
+  try { sandi = decodeURIComponent(sandi); } catch {}
+  return { user, sandi, host: m[1], port: m[2] || '5432', db: m[3] };
+}
+
+async function mintaKoneksi(judul, wajib) {
+  const teks = await tanya(`Tempel connection string ${judul} dari Supabase (boleh masih berisi [YOUR-PASSWORD])${wajib ? '' : ', Enter = lewati'}: `);
+  if (!teks && !wajib) return null;
+  const k = uraiKoneksi(teks);
+  if (!k) { console.error('Format tidak dikenali. Contoh: postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-1-ap-south-1.pooler.supabase.com:5432/postgres'); process.exit(1); }
+  if (!k.sandi) k.sandi = await tanya(`Password database ${judul} (tidak tampil): `, true);
+  if (!k.sandi) { console.error('Password kosong.'); process.exit(1); }
+  const ref = (k.user.match(/^postgres\.([a-z0-9]{20})$/) || k.host.match(/^db\.([a-z0-9]{20})\.supabase\.co$/) || [])[1];
+  console.log(`  -> ${k.user} @ ${k.host}:${k.port}/${k.db}`);
+  return { ref, env: { ...process.env, PGHOST: k.host, PGPORT: k.port, PGUSER: k.user, PGPASSWORD: k.sandi, PGDATABASE: k.db, PGSSLMODE: 'require' } };
+}
+
+const jalankan = (perintah, argumen, opsi = {}) => execFileSync(perintah, argumen, { encoding: 'utf8', maxBuffer: 1 << 30, stdio: ['ignore', 'pipe', 'pipe'], ...opsi });
+const pg = (k, alatPg, argumen) => jalankan(alat(alatPg), argumen, { env: k.env });
 const kepala = judul => `-- ${judul}\n-- Diekspor ${new Date().toISOString().slice(0, 16)}Z dari basis data sumber. Jalankan berurutan: 00, 01, 02, 03, 04.\n\n`;
 const kueri = n => path.join(akar, 'scripts/master/kueri', n);
-const psql = (url, berkas) => jalankan(alat('psql'), [url, '-X', '-At', '-v', 'ON_ERROR_STOP=1', '-f', berkas]);
+const psql = (k, berkas) => pg(k, 'psql', ['-X', '-At', '-v', 'ON_ERROR_STOP=1', '-f', berkas]);
 
-function eksporSkema(url, folder) {
+function eksporSkema(k, folder) {
   fs.mkdirSync(folder, { recursive: true });
-  fs.writeFileSync(path.join(folder, '00-ekstensi.sql'), kepala('Ekstensi yang dipakai platform') + psql(url, kueri('00-ekstensi.sql')));
-  const skema = jalankan(alat('pg_dump'), [url, '--schema-only', '--no-owner', '--no-privileges', '--schema=public']);
+  fs.writeFileSync(path.join(folder, '00-ekstensi.sql'), kepala('Ekstensi yang dipakai platform') + psql(k, kueri('00-ekstensi.sql')));
+  const skema = pg(k, 'pg_dump', ['--schema-only', '--no-owner', '--no-privileges', '--schema=public']);
   fs.writeFileSync(path.join(folder, '01-skema-public.sql'), kepala('Skema public: tabel, fungsi, trigger, index, RLS') + skema);
-  fs.writeFileSync(path.join(folder, '02-storage.sql'), kepala('Bucket & kebijakan Supabase Storage') + psql(url, kueri('02-storage.sql')));
-  fs.writeFileSync(path.join(folder, '03-realtime.sql'), kepala('Tabel yang memakai Realtime') + psql(url, kueri('03-realtime.sql')));
+  fs.writeFileSync(path.join(folder, '02-storage.sql'), kepala('Bucket & kebijakan Supabase Storage') + psql(k, kueri('02-storage.sql')));
+  fs.writeFileSync(path.join(folder, '03-realtime.sql'), kepala('Tabel yang memakai Realtime') + psql(k, kueri('03-realtime.sql')));
   let cron;
-  try { cron = psql(url, kueri('04-cron.sql')); } catch { cron = '-- pg_cron tidak aktif di basis data sumber.\n'; }
+  try { cron = psql(k, kueri('04-cron.sql')); } catch { cron = '-- pg_cron tidak aktif di basis data sumber.\n'; }
   fs.writeFileSync(path.join(folder, '04-cron.sql'), kepala('Jadwal pg_cron (cek & ganti placeholder sebelum dijalankan)') + cron);
 }
 
-function dumpData(url, berkas) {
-  jalankan(alat('pg_dump'), [url, '--schema=public', '--no-owner', '--no-privileges', '-Fc', '-f', berkas]);
+function dumpData(k, berkas) {
+  pg(k, 'pg_dump', ['--schema=public', '--no-owner', '--no-privileges', '-Fc', '-f', berkas]);
   const isi = jalankan(alat('pg_restore'), ['--list', berkas]).split('\n').filter(b => / TABLE DATA public /.test(b)).length;
   console.log(`  ${path.basename(berkas)}: ${(fs.statSync(berkas).size / 1048576).toFixed(1)} MB, ${isi} tabel berisi data`);
 }
@@ -67,15 +100,12 @@ function kemas(folder, zip) {
   fs.rmSync(folder, { recursive: true, force: true });
 }
 
-const refProject = url => (url.match(/postgres\.([a-z0-9]{20})[:@]/) || url.match(/db\.([a-z0-9]{20})\.supabase\.co/) || [])[1];
-
-async function tarikStorage(url, folder) {
-  const ref = refProject(url);
-  if (!ref) { console.log('  Storage dilewati: ref project tidak terbaca dari connection string'); return; }
+async function tarikStorage(k, folder) {
+  if (!k.ref) { console.log('  Storage dilewati: ref project tidak terbaca dari connection string'); return; }
   const kunci = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  const publik = new Set(jalankan(alat('psql'), [url, '-X', '-At', '-c', 'select id from storage.buckets where public']).split('\n').filter(Boolean));
-  const daftar = jalankan(alat('psql'), [url, '-X', '-At', '-F', '\t', '-c',
-    "select bucket_id, name from storage.objects where name not like '%.emptyFolderPlaceholder' order by 1, 2"]).split('\n').filter(Boolean).map(b => b.split('\t'));
+  const publik = new Set(pg(k, 'psql', ['-X', '-At', '-c', 'select id from storage.buckets where public']).split('\n').map(x => x.trim()).filter(Boolean));
+  const daftar = pg(k, 'psql', ['-X', '-At', '-F', '\t', '-c',
+    "select bucket_id, name from storage.objects where name not like '%.emptyFolderPlaceholder' order by 1, 2"]).split('\n').map(x => x.replace(/\r$/, '')).filter(Boolean).map(b => b.split('\t'));
   const catatan = ['bucket\tberkas\tstatus'];
   let ok = 0, lewat = 0, gagal = 0, bita = 0, i = 0;
   const unduh = async () => {
@@ -84,7 +114,7 @@ async function tarikStorage(url, folder) {
       const jalur = nama.split('/').map(encodeURIComponent).join('/');
       const pub = publik.has(bucket);
       if (!pub && !kunci) { lewat++; catatan.push(`${bucket}\t${nama}\tdilewati (bucket privat, isi SUPABASE_SERVICE_ROLE_KEY)`); continue; }
-      const alamat = `https://${ref}.supabase.co/storage/v1/object/${pub ? 'public/' : ''}${bucket}/${jalur}`;
+      const alamat = `https://${k.ref}.supabase.co/storage/v1/object/${pub ? 'public/' : ''}${bucket}/${jalur}`;
       try {
         const r = await fetch(alamat, { headers: !pub ? { Authorization: `Bearer ${kunci}`, apikey: kunci } : {} });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -94,7 +124,7 @@ async function tarikStorage(url, folder) {
         fs.writeFileSync(tujuan, isi);
         ok++; bita += isi.length; catatan.push(`${bucket}\t${nama}\tok`);
       } catch (e) { gagal++; catatan.push(`${bucket}\t${nama}\tgagal ${e.message}`); }
-      if ((ok + lewat + gagal) % 50 === 0) process.stdout.write(`  ${ok + lewat + gagal}/${daftar.length} berkas\r`);
+      if ((ok + lewat + gagal) % 25 === 0) process.stdout.write(`  ${ok + lewat + gagal}/${daftar.length} berkas\r`);
     }
   };
   await Promise.all(Array.from({ length: 6 }, unduh));
@@ -123,37 +153,46 @@ Memulihkan ke project Supabase baru yang kosong (PostgreSQL client 17+):
 File ini berisi data pribadi & hash password. Jangan diunggah tanpa enkripsi.
 `;
 
-const urlUtama = process.env.DB_URL || await tanya('Connection string Session pooler basis data UTAMA: ', true);
-if (!/^postgres(ql)?:\/\//.test(urlUtama)) { console.error('Connection string harus diawali postgresql://'); process.exit(1); }
-const urlServices = process.env.DB_URL_SERVICES ?? await tanya('Connection string basis data TEAM SERVICES (Enter = lewati): ', true);
+try {
+  const utama = await mintaKoneksi('basis data UTAMA', true);
+  process.stdout.write('  Mengecek koneksi... ');
+  pg(utama, 'psql', ['-X', '-At', '-c', 'select 1']);
+  console.log('tersambung');
+  const services = await mintaKoneksi('basis data TEAM SERVICES', false);
 
-fs.mkdirSync(keluar, { recursive: true });
-const komit = jalankan('git', ['rev-parse', '--short', 'HEAD'], { cwd: akar }).trim();
+  fs.mkdirSync(keluar, { recursive: true });
+  const komit = jalankan('git', ['rev-parse', '--short', 'HEAD'], { cwd: akar }).trim();
 
-console.log('\n1/3 Backup penuh basis data asli');
-const tahap = path.join(keluar, `backup-asli-${tgl}`);
-fs.rmSync(tahap, { recursive: true, force: true });
-fs.mkdirSync(tahap, { recursive: true });
-dumpData(urlUtama, path.join(tahap, 'db-utama.dump'));
-if (/^postgres(ql)?:\/\//.test(urlServices)) dumpData(urlServices, path.join(tahap, 'db-services.dump'));
-eksporSkema(urlUtama, path.join(tahap, 'skema-utama'));
-await tarikStorage(urlUtama, path.join(tahap, 'storage'));
-jalankan('git', ['archive', '--format=zip', '-o', path.join(tahap, 'kode-sumber.zip'), 'HEAD'], { cwd: akar });
-fs.writeFileSync(path.join(tahap, 'PULIHKAN.txt'), PULIHKAN);
-const zipAsli = path.join(keluar, `wm-backup-asli-${tgl}.zip`);
-kemas(tahap, zipAsli);
+  console.log('\n1/3 Backup penuh server pemilik (data + foto + kode)');
+  const tahap = path.join(keluar, `backup-asli-${tgl}`);
+  fs.rmSync(tahap, { recursive: true, force: true });
+  fs.mkdirSync(tahap, { recursive: true });
+  dumpData(utama, path.join(tahap, 'db-utama.dump'));
+  if (services) dumpData(services, path.join(tahap, 'db-services.dump'));
+  eksporSkema(utama, path.join(tahap, 'skema-utama'));
+  await tarikStorage(utama, path.join(tahap, 'storage'));
+  jalankan('git', ['archive', '--format=zip', '-o', path.join(tahap, 'kode-sumber.zip'), 'HEAD'], { cwd: akar });
+  fs.writeFileSync(path.join(tahap, 'PULIHKAN.txt'), PULIHKAN);
+  const zipAsli = path.join(keluar, `wm-backup-asli-${tgl}.zip`);
+  kemas(tahap, zipAsli);
 
-console.log('\n2/3 Ekspor skema untuk file master (tanpa data)');
-const skemaMaster = path.join(keluar, `skema-${tgl}`);
-fs.rmSync(skemaMaster, { recursive: true, force: true });
-eksporSkema(urlUtama, skemaMaster);
+  console.log('\n2/3 Ekspor struktur database untuk kloning (tanpa data)');
+  const skemaMaster = path.join(keluar, `skema-${tgl}`);
+  fs.rmSync(skemaMaster, { recursive: true, force: true });
+  eksporSkema(utama, skemaMaster);
 
-console.log('\n3/3 File master untuk pelanggan');
-jalankan(process.execPath, [path.join(akar, 'scripts/master/buat-master.mjs'), '--skema', skemaMaster, '--versi', tgl], { cwd: akar, stdio: 'inherit' });
-fs.rmSync(skemaMaster, { recursive: true, force: true });
+  console.log('\n3/3 File master kloning untuk pelanggan (+ data demo)');
+  jalankan(process.execPath, [path.join(akar, 'scripts/master/buat-master.mjs'), '--skema', skemaMaster, '--versi', tgl], { cwd: akar, stdio: 'inherit' });
+  fs.rmSync(skemaMaster, { recursive: true, force: true });
 
-const ukuran = f => `${(fs.statSync(f).size / 1048576).toFixed(1)} MB`;
-const zipMaster = path.join(keluar, `work-management-master-${tgl}.zip`);
-console.log(`\nSelesai (komit ${komit}):`);
-console.log(`  Backup asli pemilik : ${zipAsli} (${ukuran(zipAsli)})`);
-if (fs.existsSync(zipMaster)) console.log(`  File master pelanggan: ${zipMaster} (${ukuran(zipMaster)})`);
+  const ukuran = f => `${(fs.statSync(f).size / 1048576).toFixed(1)} MB`;
+  const zipMaster = path.join(keluar, `work-management-master-${tgl}.zip`);
+  console.log(`\nSelesai (komit ${komit}):`);
+  console.log(`  Backup server pemilik : ${zipAsli} (${ukuran(zipAsli)})`);
+  if (fs.existsSync(zipMaster)) console.log(`  Kloning untuk pelanggan: ${zipMaster} (${ukuran(zipMaster)})`);
+} catch (e) {
+  const pesan = String(e.stderr || e.message || e).split('\n').filter(b => b.trim()).slice(0, 4).join('\n');
+  console.error(`\nGAGAL: ${pesan}`);
+  if (/password authentication failed|Authentication error/i.test(pesan)) console.error('Periksa password database (Supabase -> Project Settings -> Database -> Reset database password).');
+  process.exit(1);
+}
