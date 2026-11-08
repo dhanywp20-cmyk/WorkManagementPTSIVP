@@ -1,5 +1,6 @@
 'use client';
 
+import { kirimFormTahan } from '@/lib/unggah-tahan';
 import { useRef, useState, type ReactNode } from 'react';
 import { AlertTriangle, Camera, Check, ChevronDown, Loader2 } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
@@ -364,7 +365,7 @@ export async function kirimFoto(url: string, itemId: string, file: File): Promis
   form.append('itemId', itemId);
   form.append('full', full);
   form.append('thumb', thumb);
-  const res = await fetch(url, { method: 'POST', body: form, cache: 'no-store' });
+  const res = await kirimFormTahan(url, form, { cache: 'no-store' });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(json.error || 'Gagal mengunggah foto.');
   return json.item as ChecklistItem;

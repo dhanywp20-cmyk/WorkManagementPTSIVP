@@ -1,5 +1,6 @@
 'use client';
 
+import { kirimFormTahan } from '@/lib/unggah-tahan';
 import { useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 
@@ -16,7 +17,7 @@ export function UnggahGambarSoal({ url, ubah }: { url: string | null | undefined
     const fd = new FormData();
     fd.append('berkas', siap); fd.append('jenis', 'soal');
     try {
-      const r = await fetch('/api/admin/kelas-eksternal/unggah', { method: 'POST', body: fd });
+      const r = await kirimFormTahan('/api/admin/kelas-eksternal/unggah', fd);
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setGalat(j.error || 'Unggah gagal.');
       else ubah(j.url as string);

@@ -1,4 +1,4 @@
-import { denganUnggahTahan, bodiDiMemori, PESAN_BERKAS_TAK_TERBACA } from '../lib/unggah-tahan';
+import { denganUnggahTahan, bodiDiMemori, kirimFormTahan, PESAN_BERKAS_TAK_TERBACA } from '../lib/unggah-tahan';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, ok: boolean, c = '') => {
@@ -66,6 +66,14 @@ const formFoto = () => { const f = new FormData(); f.append('cacheControl', '360
     let pesan = '';
     try { await bodiDiMemori(fd); } catch (e) { pesan = (e as Error).message; }
     cek('pesan jelas untuk berkas tak terbaca', pesan === PESAN_BERKAS_TAK_TERBACA, pesan);
+  }
+  console.log('\n6. Upload lewat API aplikasi (foto checklist, gambar soal, latar kelas)');
+  {
+    let n = 0; const asli = globalThis.fetch;
+    globalThis.fetch = (async () => { n++; if (n === 1) throw new TypeError('Failed to fetch'); return new Response('{"item":{}}'); }) as typeof fetch;
+    const r = await kirimFormTahan('/api/project-progress/checklist/1/foto', formFoto(), {}, 1);
+    globalThis.fetch = asli;
+    cek('koneksi putus sekali lalu berhasil', r.ok && n === 2, `panggil ${n}`);
   }
   console.log(`\n${lulus} lulus, ${gagal} gagal`);
   if (gagal) process.exit(1);

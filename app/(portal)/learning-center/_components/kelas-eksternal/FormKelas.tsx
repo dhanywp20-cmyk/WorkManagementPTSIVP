@@ -1,5 +1,6 @@
 'use client';
 
+import { kirimFormTahan } from '@/lib/unggah-tahan';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Search, Trash2, Upload } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
@@ -44,7 +45,7 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
     const fd = new FormData();
     fd.append('berkas', siap); fd.append('jenis', jenis);
     try {
-      const r = await fetch('/api/admin/kelas-eksternal/unggah', { method: 'POST', body: fd });
+      const r = await kirimFormTahan('/api/admin/kelas-eksternal/unggah', fd);
       const j = await r.json().catch(() => ({}));
       if (!r.ok) setGalat(j.error || 'Unggah gagal.');
       else setF(x => ({ ...x, [jenis === 'logo' ? 'logo_url' : 'latar_url']: j.url as string }));

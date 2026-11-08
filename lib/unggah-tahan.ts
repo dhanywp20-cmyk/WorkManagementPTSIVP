@@ -66,3 +66,16 @@ export async function salinBerkas(f: File | null | undefined): Promise<File | nu
   if (!f) return null;
   try { return await berkasDiMemori(f) as File; } catch { return f; }
 }
+
+export async function kirimFormTahan(url: string, form: FormData, init: RequestInit = {}, jedaMs = 1000): Promise<Response> {
+  const body = await bodiDiMemori(form);
+  for (let percobaan = 0; ; percobaan++) {
+    try {
+      return await fetch(url, { ...init, method: 'POST', body });
+    } catch (galat) {
+      const dibatalkan = galat instanceof Error && galat.name === 'AbortError';
+      if (dibatalkan || percobaan >= MAKS_ULANG) throw galat;
+      await jeda(jedaMs * (percobaan + 1));
+    }
+  }
+}
