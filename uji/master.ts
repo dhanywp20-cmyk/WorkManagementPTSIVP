@@ -6,7 +6,7 @@ const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   $
 
 console.log('\nIsi paket');
 cek('kode aplikasi ikut', berkasMasuk('app/(portal)/layout.tsx') && berkasMasuk('lib/lisensi/inti.ts') && berkasMasuk('vercel.json') && berkasMasuk('.env.example'));
-cek('berkas internal pemilik tidak ikut', !berkasMasuk('docs/BACKUP-DB.md') && !berkasMasuk('sql/cek-rls.sql') && !berkasMasuk('.github/workflows/ci.yml') && !berkasMasuk('scripts/lisensi/terbitkan.ts') && !berkasMasuk('scripts/terbitkan-apk.mjs') && berkasMasuk('scripts/master/buat-admin.mjs'));
+cek('berkas internal pemilik tidak ikut', !berkasMasuk('docs/BACKUP-DB.md') && !berkasMasuk('sql/cek-rls.sql') && !berkasMasuk('.github/workflows/ci.yml') && !berkasMasuk('scripts/lisensi/terbitkan.ts') && !berkasMasuk('scripts/terbitkan-apk.mjs') && !berkasMasuk('scripts/pemilik/buat-file-lokal.mjs') && berkasMasuk('scripts/master/buat-admin.mjs'));
 cek('berkas .env asli tidak ikut', !berkasMasuk('.env') && !berkasMasuk('.env.local') && !berkasMasuk('sub/.env.production'));
 
 console.log('\nMenu Database PTS');

@@ -52,14 +52,16 @@ gpg --decrypt -o work-management-master-<versi>.zip work-management-master-<vers
 
 Passphrase = secret `BACKUP_PASSPHRASE`.
 
-**Dari laptop** (butuh Git Bash + PostgreSQL client 17):
+**Dari laptop, sekali jalan** (butuh PostgreSQL client 17+):
 
 ```bash
-DB_URL="<session pooler URL>" bash scripts/master/ekspor-skema.sh skema-ekspor
-node scripts/master/buat-master.mjs --skema skema-ekspor --versi 2026.11
+node scripts/pemilik/buat-file-lokal.mjs
 ```
 
-ZIP ada di `hasil-master/`. Kedua folder itu tidak ikut git.
+Skrip meminta connection string *Session pooler* (tidak tampil di layar), lalu membuat di `hasil-master/` (tidak ikut git):
+
+- `wm-backup-asli-<tanggal>.zip` — backup penuh server pemilik: seluruh data basis data utama (+ Team Services bila diisi), skema asli, kode sumber, `PULIHKAN.txt`
+- `work-management-master-<tanggal>.zip` — file master untuk pelanggan (aplikasi + skema kosong)
 
 ### Isi ZIP vs repo
 
