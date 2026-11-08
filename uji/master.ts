@@ -29,6 +29,7 @@ const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.abcdefghijklmn
 const sql = bersihkanSql(`\\restrict abc\nSET transaction_timeout = 0;\nCREATE SCHEMA public;\nselect net.http_post('https://abcdefghijklmnopqrst.supabase.co/x', headers := '{"Authorization":"Bearer ${jwt}"}');\n\\unrestrict abc\n`);
 cek('kunci JWT & URL project diganti placeholder', !sql.includes(jwt) && sql.includes('<GANTI_SERVICE_ROLE_KEY>') && sql.includes('https://<GANTI_PROJECT_REF>.supabase.co'));
 cek('baris khusus pg_dump 17 dibuang, schema public aman dijalankan ulang', !sql.includes('\\restrict') && !sql.includes('transaction_timeout') && sql.includes('CREATE SCHEMA IF NOT EXISTS public;'));
+cek('menu database-pts dibuang dari nilai bawaan allowed_menus', bersihkanSql("allowed_menus text[] DEFAULT ARRAY['form-bast'::text, 'database-pts'::text, 'unit-movement'::text]") === "allowed_menus text[] DEFAULT ARRAY['form-bast'::text, 'unit-movement'::text]");
 cek('pemindai menemukan rahasia yang tersisa', cariRahasia(`x ${jwt}`).length === 1 && cariRahasia('-----BEGIN PRIVATE KEY-----').length === 1 && cariRahasia('aman').length === 0);
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

@@ -30,6 +30,7 @@ export function bersihkanSql(teks) {
   let s = teks.replace(/\r\n/g, '\n');
   s = s.split('\n').filter(b => !/^\\(un)?restrict\b/.test(b) && !/^SET transaction_timeout\b/.test(b)).join('\n');
   s = s.replace(/^CREATE SCHEMA public;$/m, 'CREATE SCHEMA IF NOT EXISTS public;');
+  s = s.replace(/'database-pts'::text,\s*/g, '').replace(/,\s*'database-pts'::text/g, '');
   s = s.replace(POLA_JWT, '<GANTI_SERVICE_ROLE_KEY>').replace(POLA_URL_SUPABASE, 'https://<GANTI_PROJECT_REF>.supabase.co');
   return s;
 }
