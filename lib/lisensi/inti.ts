@@ -51,7 +51,8 @@ export const jalurPro = (path: string) => JALUR_PRO.some(p => path === p || path
 
 export function menuBoleh(kunci: string, s: Pick<StatusLisensi, 'sah' | 'edisi' | 'pemilik'> | null): boolean {
   if (MENU_PEMILIK.includes(kunci)) return !!s?.sah && s.pemilik;
-  if (!s?.sah) return false;
+  if (!s) return true;
+  if (!s.sah) return false;
   return MENU_PRO.includes(kunci) ? s.edisi === 'pro' : true;
 }
 

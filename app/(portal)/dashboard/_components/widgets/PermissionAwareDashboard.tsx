@@ -11,6 +11,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
 import PanelAgenda, { type RingkasAgenda } from '../workcenter/PanelAgenda';
 import { IsiBeranda } from '../beranda/IsiBeranda';
+import { useDasborWidget } from '../beranda/useDasborWidget';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -77,6 +78,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
     return () => { batal = true; };
   }, [currentUser.id]);
   useKelompok();
+  const widgetDasbor = useDasborWidget();
 
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
@@ -90,12 +92,13 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const widgetUtama = visible.filter(w => w.size === 'full' && !['work-queue', 'team-monitoring', 'analytics'].includes(w.id));
   const widgetKisi = visible.filter(w => w.size !== 'full');
 
-  const panel = adaAgenda
+  const panel = adaAgenda && !widgetDasbor.sembunyi.includes('agenda')
     ? <PanelAgenda user={currentUser} openMenu={openMenu} openUrl={openUrl} onRingkas={setRingkasAgenda} />
     : undefined;
 
   return (
-    <div className="dasbor-3d tema-beranda w-full h-full overflow-y-auto">
+    <div className="dasbor-3d tema-beranda w-full h-full overflow-y-auto"
+      style={widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
       <header className="sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">

@@ -14,6 +14,7 @@ import { AccountSettingsInline } from './modal-akun';
 import { UserManagementInline } from './pengguna/KelolaPenggunaInline';
 import { BrandPicSettingInline } from './modal-brand-pic';
 import { MerekSettingInline } from './modal-merek';
+import { WidgetDasborInline } from './modal-widget-dasbor';
 import { KelompokSettingInline } from './modal-kelompok';
 import { KartuSuaraNotif } from './kartu-suara-notif';
 import { IntegrasiInline } from './modal-integrasi';
@@ -26,7 +27,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'widgetDasbor' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'>(initialTab);
 
 const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system'; label: string }[] = [
   { key: 'organization',  label: 'Organisasi' },
@@ -35,7 +36,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system
   { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'widgetDasbor' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan' | 'lisensi'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -84,6 +85,14 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       group: 'appearance',
       label: 'Dashboard Setting',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>,
+      color: '#7e22ce', activeBg: 'rgba(147,51,234,0.1)', activeBorder: 'rgba(147,51,234,0.4)', activeText: '#7e22ce',
+    },
+    {
+      key: 'widgetDasbor',
+      group: 'appearance',
+      label: 'Widget Dashboard',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5h6v6H4zM14 5h6v4h-6zM4 15h6v5H4zM14 13h6v7h-6z" /></svg>,
       color: '#7e22ce', activeBg: 'rgba(147,51,234,0.1)', activeBorder: 'rgba(147,51,234,0.4)', activeText: '#7e22ce',
     },
     {
@@ -207,6 +216,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
                 {activeSection === 'merek' && 'Logo, nama, warna header & tampilan halaman login'}
+                {activeSection === 'widgetDasbor' && 'Kartu yang tampil di Dashboard Analytics'}
                 {activeSection === 'kelompok' && 'Daftar kelompok kerja & lonceng yang boleh dilihat masing-masing'}
                 {activeSection === 'integrasi' && 'Kanal notifikasi (In-App, WhatsApp, Telegram) & event mana lewat kanal mana'}
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
@@ -233,6 +243,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'daftarPilihan' && <DaftarPilihanInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
             {activeSection === 'merek' && <MerekSettingInline />}
+            {activeSection === 'widgetDasbor' && <WidgetDasborInline />}
             {activeSection === 'kelompok' && (
               <><div className="px-4 pt-4"><KartuSuaraNotif /></div><KelompokSettingInline /></>
             )}
