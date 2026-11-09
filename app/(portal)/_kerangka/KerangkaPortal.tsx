@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken, SESI_HABIS } from '@/lib/supabase';
@@ -20,6 +19,7 @@ import { SidebarPortal } from './SidebarPortal';
 import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 import { useMerek, latarDasbor } from '@/lib/merek/inti';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
+import { kembaliTerang } from '@/components/shared/Tema';
 import { Ikon } from '@/components/shared/Ikon';
 import { catatPemakaian } from '@/lib/pemakaian';
 import { pasangMiring3D } from '@/lib/miring3d';
@@ -110,7 +110,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }, [kunciMenu, lisensi]);
 
   const sesiBerakhir = useCallback(() => {
-    autoNavigatedRef.current = false;
+    kembaliTerang(); autoNavigatedRef.current = false;
     setIsLoggedIn(false); setCurrentUser(null);
     setDasborMuncul(false);
     sudahMasukRef.current = false;

@@ -14,6 +14,11 @@ function terapkan(gelap: boolean) {
   window.dispatchEvent(new CustomEvent('wm-tema', { detail: gelap }));
 }
 
+export function kembaliTerang() {
+  try { localStorage.removeItem(KUNCI_TEMA); } catch {}
+  if (typeof document !== 'undefined' && sedangGelap()) terapkan(false);
+}
+
 export function PenyelarasTema() {
   useEffect(() => {
     if (sedangGelap()) document.documentElement.style.colorScheme = 'dark';
