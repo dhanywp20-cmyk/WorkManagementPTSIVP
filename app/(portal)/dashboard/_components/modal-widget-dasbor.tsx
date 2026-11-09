@@ -48,7 +48,7 @@ export function WidgetDasborInline() {
   const jumlahTampil = DAFTAR_WIDGET.length - p.sembunyi.length;
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="max-w-3xl space-y-4 p-4">
       <p className="text-[12.5px] text-slate-600">
         Pilih kartu yang tampil di Dashboard Analytics. Kartu yang tersisa otomatis melebar mengisi ruang kosong.
         Kartu tetap mengikuti hak akses: pengguna hanya melihat kartu yang memang boleh ia lihat.
