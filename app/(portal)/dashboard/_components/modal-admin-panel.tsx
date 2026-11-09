@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { AturanPerbandinganInline } from './perbandingan-aturan';
 import { supabase } from '@/lib/supabase';
 
@@ -147,13 +148,22 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
   ];
 
   const activeNav = navItems.find(n => n.key === activeSection)!;
+  const pratinjau = activeSection === 'widgetDasbor';
+  const bagianSebelum = useRef<typeof activeSection>(initialTab);
+  useEffect(() => { if (activeSection !== 'widgetDasbor') bagianSebelum.current = activeSection; }, [activeSection]);
+  const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => { if (pratinjau && pathname !== '/dashboard') router.push('/dashboard'); }, [pratinjau, pathname, router]);
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center pt-16 px-4 pb-4">
-      <div className="bg-white rounded-kartu shadow-modal w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
+    <div role="dialog" aria-modal={!pratinjau} aria-label="Admin Panel" style={pratinjau ? undefined : { background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+      className={pratinjau ? 'fixed inset-0 z-1000 flex justify-start pointer-events-none' : 'fixed inset-0 z-1000 flex items-center justify-center pt-16 px-4 pb-4'}>
+      <div className={pratinjau
+        ? 'pointer-events-auto bg-white shadow-modal w-full sm:w-[400px] h-full flex flex-col overflow-hidden border-r border-slate-200'
+        : 'bg-white rounded-kartu shadow-modal w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200'}>
 
-        <div className="w-full sm:w-56 shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
+        <div className={`${pratinjau ? 'hidden' : 'flex'} w-full sm:w-56 shrink-0 flex-col border-b sm:border-b-0 sm:border-r border-slate-100`} style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
           <div className="px-4 sm:px-5 py-3 sm:py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
@@ -203,20 +213,26 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3 shrink-0"
             style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
+            {pratinjau && (
+              <button type="button" aria-label="Kembali ke menu Admin Panel" title="Kembali ke menu Admin Panel" onClick={() => setActiveSection(bagianSebelum.current)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-slate-600 hover:bg-slate-200/70 transition-colors">
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+            )}
             <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: activeNav.activeBg, border: `1px solid ${activeNav.activeBorder}`, color: activeNav.activeText }}>
               <Ikon nama={activeNav.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-slate-800 text-sm sm:text-base sm:leading-6 leading-tight">{activeNav.label}</h2>
-              <p className="text-slate-500 text-[11px] sm:text-xs hidden sm:block">
+              <p className={`text-slate-500 text-[11px] sm:text-xs ${pratinjau ? 'block' : 'hidden sm:block'}`}>
                 {activeSection === 'settings' && 'Kelola akun user & hak akses menu'}
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'kodeAcara' && 'Pendaftaran acara tanpa persetujuan admin'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
                 {activeSection === 'merek' && 'Logo, nama, warna header & tampilan halaman login'}
-                {activeSection === 'widgetDasbor' && 'Kartu yang tampil di Dashboard Analytics'}
+                {activeSection === 'widgetDasbor' && 'Perubahan langsung terlihat di dashboard sebelah kanan'}
                 {activeSection === 'kelompok' && 'Daftar kelompok kerja & lonceng yang boleh dilihat masing-masing'}
                 {activeSection === 'integrasi' && 'Kanal notifikasi (In-App, WhatsApp, Telegram) & event mana lewat kanal mana'}
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
