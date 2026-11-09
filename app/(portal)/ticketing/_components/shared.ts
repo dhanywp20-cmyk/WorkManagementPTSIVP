@@ -346,9 +346,6 @@ export function adalahPending(st: string | undefined | null): boolean {
   return (st ?? '').startsWith('Pending');
 }
 
-/** Ringkasan "Pending": semua status yang belum Solved (Call, Onsite, Waiting
- *  Approval, Pending Action, dst.). In Progress dikecualikan karena punya
- *  kartu ringkasan sendiri, supaya tidak terhitung dua kali. */
 export function masukRingkasanPending(st: string | undefined | null): boolean {
   return st !== 'Solved' && st !== 'In Progress';
 }
