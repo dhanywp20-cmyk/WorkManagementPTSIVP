@@ -7,6 +7,7 @@ import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/
 import { useKelompokPTS } from '@/lib/kelompok/inti';
 import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
+import { kembaliTerang } from '@/components/shared/Tema';
 import { LangkahDuaFaktor, type HasilMasuk } from './LangkahDuaFaktor';
 import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 
@@ -84,6 +85,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
 
   const handleLogin = async () => {
     if (loginLoading) return;
+    kembaliTerang();
     setLoginLoading(true);
     setLoginErr('');
     try {

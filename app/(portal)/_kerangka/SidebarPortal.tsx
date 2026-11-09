@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { IkonTema, useTema } from '@/components/shared/Tema';
 import type { User, MenuItem } from '../dashboard/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
@@ -30,6 +31,7 @@ export function SidebarPortal({
   showDashboardPanel, aktifUrl, currentUser, isAdmin, isFullAccess, pendingUsers, pendingRequests,
   onMenu, onBeranda, onProfil, onAdminPanel, onKeluar,
 }: SidebarPortalProps) {
+  const [gelap, tukarTema] = useTema();
   return (
         <div
       className={`
@@ -339,6 +341,11 @@ export function SidebarPortal({
               </button>
             )}
 
+            <button aria-label={gelap ? 'Mode terang' : 'Mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'} onClick={tukarTema}
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+              <IkonTema gelap={gelap} />
+            </button>
+
             <button aria-label="Sign Out"
               onClick={onKeluar}
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-all"
@@ -398,9 +405,10 @@ export function SidebarPortal({
               </button>
             )}
 
+            <div className="flex items-center gap-1.5">
             <button
               onClick={onKeluar}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+              className="flex-1 min-w-0 flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
               style={{ color: '#64748b', border: '1px solid transparent' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.15)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
@@ -410,6 +418,11 @@ export function SidebarPortal({
               </svg>
               Sign out
             </button>
+            <button type="button" onClick={tukarTema} aria-label={gelap ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'}
+              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+              <IkonTema gelap={gelap} />
+            </button>
+            </div>
 
           </div>
         )}
