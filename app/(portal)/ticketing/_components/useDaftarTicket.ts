@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { User, TeamMember, Ticket, OverdueSetting, adalahPending, TAHUN_TERBARU } from './shared';
+import { User, TeamMember, Ticket, OverdueSetting, masukRingkasanPending, TAHUN_TERBARU } from './shared';
 import { supabase } from '@/lib/supabase';
 import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from '@/lib/teams';
 
@@ -41,7 +41,7 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
       else if (filterStatus === "Overdue") statusMatch = isTicketOverdue(t) && t.status !== "Solved";
       else if (filterStatus === "Solved Overdue") statusMatch = isTicketOverdue(t) && t.status === "Solved";
       else if (currentUserTeamType === "Team Services") statusMatch = t.services_status === filterStatus || t.status === filterStatus;
-      else if (filterStatus === "Pending") statusMatch = (t.status ?? '').startsWith("Pending");
+      else if (filterStatus === "Pending") statusMatch = masukRingkasanPending(t.status);
       else statusMatch = t.status === filterStatus;
       const handlerMatch = handlerFilter === null || t.assign_name === handlerFilter;
       const divisionMatch = salesDivisionFilter === null || t.sales_division === salesDivisionFilter;
@@ -67,11 +67,11 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
   const stats = useMemo(() => {
     const total = tickets.length;
     const processing = tickets.filter((t) => t.status === "In Progress").length;
-    const pending = tickets.filter((t) => adalahPending(t.status)).length;
+    const pending = tickets.filter((t) => masukRingkasanPending(t.status)).length;
     const solved = tickets.filter((t) => t.status === "Solved").length;
     const overdue = tickets.filter((t) => isTicketOverdue(t) && t.status !== "Solved").length;
     const solvedOverdue = tickets.filter((t) => isTicketOverdue(t) && t.status === "Solved").length;
-    const pendingTepat = tickets.filter((t) => adalahPending(t.status) && !isTicketOverdue(t)).length;
+    const pendingTepat = tickets.filter((t) => masukRingkasanPending(t.status) && !isTicketOverdue(t)).length;
     const processingTepat = tickets.filter((t) => t.status === "In Progress" && !isTicketOverdue(t)).length;
     return {
       total, pending, processing, solved, overdue, solvedOverdue,

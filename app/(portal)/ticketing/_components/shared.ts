@@ -346,6 +346,10 @@ export function adalahPending(st: string | undefined | null): boolean {
   return (st ?? '').startsWith('Pending');
 }
 
+export function masukRingkasanPending(st: string | undefined | null): boolean {
+  return st !== 'Solved' && st !== 'In Progress';
+}
+
 export function bolehUpdateTicket(t: Ticket, currentUser: User | null): boolean {
   return !!currentUser && (
     currentUser.role === 'admin' || currentUser.role === 'superadmin'
