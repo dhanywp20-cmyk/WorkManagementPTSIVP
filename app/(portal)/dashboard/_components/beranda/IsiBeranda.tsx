@@ -104,7 +104,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
             {temuan ?? <span className="bb-kerangka w-64" aria-hidden="true" />}
           </p>
         ) : <span />}
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        <div className="bb-periode">
           <span className="text-[12px] font-medium text-slate-500 tabular-nums whitespace-nowrap">{fmtRentang(mulai)} – {fmtRentang(akhir, true)}</span>
           <div className="bb-segmen" role="group" aria-label="Periode ringkasan">
             {DAFTAR_PERIODE.map(p => (
