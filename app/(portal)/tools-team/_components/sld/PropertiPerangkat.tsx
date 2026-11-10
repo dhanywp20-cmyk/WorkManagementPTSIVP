@@ -1,0 +1,94 @@
+'use client';
+import { useRef, useState } from 'react';
+import { Copy, ImagePlus, Trash2 } from 'lucide-react';
+import { DAFTAR_IKON } from '@/lib/sld/ikon';
+import type { Perangkat } from '@/lib/sld/tipe';
+import { kompresGambar } from './gambar';
+import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { MiniIkon } from './PanelKatalog';
+import type { KeadaanSLD } from './useKeadaanSLD';
+
+export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
+  const ubah = (x: Partial<Perangkat>) => a.ubahPerangkat(p.id, x);
+  const berkas = useRef<HTMLInputElement>(null);
+  const [galat, setGalat] = useState('');
+  const [sibuk, setSibuk] = useState(false);
+  const lain = a.dok.perangkat.filter(x => x.id !== p.id);
+
+  const unggah = async (f?: File | null) => {
+    if (!f) return;
+    setSibuk(true); setGalat('');
+    try {
+      const g = await kompresGambar(f);
+      const h = Math.round((p.w / g.rasio) * 2) / 2;
+      ubah({ gambar: g.dataUrl, rasio: g.rasio, h: Math.max(10, Math.min(80, h)) });
+    } catch (e) { setGalat(e instanceof Error ? e.message : 'Gambar gagal dipakai.'); } finally {
+      setSibuk(false);
+      if (berkas.current) berkas.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-20 h-14 rounded-lg border border-slate-200 bg-white grid place-items-center overflow-hidden shrink-0">
+          {p.gambar ? <img src={p.gambar} alt="" className="max-w-full max-h-full object-contain" /> : <MiniIkon ikon={p.ikon} className="w-16 h-10" />}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={kelasTombol} disabled={sibuk} onClick={() => berkas.current?.click()}>
+            <ImagePlus size={15} /> {sibuk ? 'Memproses...' : p.gambar ? 'Ganti foto' : 'Pakai foto'}
+          </button>
+          {p.gambar && <button type="button" className={kelasTombol} onClick={() => ubah({ gambar: undefined, rasio: undefined })}>Pakai ilustrasi</button>}
+          <input ref={berkas} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => void unggah(e.target.files?.[0])} />
+        </div>
+      </div>
+      {galat && <p className="text-[12px] text-rose-700">{galat}</p>}
+      {!p.gambar && (
+        <Isian label="Ilustrasi">
+          <select value={p.ikon} onChange={e => ubah({ ikon: e.target.value })} className={kelasKecil}>
+            {DAFTAR_IKON.map(i => <option key={i.v} value={i.v}>{i.l}</option>)}
+          </select>
+        </Isian>
+      )}
+      <div className="grid grid-cols-[72px_1fr] gap-2">
+        <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder="1" />
+        <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />
+      </div>
+      <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />
+      <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
+      <div className="grid grid-cols-2 gap-2">
+        <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
+        <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} />
+      </div>
+      <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
+        <Isian label="Qty">
+          <input type="number" min={0} value={p.qty} onChange={e => ubah({ qty: Math.max(0, Number(e.target.value) || 0) })} className={kelasKecil} />
+        </Isian>
+        <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
+        <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
+      </div>
+      <Teks label="Daftar port (pisahkan dengan koma)" nilai={p.port.join(', ')} onUbah={v => ubah({ port: v.split(',').map(s => s.trim()).filter(Boolean).slice(0, 48) })}
+        bantuan="Dipakai sebagai pilihan port saat mengisi kabel." />
+      <div className="grid grid-cols-2 gap-2">
+        <Isian label="Lebar gambar (mm)">
+          <input type="number" min={12} max={200} value={p.w} onChange={e => ubah({ w: Math.max(12, Number(e.target.value) || 12) })} className={kelasKecil} />
+        </Isian>
+        <Isian label="Tinggi gambar (mm)">
+          <input type="number" min={8} max={200} value={p.h} onChange={e => ubah({ h: Math.max(8, Number(e.target.value) || 8) })} className={kelasKecil} />
+        </Isian>
+      </div>
+      {lain.length > 0 && (
+        <Isian label="Sambungkan kabel ke">
+          <select value="" onChange={e => e.target.value && a.hubungkan(p.id, e.target.value)} className={kelasKecil}>
+            <option value="">Pilih perangkat tujuan...</option>
+            {lain.map(x => <option key={x.id} value={x.id}>{x.nama || 'Tanpa nama'}</option>)}
+          </select>
+        </Isian>
+      )}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <button type="button" className={kelasTombol} onClick={() => a.duplikat(p.id)}><Copy size={15} /> Duplikat</button>
+        <button type="button" className={`${kelasTombol} text-rose-700`} onClick={() => a.hapus({ jenis: 'p', id: p.id })}><Trash2 size={15} /> Hapus</button>
+      </div>
+    </div>
+  );
+}

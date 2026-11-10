@@ -8,6 +8,7 @@ _components/
   Desain3D.tsx       kerangka Desain 3D Ruang AV        → desain3d/  (lihat desain3d/README.md)
   KalkulatorLED.tsx  kerangka LED Videotron             → led/
   KalkulatorAV.tsx   kerangka Kalkulator AV (5 sub)     → av/
+  SLD.tsx            kerangka Single Line Diagram       → sld/ (logika murni lib/sld/, diuji uji/sld.ts)
   ChecklistBarang.tsx kerangka Checklist Barang         → cekbarang/ (impor Excel / PDF, PDF hasil + tanda tangan;
                      logika murni lib/checklist/barang.ts, diuji uji/checklist-barang.ts)
   bersama/           dipakai semua alat: ui.tsx (isian, kartu, nilai), cetak.ts (lembar A4 & PNG),
@@ -31,6 +32,27 @@ led/
   daya/               Power Connection: data.ts (murni), svg.ts, teks.ts, RuangDaya.tsx
   referensi/          referensi produk LED: useReferensiLED, EditorReferensiLED, TabelHardware
   FileLED.tsx         buka / simpan hitungan ke server tim
+```
+
+## sld/ — Single Line Diagram
+
+Template ekspor BAKU, meniru SLD contoh final yang disetujui pemilik (A3 landscape, 2 sheet):
+sheet 1 = strip judul kiri + diagram foto perangkat & kabel berwarna; sheet 2 = Daftar Koneksi,
+Gambar Perangkat, Daftar Perangkat, Catatan Pemasangan, blok judul. Warna, huruf & kolom dikunci
+di `lib/sld/gaya.ts`, `lembar1.ts`, `lembar2.ts` dan dijaga `uji/sld.ts` - jangan dibuat bertema.
+
+```
+lib/sld/
+  tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
+  gaya.ts       warna kabel, huruf, watermark (tetap)
+  geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label
+  lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
+  katalog.ts    templat perangkat + port      ikon.ts  ilustrasi bila belum ada foto
+  dok.ts        buat / bersihkan dokumen      contoh.ts  contoh Voice Kamar Pasien
+_components/sld/
+  useKeadaanSLD.ts  dokumen + undo/redo + draf localStorage
+  KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
+  PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (PDF A3 / PNG)
 ```
 
 ## av/ — Kalkulator AV
