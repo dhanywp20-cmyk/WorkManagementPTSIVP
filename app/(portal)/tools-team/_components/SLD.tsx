@@ -6,6 +6,7 @@ import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
 import { HALAMAN } from '@/lib/sld/tipe';
 import { cetakPdf, unduhPng } from './sld/ekspor';
+import { gambarDariClipboard, kompresGambar } from './sld/gambar';
 import { kelasTombol } from './sld/isian';
 import { KanvasSLD } from './sld/KanvasSLD';
 import { PanelKatalog } from './sld/PanelKatalog';
@@ -56,8 +57,17 @@ export function SLD() {
       const s = e.shiftKey ? 5 : 0.5;
       if (per) x.ubahPerangkat(per.id, { x: per.x + d[0] * s, y: per.y + d[1] * s });
     };
+    const tempel = (e: ClipboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName))) return;
+      const x = aRef.current, p = x.pilih, f = gambarDariClipboard(e);
+      if (!f || p?.jenis !== 'p') return;
+      e.preventDefault();
+      kompresGambar(f).then(g => x.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true }));
+    };
     window.addEventListener('keydown', tekan);
-    return () => window.removeEventListener('keydown', tekan);
+    window.addEventListener('paste', tempel);
+    return () => { window.removeEventListener('keydown', tekan); window.removeEventListener('paste', tempel); };
   }, []);
 
   const jalankan = async (label: string, f: () => Promise<void>) => {

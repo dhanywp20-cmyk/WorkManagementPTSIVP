@@ -48,12 +48,18 @@ lib/sld/
   geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label
   lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
   katalog.ts    templat perangkat + port      ikon.ts  ilustrasi bila belum ada foto
-  dok.ts        buat / bersihkan dokumen      contoh.ts  contoh Voice Kamar Pasien
+  dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
+  bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
 _components/sld/
   useKeadaanSLD.ts  dokumen + undo/redo + draf localStorage
   KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
   PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (PDF A3 / PNG)
+  ImporBom.tsx      foto & perangkat dari BOM;  foto-lokal.ts  foto & galeri di IndexedDB browser
 ```
+
+FOTO PERANGKAT HANYA DI BROWSER: tidak pernah diunggah ke Supabase / Vercel (hemat egress). Draf di
+localStorage disimpan lewat `tanpaFoto()`, foto terpisah di IndexedDB. Fitur simpan ke server nanti
+WAJIB memakai `tanpaFoto()` - dijaga uji/sld.ts.
 
 ## av/ — Kalkulator AV
 

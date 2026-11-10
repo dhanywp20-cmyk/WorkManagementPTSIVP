@@ -4,6 +4,7 @@ import { jalurBulat, barisLabel, isiLembar1 } from '@/lib/sld/lembar1';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { lebarTeks } from '@/lib/sld/teks';
 import { HALAMAN, type Perangkat, type Titik, UKURAN_MIN } from '@/lib/sld/tipe';
+import { kompresGambar } from './gambar';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 type Seret =
@@ -28,7 +29,7 @@ export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
   const { dok, geo, pilih } = a;
   const isi = useMemo(() => isiLembar1(dok, { watermark: WATERMARK_BAWAAN }, geo), [dok, geo]);
 
-  const titik = (e: React.PointerEvent): Titik => {
+  const titik = (e: { clientX: number; clientY: number }): Titik => {
     const s = svgRef.current, m = s?.getScreenCTM();
     if (!s || !m) return { x: 0, y: 0 };
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
@@ -62,13 +63,29 @@ export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
     setSeret(null);
   };
 
+  const [seretFoto, setSeretFoto] = useState(false);
+  const [galatFoto, setGalatFoto] = useState('');
+  const jatuhkan = async (e: React.DragEvent) => {
+    e.preventDefault(); setSeretFoto(false); setGalatFoto('');
+    const f = [...e.dataTransfer.files].find(x => x.type.startsWith('image/'));
+    if (!f) return;
+    const p = perangkatDi(titik(e)) ?? (pilih?.jenis === 'p' ? dok.perangkat.find(x => x.id === pilih.id) : undefined);
+    if (!p) { setGalatFoto('Jatuhkan foto tepat di atas perangkat di diagram.'); return; }
+    try { a.pasangFotoKe(p.id, await kompresGambar(f), f.name.replace(/\.[^.]+$/, '')); a.setPilih({ jenis: 'p', id: p.id }); } catch (x) {
+      setGalatFoto(x instanceof Error ? x.message : 'Foto gagal dipakai.');
+    }
+  };
+
   const pDipilih = pilih?.jenis === 'p' ? dok.perangkat.find(p => p.id === pilih.id) : undefined;
   const kDipilih = pilih?.jenis === 'k' ? geo.find(g => g.id === pilih.id) : undefined;
   const asal = seret?.mode === 'sambung' ? dok.perangkat.find(p => p.id === seret.dari) : undefined;
   const tengah = kDipilih && kDipilih.garis[0].titik.length === 4 ? kDipilih.garis[0].titik : null;
 
   return (
-    <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-100 max-h-[78vh]" style={{ colorScheme: 'light' }}>
+    <div className={`relative overflow-auto rounded-xl border bg-slate-100 max-h-[78vh] ${seretFoto ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200'}`}
+      style={{ colorScheme: 'light' }} onDragOver={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setSeretFoto(true); } }}
+      onDragLeave={() => setSeretFoto(false)} onDrop={e => void jatuhkan(e)}>
+      {galatFoto && <p role="alert" className="sticky top-0 left-0 z-10 m-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-[12px] text-rose-800">{galatFoto}</p>}
       <svg ref={svgRef} viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`} style={{ width: `${zoom * 100}%`, minWidth: zoom * 640, display: 'block', background: '#fff', userSelect: 'none', WebkitUserSelect: 'none' }}
         onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={() => setSeret(null)} role="img" aria-label="Kanvas Single Line Diagram">
         <rect width={HALAMAN.w} height={HALAMAN.h} fill="#fff" onPointerDown={() => a.setPilih(null)} />

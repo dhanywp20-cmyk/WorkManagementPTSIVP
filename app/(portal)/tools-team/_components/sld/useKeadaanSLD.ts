@@ -1,13 +1,17 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSession } from '@/lib/auth/sesi';
 import { contohVoiceKamar } from '@/lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, idBaru, kabelBaru, perangkatBaru, ujungBaru } from '@/lib/sld/dok';
+import {
+  bersihkanDok, dokBaru, hapusPerangkat, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, ujungBaru,
+} from '@/lib/sld/dok';
 import { geometri } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { periksaDok } from '@/lib/sld/turunan';
 import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
+import { type FotoGaleri, muatFotoDraf, muatGaleri, simpanFotoDraf, simpanGaleri } from './foto-lokal';
+import type { FotoSiap } from './gambar';
 
 const KUNCI = 'tools-team-sld-v1';
 
@@ -27,23 +31,55 @@ export function useKeadaanSLD() {
   const [siap, setSiap] = useState(false);
   const [pilih, setPilih] = useState<Pilihan>(null);
   const [galatSimpan, setGalatSimpan] = useState(false);
+  const [galeri, setGaleri] = useState<FotoGaleri[]>([]);
+  const mulaiRef = useRef<(d: DokSLD) => void>(() => {});
 
   useEffect(() => {
-    const d = muatDraf();
-    setDok(d ?? dokBaru(namaPengguna()));
-    setSiap(true);
+    let batal = false;
+    const d = muatDraf() ?? dokBaru(namaPengguna());
+    void Promise.all([muatFotoDraf().catch(() => ({})), muatGaleri().catch(() => [])]).then(([peta, g]) => {
+      if (batal) return;
+      const awal = pasangFoto(d, peta);
+      setDok(awal); setGaleri(g); setSiap(true); mulaiRef.current(awal);
+    });
+    return () => { batal = true; };
   }, []);
   useEffect(() => {
     if (!siap) return;
     const t = setTimeout(() => {
-      try { localStorage.setItem(KUNCI, JSON.stringify(dok)); setGalatSimpan(false); } catch { setGalatSimpan(true); }
+      try { localStorage.setItem(KUNCI, JSON.stringify(tanpaFoto(dok))); setGalatSimpan(false); } catch { setGalatSimpan(true); }
     }, 500);
     return () => clearTimeout(t);
   }, [dok, siap]);
+  const kunciFoto = dok.perangkat.map(p => (p.gambar ? `${p.id}:${p.gambar.length}` : '')).join('|');
+  const dokRef = useRef(dok); dokRef.current = dok;
+  useEffect(() => {
+    if (!siap) return;
+    const t = setTimeout(() => { simpanFotoDraf(petaFoto(dokRef.current)).catch(() => setGalatSimpan(true)); }, 600);
+    return () => clearTimeout(t);
+  }, [kunciFoto, siap]);
 
   const riwayat = useRiwayat(dok, setDok);
+  mulaiRef.current = riwayat.mulaiBaru;
   const geo = useMemo(() => geometri(dok), [dok]);
   const temuan = useMemo(() => periksaDok(dok), [dok]);
+
+  const tambahGaleri = useCallback((baru: FotoGaleri[]) => setGaleri(g => {
+    const ada = new Set(g.map(x => x.gambar));
+    const hasil = [...baru.filter(x => !ada.has(x.gambar)), ...g];
+    void simpanGaleri(hasil).catch(() => {});
+    return hasil;
+  }), []);
+  const hapusGaleri = useCallback((id: string) => setGaleri(g => {
+    const hasil = g.filter(x => x.id !== id);
+    void simpanGaleri(hasil).catch(() => {});
+    return hasil;
+  }), []);
+  const pasangFotoKe = useCallback((id: string, f: FotoSiap, nama = 'Foto') => {
+    setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (p.id === id
+      ? { ...p, gambar: f.dataUrl, rasio: f.rasio, h: Math.max(10, Math.min(80, Math.round((p.w / f.rasio) * 2) / 2)) } : p)) }));
+    tambahGaleri([{ id: idBaru('g'), nama, gambar: f.dataUrl, rasio: f.rasio }]);
+  }, [tambahGaleri]);
 
   const ubahBlok = useCallback((p: Partial<BlokJudul>) => setDok(d => ({ ...d, blok: { ...d.blok, ...p } })), []);
   const ubahPerangkat = useCallback((id: string, p: Partial<Perangkat>) =>
@@ -105,7 +141,7 @@ export function useKeadaanSLD() {
   const contoh = useCallback(() => muat(contohVoiceKamar(namaPengguna())), [muat]);
 
   return {
-    dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan,
+    dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe,
     ubahBlok, ubahPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
   };
 }

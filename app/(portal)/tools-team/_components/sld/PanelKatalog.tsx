@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import { svgIkon } from '@/lib/sld/ikon';
 import { KATALOG } from '@/lib/sld/katalog';
 import { kelasInput } from '../bersama/ui';
+import { ImporBom } from './ImporBom';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 export function MiniIkon({ ikon, className = 'w-12 h-8' }: { ikon: string; className?: string }) {
@@ -18,6 +19,7 @@ export function PanelKatalog({ a }: { a: KeadaanSLD }) {
   }, [cari]);
   return (
     <div className="space-y-2">
+      <ImporBom a={a} />
       <label className="relative block">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
         <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari perangkat..." aria-label="Cari perangkat" className={`${kelasInput} pl-9`} />

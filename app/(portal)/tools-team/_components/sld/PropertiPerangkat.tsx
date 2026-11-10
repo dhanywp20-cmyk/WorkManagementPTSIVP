@@ -19,9 +19,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
     if (!f) return;
     setSibuk(true); setGalat('');
     try {
-      const g = await kompresGambar(f);
-      const h = Math.round((p.w / g.rasio) * 2) / 2;
-      ubah({ gambar: g.dataUrl, rasio: g.rasio, h: Math.max(10, Math.min(80, h)) });
+      a.pasangFotoKe(p.id, await kompresGambar(f), f.name.replace(/\.[^.]+$/, ''));
     } catch (e) { setGalat(e instanceof Error ? e.message : 'Gambar gagal dipakai.'); } finally {
       setSibuk(false);
       if (berkas.current) berkas.current.value = '';
@@ -43,6 +41,23 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
         </div>
       </div>
       {galat && <p className="text-[12px] text-rose-700">{galat}</p>}
+      <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto hanya disimpan di browser ini, tidak diunggah ke server.</p>
+      {a.galeri.length > 0 && (
+        <Isian label={`Galeri foto di browser ini (${a.galeri.length})`}>
+          <div className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto">
+            {a.galeri.map(g => (
+              <div key={g.id} className="relative group">
+                <button type="button" title={g.nama} onClick={() => a.pasangFotoKe(p.id, { dataUrl: g.gambar, rasio: g.rasio }, g.nama)}
+                  className={`w-full h-12 rounded-lg border bg-white grid place-items-center overflow-hidden ${p.gambar === g.gambar ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300'}`}>
+                  <img src={g.gambar} alt={g.nama} className="max-w-full max-h-full object-contain" />
+                </button>
+                <button type="button" onClick={() => a.hapusGaleri(g.id)} aria-label={`Hapus ${g.nama} dari galeri`}
+                  className="absolute -top-1 -right-1 hidden group-hover:grid place-items-center w-4 h-4 rounded-full bg-slate-700 text-white text-[10px] leading-none">×</button>
+              </div>
+            ))}
+          </div>
+        </Isian>
+      )}
       {!p.gambar && (
         <Isian label="Ilustrasi">
           <select value={p.ikon} onChange={e => ubah({ ikon: e.target.value })} className={kelasKecil}>

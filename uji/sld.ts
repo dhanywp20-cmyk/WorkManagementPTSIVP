@@ -1,10 +1,12 @@
+import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { contohVoiceKamar } from '../lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, perangkatBaru } from '../lib/sld/dok';
+import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, kodeKabel, sisiOtomatis } from '../lib/sld/geometri';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
+import { bacaZip, crc32, tulisZip } from '../lib/sld/zip';
 import { barisKoneksi, barisPerangkat, jenisTerpakai, kartuGambar, periksaDok } from '../lib/sld/turunan';
 
 let lulus = 0, gagal = 0;
@@ -90,5 +92,51 @@ console.log('\n4. Simpan & muat');
   cek('pemeriksaan: perangkat tanpa kabel & tanpa No. BOM dilaporkan', periksaDok(satu).length === 2);
 }
 
-console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
-process.exit(gagal ? 1 : 0);
+console.log('\n5. Foto hanya di browser & impor BOM');
+void (async () => {
+  const foto = 'data:image/png;base64,iVBORw0KGgo=';
+  const berfoto = { ...d, perangkat: d.perangkat.map((p, i) => (i === 0 ? { ...p, gambar: foto, rasio: 1.5 } : p)) };
+  const draf = JSON.stringify(tanpaFoto(berfoto));
+  cek('draf / data untuk server tidak membawa foto', !draf.includes('data:image') && tanpaFoto(berfoto).perangkat.every(p => !p.gambar));
+  const peta = petaFoto(berfoto);
+  cek('foto dipisah per perangkat lalu dipasang kembali', Object.keys(peta).length === 1 && pasangFoto(tanpaFoto(berfoto), peta).perangkat[0].gambar === foto);
+  cek('foto rusak di penyimpanan lokal diabaikan', !pasangFoto(tanpaFoto(berfoto), { [d.perangkat[0].id]: { gambar: 'javascript:x' } }).perangkat[0].gambar);
+
+  const te = new TextEncoder();
+  cek('crc32 baku', crc32(te.encode('123456789')) === 0xcbf43926);
+  const z = tulisZip([{ nama: 'a.txt', isi: te.encode('halo') }, { nama: 'd/b.bin', isi: new Uint8Array([1, 2, 3]) }]);
+  const zb = await bacaZip(z);
+  cek('tulis lalu baca ZIP utuh', new TextDecoder().decode(zb.get('a.txt')) === 'halo' && zb.get('d/b.bin')?.join(',') === '1,2,3');
+
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3]);
+  const sheet = '<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row>'
+    + '<row r="3"><c r="A3" t="s"><v>1</v></c><c r="B3" t="s"><v>2</v></c><c r="C3" t="s"><v>3</v></c><c r="D3" t="s"><v>4</v></c><c r="E3" t="s"><v>5</v></c>'
+    + '<c r="H3" t="s"><v>6</v></c></row><row r="4"><c r="A4"><v>1</v></c><c r="C4" t="s"><v>7</v></c><c r="D4" t="s"><v>8</v></c><c r="E4" t="s"><v>9</v></c>'
+    + '<c r="H4"><v>2</v></c></row><row r="5"><c r="A5"><v>2</v></c><c r="D5" t="s"><v>10</v></c><c r="E5" t="inlineStr"><is><t>Mini PC</t></is></c>'
+    + '<c r="H5"><v>1</v></c></row></sheetData></worksheet>';
+  const kata = ['BILL OF MATERIALS', 'No', 'Gambar', 'Kategori', 'Merek', 'Model / Part No.', 'Qty', 'Kontrol &amp; Relay', 'CUE', 'relayCUE-8', 'Sesuai pengadaan'];
+  const drawing = '<xdr:wsDr><xdr:oneCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:row>3</xdr:row></xdr:from><xdr:pic><xdr:blipFill>'
+    + '<a:blip r:embed="rId1"/><a:srcRect l="10000" t="20000"/></xdr:blipFill></xdr:pic></xdr:oneCellAnchor></xdr:wsDr>';
+  const xlsx = tulisZip([
+    { nama: 'xl/workbook.xml', isi: te.encode('<workbook><sheets><sheet name="BOM" sheetId="1" r:id="rId1"/></sheets></workbook>') },
+    { nama: 'xl/_rels/workbook.xml.rels', isi: te.encode('<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>') },
+    { nama: 'xl/sharedStrings.xml', isi: te.encode(`<sst>${kata.map(k => `<si><t>${k}</t></si>`).join('')}</sst>`) },
+    { nama: 'xl/worksheets/sheet1.xml', isi: te.encode(sheet) },
+    { nama: 'xl/worksheets/_rels/sheet1.xml.rels', isi: te.encode('<Relationships><Relationship Id="rId2" Target="../drawings/drawing1.xml"/></Relationships>') },
+    { nama: 'xl/drawings/drawing1.xml', isi: te.encode(drawing) },
+    { nama: 'xl/drawings/_rels/drawing1.xml.rels', isi: te.encode('<Relationships><Relationship Id="rId1" Target="../media/image1.png"/></Relationships>') },
+    { nama: 'xl/media/image1.png', isi: png },
+  ]);
+  const bom = await bacaBom(xlsx);
+  cek('BOM: baris bernomor terbaca dengan kolom dari judul tabel',
+    bom.length === 2 && bom[0].no === '1' && bom[0].model === 'relayCUE-8' && bom[0].qty === 2 && bom[0].kategori === 'Kontrol & Relay',
+    JSON.stringify(bom.map(b => [b.no, b.model, b.qty, b.kategori])));
+  cek('BOM: foto tertambat ke barisnya, potongan Excel ikut',
+    bom[0].foto?.mime === 'image/png' && bom[0].foto.isi.length === png.length && bom[0].foto.potong?.l === 0.1 && bom[0].foto.potong?.t === 0.2 && !bom[1].foto);
+  cek('BOM: teks inline terbaca', bom[1].model === 'Mini PC');
+  cek('merek / model mengikuti gaya Daftar Perangkat',
+    modelBom(bom[0]) === 'CUE relayCUE-8' && modelBom(bom[1]) === 'Mini PC (sesuai pengadaan)' && isiDariBom(bom[1]).subGambar === 'sesuai pengadaan');
+
+  console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
+  process.exit(gagal ? 1 : 0);
+})();

@@ -106,3 +106,19 @@ export function hapusPerangkat(d: DokSLD, id: string): DokSLD {
 }
 
 const namaDari = (d: DokSLD, id: string) => d.perangkat.find(p => p.id === id)?.nama ?? '';
+
+export type PetaFoto = Record<string, { gambar: string; rasio?: number }>;
+
+export const tanpaFoto = (d: DokSLD): DokSLD => ({ ...d, perangkat: d.perangkat.map(p => ({ ...p, gambar: undefined })) });
+
+export function petaFoto(d: DokSLD): PetaFoto {
+  return Object.fromEntries(d.perangkat.filter(p => p.gambar).map(p => [p.id, { gambar: p.gambar!, rasio: p.rasio }]));
+}
+
+export function pasangFoto(d: DokSLD, peta: PetaFoto): DokSLD {
+  return { ...d, perangkat: d.perangkat.map(p => {
+    const f = peta[p.id];
+    const gambar = f ? bersihkanGambarSLD(f.gambar) : undefined;
+    return gambar ? { ...p, gambar, rasio: f.rasio ?? p.rasio } : p;
+  }) };
+}
