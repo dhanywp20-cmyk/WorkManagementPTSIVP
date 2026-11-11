@@ -3,6 +3,7 @@ import { cariTemplat } from './katalog';
 import { rasioDinding } from './dinding';
 import { URUTAN_JENIS } from './gaya';
 import { sudutSah } from './geometri';
+import { GAYA_ZONA, TEBAL_ZONA } from './zona';
 import {
   AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
   MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi, POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD,
@@ -129,7 +130,9 @@ function bersihkanZona(v: unknown, area: Area): ZonaSLD | null {
   if (typeof z.id !== 'string' || !z.id) return null;
   const w = angka(z.w, 10, area.w + 20, 80), h = angka(z.h, 8, area.h + 20, 50);
   return { id: z.id.slice(0, 40), label: teks(z.label, 60), warna: WARNA_ZONA_SAH.includes(z.warna as WarnaZona) ? (z.warna as WarnaZona) : 'abu',
-    x: angka(z.x, area.x - 10, area.x + area.w, area.x), y: angka(z.y, area.y - 5, area.y + area.h, area.y), w, h };
+    x: angka(z.x, area.x - 10, area.x + area.w, area.x), y: angka(z.y, area.y - 5, area.y + area.h, area.y), w, h,
+    ...(hurufSah(z.huruf) !== undefined ? { huruf: hurufSah(z.huruf) } : {}),
+    ...(typeof z.tebal === 'number' && Number.isFinite(z.tebal) ? { tebal: angka(z.tebal, TEBAL_ZONA.min, TEBAL_ZONA.maks, GAYA_ZONA.tebal) } : {}) };
 }
 const BIDANG_BOQ = { kategori: 120, merek: 120, model: 200, spek: 800, fungsi: 600 } as const;
 

@@ -81,7 +81,7 @@ lib/sld/
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto, hapusPerangkat (kabelnya ikut, cabang bus dirapikan), kabelYatim
                 contoh.ts  contoh Voice Kamar Pasien
   pilih.ts      pilih banyak (kotak seret), geser grup, salin / tempel (kabel antar item ikut, id baru), ratakan, jepret garis panduan
-  zona.ts       area kotak putus-putus berlabel (Rack / Wall / Ceiling / ruangan) - sheet 1 & Visio, tidak masuk BOQ
+  zona.ts       area kotak putus-putus berlabel (Rack / Wall / Ceiling / ruangan), ukuran huruf   zona.ts       area kotak putus-putus berlabel (Rack / Wall / Ceiling / ruangan) - sheet 1 & Visio, tidak masuk BOQ tebal garis bisa diatur - sheet 1 & Visio, tidak masuk BOQ
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
   ekspor.ts     (browser) SVG per sheet + foto tersemat, .vsdx, PNG, berkas paket - dipakai juga Request Design
   sematkan.ts / ilustrasi.ts  (browser) foto bawaan jadi data URL, ilustrasi jadi PNG

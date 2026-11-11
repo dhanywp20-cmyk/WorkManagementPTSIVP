@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { hurufPerangkat, type Kotak, kotakTampak, sudutSah } from '@/lib/sld/geometri';
 import { jalurBulat, isiLembar1, letakLabel } from '@/lib/sld/lembar1';
 import { idDalamKotak, jepret, kotakDari, type Panduan, posisiAwal } from '@/lib/sld/pilih';
-import { labelZona } from '@/lib/sld/zona';
+import { labelZona, tebalZona } from '@/lib/sld/zona';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { kotakTeks } from '@/lib/sld/teks-bebas';
 import { halamanDok, type Perangkat, type TeksBebas, type Titik, UKURAN_MIN } from '@/lib/sld/tipe';
@@ -150,7 +150,7 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
           const l = labelZona(z);
           return (
             <g key={z.id} style={{ cursor: 'move', touchAction: 'none' }} onPointerDown={e => mulaiObjek(e, z.id)}>
-              <rect x={z.x} y={z.y} width={z.w} height={z.h} fill="none" stroke="transparent" strokeWidth={2.4} pointerEvents="stroke" />
+              <rect x={z.x} y={z.y} width={z.w} height={z.h} fill="none" stroke="transparent" strokeWidth={Math.max(2.4, tebalZona(z) + 1.6)} pointerEvents="stroke" />
               {l.w > 0 && <rect x={l.x} y={l.y} width={l.w} height={l.h} fill="transparent" />}
             </g>
           );

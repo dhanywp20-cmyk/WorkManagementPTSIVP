@@ -3,7 +3,7 @@ import type { Prim } from './primitif';
 import { kotakTeks, WARNA_TEKS } from './teks-bebas';
 import { lebarTeks } from './teks';
 import type { TeksBebas, ZonaSLD } from './tipe';
-import { GAYA_ZONA, labelZona, WARNA_ZONA } from './zona';
+import { GAYA_ZONA, hurufZona, labelZona, tebalZona, WARNA_ZONA } from './zona';
 
 export const INCI = (mm: number) => mm / 25.4;
 export const f = (v: number) => (Math.abs(v) < 1e-9 ? '0' : String(Math.round(v * 1e9) / 1e9));
@@ -51,10 +51,10 @@ export function bentukTeksBebas(t: TeksBebas, id: number): string {
 export function bentukZona(z: ZonaSLD, baru: () => number): string[] {
   const c = WARNA_ZONA[z.warna] ?? WARNA_ZONA.abu, l = labelZona(z);
   const kotak = `<Shape ID='${baru()}' NameU='Area' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(z.x, z.y, z.w, z.h)}`
-    + `${sel('LineWeight', INCI(GAYA_ZONA.tebal), " U='MM'")}${sel('LineColor', c)}${sel('LinePattern', 2)}${sel('FillPattern', 0)}`
+    + `${sel('LineWeight', INCI(tebalZona(z)), " U='MM'")}${sel('LineColor', c)}${sel('LinePattern', 2)}${sel('FillPattern', 0)}`
     + `${sel('Rounding', INCI(GAYA_ZONA.sudut), " U='MM'")}${geomKotak(false, true)}</Shape>`;
   if (!l.w) return [kotak];
-  const [a, b] = pisahTeks(teksRun([{ isi: z.label.trim(), ukuran: GAYA_ZONA.huruf, warna: c, tebal: true }], 1));
+  const [a, b] = pisahTeks(teksRun([{ isi: z.label.trim(), ukuran: hurufZona(z), warna: c, tebal: true }], 1));
   return [kotak, `<Shape ID='${baru()}' NameU='Label area' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(l.x, l.y, l.w * 1.12, l.h)}`
     + `${sel('LinePattern', 0)}${sel('FillForegnd', '#ffffff')}${sel('FillPattern', 1)}${tanpaMargin}${sel('VerticalAlign', 1)}${a}${geomKotak(true, false)}${b}</Shape>`];
 }

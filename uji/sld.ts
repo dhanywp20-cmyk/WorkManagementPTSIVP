@@ -14,7 +14,7 @@ import ExcelJS from 'exceljs';
 import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
 import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, tempelKlip } from '../lib/sld/pilih';
 import { letakLabel } from '../lib/sld/lembar1';
-import { svgZona } from '../lib/sld/zona';
+import { labelZona, svgZona } from '../lib/sld/zona';
 import { tabrak } from '../lib/sld/rute';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
@@ -406,6 +406,11 @@ void (async () => {
   cek('grup model buatan sendiri: daftar unik per kategori + model, qty dijumlah', gm9.length === 2 && gm9.find(g => g.model === 'Philips 86BDL')?.jumlah === 3);
   const h5 = { ...h1, perangkat: h1.perangkat.map(p => (p.id === 'i1' || p.id === 'i3' ? { ...p, model: 'Grup A' } : p)) };
   cek('model baru = grup BOQ sendiri', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(',') === 'Matrix switcher:1,Grup A:2,IFP 2:1', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(','));
+  const zBesar = { id: 'zb', x: 40, y: 40, w: 150, h: 60, label: 'Rack', warna: 'biru' as const, huruf: 2, tebal: 1.2 };
+  const zDok = bersihkanDok({ ...dokBaru(), zona: [zBesar, { ...zBesar, id: 'zc', tebal: 10, huruf: -1 }] })!.zona!;
+  cek('area: ukuran huruf & tebal garis bisa diatur, tersimpan & dibatasi', svgZona(zBesar).includes('stroke-width="1.2"') && labelZona(zBesar).h > labelZona({ ...zBesar, huruf: undefined }).h
+    && zDok[0].huruf === 2 && zDok[0].tebal === 1.2 && zDok[1].tebal === 3 && zDok[1].huruf === undefined
+    && new TextDecoder().decode((await bacaZip(buatVsdx({ dok: { ...dokBaru(), zona: [zBesar] }, gambar: new Map() }))).get('visio/pages/page1.xml')).includes("NameU='Area'"));
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);

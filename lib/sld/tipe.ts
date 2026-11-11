@@ -75,7 +75,7 @@ export type WarnaTeks = 'hitam' | 'merah' | 'abu' | 'biru';
 export interface TeksBebas { id: string; x: number; y: number; isi: string; ukuran: number; warna: WarnaTeks; tebal: boolean; putar?: number }
 
 export type WarnaZona = 'abu' | 'biru' | 'merah' | 'hijau' | 'oranye';
-export interface ZonaSLD { id: string; x: number; y: number; w: number; h: number; label: string; warna: WarnaZona }
+export interface ZonaSLD { id: string; x: number; y: number; w: number; h: number; label: string; warna: WarnaZona; huruf?: number; tebal?: number }
 
 export type IsiBoqItem = { kategori?: string; merek?: string; model?: string; spek?: string; fungsi?: string };
 

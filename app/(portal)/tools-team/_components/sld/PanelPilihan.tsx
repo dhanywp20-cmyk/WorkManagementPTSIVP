@@ -1,11 +1,12 @@
 'use client';
 import {
-  AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, ClipboardPaste, Copy, CopyPlus, Trash2,
+  AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, ClipboardPaste, Copy, CopyPlus, Minus, Plus, Trash2,
 } from 'lucide-react';
 import type { Rata } from '@/lib/sld/pilih';
-import { LABEL_WARNA_ZONA, LABEL_ZONA_CEPAT, WARNA_ZONA } from '@/lib/sld/zona';
+import { GAYA_ZONA, LABEL_WARNA_ZONA, LABEL_ZONA_CEPAT, TEBAL_ZONA, tebalZona, WARNA_ZONA } from '@/lib/sld/zona';
 import { POSISI_LABEL, type PosisiLabel, type WarnaZona, type ZonaSLD } from '@/lib/sld/tipe';
-import { Angka, Isian, kelasTombol, Teks } from './isian';
+import { IsianHurufLabel } from './IsianHuruf';
+import { Angka, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import { PilihModel } from './PilihModel';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -77,6 +78,20 @@ export function PropertiZona({ a, z }: { a: KeadaanSLD; z: ZonaSLD }) {
             <button key={w} type="button" onClick={() => ubah({ warna: w })} aria-pressed={z.warna === w}
               className={`${kelasTombol} !px-2.5 ${z.warna === w ? '!border-blue-500 ring-2 ring-blue-200' : ''}`}>
               <span className="w-3 h-3 rounded-sm border-2 border-dashed" style={{ borderColor: WARNA_ZONA[w] }} aria-hidden="true" /> {LABEL_WARNA_ZONA[w]}
+            </button>
+          ))}
+        </div>
+      </Isian>
+      <IsianHurufLabel label="Ukuran huruf label area" dasarMm={GAYA_ZONA.huruf} faktor={z.huruf} onUbah={f => ubah({ huruf: f })} />
+      <Isian label="Tebal garis (mm)">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button type="button" className={`${kelasTombol} !px-2.5`} aria-label="Tipiskan garis" onClick={() => ubah({ tebal: Math.max(TEBAL_ZONA.min, Math.round((tebalZona(z) - 0.1) * 100) / 100) })}><Minus size={15} /></button>
+          <Angka nilai={tebalZona(z)} min={TEBAL_ZONA.min} maks={TEBAL_ZONA.maks} langkah={0.05} onUbah={v => ubah({ tebal: v })} className={`${kelasKecil} !w-20`} label="Tebal garis area (mm)" />
+          <button type="button" className={`${kelasTombol} !px-2.5`} aria-label="Tebalkan garis" onClick={() => ubah({ tebal: Math.min(TEBAL_ZONA.maks, Math.round((tebalZona(z) + 0.1) * 100) / 100) })}><Plus size={15} /></button>
+          {TEBAL_ZONA.cepat.map(t => (
+            <button key={t} type="button" onClick={() => ubah({ tebal: t === GAYA_ZONA.tebal ? undefined : t })} aria-pressed={tebalZona(z) === t} title={`${t} mm`}
+              className={`${kelasTombol} !px-2 !py-1.5 ${tebalZona(z) === t ? '!border-blue-500 ring-2 ring-blue-200' : ''}`}>
+              <span className="block w-7 border-t border-dashed" style={{ borderTopWidth: Math.max(1, t * 2.4), borderColor: WARNA_ZONA[z.warna] }} aria-hidden="true" />
             </button>
           ))}
         </div>
