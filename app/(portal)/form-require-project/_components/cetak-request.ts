@@ -1,12 +1,18 @@
 import { statusConfig, type ProjectRequest } from './shared';
 import { esc, escObjek } from '@/lib/lembar-cetak';
 import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
+import { htmlSeksiSld, isiSeksiSld, type TautanSld } from './sld-request';
 
 const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = []): void {
+export async function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = [], sld: TautanSld[] = []): Promise<void> {
   if (!asli) return;
+  const w = window.open('', '_blank');
+  if (!w) return;
+  if (sld.length) w.document.write('<p style="font-family:Arial;padding:24px">Menyiapkan dokumen...</p>');
+  const namaRuangSld = (i: number) => (i === 0 ? asli.room_name : asli.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`;
+  const seksiSld = sld.length ? htmlSeksiSld(await isiSeksiSld(asli.id, sld, true), namaRuangSld) : '';
   const selectedRequest = escObjek(asli);
   ccLabel = esc(ccLabel);
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
@@ -162,6 +168,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #
   </div>
 </div>
 
+${seksiSld}
 ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`, window.location.origin)}
 
 <!-- FOOTER -->
@@ -178,9 +185,8 @@ ${selectedRequest.assign_name ? `
 </div>` : ''}
 
 </div></body></html>`;
-  const w = window.open('', '_blank');
-  if (w) {
-    w.document.write(printContent); w.document.close();
+  {
+    w.document.open(); w.document.write(printContent); w.document.close();
     const gambar = Array.from(w.document.images);
     Promise.all(gambar.map(g => (g.complete ? Promise.resolve() : new Promise(r => { g.onload = g.onerror = () => r(null); }))))
       .then(() => setTimeout(() => w.print(), 200));

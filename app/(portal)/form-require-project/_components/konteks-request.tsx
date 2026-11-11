@@ -3,6 +3,7 @@
 import { createContext, useContext } from 'react';
 import type { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
 import type { TautanDesain3D, IzinRuang } from './desain-3d-request';
+import type { DataSld, TautanSld } from './sld-request';
 
 export interface NilaiKonteksRequest {
   sesi: {
@@ -113,6 +114,11 @@ export interface NilaiKonteksRequest {
     setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
     showUploadChoice: boolean;
     sldFileRef: import("react").RefObject<HTMLInputElement | null>;
+    sld: DataSld | null;
+    sldTools: TautanSld[];
+    mintaPilihSld: number;
+    setMintaPilihSld: import("react").Dispatch<import("react").SetStateAction<number>>;
+    muatSld: (id: string) => Promise<void>;
     uploadingCategory: "sld" | "boq" | "design3d" | null;
     uploadingFile: boolean;
   };

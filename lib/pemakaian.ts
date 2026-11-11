@@ -6,7 +6,7 @@ export const MODUL_DICATAT = [
 ] as const;
 export type ModulDicatat = typeof MODUL_DICATAT[number];
 
-export const ALAT_TOOLS = ['3d', 'led', 'av', 'banding', 'cekbarang', 'pustaka'] as const;
+export const ALAT_TOOLS = ['3d', 'led', 'av', 'sld', 'banding', 'cekbarang', 'pustaka'] as const;
 
 export const modulSah = (v: unknown): v is ModulDicatat => typeof v === 'string' && (MODUL_DICATAT as readonly string[]).includes(v);
 export const subSah = (modul: ModulDicatat, v: unknown): boolean =>
