@@ -24,7 +24,7 @@ export function areaLabel(p: Perangkat) {
   return { x: p.x, y: p.y, w, h: p.h + 3 + h };
 }
 
-export function KanvasSLD({ a, zoom, penuh = false }: { a: KeadaanSLD; zoom: number; penuh?: boolean }) {
+export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: KeadaanSLD; zoom: number; penuh?: boolean; simple?: boolean }) {
   const wadahRef = useRef<HTMLDivElement>(null);
   const [ukuran, setUkuran] = useState({ w: 960, h: 540 });
   useEffect(() => {
@@ -39,7 +39,7 @@ export function KanvasSLD({ a, zoom, penuh = false }: { a: KeadaanSLD; zoom: num
   const [seret, setSeret] = useState<Seret | null>(null);
   const { dok, geo, pilih } = a;
   const logo = a.logo ?? WATERMARK_BAWAAN;
-  const isi = useMemo(() => isiLembar1(dok, { watermark: logo }, geo), [dok, geo, logo]);
+  const isi = useMemo(() => isiLembar1(dok, { watermark: logo, simple }, geo), [dok, geo, logo, simple]);
 
   const titik = (e: { clientX: number; clientY: number }): Titik => {
     const s = svgRef.current, m = s?.getScreenCTM();

@@ -4,7 +4,7 @@ import type { Prim } from './primitif';
 import { esc, n } from './teks';
 import { HALAMAN, type Perangkat } from './tipe';
 
-export interface OpsiLembar { watermark?: string; tanpaWatermark?: boolean }
+export interface OpsiLembar { watermark?: string; tanpaWatermark?: boolean; simple?: boolean }
 
 export const WATERMARK_BAWAAN = '/sld/watermark.png';
 

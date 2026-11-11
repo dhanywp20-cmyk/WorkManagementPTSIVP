@@ -19,8 +19,11 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
   const {
     activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
     handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory,
-    uploadingFile
+    uploadingFile, sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld
   } = k.lampiran;
+  const namaRuang = detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`);
+  const tools3D = desain3dTools.filter(t => t.room_idx === detailRoomIdx).length;
+  const toolsSld = sldTools.filter(t => t.room_idx === detailRoomIdx).length;
   return (
     <>
       <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs satulayar:col-span-2">
@@ -64,6 +67,11 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
                         <span>{label}<br /><span className="font-normal text-gray-500">{hint}</span></span>
                       </button>
                     ))}
+                    <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'sld' ? t : 'sld')); setMintaPilihSld(n => n + 1); }}
+                      className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-blue-50 flex items-start gap-2 border-t border-gray-100">
+                      <span className="text-base leading-none"><Ikon nama="📐" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                      <span>SLD dari AV Solution Tools<br /><span className="font-normal text-gray-500">Tautkan SLD dari Single Line Diagram (opsional)</span></span>
+                    </button>
                     <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'design3d' ? t : 'design3d')); setMintaPilih3D(n => n + 1); }}
                       className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-violet-50 flex items-start gap-2 border-t border-gray-100">
                       <span className="text-base leading-none"><Ikon nama="🧊" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
@@ -104,7 +112,8 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
           {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveAttachTab(tab)}
               className={`flex-1 py-2 text-xs font-bold uppercase transition-all ${activeAttachTab === tab ? 'text-white bg-teal-600' : 'text-gray-500 hover:bg-gray-50'}`}>
-              {tab === 'all' ? `Semua (${roomAttachments.length + desain3dTools.filter(t => t.room_idx === detailRoomIdx).length})` : tab === 'design3d' ? `3D (${roomAttachments.filter(a => a.attachment_category === 'design3d').length + desain3dTools.filter(t => t.room_idx === detailRoomIdx).length})` : `${tab.toUpperCase()} (${roomAttachments.filter(a => a.attachment_category === tab).length})`}
+              {`${tab === 'all' ? 'Semua' : tab === 'design3d' ? '3D' : tab.toUpperCase()} (${(tab === 'all' ? roomAttachments.length : roomAttachments.filter(a => a.attachment_category === tab).length)
+                + (tab === 'all' || tab === 'design3d' ? tools3D : 0) + (tab === 'all' || tab === 'sld' ? toolsSld : 0)})`}
             </button>
           ))}
         </div>
@@ -207,15 +216,16 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
         )}
         {(activeAttachTab === 'all' || activeAttachTab === 'sld') && (
           <div className="mt-3">
-            <SldTools requestId={selectedRequest.id} roomIdx={detailRoomIdx} notify={notify}
-              namaRuang={detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`)} />
+            <SldTools requestId={selectedRequest.id} roomIdx={detailRoomIdx} namaRuang={namaRuang}
+              projectName={selectedRequest.project_name} mintaPilih={mintaPilihSld} data={sld}
+              muatUlang={() => muatSld(selectedRequest.id)} notify={notify} />
           </div>
         )}
         {(activeAttachTab === 'all' || activeAttachTab === 'design3d') && (
           <div className="mt-3">
             <Desain3DTools requestId={selectedRequest.id} roomIdx={detailRoomIdx}
-              namaRuang={detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`)}
-              projectName={selectedRequest.project_name} mintaPilih={mintaPilih3D} data={desain3d}
+              namaRuang={namaRuang} projectName={selectedRequest.project_name} mintaPilih={mintaPilih3D}
+              data={desain3d}
               muatUlang={() => muatDesain3D(selectedRequest.id)} notify={notify} />
           </div>
         )}

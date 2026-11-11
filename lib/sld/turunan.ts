@@ -15,25 +15,54 @@ export function urutKabel(kabel: Kabel[]): Kabel[] {
   return [...kabel.filter(c => !c.daya), ...kabel.filter(c => c.daya)];
 }
 
+const FUNGSI_JENIS: Record<JenisKabel, string> = {
+  catx: 'Jaringan data / kontrol (LAN)', usb: 'Data USB', ac: 'Catu daya 230 VAC', hdmi: 'Sinyal video + audio', audio: 'Sinyal audio',
+  speaker: 'Audio ke speaker', fiber: 'Sinyal via fiber optik', dc: 'Catu daya DC', ir: 'Kontrol IR', lain: '',
+};
+
+export function fungsiOtomatis(c: Kabel): string {
+  const t = `${c.teksGaris} ${c.media}`;
+  if (/poe/i.test(t)) return 'Data + daya PoE';
+  if (/hdbase/i.test(t)) return 'Video + kontrol via HDBaseT';
+  if (/rs-?485/i.test(t)) return 'Kontrol RS-485';
+  if (/rs-?232/i.test(t)) return 'Kontrol RS-232';
+  return FUNGSI_JENIS[c.jenis] ?? '';
+}
+
 export function barisKoneksi(d: DokSLD): BarisKoneksi[] {
   const peta = new Map(d.perangkat.map(p => [p.id, p]));
   const kode = kodeKabel(d.kabel);
   return urutKabel(d.kabel).map(c => ({
     id: c.id, kode: kode.get(c.id)!, dari: namaUjung(c.dari, peta),
     ke: [c.ke, ...c.cabang].map(u => namaUjung(u, peta)).filter(Boolean).join(', '),
-    media: c.media, fungsi: c.fungsi, catatan: c.catatan,
+    media: c.media, fungsi: c.fungsi.trim() || fungsiOtomatis(c), catatan: c.catatan,
   }));
 }
 
 const angkaNo = (no: string) => { const x = parseFloat(no); return Number.isFinite(x) ? x : Infinity; };
 
+export const BUKAN_PASOKAN = new Set(['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb']);
+export const ikutDaftar = (p: Perangkat) => !!p.no.trim() || !BUKAN_PASOKAN.has(p.ikon);
+const kunciModel = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
+
 function kelompokNo(d: DokSLD): Map<string, Perangkat[]> {
   const m = new Map<string, Perangkat[]>();
+  const tanpa = new Map<string, Perangkat[]>();
   for (const p of d.perangkat) {
     const no = p.no.trim();
     if (no) m.set(no, [...(m.get(no) ?? []), p]);
+    else if (ikutDaftar(p)) tanpa.set(kunciModel(p), [...(tanpa.get(kunciModel(p)) ?? []), p]);
   }
-  return new Map([...m.entries()].sort((a, b) => angkaNo(a[0]) - angkaNo(b[0]) || a[0].localeCompare(b[0])));
+  const urut = [...m.entries()].sort((a, b) => angkaNo(a[0]) - angkaNo(b[0]) || a[0].localeCompare(b[0]));
+  let n = Math.max(0, ...[...m.keys()].map(angkaNo).filter(Number.isFinite).map(Math.floor));
+  for (const daftar of tanpa.values()) urut.push([String(++n), daftar]);
+  return new Map(urut);
+}
+
+export function noOtomatis(d: DokSLD): Map<string, string> {
+  const hasil = new Map<string, string>();
+  for (const [no, daftar] of kelompokNo(d)) for (const p of daftar) if (!p.no.trim()) hasil.set(p.id, no);
+  return hasil;
 }
 
 export function barisPerangkat(d: DokSLD): BarisPerangkat[] {
@@ -85,7 +114,6 @@ export function periksaDok(d: DokSLD): Temuan[] {
   const tersambung = new Set(d.kabel.flatMap(c => [c.dari.p, c.ke.p, ...c.cabang.map(u => u.p)]));
   for (const p of d.perangkat) {
     if (!tersambung.has(p.id)) hasil.push({ tingkat: 'info', pesan: `${p.nama || 'Perangkat'} belum punya kabel.` });
-    if (!p.no.trim()) hasil.push({ tingkat: 'info', pesan: `${p.nama || 'Perangkat'} belum punya No. item BOM - tidak masuk Daftar Perangkat.` });
   }
   return hasil;
 }

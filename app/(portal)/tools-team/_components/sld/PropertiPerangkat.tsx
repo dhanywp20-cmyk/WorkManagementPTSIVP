@@ -5,6 +5,7 @@ import { DAFTAR_IKON } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
 import type { Perangkat } from '@/lib/sld/tipe';
+import { noOtomatis } from '@/lib/sld/turunan';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
@@ -74,7 +75,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
         </Isian>
       )}
       <div className="grid grid-cols-[72px_1fr] gap-2">
-        <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder="1" />
+        <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder={noOtomatis(a.dok).has(p.id) ? `${noOtomatis(a.dok).get(p.id)} (otomatis)` : "luar BOM"} />
         <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />
       </div>
       <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />

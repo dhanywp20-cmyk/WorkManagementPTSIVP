@@ -42,6 +42,17 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string 
   if ('galat' in m) return m.galat;
   const { user, request } = m;
   const db = getAdminClient();
+  const tautanId = req.nextUrl.searchParams.get('tautan');
+  if (tautanId) {
+    if (!POLA_ID.test(tautanId)) return gagal('Tautan tidak sah.');
+    const { data: t, error: e1 } = await db.from('request_sld').select('versi, versi_id').eq('id', tautanId).eq('request_id', request.id).maybeSingle();
+    if (e1) return gagal(e1.message, 500);
+    if (!t) return gagal('Tautan tidak ditemukan.', 404);
+    const { data: v, error: e2 } = await db.from('tools_sld_versi').select('nama, versi, data').eq('id', t.versi_id).maybeSingle();
+    if (e2) return gagal(e2.message, 500);
+    if (!v) return gagal('Versi SLD tidak ditemukan.', 404);
+    return NextResponse.json({ ok: true, sld: v }, { headers: { 'Cache-Control': 'private, max-age=300' } });
+  }
   const { data, error } = await db.from('request_sld')
     .select('id, room_idx, sld_id, versi, dilampirkan_oleh_nama, created_at, updated_at, snapshot:tools_sld_versi(nama, created_at, dibuat_oleh_nama), sumber:tools_sld(nama, versi, diarsipkan_at)')
     .eq('request_id', request.id).order('created_at', { ascending: true });

@@ -4,6 +4,7 @@ import { ujungBaru } from '@/lib/sld/dok';
 import { GAYA_KABEL, URUTAN_JENIS } from '@/lib/sld/gaya';
 import { kodeKabel } from '@/lib/sld/geometri';
 import type { JenisKabel, Kabel, PilihSisi, Ujung } from '@/lib/sld/tipe';
+import { fungsiOtomatis } from '@/lib/sld/turunan';
 import { Centang, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -76,7 +77,7 @@ export function PropertiKabel({ a, c }: { a: KeadaanSLD; c: Kabel }) {
         <Teks label="Kabel / media (tabel)" nilai={c.media} onUbah={v => ubah({ media: v })} placeholder="Cat6 patch" />
         <Teks label="Teks di garis" nilai={c.teksGaris} onUbah={v => ubah({ teksGaris: v })} placeholder={c.media || 'Cat6'} />
       </div>
-      <Teks label="Fungsi" nilai={c.fungsi} onUbah={v => ubah({ fungsi: v })} />
+      <Teks label="Fungsi" nilai={c.fungsi} onUbah={v => ubah({ fungsi: v })} placeholder={fungsiOtomatis(c) ? `otomatis: ${fungsiOtomatis(c)}` : undefined} />
       <Teks label="Catatan" nilai={c.catatan} onUbah={v => ubah({ catatan: v })} />
       <Centang label="Label garis di sisi seberang" nilai={c.labelBalik} onUbah={v => ubah({ labelBalik: v })} />
       <div className="flex flex-wrap gap-1.5 pt-1">

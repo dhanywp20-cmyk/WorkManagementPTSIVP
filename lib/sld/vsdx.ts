@@ -10,7 +10,7 @@ import { STYLE_DASAR } from './vsdx-gaya';
 import { tulisZip } from './zip';
 
 export interface GambarVsdx { isi: Uint8Array; jpeg: boolean }
-export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string }
+export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean }
 
 const NS = "xmlns='http://schemas.microsoft.com/office/visio/2012/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xml:space='preserve'";
 const KEPALA = "<?xml version='1.0' encoding='utf-8' ?>\n";
@@ -63,7 +63,7 @@ const kunciTitik = (t: Titik) => `${Math.round(t.x * 100)},${Math.round(t.y * 10
 function lembar1(m: MasukanVsdx, media: Media): Halaman {
   const h = new Halaman();
   const d = m.dok;
-  for (const p of primRangka1(d)) { const id = h.baru(); h.bentuk.push(bentukPrim(p, id, () => null)); }
+  for (const p of primRangka1(d, m.simple)) { const id = h.baru(); h.bentuk.push(bentukPrim(p, id, () => null)); }
   const geo = geometri(d);
   const titikPerangkat = new Map<string, Titik[]>();
   const peta = new Map(d.kabel.map(c => [c.id, c]));
@@ -198,7 +198,7 @@ function dokumen(): string {
 
 export function buatVsdx(m: MasukanVsdx): Uint8Array {
   const media = new Media();
-  const h1 = lembar1(m, media), h2 = lembar2(m, media);
+  const hal = [{ h: lembar1(m, media), nama: 'Sheet 1 - Diagram' }, ...(m.simple ? [] : [{ h: lembar2(m, media), nama: 'Sheet 2 - Koneksi & catatan' }])];
   const judul = xe(m.judul ?? 'Single Line Diagram');
   const tipeGambar = "<Default Extension='png' ContentType='image/png'/><Default Extension='jpeg' ContentType='image/jpeg'/>";
   const berkas = [
@@ -206,8 +206,7 @@ export function buatVsdx(m: MasukanVsdx): Uint8Array {
       + "<Default Extension='rels' ContentType='application/vnd.openxmlformats-package.relationships+xml'/><Default Extension='xml' ContentType='application/xml'/>"
       + "<Override PartName='/visio/document.xml' ContentType='application/vnd.ms-visio.drawing.main+xml'/>"
       + "<Override PartName='/visio/pages/pages.xml' ContentType='application/vnd.ms-visio.pages+xml'/>"
-      + "<Override PartName='/visio/pages/page1.xml' ContentType='application/vnd.ms-visio.page+xml'/>"
-      + "<Override PartName='/visio/pages/page2.xml' ContentType='application/vnd.ms-visio.page+xml'/>"
+      + hal.map((_, i) => `<Override PartName='/visio/pages/page${i + 1}.xml' ContentType='application/vnd.ms-visio.page+xml'/>`).join('')
       + "<Override PartName='/visio/windows.xml' ContentType='application/vnd.ms-visio.windows+xml'/>"
       + "<Override PartName='/docProps/core.xml' ContentType='application/vnd.openxmlformats-package.core-properties+xml'/></Types>" },
     { nama: '_rels/.rels', isi: `${KEPALA}<Relationships xmlns='${REL}'><Relationship Id='rId1' Type='http://schemas.microsoft.com/visio/2010/relationships/document' Target='visio/document.xml'/>`
@@ -221,14 +220,10 @@ export function buatVsdx(m: MasukanVsdx): Uint8Array {
     { nama: 'visio/windows.xml', isi: `${KEPALA}<Windows ClientWidth='1600' ClientHeight='900' ${NS}><Window ID='0' WindowType='Drawing' WindowState='1073741824'`
       + " ContainerType='Page' Page='0' ViewScale='-1'><ShowRulers>1</ShowRulers><ShowGrid>0</ShowGrid><ShowPageBreaks>0</ShowPageBreaks><ShowGuides>1</ShowGuides>"
       + '<ShowConnectionPoints>1</ShowConnectionPoints><GlueSettings>9</GlueSettings><SnapSettings>65847</SnapSettings></Window></Windows>' },
-    { nama: 'visio/pages/pages.xml', isi: `${KEPALA}<Pages ${NS}>${lembarHalaman(0, 'Sheet 1 - Diagram', 'rId1')}${lembarHalaman(1, 'Sheet 2 - Koneksi & catatan', 'rId2')}</Pages>` },
+    { nama: 'visio/pages/pages.xml', isi: `${KEPALA}<Pages ${NS}>${hal.map((x, i) => lembarHalaman(i, x.nama, `rId${i + 1}`)).join('')}</Pages>` },
     { nama: 'visio/pages/_rels/pages.xml.rels', isi: `${KEPALA}<Relationships xmlns='${REL}'>`
-      + "<Relationship Id='rId1' Type='http://schemas.microsoft.com/visio/2010/relationships/page' Target='page1.xml'/>"
-      + "<Relationship Id='rId2' Type='http://schemas.microsoft.com/visio/2010/relationships/page' Target='page2.xml'/></Relationships>" },
-    { nama: 'visio/pages/page1.xml', isi: isiHalaman(h1) },
-    { nama: 'visio/pages/page2.xml', isi: isiHalaman(h2) },
-    { nama: 'visio/pages/_rels/page1.xml.rels', isi: relsHalaman(h1) },
-    { nama: 'visio/pages/_rels/page2.xml.rels', isi: relsHalaman(h2) },
+      + hal.map((_, i) => `<Relationship Id='rId${i + 1}' Type='http://schemas.microsoft.com/visio/2010/relationships/page' Target='page${i + 1}.xml'/>`).join('') + '</Relationships>' },
+    ...hal.flatMap((x, i) => [{ nama: `visio/pages/page${i + 1}.xml`, isi: isiHalaman(x.h) }, { nama: `visio/pages/_rels/page${i + 1}.xml.rels`, isi: relsHalaman(x.h) }]),
   ].map(b => ({ nama: b.nama, isi: te.encode(/\.rels$|Content_Types|core\.xml$/.test(b.nama) ? kutipGanda(b.isi) : b.isi) }));
   return tulisZip([...berkas, ...media.daftar.map(x => ({ nama: `visio/media/${x.nama}`, isi: x.isi }))]);
 }

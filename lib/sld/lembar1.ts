@@ -75,7 +75,7 @@ export function svgLabelPerangkat(p: Perangkat): string {
 
 const P = { putar: 90, pusatV: true } as const;
 
-export function primStrip(d: DokSLD): Prim[] {
+export function primStrip(d: DokSLD, simple = false): Prim[] {
   const b = d.blok, T = WARNA.tinta;
   const tk = (x: number, y: number, isi: string, ukuran: number, tebal = false, warna: string = T): Prim => ({ t: 'teks', x, y, isi, ukuran, warna, tebal, ...P });
   const gr = (x1: number, y1: number, x2: number, y2: number, tebal: number): Prim => ({ t: 'garis', x1, y1, x2, y2, warna: T, tebal });
@@ -89,7 +89,8 @@ export function primStrip(d: DokSLD): Prim[] {
   o.push(gr(7, 96, 27, 96, 0.3));
   o.push(tk(24.5, 100, potong(`PROJECT : ${b.proyek}`, 97, 3, true), 3, true));
   o.push(tk(19.5, 100, potong([b.lokasi, b.sistem].filter(Boolean).join(' - '), 97, 2.4, true), 2.4, true));
-  o.push(tk(14.5, 100, 'Single Line Diagram', 2.3), tk(9.5, 100, 'Sheet 1 : diagram koneksi perangkat', 2.15, false, WARNA.redup));
+  o.push(tk(14.5, 100, 'Single Line Diagram', 2.3));
+  if (!simple) o.push(tk(9.5, 100, 'Sheet 1 : diagram koneksi perangkat', 2.15, false, WARNA.redup));
   o.push(gr(7, 200, 27, 200, 0.3), gr(7, 226, 27, 226, 0.2));
   for (const x of [12, 17, 22]) o.push(gr(x, 200, x, 290, 0.2));
   const isian: [number, string, string][] = [[24.5, 'Drawn by', b.dibuat], [19.5, 'Date', b.tanggal], [14.5, 'Checked by', b.diperiksa], [9.5, 'Approved by', b.disetujui]];
@@ -98,15 +99,15 @@ export function primStrip(d: DokSLD): Prim[] {
   o.push(tk(24.5, 260, 'Drawing No.', 2.15), tk(19.5, 260, potong(b.nomor, 15, 2.15, true), 2.15, true));
   o.push(tk(14.5, 260, 'Scale :', 2.15), tk(9.5, 260, potong(b.skala, 15, 2.15, true), 2.15, true));
   o.push(gr(7, 276, 27, 276, 0.3));
-  o.push(tk(24.5, 278, 'SHEET', 2.15), tk(19.5, 278, '1 of 2', 2.15, true), tk(14.5, 278, 'Rev.', 2.15), tk(9.5, 278, potong(b.rev, 11, 2.15, true), 2.15, true));
+  o.push(tk(24.5, 278, 'SHEET', 2.15), tk(19.5, 278, simple ? '1 of 1' : '1 of 2', 2.15, true), tk(14.5, 278, 'Rev.', 2.15), tk(9.5, 278, potong(b.rev, 11, 2.15, true), 2.15, true));
   return o;
 }
 
-export const primRangka1 = (d: DokSLD): Prim[] => [...bingkaiPrim({ x: 4, y: 4, w: 412, h: 289, tebal: 0.7 }, 0.3), ...primStrip(d)];
+export const primRangka1 = (d: DokSLD, simple = false): Prim[] => [...bingkaiPrim({ x: 4, y: 4, w: 412, h: 289, tebal: 0.7 }, 0.3), ...primStrip(d, simple)];
 
 export function isiLembar1(d: DokSLD, o: OpsiLembar = {}, geo = geometri(d)): string {
   const k = svgKabel(d, geo);
-  return svgPrimitif(primRangka1(d), () => '')
+  return svgPrimitif(primRangka1(d, o.simple), () => '')
     + d.perangkat.map(p => gambarPerangkat(p, p.x, p.y, p.w, p.h)).join('')
     + k.garis + k.label + d.perangkat.map(svgLabelPerangkat).join('') + watermark({ ...o, tanpaWatermark: o.tanpaWatermark || d.watermark === false });
 }

@@ -16,6 +16,8 @@ import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
 import { useKeadaanSLD } from './sld/useKeadaanSLD';
 
+const KUNCI_RINCI = 'tools-team-sld-rinci';
+
 type Sheet = 1 | 2;
 
 function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
@@ -45,6 +47,9 @@ export function SLD() {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const simpan = useSimpanSLD(a);
   const aRef = useRef(a); aRef.current = a;
+  const [simpleMode, setSimpleState] = useState(() => { try { return typeof window !== 'undefined' && localStorage.getItem(KUNCI_RINCI) === 'simple'; } catch { return false; } });
+  const setSimple = (v: boolean) => { setSimpleState(v); try { localStorage.setItem(KUNCI_RINCI, v ? 'simple' : 'lengkap'); } catch {  } };
+  const opsi = { logo: a.logo, simple: simpleMode };
 
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
@@ -126,7 +131,7 @@ export function SLD() {
           {([1, 2] as Sheet[]).map(s => (
             <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)}
               className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-              {s === 1 ? 'Sheet 1 · Diagram' : 'Sheet 2 · Koneksi & catatan'}
+              {s === 1 ? 'Sheet 1 · Diagram' : `Sheet 2 · Koneksi & catatan${simpleMode ? ' (tidak diekspor)' : ''}`}
             </button>
           ))}
         </div>
@@ -149,14 +154,21 @@ export function SLD() {
           </button>
         </div>
         <div className="flex flex-wrap gap-1.5 ml-auto">
+          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Isi ekspor">
+            {([[false, 'Full Detail', 'PDF, Visio & PNG berisi Sheet 1 + Sheet 2 (koneksi, daftar perangkat, catatan) - untuk internal'],
+              [true, 'Simple', 'Hanya Sheet 1 (diagram) - aman dibagikan ke klien']] as const).map(([v, l, t]) => (
+              <button key={l} type="button" role="radio" aria-checked={simpleMode === v} title={t} onClick={() => setSimple(v)}
+                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${simpleMode === v ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>{l}</button>
+            ))}
+          </div>
           <button type="button" className={`${kelasTombol} ${tombolAktif} hover:!bg-blue-800`} disabled={!!sibuk}
-            onClick={() => void jalankan('pdf', () => cetakPdf(a.dok, a.logo))}><FileDown size={15} /> {sibuk === 'pdf' ? 'Menyiapkan...' : 'PDF A3'}</button>
-          <button type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan('vsdx', () => unduhVsdx(a.dok, a.logo))}>
+            onClick={() => void jalankan('pdf', () => cetakPdf(a.dok, opsi))}><FileDown size={15} /> {sibuk === 'pdf' ? 'Menyiapkan...' : 'PDF A3'}</button>
+          <button type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan('vsdx', () => unduhVsdx(a.dok, opsi))}>
             <FileBox size={15} /> {sibuk === 'vsdx' ? 'Membuat...' : 'Visio'}
           </button>
-          {([1, 2] as Sheet[]).map(s => (
-            <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s, a.logo))}>
-              <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : `PNG ${s}`}
+          {(simpleMode ? [1] : [1, 2] as Sheet[]).map(s => (
+            <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s as Sheet, opsi))}>
+              <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : simpleMode ? 'PNG' : `PNG ${s}`}
             </button>
           ))}
         </div>
@@ -184,7 +196,7 @@ export function SLD() {
           </section>
         )}
         <div className={`order-1 lg:order-2 min-w-0 ${penuh ? 'h-full min-h-0' : ''}`}>
-          {sheet === 1 ? <KanvasSLD a={a} zoom={zoom} penuh={penuh} /> : <Sheet2 a={a} />}
+          {sheet === 1 ? <KanvasSLD a={a} zoom={zoom} penuh={penuh} simple={simpleMode} /> : <Sheet2 a={a} />}
         </div>
         {kanan && <div className={`order-3 ${panel}`}><PanelSamping a={a} /></div>}
       </div>

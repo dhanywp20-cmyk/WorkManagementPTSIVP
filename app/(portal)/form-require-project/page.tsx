@@ -10,6 +10,7 @@ import { hasFullAccess } from '@/lib/constants';
 import { User, ProjectRequest, RoomDetail, BrandPicMapping, ProjectMessage, ProjectAttachment, statusConfig, getRoomStatus, getRoomAssignName } from './_components/shared';
 import { InitialFormType } from './_components/Modals';
 import { muatTautanDesain3D, type TautanDesain3D, type IzinRuang } from './_components/desain-3d-request';
+import { muatTautanSld, type DataSld } from './_components/sld-request';
 import { Ikon } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
 import { ModalEditForm } from './_components/ModalEditForm';
@@ -138,10 +139,17 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const h = await muatTautanDesain3D(id);
     setDesain3d(prev => ('galat' in h ? { tautan: prev?.tautan ?? [], izin: prev?.izin ?? [], galat: h.galat } : h));
   }, []);
+  const [sld, setSld] = useState<DataSld | null>(null);
+  const sldTools = sld?.tautan ?? [];
+  const [mintaPilihSld, setMintaPilihSld] = useState(0);
+  const muatSld = useCallback(async (id: string) => {
+    const h = await muatTautanSld(id);
+    setSld(prev => ('tautan' in h ? h : { tautan: prev?.tautan ?? [], izin: prev?.izin ?? [], galat: h.galat }));
+  }, []);
   useEffect(() => {
-    setDesain3d(null);
-    if (idRequestTerpilih) void muatDesain3D(idRequestTerpilih);
-  }, [idRequestTerpilih, muatDesain3D]);
+    setDesain3d(null); setSld(null);
+    if (idRequestTerpilih) { void muatDesain3D(idRequestTerpilih); void muatSld(idRequestTerpilih); }
+  }, [idRequestTerpilih, muatDesain3D, muatSld]);
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
   const [detailMobileTab, setDetailMobileTab] = useState<'info' | 'chat'>('info');
   const [chatRoomFilter, setChatRoomFilter] = useState<string>('all');
@@ -376,7 +384,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       setDetailMobileTab, setDetailRoomIdx, setSelectedRequest, showDetailModal },
     lampiran: { activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, downloadingPackage, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
       handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setDownloadingPackage, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef,
-      uploadingCategory, uploadingFile },
+      uploadingCategory, uploadingFile,
+      sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld },
     pesan: { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText },
     aksi: { handleOpenEditForm, handleReject, handleResubmit, handleStatusUpdate, setAssignModal, setDeleteConfirmText, setDeleteModal, setInternalApproveTarget, setRerouteTarget,
       setRerouteTo, setSelectedNewStatus, setStatusUpdateModal },

@@ -1,5 +1,5 @@
 'use client';
-import { isiIkon, viewBoxIkon } from '@/lib/sld/ikon';
+import { isiIkon, viewBoxIkon } from './ikon';
 import { sematkanFoto } from './sematkan';
 
 const simpanan = new Map<string, Promise<string>>();

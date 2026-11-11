@@ -13,7 +13,7 @@ import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
 import { bacaZip, crc32, tulisZip } from '../lib/sld/zip';
-import { barisKoneksi, barisPerangkat, jenisTerpakai, kartuGambar, periksaDok } from '../lib/sld/turunan';
+import { barisKoneksi, barisPerangkat, fungsiOtomatis, jenisTerpakai, kartuGambar, noOtomatis, periksaDok } from '../lib/sld/turunan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -95,7 +95,15 @@ console.log('\n4. Simpan & muat');
   cek('hapus perangkat: kabel tetap di tabel dengan nama teks', tanpa.kabel.length === d.kabel.length && barisKoneksi(tanpa)[0].ke.startsWith('Mini PC Windows 11'));
   const kosong = dokBaru();
   const satu = { ...kosong, perangkat: [perangkatBaru('switch', 50, 50)] };
-  cek('pemeriksaan: perangkat tanpa kabel & tanpa No. BOM dilaporkan', periksaDok(satu).length === 2);
+  cek('pemeriksaan: perangkat tanpa kabel dilaporkan', periksaDok(satu).length === 1 && /belum punya kabel/.test(periksaDok(satu)[0].pesan));
+  const sw = perangkatBaru('switch', 50, 50), sw2 = { ...perangkatBaru('switch', 120, 50), id: 'sw2' }, tv = { ...perangkatBaru('tv-tcl', 200, 50), no: '3' };
+  const auto = { ...kosong, perangkat: [sw, sw2, tv, perangkatBaru('tirai', 50, 150), perangkatBaru('lampu', 120, 150)] };
+  const ba = barisPerangkat(auto);
+  cek('Sheet 2 otomatis: perangkat tanpa No. dinomori setelah No. BOM, model sama digabung', ba.map(r => `${r.no}:${r.qty}`).join(',') === '3:1 unit,4:2 unit', ba.map(r => `${r.no}:${r.qty}`).join(','));
+  cek('Sheet 2 otomatis: tirai & lampu (bukan pasokan) tidak masuk, kartu gambar ikut', kartuGambar(auto).length === 2 && noOtomatis(auto).get(sw.id) === '4' && !noOtomatis(auto).has(auto.perangkat[3].id));
+  const kb = kabelBaru(sw.id, tv.id, { jenis: 'hdmi', fungsi: '' });
+  cek('kolom Fungsi kosong diisi otomatis dari jenis kabel', barisKoneksi({ ...auto, kabel: [kb] })[0].fungsi === 'Sinyal video + audio'
+    && fungsiOtomatis({ ...kb, jenis: 'catx', teksGaris: 'Cat6 PoE+' }) === 'Data + daya PoE' && barisKoneksi(d).every(r => { const c = d.kabel.find(x => x.id === r.id)!; return !c.fungsi.trim() || r.fungsi === c.fungsi; }));
 }
 
 console.log('\n5. Foto hanya di browser & impor BOM');
@@ -192,6 +200,21 @@ void (async () => {
     && /revoke all on function public\.tools_simpan_sld[^;]*from public, anon, authenticated/.test(mig) && /grant execute on function public\.tools_simpan_sld[^;]*to service_role/.test(mig));
   const rute = readFileSync('app/api/tools-team/sld/route.ts', 'utf8');
   cek('route simpan membuang foto pengguna sebelum ke server', rute.includes('tanpaFoto(dok)') && rute.includes('pastikanMasuk'));
+  console.log('\n9. Mode Simple & tautan Request Design');
+  const s1 = svgLembar1(d, { simple: true }), f1 = svgLembar1(d);
+  cek('Simple: strip Sheet 1 menulis 1 of 1 tanpa sub judul sheet', s1.includes('1 of 1') && !s1.includes('Sheet 1 : diagram') && f1.includes('1 of 2') && f1.includes('Sheet 1 : diagram'));
+  const gb = new Map(d.perangkat.map(p => [p.id, { isi: new Uint8Array([0x89, 0x50, 0x4e, 0x47]), jpeg: false }]));
+  const vs = await bacaZip(buatVsdx({ dok: d, gambar: gb, simple: true })), vl = await bacaZip(buatVsdx({ dok: d, gambar: gb }));
+  const halVs = new TextDecoder().decode(vs.get('visio/pages/pages.xml'));
+  cek('Simple: Visio hanya 1 halaman, Full Detail 2 halaman', vs.has('visio/pages/page1.xml') && !vs.has('visio/pages/page2.xml') && vl.has('visio/pages/page2.xml')
+    && (halVs.match(/<Page /g) ?? []).length === 1 && !new TextDecoder().decode(vs.get('[Content_Types].xml')).includes('page2.xml'));
+  const ruteReq = readFileSync('app/api/form-require-project/[id]/sld/route.ts', 'utf8');
+  cek('isi SLD tertaut hanya lewat request yang boleh diakses pengguna', ruteReq.includes("searchParams.get('tautan')") && ruteReq.includes(".eq('request_id', request.id)") && ruteReq.includes('klienSebagaiUser(user)'));
+  const panelReq = readFileSync('app/(portal)/form-require-project/_components/detail/PanelLampiranDetail.tsx', 'utf8');
+  const paketReq = readFileSync('app/(portal)/form-require-project/_components/paket-unduhan.ts', 'utf8');
+  const cetakReq = readFileSync('app/(portal)/form-require-project/_components/cetak-request.ts', 'utf8');
+  cek('Request Design: SLD opsional seperti Design 3D (menu unggah, panel, cetak, paket .zip)', panelReq.includes('SLD dari AV Solution Tools') && panelReq.includes('mintaPilih={mintaPilihSld}')
+    && paketReq.includes('berkasPaketSld') && cetakReq.includes('htmlSeksiSld'));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

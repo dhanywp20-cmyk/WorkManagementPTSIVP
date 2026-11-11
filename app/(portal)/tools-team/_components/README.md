@@ -41,6 +41,11 @@ sheet 1 = strip judul kiri + diagram foto perangkat & kabel berwarna; sheet 2 = 
 Gambar Perangkat, Daftar Perangkat, Catatan Pemasangan, blok judul. Warna, huruf & kolom dikunci
 di `lib/sld/gaya.ts`, `lembar1.ts`, `lembar2.ts` dan dijaga `uji/sld.ts` - jangan dibuat bertema.
 
+Dua isi ekspor dari SLD yang sama: **Full Detail** (2 sheet, internal - "NO SHARE") dan **Simple** (hanya sheet 1,
+"no dtl", aman dibagikan ke klien). Sheet 2 terisi otomatis: perangkat tanpa No. BOM dinomori setelah No. BOM
+yang ada (model sama digabung, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
+diisi dari jenis kabel.
+
 ```
 lib/sld/
   tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
@@ -55,10 +60,12 @@ lib/sld/
   ikon.ts / ikon-layar.ts  ilustrasi 2D - hanya untuk barang non-AV (tirai, gorden, lampu, AC/FCU, MCB) atau bila foto dihapus
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
+  ekspor.ts     (browser) SVG per sheet + foto tersemat, .vsdx, PNG, berkas paket - dipakai juga Request Design
+  sematkan.ts / ilustrasi.ts  (browser) foto bawaan jadi data URL, ilustrasi jadi PNG
 _components/sld/
   useKeadaanSLD.ts  dokumen + undo/redo + draf localStorage
   KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
-  PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (PDF A3 / PNG)
+  PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (unduh PDF A3 / PNG / Visio)
   ImporBom.tsx      foto & perangkat dari BOM;  AmbilBrosur.tsx  potong foto produk dari brosur PDF
   foto-lokal.ts     foto, galeri & logo watermark di IndexedDB browser;  PengaturanWatermark.tsx  aktif / ganti logo
 ```
