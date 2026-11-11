@@ -19,7 +19,7 @@ export function HeaderFormRequire({ bellDropdownOpen, handleOpenDetail, pimpinan
     <>
       <PageHeader icon="🏗️" title="Request Design Project" subtitle="IVP Product — AV Solution Request">
         {(() => {
-          const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
+          const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'approved' || r.status === 'in_progress');
           if (activeTickets.length === 0) return null;
           return (
             <div className="relative">

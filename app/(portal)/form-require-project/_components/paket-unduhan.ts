@@ -1,4 +1,5 @@
 import { statusConfig, type ProjectRequest, type ProjectAttachment } from './shared';
+import type { KategoriLampiran } from './shared';
 import { htmlSeksiDesain3D, byteGambarHD, type TautanDesain3D } from './desain-3d-request';
 import { berkasPaketSld, htmlSeksiSld, isiSeksiSld, type TautanSld } from './sld-request';
 
@@ -211,10 +212,11 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
 </body></html>`;
     zipFiles.push({ name: `${folderName}/01_Form_Detail_${projectSlug}.html`, data: enc.encode(formHtml) });
 
-    const structuredCats: { cat: 'sld' | 'boq' | 'design3d'; prefix: string }[] = [
+    const structuredCats: { cat: KategoriLampiran; prefix: string }[] = [
       { cat: 'sld', prefix: '02_SLD' },
       { cat: 'boq', prefix: '03_BOQ' },
       { cat: 'design3d', prefix: '04_Design3D' },
+      { cat: 'screen', prefix: '04_Screen_Connection' },
     ];
 
     for (const { cat, prefix } of structuredCats) {

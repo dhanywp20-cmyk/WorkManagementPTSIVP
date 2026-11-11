@@ -67,6 +67,7 @@ export function KalkulatorRak() {
           </div>
         </div>
       </Kartu>
+      <div className="lg:sticky lg:top-24">
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Kebutuhan Rak')} />}>
         <div className="kisi-nilai">
           <Nilai label="U dibutuhkan" nilai={h.uButuh} satuan="U" ket={`${h.uPerangkat}U + ${h.uVentilasi}U vent + ${cadangan}%`} />
@@ -76,6 +77,7 @@ export function KalkulatorRak() {
         </div>
         <Catatan>{CATATAN}</Catatan>
       </Kartu>
+      </div>
     </div>
   );
 }

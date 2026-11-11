@@ -62,7 +62,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
+                <option value="pending">Pending (+ Approved)</option>
                 <option value="approved">Approved</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
