@@ -7,6 +7,7 @@ import {
 } from '@/lib/sld/dok';
 import { geometri } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
+import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
 import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
@@ -16,6 +17,7 @@ import {
 import type { FotoSiap } from './gambar';
 
 const KUNCI = 'tools-team-sld-v1';
+const KUNCI_PRESET = 'tools-team-sld-kabel';
 
 export type Pilihan = { jenis: 'p' | 'k'; id: string } | null;
 
@@ -75,6 +77,10 @@ export function useKeadaanSLD() {
     ingatan.current = { ...ingatan.current, [k]: { gambar: f.dataUrl, rasio: f.rasio } };
     void simpanIngatan(ingatan.current).catch(() => {});
   }, []);
+  const pasangIngatan = useCallback((d: DokSLD): DokSLD => ({ ...d, perangkat: d.perangkat.map(p => {
+    const m = !p.gambar && p.model.trim() ? ingatan.current[kunciModel(p.model)] : undefined;
+    return m ? { ...p, gambar: m.gambar, rasio: m.rasio } : p;
+  }) }), []);
   const tambahGaleri = useCallback((baru: FotoGaleri[]) => setGaleri(g => {
     const ada = new Set(g.map(x => x.gambar));
     const hasil = [...baru.filter(x => !ada.has(x.gambar)), ...g];
@@ -129,12 +135,21 @@ export function useKeadaanSLD() {
     setPilih({ jenis: 'p', id: baru });
   }, []);
 
+  const [presetTerakhir, setPresetTerakhirState] = useState(() => {
+    try { return localStorage.getItem(KUNCI_PRESET) ?? 'cat6'; } catch { return 'cat6'; }
+  });
+  const [kabelBaruId, setKabelBaruId] = useState<string | null>(null);
+  const setPresetTerakhir = useCallback((k: string) => {
+    setPresetTerakhirState(k);
+    try { localStorage.setItem(KUNCI_PRESET, k); } catch {  }
+  }, []);
   const hubungkan = useCallback((dari: string, ke: string) => {
     if (dari === ke) return;
-    const c = kabelBaru(dari, ke, { media: 'Cat6 patch', teksGaris: 'Cat6' });
+    const c = kabelBaru(dari, ke, isiPreset(presetKabel(presetTerakhir)));
     setDok(d => (d.kabel.length >= MAKS_KABEL ? d : { ...d, kabel: [...d.kabel, c] }));
     setPilih({ jenis: 'k', id: c.id });
-  }, []);
+    setKabelBaruId(c.id);
+  }, [presetTerakhir]);
 
   const kabelBebas = useCallback(() => {
     const c = { ...kabelBaru('', '', { jenis: 'ac', daya: true, media: 'Kabel listrik 230 VAC' }), dari: { ...ujungBaru(), nama: 'MCB panel listrik' } };
@@ -163,6 +178,7 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }
 

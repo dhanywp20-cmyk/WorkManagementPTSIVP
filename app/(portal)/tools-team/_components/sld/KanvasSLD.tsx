@@ -1,9 +1,10 @@
 'use client';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { jalurBulat, barisLabel, isiLembar1 } from '@/lib/sld/lembar1';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { lebarTeks } from '@/lib/sld/teks';
 import { HALAMAN, type Perangkat, type Titik, UKURAN_MIN } from '@/lib/sld/tipe';
+import { EditorKabelBaru } from './EditorKabelBaru';
 import { kompresGambar } from './gambar';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -23,7 +24,17 @@ export function areaLabel(p: Perangkat) {
   return { x: p.x, y: p.y, w, h: p.h + 3 + h };
 }
 
-export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
+export function KanvasSLD({ a, zoom, penuh = false }: { a: KeadaanSLD; zoom: number; penuh?: boolean }) {
+  const wadahRef = useRef<HTMLDivElement>(null);
+  const [ukuran, setUkuran] = useState({ w: 960, h: 540 });
+  useEffect(() => {
+    const el = wadahRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setUkuran({ w: e.contentRect.width, h: e.contentRect.height }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const lebarPas = Math.max(320, Math.min(ukuran.w - 16, ((ukuran.h - 16) * HALAMAN.w) / HALAMAN.h));
   const svgRef = useRef<SVGSVGElement>(null);
   const [seret, setSeret] = useState<Seret | null>(null);
   const { dok, geo, pilih } = a;
@@ -83,11 +94,15 @@ export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
   const tengah = kDipilih && kDipilih.garis[0].titik.length === 4 ? kDipilih.garis[0].titik : null;
 
   return (
-    <div className={`relative overflow-auto rounded-xl border bg-slate-100 max-h-[78vh] ${seretFoto ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200'}`}
+    <div className={`relative rounded-xl border bg-slate-200/70 ${penuh ? 'h-full' : 'aspect-video'} ${seretFoto ? 'border-blue-500 ring-2 ring-blue-200' : 'border-slate-200'}`}
       style={{ colorScheme: 'light' }} onDragOver={e => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setSeretFoto(true); } }}
       onDragLeave={() => setSeretFoto(false)} onDrop={e => void jatuhkan(e)}>
-      {galatFoto && <p role="alert" className="sticky top-0 left-0 z-10 m-2 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-[12px] text-rose-800">{galatFoto}</p>}
-      <svg ref={svgRef} viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`} style={{ width: `${zoom * 100}%`, minWidth: zoom * 640, display: 'block', background: '#fff', userSelect: 'none', WebkitUserSelect: 'none' }}
+      {galatFoto && <p role="alert" className="absolute top-2 left-2 z-10 rounded-lg bg-rose-50 border border-rose-200 px-3 py-1.5 text-[12px] text-rose-800">{galatFoto}</p>}
+      <EditorKabelBaru a={a} />
+      <div ref={wadahRef} className="absolute inset-0 overflow-auto">
+      <div className="min-h-full min-w-full grid place-items-center p-2">
+      <svg ref={svgRef} viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`}
+        style={{ width: lebarPas * zoom, height: (lebarPas * zoom * HALAMAN.h) / HALAMAN.w, display: 'block', background: '#fff', userSelect: 'none', WebkitUserSelect: 'none', boxShadow: '0 1px 6px rgba(15,23,42,.18)' }}
         onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={() => setSeret(null)} role="img" aria-label="Kanvas Single Line Diagram">
         <rect width={HALAMAN.w} height={HALAMAN.h} fill="#fff" onPointerDown={() => a.setPilih(null)} />
         <g pointerEvents="none" dangerouslySetInnerHTML={{ __html: isi }} />
@@ -133,6 +148,8 @@ export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
           <line x1={asal.x + asal.w / 2} y1={asal.y + asal.h / 2} x2={seret.titik.x} y2={seret.titik.y} stroke={BIRU} strokeWidth={0.5} strokeDasharray="1.5 1" pointerEvents="none" />
         )}
       </svg>
+      </div>
+      </div>
     </div>
   );
 }

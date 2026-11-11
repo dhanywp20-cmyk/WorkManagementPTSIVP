@@ -15,7 +15,7 @@ export const tanggalSLD = (t = new Date()) => `${t.getDate()} ${bulan[t.getMonth
 export function blokBaru(dibuat = ''): BlokJudul {
   return {
     proyek: '', lokasi: '', sistem: '', ringkas: '', lingkup: '', acuan: '', acuanSingkat: '', catatanRev: '',
-    nomor: 'SLD-01', rev: 'A', tanggal: tanggalSLD(), skala: 'NTS', dibuat, diperiksa: '', disetujui: '',
+    nomor: 'SLD-01', rev: 'A', tanggal: tanggalSLD(), skala: 'NTS', dibuat, diperiksa: '', disetujui: 'DWP',
   };
 }
 
@@ -93,6 +93,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   const b = (d.blok ?? {}) as Record<string, unknown>;
   const awal = blokBaru();
   const blok = Object.fromEntries(Object.keys(awal).map(k => [k, typeof b[k] === 'string' ? (b[k] as string).slice(0, 600) : awal[k as keyof BlokJudul]])) as unknown as BlokJudul;
+  if (!blok.disetujui.trim()) blok.disetujui = awal.disetujui;
   const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(bersihkanPerangkat).filter((p): p is Perangkat => !!p);
   const id = new Set(perangkat.map(p => p.id));
   const kabel = (Array.isArray(d.kabel) ? d.kabel : []).slice(0, MAKS_KABEL).map(c => bersihkanKabel(c, id)).filter((c): c is Kabel => !!c);

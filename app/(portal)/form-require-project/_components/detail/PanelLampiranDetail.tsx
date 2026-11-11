@@ -2,6 +2,7 @@
 
 import { Ikon } from '@/components/shared/Ikon';
 import { Desain3DTools } from '../Desain3DTools';
+import { SldTools } from '../SldTools';
 import { ProjectRequest } from '../shared';
 import { useKonteksRequest } from '../konteks-request';
 
@@ -202,6 +203,12 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {(activeAttachTab === 'all' || activeAttachTab === 'sld') && (
+          <div className="mt-3">
+            <SldTools requestId={selectedRequest.id} roomIdx={detailRoomIdx} notify={notify}
+              namaRuang={detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`)} />
           </div>
         )}
         {(activeAttachTab === 'all' || activeAttachTab === 'design3d') && (

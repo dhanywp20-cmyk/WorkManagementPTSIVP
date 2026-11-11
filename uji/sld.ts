@@ -1,6 +1,7 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { FOTO_PRODUK } from '../lib/sld/foto-produk';
+import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
@@ -180,6 +181,17 @@ void (async () => {
   cek('jalur foto bawaan dipertahankan, URL luar dibuang', bersih.perangkat[0].foto === m.foto && !bersih.perangkat[1].foto);
   cek('contoh SLD memakai foto asli (HALO 80, NUC, Philips, Netgear, CUE)', ['halo-80', 'asus-nuc', 'philips-10bdl3351t', 'netgear-m4250', 'controlcue', 'relaycue', 'tcl-tv']
     .every(k => d.perangkat.some(p => p.foto === `/sld/produk/${k}.jpg`)));
+  console.log('\n8. Kabel, judul & simpan server');
+  const pr = presetKabel('hdmi');
+  cek('preset kabel bisa dipilih (bukan selalu Cat6)', isiPreset(pr).jenis === 'hdmi' && isiPreset(pr).teksGaris === 'HDMI' && presetKabel('tidak-ada').k === 'cat6');
+  cek('Approved by bawaan DWP, juga untuk draf lama yang kosong', dokBaru().blok.disetujui === 'DWP'
+    && bersihkanDok({ ...dokBaru(), blok: { ...dokBaru().blok, disetujui: '' } })!.blok.disetujui === 'DWP');
+  const mig = readFileSync('supabase/migrations/069_tools_sld.sql', 'utf8');
+  cek('migrasi: tabel SLD, versi & tautan request dengan RLS aktif', ['tools_sld', 'tools_sld_versi', 'request_sld'].every(t => mig.includes(`alter table public.${t} enable row level security`)));
+  cek('migrasi: fungsi simpan hanya untuk service role (optimistic locking)', mig.includes("raise exception 'konflik'")
+    && /revoke all on function public\.tools_simpan_sld[^;]*from public, anon, authenticated/.test(mig) && /grant execute on function public\.tools_simpan_sld[^;]*to service_role/.test(mig));
+  const rute = readFileSync('app/api/tools-team/sld/route.ts', 'utf8');
+  cek('route simpan membuang foto pengguna sebelum ke server', rute.includes('tanpaFoto(dok)') && rute.includes('pastikanMasuk'));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();
