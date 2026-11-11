@@ -137,6 +137,7 @@ export function KalkulatorDisplay() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+        <div className="lg:sticky lg:top-24">
         <Kartu judul="Masukan">
           <div className="space-y-3">
             <Segmen nilai={jenis} onUbah={setJenis} opsi={[{ v: 'videowall', l: 'Videowall LCD' }, { v: 'ifp', l: 'Interactive flat panel' }]} />
@@ -195,7 +196,9 @@ export function KalkulatorDisplay() {
             )}
           </div>
         </Kartu>
+        </div>
 
+        <div className="space-y-4 min-w-0">
         <Kartu judul="Hasil">
           {jenis === 'videowall' ? (
             <div className="kisi-nilai">
@@ -221,7 +224,6 @@ export function KalkulatorDisplay() {
             ? 'Ukuran panel = area gambar 16:9 dari diagonalnya, ditambah celah bezel. Daya panel dari Pustaka (bidang Daya), bawaan 180 W/panel bila kosong.'
             : 'Diagonal minimum dari aturan 4-6-8 (AVIXA). Daftar ukuran dari Pustaka (display tanpa bezel, ≥ 55"), bawaan 55-110" bila kosong.'}</Catatan>
         </Kartu>
-      </div>
 
       <Kartu judul={adaHarga ? 'Daftar material & penawaran' : 'Daftar material (BOM)'}
         aksi={<TombolSalin teks={teks} onCetak={() => bukaCetak(lembar())} onPng={() => unduhLembarPNG(lembar(), namaBerkas(nama, project, customer))} simpan={{ judul: nama, lembar }} />}>
@@ -231,6 +233,8 @@ export function KalkulatorDisplay() {
         <TabelBom baris={barisBom} harga={harga} setHarga={setHarga} ppn={ppn} nilai={nilai} />
         <Catatan>Isi harga satuan untuk membuat lembar penawaran. Simpan ke proyek menyimpan potret lembar ini di Project Progress.</Catatan>
       </Kartu>
+        </div>
+      </div>
     </div>
   );
 }

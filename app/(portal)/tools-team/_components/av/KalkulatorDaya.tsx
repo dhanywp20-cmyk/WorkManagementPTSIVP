@@ -57,6 +57,7 @@ export function KalkulatorDaya() {
           </div>
         </div>
       </Kartu>
+      <div className="lg:sticky lg:top-24">
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(() => lembarAV('Daya, UPS & Panas Perangkat AV',
         [['Tegangan', `${tegangan} V`], ['Power factor', f(pf)], ['Jumlah perangkat', String(beban.reduce((a, b) => a + b.jumlah, 0))]],
         [['Total daya', `${f(h.totalW, 0)} W · ${f(h.va, 0)} VA`, true], [`Arus @${tegangan} V`, `${f(h.arusA, 1)} A · MCB ${h.mcbA} A`], ['UPS saran', `${f(h.upsVA, 0)} VA (+25%)`, true], ['Cadangan UPS', `±${f(runtime, 0)} menit (${batN} × ${batV} V ${batAh} Ah)`], ['Panas', `±${f(h.btu, 0)} BTU/jam (±${f(h.pkAC, 1)} PK)`]],
@@ -72,6 +73,7 @@ export function KalkulatorDaya() {
         </div>
         <Catatan>Gunakan daya maksimum dari datasheet. Kebutuhan AC ruangan juga dipengaruhi jumlah orang, kaca, dan luas ruang.</Catatan>
       </Kartu>
+      </div>
     </div>
   );
 }

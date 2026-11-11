@@ -61,6 +61,7 @@ export function KalkulatorPoE() {
           }} />
         </div>
       </Kartu>
+      <div className="lg:sticky lg:top-24">
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Kebutuhan PoE')} />}>
         <div className="kisi-nilai">
           <Nilai label="Port PoE" nilai={h.port} ket={`switch ${h.portSwitch ?? '> 48'} port`} />
@@ -75,6 +76,7 @@ export function KalkulatorPoE() {
         )}
         <Catatan>{CATATAN}</Catatan>
       </Kartu>
+      </div>
     </div>
   );
 }

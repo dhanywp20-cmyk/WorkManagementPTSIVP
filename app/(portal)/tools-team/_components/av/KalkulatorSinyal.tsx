@@ -19,6 +19,7 @@ export function KalkulatorSinyal() {
   return (
     <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+      <div className="lg:sticky lg:top-24">
       <Kartu judul="Format sinyal">
         <div className="grid grid-cols-2 gap-3">
           <Pilih label="Resolusi" nilai={res} onUbah={setRes} opsi={RESOLUSI.map(([w, h]) => ({ v: `${w}x${h}`, l: `${w} × ${h}` }))} />
@@ -27,6 +28,7 @@ export function KalkulatorSinyal() {
           <Pilih label="Chroma" nilai={chroma} onUbah={setChroma} opsi={(['4:4:4', '4:2:2', '4:2:0'] as Chroma[]).map(v => ({ v, l: v }))} />
         </div>
       </Kartu>
+      </div>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(() => lembarAV('Bandwidth Sinyal Video',
         [['Resolusi', `${lebar} × ${tinggi}`], ['Refresh', `${hz} Hz`], ['Bit depth / chroma', `${bit}-bit · ${chroma}`]],
         [['Data video', `${f(b.dataGbps, 2)} Gbps`, true], ['Pixel clock', `${f(b.pixelClockMHz, 1)} MHz`]],
