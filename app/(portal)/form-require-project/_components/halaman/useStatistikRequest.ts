@@ -21,7 +21,8 @@ export function useStatistikRequest(k: StatistikRequestKonteks) {
   const availableYears = [...new Set(requests.map(r => new Date(r.created_at).getFullYear().toString()))].sort((a, b) => b.localeCompare(a));
 
   const filteredRequests = requests.filter(r => {
-    const matchStatus = filterStatus === 'all' || r.status === filterStatus;
+    // Kartu & filter Pending mencakup ticket 'approved' (sudah di-approve, belum mulai dikerjakan handler)
+    const matchStatus = filterStatus === 'all' || r.status === filterStatus || (filterStatus === 'pending' && r.status === 'approved');
     const matchYear = filterYear === 'all' || new Date(r.created_at).getFullYear().toString() === filterYear;
     const matchMonth = filterMonth === 'all' || (new Date(r.created_at).getMonth() + 1).toString().padStart(2, '0') === filterMonth;
     const matchHandler = filterHandler === 'all' || (r.assign_name || '') === filterHandler;
