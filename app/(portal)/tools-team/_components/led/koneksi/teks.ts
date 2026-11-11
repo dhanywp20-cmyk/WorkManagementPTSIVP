@@ -1,6 +1,7 @@
 import { esc, type Seksi } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { type DataKoneksi, namaCadangan, namaPort, type PengaturanKoneksi, SUDUT, type Susunan, susunKoneksi } from './data';
+import { gambarPanelKoneksi } from './panel';
 import { svgKoneksi } from './svg';
 import type { SudutMulai } from '@/lib/av/hitung';
 
@@ -28,11 +29,16 @@ export function seksiCetakKoneksi(d: DataKoneksi, s: PengaturanKoneksi): Seksi[]
   const ket = `${t.K} × ${t.B} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${t.resX} × ${t.resY} px · ${teksCara(s)}${teksCadangan(t)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)${t.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}`;
   const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung.` : '', k.lewat.length ? `Port melebihi batas beban: ${k.lewat.join(', ')}.` : '']
     .filter(Boolean).map(x => `<p style="margin:4px 0 0;font-size:11px;color:#b91c1c">${esc(x)}</p>`).join('');
+  const { gambar, sisa } = gambarPanelKoneksi(d, t);
+  const panel = gambar.map(g => g.svg.replace('<svg ', '<svg style="max-width:100%;height:auto;display:block;margin:0 auto 10px" ')).join('')
+    + (sisa > 0 ? `<p style="margin:0;font-size:11px;color:#475569">+${sisa} controller lagi dengan susunan port serupa.</p>` : '');
   return [
     { judul: 'Screen connection (urutan kabel data)', jenis: 'html',
       html: `<div class="diagram">${svgKoneksi(d, t)}<p style="margin:6px 0 0;font-size:11px;color:#475569">${esc(ket)}</p>${peringatan}</div>` },
     { judul: 'Pembagian port LAN', jenis: 'tabel', kepala: ['Port', 'Receiving card', 'Pixel', 'Beban', 'Masuk di', ...(t.cadangan !== 'tidak' ? ['Kabel cadangan (B)'] : [])], rataKanan: [1, 2, 3],
       isi: k.port.map(p => [namaPort(t, p.port), String(p.jumlah), p.px.toLocaleString('id-ID'), `${f(p.beban, 0)}%`, p.mulai ? `kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : '—',
         ...(t.cadangan !== 'tidak' ? [p.jumlah ? namaCadangan(t, p.port) : '—'] : [])]) },
+    ...(gambar.length ? [{ judul: 'Sending box / video controller · port yang dipakai', jenis: 'html' as const,
+      html: `<div class="diagram" style="page-break-inside:avoid">${panel}<p style="margin:6px 0 0;font-size:11px;color:#475569">Port LAN berwarna = terpakai, label P1, P2, … sama dengan diagram. Abu-abu = kosong.</p></div>` }] : []),
   ];
 }
