@@ -18,6 +18,7 @@ export interface Perangkat {
   port: string[];
   x: number; y: number; w: number; h: number;
   gambar?: string;
+  foto?: string;
   rasio?: number;
 }
 

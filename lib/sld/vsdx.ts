@@ -161,8 +161,9 @@ function lembar2(m: MasukanVsdx, media: Media): Halaman {
   for (const p of prim) {
     const id = h.baru();
     h.bentuk.push(bentukPrim(p, id, pid => {
-      const g = m.gambar.get(pid);
-      return g ? { rid: h.rid(media.tambah(pid, g)), jpeg: g.jpeg } : null;
+      const g = m.gambar.get(pid), per = m.dok.perangkat.find(x => x.id === pid);
+      const k = per ? kotakTampak(per) : undefined;
+      return g ? { rid: h.rid(media.tambah(pid, g)), jpeg: g.jpeg, rasio: k ? k.w / k.h : undefined } : null;
     }));
   }
   if (m.dok.watermark !== false) watermark(h, media, m.watermark);

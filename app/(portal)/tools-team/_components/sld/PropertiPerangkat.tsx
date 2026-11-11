@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { Copy, ImagePlus, Trash2 } from 'lucide-react';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
+import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
 import type { Perangkat } from '@/lib/sld/tipe';
 import { AmbilBrosur } from './AmbilBrosur';
@@ -9,6 +10,8 @@ import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import { MiniIkon } from './PanelKatalog';
 import type { KeadaanSLD } from './useKeadaanSLD';
+
+const fotoRasio = (src: string) => Object.values(FOTO_PRODUK).find(f => f.src === src)?.rasio;
 
 export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
   const ubah = (x: Partial<Perangkat>) => a.ubahPerangkat(p.id, x);
@@ -33,14 +36,15 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         <div className="w-20 h-14 rounded-lg border border-slate-200 bg-white grid place-items-center overflow-hidden shrink-0">
-          {p.gambar ? <img src={p.gambar} alt="" className="max-w-full max-h-full object-contain" /> : <MiniIkon ikon={p.ikon} className="w-16 h-10" />}
+          {p.gambar || p.foto ? <img src={p.gambar ?? p.foto} alt="" className="max-w-full max-h-full object-contain" /> : <MiniIkon ikon={p.ikon} className="w-16 h-10" />}
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button type="button" className={kelasTombol} disabled={sibuk} onClick={() => berkas.current?.click()}>
             <ImagePlus size={15} /> {sibuk ? 'Memproses...' : p.gambar ? 'Ganti foto' : 'Pakai foto'}
           </button>
           <AmbilBrosur onPakai={(f, nama) => a.pasangFotoKe(p.id, f, nama)} />
-          {p.gambar && <button type="button" className={kelasTombol} onClick={() => ubah({ gambar: undefined, rasio: undefined })}>Pakai ilustrasi</button>}
+          {p.gambar && <button type="button" className={kelasTombol} onClick={() => ubah({ gambar: undefined, rasio: p.foto ? fotoRasio(p.foto) : undefined })}>{p.foto ? 'Foto bawaan' : 'Pakai ilustrasi'}</button>}
+          {!p.gambar && p.foto && <button type="button" className={kelasTombol} onClick={() => ubah({ foto: undefined, rasio: undefined })}>Pakai ilustrasi</button>}
           <input ref={berkas} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => void unggah(e.target.files?.[0])} />
         </div>
       </div>

@@ -16,6 +16,7 @@ export interface TemplatPerangkat {
   w: number; h: number;
   ket?: string;
   saran?: string[];
+  foto?: string;
 }
 
 const PHILIPS_BDL = [
@@ -30,51 +31,51 @@ const W = 'WyreStorm';
 const ws = (...m: string[]) => m.map(x => `${W} ${x}`);
 
 export const KATALOG: TemplatPerangkat[] = [
-  { k: 'tv-tcl', nama: 'TV TCL', kategori: 'Display', kelompok: 'display', ikon: 'tv', port: ['HDMI 1', 'HDMI 2', 'HDMI 3', 'LAN', 'USB', 'RS-232'], w: 48, h: 30, saran: TCL },
-  { k: 'signage-philips', nama: 'Philips Signage BDL', kategori: 'Display', kelompok: 'display', ikon: 'signage',
+  { k: 'tv-tcl', foto: 'tcl-tv', nama: 'TV TCL', kategori: 'Display', kelompok: 'display', ikon: 'tv', port: ['HDMI 1', 'HDMI 2', 'HDMI 3', 'LAN', 'USB', 'RS-232'], w: 48, h: 30, saran: TCL },
+  { k: 'signage-philips', foto: 'philips-55bdl4650d', nama: 'Philips Signage BDL', kategori: 'Display', kelompok: 'display', ikon: 'signage',
     port: ['HDMI 1', 'HDMI 2', 'DisplayPort', 'LAN (RJ45)', 'RS-232', 'IR in', 'USB'], w: 48, h: 30, saran: PHILIPS_BDL },
-  { k: 'panel', nama: 'Panel sentuh 10"', kategori: 'User Interface', kelompok: 'display', ikon: 'panel', port: ['LAN (PoE+)', 'USB'], w: 42, h: 26,
+  { k: 'panel', foto: 'philips-10bdl3351t', nama: 'Panel sentuh 10"', kategori: 'User Interface', kelompok: 'display', ikon: 'panel', port: ['LAN (PoE+)', 'USB'], w: 42, h: 26,
     saran: ['Philips 10BDL3351T'] },
   { k: 'videowall', nama: 'Videowall', kategori: 'Display', kelompok: 'display', ikon: 'videowall', port: ['HDMI in', 'DP out (loop)', 'LAN', 'RS-232'], w: 50, h: 31,
     saran: ['Philips 55BDL2105X', 'Philips 49BDL2105X'] },
-  { k: 'proyektor', nama: 'Proyektor', kategori: 'Display', kelompok: 'display', ikon: 'proyektor', port: ['HDMI', 'HDBaseT', 'LAN', 'RS-232'], w: 44, h: 27.5 },
+  { k: 'proyektor', foto: 'panasonic-proyektor', nama: 'Proyektor', kategori: 'Display', kelompok: 'display', ikon: 'proyektor', port: ['HDMI', 'HDBaseT', 'LAN', 'RS-232'], w: 44, h: 27.5 },
 
-  { k: 'matrix', nama: 'Matrix switcher', kategori: 'Middleware / Switching', kelompok: 'middleware', ikon: 'matrix',
+  { k: 'matrix', foto: 'mx-0404-scl', nama: 'Matrix switcher', kategori: 'Middleware / Switching', kelompok: 'middleware', ikon: 'matrix',
     port: ['HDMI in 1', 'HDMI in 2', 'HDMI in 3', 'HDMI in 4', 'HDBT out 1', 'HDBT out 2', 'HDMI out 1', 'HDMI out 2', 'LAN', 'RS-232', 'IR'], w: 58, h: 36,
     saran: ws('MX-0404-SCL', 'MX-0404-HDMI', 'MX-0808-H2A-MK2', 'MX-0808-SCL-V2', 'MX-0812-SCL', 'MX-1616-SCL', 'MXV-0404-H2A-KIT v2', 'MXV-0808-H2A-70 v3',
       'MXV-0808-H2A-KIT', 'EXP-MX-0402-H2') },
-  { k: 'presentasi', nama: 'Presentation switcher', kategori: 'Middleware / Switching', kelompok: 'middleware', ikon: 'switcher',
+  { k: 'presentasi', foto: 'mx-0402-mst', nama: 'Presentation switcher', kategori: 'Middleware / Switching', kelompok: 'middleware', ikon: 'switcher',
     port: ['USB-C', 'HDMI in 1', 'HDMI in 2', 'HDBT out', 'HDMI out', 'USB host', 'LAN'], w: 46, h: 29,
     saran: ws('MX-0402-MST v2', 'MX-0403-H3-MST', 'MX-0804-EDC', 'MX-1007-HYB', 'SW-510-TX', 'SW-120-TX3', 'SW-620-TX-W') },
-  { k: 'extender', nama: 'Extender HDBaseT TX/RX', kategori: 'Middleware / Extender', kelompok: 'middleware', ikon: 'extender',
+  { k: 'extender', foto: 'ex-70-h2', nama: 'Extender HDBaseT TX/RX', kategori: 'Middleware / Extender', kelompok: 'middleware', ikon: 'extender',
     port: ['HDMI in', 'HDBaseT', 'HDMI out', 'IR', 'RS-232'], w: 52, h: 32.5,
     saran: ws('EX-35-H2', 'EX-70-H2', 'EX-70-G2', 'EX-100-G2', 'EX-35-8K', 'RX-70-4K', 'RXV-70-4K-G2', 'RX3-100') },
-  { k: 'avoip', nama: 'AV over IP encoder / decoder', kategori: 'Middleware / AV over IP', kelompok: 'middleware', ikon: 'encoder',
+  { k: 'avoip', foto: 'nhd-120-tx', nama: 'AV over IP encoder / decoder', kategori: 'Middleware / AV over IP', kelompok: 'middleware', ikon: 'encoder',
     port: ['HDMI', 'LAN (1G)', 'USB', 'IR', 'RS-232'], w: 44, h: 27.5,
     saran: ws('NHD-120-TX', 'NHD-120-RX', 'NHD-124-TX', 'NHD-150-RX', 'NHD-510-TX', 'NHD-500-TX/RX v2', 'NHD-600-E-TX/RX', 'NHD-0401-MV', 'NHD-CTL-PRO v2') },
 
   { k: 'laptop', nama: 'Laptop', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'laptop', port: ['HDMI', 'USB-C', 'USB-A', 'LAN'], w: 42, h: 26 },
   { k: 'pc', nama: 'PC', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'pc', port: ['HDMI', 'DisplayPort', 'USB', 'LAN'], w: 36, h: 22.5 },
-  { k: 'minipc', nama: 'Mini PC', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'minipc', port: ['LAN', 'USB-A', 'USB-C', 'HDMI'], w: 40, h: 25 },
-  { k: 'nvr', nama: 'NVR CCTV', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'nvr', port: ['HDMI', 'VGA', 'LAN', 'PoE (kamera)', 'USB'], w: 48, h: 30 },
-  { k: 'kamera', nama: 'Kamera PTZ', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'kamera', port: ['HDMI', 'USB', 'LAN (PoE)', 'RS-232'], w: 34, h: 21.25,
+  { k: 'minipc', foto: 'asus-nuc', nama: 'Mini PC', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'minipc', port: ['LAN', 'USB-A', 'USB-C', 'HDMI'], w: 40, h: 25 },
+  { k: 'nvr', foto: 'hikvision-nvr', nama: 'NVR CCTV', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'nvr', port: ['HDMI', 'VGA', 'LAN', 'PoE (kamera)', 'USB'], w: 48, h: 30 },
+  { k: 'kamera', foto: 'cam-210-ptz', nama: 'Kamera PTZ', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'kamera', port: ['HDMI', 'USB', 'LAN (PoE)', 'RS-232'], w: 34, h: 21.25,
     saran: ws('CAM-210-PTZ', 'CAM-210-NDI-PTZ', 'CAM-420-PTZ', 'FOCUS 200 PRO') },
-  { k: 'mediaplayer', nama: 'Media player digital signage', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'mediaplayer', port: ['HDMI', 'LAN', 'USB'], w: 40, h: 25 },
+  { k: 'mediaplayer', foto: 'brightsign', nama: 'Media player digital signage', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'mediaplayer', port: ['HDMI', 'LAN', 'USB'], w: 40, h: 25 },
 
-  { k: 'speakerphone', nama: 'Speakerphone', kategori: 'Audio (Mic + Speaker)', kelompok: 'audio', ikon: 'speakerphone', port: ['USB-C'], w: 42, h: 26.25,
+  { k: 'speakerphone', foto: 'halo-80', nama: 'Speakerphone', kategori: 'Audio (Mic + Speaker)', kelompok: 'audio', ikon: 'speakerphone', port: ['USB-C'], w: 42, h: 26.25,
     saran: ws('HALO 80', 'APO-210-UC') },
-  { k: 'videobar', nama: 'Video bar', kategori: 'Video Conference', kelompok: 'audio', ikon: 'videobar', port: ['USB-C', 'HDMI in', 'HDMI out', 'LAN'], w: 50, h: 31.25,
+  { k: 'videobar', foto: 'apo-vx20', nama: 'Video bar', kategori: 'Video Conference', kelompok: 'audio', ikon: 'videobar', port: ['USB-C', 'HDMI in', 'HDMI out', 'LAN'], w: 50, h: 31.25,
     saran: ws('APO-VX20-UC v2', 'HALO-VX10 v2') },
-  { k: 'mic', nama: 'Mikrofon plafon', kategori: 'Audio', kelompok: 'audio', ikon: 'mic', port: ['RJ45 / USB'], w: 36, h: 22.5, saran: ws('APO-SKY-MIC', 'HALO-COM-MIC') },
-  { k: 'dsp', nama: 'Audio DSP / hub mic', kategori: 'Audio', kelompok: 'audio', ikon: 'dsp', port: ['LAN', 'USB-B', 'Mic in', 'Line out', 'Dante'], w: 50, h: 31.25 },
-  { k: 'amplifier', nama: 'Amplifier', kategori: 'Audio', kelompok: 'audio', ikon: 'amplifier', port: ['Input', 'Output speaker', 'LAN'], w: 50, h: 31.25 },
+  { k: 'mic', foto: 'apo-sky-mic', nama: 'Mikrofon plafon', kategori: 'Audio', kelompok: 'audio', ikon: 'mic', port: ['RJ45 / USB'], w: 36, h: 22.5, saran: ws('APO-SKY-MIC', 'HALO-COM-MIC') },
+  { k: 'dsp', foto: 'dsp-88-dnt', nama: 'Audio DSP / hub mic', kategori: 'Audio', kelompok: 'audio', ikon: 'dsp', port: ['LAN', 'USB-B', 'Mic in', 'Line out', 'Dante'], w: 50, h: 31.25 },
+  { k: 'amplifier', foto: 'amp-2120', nama: 'Amplifier', kategori: 'Audio', kelompok: 'audio', ikon: 'amplifier', port: ['Input', 'Output speaker', 'LAN'], w: 50, h: 31.25 },
   { k: 'speaker', nama: 'Speaker', kategori: 'Audio', kelompok: 'audio', ikon: 'speaker', port: ['Input speaker'], w: 28, h: 17.5 },
 
-  { k: 'controller', nama: 'Prosesor kontrol', kategori: 'Control Automation', kelompok: 'kontrol', ikon: 'controller',
+  { k: 'controller', foto: 'controlcue', nama: 'Prosesor kontrol', kategori: 'Control Automation', kelompok: 'kontrol', ikon: 'controller',
     port: ['LAN', 'Serial 1 (RS-485)', 'Serial 2 (RS-485)', 'RS-232', 'IR', 'Relay'], w: 48, h: 30, saran: [...ws('SYN-CTL-FL10'), 'CUE controlCUE-versatile (CS0475)'] },
-  { k: 'relay', nama: 'Modul relay', kategori: 'Kontrol relay', kelompok: 'kontrol', ikon: 'relay', port: ['RS-485', 'Relay 1', 'Relay 2', 'Relay 3', 'Relay 4', 'AC in'], w: 42, h: 26.25,
+  { k: 'relay', foto: 'relaycue', nama: 'Modul relay', kategori: 'Kontrol relay', kelompok: 'kontrol', ikon: 'relay', port: ['RS-485', 'Relay 1', 'Relay 2', 'Relay 3', 'Relay 4', 'AC in'], w: 42, h: 26.25,
     saran: ['CUE relayCUE-8 (CS0335-2, 230 V)'] },
-  { k: 'switch', nama: 'Switch jaringan', kategori: 'Jaringan', kelompok: 'kontrol', ikon: 'switch', port: ['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port PoE+', 'SFP uplink'], w: 52, h: 32.5,
+  { k: 'switch', foto: 'netgear-m4250', nama: 'Switch jaringan', kategori: 'Jaringan', kelompok: 'kontrol', ikon: 'switch', port: ['Port 1', 'Port 2', 'Port 3', 'Port 4', 'Port PoE+', 'SFP uplink'], w: 52, h: 32.5,
     saran: ['Netgear M4250-GSM4230PX-26P', 'Netgear M4250-GSM4248PX-40P'] },
   { k: 'rak', nama: 'Rak perangkat', kategori: 'Infrastruktur', kelompok: 'kontrol', ikon: 'rak', port: [], w: 30, h: 18.75 },
 

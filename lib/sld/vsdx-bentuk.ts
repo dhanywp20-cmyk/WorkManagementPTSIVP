@@ -39,7 +39,7 @@ export const pisahTeks = (s: string): [string, string] => { const i = s.indexOf(
 
 const pola = (putus?: string) => (!putus ? 1 : /^0\.[0-9]+ /.test(putus) ? 3 : 2);
 
-export function bentukPrim(p: Prim, id: number, gambar: (perangkat: string) => { rid: string; jpeg: boolean } | null): string {
+export function bentukPrim(p: Prim, id: number, gambar: (perangkat: string) => { rid: string; jpeg: boolean; rasio?: number } | null): string {
   const awal = (jenis = 'Shape') => `<Shape ID='${id}' Type='${jenis}' LineStyle='3' FillStyle='3' TextStyle='3'>`;
   switch (p.t) {
     case 'kotak': {
@@ -84,8 +84,11 @@ export function bentukPrim(p: Prim, id: number, gambar: (perangkat: string) => {
     case 'gambar': {
       const g = gambar(p.perangkat);
       if (!g) return '';
-      return `<Shape ID='${id}' Type='Foreign' LineStyle='2' FillStyle='2' TextStyle='2'>${pin(p.x, p.y, p.w, p.h)}${sel('ImgWidth', INCI(p.w), " F='Width*1'")}`
-        + `${sel('ImgHeight', INCI(p.h), " F='Height*1'")}${geomKotak(false, false)}`
+      const r = g.rasio ?? p.w / p.h;
+      const w = p.w / p.h > r ? p.h * r : p.w, h = p.w / p.h > r ? p.h : p.w / r;
+      const x = p.x + (p.w - w) / 2, y = p.y + (p.h - h) / 2;
+      return `<Shape ID='${id}' Type='Foreign' LineStyle='2' FillStyle='2' TextStyle='2'>${pin(x, y, w, h)}${sel('ImgWidth', INCI(w), " F='Width*1'")}`
+        + `${sel('ImgHeight', INCI(h), " F='Height*1'")}${geomKotak(false, false)}`
         + `<ForeignData ForeignType='Bitmap' CompressionType='${g.jpeg ? 'JPEG' : 'PNG'}'><Rel r:id='${g.rid}'/></ForeignData></Shape>`;
     }
   }

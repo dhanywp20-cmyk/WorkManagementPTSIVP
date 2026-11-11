@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { isiIkon, viewBoxIkon } from '@/lib/sld/ikon';
+import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { KATALOG, LABEL_KELOMPOK, URUTAN_KELOMPOK } from '@/lib/sld/katalog';
 import { kelasInput } from '../bersama/ui';
 import { ImporBom } from './ImporBom';
@@ -37,7 +38,9 @@ export function PanelKatalog({ a }: { a: KeadaanSLD }) {
               {g.isi.map(t => (
                 <button key={t.k} type="button" onClick={() => a.tambahPerangkat(t.k)} title={`${t.nama} · ${t.kategori}`}
                   className={KELAS_KARTU}>
-                  <MiniIkon ikon={t.ikon} className="w-[72px] h-[45px] transition-transform duration-200 group-hover:scale-105" />
+                  {t.foto && FOTO_PRODUK[t.foto]
+                    ? <img src={FOTO_PRODUK[t.foto].src} alt="" className="w-[72px] h-[45px] object-contain transition-transform duration-200 group-hover:scale-105" />
+                    : <MiniIkon ikon={t.ikon} className="w-[72px] h-[45px] transition-transform duration-200 group-hover:scale-105" />}
                   <span className="text-[11px] font-semibold leading-tight text-slate-700">{t.nama}</span>
                 </button>
               ))}

@@ -30,9 +30,10 @@ export function watermark(o: OpsiLembar): string {
   return `<g opacity="${WATERMARK.tembus}" pointer-events="none">${out.join('')}</g>`;
 }
 
-export function gambarPerangkat(p: Pick<Perangkat, 'gambar' | 'ikon'>, x: number, y: number, w: number, h: number): string {
-  if (p.gambar) {
-    const href = esc(p.gambar);
+export function gambarPerangkat(p: Pick<Perangkat, 'gambar' | 'foto' | 'ikon'>, x: number, y: number, w: number, h: number): string {
+  const sumber = p.gambar ?? p.foto;
+  if (sumber) {
+    const href = esc(sumber);
     return `<image href="${href}" xlink:href="${href}" x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" preserveAspectRatio="xMidYMid meet"/>`;
   }
   return svgIkon(p.ikon, x, y, w, h);

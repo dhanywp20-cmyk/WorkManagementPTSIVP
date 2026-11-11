@@ -1,4 +1,6 @@
+import { existsSync, statSync } from 'node:fs';
 import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
+import { FOTO_PRODUK } from '../lib/sld/foto-produk';
 import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
@@ -164,6 +166,20 @@ void (async () => {
     .every(k => KATALOG.some(t => t.k === k)));
   cek('tebak jenis dari kode model', tebakTemplat('WyreStorm MX-0404-SCL') === 'matrix' && tebakTemplat('Philips 55BDL4650D') === 'signage-philips'
     && tebakTemplat('NHD-120-TX') === 'avoip' && tebakTemplat('EX-70-H2') === 'extender' && tebakTemplat('NVR 16 channel') === 'nvr', tebakTemplat('NHD-120-TX'));
+  console.log('\n7. Foto produk asli');
+  const ilustrasiSaja = ['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb', 'ups', 'rak', 'umum', 'laptop', 'pc', 'speaker', 'videowall'];
+  const tanpaFotoAV = KATALOG.filter(t => !t.foto && !ilustrasiSaja.includes(t.k)).map(t => t.k);
+  cek('semua produk AV di katalog punya foto asli bawaan', !tanpaFotoAV.length, tanpaFotoAV.join(','));
+  cek('tirai, gorden, lampu, AC/FCU tetap ilustrasi', ['tirai', 'gorden', 'lampu', 'ac', 'fcu'].every(k => !KATALOG.find(t => t.k === k)?.foto));
+  cek('setiap foto bawaan ada berkasnya & di bawah 100 KB', Object.values(FOTO_PRODUK).every(f => existsSync(`public${f.src}`) && statSync(`public${f.src}`).size < 100_000));
+  const m = perangkatBaru('matrix', 50, 50);
+  cek('perangkat baru dari katalog langsung memakai foto & rasio aslinya', m.foto === '/sld/produk/mx-0404-scl.jpg' && Math.abs((m.rasio ?? 0) - 428 / 194) < 0.01);
+  const dm = { ...dokBaru(), perangkat: [m] };
+  cek('sheet 1 & 2 menampilkan foto asli', svgLembar1(dm).includes('href="/sld/produk/mx-0404-scl.jpg"') && svgLembar2({ ...dm, perangkat: [{ ...m, no: '1' }] }).includes('/sld/produk/mx-0404-scl.jpg'));
+  const bersih = bersihkanDok({ perangkat: [{ ...m }, { ...m, id: 'x2', foto: 'https://contoh.com/a.jpg' }] })!;
+  cek('jalur foto bawaan dipertahankan, URL luar dibuang', bersih.perangkat[0].foto === m.foto && !bersih.perangkat[1].foto);
+  cek('contoh SLD memakai foto asli (HALO 80, NUC, Philips, Netgear, CUE)', ['halo-80', 'asus-nuc', 'philips-10bdl3351t', 'netgear-m4250', 'controlcue', 'relaycue', 'tcl-tv']
+    .every(k => d.perangkat.some(p => p.foto === `/sld/produk/${k}.jpg`)));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

@@ -17,7 +17,7 @@ export const tergambar = (c: Kabel, peta: Map<string, Perangkat>) =>
 const pusat = (b: Kotak): Titik => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
 export function kotakTampak(p: Perangkat): Kotak {
-  const r = p.gambar ? (p.rasio ?? p.w / p.h) : 1.6;
+  const r = p.gambar || p.foto ? (p.rasio ?? p.w / p.h) : 1.6;
   if (p.w / p.h > r) { const w = p.h * r; return { x: p.x + (p.w - w) / 2, y: p.y, w, h: p.h }; }
   const h = p.w / r;
   return { x: p.x, y: p.y + (p.h - h) / 2, w: p.w, h };

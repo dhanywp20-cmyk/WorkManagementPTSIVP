@@ -1,3 +1,4 @@
+import { FOTO_PRODUK, fotoSah } from './foto-produk';
 import { cariTemplat } from './katalog';
 import { URUTAN_JENIS } from './gaya';
 import {
@@ -22,9 +23,12 @@ export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibu
 
 export function perangkatBaru(k: string, x: number, y: number, isi: Partial<Perangkat> = {}): Perangkat {
   const t = cariTemplat(k);
+  const fp = t.foto ? FOTO_PRODUK[t.foto] : undefined;
+  const w = isi.w ?? t.w;
+  const ukuran = fp ? { foto: fp.src, rasio: fp.rasio, h: isi.h ?? Math.round(Math.min(40, Math.max(10, w / fp.rasio)) * 2) / 2 } : { h: isi.h ?? t.h };
   return {
     id: idBaru('p'), no: '', nama: t.nama, peran: '', ket: t.ket ?? '', kategori: t.kategori, model: '', qty: 1, satuan: 'unit',
-    subGambar: '', ikon: t.ikon, port: [...t.port], x, y, w: t.w, h: t.h, ...isi,
+    subGambar: '', ikon: t.ikon, port: [...t.port], x, y, w, ...ukuran, ...isi,
   };
 }
 
@@ -65,6 +69,7 @@ function bersihkanPerangkat(v: unknown): Perangkat | null {
     port: Array.isArray(p.port) ? p.port.map(x => teks(x, 60)).filter(Boolean).slice(0, 48) : [],
     x: angka(p.x, AREA.x - w / 2, AREA.x + AREA.w - w / 2, AREA.x), y: angka(p.y, AREA.y - h / 2, AREA.y + AREA.h - h / 2, AREA.y), w, h,
     gambar: bersihkanGambarSLD(p.gambar),
+    foto: fotoSah(p.foto) ? p.foto : undefined,
     rasio: Number.isFinite(Number(p.rasio)) && Number(p.rasio) > 0 ? angka(p.rasio, 0.1, 10, 1.6) : undefined,
   };
 }

@@ -8,6 +8,7 @@ import { esc } from '@/lib/sld/teks';
 import type { DokSLD } from '@/lib/sld/tipe';
 import { buatVsdx, type GambarVsdx } from '@/lib/sld/vsdx';
 import { ilustrasiPng } from './ilustrasi';
+import { fotoData, sematkanFoto } from './sematkan';
 
 let bawaan: Promise<string> | null = null;
 
@@ -30,7 +31,7 @@ export const namaSLD = (d: DokSLD) =>
 
 export async function lembarSvg(d: DokSLD, logo?: string | null): Promise<[string, string]> {
   const watermark = d.watermark ? await watermarkData(logo) : undefined;
-  return [svgLembar1(d, { watermark }), svgLembar2(d, { watermark })];
+  return Promise.all([sematkanFoto(svgLembar1(d, { watermark })), sematkanFoto(svgLembar2(d, { watermark }))]) as Promise<[string, string]>;
 }
 
 export async function cetakPdf(d: DokSLD, logo?: string | null): Promise<void> {
@@ -82,7 +83,7 @@ export async function unduhVsdx(d: DokSLD, logo?: string | null): Promise<void> 
   const gambar = new Map<string, GambarVsdx>();
   for (const p of d.perangkat) {
     const k = kotakTampak(p);
-    gambar.set(p.id, p.gambar ? dariDataUrl(p.gambar) : await kePng(await ilustrasiPng(p.ikon, k.w / k.h)));
+    gambar.set(p.id, p.gambar ? dariDataUrl(p.gambar) : p.foto ? dariDataUrl(await fotoData(p.foto)) : await kePng(await ilustrasiPng(p.ikon, k.w / k.h)));
   }
   const watermark = d.watermark ? await kePng(await watermarkData(logo)) : undefined;
   const isi = buatVsdx({ dok: d, gambar, watermark, judul: namaSLD(d) });
