@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { bersihkanDok, tanpaFoto } from '@/lib/sld/dok';
 import { semuaPerangkat } from '@/lib/sld/ruang';
 import type { DokSLD } from '@/lib/sld/tipe';
@@ -34,6 +34,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
     setAktifState(v);
     try { if (v) localStorage.setItem(KUNCI_AKTIF, JSON.stringify(v)); else localStorage.removeItem(KUNCI_AKTIF); } catch {  }
   }, []);
+  const [versiServer, setVersiServer] = useState<{ versi: number; oleh: string } | null>(null);
   const berubah = useMemo(() => (aktif ? kunciDok(a.proyek) !== aktif.kunci : semuaPerangkat(a.proyek).length > 0), [a.proyek, aktif]);
 
   const kirim = useCallback(async (nama: string, timpa: boolean): Promise<string | null> => {
@@ -99,7 +100,27 @@ export function useSimpanSLD(a: KeadaanSLD) {
 
   const lepas = useCallback(() => setAktif(null), [setAktif]);
 
-  return { aktif, berubah, sibuk, pesan, setPesan, daftar, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas };
+  const berubahRef = useRef(berubah); berubahRef.current = berubah;
+  const bukaRef = useRef(buka); bukaRef.current = buka;
+  const idAktif = aktif?.id, versiAktif = aktif?.versi;
+  useEffect(() => {
+    if (!a.siap || !idAktif || !versiAktif) return;
+    let hidup = true;
+    const cek = async () => {
+      const r = await fetch(`${API}?id=${encodeURIComponent(idAktif)}&riwayat=1`, { credentials: 'include', cache: 'no-store' }).catch(() => null);
+      const j = await jsonDari(r), v = (j?.versi as { versi: number; dibuat_oleh_nama: string }[] | undefined)?.[0];
+      if (!hidup || !v) return;
+      if (v.versi <= versiAktif) { setVersiServer(null); return; }
+      if (!berubahRef.current) await bukaRef.current(idAktif);
+      else setVersiServer({ versi: v.versi, oleh: v.dibuat_oleh_nama });
+    };
+    void cek();
+    const fokus = () => { if (document.visibilityState === 'visible') void cek(); };
+    document.addEventListener('visibilitychange', fokus);
+    return () => { hidup = false; document.removeEventListener('visibilitychange', fokus); };
+  }, [a.siap, idAktif, versiAktif]);
+
+  return { aktif, berubah, sibuk, pesan, setPesan, daftar, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas, versiServer, tutupVersiServer: () => setVersiServer(null) };
 }
 
 export type KeadaanSimpanSLD = ReturnType<typeof useSimpanSLD>;

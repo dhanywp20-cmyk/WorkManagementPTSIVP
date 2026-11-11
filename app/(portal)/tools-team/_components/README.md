@@ -58,7 +58,7 @@ Kanvas baru & contoh memakai 16:9; draf lama tanpa kertas diubah sekali ke 16:9.
 Dua isi ekspor dari SLD yang sama: **Full Detail** (2 sheet, internal - "NO SHARE") dan **Simple** (hanya sheet 1,
 "no dtl", aman dibagikan ke klien). Sheet 2 terisi otomatis: perangkat tanpa No. BOM dinomori setelah No. BOM
 yang ada (model sama digabung, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
-diisi dari jenis kabel.
+diisi dari jenis kabel. Kabel bus (bercabang) jadi satu baris per perangkat tujuan (K5.1, K5.2, ...).
 
 ```
 lib/sld/
@@ -77,7 +77,10 @@ lib/sld/
   boq.ts        sheet 3 BOQ: baris, gaya & HTML      excel.ts  buku Excel sheet 1 (gambar), sheet 2 (tabel), sheet 3 (BOQ)
   dinding.ts    videowall & LED dari foto asli: susunan "4 x 3" / ukuran "6 x 2 m" / "8 x 4 kabinet" dibaca dari nama & keterangan,
                 konten otomatis per panel ber-bezel (videowall) atau satu gambar layar penuh tanpa garis (LED), perspektif seperti foto acuan
-  dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
+  dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto, hapusPerangkat (kabelnya ikut, cabang bus dirapikan), kabelYatim
+                contoh.ts  contoh Voice Kamar Pasien
+  pilih.ts      pilih banyak (kotak seret), geser grup, salin / tempel (kabel antar item ikut, id baru), ratakan, jepret garis panduan
+  zona.ts       area kotak putus-putus berlabel (Rack / Wall / Ceiling / ruangan) - sheet 1 & Visio, tidak masuk BOQ
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
   ekspor.ts     (browser) SVG per sheet + foto tersemat, .vsdx, PNG, berkas paket - dipakai juga Request Design
   sematkan.ts / ilustrasi.ts  (browser) foto bawaan jadi data URL, ilustrasi jadi PNG
@@ -85,6 +88,8 @@ _components/sld/
   useKeadaanSLD.ts  dokumen + undo/redo + draf localStorage
   KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
   PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (unduh PDF A3 / PNG / Visio)
+  PanelPilihan.tsx  banyak item (salin / tempel / ratakan), posisi teks keterangan 8 arah, properti area
+  useSimpanSLD.ts   simpan / buka server + cek versi server lebih baru (muat otomatis bila tidak ada perubahan lokal)
   ImporBom.tsx      foto & perangkat dari BOM;  AmbilBrosur.tsx  potong foto produk dari brosur PDF
   foto-lokal.ts     foto, galeri & logo watermark di IndexedDB browser;  PengaturanWatermark.tsx  aktif / ganti logo
 ```

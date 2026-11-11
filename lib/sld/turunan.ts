@@ -32,11 +32,13 @@ export function fungsiOtomatis(c: Kabel): string {
 export function barisKoneksi(d: DokSLD): BarisKoneksi[] {
   const peta = new Map(d.perangkat.map(p => [p.id, p]));
   const kode = kodeKabel(d.kabel);
-  return urutKabel(d.kabel).map(c => ({
-    id: c.id, kode: kode.get(c.id)!, dari: namaUjung(c.dari, peta),
-    ke: [c.ke, ...c.cabang].map(u => namaUjung(u, peta)).filter(Boolean).join(', '),
-    media: c.media, fungsi: c.fungsi.trim() || fungsiOtomatis(c), catatan: c.catatan,
-  }));
+  return urutKabel(d.kabel).flatMap(c => {
+    const tujuan = [c.ke, ...c.cabang], k = kode.get(c.id)!;
+    return tujuan.map((u, i) => ({
+      id: c.id, kode: tujuan.length > 1 ? `${k}.${i + 1}` : k, dari: namaUjung(c.dari, peta), ke: namaUjung(u, peta),
+      media: c.media, fungsi: c.fungsi.trim() || fungsiOtomatis(c), catatan: c.catatan,
+    }));
+  });
 }
 
 const angkaNo = (no: string) => { const x = parseFloat(no); return Number.isFinite(x) ? x : Infinity; };

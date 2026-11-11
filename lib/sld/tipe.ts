@@ -3,6 +3,9 @@ export type JenisKabel = 'catx' | 'usb' | 'ac' | 'hdmi' | 'audio' | 'speaker' | 
 export type Sisi = 'kiri' | 'kanan' | 'atas' | 'bawah';
 export type PilihSisi = 'auto' | Sisi;
 
+export type PosisiLabel = 'bawah' | 'atas' | 'kiri' | 'kanan' | 'kiri-atas' | 'kanan-atas' | 'kiri-bawah' | 'kanan-bawah';
+export const POSISI_LABEL: PosisiLabel[] = ['kiri-atas', 'atas', 'kanan-atas', 'kiri', 'kanan', 'kiri-bawah', 'bawah', 'kanan-bawah'];
+
 export interface Perangkat {
   id: string;
   no: string;
@@ -24,6 +27,7 @@ export interface Perangkat {
   balikH?: boolean;
   balikV?: boolean;
   huruf?: number;
+  labelDi?: PosisiLabel;
 }
 
 export interface Ujung { p: string; nama: string; port: string; sisi: PilihSisi }
@@ -70,6 +74,9 @@ export type WarnaTeks = 'hitam' | 'merah' | 'abu' | 'biru';
 
 export interface TeksBebas { id: string; x: number; y: number; isi: string; ukuran: number; warna: WarnaTeks; tebal: boolean; putar?: number }
 
+export type WarnaZona = 'abu' | 'biru' | 'merah' | 'hijau' | 'oranye';
+export interface ZonaSLD { id: string; x: number; y: number; w: number; h: number; label: string; warna: WarnaZona }
+
 export type IsiBoqItem = { kategori?: string; merek?: string; model?: string; spek?: string; fungsi?: string };
 
 export interface RuangSLD {
@@ -80,6 +87,7 @@ export interface RuangSLD {
   teks: TeksBebas[];
   catatan: CatatanPasang[];
   boq?: Record<string, IsiBoqItem>;
+  zona?: ZonaSLD[];
 }
 
 export interface DokSLD {
@@ -95,6 +103,7 @@ export interface DokSLD {
   boq?: Record<string, IsiBoqItem>;
   namaRuang?: string;
   ruangLain?: RuangSLD[];
+  zona?: ZonaSLD[];
 }
 
 export interface Titik { x: number; y: number }
@@ -118,6 +127,7 @@ export const areaDok = (d: { kertas?: Kertas }) => ({ ...AREA, h: halamanDok(d).
 export const HURUF_MIN = 0.5, HURUF_MAKS = 3;
 export const MAKS_TEKS = 60;
 export const MAKS_RUANG = 20;
+export const MAKS_ZONA = 40;
 export const UKURAN_AWAL = { w: 46, h: 30 } as const;
 export const UKURAN_MIN = { w: 12, h: 8 } as const;
 export const MAKS_PERANGKAT = 60;

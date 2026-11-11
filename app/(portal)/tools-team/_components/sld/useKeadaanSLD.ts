@@ -3,7 +3,7 @@ import { type SetStateAction, useCallback, useEffect, useMemo, useRef, useState 
 import { getSession } from '@/lib/auth/sesi';
 import { contohVoiceKamar } from '@/lib/sld/contoh';
 import {
-  bersihkanDok, dokBaru, hapusPerangkat, hurufSah, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru,
+  bersihkanDok, dokBaru, hapusPerangkat, hurufSah, idBaru, kabelBaru, kabelYatim, pasangFoto, zonaBaru, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru,
 } from '@/lib/sld/dok';
 import { rasioDinding } from '@/lib/sld/dinding';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
@@ -11,8 +11,9 @@ import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
+import { hapusObjek, type Klip, type Rata, ratakan, salinObjek, tempelKlip, geserObjek } from '@/lib/sld/pilih';
 import {
-  AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, type Perangkat, type TeksBebas, UKURAN_MIN,
+  AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PosisiLabel, type TeksBebas, UKURAN_MIN, type ZonaSLD,
 } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
 import {
@@ -24,7 +25,8 @@ const KUNCI = 'tools-team-sld-v1';
 const KUNCI_PRESET = 'tools-team-sld-kabel';
 const TEKS_DINDING = ['nama', 'model', 'ket', 'subGambar', 'ikon'];
 
-export type Pilihan = { jenis: 'p' | 'k' | 't'; id: string } | null;
+export type Pilihan = { jenis: 'p' | 'k' | 't' | 'z'; id: string } | null;
+const KUNCI_KLIP = 'tools-team-sld-klip';
 
 const namaPengguna = () => {
   const u = getSession<{ full_name?: string; username?: string }>();
@@ -51,6 +53,7 @@ export function useKeadaanSLD() {
   }), []);
   const [siap, setSiap] = useState(false);
   const [pilih, setPilih] = useState<Pilihan>(null);
+  const [grup, setGrup] = useState<{ utama: string | null; ids: string[] }>({ utama: null, ids: [] });
   const [galatSimpan, setGalatSimpan] = useState(false);
   const [galeri, setGaleri] = useState<FotoGaleri[]>([]);
   const [logo, setLogoState] = useState<string | null>(null);
@@ -199,9 +202,59 @@ export function useKeadaanSLD() {
     return { ...d, kabel };
   }), [setDok]);
 
+  const terpilih = useMemo(() => (grup.utama === (pilih?.id ?? null) && grup.ids.length ? grup.ids : pilih ? [pilih.id] : []), [grup, pilih]);
+  const terpilihRef = useRef(terpilih); terpilihRef.current = terpilih;
+  const jenisDari = useCallback((id: string): Pilihan => {
+    const d = dokRef.current;
+    if (d.perangkat.some(p => p.id === id)) return { jenis: 'p', id };
+    if (d.teks.some(t => t.id === id)) return { jenis: 't', id };
+    if ((d.zona ?? []).some(z => z.id === id)) return { jenis: 'z', id };
+    return d.kabel.some(c => c.id === id) ? { jenis: 'k', id } : null;
+  }, []);
+  const pilihBanyak = useCallback((ids: string[]) => {
+    const unik = [...new Set(ids)];
+    if (unik.length === 1) { setPilih(jenisDari(unik[0])); setGrup({ utama: null, ids: [] }); return; }
+    setPilih(null); setGrup({ utama: null, ids: unik });
+  }, [jenisDari]);
+  const togglePilih = useCallback((id: string) => {
+    const kini = terpilihRef.current;
+    pilihBanyak(kini.includes(id) ? kini.filter(x => x !== id) : [...kini, id]);
+  }, [pilihBanyak]);
+  const geserGrup = useCallback((awal: Map<string, { x: number; y: number }>, dx: number, dy: number) => setDok(d => geserObjek(d, awal, dx, dy)), [setDok]);
+  const klip = useRef<Klip | null>(null);
+  const salin = useCallback(() => {
+    const k = salinObjek(dokRef.current, terpilihRef.current);
+    if (!k.perangkat.length && !k.teks.length && !k.zona.length) return false;
+    klip.current = k;
+    try { localStorage.setItem(KUNCI_KLIP, JSON.stringify({ ...k, perangkat: k.perangkat.map(p => ({ ...p, gambar: undefined })) })); } catch {  }
+    return true;
+  }, []);
+  const tempel = useCallback(() => {
+    let k = klip.current;
+    if (!k) { try { k = JSON.parse(localStorage.getItem(KUNCI_KLIP) ?? 'null') as Klip | null; } catch { k = null; } }
+    if (!k || (!k.perangkat?.length && !k.teks?.length && !k.zona?.length)) return false;
+    const h = tempelKlip(dokRef.current, { perangkat: k.perangkat ?? [], kabel: k.kabel ?? [], teks: k.teks ?? [], zona: k.zona ?? [] });
+    setDok(h.dok); pilihBanyak(h.ids);
+    return true;
+  }, [setDok, pilihBanyak]);
+  const hapusTerpilih = useCallback(() => {
+    const ids = terpilihRef.current;
+    if (!ids.length) return;
+    setDok(d => hapusObjek(d, ids)); setPilih(null); setGrup({ utama: null, ids: [] });
+  }, [setDok]);
+  const ratakanTerpilih = useCallback((cara: Rata) => setDok(d => ratakan(d, terpilihRef.current, cara)), [setDok]);
+  const aturLabelDi = useCallback((ids: string[], posisi: PosisiLabel) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id) ? { ...p, labelDi: posisi === 'bawah' ? undefined : posisi } : p)) })), [setDok]);
+  const tambahZona = useCallback((posisi?: { x: number; y: number }, label?: string) => {
+    const a = areaDok(dokRef.current), z = zonaBaru(posisi?.x ?? a.x + 20, posisi?.y ?? a.y + 15, label);
+    setDok(d => ((d.zona?.length ?? 0) >= MAKS_ZONA ? d : { ...d, zona: [...(d.zona ?? []), z] }));
+    setPilih({ jenis: 'z', id: z.id });
+  }, [setDok]);
+  const ubahZona = useCallback((id: string, p: Partial<ZonaSLD>) => setDok(d => ({ ...d, zona: (d.zona ?? []).map(z => (z.id === id ? { ...z, ...p } : z)) })), [setDok]);
+  const bersihkanKabelYatim = useCallback(() => setDok(d => { const y = new Set(kabelYatim(d).map(c => c.id)); return { ...d, kabel: d.kabel.filter(c => !y.has(c.id)) }; }), [setDok]);
+
   const hapus = useCallback((p: Pilihan) => {
     if (!p) return;
-    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : p.jenis === 't' ? { ...d, teks: d.teks.filter(t => t.id !== p.id) } : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
+    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : p.jenis === 'z' ? { ...d, zona: (d.zona ?? []).filter(z => z.id !== p.id) } : p.jenis === 't' ? { ...d, teks: d.teks.filter(t => t.id !== p.id) } : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
     setPilih(null);
   }, [setDok]);
 
@@ -253,7 +306,8 @@ export function useKeadaanSLD() {
 
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
+    aturLabelDi, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

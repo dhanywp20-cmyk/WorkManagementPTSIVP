@@ -9,6 +9,7 @@ import type { Perangkat } from '@/lib/sld/tipe';
 import { noOtomatis } from '@/lib/sld/turunan';
 import { LABEL_PERANGKAT } from '@/lib/sld/gaya';
 import { IsianHurufLabel } from './IsianHuruf';
+import { PilihPosisiLabel } from './PanelPilihan';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
@@ -83,6 +84,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
       </div>
       <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />
       <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
+      <PilihPosisiLabel nilai={p.labelDi} onPilih={x => a.aturLabelDi([p.id], x)} />
       <IsianHurufLabel label="Ukuran huruf label (baris #nama)" dasarMm={LABEL_PERANGKAT.nama.ukuran} faktor={p.huruf} bawaan={a.dok.huruf?.perangkat}
         onUbah={f => ubah({ huruf: f })} bantuan="Baris *peran dan keterangan ikut membesar / mengecil." />
       <div className="grid grid-cols-2 gap-2">

@@ -40,6 +40,8 @@ export const FOTO_PRODUK: Record<string, FotoProduk> = {
   'sennheiser-md42': f('sennheiser-md42', 216, 400, 'Sennheiser MD 42'),
   'receiver-mic-wireless': f('receiver-mic-wireless', 192, 88, 'Receiver mic wireless'),
   'wyrestorm-wallplate': f('wyrestorm-wallplate', 413, 400, 'WyreStorm wallplate HDMI + USB-C'),
+  ifp: f('ifp', 410, 400, 'Interactive flat panel'),
+  'dongle-wireless': f('dongle-wireless', 155, 311, 'Dongle wireless presentation'),
 };
 
 export const POLA_FOTO_PRODUK = /^\/sld\/produk\/[a-z0-9-]+\.jpg$/;
