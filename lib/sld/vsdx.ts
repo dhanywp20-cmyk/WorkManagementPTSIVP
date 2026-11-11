@@ -1,11 +1,11 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, WATERMARK } from './gaya';
 import { geometri, hurufPerangkat, kotakTampak, rasioPerangkat, teksLabel } from './geometri';
-import { barisLabel, primRangka1 } from './lembar1';
+import { barisLabel, letakLabel, primRangka1 } from './lembar1';
 import { primLembar2 } from './lembar2';
 import type { Prim } from './primitif';
 import { lebarTeks } from './teks';
 import { type DokSLD, halamanDok, HALAMAN, type Titik } from './tipe';
-import { aturTinggiHalaman, bentukPrim, bentukTeksBebas, f, geomKotak, INCI, pisahTeks, sel, teksRun, vy, xe } from './vsdx-bentuk';
+import { aturTinggiHalaman, bentukPrim, bentukTeksBebas, bentukZona, f, geomKotak, INCI, pisahTeks, sel, teksRun, vy, xe } from './vsdx-bentuk';
 import { STYLE_DASAR } from './vsdx-gaya';
 import { tulisZip } from './zip';
 
@@ -67,6 +67,7 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
   const h = new Halaman();
   const d = m.dok;
   for (const p of primRangka1(d, m.simple)) { const id = h.baru(); h.bentuk.push(bentukPrim(p, id, () => null)); }
+  for (const z of d.zona ?? []) h.bentuk.push(...bentukZona(z, () => h.baru()));
   const geo = geometri(d);
   const titikPerangkat = new Map<string, Titik[]>();
   const peta = new Map(d.kabel.map(c => [c.id, c]));
@@ -96,8 +97,8 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
     const baris = barisLabel(p, hurufPerangkat(p, d));
     const lebarLabel = Math.max(k.w, ...baris.map(b => lebarTeks(b.isi, b.ukuran, b.tebal) * 1.15 + 2));
     const tinggiLabel = baris.reduce((s, b) => s + b.ukuran * LABEL_PERANGKAT.spasi, 0) + 1;
-    const kiri = p.x + LABEL_PERANGKAT.geserKiri - k.x, atas = p.y + p.h + LABEL_PERANGKAT.jarakAtas - (k.y + k.h);
-    const teks = baris.length ? pisahTeks(teksRun(baris.map((b, i) => ({ ...b, isi: i < baris.length - 1 ? `${b.isi}\n` : b.isi })), 0, -1.1)) : ['', ''];
+    const l = letakLabel(p, hurufPerangkat(p, d)), kiri = (l.kanan ? l.x - lebarLabel : l.x) - k.x, atas = l.atas - (k.y + k.h);
+    const teks = baris.length ? pisahTeks(teksRun(baris.map((b, i) => ({ ...b, isi: i < baris.length - 1 ? `${b.isi}\n` : b.isi })), l.kanan ? 2 : 0, -1.1)) : ['', ''];
     const g = m.gambar.get(p.id);
     const rid = g ? h.rid(media.tambah(p.id, g)) : '';
     h.bentuk.push(`<Shape ID='${id}' NameU='${xe(p.nama || 'Perangkat')}' Type='${g ? 'Foreign' : 'Shape'}' LineStyle='2' FillStyle='2' TextStyle='3'>`

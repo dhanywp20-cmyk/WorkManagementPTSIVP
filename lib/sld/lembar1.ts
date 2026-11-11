@@ -1,10 +1,11 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, TITIK_UJUNG, WARNA } from './gaya';
-import { geometri, hurufPerangkat, teksLabel } from './geometri';
+import { geometri, hurufPerangkat, kotakTampak, teksLabel } from './geometri';
 import { bingkaiPrim, bukaSvg, gambarPerangkat, type OpsiLembar, watermark } from './lembar-umum';
 import { type Prim, svgPrimitif } from './primitif';
-import { n, potong, teks } from './teks';
+import { lebarTeks, n, potong, teks } from './teks';
 import { jenisTerpakai } from './turunan';
 import { svgTeksBebas } from './teks-bebas';
+import { svgZona } from './zona';
 import { type DokSLD, type GeoKabel, halamanDok, type Perangkat, type Titik } from './tipe';
 
 const PANJANG_PANAH = 2.2, LEBAR_PANAH = 1.8;
@@ -64,12 +65,27 @@ export function barisLabel(p: Perangkat, f = 1): { isi: string; ukuran: number; 
   ];
 }
 
+export interface LetakLabel { x: number; atas: number; w: number; h: number; kanan: boolean }
+
+export function letakLabel(p: Perangkat, f = 1): LetakLabel {
+  const b = barisLabel(p, f), L = LABEL_PERANGKAT, G = 1.5;
+  const h = b.reduce((s, x) => s + x.ukuran * L.spasi, 0), w = Math.max(0, ...b.map(x => lebarTeks(x.isi, x.ukuran, x.tebal)));
+  const k = kotakTampak(p), tengahV = k.y + (k.h - h) / 2, posisi = p.labelDi ?? 'bawah';
+  const kiri = { x: k.x - G, kanan: true }, kanan = { x: k.x + k.w + G, kanan: false };
+  const sisi: Record<string, { x: number; kanan: boolean; atas: number }> = {
+    bawah: { x: p.x + L.geserKiri, kanan: false, atas: p.y + p.h + L.jarakAtas }, atas: { x: k.x + L.geserKiri, kanan: false, atas: k.y - L.jarakAtas - h },
+    kiri: { ...kiri, atas: tengahV }, kanan: { ...kanan, atas: tengahV }, 'kiri-atas': { ...kiri, atas: k.y - h }, 'kanan-atas': { ...kanan, atas: k.y - h },
+    'kiri-bawah': { ...kiri, atas: k.y + k.h }, 'kanan-bawah': { ...kanan, atas: k.y + k.h },
+  };
+  return { ...(sisi[posisi] ?? sisi.bawah), w, h };
+}
+
 export function svgLabelPerangkat(p: Perangkat, f = 1): string {
-  const x = p.x + LABEL_PERANGKAT.geserKiri;
-  let y = p.y + p.h + LABEL_PERANGKAT.jarakAtas;
+  const l = letakLabel(p, f);
+  let y = l.atas;
   return barisLabel(p, f).map(b => {
     y += b.ukuran * 1.02;
-    const s = teks(x, y, b.isi, { ukuran: b.ukuran, warna: b.warna, tebal: b.tebal });
+    const s = teks(l.x, y, b.isi, { ukuran: b.ukuran, warna: b.warna, tebal: b.tebal, kanan: l.kanan });
     y += b.ukuran * (LABEL_PERANGKAT.spasi - 1.02);
     return s;
   }).join('');
@@ -110,7 +126,7 @@ export const primRangka1 = (d: DokSLD, simple = false): Prim[] => [...bingkaiPri
 
 export function isiLembar1(d: DokSLD, o: OpsiLembar = {}, geo = geometri(d)): string {
   const k = svgKabel(d, geo);
-  return svgPrimitif(primRangka1(d, o.simple), () => '')
+  return svgPrimitif(primRangka1(d, o.simple), () => '') + (d.zona ?? []).map(svgZona).join('')
     + d.perangkat.map(p => gambarPerangkat(p, p.x, p.y, p.w, p.h, p)).join('')
     + k.garis + k.label + d.perangkat.map(p => svgLabelPerangkat(p, hurufPerangkat(p, d))).join('') + (d.teks ?? []).map(svgTeksBebas).join('')
     + watermark({ ...o, tinggi: halamanDok(d).h, tanpaWatermark: o.tanpaWatermark || d.watermark === false });

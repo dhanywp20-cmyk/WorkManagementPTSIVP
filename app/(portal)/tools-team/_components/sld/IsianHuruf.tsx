@@ -1,6 +1,6 @@
 'use client';
 import { hurufSah } from '@/lib/sld/dok';
-import { Isian, kelasKecil, kelasTombol } from './isian';
+import { Angka, Isian, kelasKecil, kelasTombol } from './isian';
 
 export const PT_PER_MM = 72 / 25.4;
 const bulat = (v: number) => Math.round(v * 2) / 2;
@@ -14,8 +14,7 @@ export function IsianPt({ label, mm, onUbah, min = 3, maks = 56, bantuan, reset 
     <Isian label={label} bantuan={bantuan}>
       <div className="flex items-center gap-1.5">
         <button type="button" className={`${kelasTombol} !px-2.5`} onClick={() => atur(pt - 0.5)} aria-label="Perkecil huruf">A−</button>
-        <input type="number" min={min} max={maks} step={0.5} value={pt} onChange={e => { const v = Number(e.target.value); if (Number.isFinite(v) && v > 0) atur(v); }}
-          className={`${kelasKecil} !w-20`} aria-label={`${label} (pt)`} />
+        <Angka nilai={pt} min={min} maks={maks} langkah={0.5} onUbah={atur} className={`${kelasKecil} !w-20`} label={`${label} (pt)`} />
         <span className="text-[12px] text-slate-500">pt</span>
         <button type="button" className={`${kelasTombol} !px-2.5`} onClick={() => atur(pt + 0.5)} aria-label="Perbesar huruf">A+</button>
         {reset && <button type="button" className={kelasTombol} onClick={reset}>Bawaan</button>}

@@ -107,6 +107,12 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
         <span className={`hidden xl:inline text-[11.5px] font-semibold px-2 py-1 rounded-lg ${s.aktif ? (s.berubah ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800') : 'bg-slate-100 text-slate-600'}`}>
           {s.aktif ? `${s.aktif.nama} · v${s.aktif.versi}${s.berubah ? ' · belum disimpan' : ' · tersimpan'}` : 'Draf (belum disimpan ke server)'}
         </span>
+        {s.versiServer && s.aktif && (
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+            Ada v{s.versiServer.versi} dari {s.versiServer.oleh || 'tim'} di server
+            <button type="button" className="underline font-bold" onClick={() => { const id = s.aktif!.id; s.tutupVersiServer(); void s.buka(id); }}>Muat versi terbaru</button>
+          </span>
+        )}
       </div>
 
       <Modal buka={dialog === 'sebagai'} onTutup={() => setDialog(null)} judul="Simpan sebagai SLD baru" ikon={<SaveAll size={18} />}

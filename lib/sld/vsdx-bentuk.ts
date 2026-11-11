@@ -2,7 +2,8 @@ import { HURUF } from './gaya';
 import type { Prim } from './primitif';
 import { kotakTeks, WARNA_TEKS } from './teks-bebas';
 import { lebarTeks } from './teks';
-import type { TeksBebas } from './tipe';
+import type { TeksBebas, ZonaSLD } from './tipe';
+import { GAYA_ZONA, hurufZona, labelZona, tebalZona, WARNA_ZONA } from './zona';
 
 export const INCI = (mm: number) => mm / 25.4;
 export const f = (v: number) => (Math.abs(v) < 1e-9 ? '0' : String(Math.round(v * 1e9) / 1e9));
@@ -45,6 +46,17 @@ export function bentukTeksBebas(t: TeksBebas, id: number): string {
   const [a, b] = pisahTeks(teksRun([{ isi: t.isi, ukuran: t.ukuran, warna: WARNA_TEKS[t.warna], tebal: t.tebal }], 0, -1.25));
   return `<Shape ID='${id}' NameU='Teks' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(k.x + (k.w - w) / 2, k.y, w, k.h, (-(t.putar ?? 0) * Math.PI) / 180)}`
     + `${sel('LinePattern', 0)}${sel('FillPattern', 0)}${tanpaMargin}${sel('VerticalAlign', 0)}${a}${b}</Shape>`;
+}
+
+export function bentukZona(z: ZonaSLD, baru: () => number): string[] {
+  const c = WARNA_ZONA[z.warna] ?? WARNA_ZONA.abu, l = labelZona(z);
+  const kotak = `<Shape ID='${baru()}' NameU='Area' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(z.x, z.y, z.w, z.h)}`
+    + `${sel('LineWeight', INCI(tebalZona(z)), " U='MM'")}${sel('LineColor', c)}${sel('LinePattern', 2)}${sel('FillPattern', 0)}`
+    + `${sel('Rounding', INCI(GAYA_ZONA.sudut), " U='MM'")}${geomKotak(false, true)}</Shape>`;
+  if (!l.w) return [kotak];
+  const [a, b] = pisahTeks(teksRun([{ isi: z.label.trim(), ukuran: hurufZona(z), warna: c, tebal: true }], 1));
+  return [kotak, `<Shape ID='${baru()}' NameU='Label area' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(l.x, l.y, l.w * 1.12, l.h)}`
+    + `${sel('LinePattern', 0)}${sel('FillForegnd', '#ffffff')}${sel('FillPattern', 1)}${tanpaMargin}${sel('VerticalAlign', 1)}${a}${geomKotak(true, false)}${b}</Shape>`];
 }
 
 const pola = (putus?: string) => (!putus ? 1 : /^0\.[0-9]+ /.test(putus) ? 3 : 2);

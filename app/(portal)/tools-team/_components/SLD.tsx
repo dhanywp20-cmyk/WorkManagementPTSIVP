@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X, Type, Expand, FileBox, FileSpreadsheet, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { SquareDashed, X, Type, Expand, FileBox, FileSpreadsheet, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
@@ -10,6 +10,7 @@ import { cetakPdf, unduhExcel, unduhPng, unduhVsdx } from './sld/ekspor';
 import { LembarBoq } from './sld/LembarBoq';
 import { BilahRuang } from './sld/BilahRuang';
 import { semuaPerangkat } from '@/lib/sld/ruang';
+import { posisiAwal } from '@/lib/sld/pilih';
 import { PengaturanWatermark } from './sld/PengaturanWatermark';
 import { BilahSimpan } from './sld/BilahSimpan';
 import { useSimpanSLD } from './sld/useSimpanSLD';
@@ -18,6 +19,7 @@ import { kelasTombol } from './sld/isian';
 import { KanvasSLD } from './sld/KanvasSLD';
 import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
+import { PopupGeser } from './sld/PopupGeser';
 import { useKeadaanSLD } from './sld/useKeadaanSLD';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
@@ -63,7 +65,17 @@ export function SLD() {
     const tekan = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
-      const x = aRef.current, p = x.pilih;
+      const x = aRef.current, p = x.pilih, ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+      if (ctrl && k === 'c') { if (x.salin()) e.preventDefault(); return; }
+      if (ctrl && k === 'a') { e.preventDefault(); x.pilihBanyak([...x.dok.perangkat, ...x.dok.teks, ...(x.dok.zona ?? [])].map(o => o.id)); return; }
+      if (ctrl && k === 'd') { e.preventDefault(); if (x.salin()) x.tempel(); return; }
+      if (x.terpilih.length > 1) {
+        if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); x.hapusTerpilih(); return; }
+        if (e.key === 'Escape') { x.pilihBanyak([]); return; }
+        const g: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+        if (g[e.key]) { e.preventDefault(); const s = e.shiftKey ? 5 : 0.5; x.geserGrup(posisiAwal(x.dok, x.terpilih), g[e.key][0] * s, g[e.key][1] * s); }
+        return;
+      }
       if (!p) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); x.hapus(p); return; }
       if (e.key === 'Escape') { x.setPilih(null); return; }
@@ -92,7 +104,7 @@ export function SLD() {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName))) return;
       const x = aRef.current, p = x.pilih, f = gambarDariClipboard(e);
-      if (!f || p?.jenis !== 'p') return;
+      if (!f || p?.jenis !== 'p') { if (!f && x.tempel()) e.preventDefault(); return; }
       e.preventDefault();
       kompresGambar(f).then(g => x.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true }));
     };
@@ -169,6 +181,7 @@ export function SLD() {
           ))}
         </div>
         <button type="button" className={kelasTombol} onClick={() => { setSheet(1); a.tambahTeks(); }} title="Tambah teks bebas (atau klik dua kali di diagram)"><Type size={15} /> Teks</button>
+        <button type="button" className={kelasTombol} onClick={() => { setSheet(1); a.tambahZona(); }} title="Kotak putus-putus berlabel: ruangan, Rack, Wall, Ceiling"><SquareDashed size={15} /> Area</button>
         <div className="flex gap-1">
           <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} aria-label="Perkecil" disabled={sheet !== 1}>
             <ZoomOut size={15} />
@@ -235,9 +248,9 @@ export function SLD() {
             <PanelKatalog a={a} />
           </section>
           {!kiri && <button type="button" onClick={() => setKiri(true)} className={TAB_KIRI}>Perangkat</button>}
-          <div inert={!kanan} className={`${POPUP_KANAN} ${kanan ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}>
+          <PopupGeser buka={kanan} judul="Properti · seret untuk pindah" className={POPUP_KANAN}>
             <PanelSamping a={a} onTutup={tutupKanan} />
-          </div>
+          </PopupGeser>
         </>)}
       </div>
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />

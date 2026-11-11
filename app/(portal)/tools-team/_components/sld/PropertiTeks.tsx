@@ -4,7 +4,7 @@ import { sudutSah } from '@/lib/sld/geometri';
 import { LABEL_WARNA_TEKS, WARNA_TEKS } from '@/lib/sld/teks-bebas';
 import type { TeksBebas, WarnaTeks } from '@/lib/sld/tipe';
 import { IsianPt } from './IsianHuruf';
-import { Area, Isian, kelasKecil, kelasTombol } from './isian';
+import { Angka, Area, Isian, kelasKecil, kelasTombol } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 export function PropertiTeks({ a, t }: { a: KeadaanSLD; t: TeksBebas }) {
@@ -29,8 +29,8 @@ export function PropertiTeks({ a, t }: { a: KeadaanSLD; t: TeksBebas }) {
         </button>
         <button type="button" className={kelasTombol} onClick={() => ubah({ putar: sudutSah((t.putar ?? 0) - 90) || undefined })} aria-label="Putar 90° ke kiri"><RotateCcw size={15} /></button>
         <button type="button" className={kelasTombol} onClick={() => ubah({ putar: sudutSah((t.putar ?? 0) + 90) || undefined })} aria-label="Putar 90° ke kanan"><RotateCw size={15} /></button>
-        <input type="number" min={0} max={359} step={15} value={t.putar ?? 0} onChange={e => ubah({ putar: sudutSah(e.target.value) || undefined })}
-          className={`${kelasKecil} !w-20`} aria-label="Sudut putar teks (derajat)" />
+        <Angka nilai={t.putar ?? 0} min={0} maks={359} langkah={15} onUbah={v => ubah({ putar: sudutSah(v) || undefined })}
+          className={`${kelasKecil} !w-20`} label="Sudut putar teks (derajat)" />
         <span className="text-[12px] text-slate-500">°</span>
       </div>
       <div className="flex flex-wrap gap-1.5 pt-1">

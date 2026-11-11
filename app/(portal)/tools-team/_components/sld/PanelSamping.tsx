@@ -7,6 +7,8 @@ import { PanelDokumen } from './PanelDokumen';
 import { PropertiKabel } from './PropertiKabel';
 import { PropertiPerangkat } from './PropertiPerangkat';
 import { PropertiTeks } from './PropertiTeks';
+import { PanelBanyak, PropertiZona } from './PanelPilihan';
+import { kabelYatim } from '@/lib/sld/dok';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 type Tab = 'properti' | 'koneksi' | 'dokumen' | 'periksa';
@@ -36,6 +38,8 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
   const p = a.pilih?.jenis === 'p' ? a.dok.perangkat.find(x => x.id === a.pilih!.id) : undefined;
   const c = a.pilih?.jenis === 'k' ? a.dok.kabel.find(x => x.id === a.pilih!.id) : undefined;
   const tk = a.pilih?.jenis === 't' ? a.dok.teks.find(x => x.id === a.pilih!.id) : undefined;
+  const zn = a.pilih?.jenis === 'z' ? a.dok.zona?.find(x => x.id === a.pilih!.id) : undefined;
+  const yatim = kabelYatim(a.dok).length;
   const awas = a.temuan.filter(t => t.tingkat === 'awas').length;
   const TAB: { k: Tab; l: string }[] = [
     { k: 'properti', l: 'Properti' }, { k: 'koneksi', l: `Koneksi (${a.dok.kabel.length})` }, { k: 'dokumen', l: 'Judul & catatan' },
@@ -59,7 +63,7 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
           </button>
         )}
       </div>
-      {aktif === 'properti' && (p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
+      {aktif === 'properti' && (a.terpilih.length > 1 ? <PanelBanyak a={a} /> : zn ? <PropertiZona key={zn.id} a={a} z={zn} /> : p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
         <div className="text-[13px] text-slate-600 space-y-2">
           <p>Klik perangkat atau garis kabel di diagram untuk mengubahnya.</p>
           <ul className="list-disc pl-5 space-y-1 text-slate-500">
@@ -73,6 +77,12 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
       ))}
       {aktif === 'koneksi' && <DaftarKoneksi a={a} onPilih={() => setTab('properti')} />}
       {aktif === 'dokumen' && <PanelDokumen a={a} />}
+      {aktif === 'periksa' && yatim > 0 && (
+        <div className="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2 text-[12.5px] text-amber-900">
+          {yatim} kabel tidak lagi tersambung ke perangkat (perangkatnya sudah dihapus) tetapi masih tercatat di Sheet 2.
+          <button type="button" onClick={a.bersihkanKabelYatim} className="ml-1 underline font-bold">Hapus kabel tersebut</button>
+        </div>
+      )}
       {aktif === 'periksa' && (a.temuan.length ? (
         <ul className="space-y-1.5">
           {a.temuan.map((t, i) => (

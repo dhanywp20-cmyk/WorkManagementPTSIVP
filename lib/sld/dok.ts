@@ -3,9 +3,10 @@ import { cariTemplat } from './katalog';
 import { rasioDinding } from './dinding';
 import { URUTAN_JENIS } from './gaya';
 import { sudutSah } from './geometri';
+import { GAYA_ZONA, TEBAL_ZONA } from './zona';
 import {
   AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
-  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_RUANG, MAKS_TEKS, type Perangkat, type PilihSisi, type RuangSLD, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks,
+  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi, POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD,
 } from './tipe';
 
 let urut = 0;
@@ -22,6 +23,8 @@ export function blokBaru(dibuat = ''): BlokJudul {
 }
 
 export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], teks: [], catatan: [], watermark: true, kertas: '169' });
+
+export const zonaBaru = (x: number, y: number, label = 'Area'): ZonaSLD => ({ id: idBaru('z'), x, y, w: 90, h: 60, label, warna: 'abu' });
 
 export const teksBaru = (x: number, y: number, isi = 'Teks'): TeksBebas => ({ id: idBaru('t'), x, y, isi, ukuran: 3, warna: 'hitam', tebal: false });
 
@@ -90,6 +93,7 @@ function bersihkanPerangkat(v: unknown, area: Area = AREA): Perangkat | null {
     balikH: p.balikH === true || undefined,
     balikV: p.balikV === true || undefined,
     huruf: hurufSah(p.huruf),
+    labelDi: POSISI_LABEL.includes(p.labelDi as PosisiLabel) && p.labelDi !== 'bawah' ? (p.labelDi as PosisiLabel) : undefined,
   };
 }
 
@@ -118,7 +122,18 @@ function bersihkanTeks(v: unknown, area: Area): TeksBebas | null {
   };
 }
 
-type Isi = Pick<DokSLD, 'perangkat' | 'kabel' | 'teks' | 'catatan' | 'boq'>;
+type Isi = Pick<DokSLD, 'perangkat' | 'kabel' | 'teks' | 'catatan' | 'boq' | 'zona'>;
+const WARNA_ZONA_SAH: WarnaZona[] = ['abu', 'biru', 'merah', 'hijau', 'oranye'];
+
+function bersihkanZona(v: unknown, area: Area): ZonaSLD | null {
+  const z = (v ?? {}) as Record<string, unknown>;
+  if (typeof z.id !== 'string' || !z.id) return null;
+  const w = angka(z.w, 10, area.w + 20, 80), h = angka(z.h, 8, area.h + 20, 50);
+  return { id: z.id.slice(0, 40), label: teks(z.label, 60), warna: WARNA_ZONA_SAH.includes(z.warna as WarnaZona) ? (z.warna as WarnaZona) : 'abu',
+    x: angka(z.x, area.x - 10, area.x + area.w, area.x), y: angka(z.y, area.y - 5, area.y + area.h, area.y), w, h,
+    ...(hurufSah(z.huruf) !== undefined ? { huruf: hurufSah(z.huruf) } : {}),
+    ...(typeof z.tebal === 'number' && Number.isFinite(z.tebal) ? { tebal: angka(z.tebal, TEBAL_ZONA.min, TEBAL_ZONA.maks, GAYA_ZONA.tebal) } : {}) };
+}
 const BIDANG_BOQ = { kategori: 120, merek: 120, model: 200, spek: 800, fungsi: 600 } as const;
 
 function bersihkanIsi(d: Record<string, unknown>, area: Area): Isi {
@@ -135,7 +150,8 @@ function bersihkanIsi(d: Record<string, unknown>, area: Area): Isi {
       return [k.slice(0, 200), Object.fromEntries(Object.entries(BIDANG_BOQ).map(([b, maks]) => [b, teks(x[b], maks)]).filter(([, isi]) => isi))] as const;
     })
     .filter(([, v]) => Object.keys(v).length));
-  return { perangkat, kabel, teks: teksBebas, catatan, ...(Object.keys(boq).length ? { boq } : {}) };
+  const zona = (Array.isArray(d.zona) ? d.zona : []).slice(0, MAKS_ZONA).map(x => bersihkanZona(x, area)).filter((z): z is ZonaSLD => !!z);
+  return { perangkat, kabel, teks: teksBebas, catatan, ...(Object.keys(boq).length ? { boq } : {}), ...(zona.length ? { zona } : {}) };
 }
 
 export function bersihkanDok(v: unknown): DokSLD | null {
@@ -161,7 +177,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
 
 const setengah = (v: number) => Math.round(v * 2) / 2;
 
-function skalaIsi<T extends Pick<DokSLD, 'perangkat' | 'kabel' | 'teks'>>(r: T, k: number): T {
+function skalaIsi<T extends Pick<DokSLD, 'perangkat' | 'kabel' | 'teks' | 'zona'>>(r: T, k: number): T {
   const Y = (y: number) => AREA.y + (y - AREA.y) * k;
   return {
     ...r,
@@ -171,6 +187,7 @@ function skalaIsi<T extends Pick<DokSLD, 'perangkat' | 'kabel' | 'teks'>>(r: T, 
     }),
     kabel: r.kabel.map(c => ({ ...c, tengah: undefined })),
     teks: r.teks.map(t => ({ ...t, y: setengah(Y(t.y)) })),
+    ...(r.zona ? { zona: r.zona.map(z => ({ ...z, y: setengah(Y(z.y)), h: setengah(Math.max(8, z.h * k)) })) } : {}),
   };
 }
 
@@ -182,14 +199,19 @@ export function ubahKertas(d: DokSLD, kertas: Kertas): DokSLD {
 }
 
 export function hapusPerangkat(d: DokSLD, id: string): DokSLD {
-  const lepas = (u: Ujung): Ujung => (u.p === id ? { ...u, p: '', nama: u.nama || namaDari(d, id) } : u);
-  const kabel = d.kabel
-    .map(c => ({ ...c, cabang: c.cabang.filter(u => u.p !== id), dari: lepas(c.dari), ke: lepas(c.ke) }))
-    .filter(c => c.dari.p || c.ke.p || c.dari.nama || c.ke.nama);
+  const kabel = d.kabel.flatMap(c => {
+    const cabang = c.cabang.filter(u => u.p !== id);
+    if (c.dari.p === id) return [];
+    if (c.ke.p !== id) return [{ ...c, cabang }];
+    return cabang.length ? [{ ...c, ke: cabang[0], cabang: cabang.slice(1) }] : [];
+  });
   return { ...d, perangkat: d.perangkat.filter(p => p.id !== id), kabel };
 }
 
-const namaDari = (d: DokSLD, id: string) => d.perangkat.find(p => p.id === id)?.nama ?? '';
+export function kabelYatim(d: DokSLD): Kabel[] {
+  const ada = new Set(d.perangkat.map(p => p.id));
+  return d.kabel.filter(c => !c.daya && (!ada.has(c.dari.p) || ![c.ke, ...c.cabang].some(u => ada.has(u.p))));
+}
 
 export type PetaFoto = Record<string, { gambar: string; rasio?: number }>;
 

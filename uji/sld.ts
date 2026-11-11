@@ -3,7 +3,7 @@ import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { FOTO_PRODUK } from '../lib/sld/foto-produk';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
+import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelYatim, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, kodeKabel, kotakTampak, sisiOtomatis } from '../lib/sld/geometri';
 import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dinding';
@@ -12,13 +12,17 @@ import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
 import ExcelJS from 'exceljs';
 import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
+import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, tempelKlip } from '../lib/sld/pilih';
+import { letakLabel } from '../lib/sld/lembar1';
+import { labelZona, svgZona } from '../lib/sld/zona';
+import { tabrak } from '../lib/sld/rute';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
 import { bacaZip, crc32, tulisZip } from '../lib/sld/zip';
-import { barisKoneksi, barisPerangkat, fungsiOtomatis, jenisTerpakai, kartuGambar, noOtomatis, periksaDok } from '../lib/sld/turunan';
+import { barisKoneksi, barisPerangkat, fungsiOtomatis, grupModel, jenisTerpakai, kartuGambar, noOtomatis, periksaDok } from '../lib/sld/turunan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -35,7 +39,7 @@ console.log('\n1. Penomoran & tabel');
   const k = barisKoneksi(d);
   cek('tabel koneksi: K dulu lalu P', k[0].kode === 'K1' && k[k.length - 1].kode === 'P1');
   cek('kolom Dari = nama · port', k[0].dari === 'Speakerphone HALO 80 · USB-C', k[0].dari);
-  cek('cabang bus ikut di kolom Ke', k[4].ke.includes('Modul relay 8 #1') && k[4].ke.includes('Modul relay 8 #2'), k[4].ke);
+  cek('kabel bus / rantai: satu baris per perangkat tujuan (K5.1, K5.2)', k[4].kode === 'K5.1' && k[4].ke.startsWith('Modul relay 8 #1') && k[5].kode === 'K5.2' && k[5].ke.startsWith('Modul relay 8 #2'), k.map(x => x.kode).join(','));
   cek('ujung teks bebas (P1) tetap tertulis', k[k.length - 1].dari === 'MCB panel listrik');
   const p = barisPerangkat(d);
   cek('Daftar Perangkat urut No. BOM, item tanpa No. tidak masuk', p.map(r => r.no).join(',') === '1,2,3,4,5,6,7', p.map(r => r.no).join(','));
@@ -97,7 +101,10 @@ console.log('\n4. Simpan & muat');
   cek('gambar non data-URL dibuang, posisi & ukuran dibatasi, jenis kabel tak dikenal -> lain',
     !jahat.perangkat[0].gambar && jahat.perangkat[0].x < 420 && jahat.perangkat[0].w >= 12 && jahat.kabel[0].jenis === 'lain');
   const tanpa = hapusPerangkat(d, d.perangkat[1].id);
-  cek('hapus perangkat: kabel tetap di tabel dengan nama teks', tanpa.kabel.length === d.kabel.length && barisKoneksi(tanpa)[0].ke.startsWith('Mini PC Windows 11'));
+  cek('hapus perangkat: kabelnya ikut hilang dari Sheet 2', tanpa.kabel.length === d.kabel.length - 2 && !barisKoneksi(tanpa).some(r => r.dari.includes('Mini PC') || r.ke.includes('Mini PC')));
+  const bus = d.kabel.find(c => c.cabang.length)!, tanpaR1 = hapusPerangkat(d, bus.ke.p);
+  cek('hapus perangkat di tengah bus: cabang lain tetap tersambung', tanpaR1.kabel.find(c => c.id === bus.id)?.ke.p === bus.cabang[0].p);
+  cek('kabel yatim (perangkat sudah dihapus) terdeteksi', kabelYatim({ ...d, perangkat: d.perangkat.slice(1) }).length > 0 && kabelYatim(d).length === 0);
   const kosong = dokBaru();
   const satu = { ...kosong, perangkat: [perangkatBaru('switch', 50, 50)] };
   cek('pemeriksaan: perangkat tanpa kabel dilaporkan', periksaDok(satu).length === 1 && /belum punya kabel/.test(periksaDok(satu)[0].pesan));
@@ -350,6 +357,61 @@ void (async () => {
     && String(bqx.getCell('A7').value).startsWith('A. ') && bqx.getColumn(1).values.some(v => String(v).startsWith('B. RUANG RAPAT')) && String(bqx.getCell('B3').value ?? bqx.getCell('A3').value) !== '', namaSheet.join(' | '));
   const vm = await bacaZip(buatVsdx({ dok: pr4, gambar: new Map(), ruang: [0, 1].map(i => ({ dok: dokRuang(pr4, i), nama: i ? 'Ruang Rapat' : 'Ruangan 1' })) }));
   cek('Visio multi ruangan: 2 halaman per ruangan', vm.has('visio/pages/page4.xml') && !vm.has('visio/pages/page5.xml'));
+  console.log('\n14. Pilih banyak, salin-tempel, panduan, posisi label & area');
+  const pa = { ...perangkatBaru('tv-tcl', 50, 50), id: 'pa' }, pb = { ...perangkatBaru('presentasi', 120, 50), id: 'pb' }, pc = { ...perangkatBaru('kamera', 250, 150), id: 'pc' };
+  const kab = { ...kabelBaru('pa', 'pb'), id: 'kab' }, zn = { id: 'zn', x: 40, y: 40, w: 150, h: 60, label: 'Rack', warna: 'biru' as const };
+  const dp = { ...dokBaru(), perangkat: [pa, pb, pc], kabel: [kab], teks: [{ ...teksBaru(60, 100, 'catatan'), id: 'tt' }], zona: [zn] };
+  const dk = idDalamKotak(dp, { x: 30, y: 30, w: 170, h: 90 });
+  cek('kotak pilih: perangkat, teks & area di dalam kotak terpilih', ['pa', 'pb', 'tt', 'zn'].every(i => dk.includes(i)) && !dk.includes('pc'), dk.join(','));
+  const gs = geserObjek(dp, posisiAwal(dp, ['pa', 'tt', 'zn']), 10, 5);
+  cek('geser banyak sekaligus', gs.perangkat[0].x === pa.x + 10 && gs.teks[0].y === 105 && gs.zona![0].x === 50 && gs.perangkat[1].x === pb.x);
+  const tp = tempelKlip(dp, salinObjek(dp, ['pa', 'pb', 'zn']));
+  const kabBaru = tp.dok.kabel[1], baruA = tp.dok.perangkat[3], baruB = tp.dok.perangkat[4];
+  cek('salin-tempel: id baru, kabel di antara item ikut & tersambung ke salinan', tp.ids.length === 3 && tp.dok.perangkat.length === 5 && tp.dok.zona!.length === 2
+    && kabBaru.dari.p === baruA.id && kabBaru.ke.p === baruB.id && baruA.id !== 'pa' && baruA.x === pa.x + 8);
+  const hp = hapusObjek(dp, ['pa', 'zn', 'tt']);
+  cek('hapus banyak: perangkat, kabelnya, teks & area hilang', hp.perangkat.length === 2 && hp.kabel.length === 0 && hp.teks.length === 0 && hp.zona!.length === 0);
+  const rt = ratakan({ ...dp, perangkat: [pa, { ...pb, y: 70 }] }, ['pa', 'pb'], 'atas');
+  cek('ratakan atas', Math.abs(kotakTampak(rt.perangkat[0]).y - kotakTampak(rt.perangkat[1]).y) < 0.5);
+  const j = jepret({ x: 10, y: 51, w: 20, h: 10 }, [{ x: 100, y: 50, w: 30, h: 10 }]);
+  cek('garis panduan: jepret sejajar dengan perangkat di samping', j.dy === -1 && j.garis.length === 1 && j.garis[0].y1 === 50);
+  const lb = letakLabel({ ...pa, labelDi: 'kanan' }), lk = letakLabel({ ...pa, labelDi: 'kiri-atas' });
+  cek('posisi label: kanan / kiri-atas', lb.x > pa.x + pa.w - 1 && !lb.kanan && lk.kanan && lk.atas + lk.h <= kotakTampak(pa).y + 0.01
+    && svgLembar1({ ...dokBaru(), perangkat: [{ ...pa, nama: 'TV', labelDi: 'kiri' }] }).includes('text-anchor="end">#TV')
+    && bersihkanDok({ ...dp, perangkat: [{ ...pa, labelDi: 'kanan-bawah' }, { ...pb, labelDi: 'ngawur' }] })!.perangkat.map(p => p.labelDi).join(',') === 'kanan-bawah,');
+  const sz = svgZona(zn), dz = bersihkanDok(dp)!;
+  cek('area: kotak putus-putus berlabel, tersimpan, ikut ke sheet 1 & Visio', sz.includes('stroke-dasharray') && sz.includes('>Rack<') && dz.zona?.[0].label === 'Rack'
+    && svgLembar1(dp).includes('>Rack<') && new TextDecoder().decode((await bacaZip(buatVsdx({ dok: dp, gambar: new Map() }))).get('visio/pages/page1.xml')).includes("NameU='Area'"));
+  cek('katalog: interactive display & dongle wireless berfoto', tebakTemplat('Interactive Flat Panel 75"') === 'ifp' && tebakTemplat('Wireless presentation dongle') === 'dongle'
+    && !!KATALOG.find(t => t.k === 'ifp')?.foto && !!KATALOG.find(t => t.k === 'dongle')?.foto);
+  console.log('\n15. Kabel menghindari perangkat & BOQ per model');
+  const ifpU = (id: string, x: number, y: number, nama: string) => ({ ...perangkatBaru('ifp', x, y), id, nama });
+  const mxU = { ...perangkatBaru('matrix', 40, 60), id: 'mx', nama: 'Matrix switcher' };
+  const kenaLain = (d: ReturnType<typeof dokBaru>) => geometri(d).some(g => {
+    const c = d.kabel.find(k => k.id === g.id)!, ujung = [c.ke, ...c.cabang];
+    return g.garis.some((gr, i) => tabrak(gr.titik, d.perangkat.filter(p => p.id !== c.dari.p && p.id !== ujung[i].p).map(kotakTampak), 0.5));
+  });
+  const busKe = (a: string, ...cab: string[]) => ({ ...kabelBaru('mx', a), id: 'kb', cabang: cab.map(p => ({ p, nama: '', port: '', sisi: 'auto' as const })) });
+  const h1 = { ...dokBaru(), perangkat: [mxU, ifpU('i1', 230, 15, 'IFP 1'), ifpU('i3', 160, 110, 'IFP 3'), ifpU('i2', 160, 170, 'IFP 2')], kabel: [busKe('i1', 'i3', 'i2')] };
+  const h2 = { ...dokBaru(), perangkat: [mxU, ifpU('i1', 230, 15, 'IFP 1'), ifpU('i3', 160, 110, 'IFP 3'), ifpU('i2', 225, 110, 'IFP 2')], kabel: [busKe('i1', 'i3', 'i2')] };
+  const h3 = { ...dokBaru(), perangkat: [mxU, ifpU('i3', 120, 50, 'IFP 3'), ifpU('i2', 200, 55, 'IFP 2')], kabel: [{ ...kabelBaru('mx', 'i2'), id: 'k1' }] };
+  cek('kabel bus tidak menembus perangkat lain (IFP di bawah IFP lain)', !kenaLain(h1));
+  cek('kabel bus tidak menembus perangkat lain (IFP berjajar)', !kenaLain(h2));
+  cek('kabel lurus memutar bila ada perangkat di tengah', !kenaLain(h3));
+  const bq9 = barisBoq(h1), bp9 = barisPerangkat(h1), kg9 = kartuGambar(h1);
+  cek('BOQ & sheet 2: nama beda tapi jenis sama = satu baris, qty dijumlah', bq9.length === 2 && bq9[1].qty === 3 && bq9[1].model === 'IFP' && bp9.length === 2 && bp9[1].qty.startsWith('3') && kg9[1].judul === 'IFP', JSON.stringify(bq9.map(b => [b.model, b.qty])));
+  const h4 = { ...h1, perangkat: h1.perangkat.map(p => p.id === 'i2' ? { ...p, model: 'Philips 86BDL' } : p) };
+  cek('model / part no beda = baris terpisah', barisBoq(h4).length === 3);
+  const gm9 = grupModel([{ ...h1.perangkat[1], model: 'Philips 86BDL' }, { ...h1.perangkat[2], model: 'philips 86bdl ', qty: 2 }, h1.perangkat[3], { ...mxU, model: 'WyreStorm MX-0404' }]);
+  cek('grup model buatan sendiri: daftar unik per kategori + model, qty dijumlah', gm9.length === 2 && gm9.find(g => g.model === 'Philips 86BDL')?.jumlah === 3);
+  const h5 = { ...h1, perangkat: h1.perangkat.map(p => (p.id === 'i1' || p.id === 'i3' ? { ...p, model: 'Grup A' } : p)) };
+  cek('model baru = grup BOQ sendiri', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(',') === 'Matrix switcher:1,Grup A:2,IFP 2:1', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(','));
+  const zBesar = { id: 'zb', x: 40, y: 40, w: 150, h: 60, label: 'Rack', warna: 'biru' as const, huruf: 2, tebal: 1.2 };
+  const zDok = bersihkanDok({ ...dokBaru(), zona: [zBesar, { ...zBesar, id: 'zc', tebal: 10, huruf: -1 }] })!.zona!;
+  cek('area: ukuran huruf & tebal garis bisa diatur, tersimpan & dibatasi', svgZona(zBesar).includes('stroke-width="1.2"') && labelZona(zBesar).h > labelZona({ ...zBesar, huruf: undefined }).h
+    && zDok[0].huruf === 2 && zDok[0].tebal === 1.2 && zDok[1].tebal === 3 && zDok[1].huruf === undefined
+    && new TextDecoder().decode((await bacaZip(buatVsdx({ dok: { ...dokBaru(), zona: [zBesar] }, gambar: new Map() }))).get('visio/pages/page1.xml')).includes("NameU='Area'"));
+  cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

@@ -1,0 +1,90 @@
+import { hapusPerangkat, idBaru } from './dok';
+import { kotakTampak, type Kotak } from './geometri';
+import { kotakTeks } from './teks-bebas';
+import type { DokSLD, Kabel, Perangkat, TeksBebas, Titik, ZonaSLD } from './tipe';
+
+export interface Klip { perangkat: Perangkat[]; kabel: Kabel[]; teks: TeksBebas[]; zona: ZonaSLD[] }
+export type Rata = 'kiri' | 'tengahH' | 'kanan' | 'atas' | 'tengahV' | 'bawah';
+
+export const kotakDari = (a: Titik, b: Titik): Kotak => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) });
+const potong = (a: Kotak, b: Kotak) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const di = (a: Kotak, b: Kotak) => a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h;
+
+export function idDalamKotak(d: DokSLD, m: Kotak): string[] {
+  return [
+    ...d.perangkat.filter(p => potong(kotakTampak(p), m)).map(p => p.id),
+    ...d.teks.filter(t => potong(kotakTeks(t), m)).map(t => t.id),
+    ...(d.zona ?? []).filter(z => di(z, m)).map(z => z.id),
+  ];
+}
+
+export const posisiAwal = (d: DokSLD, ids: string[]) => {
+  const s = new Set(ids), hasil = new Map<string, Titik>();
+  for (const o of [...d.perangkat, ...d.teks, ...(d.zona ?? [])]) if (s.has(o.id)) hasil.set(o.id, { x: o.x, y: o.y });
+  return hasil;
+};
+
+export function geserObjek(d: DokSLD, awal: Map<string, Titik>, dx: number, dy: number): DokSLD {
+  const geser = <T extends { id: string; x: number; y: number }>(o: T): T => {
+    const a = awal.get(o.id);
+    return a ? { ...o, x: Math.round((a.x + dx) * 2) / 2, y: Math.round((a.y + dy) * 2) / 2 } : o;
+  };
+  return { ...d, perangkat: d.perangkat.map(geser), teks: d.teks.map(geser), ...(d.zona ? { zona: d.zona.map(geser) } : {}) };
+}
+
+export function salinObjek(d: DokSLD, ids: string[]): Klip {
+  const s = new Set(ids), perangkat = d.perangkat.filter(p => s.has(p.id)), ada = new Set(perangkat.map(p => p.id));
+  const kabel = d.kabel.filter(c => ada.has(c.dari.p) && ada.has(c.ke.p)).map(c => ({ ...c, cabang: c.cabang.filter(u => ada.has(u.p)) }));
+  return { perangkat, kabel, teks: d.teks.filter(t => s.has(t.id)), zona: (d.zona ?? []).filter(z => s.has(z.id)) };
+}
+
+export function tempelKlip(d: DokSLD, k: Klip, geser = 8): { dok: DokSLD; ids: string[] } {
+  const peta = new Map(k.perangkat.map(p => [p.id, idBaru('p')]));
+  const pindah = <T extends { id: string; x: number; y: number }>(o: T, id: string): T => ({ ...o, id, x: o.x + geser, y: o.y + geser });
+  const perangkat = k.perangkat.map(p => pindah(p, peta.get(p.id)!));
+  const ganti = <U extends { p: string }>(u: U): U => ({ ...u, p: peta.get(u.p) ?? u.p });
+  const kabel = k.kabel.map(c => ({ ...c, id: idBaru('k'), dari: ganti(c.dari), ke: ganti(c.ke), cabang: c.cabang.map(ganti), tengah: undefined }));
+  const teks = k.teks.map(t => pindah(t, idBaru('t'))), zona = k.zona.map(z => pindah(z, idBaru('z')));
+  return {
+    dok: { ...d, perangkat: [...d.perangkat, ...perangkat], kabel: [...d.kabel, ...kabel], teks: [...d.teks, ...teks], zona: [...(d.zona ?? []), ...zona] },
+    ids: [...perangkat, ...teks, ...zona].map(o => o.id),
+  };
+}
+
+export function hapusObjek(d: DokSLD, ids: string[]): DokSLD {
+  const s = new Set(ids);
+  let hasil: DokSLD = { ...d, teks: d.teks.filter(t => !s.has(t.id)), zona: (d.zona ?? []).filter(z => !s.has(z.id)), kabel: d.kabel.filter(c => !s.has(c.id)) };
+  for (const p of d.perangkat) if (s.has(p.id)) hasil = hapusPerangkat(hasil, p.id);
+  return hasil;
+}
+
+export function ratakan(d: DokSLD, ids: string[], cara: Rata): DokSLD {
+  const daftar = d.perangkat.filter(p => ids.includes(p.id));
+  if (daftar.length < 2) return d;
+  const k = new Map(daftar.map(p => [p.id, kotakTampak(p)]));
+  const ks = [...k.values()], minX = Math.min(...ks.map(b => b.x)), maxX = Math.max(...ks.map(b => b.x + b.w));
+  const minY = Math.min(...ks.map(b => b.y)), maxY = Math.max(...ks.map(b => b.y + b.h));
+  return { ...d, perangkat: d.perangkat.map(p => {
+    const b = k.get(p.id);
+    if (!b) return p;
+    const dx = cara === 'kiri' ? minX - b.x : cara === 'kanan' ? maxX - (b.x + b.w) : cara === 'tengahH' ? (minX + maxX) / 2 - (b.x + b.w / 2) : 0;
+    const dy = cara === 'atas' ? minY - b.y : cara === 'bawah' ? maxY - (b.y + b.h) : cara === 'tengahV' ? (minY + maxY) / 2 - (b.y + b.h / 2) : 0;
+    return { ...p, x: Math.round((p.x + dx) * 2) / 2, y: Math.round((p.y + dy) * 2) / 2 };
+  }) };
+}
+
+export interface Panduan { x1: number; y1: number; x2: number; y2: number }
+
+export function jepret(k: Kotak, lain: Kotak[], ambang = 1.6): { dx: number; dy: number; garis: Panduan[] } {
+  const xs = [k.x, k.x + k.w / 2, k.x + k.w], ys = [k.y, k.y + k.h / 2, k.y + k.h];
+  let bx: { d: number; v: number; o: Kotak } | null = null, by: { d: number; v: number; o: Kotak } | null = null;
+  for (const o of lain) {
+    for (const t of [o.x, o.x + o.w / 2, o.x + o.w]) for (const s of xs) { const d = t - s; if (Math.abs(d) <= ambang && (!bx || Math.abs(d) < Math.abs(bx.d))) bx = { d, v: t, o }; }
+    for (const t of [o.y, o.y + o.h / 2, o.y + o.h]) for (const s of ys) { const d = t - s; if (Math.abs(d) <= ambang && (!by || Math.abs(d) < Math.abs(by.d))) by = { d, v: t, o }; }
+  }
+  const garis: Panduan[] = [];
+  const dx = bx?.d ?? 0, dy = by?.d ?? 0;
+  if (bx) garis.push({ x1: bx.v, y1: Math.min(k.y + dy, bx.o.y) - 3, x2: bx.v, y2: Math.max(k.y + dy + k.h, bx.o.y + bx.o.h) + 3 });
+  if (by) garis.push({ x1: Math.min(k.x + dx, by.o.x) - 3, y1: by.v, x2: Math.max(k.x + dx + k.w, by.o.x + by.o.w) + 3, y2: by.v });
+  return { dx, dy, garis };
+}

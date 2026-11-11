@@ -13,12 +13,12 @@ export function dokRuang(d: DokSLD, i: number): DokSLD {
   void _abaikan;
   if (j === 0) return { ...dasar, ...(nama ? { namaRuang: nama } : {}) };
   const r = d.ruangLain![j - 1];
-  return { ...dasar, perangkat: r.perangkat, kabel: r.kabel, teks: r.teks, catatan: r.catatan, boq: r.boq, namaRuang: nama };
+  return { ...dasar, perangkat: r.perangkat, kabel: r.kabel, teks: r.teks, catatan: r.catatan, boq: r.boq, zona: r.zona, namaRuang: nama };
 }
 
 export function gabungRuang(d: DokSLD, i: number, v: DokSLD): DokSLD {
   const bersama = { blok: v.blok, watermark: v.watermark, kertas: v.kertas, huruf: v.huruf };
-  const isi = { perangkat: v.perangkat, kabel: v.kabel, teks: v.teks, catatan: v.catatan, boq: v.boq };
+  const isi = { perangkat: v.perangkat, kabel: v.kabel, teks: v.teks, catatan: v.catatan, boq: v.boq, zona: v.zona };
   if (i <= 0 || !d.ruangLain?.[i - 1]) return { ...d, ...bersama, ...isi, ...(i <= 0 && jumlahRuang(d) === 1 ? { namaRuang: v.namaRuang } : {}) };
   return { ...d, ...bersama, ruangLain: d.ruangLain.map((r, k) => (k === i - 1 ? { ...r, ...isi } : r)) };
 }
@@ -36,7 +36,7 @@ export function hapusRuang(d: DokSLD, i: number): DokSLD {
   if (!lain.length) return d;
   if (i <= 0) {
     const [pertama, ...sisa] = lain;
-    return { ...d, namaRuang: pertama.nama, perangkat: pertama.perangkat, kabel: pertama.kabel, teks: pertama.teks, catatan: pertama.catatan, boq: pertama.boq,
+    return { ...d, namaRuang: pertama.nama, perangkat: pertama.perangkat, kabel: pertama.kabel, teks: pertama.teks, catatan: pertama.catatan, boq: pertama.boq, zona: pertama.zona,
       ruangLain: sisa.length ? sisa : undefined };
   }
   const sisa = lain.filter((_, k) => k !== i - 1);

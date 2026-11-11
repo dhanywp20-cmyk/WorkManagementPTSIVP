@@ -2,7 +2,7 @@ import { isiIkon, viewBoxIkon } from './ikon';
 import { dokRuang, jumlahRuang, namaRuangKe } from './ruang';
 import { esc } from './teks';
 import type { DokSLD, IsiBoqItem, Perangkat } from './tipe';
-import { judulKartu, kelompokNo, kunciModel } from './turunan';
+import { judulKartu, kelompokNo, kunciModel, kunciNama, namaKelompok } from './turunan';
 
 export type IsiBoq = IsiBoqItem;
 export type KolomEditBoq = keyof IsiBoqItem;
@@ -42,8 +42,8 @@ export function pisahMerek(model: string, nama: string): { merek: string; model:
 
 export function barisBoq(d: DokSLD, ruang = 0): BarisBoq[] {
   return [...kelompokNo(d).entries()].map(([no, daftar]) => {
-    const p = daftar[0], kunci = kunciModel(p), isi = d.boq?.[kunci] ?? {};
-    const asal = pisahMerek(p.model, p.nama);
+    const p = daftar[0], kunci = kunciModel(p), isi = d.boq?.[kunci] ?? daftar.map(x => d.boq?.[kunciNama(x)]).find(Boolean) ?? {};
+    const asal = pisahMerek(p.model, namaKelompok(daftar));
     return {
       ruang, kunci, no, kategori: isi.kategori ?? p.kategori, merek: isi.merek ?? asal.merek, model: isi.model ?? asal.model, spek: isi.spek ?? '', fungsi: isi.fungsi ?? '', satuan: p.satuan || 'unit',
       qty: daftar.reduce((s, x) => s + (Number.isFinite(x.qty) ? x.qty : 0), 0), contoh: daftar.find(x => x.gambar || x.foto) ?? p,
