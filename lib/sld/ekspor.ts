@@ -6,6 +6,8 @@ import { adaArah, type Arah, WATERMARK_BAWAAN } from './lembar-umum';
 import { svgLembar1 } from './lembar1';
 import { svgLembar2 } from './lembar2';
 import { fotoData, sematkanFoto } from './sematkan';
+import { barisBoq } from './boq';
+import type { GambarExcel } from './excel';
 import type { DokSLD } from './tipe';
 import { buatVsdx, type GambarVsdx } from './vsdx';
 
@@ -103,6 +105,31 @@ export async function pngDariSvg(svg: string, lebar = 4200): Promise<Blob> {
   return new Promise((ok, gagal) => c.toBlob(b => (b ? ok(b) : gagal(new Error('PNG gagal dibuat.'))), 'image/png'));
 }
 
+async function gambarExcel(url: string): Promise<GambarExcel> {
+  const img = await muatGambar(url);
+  const w = img.naturalWidth || 600, h = img.naturalHeight || 375;
+  if (/^data:image\/(png|jpe?g);base64,/.test(url)) return { data: url, ext: /jpe?g/.test(url.slice(0, 20)) ? 'jpeg' : 'png', w, h };
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+  return { data: c.toDataURL('image/png'), ext: 'png', w, h };
+}
+
+export async function bytesExcel(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Array> {
+  const [{ bukuExcel }, [svg1]] = await Promise.all([import('./excel'), lembarSvg(d, o)]);
+  const lembar1 = await gambarExcel(await keDataUrl(await pngDariSvg(svg1, 3000)));
+  const gambar = new Map<string, GambarExcel>();
+  if (!o.simple) {
+    for (const b of barisBoq(d)) {
+      const p = b.contoh;
+      try {
+        gambar.set(p.id, await gambarExcel(p.gambar ?? (p.foto ? await fotoData(p.foto) : await ilustrasiPng(p.ikon, rasioPerangkat(p), p))));
+      } catch {  }
+    }
+  }
+  return bukuExcel({ dok: d, simple: o.simple, lembar1, gambar });
+}
+
 export async function berkasPaket(d: DokSLD, awalan: string): Promise<{ name: string; data: Uint8Array }[]> {
   const lembar = await lembarSvg(d);
   const hasil: { name: string; data: Uint8Array }[] = [];
@@ -110,5 +137,6 @@ export async function berkasPaket(d: DokSLD, awalan: string): Promise<{ name: st
     hasil.push({ name: `${awalan}_Sheet${i + 1}.png`, data: new Uint8Array(await (await pngDariSvg(lembar[i], 3000)).arrayBuffer()) });
   }
   hasil.push({ name: `${awalan}.vsdx`, data: await bytesVsdx(d) });
+  hasil.push({ name: `${awalan}_Sheet1-3_BOQ.xlsx`, data: await bytesExcel(d) });
   return hasil;
 }

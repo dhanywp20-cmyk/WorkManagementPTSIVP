@@ -31,7 +31,11 @@ const namaPengguna = () => {
 };
 
 function muatDraf(): DokSLD | null {
-  try { return bersihkanDok(JSON.parse(localStorage.getItem(KUNCI) ?? 'null')); } catch { return null; }
+  try {
+    const mentah = JSON.parse(localStorage.getItem(KUNCI) ?? 'null') as Record<string, unknown> | null;
+    const d = bersihkanDok(mentah);
+    return d && mentah && !('kertas' in mentah) ? ubahKertas(d, '169') : d;
+  } catch { return null; }
 }
 
 export function useKeadaanSLD() {
@@ -207,6 +211,8 @@ export function useKeadaanSLD() {
     });
     setPilih({ jenis: 't', id: baru });
   }, []);
+  const ubahBoq = useCallback((kunci: string, p: { spek?: string; fungsi?: string }) =>
+    setDok(d => ({ ...d, boq: { ...d.boq, [kunci]: { ...d.boq?.[kunci], ...p } } })), []);
   const aturKertas = useCallback((k: Kertas) => setDok(d => ubahKertas(d, k)), []);
   const aturHurufDok = useCallback((kunci: 'perangkat' | 'kabel', nilai: number | undefined) => setDok(d => {
     const huruf = { ...d.huruf, [kunci]: hurufSah(nilai) };
@@ -215,11 +221,11 @@ export function useKeadaanSLD() {
 
   const muat = useCallback((d: DokSLD) => { setDok(d); riwayat.mulaiBaru(d); setPilih(null); }, [riwayat]);
   const baru = useCallback(() => muat(dokBaru(namaPengguna())), [muat]);
-  const contoh = useCallback(() => muat(contohVoiceKamar(namaPengguna())), [muat]);
+  const contoh = useCallback(() => muat(ubahKertas(contohVoiceKamar(namaPengguna()), '169')), [muat]);
 
   return {
     dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, aturKertas, aturHurufDok, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

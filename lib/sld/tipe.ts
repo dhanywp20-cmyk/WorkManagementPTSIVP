@@ -80,6 +80,7 @@ export interface DokSLD {
   watermark: boolean;
   kertas?: Kertas;
   huruf?: { perangkat?: number; kabel?: number };
+  boq?: Record<string, { spek?: string; fungsi?: string }>;
 }
 
 export interface Titik { x: number; y: number }

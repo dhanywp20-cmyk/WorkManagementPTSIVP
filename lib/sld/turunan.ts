@@ -43,9 +43,9 @@ const angkaNo = (no: string) => { const x = parseFloat(no); return Number.isFini
 
 export const BUKAN_PASOKAN = new Set(['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb']);
 export const ikutDaftar = (p: Perangkat) => !!p.no.trim() || !BUKAN_PASOKAN.has(p.ikon);
-const kunciModel = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
+export const kunciModel = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
 
-function kelompokNo(d: DokSLD): Map<string, Perangkat[]> {
+export function kelompokNo(d: DokSLD): Map<string, Perangkat[]> {
   const m = new Map<string, Perangkat[]>();
   const tanpa = new Map<string, Perangkat[]>();
   for (const p of d.perangkat) {

@@ -10,6 +10,9 @@ import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dind
 import { DAFTAR_IKON } from '../lib/sld/ikon';
 import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
+import ExcelJS from 'exceljs';
+import { barisBoq, CSS_BOQ, htmlBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
+import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
@@ -286,6 +289,35 @@ void (async () => {
   cek('ukuran huruf label kabel bisa diubah per kabel', gk[0].huruf === 1.5 && svgLembar1({ ...dokBaru(), perangkat: [pBesar, p2], kabel: [kb2] }).includes('font-size="3"'));
   const gDok = geometri({ ...dokBaru(), huruf: { kabel: 2 }, perangkat: [pBesar, p2], kabel: [{ ...kb2, huruf: undefined }] });
   cek('ukuran huruf semua label dari pengaturan dokumen; dibatasi 0,5x - 3x', gDok[0].huruf === 2 && hurufSah(5) === 3 && hurufSah(0.1) === 0.5 && hurufSah(1) === undefined && !!kBesar);
+  console.log('\n12. Sheet 3 BOQ (view, PDF & Excel)');
+  const bq = barisBoq(d);
+  cek('BOQ: satu baris per No. BOM, merek & model dipisah, spesifikasi & fungsi kosong', bq.length === 7 && bq[0].no === '1' && bq.every(r => r.spek === '' && r.fungsi === '')
+    && pisahMerek('WyreStorm HALO 80', '').merek === 'WyreStorm' && pisahMerek('Mini PC Windows 11 (sesuai pengadaan)', '').model === 'Mini PC Windows 11'
+    && pisahMerek('', 'Switch #1').merek === 'Sesuai pengadaan', JSON.stringify(bq.map(r => [r.no, r.merek, r.model])));
+  const dBoq = { ...d, boq: { [bq[0].kunci]: { spek: 'Speakerphone USB, 4 mic', fungsi: 'Mic perintah suara' } } };
+  cek('BOQ: isian tim (spesifikasi & fungsi) tersimpan per item dan lolos pembersihan', barisBoq(bersihkanDok(dBoq)!)[0].spek === 'Speakerphone USB, 4 mic'
+    && !bersihkanDok({ ...d, boq: { x: { spek: '', fungsi: '' } } })!.boq);
+  const hb = htmlBoq(dBoq);
+  cek('BOQ HTML: judul, kolom & seksi sesuai contoh; harga kosong, total "-"', hb.includes(judulBoq(d)) && KOLOM_BOQ.every(k => hb.includes(`<th>${k.judul.replace('&', '&amp;')}</th>`))
+    && hb.includes('A. PERANGKAT UTAMA (sesuai daftar)') && (hb.match(/<td class="harga"><\/td>/g) ?? []).length === 7 && (hb.match(/<td class="total">-<\/td>/g) ?? []).length === 7
+    && hb.includes('Speakerphone USB, 4 mic'));
+  cek('BOQ tema: warna & garis sama dengan contoh Excel', ['1F3864', 'D9E2F3', 'FFF2CC', 'BFBFBF', '0000FF'].every(w => CSS_BOQ.includes(w)) && CSS_BOQ.includes('Arial'));
+  const png1 = { data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', ext: 'png' as const, w: 4, h: 3 };
+  const xb = new ExcelJS.Workbook();
+  await xb.xlsx.load((await bukuExcel({ dok: dBoq, lembar1: png1, gambar: new Map(bq.map(r => [r.contoh.id, png1])) })) as unknown as ArrayBuffer);
+  const wsq = xb.getWorksheet('Sheet 3 - BOQ')!;
+  cek('Excel: 3 sheet (diagram, koneksi, BOQ)', xb.worksheets.map(w => w.name).join('|') === 'Sheet 1 - Diagram|Sheet 2 - Koneksi|Sheet 3 - BOQ' && xb.getWorksheet('Sheet 1 - Diagram')!.getImages().length === 1);
+  const fill = (a: string) => ((wsq.getCell(a).fill as ExcelJS.FillPattern)?.fgColor?.argb ?? '');
+  cek('Excel BOQ: judul, kepala navy huruf putih, seksi biru muda, harga kuning, garis abu', String(wsq.getCell('A1').value).startsWith('BILL OF MATERIALS')
+    && wsq.getCell('F6').value === 'Spesifikasi Singkat' && fill('A6') === 'FF1F3864' && wsq.getCell('A6').font.color?.argb === 'FFFFFFFF' && fill('A7') === 'FFD9E2F3'
+    && fill('J8') === 'FFFFF2CC' && wsq.getCell('A8').border.top?.color?.argb === 'FFBFBFBF' && wsq.getCell('E8').font.bold === true && wsq.getCell('H8').font.color?.argb === 'FF0000FF');
+  cek('Excel BOQ: harga kosong, total = Qty x Harga dengan format Rp, isian tim ikut', wsq.getCell('J8').value === null && (wsq.getCell('K8').value as ExcelJS.CellFormulaValue).formula === 'H8*J8'
+    && String(wsq.getCell('K8').numFmt).includes('Rp') && wsq.getCell('F8').value === 'Speakerphone USB, 4 mic' && wsq.getCell('F9').value === '');
+  cek('Excel BOQ: lebar kolom, tinggi baris, foto per baris, kepala tercetak ulang', wsq.getColumn(6).width === 44 && wsq.getColumn(2).width === 25 && wsq.getRow(8).height === 84
+    && wsq.getImages().length === 7 && wsq.pageSetup.printTitlesRow === '6:6' && wsq.views[0].showGridLines === false && wsq.getCell('A7').isMerged);
+  const xs = new ExcelJS.Workbook();
+  await xs.xlsx.load((await bukuExcel({ dok: d, simple: true, lembar1: png1 })) as unknown as ArrayBuffer);
+  cek('Excel mode Simple: hanya Sheet 1', xs.worksheets.length === 1);
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

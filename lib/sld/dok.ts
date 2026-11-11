@@ -21,7 +21,7 @@ export function blokBaru(dibuat = ''): BlokJudul {
   };
 }
 
-export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], teks: [], catatan: [], watermark: true, kertas: 'a3' });
+export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], teks: [], catatan: [], watermark: true, kertas: '169' });
 
 export const teksBaru = (x: number, y: number, isi = 'Teks'): TeksBebas => ({ id: idBaru('t'), x, y, isi, ukuran: 3, warna: 'hitam', tebal: false });
 
@@ -129,6 +129,9 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(x => bersihkanPerangkat(x, area)).filter((p): p is Perangkat => !!p);
   const teksBebas = (Array.isArray(d.teks) ? d.teks : []).slice(0, MAKS_TEKS).map(x => bersihkanTeks(x, area)).filter((t): t is TeksBebas => !!t);
   const h = (d.huruf ?? {}) as Record<string, unknown>, huruf = { perangkat: hurufSah(h.perangkat), kabel: hurufSah(h.kabel) };
+  const boq = Object.fromEntries(Object.entries((d.boq && typeof d.boq === 'object' ? d.boq : {}) as Record<string, unknown>).slice(0, MAKS_PERANGKAT * 2)
+    .map(([k, v]) => { const x = (v ?? {}) as Record<string, unknown>; return [k.slice(0, 200), { spek: teks(x.spek, 800) || undefined, fungsi: teks(x.fungsi, 600) || undefined }] as const; })
+    .filter(([, v]) => v.spek || v.fungsi));
   const id = new Set(perangkat.map(p => p.id));
   const kabel = (Array.isArray(d.kabel) ? d.kabel : []).slice(0, MAKS_KABEL).map(c => bersihkanKabel(c, id)).filter((c): c is Kabel => !!c);
   const catatan = (Array.isArray(d.catatan) ? d.catatan : []).slice(0, MAKS_CATATAN)
@@ -137,6 +140,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   return {
     versi: 1, blok, perangkat, kabel, teks: teksBebas, catatan, watermark: d.watermark !== false, kertas,
     ...(huruf.perangkat || huruf.kabel ? { huruf } : {}),
+    ...(Object.keys(boq).length ? { boq } : {}),
   };
 }
 
