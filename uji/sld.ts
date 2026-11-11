@@ -226,8 +226,8 @@ void (async () => {
   const vw = dinding('videowall', { ket: 'Susunan 3 x 3' })!, ld = dinding('led', { nama: 'LED 6 x 2 m' })!;
   const href = [...vw.isi.matchAll(/href="(\/sld\/[^"]+)"/g), ...ld.isi.matchAll(/href="(\/sld\/[^"]+)"/g)].map(m => m[1]);
   cek('videowall otomatis: 9 panel berisi konten dari foto videowall asli', (vw.isi.match(/<use href="#sldd-vw-/g) ?? []).length === 9 && href.includes('/sld/produk/vw-isi-1.jpg'));
-  cek('LED otomatis: satu konten layar penuh dibagi per kabinet + profil kabinet asli', (ld.isi.match(/<use href="#sldd-led-300"/g) ?? []).length === 48
-    && href.includes('/sld/produk/led-profil.jpg') && (ld.isi.match(/href="\/sld\/produk\/led-isi\.jpg"/g) ?? []).length === 1);
+  cek('LED: satu konten layar penuh tanpa garis kabinet (beda dengan videowall) + profil kabinet asli', !ld.isi.includes('<use ') && !ld.isi.includes('stroke="#000"')
+    && ld.isi.includes('clip-path="url(#sldd-led-300)"') && href.includes('/sld/produk/led-profil.jpg') && (ld.isi.match(/href="\/sld\/produk\/led-isi\.jpg"/g) ?? []).length === 1);
   cek('gambar videowall & LED memakai berkas foto yang ada (ikut tersemat saat ekspor)', href.every(h => /^\/sld\/produk\/[a-z0-9-]+\.jpg$/.test(h) && existsSync(`public${h}`)));
   cek('rasio kotak videowall / LED mengikuti ukuran', Math.abs(rasioDinding('led', { nama: 'LED 6 x 2 m' })! - ld.rasio) < 1e-9
     && rasioDinding('led', { ket: '8 x 2 m' })! > rasioDinding('led', { ket: '4 x 2 m' })! && rasioDinding('tv') === null);
@@ -242,6 +242,17 @@ void (async () => {
   cek('putar 90°: kotak sambung kabel ikut berputar (lebar <-> tinggi)', Math.abs(kt.w - 40) < 1e-9 && Math.abs(km.h - 25) < 1e-9 && Math.abs(km.w - 25 / 1.6) < 1e-9);
   const dm2 = { ...dokBaru(), perangkat: [miring] };
   cek('putar: gambar di sheet 1 diputar, kartu sheet 2 tetap tegak', svgLembar1(dm2).includes('rotate(90 ') && !svgLembar2({ ...dm2, perangkat: [{ ...miring, no: '1' }] }).includes('rotate(90 '));
+  const balik = { ...tegak, balikH: true }, dbl = { ...dokBaru(), perangkat: [balik] };
+  cek('balik horizontal / vertikal: gambar sheet 1 dicerminkan, kotak sambung tidak berubah', svgLembar1(dbl).includes('scale(-1 1)')
+    && svgLembar1({ ...dbl, perangkat: [{ ...tegak, balikV: true }] }).includes('scale(1 -1)') && JSON.stringify(kotakTampak(balik)) === JSON.stringify(kt));
+  const sb = bersihkanDok({ perangkat: [{ ...balik, id: 'a', balikV: 'ya' }] })!.perangkat[0];
+  cek('balik: hanya nilai true yang disimpan', sb.balikH === true && sb.balikV === undefined);
+  const petaAudio = { 'Fonestar ceiling speaker 6"': 'speaker-plafon', 'Speaker dinding 5"': 'speaker', 'NEO-8 full range': 'speaker-pa', 'Mic array ceiling tile': 'mic-array',
+    'Sennheiser MD 42': 'mic-handheld', 'Receiver mic wireless 4 ch': 'receiver-wireless', 'Fonestar SCI-750': 'sentral-konferensi', 'Delegate unit': 'mic-konferensi',
+    'Paperless terminal 15"': 'paperless', 'Tricolor terminal': 'paperless-tricolor', 'Monitor lift 17"': 'monitor-lift', 'AVer FONE540': 'speakerphone-aver',
+    'Wallplate HDMI + USB-C': 'wallplate', 'WyreStorm HALO 80': 'speakerphone' } as Record<string, string>;
+  const salah = Object.entries(petaAudio).filter(([t, k]) => tebakTemplat(t) !== k).map(([t]) => `${t} -> ${tebakTemplat(t)}`);
+  cek('katalog speaker, mic, konferensi & wallplate dikenali dari BOM, semuanya berfoto', !salah.length && Object.values(petaAudio).every(k => !!KATALOG.find(t => t.k === k)?.foto), salah.join('; '));
   const sp = bersihkanDok({ perangkat: [{ ...miring, id: 'a', putar: -90 }, { ...miring, id: 'b', putar: 'x' }, { ...miring, id: 'c', putar: 450 }] })!;
   cek('putar: sudut dinormalkan 0-359 saat disimpan', sp.perangkat[0].putar === 270 && sp.perangkat[1].putar === undefined && sp.perangkat[2].putar === 90);
   const gbr = new Map([[miring.id, { isi: new Uint8Array([1]), jpeg: false }]]), kartu = new Map([[miring.id, { isi: new Uint8Array([2]), jpeg: false }]]);

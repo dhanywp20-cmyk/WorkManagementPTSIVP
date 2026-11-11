@@ -121,6 +121,10 @@ export function useKeadaanSLD() {
     const w = Math.max(UKURAN_MIN.w, x.h), h = Math.max(UKURAN_MIN.h, x.w);
     return { ...x, putar, w, h, x: x.x + (x.w - w) / 2, y: x.y + (x.h - h) / 2 };
   }) })), []);
+  const balikPerangkat = useCallback((id: string, sumbu: 'h' | 'v') => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
+    if (x.id !== id) return x;
+    return sumbu === 'h' ? { ...x, balikH: !x.balikH || undefined } : { ...x, balikV: !x.balikV || undefined };
+  }) })), []);
   const ubahKabel = useCallback((id: string, p: Partial<Kabel>) =>
     setDok(d => ({ ...d, kabel: d.kabel.map(x => (x.id === id ? { ...x, ...p } : x)) })), []);
 
@@ -188,7 +192,7 @@ export function useKeadaanSLD() {
 
   return {
     dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, putarPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

@@ -64,6 +64,11 @@ export function SLD() {
         x.putarPerangkat(p.id, e.shiftKey ? -90 : 90);
         return;
       }
+      if ((e.key === 'h' || e.key === 'H' || e.key === 'v' || e.key === 'V') && p.jenis === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        x.balikPerangkat(p.id, e.key.toLowerCase() === 'h' ? 'h' : 'v');
+        return;
+      }
       const arah: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       const d = arah[e.key];
       if (!d || p.jenis !== 'p') return;

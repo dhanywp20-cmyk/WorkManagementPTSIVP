@@ -2,7 +2,7 @@
 import { namaBerkas } from '@/lib/lembar-cetak';
 import { rasioPerangkat, sudutSah } from './geometri';
 import { ilustrasiPng } from './ilustrasi';
-import { WATERMARK_BAWAAN } from './lembar-umum';
+import { adaArah, type Arah, WATERMARK_BAWAAN } from './lembar-umum';
 import { svgLembar1 } from './lembar1';
 import { svgLembar2 } from './lembar2';
 import { fotoData, sematkanFoto } from './sematkan';
@@ -62,14 +62,15 @@ async function kePng(url: string): Promise<GambarVsdx> {
   return dariDataUrl(c.toDataURL('image/png'));
 }
 
-async function putarPng(url: string, sudut: number, r: number): Promise<GambarVsdx> {
+async function putarPng(url: string, o: Arah, r: number): Promise<GambarVsdx> {
+  const sudut = sudutSah(o.putar);
   const img = await muatGambar(url);
   const a = (sudut * Math.PI) / 180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a));
   const w = 960, h = w / r, kanvas = document.createElement('canvas');
   kanvas.width = Math.round(w * c + h * s); kanvas.height = Math.round(w * s + h * c);
   const g = kanvas.getContext('2d');
   if (!g) throw new Error('Kanvas tidak tersedia.');
-  g.translate(kanvas.width / 2, kanvas.height / 2); g.rotate(a); g.drawImage(img, -w / 2, -h / 2, w, h);
+  g.translate(kanvas.width / 2, kanvas.height / 2); g.rotate(a); g.scale(o.balikH ? -1 : 1, o.balikV ? -1 : 1); g.drawImage(img, -w / 2, -h / 2, w, h);
   return dariDataUrl(kanvas.toDataURL('image/png'));
 }
 
@@ -79,7 +80,7 @@ export async function bytesVsdx(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Arr
     const r = rasioPerangkat(p);
     const url = p.gambar ?? (p.foto ? await fotoData(p.foto) : await ilustrasiPng(p.ikon, r, p));
     const tegak = /^data:image\/(png|jpe?g);base64,/.test(url) ? dariDataUrl(url) : await kePng(url);
-    if (sudutSah(p.putar)) { gambar.set(p.id, await putarPng(url, sudutSah(p.putar), r)); kartu.set(p.id, tegak); } else gambar.set(p.id, tegak);
+    if (adaArah(p)) { gambar.set(p.id, await putarPng(url, p, r)); kartu.set(p.id, tegak); } else gambar.set(p.id, tegak);
   }
   const watermark = d.watermark ? await kePng(await watermarkData(o.logo)) : undefined;
   return buatVsdx({ dok: d, gambar, kartu, watermark, judul: namaSLD(d), simple: o.simple });

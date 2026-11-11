@@ -21,6 +21,8 @@ export interface Perangkat {
   foto?: string;
   rasio?: number;
   putar?: number;
+  balikH?: boolean;
+  balikV?: boolean;
 }
 
 export interface Ujung { p: string; nama: string; port: string; sisi: PilihSisi }

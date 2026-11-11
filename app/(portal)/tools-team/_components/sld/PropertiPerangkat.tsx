@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import { Copy, ImagePlus, RotateCcw, RotateCw, Trash2 } from 'lucide-react';
+import { Copy, FlipHorizontal2, FlipVertical2, ImagePlus, RotateCcw, RotateCw, Trash2 } from 'lucide-react';
 import { sudutSah } from '@/lib/sld/geometri';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
@@ -103,15 +103,19 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
           <input type="number" min={8} max={200} value={p.h} onChange={e => ubah({ h: Math.max(8, Number(e.target.value) || 8) })} className={kelasKecil} />
         </Isian>
       </div>
-      <Isian label={`Putar (${p.putar ?? 0}°)`}>
-        <div className="flex items-center gap-1.5">
+      <Isian label={`Putar & balik (${p.putar ?? 0}°${p.balikH ? ' · balik horizontal' : ''}${p.balikV ? ' · balik vertikal' : ''})`}>
+        <div className="flex flex-wrap items-center gap-1.5">
           <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, -90)} aria-label="Putar 90° ke kiri"><RotateCcw size={15} /></button>
           <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, 90)} aria-label="Putar 90° ke kanan"><RotateCw size={15} /></button>
           <input type="number" min={0} max={359} step={15} value={p.putar ?? 0} onChange={e => ubah({ putar: sudutSah(e.target.value) || undefined })}
             className={`${kelasKecil} !w-20`} aria-label="Sudut putar (derajat)" />
-          {!!p.putar && <button type="button" className={kelasTombol} onClick={() => ubah({ putar: undefined })}>Tegak</button>}
+          <button type="button" className={`${kelasTombol} ${p.balikH ? '!bg-blue-50 !border-blue-300' : ''}`} onClick={() => a.balikPerangkat(p.id, 'h')} aria-pressed={!!p.balikH}
+            title="Balik horizontal (H)"><FlipHorizontal2 size={15} /> Horizontal</button>
+          <button type="button" className={`${kelasTombol} ${p.balikV ? '!bg-blue-50 !border-blue-300' : ''}`} onClick={() => a.balikPerangkat(p.id, 'v')} aria-pressed={!!p.balikV}
+            title="Balik vertikal (V)"><FlipVertical2 size={15} /> Vertikal</button>
+          {(!!p.putar || p.balikH || p.balikV) && <button type="button" className={kelasTombol} onClick={() => ubah({ putar: undefined, balikH: undefined, balikV: undefined })}>Tegak</button>}
         </div>
-        <p className="mt-1 text-[11px] text-slate-500">Atau seret tombol bulat di atas perangkat (per 15°, tahan Shift untuk bebas). Tombol R = putar 90°.</p>
+        <p className="mt-1 text-[11px] text-slate-500">Atau seret tombol bulat di atas perangkat (per 15°, tahan Shift untuk bebas). Tombol R = putar 90°, H / V = balik horizontal / vertikal.</p>
       </Isian>
       {lain.length > 0 && (
         <Isian label="Sambungkan kabel ke">

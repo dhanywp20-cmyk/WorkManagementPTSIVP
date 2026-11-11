@@ -50,7 +50,7 @@ diisi dari jenis kabel.
 lib/sld/
   tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
   gaya.ts       warna kabel, huruf, watermark (tetap)
-  geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label, putar perangkat (kotak sambung = kotak setelah diputar)
+  geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label, putar & balik perangkat (kotak sambung = kotak setelah diputar)
   primitif.ts   tata letak bersama (kotak, garis, teks, sel tabel) -> SVG & Visio dari sumber yang sama
   lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
   vsdx.ts       ekspor Visio: shape bergambar + titik sambung, kabel = connector yang menempel (glue);
@@ -59,7 +59,7 @@ lib/sld/
   foto-produk.ts  FOTO PRODUK ASLI bawaan (public/sld/produk/*.jpg, dari situs resmi pabrikan) per item katalog AV
   ikon.ts / ikon-layar.ts  ilustrasi 2D - hanya untuk barang non-AV (tirai, gorden, lampu, AC/FCU, MCB) atau bila foto dihapus
   dinding.ts    videowall & LED dari foto asli: susunan "4 x 3" / ukuran "6 x 2 m" / "8 x 4 kabinet" dibaca dari nama & keterangan,
-                konten otomatis per panel (videowall) atau satu gambar dibagi per kabinet (LED), perspektif seperti foto acuan
+                konten otomatis per panel ber-bezel (videowall) atau satu gambar layar penuh tanpa garis (LED), perspektif seperti foto acuan
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
   ekspor.ts     (browser) SVG per sheet + foto tersemat, .vsdx, PNG, berkas paket - dipakai juga Request Design

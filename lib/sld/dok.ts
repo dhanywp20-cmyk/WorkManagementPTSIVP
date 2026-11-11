@@ -76,6 +76,8 @@ function bersihkanPerangkat(v: unknown): Perangkat | null {
     foto: fotoSah(p.foto) ? p.foto : undefined,
     rasio: Number.isFinite(Number(p.rasio)) && Number(p.rasio) > 0 ? angka(p.rasio, 0.1, 10, 1.6) : undefined,
     putar: sudutSah(p.putar) || undefined,
+    balikH: p.balikH === true || undefined,
+    balikV: p.balikV === true || undefined,
   };
 }
 

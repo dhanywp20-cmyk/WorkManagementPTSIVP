@@ -108,7 +108,7 @@ export const primRangka1 = (d: DokSLD, simple = false): Prim[] => [...bingkaiPri
 export function isiLembar1(d: DokSLD, o: OpsiLembar = {}, geo = geometri(d)): string {
   const k = svgKabel(d, geo);
   return svgPrimitif(primRangka1(d, o.simple), () => '')
-    + d.perangkat.map(p => gambarPerangkat(p, p.x, p.y, p.w, p.h, p.putar)).join('')
+    + d.perangkat.map(p => gambarPerangkat(p, p.x, p.y, p.w, p.h, p)).join('')
     + k.garis + k.label + d.perangkat.map(svgLabelPerangkat).join('') + watermark({ ...o, tanpaWatermark: o.tanpaWatermark || d.watermark === false });
 }
 
