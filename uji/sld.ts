@@ -15,6 +15,7 @@ import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pi
 import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, tempelKlip } from '../lib/sld/pilih';
 import { letakLabel } from '../lib/sld/lembar1';
 import { svgZona } from '../lib/sld/zona';
+import { tabrak } from '../lib/sld/rute';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
@@ -383,6 +384,25 @@ void (async () => {
     && svgLembar1(dp).includes('>Rack<') && new TextDecoder().decode((await bacaZip(buatVsdx({ dok: dp, gambar: new Map() }))).get('visio/pages/page1.xml')).includes("NameU='Area'"));
   cek('katalog: interactive display & dongle wireless berfoto', tebakTemplat('Interactive Flat Panel 75"') === 'ifp' && tebakTemplat('Wireless presentation dongle') === 'dongle'
     && !!KATALOG.find(t => t.k === 'ifp')?.foto && !!KATALOG.find(t => t.k === 'dongle')?.foto);
+  console.log('\n15. Kabel menghindari perangkat & BOQ per model');
+  const ifpU = (id: string, x: number, y: number, nama: string) => ({ ...perangkatBaru('ifp', x, y), id, nama });
+  const mxU = { ...perangkatBaru('matrix', 40, 60), id: 'mx', nama: 'Matrix switcher' };
+  const kenaLain = (d: ReturnType<typeof dokBaru>) => geometri(d).some(g => {
+    const c = d.kabel.find(k => k.id === g.id)!, ujung = [c.ke, ...c.cabang];
+    return g.garis.some((gr, i) => tabrak(gr.titik, d.perangkat.filter(p => p.id !== c.dari.p && p.id !== ujung[i].p).map(kotakTampak), 0.5));
+  });
+  const busKe = (a: string, ...cab: string[]) => ({ ...kabelBaru('mx', a), id: 'kb', cabang: cab.map(p => ({ p, nama: '', port: '', sisi: 'auto' as const })) });
+  const h1 = { ...dokBaru(), perangkat: [mxU, ifpU('i1', 230, 15, 'IFP 1'), ifpU('i3', 160, 110, 'IFP 3'), ifpU('i2', 160, 170, 'IFP 2')], kabel: [busKe('i1', 'i3', 'i2')] };
+  const h2 = { ...dokBaru(), perangkat: [mxU, ifpU('i1', 230, 15, 'IFP 1'), ifpU('i3', 160, 110, 'IFP 3'), ifpU('i2', 225, 110, 'IFP 2')], kabel: [busKe('i1', 'i3', 'i2')] };
+  const h3 = { ...dokBaru(), perangkat: [mxU, ifpU('i3', 120, 50, 'IFP 3'), ifpU('i2', 200, 55, 'IFP 2')], kabel: [{ ...kabelBaru('mx', 'i2'), id: 'k1' }] };
+  cek('kabel bus tidak menembus perangkat lain (IFP di bawah IFP lain)', !kenaLain(h1));
+  cek('kabel bus tidak menembus perangkat lain (IFP berjajar)', !kenaLain(h2));
+  cek('kabel lurus memutar bila ada perangkat di tengah', !kenaLain(h3));
+  const bq9 = barisBoq(h1), bp9 = barisPerangkat(h1), kg9 = kartuGambar(h1);
+  cek('BOQ & sheet 2: nama beda tapi jenis sama = satu baris, qty dijumlah', bq9.length === 2 && bq9[1].qty === 3 && bq9[1].model === 'IFP' && bp9.length === 2 && bp9[1].qty.startsWith('3') && kg9[1].judul === 'IFP', JSON.stringify(bq9.map(b => [b.model, b.qty])));
+  const h4 = { ...h1, perangkat: h1.perangkat.map(p => p.id === 'i2' ? { ...p, model: 'Philips 86BDL' } : p) };
+  cek('model / part no beda = baris terpisah', barisBoq(h4).length === 3);
+  cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

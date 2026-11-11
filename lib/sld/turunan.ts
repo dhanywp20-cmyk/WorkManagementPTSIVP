@@ -1,5 +1,8 @@
 import { URUTAN_JENIS } from './gaya';
+import { IKON_DINDING } from './dinding';
+import { FOTO_PRODUK } from './foto-produk';
 import { kodeKabel, tergambar } from './geometri';
+import { KATALOG } from './katalog';
 import type { DokSLD, JenisKabel, Kabel, Perangkat, Ujung } from './tipe';
 
 export interface BarisKoneksi { id: string; kode: string; dari: string; ke: string; media: string; fungsi: string; catatan: string }
@@ -45,7 +48,18 @@ const angkaNo = (no: string) => { const x = parseFloat(no); return Number.isFini
 
 export const BUKAN_PASOKAN = new Set(['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb']);
 export const ikutDaftar = (p: Perangkat) => !!p.no.trim() || !BUKAN_PASOKAN.has(p.ikon);
-export const kunciModel = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
+export const kunciNama = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
+const jenisFoto = (p: Perangkat) => (p.foto && !p.foto.startsWith('data:') ? p.foto : `ikon:${p.ikon}`);
+export const kunciModel = (p: Perangkat) => (p.model.trim() || IKON_DINDING.has(p.ikon) ? kunciNama(p) : `${p.kategori.trim().toLowerCase()}|jenis:${jenisFoto(p).toLowerCase()}`);
+const namaTemplat = (p: Perangkat) =>
+  (KATALOG.find(t => t.foto && FOTO_PRODUK[t.foto]?.src === p.foto) ?? KATALOG.find(t => t.ikon === p.ikon && t.kategori === p.kategori))?.nama;
+export function namaKelompok(daftar: Perangkat[]): string {
+  const nama = daftar.map(p => judulKartu(p.nama)), p = daftar[0];
+  if (p.model.trim() || nama.every(n => n === nama[0])) return nama[0];
+  const dasar = nama.map(n => n.replace(/[\s#-]*\d+$/, '').trim());
+  if (dasar[0] && dasar.every(n => n.toLowerCase() === dasar[0].toLowerCase())) return dasar[0];
+  return namaTemplat(p) ?? nama[0];
+}
 
 export function kelompokNo(d: DokSLD): Map<string, Perangkat[]> {
   const m = new Map<string, Perangkat[]>();
@@ -71,7 +85,7 @@ export function barisPerangkat(d: DokSLD): BarisPerangkat[] {
   return [...kelompokNo(d).entries()].map(([no, daftar]) => {
     const p = daftar[0];
     const qty = daftar.reduce((s, x) => s + (Number.isFinite(x.qty) ? x.qty : 0), 0);
-    return { no, kategori: p.kategori, model: p.model || p.nama, qty: `${qty.toLocaleString('id-ID')} ${p.satuan || 'unit'}` };
+    return { no, kategori: p.kategori, model: p.model || namaKelompok(daftar), qty: `${qty.toLocaleString('id-ID')} ${p.satuan || 'unit'}` };
   });
 }
 
@@ -82,7 +96,7 @@ export function kartuGambar(d: DokSLD): KartuGambar[] {
     const p = daftar.find(x => x.gambar) ?? daftar[0];
     const qty = daftar.reduce((s, x) => s + x.qty, 0);
     const sub = p.subGambar || [p.model, qty > 1 ? `(${qty} ${p.satuan})` : ''].filter(Boolean).join(' ');
-    return { no, judul: judulKartu(p.nama), sub, contoh: p };
+    return { no, judul: namaKelompok(daftar), sub, contoh: p };
   });
 }
 

@@ -57,13 +57,14 @@ Kanvas baru & contoh memakai 16:9; draf lama tanpa kertas diubah sekali ke 16:9.
 
 Dua isi ekspor dari SLD yang sama: **Full Detail** (2 sheet, internal - "NO SHARE") dan **Simple** (hanya sheet 1,
 "no dtl", aman dibagikan ke klien). Sheet 2 terisi otomatis: perangkat tanpa No. BOM dinomori setelah No. BOM
-yang ada (model sama digabung, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
+yang ada (kategori + model sama digabung walau nama di diagram beda; tanpa model = per jenis produk, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
 diisi dari jenis kabel. Kabel bus (bercabang) jadi satu baris per perangkat tujuan (K5.1, K5.2, ...).
 
 ```
 lib/sld/
   tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
   gaya.ts       warna kabel, huruf, watermark (tetap)
+  rute.ts       kabel memutari perangkat lain (sisi sambung pindah bila terhalang, rute siku menghindar)
   geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label, putar & balik perangkat (kotak sambung = kotak setelah diputar)
   primitif.ts   tata letak bersama (kotak, garis, teks, sel tabel) -> SVG & Visio dari sumber yang sama
   lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
