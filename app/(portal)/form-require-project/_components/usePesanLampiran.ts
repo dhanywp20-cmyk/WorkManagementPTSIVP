@@ -1,5 +1,7 @@
 'use client';
 
+import { LABEL_KATEGORI } from './lampiran-kategori';
+import type { KategoriLampiran } from './shared';
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
@@ -30,7 +32,7 @@ export interface PesanLampiranKonteks {
   setSendingMsg: import("react").Dispatch<import("react").SetStateAction<boolean>>;
   setShowDetailModal: import("react").Dispatch<import("react").SetStateAction<boolean>>;
   setUnreadMsgMap: import("react").Dispatch<import("react").SetStateAction<Record<string, number>>>;
-  setUploadingCategory: import("react").Dispatch<import("react").SetStateAction<"sld" | "boq" | "design3d" | null>>;
+  setUploadingCategory: import("react").Dispatch<import("react").SetStateAction<KategoriLampiran | null>>;
   setUploadingFile: import("react").Dispatch<import("react").SetStateAction<boolean>>;
   toStorageSafeName: (name: string) => string;
 }
@@ -75,12 +77,16 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📎 Melampirkan file: ${file.name}` }]);
   };
 
-  const handleCategoryUpload = async (file: File, category: 'sld' | 'boq' | 'design3d') => {
+  const handleCategoryUpload = async (file: File, category: KategoriLampiran) => {
     if (!selectedRequest) return;
+    if ((category === 'screen' || category === 'sld') && !(file.type === 'application/pdf' || /\.pdf$/i.test(file.name))) {
+      notify('error', `${category === 'screen' ? 'Screen Connection' : 'SLD'} wajib berupa file PDF.`);
+      return;
+    }
     setUploadingCategory(category);
     const existing = attachments.filter(a => a.attachment_category === category && getFileRoomIdx(a.file_name) === detailRoomIdx);
     const revisionNum = existing.length + 1;
-    const label = category === 'sld' ? 'SLD' : category === 'boq' ? 'BOQ' : 'Design 3D';
+    const label = LABEL_KATEGORI[category];
     const toUpload = await compressImage(file);
     const taggedName = detailRoomIdx > 0 ? `[room${detailRoomIdx + 1}] ${file.name}` : file.name;
     const filePath = `project-files/${selectedRequest.id}/${category}-rev${revisionNum}-${Date.now()}-${toStorageSafeName(taggedName)}`;

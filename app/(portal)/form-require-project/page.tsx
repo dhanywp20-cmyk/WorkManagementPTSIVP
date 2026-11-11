@@ -7,10 +7,11 @@ import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
 import { getSession } from '@/lib/auth/sesi';
 import { LoadingScreen, ViewIconBtn, DeleteIconBtn, ConfirmDialog, type ConfirmState, ModalPortal } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
-import { User, ProjectRequest, RoomDetail, BrandPicMapping, ProjectMessage, ProjectAttachment, statusConfig, getRoomStatus, getRoomAssignName } from './_components/shared';
+import { User, ProjectRequest, RoomDetail, BrandPicMapping, ProjectMessage, ProjectAttachment, statusConfig, getRoomStatus, getRoomAssignName, type KategoriLampiran } from './_components/shared';
 import { InitialFormType } from './_components/Modals';
 import { muatTautanDesain3D, type TautanDesain3D, type IzinRuang } from './_components/desain-3d-request';
 import { muatTautanSld, type DataSld } from './_components/sld-request';
+import { muatTautanScreen, type DataScreen } from './_components/screen-connection-request';
 import { Ikon } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
 import { ModalEditForm } from './_components/ModalEditForm';
@@ -127,10 +128,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const sldFileRef = useRef<HTMLInputElement>(null);
   const boqFileRef = useRef<HTMLInputElement>(null);
   const design3dFileRef = useRef<HTMLInputElement>(null);
+  const screenFileRef = useRef<HTMLInputElement>(null);
   const [showUploadChoice, setShowUploadChoice] = useState(false);
   const activeRequestIdRef = useRef<string | null>(null);
-  const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
-  const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
+  const [uploadingCategory, setUploadingCategory] = useState<KategoriLampiran | null>(null);
+  const [activeAttachTab, setActiveAttachTab] = useState<'all' | KategoriLampiran>('all');
   const [desain3d, setDesain3d] = useState<{ tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string } | null>(null);
   const desain3dTools = desain3d?.tautan ?? [];
   const [mintaPilih3D, setMintaPilih3D] = useState(0);
@@ -146,10 +148,17 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const h = await muatTautanSld(id);
     setSld(prev => ('tautan' in h ? h : { tautan: prev?.tautan ?? [], izin: prev?.izin ?? [], galat: h.galat }));
   }, []);
+  const [screen, setScreen] = useState<DataScreen | null>(null);
+  const screenTools = screen?.tautan ?? [];
+  const [mintaPilihScreen, setMintaPilihScreen] = useState(0);
+  const muatScreen = useCallback(async (id: string) => {
+    const h = await muatTautanScreen(id);
+    setScreen(prev => ('tautan' in h ? h : { tautan: prev?.tautan ?? [], izin: prev?.izin ?? [], galat: h.galat }));
+  }, []);
   useEffect(() => {
-    setDesain3d(null); setSld(null);
-    if (idRequestTerpilih) { void muatDesain3D(idRequestTerpilih); void muatSld(idRequestTerpilih); }
-  }, [idRequestTerpilih, muatDesain3D, muatSld]);
+    setDesain3d(null); setSld(null); setScreen(null);
+    if (idRequestTerpilih) { void muatDesain3D(idRequestTerpilih); void muatSld(idRequestTerpilih); void muatScreen(idRequestTerpilih); }
+  }, [idRequestTerpilih, muatDesain3D, muatSld, muatScreen]);
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
   const [detailMobileTab, setDetailMobileTab] = useState<'info' | 'chat'>('info');
   const [chatRoomFilter, setChatRoomFilter] = useState<string>('all');
@@ -385,7 +394,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     lampiran: { activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, downloadingPackage, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
       handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setDownloadingPackage, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef,
       uploadingCategory, uploadingFile,
-      sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld },
+      sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld, screenFileRef, screen, screenTools, mintaPilihScreen, setMintaPilihScreen, muatScreen },
     pesan: { chatFileRef, chatRoomFilter, handleSendMessage, messages, messagesEndRef, msgText, sendingMsg, setChatRoomFilter, setMsgText },
     aksi: { handleOpenEditForm, handleReject, handleResubmit, handleStatusUpdate, setAssignModal, setDeleteConfirmText, setDeleteModal, setInternalApproveTarget, setRerouteTarget,
       setRerouteTo, setSelectedNewStatus, setStatusUpdateModal },

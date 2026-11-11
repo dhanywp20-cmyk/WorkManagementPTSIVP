@@ -3,6 +3,8 @@
 import { Ikon } from '@/components/shared/Ikon';
 import { Desain3DTools } from '../Desain3DTools';
 import { SldTools } from '../SldTools';
+import { ScreenConnectionTools } from '../ScreenConnectionTools';
+import { KELAS_KATEGORI, LABEL_KATEGORI } from '../lampiran-kategori';
 import { ProjectRequest } from '../shared';
 import { useKonteksRequest } from '../konteks-request';
 
@@ -19,11 +21,12 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
   const {
     activeAttachTab, attachments, boqFileRef, desain3d, desain3dTools, design3dFileRef, fileInputRef, handleCategoryUpload, handleDeleteAttachment,
     handleFileUpload, mintaPilih3D, muatDesain3D, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory,
-    uploadingFile, sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld
+    uploadingFile, sld, sldTools, mintaPilihSld, setMintaPilihSld, muatSld, screenFileRef, screen, screenTools, mintaPilihScreen, setMintaPilihScreen, muatScreen
   } = k.lampiran;
   const namaRuang = detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`);
   const tools3D = desain3dTools.filter(t => t.room_idx === detailRoomIdx).length;
   const toolsSld = sldTools.filter(t => t.room_idx === detailRoomIdx).length;
+  const toolsScreen = screenTools.filter(t => t.room_idx === detailRoomIdx).length;
   return (
     <>
       <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs satulayar:col-span-2">
@@ -60,6 +63,7 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
                       { ref: sldFileRef, icon: '📐', label: 'SLD (PDF)', hint: 'Gambar teknis instalasi' },
                       { ref: boqFileRef, icon: '📊', label: 'BOQ (Excel)', hint: 'Rincian kebutuhan & harga' },
                       { ref: design3dFileRef, icon: '🎨', label: 'Design 3D', hint: 'Render / mock-up ruangan' },
+                      { ref: screenFileRef, icon: '🖥️', label: 'Screen Connection (PDF)', hint: 'Dari aplikasi lain, wajib PDF' },
                     ].map(({ ref, icon, label, hint }) => (
                       <button key={label} onClick={() => { setShowUploadChoice(false); ref.current?.click(); }}
                         className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
@@ -77,6 +81,11 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
                       <span className="text-base leading-none"><Ikon nama="🧊" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                       <span>Design 3D dari AV Solution Tools<br /><span className="font-normal text-gray-500">Tautkan desain dari Desain 3D Ruang (opsional)</span></span>
                     </button>
+                    <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'screen' ? t : 'screen')); setMintaPilihScreen(n => n + 1); }}
+                      className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-cyan-50 flex items-start gap-2 border-t border-gray-100">
+                      <span className="text-base leading-none"><Ikon nama="🖥️" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                      <span>Screen Connection dari AV Solution Tools<br /><span className="font-normal text-gray-500">Tautkan dari LED Videotron → Screen Connection</span></span>
+                    </button>
                   </div>
                 </>)}
               </div>
@@ -91,6 +100,8 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
           onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'boq'); e.target.value = ''; }} />
         <input ref={design3dFileRef} type="file" className="hidden" accept=".pdf,.dwg,.skp"
           onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'design3d'); e.target.value = ''; }} />
+        <input ref={screenFileRef} type="file" className="hidden" accept=".pdf,application/pdf"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleCategoryUpload(f, 'screen'); e.target.value = ''; }} />
 
         {isPTS && detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
           <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-100">
@@ -99,6 +110,7 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
               { cat: 'sld' as const, ref: sldFileRef, label: '📐 SLD (PDF)', cls: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' },
               { cat: 'boq' as const, ref: boqFileRef, label: '📊 BOQ (Excel)', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
               { cat: 'design3d' as const, ref: design3dFileRef, label: '🎨 Design 3D', cls: 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' },
+              { cat: 'screen' as const, ref: screenFileRef, label: '🖥️ Screen Connection (PDF)', cls: 'bg-cyan-50 text-cyan-800 border-cyan-200 hover:bg-cyan-100' },
             ].map(({ cat, ref, label, cls }) => (
               <button key={cat} onClick={() => ref.current?.click()} disabled={uploadingCategory === cat}
                 className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${cls}`}>
@@ -109,11 +121,11 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
         )}
 
         <div className="flex border border-gray-200 rounded-xl overflow-hidden mb-4">
-          {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
+          {(['all', 'sld', 'boq', 'design3d', 'screen'] as const).map(tab => (
             <button key={tab} onClick={() => setActiveAttachTab(tab)}
               className={`flex-1 py-2 text-xs font-bold uppercase transition-all ${activeAttachTab === tab ? 'text-white bg-teal-600' : 'text-gray-500 hover:bg-gray-50'}`}>
-              {`${tab === 'all' ? 'Semua' : tab === 'design3d' ? '3D' : tab.toUpperCase()} (${(tab === 'all' ? roomAttachments.length : roomAttachments.filter(a => a.attachment_category === tab).length)
-                + (tab === 'all' || tab === 'design3d' ? tools3D : 0) + (tab === 'all' || tab === 'sld' ? toolsSld : 0)})`}
+              {`${tab === 'all' ? 'Semua' : tab === 'design3d' ? '3D' : tab === 'screen' ? 'Screen' : tab.toUpperCase()} (${(tab === 'all' ? roomAttachments.length : roomAttachments.filter(a => a.attachment_category === tab).length)
+                + (tab === 'all' || tab === 'design3d' ? tools3D : 0) + (tab === 'all' || tab === 'sld' ? toolsSld : 0) + (tab === 'all' || tab === 'screen' ? toolsScreen : 0)})`}
             </button>
           ))}
         </div>
@@ -125,7 +137,7 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
           </div>
         ) : (
           <div className="space-y-3">
-            {(['sld','boq','design3d'] as const).filter(cat =>
+            {(['sld', 'boq', 'design3d', 'screen'] as const).filter(cat =>
               (activeAttachTab === 'all' || activeAttachTab === cat) &&
               roomAttachments.some(a => a.attachment_category === cat)
             ).map(cat => {
@@ -133,24 +145,24 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
                 .sort((a, b) => (b.revision_version || 0) - (a.revision_version || 0));
               const latest = catFiles[0];
               const history = catFiles.slice(1);
-              const catLabel = cat === 'sld' ? 'SLD' : cat === 'boq' ? 'BOQ' : 'Design 3D';
-              const catColor = cat === 'sld' ? 'blue' : cat === 'boq' ? 'emerald' : 'purple';
+              const catLabel = LABEL_KATEGORI[cat];
+              const kelas = KELAS_KATEGORI[cat];
               return (
-                <div key={cat} className={`rounded-xl border-2 overflow-hidden border-${catColor}-200`}>
-                  <div className={`px-3 py-1.5 flex items-center justify-between bg-${catColor}-50`}>
-                    <span className={`text-[11px] font-bold text-${catColor}-700 uppercase tracking-widest`}>{catLabel} — Versi Terbaru</span>
-                    {history.length > 0 && <span className={`text-[10px] font-bold text-${catColor}-500`}>{history.length} versi lama</span>}
+                <div key={cat} className={`rounded-xl border-2 overflow-hidden ${kelas.garis}`}>
+                  <div className={`px-3 py-1.5 flex items-center justify-between ${kelas.latar}`}>
+                    <span className={`text-[11px] font-bold ${kelas.teks} uppercase tracking-widest`}>{catLabel} — Versi Terbaru</span>
+                    {history.length > 0 && <span className={`text-[10px] font-bold ${kelas.teksRedup}`}>{history.length} versi lama</span>}
                   </div>
                   <div className="flex items-center gap-1 border-b border-gray-100">
                   <a href={latest.file_url} target="_blank" rel="noopener noreferrer"
                     className="flex-1 min-w-0 flex items-center gap-3 p-3 hover:bg-teal-50 transition-all cursor-pointer">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl bg-${catColor}-100`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl ${kelas.ikon}`}>
                       {latest.file_type?.includes('pdf') ? '📄' : latest.file_type?.startsWith('image') ? '🖼️' : '📊'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-xs font-bold text-gray-800 truncate">{displayFileName(latest.file_name)}</p>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full bg-${catColor}-500 text-white whitespace-nowrap`}>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${kelas.lencana} text-white whitespace-nowrap`}>
                           {latest.revision_version ? `Rev ${latest.revision_version}` : 'Latest'} ★
                         </span>
                       </div>
@@ -219,6 +231,13 @@ export function PanelLampiranDetail({ selectedRequest }: PanelLampiranDetailProp
             <SldTools requestId={selectedRequest.id} roomIdx={detailRoomIdx} namaRuang={namaRuang}
               projectName={selectedRequest.project_name} mintaPilih={mintaPilihSld} data={sld}
               muatUlang={() => muatSld(selectedRequest.id)} notify={notify} />
+          </div>
+        )}
+        {(activeAttachTab === 'all' || activeAttachTab === 'screen') && (
+          <div className="mt-3">
+            <ScreenConnectionTools requestId={selectedRequest.id} roomIdx={detailRoomIdx} namaRuang={namaRuang}
+              projectName={selectedRequest.project_name} mintaPilih={mintaPilihScreen} data={screen}
+              muatUlang={() => muatScreen(selectedRequest.id)} notify={notify} />
           </div>
         )}
         {(activeAttachTab === 'all' || activeAttachTab === 'design3d') && (

@@ -144,6 +144,8 @@ export interface ProjectMessage {
   attachments?: ProjectAttachment[];
 }
 
+export type KategoriLampiran = 'sld' | 'boq' | 'design3d' | 'screen';
+
 export interface ProjectAttachment {
   id: string;
   message_id?: string;
@@ -154,7 +156,7 @@ export interface ProjectAttachment {
   file_size: number;
   uploaded_by: string;
   uploaded_at: string;
-  attachment_category?: 'general' | 'sld' | 'boq' | 'design3d';
+  attachment_category?: 'general' | KategoriLampiran;
   revision_version?: number;
 }
 

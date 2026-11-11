@@ -16,9 +16,9 @@ interface Baris {
 
 const tgl = (x: string) => new Date(x).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, onBuka, onTersimpan }: {
+export function FileLED({ mode, onTutup, isian, ringkasan, svgKoneksi, namaAwal, fileAktif, onBuka, onTersimpan }: {
   mode: 'buka' | 'simpan' | null; onTutup: () => void;
-  isian: Record<string, unknown>; ringkasan: RingkasanLED; namaAwal: string;
+  isian: Record<string, unknown>; ringkasan: RingkasanLED; svgKoneksi?: () => string; namaAwal: string;
   fileAktif: FileAktifLED | null;
   onBuka: (data: Record<string, unknown>, file: FileAktifLED) => void;
   onTersimpan: (file: FileAktifLED) => void;
@@ -47,6 +47,8 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
     return () => { hidup = false; clearTimeout(t); };
   }, [mode, q, segar]);
 
+  const gambarKoneksi = () => { try { return svgKoneksi?.() ?? null; } catch { return null; } };
+
   const simpan = async (baru: boolean) => {
     const n = nama.trim() || 'Kalkulasi LED';
     const timpa = !baru && fileAktif?.bolehUbah ? fileAktif.id : undefined;
@@ -54,7 +56,7 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
     try {
       const r = await fetch(API, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: timpa, nama: n, data: isian, ringkasan }),
+        body: JSON.stringify({ id: timpa, nama: n, data: isian, ringkasan, svg_koneksi: gambarKoneksi() }),
       });
       const j = await r.json().catch(() => null);
       if (!r.ok || !j?.ok) { setStatus({ teks: j?.alasan ?? 'Gagal menyimpan.', galat: true }); return; }
