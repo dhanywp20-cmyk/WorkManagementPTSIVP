@@ -1,16 +1,18 @@
 'use client';
+import type { TeksPerangkat } from './dinding';
+import { teksPerangkat } from './dinding';
 import { isiIkon, viewBoxIkon } from './ikon';
 import { sematkanFoto } from './sematkan';
 
 const simpanan = new Map<string, Promise<string>>();
 const LEBAR = 960, TINGGI = 600;
 
-export function ilustrasiPng(ikon: string, rasio = 1.6): Promise<string> {
-  const kunci = `${ikon}|${Math.round(rasio * 100)}`;
+export function ilustrasiPng(ikon: string, rasio = 1.6, p?: TeksPerangkat): Promise<string> {
+  const kunci = `${ikon}|${Math.round(rasio * 100)}|${teksPerangkat(p)}`;
   const ada = simpanan.get(kunci);
   if (ada) return ada;
   const h = Math.round(LEBAR / rasio);
-  const janji = sematkanFoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBoxIkon(ikon)}" width="${LEBAR}" height="${h}" preserveAspectRatio="xMidYMid meet">${isiIkon(ikon)}</svg>`)
+  const janji = sematkanFoto(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBoxIkon(ikon, p)}" width="${LEBAR}" height="${h}" preserveAspectRatio="xMidYMid meet">${isiIkon(ikon, p)}</svg>`)
     .then(svg => new Promise<string>((ok, gagal) => {
     const img = new Image();
     img.onload = () => {

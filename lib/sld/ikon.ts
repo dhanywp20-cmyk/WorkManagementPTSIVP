@@ -1,3 +1,4 @@
+import { dinding, type TeksPerangkat } from './dinding';
 import { DEFS_LAYAR, IKON_LAYAR } from './ikon-layar';
 
 const n = (v: number) => String(Math.round(v * 100) / 100);
@@ -163,13 +164,15 @@ function tirai(warna: string): string {
 
 export const DAFTAR_IKON = Object.entries(IKON).map(([v, x]) => ({ v, l: x.l }));
 
-export const isiIkon = (ikon: string) => DEFS + DEFS_LAYAR + (IKON[ikon] ?? IKON.umum).svg();
+export const isiIkon = (ikon: string, p?: TeksPerangkat) => dinding(ikon, p)?.isi ?? DEFS + DEFS_LAYAR + (IKON[ikon] ?? IKON.umum).svg();
 
-export const viewBoxIkon = (ikon: string) => {
+export const viewBoxIkon = (ikon: string, p?: TeksPerangkat) => {
+  const d = dinding(ikon, p);
+  if (d) return `0 0 ${d.vb[0]} ${n(d.vb[1])}`;
   const [x, y, w] = (IKON[ikon] ?? IKON.umum).vb ?? [0, 0, 160];
   return `${x} ${y} ${w} ${n(w / 1.6)}`;
 };
 
-export function svgIkon(ikon: string, x: number, y: number, w: number, h: number): string {
-  return `<svg x="${x}" y="${y}" width="${w}" height="${h}" viewBox="${viewBoxIkon(ikon)}" preserveAspectRatio="xMidYMid meet" overflow="hidden">${isiIkon(ikon)}</svg>`;
+export function svgIkon(ikon: string, x: number, y: number, w: number, h: number, p?: TeksPerangkat): string {
+  return `<svg x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" viewBox="${viewBoxIkon(ikon, p)}" preserveAspectRatio="xMidYMid meet" overflow="hidden">${isiIkon(ikon, p)}</svg>`;
 }

@@ -1,3 +1,4 @@
+import { kotakPutar, rasioPerangkat, sudutSah } from './geometri';
 import { WARNA, WATERMARK } from './gaya';
 import { svgIkon } from './ikon';
 import type { Prim } from './primitif';
@@ -30,11 +31,12 @@ export function watermark(o: OpsiLembar): string {
   return `<g opacity="${WATERMARK.tembus}" pointer-events="none">${out.join('')}</g>`;
 }
 
-export function gambarPerangkat(p: Pick<Perangkat, 'gambar' | 'foto' | 'ikon'>, x: number, y: number, w: number, h: number): string {
+export function gambarPerangkat(p: Perangkat, x: number, y: number, w: number, h: number, sudut = 0): string {
+  const g = kotakPutar({ x, y, w, h }, rasioPerangkat(p), sudut);
+  const gx = g.cx - g.w / 2, gy = g.cy - g.h / 2;
   const sumber = p.gambar ?? p.foto;
-  if (sumber) {
-    const href = esc(sumber);
-    return `<image href="${href}" xlink:href="${href}" x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" preserveAspectRatio="xMidYMid meet"/>`;
-  }
-  return svgIkon(p.ikon, x, y, w, h);
+  const isi = sumber
+    ? `<image href="${esc(sumber)}" xlink:href="${esc(sumber)}" x="${n(gx)}" y="${n(gy)}" width="${n(g.w)}" height="${n(g.h)}" preserveAspectRatio="xMidYMid meet"/>`
+    : svgIkon(p.ikon, gx, gy, g.w, g.h, p);
+  return sudutSah(sudut) ? `<g transform="rotate(${sudutSah(sudut)} ${n(g.cx)} ${n(g.cy)})">${isi}</g>` : isi;
 }

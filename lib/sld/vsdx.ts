@@ -1,5 +1,5 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, WATERMARK } from './gaya';
-import { geometri, kotakTampak, teksLabel } from './geometri';
+import { geometri, kotakTampak, rasioPerangkat, teksLabel } from './geometri';
 import { barisLabel, primRangka1 } from './lembar1';
 import { primLembar2 } from './lembar2';
 import type { Prim } from './primitif';
@@ -10,7 +10,7 @@ import { STYLE_DASAR } from './vsdx-gaya';
 import { tulisZip } from './zip';
 
 export interface GambarVsdx { isi: Uint8Array; jpeg: boolean }
-export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean }
+export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; kartu?: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean }
 
 const NS = "xmlns='http://schemas.microsoft.com/office/visio/2012/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xml:space='preserve'";
 const KEPALA = "<?xml version='1.0' encoding='utf-8' ?>\n";
@@ -161,9 +161,8 @@ function lembar2(m: MasukanVsdx, media: Media): Halaman {
   for (const p of prim) {
     const id = h.baru();
     h.bentuk.push(bentukPrim(p, id, pid => {
-      const g = m.gambar.get(pid), per = m.dok.perangkat.find(x => x.id === pid);
-      const k = per ? kotakTampak(per) : undefined;
-      return g ? { rid: h.rid(media.tambah(pid, g)), jpeg: g.jpeg, rasio: k ? k.w / k.h : undefined } : null;
+      const kartu = m.kartu?.get(pid), g = kartu ?? m.gambar.get(pid), per = m.dok.perangkat.find(x => x.id === pid);
+      return g ? { rid: h.rid(media.tambah(kartu ? `${pid}#kartu` : pid, g)), jpeg: g.jpeg, rasio: per ? rasioPerangkat(per) : undefined } : null;
     }));
   }
   if (m.dok.watermark !== false) watermark(h, media, m.watermark);

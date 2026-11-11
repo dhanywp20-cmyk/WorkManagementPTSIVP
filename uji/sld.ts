@@ -5,7 +5,8 @@ import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
-import { geometri, kodeKabel, sisiOtomatis } from '../lib/sld/geometri';
+import { geometri, kodeKabel, kotakTampak, sisiOtomatis } from '../lib/sld/geometri';
+import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dinding';
 import { DAFTAR_IKON } from '../lib/sld/ikon';
 import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
@@ -176,7 +177,7 @@ void (async () => {
   cek('tebak jenis dari kode model', tebakTemplat('WyreStorm MX-0404-SCL') === 'matrix' && tebakTemplat('Philips 55BDL4650D') === 'signage-philips'
     && tebakTemplat('NHD-120-TX') === 'avoip' && tebakTemplat('EX-70-H2') === 'extender' && tebakTemplat('NVR 16 channel') === 'nvr', tebakTemplat('NHD-120-TX'));
   console.log('\n7. Foto produk asli');
-  const ilustrasiSaja = ['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb', 'ups', 'rak', 'umum', 'laptop', 'pc', 'speaker', 'videowall'];
+  const ilustrasiSaja = ['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb', 'ups', 'rak', 'umum', 'laptop', 'pc', 'speaker', 'videowall', 'led'];
   const tanpaFotoAV = KATALOG.filter(t => !t.foto && !ilustrasiSaja.includes(t.k)).map(t => t.k);
   cek('semua produk AV di katalog punya foto asli bawaan', !tanpaFotoAV.length, tanpaFotoAV.join(','));
   cek('tirai, gorden, lampu, AC/FCU tetap ilustrasi', ['tirai', 'gorden', 'lampu', 'ac', 'fcu'].every(k => !KATALOG.find(t => t.k === k)?.foto));
@@ -215,6 +216,37 @@ void (async () => {
   const cetakReq = readFileSync('app/(portal)/form-require-project/_components/cetak-request.ts', 'utf8');
   cek('Request Design: SLD opsional seperti Design 3D (menu unggah, panel, cetak, paket .zip)', panelReq.includes('SLD dari AV Solution Tools') && panelReq.includes('mintaPilih={mintaPilihSld}')
     && paketReq.includes('berkasPaketSld') && cetakReq.includes('htmlSeksiSld'));
+  console.log('\n10. Videowall, LED, layar proyektor & putar');
+  const g43 = gridVideowall('Videowall 4 x 3 panel 55"'), g0 = gridVideowall('Videowall'), gm = gridVideowall('4 x 2,25 m');
+  cek('videowall: susunan kolom x baris dibaca dari nama / keterangan (bawaan 3 x 2)', g43.kol === 4 && g43.bar === 3 && g0.kol === 3 && g0.bar === 2 && gm.kol === 3,
+    JSON.stringify([g43, g0, gm]));
+  const u1 = ukuranLed('LED P2.5 5 x 2,5 m'), u2 = ukuranLed('3840 x 2160 mm'), u3 = ukuranLed('8 x 4 kabinet');
+  cek('LED: ukuran meter / mm / jumlah kabinet dibaca, kabinet 0,5 m', u1.w === 5 && u1.kol === 10 && u1.bar === 5 && Math.abs(u2.w - 3.84) < 1e-9
+    && u3.w === 4 && u3.h === 2 && u3.kol === 8 && u3.bar === 4, JSON.stringify([u1, u2, u3]));
+  const vw = dinding('videowall', { ket: 'Susunan 3 x 3' })!, ld = dinding('led', { nama: 'LED 6 x 2 m' })!;
+  const href = [...vw.isi.matchAll(/href="(\/sld\/[^"]+)"/g), ...ld.isi.matchAll(/href="(\/sld\/[^"]+)"/g)].map(m => m[1]);
+  cek('videowall otomatis: 9 panel berisi konten dari foto videowall asli', (vw.isi.match(/<use href="#sldd-vw-/g) ?? []).length === 9 && href.includes('/sld/produk/vw-isi-1.jpg'));
+  cek('LED otomatis: satu konten layar penuh dibagi per kabinet + profil kabinet asli', (ld.isi.match(/<use href="#sldd-led-300"/g) ?? []).length === 48
+    && href.includes('/sld/produk/led-profil.jpg') && (ld.isi.match(/href="\/sld\/produk\/led-isi\.jpg"/g) ?? []).length === 1);
+  cek('gambar videowall & LED memakai berkas foto yang ada (ikut tersemat saat ekspor)', href.every(h => /^\/sld\/produk\/[a-z0-9-]+\.jpg$/.test(h) && existsSync(`public${h}`)));
+  cek('rasio kotak videowall / LED mengikuti ukuran', Math.abs(rasioDinding('led', { nama: 'LED 6 x 2 m' })! - ld.rasio) < 1e-9
+    && rasioDinding('led', { ket: '8 x 2 m' })! > rasioDinding('led', { ket: '4 x 2 m' })! && rasioDinding('tv') === null);
+  const ledBaru = perangkatBaru('led', 50, 50);
+  cek('LED baru dari katalog: tinggi kotak mengikuti ukuran di keterangan', Math.abs(ledBaru.w / ledBaru.h - rasioDinding('led', ledBaru)!) < 0.1, `${ledBaru.w}x${ledBaru.h}`);
+  cek('katalog: NovaStar sending box, video processor, layar motorized & fixed frame', tebakTemplat('NovaStar MCTRL660 PRO') === 'sending-box'
+    && tebakTemplat('Pontus video wall controller') === 'videoprocessor' && tebakTemplat('Layar proyektor motorized 100"') === 'layar-motor'
+    && tebakTemplat('Fixed frame screen 120"') === 'layar-frame' && tebakTemplat('LED P2.5 indoor') === 'led' && tebakTemplat('LED TV 55') === 'tv-tcl'
+    && ['sending-box', 'videoprocessor', 'layar-motor', 'layar-frame'].every(k => !!KATALOG.find(t => t.k === k)?.foto));
+  const tegak = { ...perangkatBaru('tv-tcl', 100, 100), w: 40, h: 25, rasio: 1.6 }, miring = { ...tegak, putar: 90 };
+  const kt = kotakTampak(tegak), km = kotakTampak(miring);
+  cek('putar 90°: kotak sambung kabel ikut berputar (lebar <-> tinggi)', Math.abs(kt.w - 40) < 1e-9 && Math.abs(km.h - 25) < 1e-9 && Math.abs(km.w - 25 / 1.6) < 1e-9);
+  const dm2 = { ...dokBaru(), perangkat: [miring] };
+  cek('putar: gambar di sheet 1 diputar, kartu sheet 2 tetap tegak', svgLembar1(dm2).includes('rotate(90 ') && !svgLembar2({ ...dm2, perangkat: [{ ...miring, no: '1' }] }).includes('rotate(90 '));
+  const sp = bersihkanDok({ perangkat: [{ ...miring, id: 'a', putar: -90 }, { ...miring, id: 'b', putar: 'x' }, { ...miring, id: 'c', putar: 450 }] })!;
+  cek('putar: sudut dinormalkan 0-359 saat disimpan', sp.perangkat[0].putar === 270 && sp.perangkat[1].putar === undefined && sp.perangkat[2].putar === 90);
+  const gbr = new Map([[miring.id, { isi: new Uint8Array([1]), jpeg: false }]]), kartu = new Map([[miring.id, { isi: new Uint8Array([2]), jpeg: false }]]);
+  const zr = await bacaZip(buatVsdx({ dok: { ...dm2, perangkat: [{ ...miring, no: '1' }] }, gambar: gbr, kartu }));
+  cek('Visio: perangkat diputar memakai gambar diputar di sheet 1 dan gambar tegak di kartu sheet 2', [...zr.keys()].filter(k => k.startsWith('visio/media/')).length === 2);
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

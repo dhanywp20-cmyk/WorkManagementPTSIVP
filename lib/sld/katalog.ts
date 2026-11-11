@@ -1,7 +1,7 @@
 export type KelompokKatalog = 'display' | 'middleware' | 'sumber' | 'audio' | 'kontrol' | 'listrik';
 
 export const LABEL_KELOMPOK: Record<KelompokKatalog, string> = {
-  display: 'Display', middleware: 'Middleware (WyreStorm)', sumber: 'Sumber input', audio: 'Audio & konferensi',
+  display: 'Display', middleware: 'Middleware (WyreStorm, LED & videowall)', sumber: 'Sumber input', audio: 'Audio & konferensi',
   kontrol: 'Kontrol & jaringan', listrik: 'Kelistrikan & beban',
 };
 export const URUTAN_KELOMPOK: KelompokKatalog[] = ['display', 'middleware', 'sumber', 'audio', 'kontrol', 'listrik'];
@@ -36,9 +36,16 @@ export const KATALOG: TemplatPerangkat[] = [
     port: ['HDMI 1', 'HDMI 2', 'DisplayPort', 'LAN (RJ45)', 'RS-232', 'IR in', 'USB'], w: 48, h: 30, saran: PHILIPS_BDL },
   { k: 'panel', foto: 'philips-10bdl3351t', nama: 'Panel sentuh 10"', kategori: 'User Interface', kelompok: 'display', ikon: 'panel', port: ['LAN (PoE+)', 'USB'], w: 42, h: 26,
     saran: ['Philips 10BDL3351T'] },
-  { k: 'videowall', nama: 'Videowall', kategori: 'Display', kelompok: 'display', ikon: 'videowall', port: ['HDMI in', 'DP out (loop)', 'LAN', 'RS-232'], w: 50, h: 31,
-    saran: ['Philips 55BDL2105X', 'Philips 49BDL2105X'] },
+  { k: 'videowall', nama: 'Videowall', kategori: 'Display', kelompok: 'display', ikon: 'videowall', port: ['HDMI in', 'DP out (loop)', 'LAN', 'RS-232'], w: 56, h: 28,
+    ket: 'Susunan 3 x 2 · panel 55" bezel tipis', saran: ['Philips 55BDL2105X', 'Philips 49BDL2105X'] },
+  { k: 'led', nama: 'LED Display', kategori: 'Display', kelompok: 'display', ikon: 'led', port: ['Ethernet in (dari sending box)', 'Ethernet loop', 'AC in'], w: 60, h: 30,
+    ket: 'Ukuran 4 x 2,25 m · pitch P2.5', saran: ['LED indoor P1.5', 'LED indoor P1.8', 'LED indoor P2.5', 'LED indoor P3.9', 'LED outdoor P4', 'LED outdoor P6', 'LED outdoor P10'] },
   { k: 'proyektor', foto: 'panasonic-proyektor', nama: 'Proyektor', kategori: 'Display', kelompok: 'display', ikon: 'proyektor', port: ['HDMI', 'HDBaseT', 'LAN', 'RS-232'], w: 44, h: 27.5 },
+  { k: 'layar-motor', foto: 'elite-layar-motor', nama: 'Layar proyektor motorized', kategori: 'Display / Layar proyektor', kelompok: 'display', ikon: 'layar',
+    port: ['AC in', 'Trigger 12 V', 'RS-485 / IR'], w: 40, h: 31,
+    saran: ['Elite Screens Evanesce Tension B', 'Elite Screens Spectrum', 'Elite Screens VMAX2', 'Screenview motorized', 'Screenview motorized tab-tension'] },
+  { k: 'layar-frame', foto: 'elite-layar-frame', nama: 'Layar proyektor fixed frame', kategori: 'Display / Layar proyektor', kelompok: 'display', ikon: 'layar',
+    port: [], w: 40, h: 34, saran: ['Elite Screens Sable Frame B2', 'Elite Screens Aeon CLR', 'Screenview fixed frame'] },
 
   { k: 'matrix', foto: 'mx-0404-scl', nama: 'Matrix switcher', kategori: 'Middleware / Switching', kelompok: 'middleware', ikon: 'matrix',
     port: ['HDMI in 1', 'HDMI in 2', 'HDMI in 3', 'HDMI in 4', 'HDBT out 1', 'HDBT out 2', 'HDMI out 1', 'HDMI out 2', 'LAN', 'RS-232', 'IR'], w: 58, h: 36,
@@ -53,6 +60,13 @@ export const KATALOG: TemplatPerangkat[] = [
   { k: 'avoip', foto: 'nhd-120-tx', nama: 'AV over IP encoder / decoder', kategori: 'Middleware / AV over IP', kelompok: 'middleware', ikon: 'encoder',
     port: ['HDMI', 'LAN (1G)', 'USB', 'IR', 'RS-232'], w: 44, h: 27.5,
     saran: ws('NHD-120-TX', 'NHD-120-RX', 'NHD-124-TX', 'NHD-150-RX', 'NHD-510-TX', 'NHD-500-TX/RX v2', 'NHD-600-E-TX/RX', 'NHD-0401-MV', 'NHD-CTL-PRO v2') },
+  { k: 'sending-box', foto: 'novastar-mctrl660-pro', nama: 'Sending box LED', kategori: 'Middleware / LED controller', kelompok: 'middleware', ikon: 'matrix',
+    port: ['HDMI in', 'DVI in', 'DVI loop', 'Ethernet out 1', 'Ethernet out 2', 'Ethernet out 3', 'Ethernet out 4', 'USB (kontrol)', 'Audio in'], w: 64, h: 10,
+    saran: ['NovaStar MCTRL300', 'NovaStar MCTRL600', 'NovaStar MCTRL660', 'NovaStar MCTRL660 PRO', 'NovaStar MCTRL700', 'NovaStar MSD300', 'NovaStar VX400',
+      'NovaStar VX600', 'NovaStar VX1000', 'NovaStar TB60 (Taurus)'] },
+  { k: 'videoprocessor', foto: 'pontus-vwc', nama: 'Video processor / videowall controller', kategori: 'Middleware / Video processor', kelompok: 'middleware',
+    ikon: 'matrix', port: ['HDMI in 1', 'HDMI in 2', 'HDMI in 3', 'HDMI in 4', 'HDMI out 1', 'HDMI out 2', 'HDMI out 3', 'HDMI out 4', 'LAN', 'RS-232'], w: 52, h: 18,
+    saran: ['Pontus video wall controller', 'Tricolor video processor', 'NovaStar VX1000', 'NovaStar H2', 'NovaStar H5'] },
 
   { k: 'laptop', nama: 'Laptop', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'laptop', port: ['HDMI', 'USB-C', 'USB-A', 'LAN'], w: 42, h: 26 },
   { k: 'pc', nama: 'PC', kategori: 'Sumber input', kelompok: 'sumber', ikon: 'pc', port: ['HDMI', 'DisplayPort', 'USB', 'LAN'], w: 36, h: 22.5 },
@@ -96,7 +110,13 @@ export const templatIkon = (ikon: string) => KATALOG.find(t => t.ikon === ikon);
 const KATA_KUNCI: [RegExp, string][] = [
   [/\bBDL\b|\d{2}BDL\d|philips.*(signage|display)|signage display/i, 'signage-philips'],
   [/10BDL|touch ?panel|panel sentuh|user interface/i, 'panel'],
+  [/video ?processor|video ?wall controller|pontus|tricolor/i, 'videoprocessor'],
+  [/novastar|sending ?(box|card)|\bMCTRL|\bMSD\d|\bVX\d{3,4}\b|taurus/i, 'sending-box'],
   [/videowall|video wall/i, 'videowall'],
+  [/\bLED\b(?! ?(tv|monitor|lamp|lampu))|videotron/i, 'led'],
+  [/motori[sz]ed|electric screen|tab.?tension|layar (proyektor |projector )?motor/i, 'layar-motor'],
+  [/fixed (frame )?screen|frame screen|sable frame|layar (proyektor |projector )?(fixed|frame)/i, 'layar-frame'],
+  [/projection screen|projector screen|layar (proyektor|projector)/i, 'layar-motor'],
   [/\bMXV?-\d{4}|matrix/i, 'matrix'],
   [/MX-0\d0\d-(MST|EDC)|MX-1007|SW-\d{3}|presentation|switcher/i, 'presentasi'],
   [/\bNHD-|av over ip|encoder|decoder/i, 'avoip'],

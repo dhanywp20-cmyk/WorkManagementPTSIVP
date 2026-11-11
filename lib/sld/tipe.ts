@@ -20,6 +20,7 @@ export interface Perangkat {
   gambar?: string;
   foto?: string;
   rasio?: number;
+  putar?: number;
 }
 
 export interface Ujung { p: string; nama: string; port: string; sisi: PilihSisi }

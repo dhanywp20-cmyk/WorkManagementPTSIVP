@@ -92,25 +92,12 @@ export const IKON_LAYAR: Record<string, { l: string; svg: () => string }> = {
     + `<rect x="74" y="83.6" width="10" height=".9" rx=".45" fill="#6b7280" transform="skewY(-3)"/>` },
   signage: { l: 'Signage Philips BDL', svg: () => bayangDinding(12, 10, 132, 75, 3)
     + panelLayar({ id: 'sg', x: 12, y: 10, w: 132, h: 75, tebal: 4.2, bezel: 1.5, warna: '#1d2025', tema: 'kota', miring: 3 }) },
-  videowall: { l: 'Videowall', svg: () => {
-    const x = 10, y = 8, w = 138, h = 80, seam = 0.7;
-    const isi = `<clipPath id="sldl-c-vw"><rect width="${w}" height="${h}"/></clipPath><g clip-path="url(#sldl-c-vw)">`
-      + `<image href="/sld/produk/philips-55bdl4650d.jpg" x="${-w * 0.035}" y="${-h * 0.06}" width="${w * 1.07}" height="${h * 1.12}" preserveAspectRatio="xMidYMid slice"/></g>`;
-    const garis = `<line x1="${w / 2}" y1="0" x2="${w / 2}" y2="${h}"/><line x1="0" y1="${h / 2}" x2="${w}" y2="${h / 2}"/>`;
-    return bayangDinding(x, y, w, h, 3) + `<g transform="translate(${x} ${y}) skewY(-3)"><polygon points="${w},0.4 ${w + 4},-1.4 ${w + 4},${h - 1.4} ${w},${h}" fill="url(#sldl-sisi)"/>`
-      + `<rect x="-0.8" y="-0.8" width="${w + 1.6}" height="${h + 1.6}" fill="#15171a"/>${isi}<g stroke="#0b0c0e" stroke-width="${seam}">${garis}</g>`
-      + `<polygon points="0,0 ${n(w * 0.62)},0 ${n(w * 0.18)},${h} 0,${h}" fill="url(#sldl-kilau)"/></g>`;
-  } },
-  led: { l: 'LED videotron', svg: () => {
-    const x = 12, y = 10, w = 132, h = 72, kol = 6, bar = 4;
-    const sambungan = [...Array.from({ length: kol - 1 }, (_, i) => `<line x1="${n(((i + 1) * w) / kol)}" y1="0" x2="${n(((i + 1) * w) / kol)}" y2="${h}"/>`),
-      ...Array.from({ length: bar - 1 }, (_, j) => `<line x1="0" y1="${n(((j + 1) * h) / bar)}" x2="${w}" y2="${n(((j + 1) * h) / bar)}"/>`)].join('');
-    return bayangLantai(80, 93, 66) + `<path d="M28 82 V92 M132 82 V92" stroke="#2b2f36" stroke-width="2.4"/>`
-      + `<g transform="translate(${x} ${y}) skewY(-3)"><polygon points="${w},0.4 ${w + 4},-1.4 ${w + 4},${h - 1.4} ${w},${h}" fill="url(#sldl-sisi)"/>`
-      + `<rect x="-1" y="-1" width="${w + 2}" height="${h + 2}" fill="#0b0c0e"/><clipPath id="sldl-c-led"><rect width="${w}" height="${h}"/></clipPath>`
-      + `<g clip-path="url(#sldl-c-led)"><image href="/sld/produk/tcl-tv.jpg" x="${-w * 0.03}" y="${-h * 0.05}" width="${w * 1.06}" height="${h * 1.1}" preserveAspectRatio="xMidYMid slice"/></g>`
-      + `<rect width="${w}" height="${h}" fill="url(#sldl-piksel)"/><g stroke="#000" stroke-opacity=".6" stroke-width=".45">${sambungan}</g></g>`;
-  } },
+  videowall: { l: 'Videowall (kolom x baris otomatis)', svg: () => '' },
+  led: { l: 'LED display (ukuran otomatis)', svg: () => '' },
+  layar: { l: 'Layar proyektor', svg: () => bayangDinding(22, 14, 116, 70, 2)
+    + '<rect x="16" y="9" width="128" height="6" rx="3" fill="url(#sldl-badan)" stroke="#9aa3ad" stroke-width=".4"/>'
+    + '<rect x="22" y="15" width="116" height="70" fill="#1b1e23"/><rect x="24.5" y="21" width="111" height="61.5" fill="#fbfbfc"/>'
+    + '<rect x="22" y="85" width="116" height="2.2" rx="1.1" fill="#2b2f36"/>' },
   panel: { l: 'Panel sentuh', svg: () => bayangLantai(82, 86, 46)
     + `<polygon points="66,84 104,84 110,72 74,72" fill="#2b2f36"/><polygon points="66,84 104,84 104.8,82.6 66.8,82.6" fill="#4b5563"/>`
     + panelLayar({ id: 'pn', x: 30, y: 16, w: 96, h: 60, tebal: 4, bezel: 4.2, warna: '#0d0e10', tema: 'ui', miring: 4, r: 3 }) },

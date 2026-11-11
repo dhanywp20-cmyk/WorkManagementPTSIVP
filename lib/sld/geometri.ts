@@ -1,8 +1,9 @@
+import { rasioDinding } from './dinding';
 import { LABEL_GARIS } from './gaya';
 import { lebarTeks } from './teks';
 import type { DokSLD, GeoGaris, GeoKabel, Kabel, Perangkat, Sisi, Titik, Ujung } from './tipe';
 
-interface Kotak { x: number; y: number; w: number; h: number }
+export interface Kotak { x: number; y: number; w: number; h: number }
 
 export function kodeKabel(kabel: Kabel[]): Map<string, string> {
   const m = new Map<string, string>();
@@ -16,12 +17,24 @@ export const tergambar = (c: Kabel, peta: Map<string, Perangkat>) =>
 
 const pusat = (b: Kotak): Titik => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
-export function kotakTampak(p: Perangkat): Kotak {
-  const r = p.gambar || p.foto ? (p.rasio ?? p.w / p.h) : 1.6;
-  if (p.w / p.h > r) { const w = p.h * r; return { x: p.x + (p.w - w) / 2, y: p.y, w, h: p.h }; }
-  const h = p.w / r;
-  return { x: p.x, y: p.y + (p.h - h) / 2, w: p.w, h };
+export const rasioPerangkat = (p: Perangkat) => (p.gambar || p.foto ? (p.rasio ?? p.w / p.h) : (rasioDinding(p.ikon, p) ?? 1.6));
+
+function muat(k: Kotak, r: number): Kotak {
+  if (k.w / k.h > r) { const w = k.h * r; return { x: k.x + (k.w - w) / 2, y: k.y, w, h: k.h }; }
+  const h = k.w / r;
+  return { x: k.x, y: k.y + (k.h - h) / 2, w: k.w, h };
 }
+
+export const sudutSah = (v: unknown) => { const a = Number(v); return Number.isFinite(a) ? ((Math.round(a) % 360) + 360) % 360 : 0; };
+
+export function kotakPutar(k: Kotak, r: number, sudut = 0): { kotak: Kotak; cx: number; cy: number; w: number; h: number } {
+  const a = (sudutSah(sudut) * Math.PI) / 180, c = Math.abs(Math.cos(a)), s = Math.abs(Math.sin(a));
+  const kotak = muat(k, (r * c + s) / (r * s + c));
+  const w = kotak.w / (c + s / r);
+  return { kotak, cx: kotak.x + kotak.w / 2, cy: kotak.y + kotak.h / 2, w, h: w / r };
+}
+
+export const kotakTampak = (p: Perangkat): Kotak => kotakPutar(p, rasioPerangkat(p), p.putar).kotak;
 const datar = (s: Sisi) => s === 'kiri' || s === 'kanan';
 
 export function sisiOtomatis(a: Kotak, b: Kotak): Sisi {

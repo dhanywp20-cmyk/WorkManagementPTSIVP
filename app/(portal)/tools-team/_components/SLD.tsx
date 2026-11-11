@@ -59,6 +59,11 @@ export function SLD() {
       if (!p) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); x.hapus(p); return; }
       if (e.key === 'Escape') { x.setPilih(null); return; }
+      if ((e.key === 'r' || e.key === 'R') && p.jenis === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        x.putarPerangkat(p.id, e.shiftKey ? -90 : 90);
+        return;
+      }
       const arah: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       const d = arah[e.key];
       if (!d || p.jenis !== 'p') return;

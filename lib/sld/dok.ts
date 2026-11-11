@@ -1,6 +1,8 @@
 import { FOTO_PRODUK, fotoSah } from './foto-produk';
 import { cariTemplat } from './katalog';
+import { rasioDinding } from './dinding';
 import { URUTAN_JENIS } from './gaya';
+import { sudutSah } from './geometri';
 import {
   AREA, type BlokJudul, type CatatanPasang, type DokSLD, type JenisKabel, type Kabel, MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL,
   MAKS_PERANGKAT, type Perangkat, type PilihSisi, type Ujung, UKURAN_MIN,
@@ -25,7 +27,9 @@ export function perangkatBaru(k: string, x: number, y: number, isi: Partial<Pera
   const t = cariTemplat(k);
   const fp = t.foto ? FOTO_PRODUK[t.foto] : undefined;
   const w = isi.w ?? t.w;
-  const ukuran = fp ? { foto: fp.src, rasio: fp.rasio, h: isi.h ?? Math.round(Math.min(40, Math.max(10, w / fp.rasio)) * 2) / 2 } : { h: isi.h ?? t.h };
+  const rd = rasioDinding(t.ikon, { nama: t.nama, ket: t.ket });
+  const ukuran = fp ? { foto: fp.src, rasio: fp.rasio, h: isi.h ?? Math.round(Math.min(40, Math.max(10, w / fp.rasio)) * 2) / 2 }
+    : { h: isi.h ?? (rd ? Math.round(Math.min(60, Math.max(10, w / rd)) * 2) / 2 : t.h) };
   return {
     id: idBaru('p'), no: '', nama: t.nama, peran: '', ket: t.ket ?? '', kategori: t.kategori, model: '', qty: 1, satuan: 'unit',
     subGambar: '', ikon: t.ikon, port: [...t.port], x, y, w, ...ukuran, ...isi,
@@ -71,6 +75,7 @@ function bersihkanPerangkat(v: unknown): Perangkat | null {
     gambar: bersihkanGambarSLD(p.gambar),
     foto: fotoSah(p.foto) ? p.foto : undefined,
     rasio: Number.isFinite(Number(p.rasio)) && Number(p.rasio) > 0 ? angka(p.rasio, 0.1, 10, 1.6) : undefined,
+    putar: sudutSah(p.putar) || undefined,
   };
 }
 

@@ -23,6 +23,10 @@ export const FOTO_PRODUK: Record<string, FotoProduk> = {
   'asus-nuc': f('asus-nuc', 294, 123, 'ASUS NUC'),
   brightsign: f('brightsign', 269, 174, 'BrightSign HD6'),
   'hikvision-nvr': f('hikvision-nvr', 640, 165, 'Hikvision DS-7608NI-Q2'),
+  'novastar-mctrl660-pro': f('novastar-mctrl660-pro', 640, 70, 'NovaStar MCTRL660 PRO'),
+  'pontus-vwc': f('pontus-vwc', 428, 143, 'Pontus video wall controller'),
+  'elite-layar-motor': f('elite-layar-motor', 480, 376, 'Elite Screens Evanesce Tension B'),
+  'elite-layar-frame': f('elite-layar-frame', 480, 412, 'Elite Screens Sable Frame B2'),
 };
 
 export const POLA_FOTO_PRODUK = /^\/sld\/produk\/[a-z0-9-]+\.jpg$/;

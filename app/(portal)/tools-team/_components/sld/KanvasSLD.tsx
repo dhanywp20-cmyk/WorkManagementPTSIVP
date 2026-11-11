@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sudutSah } from '@/lib/sld/geometri';
 import { jalurBulat, barisLabel, isiLembar1 } from '@/lib/sld/lembar1';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { lebarTeks } from '@/lib/sld/teks';
@@ -12,7 +13,8 @@ type Seret =
   | { mode: 'pindah'; id: string; dx: number; dy: number }
   | { mode: 'ukur'; id: string; x0: number; y0: number }
   | { mode: 'sambung'; dari: string; titik: Titik }
-  | { mode: 'tengah'; id: string; vertikal: boolean };
+  | { mode: 'tengah'; id: string; vertikal: boolean }
+  | { mode: 'putar'; id: string; cx: number; cy: number };
 
 const BIRU = '#2563eb';
 const snap = (v: number) => Math.round(v * 2) / 2;
@@ -65,6 +67,10 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
     if (seret.mode === 'pindah') a.ubahPerangkat(seret.id, { x: snap(t.x - seret.dx), y: snap(t.y - seret.dy) });
     else if (seret.mode === 'ukur') a.ubahPerangkat(seret.id, { w: Math.max(UKURAN_MIN.w, snap(t.x - seret.x0)), h: Math.max(UKURAN_MIN.h, snap(t.y - seret.y0)) });
     else if (seret.mode === 'sambung') setSeret({ ...seret, titik: t });
+    else if (seret.mode === 'putar') {
+      const sudut = (Math.atan2(t.y - seret.cy, t.x - seret.cx) * 180) / Math.PI + 90;
+      a.ubahPerangkat(seret.id, { putar: sudutSah(e.shiftKey ? sudut : Math.round(sudut / 15) * 15) || undefined });
+    }
     else a.ubahKabel(seret.id, { tengah: snap(seret.vertikal ? t.x : t.y) });
   };
   const lepas = (e: React.PointerEvent) => {
@@ -135,6 +141,15 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
               <rect x={pDipilih.x + pDipilih.w - 1.4} y={pDipilih.y + pDipilih.h - 1.4} width={2.8} height={2.8} fill="#fff" stroke={BIRU} strokeWidth={0.4}
                 style={{ cursor: 'nwse-resize', touchAction: 'none' }} aria-label="Ubah ukuran gambar"
                 onPointerDown={e => { e.stopPropagation(); tangkap(e); setSeret({ mode: 'ukur', id: pDipilih.id, x0: pDipilih.x, y0: pDipilih.y }); }} />
+              <g style={{ cursor: 'grab', touchAction: 'none' }} aria-label="Seret untuk memutar perangkat"
+                onPointerDown={e => { e.stopPropagation(); tangkap(e); setSeret({ mode: 'putar', id: pDipilih.id, cx: pDipilih.x + pDipilih.w / 2, cy: pDipilih.y + pDipilih.h / 2 }); }}>
+                <line x1={pDipilih.x + pDipilih.w / 2} y1={pDipilih.y - 0.8} x2={pDipilih.x + pDipilih.w / 2} y2={pDipilih.y - 3.6} stroke={BIRU} strokeWidth={0.3} />
+                <circle cx={pDipilih.x + pDipilih.w / 2} cy={pDipilih.y - 5} r={5} fill="transparent" />
+                <circle cx={pDipilih.x + pDipilih.w / 2} cy={pDipilih.y - 5} r={1.5} fill="#fff" stroke={BIRU} strokeWidth={0.45} />
+                {seret?.mode === 'putar' && (
+                  <text x={pDipilih.x + pDipilih.w / 2 + 2.6} y={pDipilih.y - 4} fontSize={2.6} fill={BIRU} fontWeight={700}>{pDipilih.putar ?? 0}°</text>
+                )}
+              </g>
               <g style={{ cursor: 'crosshair', touchAction: 'none' }} aria-label="Tarik untuk menyambung kabel"
                 onPointerDown={e => { e.stopPropagation(); tangkap(e); setSeret({ mode: 'sambung', dari: pDipilih.id, titik: titik(e) }); }}>
                 <circle cx={pDipilih.x + pDipilih.w + 4} cy={pDipilih.y + pDipilih.h / 2} r={6} fill="transparent" />

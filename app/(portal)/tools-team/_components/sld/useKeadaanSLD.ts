@@ -5,11 +5,12 @@ import { contohVoiceKamar } from '@/lib/sld/contoh';
 import {
   bersihkanDok, dokBaru, hapusPerangkat, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, ujungBaru,
 } from '@/lib/sld/dok';
-import { geometri } from '@/lib/sld/geometri';
+import { rasioDinding } from '@/lib/sld/dinding';
+import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
-import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat } from '@/lib/sld/tipe';
+import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat, UKURAN_MIN } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
 import {
   type FotoGaleri, type IngatanFoto, kunciModel, muatFotoDraf, muatGaleri, muatIngatan, muatLogo, simpanFotoDraf, simpanGaleri, simpanIngatan, simpanLogo,
@@ -18,6 +19,7 @@ import type { FotoSiap } from './gambar';
 
 const KUNCI = 'tools-team-sld-v1';
 const KUNCI_PRESET = 'tools-team-sld-kabel';
+const TEKS_DINDING = ['nama', 'model', 'ket', 'subGambar', 'ikon'];
 
 export type Pilihan = { jenis: 'p' | 'k'; id: string } | null;
 
@@ -108,8 +110,17 @@ export function useKeadaanSLD() {
     setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
       if (x.id !== id) return x;
       const ingat = p.model !== undefined && !x.gambar ? ingatan.current[kunciModel(p.model)] : undefined;
-      return ingat ? { ...x, ...p, gambar: ingat.gambar, rasio: ingat.rasio } : { ...x, ...p };
+      const baru = ingat ? { ...x, ...p, gambar: ingat.gambar, rasio: ingat.rasio } : { ...x, ...p };
+      const rd = !baru.gambar && !baru.foto && TEKS_DINDING.some(k => k in p) ? rasioDinding(baru.ikon, baru) : null;
+      return rd && p.h === undefined ? { ...baru, h: Math.round(Math.min(AREA.h, Math.max(UKURAN_MIN.h, baru.w / rd)) * 2) / 2 } : baru;
     }) })), []);
+  const putarPerangkat = useCallback((id: string, delta: number) => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
+    if (x.id !== id) return x;
+    const putar = sudutSah((x.putar ?? 0) + delta) || undefined;
+    if (Math.abs(delta) % 180 !== 90) return { ...x, putar };
+    const w = Math.max(UKURAN_MIN.w, x.h), h = Math.max(UKURAN_MIN.h, x.w);
+    return { ...x, putar, w, h, x: x.x + (x.w - w) / 2, y: x.y + (x.h - h) / 2 };
+  }) })), []);
   const ubahKabel = useCallback((id: string, p: Partial<Kabel>) =>
     setDok(d => ({ ...d, kabel: d.kabel.map(x => (x.id === id ? { ...x, ...p } : x)) })), []);
 
@@ -177,7 +188,7 @@ export function useKeadaanSLD() {
 
   return {
     dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    ubahBlok, ubahPerangkat, putarPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

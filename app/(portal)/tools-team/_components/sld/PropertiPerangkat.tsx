@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
-import { Copy, ImagePlus, Trash2 } from 'lucide-react';
+import { Copy, ImagePlus, RotateCcw, RotateCw, Trash2 } from 'lucide-react';
+import { sudutSah } from '@/lib/sld/geometri';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
@@ -102,6 +103,16 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
           <input type="number" min={8} max={200} value={p.h} onChange={e => ubah({ h: Math.max(8, Number(e.target.value) || 8) })} className={kelasKecil} />
         </Isian>
       </div>
+      <Isian label={`Putar (${p.putar ?? 0}°)`}>
+        <div className="flex items-center gap-1.5">
+          <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, -90)} aria-label="Putar 90° ke kiri"><RotateCcw size={15} /></button>
+          <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, 90)} aria-label="Putar 90° ke kanan"><RotateCw size={15} /></button>
+          <input type="number" min={0} max={359} step={15} value={p.putar ?? 0} onChange={e => ubah({ putar: sudutSah(e.target.value) || undefined })}
+            className={`${kelasKecil} !w-20`} aria-label="Sudut putar (derajat)" />
+          {!!p.putar && <button type="button" className={kelasTombol} onClick={() => ubah({ putar: undefined })}>Tegak</button>}
+        </div>
+        <p className="mt-1 text-[11px] text-slate-500">Atau seret tombol bulat di atas perangkat (per 15°, tahan Shift untuk bebas). Tombol R = putar 90°.</p>
+      </Isian>
       {lain.length > 0 && (
         <Isian label="Sambungkan kabel ke">
           <select value="" onChange={e => e.target.value && a.hubungkan(p.id, e.target.value)} className={kelasKecil}>
