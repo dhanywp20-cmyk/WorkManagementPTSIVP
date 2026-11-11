@@ -1,6 +1,26 @@
 'use client';
 import type React from 'react';
+import { useState } from 'react';
 import { kelasInput } from '../bersama/ui';
+
+export function Angka({ nilai, min, maks, langkah, onUbah, className, label }: {
+  nilai: number; min: number; maks?: number; langkah?: number; onUbah: (v: number) => void; className?: string; label?: string;
+}) {
+  const [teks, setTeks] = useState<string | null>(null);
+  const batas = (v: number) => Math.min(maks ?? Infinity, Math.max(min, v));
+  const angka = (s: string) => (s.trim() === '' ? NaN : Number(s.replace(',', '.')));
+  const akhiri = () => {
+    if (teks === null) return;
+    const v = angka(teks);
+    if (Number.isFinite(v) && batas(v) !== nilai) onUbah(batas(v));
+    setTeks(null);
+  };
+  return (
+    <input type="number" inputMode="decimal" min={min} max={maks} step={langkah} value={teks ?? String(nilai)} aria-label={label} className={className ?? kelasKecil}
+      onChange={e => { setTeks(e.target.value); const v = angka(e.target.value); if (Number.isFinite(v) && v === batas(v)) onUbah(v); }}
+      onBlur={akhiri} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); akhiri(); } else if (e.key === 'Escape') setTeks(null); }} />
+  );
+}
 
 export const kelasTombol = 'inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50';
 export const kelasKecil = `${kelasInput} !py-1.5 !text-[13px]`;

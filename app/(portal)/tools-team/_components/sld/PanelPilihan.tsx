@@ -5,7 +5,7 @@ import {
 import type { Rata } from '@/lib/sld/pilih';
 import { LABEL_WARNA_ZONA, LABEL_ZONA_CEPAT, WARNA_ZONA } from '@/lib/sld/zona';
 import { POSISI_LABEL, type PosisiLabel, type WarnaZona, type ZonaSLD } from '@/lib/sld/tipe';
-import { Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { Angka, Isian, kelasTombol, Teks } from './isian';
 import { PilihModel } from './PilihModel';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -82,8 +82,8 @@ export function PropertiZona({ a, z }: { a: KeadaanSLD; z: ZonaSLD }) {
         </div>
       </Isian>
       <div className="grid grid-cols-2 gap-2">
-        <Isian label="Lebar (mm)"><input type="number" min={10} value={z.w} onChange={e => ubah({ w: Math.max(10, Number(e.target.value) || 10) })} className={kelasKecil} /></Isian>
-        <Isian label="Tinggi (mm)"><input type="number" min={8} value={z.h} onChange={e => ubah({ h: Math.max(8, Number(e.target.value) || 8) })} className={kelasKecil} /></Isian>
+        <Isian label="Lebar (mm)"><Angka nilai={z.w} min={10} maks={420} onUbah={v => ubah({ w: v })} /></Isian>
+        <Isian label="Tinggi (mm)"><Angka nilai={z.h} min={8} maks={300} onUbah={v => ubah({ h: v })} /></Isian>
       </div>
       <div className="flex flex-wrap gap-1.5 pt-1">
         <button type="button" className={kelasTombol} onClick={() => { if (a.salin()) a.tempel(); }}><CopyPlus size={15} /> Duplikat</button>

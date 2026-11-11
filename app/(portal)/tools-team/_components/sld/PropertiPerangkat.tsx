@@ -13,7 +13,7 @@ import { PilihPosisiLabel } from './PanelPilihan';
 import { PilihModel } from './PilihModel';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
-import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { Angka, Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import { MiniIkon } from './PanelKatalog';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -67,7 +67,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
       <PilihModel a={a} ids={[p.id]} saran={saran} />
       <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
         <Isian label="Qty">
-          <input type="number" min={0} value={p.qty} onChange={e => ubah({ qty: Math.max(0, Number(e.target.value) || 0) })} className={kelasKecil} />
+          <Angka nilai={p.qty} min={0} onUbah={v => ubah({ qty: v })} />
         </Isian>
         <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
         <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
@@ -105,18 +105,18 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
         bantuan="Dipakai sebagai pilihan port saat mengisi kabel." />
       <div className="grid grid-cols-2 gap-2">
         <Isian label="Lebar gambar (mm)">
-          <input type="number" min={12} max={200} value={p.w} onChange={e => ubah({ w: Math.max(12, Number(e.target.value) || 12) })} className={kelasKecil} />
+          <Angka nilai={p.w} min={12} maks={200} onUbah={v => ubah({ w: v })} />
         </Isian>
         <Isian label="Tinggi gambar (mm)">
-          <input type="number" min={8} max={200} value={p.h} onChange={e => ubah({ h: Math.max(8, Number(e.target.value) || 8) })} className={kelasKecil} />
+          <Angka nilai={p.h} min={8} maks={200} onUbah={v => ubah({ h: v })} />
         </Isian>
       </div>
       <Isian label={`Putar & balik (${p.putar ?? 0}°${p.balikH ? ' · balik horizontal' : ''}${p.balikV ? ' · balik vertikal' : ''})`}>
         <div className="flex flex-wrap items-center gap-1.5">
           <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, -90)} aria-label="Putar 90° ke kiri"><RotateCcw size={15} /></button>
           <button type="button" className={kelasTombol} onClick={() => a.putarPerangkat(p.id, 90)} aria-label="Putar 90° ke kanan"><RotateCw size={15} /></button>
-          <input type="number" min={0} max={359} step={15} value={p.putar ?? 0} onChange={e => ubah({ putar: sudutSah(e.target.value) || undefined })}
-            className={`${kelasKecil} !w-20`} aria-label="Sudut putar (derajat)" />
+          <Angka nilai={p.putar ?? 0} min={0} maks={359} langkah={15} onUbah={v => ubah({ putar: sudutSah(v) || undefined })}
+            className={`${kelasKecil} !w-20`} label="Sudut putar (derajat)" />
           <button type="button" className={`${kelasTombol} ${p.balikH ? '!bg-blue-50 !border-blue-300' : ''}`} onClick={() => a.balikPerangkat(p.id, 'h')} aria-pressed={!!p.balikH}
             title="Balik horizontal (H)"><FlipHorizontal2 size={15} /> Horizontal</button>
           <button type="button" className={`${kelasTombol} ${p.balikV ? '!bg-blue-50 !border-blue-300' : ''}`} onClick={() => a.balikPerangkat(p.id, 'v')} aria-pressed={!!p.balikV}
