@@ -75,6 +75,19 @@ export function kelompokNo(d: DokSLD): Map<string, Perangkat[]> {
   return new Map(urut);
 }
 
+export interface GrupModel { kategori: string; model: string; jumlah: number }
+
+export function grupModel(daftar: Perangkat[]): GrupModel[] {
+  const m = new Map<string, GrupModel>();
+  for (const p of daftar) {
+    const model = p.model.trim(), qty = Number.isFinite(p.qty) ? p.qty : 0;
+    if (!model) continue;
+    const k = `${p.kategori.trim().toLowerCase()}|${model.toLowerCase()}`, g = m.get(k);
+    if (g) g.jumlah += qty; else m.set(k, { kategori: p.kategori.trim(), model, jumlah: qty });
+  }
+  return [...m.values()];
+}
+
 export function noOtomatis(d: DokSLD): Map<string, string> {
   const hasil = new Map<string, string>();
   for (const [no, daftar] of kelompokNo(d)) for (const p of daftar) if (!p.no.trim()) hasil.set(p.id, no);

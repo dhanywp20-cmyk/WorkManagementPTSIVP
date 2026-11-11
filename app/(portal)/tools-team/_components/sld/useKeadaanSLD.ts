@@ -244,6 +244,11 @@ export function useKeadaanSLD() {
   }, [setDok]);
   const ratakanTerpilih = useCallback((cara: Rata) => setDok(d => ratakan(d, terpilihRef.current, cara)), [setDok]);
   const aturLabelDi = useCallback((ids: string[], posisi: PosisiLabel) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id) ? { ...p, labelDi: posisi === 'bawah' ? undefined : posisi } : p)) })), [setDok]);
+  const aturModel = useCallback((ids: string[], model: string, kategori?: string) => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
+    if (!ids.includes(x.id)) return x;
+    const ingat = model.trim() && !x.gambar ? ingatan.current[kunciModel(model)] : undefined;
+    return { ...x, model, ...(kategori !== undefined ? { kategori } : {}), ...(ingat ? { gambar: ingat.gambar, rasio: ingat.rasio } : {}) };
+  }) })), [setDok]);
   const tambahZona = useCallback((posisi?: { x: number; y: number }, label?: string) => {
     const a = areaDok(dokRef.current), z = zonaBaru(posisi?.x ?? a.x + 20, posisi?.y ?? a.y + 15, label);
     setDok(d => ((d.zona?.length ?? 0) >= MAKS_ZONA ? d : { ...d, zona: [...(d.zona ?? []), z] }));
@@ -307,7 +312,7 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
-    aturLabelDi, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

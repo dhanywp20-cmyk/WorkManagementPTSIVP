@@ -6,6 +6,7 @@ import type { Rata } from '@/lib/sld/pilih';
 import { LABEL_WARNA_ZONA, LABEL_ZONA_CEPAT, WARNA_ZONA } from '@/lib/sld/zona';
 import { POSISI_LABEL, type PosisiLabel, type WarnaZona, type ZonaSLD } from '@/lib/sld/tipe';
 import { Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { PilihModel } from './PilihModel';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 const PANAH: Record<PosisiLabel, string> = { 'kiri-atas': '↖', atas: '↑', 'kanan-atas': '↗', kiri: '←', kanan: '→', 'kiri-bawah': '↙', bawah: '↓', 'kanan-bawah': '↘' };
@@ -52,6 +53,7 @@ export function PanelBanyak({ a }: { a: KeadaanSLD }) {
           </div>
         </Isian>
       )}
+      {perangkat.length > 0 && <PilihModel a={a} ids={perangkat.map(x => x.id)} />}
       {perangkat.length > 0 && <PilihPosisiLabel nilai={label} onPilih={p => a.aturLabelDi(perangkat.map(x => x.id), p)} />}
       <p className="text-[11.5px] text-slate-500">
         Seret salah satu item untuk memindahkan semuanya. Shift + klik menambah / mengurangi pilihan; seret kotak di area kosong untuk memilih banyak.

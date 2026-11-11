@@ -22,7 +22,7 @@ import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
 import { bacaZip, crc32, tulisZip } from '../lib/sld/zip';
-import { barisKoneksi, barisPerangkat, fungsiOtomatis, jenisTerpakai, kartuGambar, noOtomatis, periksaDok } from '../lib/sld/turunan';
+import { barisKoneksi, barisPerangkat, fungsiOtomatis, grupModel, jenisTerpakai, kartuGambar, noOtomatis, periksaDok } from '../lib/sld/turunan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -402,6 +402,10 @@ void (async () => {
   cek('BOQ & sheet 2: nama beda tapi jenis sama = satu baris, qty dijumlah', bq9.length === 2 && bq9[1].qty === 3 && bq9[1].model === 'IFP' && bp9.length === 2 && bp9[1].qty.startsWith('3') && kg9[1].judul === 'IFP', JSON.stringify(bq9.map(b => [b.model, b.qty])));
   const h4 = { ...h1, perangkat: h1.perangkat.map(p => p.id === 'i2' ? { ...p, model: 'Philips 86BDL' } : p) };
   cek('model / part no beda = baris terpisah', barisBoq(h4).length === 3);
+  const gm9 = grupModel([{ ...h1.perangkat[1], model: 'Philips 86BDL' }, { ...h1.perangkat[2], model: 'philips 86bdl ', qty: 2 }, h1.perangkat[3], { ...mxU, model: 'WyreStorm MX-0404' }]);
+  cek('grup model buatan sendiri: daftar unik per kategori + model, qty dijumlah', gm9.length === 2 && gm9.find(g => g.model === 'Philips 86BDL')?.jumlah === 3);
+  const h5 = { ...h1, perangkat: h1.perangkat.map(p => (p.id === 'i1' || p.id === 'i3' ? { ...p, model: 'Grup A' } : p)) };
+  cek('model baru = grup BOQ sendiri', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(',') === 'Matrix switcher:1,Grup A:2,IFP 2:1', barisBoq(h5).map(b => `${b.model}:${b.qty}`).join(','));
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);

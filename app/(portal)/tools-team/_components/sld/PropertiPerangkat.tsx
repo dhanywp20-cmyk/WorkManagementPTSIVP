@@ -10,6 +10,7 @@ import { noOtomatis } from '@/lib/sld/turunan';
 import { LABEL_PERANGKAT } from '@/lib/sld/gaya';
 import { IsianHurufLabel } from './IsianHuruf';
 import { PilihPosisiLabel } from './PanelPilihan';
+import { PilihModel } from './PilihModel';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
@@ -91,6 +92,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
         <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
         <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />
       </div>
+      <PilihModel a={a} ids={[p.id]} saran={saran} />
       <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
         <Isian label="Qty">
           <input type="number" min={0} value={p.qty} onChange={e => ubah({ qty: Math.max(0, Number(e.target.value) || 0) })} className={kelasKecil} />
