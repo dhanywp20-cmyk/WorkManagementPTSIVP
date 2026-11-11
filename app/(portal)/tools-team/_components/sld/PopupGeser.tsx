@@ -15,7 +15,7 @@ function muat(): { pos: Posisi; kecil: boolean } {
 }
 
 function simpan(pos: Posisi, kecil: boolean) {
-  try { localStorage.setItem(KUNCI, JSON.stringify({ pos, kecil })); } catch { /* penyimpanan peramban tidak tersedia */ }
+  try { localStorage.setItem(KUNCI, JSON.stringify({ pos, kecil })); } catch { return; }
 }
 
 export function PopupGeser({ buka, judul, className, children }: { buka: boolean; judul: string; className: string; children: ReactNode }) {
