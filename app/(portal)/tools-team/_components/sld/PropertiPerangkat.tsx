@@ -56,6 +56,23 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
       </div>
       {galat && <p className="text-[12px] text-rose-700">{galat}</p>}
       <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto hanya disimpan di browser ini, tidak diunggah ke server.</p>
+      <div className="grid grid-cols-[72px_1fr] gap-2">
+        <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder={noOtomatis(a.dok).has(p.id) ? `${noOtomatis(a.dok).get(p.id)} (otomatis)` : "luar BOM"} />
+        <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
+        <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />
+      </div>
+      <PilihModel a={a} ids={[p.id]} saran={saran} />
+      <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
+        <Isian label="Qty">
+          <input type="number" min={0} value={p.qty} onChange={e => ubah({ qty: Math.max(0, Number(e.target.value) || 0) })} className={kelasKecil} />
+        </Isian>
+        <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
+        <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
+      </div>
+      <datalist id={`saran-model-${p.id}`}>{saran.map(x => <option key={x} value={x} />)}</datalist>
       {a.galeri.length > 0 && (
         <Isian label={`Galeri foto di browser ini (${a.galeri.length})`}>
           <div className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto">
@@ -79,28 +96,11 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
           </select>
         </Isian>
       )}
-      <div className="grid grid-cols-[72px_1fr] gap-2">
-        <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder={noOtomatis(a.dok).has(p.id) ? `${noOtomatis(a.dok).get(p.id)} (otomatis)` : "luar BOM"} />
-        <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />
-      </div>
       <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />
       <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
       <PilihPosisiLabel nilai={p.labelDi} onPilih={x => a.aturLabelDi([p.id], x)} />
       <IsianHurufLabel label="Ukuran huruf label (baris #nama)" dasarMm={LABEL_PERANGKAT.nama.ukuran} faktor={p.huruf} bawaan={a.dok.huruf?.perangkat}
         onUbah={f => ubah({ huruf: f })} bantuan="Baris *peran dan keterangan ikut membesar / mengecil." />
-      <div className="grid grid-cols-2 gap-2">
-        <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
-        <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />
-      </div>
-      <PilihModel a={a} ids={[p.id]} saran={saran} />
-      <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
-        <Isian label="Qty">
-          <input type="number" min={0} value={p.qty} onChange={e => ubah({ qty: Math.max(0, Number(e.target.value) || 0) })} className={kelasKecil} />
-        </Isian>
-        <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
-        <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
-      </div>
-      <datalist id={`saran-model-${p.id}`}>{saran.map(x => <option key={x} value={x} />)}</datalist>
       <Teks label="Daftar port (pisahkan dengan koma)" nilai={p.port.join(', ')} onUbah={v => ubah({ port: v.split(',').map(s => s.trim()).filter(Boolean).slice(0, 48) })}
         bantuan="Dipakai sebagai pilihan port saat mengisi kabel." />
       <div className="grid grid-cols-2 gap-2">
