@@ -1,14 +1,17 @@
 import { HURUF } from './gaya';
 import type { Prim } from './primitif';
+import { kotakTeks, WARNA_TEKS } from './teks-bebas';
 import { lebarTeks } from './teks';
+import type { TeksBebas } from './tipe';
 
 export const INCI = (mm: number) => mm / 25.4;
 export const f = (v: number) => (Math.abs(v) < 1e-9 ? '0' : String(Math.round(v * 1e9) / 1e9));
 export const xe = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
 export const sel = (n: string, v: string | number, tambahan = '') => `<Cell N='${n}' V='${typeof v === 'number' ? f(v) : xe(v)}'${tambahan}/>`;
 
-const TINGGI = 297;
-export const vy = (y: number) => INCI(TINGGI - y);
+let tinggiHalaman = 297;
+export const aturTinggiHalaman = (h: number) => { tinggiHalaman = h; };
+export const vy = (y: number) => INCI(tinggiHalaman - y);
 
 export function pin(x: number, y: number, w: number, h: number, sudut = 0): string {
   return sel('PinX', INCI(x + w / 2)) + sel('PinY', vy(y + h / 2)) + sel('Width', INCI(w)) + sel('Height', INCI(h))
@@ -36,6 +39,13 @@ export function teksRun(runs: Run[], rata: 0 | 1 | 2, spasi = -1.1): string {
 }
 
 export const pisahTeks = (s: string): [string, string] => { const i = s.indexOf('|TEKS|'); return [s.slice(0, i), s.slice(i + 6)]; };
+
+export function bentukTeksBebas(t: TeksBebas, id: number): string {
+  const k = kotakTeks(t), w = k.w * 1.18 + 1.5;
+  const [a, b] = pisahTeks(teksRun([{ isi: t.isi, ukuran: t.ukuran, warna: WARNA_TEKS[t.warna], tebal: t.tebal }], 0, -1.25));
+  return `<Shape ID='${id}' NameU='Teks' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(k.x + (k.w - w) / 2, k.y, w, k.h, (-(t.putar ?? 0) * Math.PI) / 180)}`
+    + `${sel('LinePattern', 0)}${sel('FillPattern', 0)}${tanpaMargin}${sel('VerticalAlign', 0)}${a}${b}</Shape>`;
+}
 
 const pola = (putus?: string) => (!putus ? 1 : /^0\.[0-9]+ /.test(putus) ? 3 : 2);
 

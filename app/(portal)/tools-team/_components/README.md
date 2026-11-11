@@ -41,6 +41,10 @@ sheet 1 = strip judul kiri + diagram foto perangkat & kabel berwarna; sheet 2 = 
 Gambar Perangkat, Daftar Perangkat, Catatan Pemasangan, blok judul. Warna, huruf & kolom dikunci
 di `lib/sld/gaya.ts`, `lembar1.ts`, `lembar2.ts` dan dijaga `uji/sld.ts` - jangan dibuat bertema.
 
+Sheet 1 bisa berkertas A3 (bawaan, template baku) atau 16:9 (420 x 236,25 mm): strip judul dan bingkai mengikuti tinggi
+kertas, perangkat & teks diskalakan saat kertas diganti; sheet 2 selalu A3. Teks bebas (dok.teks) dan ukuran huruf label
+(per perangkat / kabel atau semua label lewat dok.huruf, 0,5x - 3x) ikut ke PDF, PNG & Visio.
+
 Dua isi ekspor dari SLD yang sama: **Full Detail** (2 sheet, internal - "NO SHARE") dan **Simple** (hanya sheet 1,
 "no dtl", aman dibagikan ke klien). Sheet 2 terisi otomatis: perangkat tanpa No. BOM dinomori setelah No. BOM
 yang ada (model sama digabung, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
@@ -58,6 +62,7 @@ lib/sld/
   katalog.ts    templat per kelompok (Display TCL & Philips BDL, middleware WyreStorm, sumber input, ...) + saran model
   foto-produk.ts  FOTO PRODUK ASLI bawaan (public/sld/produk/*.jpg, dari situs resmi pabrikan) per item katalog AV
   ikon.ts / ikon-layar.ts  ilustrasi 2D - hanya untuk barang non-AV (tirai, gorden, lampu, AC/FCU, MCB) atau bila foto dihapus
+  teks-bebas.ts teks bebas di sheet 1 (baris, warna, tebal, putar)
   dinding.ts    videowall & LED dari foto asli: susunan "4 x 3" / ukuran "6 x 2 m" / "8 x 4 kabinet" dibaca dari nama & keterangan,
                 konten otomatis per panel ber-bezel (videowall) atau satu gambar layar penuh tanpa garis (LED), perspektif seperti foto acuan
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien

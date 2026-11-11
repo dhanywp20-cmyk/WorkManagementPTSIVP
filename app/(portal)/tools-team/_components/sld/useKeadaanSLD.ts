@@ -3,14 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSession } from '@/lib/auth/sesi';
 import { contohVoiceKamar } from '@/lib/sld/contoh';
 import {
-  bersihkanDok, dokBaru, hapusPerangkat, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, ujungBaru,
+  bersihkanDok, dokBaru, hapusPerangkat, hurufSah, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru,
 } from '@/lib/sld/dok';
 import { rasioDinding } from '@/lib/sld/dinding';
 import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
-import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat, UKURAN_MIN } from '@/lib/sld/tipe';
+import {
+  AREA, areaDok, type BlokJudul, type DokSLD, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, type Perangkat, type TeksBebas, UKURAN_MIN,
+} from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
 import {
   type FotoGaleri, type IngatanFoto, kunciModel, muatFotoDraf, muatGaleri, muatIngatan, muatLogo, simpanFotoDraf, simpanGaleri, simpanIngatan, simpanLogo,
@@ -21,7 +23,7 @@ const KUNCI = 'tools-team-sld-v1';
 const KUNCI_PRESET = 'tools-team-sld-kabel';
 const TEKS_DINDING = ['nama', 'model', 'ket', 'subGambar', 'ikon'];
 
-export type Pilihan = { jenis: 'p' | 'k'; id: string } | null;
+export type Pilihan = { jenis: 'p' | 'k' | 't'; id: string } | null;
 
 const namaPengguna = () => {
   const u = getSession<{ full_name?: string; username?: string }>();
@@ -182,9 +184,34 @@ export function useKeadaanSLD() {
 
   const hapus = useCallback((p: Pilihan) => {
     if (!p) return;
-    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
+    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : p.jenis === 't' ? { ...d, teks: d.teks.filter(t => t.id !== p.id) } : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
     setPilih(null);
   }, []);
+
+  const tambahTeks = useCallback((posisi?: { x: number; y: number }, isi?: string) => {
+    const id = idBaru('t');
+    setDok(d => {
+      if (d.teks.length >= MAKS_TEKS) return d;
+      const a = areaDok(d), n = d.teks.length;
+      const t = { ...teksBaru(posisi?.x ?? a.x + a.w / 2 - 10 + (n % 5) * 4, posisi?.y ?? a.y + a.h / 2 + (n % 5) * 4, isi), id };
+      return { ...d, teks: [...d.teks, t] };
+    });
+    setPilih({ jenis: 't', id });
+  }, []);
+  const ubahTeks = useCallback((id: string, p: Partial<TeksBebas>) => setDok(d => ({ ...d, teks: d.teks.map(t => (t.id === id ? { ...t, ...p } : t)) })), []);
+  const duplikatTeks = useCallback((id: string) => {
+    const baru = idBaru('t');
+    setDok(d => {
+      const t = d.teks.find(x => x.id === id);
+      return !t || d.teks.length >= MAKS_TEKS ? d : { ...d, teks: [...d.teks, { ...t, id: baru, x: t.x + 6, y: t.y + 6 }] };
+    });
+    setPilih({ jenis: 't', id: baru });
+  }, []);
+  const aturKertas = useCallback((k: Kertas) => setDok(d => ubahKertas(d, k)), []);
+  const aturHurufDok = useCallback((kunci: 'perangkat' | 'kabel', nilai: number | undefined) => setDok(d => {
+    const huruf = { ...d.huruf, [kunci]: hurufSah(nilai) };
+    return { ...d, huruf: huruf.perangkat || huruf.kabel ? huruf : undefined };
+  }), []);
 
   const muat = useCallback((d: DokSLD) => { setDok(d); riwayat.mulaiBaru(d); setPilih(null); }, [riwayat]);
   const baru = useCallback(() => muat(dokBaru(namaPengguna())), [muat]);
@@ -192,7 +219,7 @@ export function useKeadaanSLD() {
 
   return {
     dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, aturKertas, aturHurufDok, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

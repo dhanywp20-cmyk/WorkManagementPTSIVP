@@ -86,9 +86,14 @@ export async function bytesVsdx(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Arr
   return buatVsdx({ dok: d, gambar, kartu, watermark, judul: namaSLD(d), simple: o.simple });
 }
 
+export const ukuranSvgMm = (svg: string) => {
+  const m = /width="([\d.]+)mm" height="([\d.]+)mm"/.exec(svg);
+  return { w: m ? Number(m[1]) : 420, h: m ? Number(m[2]) : 297 };
+};
+
 export async function pngDariSvg(svg: string, lebar = 4200): Promise<Blob> {
-  const tinggi = Math.round((lebar * 297) / 420);
-  const img = await muatGambar(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace('width="420mm" height="297mm"', `width="${lebar}" height="${tinggi}"`))}`);
+  const mm = ukuranSvgMm(svg), tinggi = Math.round((lebar * mm.h) / mm.w);
+  const img = await muatGambar(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(`width="${mm.w}mm" height="${mm.h}mm"`, `width="${lebar}" height="${tinggi}"`))}`);
   const c = document.createElement('canvas');
   c.width = lebar; c.height = tinggi;
   const g = c.getContext('2d');

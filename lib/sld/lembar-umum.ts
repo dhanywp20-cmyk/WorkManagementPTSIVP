@@ -5,17 +5,17 @@ import type { Prim } from './primitif';
 import { esc, n } from './teks';
 import { HALAMAN, type Perangkat } from './tipe';
 
-export interface OpsiLembar { watermark?: string; tanpaWatermark?: boolean; simple?: boolean }
+export interface OpsiLembar { watermark?: string; tanpaWatermark?: boolean; simple?: boolean; tinggi?: number }
 
 export const WATERMARK_BAWAAN = '/sld/watermark.png';
 
-export const bukaSvg = (dalam = '') =>
-  `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${HALAMAN.w} ${HALAMAN.h}"`
-  + ` width="${HALAMAN.w}mm" height="${HALAMAN.h}mm"${dalam}><rect width="${HALAMAN.w}" height="${HALAMAN.h}" fill="${WARNA.putih}"/>`;
+export const bukaSvg = (dalam = '', h: number = HALAMAN.h) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${HALAMAN.w} ${h}"`
+  + ` width="${HALAMAN.w}mm" height="${h}mm"${dalam}><rect width="${HALAMAN.w}" height="${h}" fill="${WARNA.putih}"/>`;
 
 export const bingkaiPrim = (luar: { x: number; y: number; w: number; h: number; tebal: number }, dalam: number): Prim[] => [
   { t: 'kotak', ...luar, garis: WARNA.tinta, tebal: luar.tebal },
-  { t: 'kotak', x: 7, y: 7, w: 406, h: 283, garis: WARNA.tinta, tebal: dalam },
+  { t: 'kotak', x: 7, y: 7, w: luar.w - 6, h: luar.h - 6, garis: WARNA.tinta, tebal: dalam },
 ];
 
 export function watermark(o: OpsiLembar): string {
@@ -23,9 +23,10 @@ export function watermark(o: OpsiLembar): string {
   const href = esc(o.watermark ?? WATERMARK_BAWAAN);
   const out: string[] = [`<defs><image id="sld-wm" href="${href}" xlink:href="${href}" x="${-WATERMARK.w / 2}" y="${-WATERMARK.h / 2}"`
     + ` width="${WATERMARK.w}" height="${WATERMARK.h}" preserveAspectRatio="xMidYMid meet"/></defs>`];
+  const k = (o.tinggi ?? HALAMAN.h) / HALAMAN.h;
   WATERMARK.baris.forEach((cy, i) => {
     for (const cx of i % 2 ? WATERMARK.kolomGanjil : WATERMARK.kolomGenap) {
-      out.push(`<use href="#sld-wm" xlink:href="#sld-wm" transform="translate(${cx} ${cy}) rotate(${WATERMARK.sudut})"/>`);
+      out.push(`<use href="#sld-wm" xlink:href="#sld-wm" transform="translate(${cx} ${n(cy * k)}) rotate(${WATERMARK.sudut})"/>`);
     }
   });
   return `<g opacity="${WATERMARK.tembus}" pointer-events="none">${out.join('')}</g>`;

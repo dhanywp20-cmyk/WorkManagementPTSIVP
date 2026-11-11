@@ -1,6 +1,8 @@
 'use client';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { MAKS_CATATAN, type BlokJudul, type CatatanPasang } from '@/lib/sld/tipe';
+import { LABEL_GARIS, LABEL_PERANGKAT } from '@/lib/sld/gaya';
+import { IsianHurufLabel } from './IsianHuruf';
 import { Area, kelasTombol, Teks } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -38,6 +40,12 @@ export function PanelDokumen({ a }: { a: KeadaanSLD }) {
         {BIDANG.map(f => (
           <Teks key={f.k} label={f.l} nilai={b[f.k]} placeholder={f.ph} onUbah={v => a.ubahBlok({ [f.k]: v })} className={f.lebar ? 'col-span-2' : ''} />
         ))}
+      </div>
+      <div className="rounded-xl border border-slate-200 p-2.5 space-y-2">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Ukuran huruf semua label</p>
+        <IsianHurufLabel label="Label perangkat (baris #nama)" dasarMm={LABEL_PERANGKAT.nama.ukuran} faktor={a.dok.huruf?.perangkat}
+          onUbah={f => a.aturHurufDok('perangkat', f)} bantuan="Berlaku untuk perangkat yang ukuran hurufnya belum diatur sendiri." />
+        <IsianHurufLabel label="Label kabel (K1, K2, ...)" dasarMm={LABEL_GARIS.ukuran} faktor={a.dok.huruf?.kabel} onUbah={f => a.aturHurufDok('kabel', f)} />
       </div>
       <Area label="Catatan revisi (kiri bawah sheet 2)" nilai={b.catatanRev} onUbah={v => a.ubahBlok({ catatanRev: v })} baris={3}
         placeholder="Rev B: disesuaikan dengan BOM Rev3..." />

@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Expand, FileBox, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Type, Expand, FileBox, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
-import { HALAMAN } from '@/lib/sld/tipe';
+import { sudutSah } from '@/lib/sld/geometri';
+import { HALAMAN, KERTAS, type Kertas } from '@/lib/sld/tipe';
 import { cetakPdf, unduhPng, unduhVsdx } from './sld/ekspor';
 import { PengaturanWatermark } from './sld/PengaturanWatermark';
 import { BilahSimpan } from './sld/BilahSimpan';
@@ -59,9 +60,11 @@ export function SLD() {
       if (!p) return;
       if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); x.hapus(p); return; }
       if (e.key === 'Escape') { x.setPilih(null); return; }
-      if ((e.key === 'r' || e.key === 'R') && p.jenis === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if ((e.key === 'r' || e.key === 'R') && p.jenis !== 'k' && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        x.putarPerangkat(p.id, e.shiftKey ? -90 : 90);
+        const t = p.jenis === 't' ? x.dok.teks.find(q => q.id === p.id) : undefined;
+        if (t) x.ubahTeks(t.id, { putar: sudutSah((t.putar ?? 0) + (e.shiftKey ? -90 : 90)) || undefined });
+        else x.putarPerangkat(p.id, e.shiftKey ? -90 : 90);
         return;
       }
       if ((e.key === 'h' || e.key === 'H' || e.key === 'v' || e.key === 'V') && p.jenis === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -71,11 +74,12 @@ export function SLD() {
       }
       const arah: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
       const d = arah[e.key];
-      if (!d || p.jenis !== 'p') return;
+      if (!d || p.jenis === 'k') return;
       e.preventDefault();
-      const per = x.dok.perangkat.find(q => q.id === p.id);
       const s = e.shiftKey ? 5 : 0.5;
+      const per = x.dok.perangkat.find(q => q.id === p.id), t = x.dok.teks.find(q => q.id === p.id);
       if (per) x.ubahPerangkat(per.id, { x: per.x + d[0] * s, y: per.y + d[1] * s });
+      else if (t) x.ubahTeks(t.id, { x: t.x + d[0] * s, y: t.y + d[1] * s });
     };
     const tempel = (e: ClipboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -145,6 +149,16 @@ export function SLD() {
             </button>
           ))}
         </div>
+        <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Ukuran kertas sheet 1">
+          {(['a3', '169'] as Kertas[]).map(k => (
+            <button key={k} type="button" role="radio" aria-checked={(a.dok.kertas ?? 'a3') === k} onClick={() => a.aturKertas(k)}
+              title={k === 'a3' ? 'Sheet 1 kertas A3 landscape (template baku)' : 'Sheet 1 kanvas 16:9 (420 x 236 mm) - perangkat & teks diskalakan otomatis'}
+              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${(a.dok.kertas ?? 'a3') === k ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+              {KERTAS[k].label}
+            </button>
+          ))}
+        </div>
+        <button type="button" className={kelasTombol} onClick={() => { setSheet(1); a.tambahTeks(); }} title="Tambah teks bebas (atau klik dua kali di diagram)"><Type size={15} /> Teks</button>
         <div className="flex gap-1">
           <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} aria-label="Perkecil" disabled={sheet !== 1}>
             <ZoomOut size={15} />

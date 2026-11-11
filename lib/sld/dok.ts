@@ -4,8 +4,8 @@ import { rasioDinding } from './dinding';
 import { URUTAN_JENIS } from './gaya';
 import { sudutSah } from './geometri';
 import {
-  AREA, type BlokJudul, type CatatanPasang, type DokSLD, type JenisKabel, type Kabel, MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL,
-  MAKS_PERANGKAT, type Perangkat, type PilihSisi, type Ujung, UKURAN_MIN,
+  AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
+  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, type Perangkat, type PilihSisi, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks,
 } from './tipe';
 
 let urut = 0;
@@ -21,7 +21,9 @@ export function blokBaru(dibuat = ''): BlokJudul {
   };
 }
 
-export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], catatan: [], watermark: true });
+export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], teks: [], catatan: [], watermark: true, kertas: 'a3' });
+
+export const teksBaru = (x: number, y: number, isi = 'Teks'): TeksBebas => ({ id: idBaru('t'), x, y, isi, ukuran: 3, warna: 'hitam', tebal: false });
 
 export function perangkatBaru(k: string, x: number, y: number, isi: Partial<Perangkat> = {}): Perangkat {
   const t = cariTemplat(k);
@@ -62,7 +64,16 @@ export function bersihkanGambarSLD(v: unknown): string | undefined {
   return /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : undefined;
 }
 
-function bersihkanPerangkat(v: unknown): Perangkat | null {
+export const hurufSah = (v: unknown) => {
+  const x = Number(v);
+  if (!Number.isFinite(x) || x <= 0) return undefined;
+  const h = Math.min(HURUF_MAKS, Math.max(HURUF_MIN, Math.round(x * 100) / 100));
+  return h === 1 ? undefined : h;
+};
+
+type Area = { x: number; y: number; w: number; h: number };
+
+function bersihkanPerangkat(v: unknown, area: Area = AREA): Perangkat | null {
   const p = (v ?? {}) as Record<string, unknown>;
   if (typeof p.id !== 'string' || !p.id) return null;
   const w = angka(p.w, UKURAN_MIN.w, AREA.w, 46), h = angka(p.h, UKURAN_MIN.h, AREA.h, 30);
@@ -71,13 +82,14 @@ function bersihkanPerangkat(v: unknown): Perangkat | null {
     kategori: teks(p.kategori, 120), model: teks(p.model, 200), qty: angka(p.qty, 0, 100000, 1), satuan: teks(p.satuan, 20) || 'unit',
     subGambar: teks(p.subGambar, 160), ikon: teks(p.ikon, 30) || 'umum',
     port: Array.isArray(p.port) ? p.port.map(x => teks(x, 60)).filter(Boolean).slice(0, 48) : [],
-    x: angka(p.x, AREA.x - w / 2, AREA.x + AREA.w - w / 2, AREA.x), y: angka(p.y, AREA.y - h / 2, AREA.y + AREA.h - h / 2, AREA.y), w, h,
+    x: angka(p.x, area.x - w / 2, area.x + area.w - w / 2, area.x), y: angka(p.y, area.y - h / 2, area.y + area.h - h / 2, area.y), w, h,
     gambar: bersihkanGambarSLD(p.gambar),
     foto: fotoSah(p.foto) ? p.foto : undefined,
     rasio: Number.isFinite(Number(p.rasio)) && Number(p.rasio) > 0 ? angka(p.rasio, 0.1, 10, 1.6) : undefined,
     putar: sudutSah(p.putar) || undefined,
     balikH: p.balikH === true || undefined,
     balikV: p.balikV === true || undefined,
+    huruf: hurufSah(p.huruf),
   };
 }
 
@@ -90,7 +102,19 @@ function bersihkanKabel(v: unknown, id: Set<string>): Kabel | null {
     daya: c.daya === true, duaArah: c.duaArah === true, dari: bersihkanUjung(c.dari), ke: bersihkanUjung(c.ke),
     cabang: Array.isArray(c.cabang) ? c.cabang.slice(0, 8).map(bersihkanUjung).filter(u => id.has(u.p)) : [],
     media: teks(c.media, 120), teksGaris: teks(c.teksGaris, 80), fungsi: teks(c.fungsi, 300), catatan: teks(c.catatan, 300),
-    labelBalik: c.labelBalik === true, tengah: Number.isFinite(tengah) ? tengah : undefined,
+    labelBalik: c.labelBalik === true, tengah: Number.isFinite(tengah) ? tengah : undefined, huruf: hurufSah(c.huruf),
+  };
+}
+
+const WARNA_TEKS: WarnaTeks[] = ['hitam', 'merah', 'abu', 'biru'];
+
+function bersihkanTeks(v: unknown, area: Area): TeksBebas | null {
+  const t = (v ?? {}) as Record<string, unknown>;
+  if (typeof t.id !== 'string' || !t.id) return null;
+  return {
+    id: t.id.slice(0, 40), isi: teks(t.isi, 500) || 'Teks', ukuran: angka(t.ukuran, 1, 20, 3), tebal: t.tebal === true,
+    x: angka(t.x, area.x - 10, area.x + area.w, area.x), y: angka(t.y, area.y - 5, area.y + area.h, area.y),
+    warna: WARNA_TEKS.includes(t.warna as WarnaTeks) ? (t.warna as WarnaTeks) : 'hitam', putar: sudutSah(t.putar) || undefined,
   };
 }
 
@@ -101,13 +125,36 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   const awal = blokBaru();
   const blok = Object.fromEntries(Object.keys(awal).map(k => [k, typeof b[k] === 'string' ? (b[k] as string).slice(0, 600) : awal[k as keyof BlokJudul]])) as unknown as BlokJudul;
   if (!blok.disetujui.trim()) blok.disetujui = awal.disetujui;
-  const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(bersihkanPerangkat).filter((p): p is Perangkat => !!p);
+  const kertas: Kertas = d.kertas === '169' ? '169' : 'a3', area = areaDok({ kertas });
+  const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(x => bersihkanPerangkat(x, area)).filter((p): p is Perangkat => !!p);
+  const teksBebas = (Array.isArray(d.teks) ? d.teks : []).slice(0, MAKS_TEKS).map(x => bersihkanTeks(x, area)).filter((t): t is TeksBebas => !!t);
+  const h = (d.huruf ?? {}) as Record<string, unknown>, huruf = { perangkat: hurufSah(h.perangkat), kabel: hurufSah(h.kabel) };
   const id = new Set(perangkat.map(p => p.id));
   const kabel = (Array.isArray(d.kabel) ? d.kabel : []).slice(0, MAKS_KABEL).map(c => bersihkanKabel(c, id)).filter((c): c is Kabel => !!c);
   const catatan = (Array.isArray(d.catatan) ? d.catatan : []).slice(0, MAKS_CATATAN)
     .map(x => ({ judul: teks((x as CatatanPasang)?.judul, 120), isi: teks((x as CatatanPasang)?.isi, 1200) }))
     .filter(x => x.judul || x.isi);
-  return { versi: 1, blok, perangkat, kabel, catatan, watermark: d.watermark !== false };
+  return {
+    versi: 1, blok, perangkat, kabel, teks: teksBebas, catatan, watermark: d.watermark !== false, kertas,
+    ...(huruf.perangkat || huruf.kabel ? { huruf } : {}),
+  };
+}
+
+const setengah = (v: number) => Math.round(v * 2) / 2;
+
+export function ubahKertas(d: DokSLD, kertas: Kertas): DokSLD {
+  const lama = halamanDok(d).h, baru = KERTAS[kertas].h;
+  if (lama === baru) return { ...d, kertas };
+  const k = (baru - 18) / (lama - 18), Y = (y: number) => AREA.y + (y - AREA.y) * k;
+  return {
+    ...d, kertas,
+    perangkat: d.perangkat.map(p => {
+      const w = setengah(Math.max(UKURAN_MIN.w, p.w * k)), h = setengah(Math.max(UKURAN_MIN.h, p.h * k));
+      return { ...p, x: setengah(p.x + (p.w - w) / 2), y: setengah(Y(p.y + p.h / 2) - h / 2), w, h };
+    }),
+    kabel: d.kabel.map(c => ({ ...c, tengah: undefined })),
+    teks: d.teks.map(t => ({ ...t, y: setengah(Y(t.y)) })),
+  };
 }
 
 export function hapusPerangkat(d: DokSLD, id: string): DokSLD {

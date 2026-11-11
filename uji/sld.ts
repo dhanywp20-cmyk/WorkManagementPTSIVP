@@ -3,7 +3,7 @@ import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { FOTO_PRODUK } from '../lib/sld/foto-produk';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
+import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, kodeKabel, kotakTampak, sisiOtomatis } from '../lib/sld/geometri';
 import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dinding';
@@ -258,6 +258,34 @@ void (async () => {
   const gbr = new Map([[miring.id, { isi: new Uint8Array([1]), jpeg: false }]]), kartu = new Map([[miring.id, { isi: new Uint8Array([2]), jpeg: false }]]);
   const zr = await bacaZip(buatVsdx({ dok: { ...dm2, perangkat: [{ ...miring, no: '1' }] }, gambar: gbr, kartu }));
   cek('Visio: perangkat diputar memakai gambar diputar di sheet 1 dan gambar tegak di kartu sheet 2', [...zr.keys()].filter(k => k.startsWith('visio/media/')).length === 2);
+  console.log('\n11. Kanvas 16:9, teks bebas & ukuran huruf label');
+  const d169 = ubahKertas(d, '169'), s169 = svgLembar1(d169);
+  const yMaks = Math.max(...d169.perangkat.map(p => p.y + p.h));
+  cek('16:9: sheet 1 berukuran 420 x 236,25 mm, perangkat diskalakan masuk bidang gambar', s169.includes('height="236.25mm"') && s169.includes('viewBox="0 0 420 236.25"')
+    && yMaks <= 236.25 - 9 + 0.5 && svgLembar1(d).includes('height="297mm"'), `${yMaks}`);
+  cek('16:9: kembali ke A3 mengembalikan tata letak (kurang dari 1 mm)', ubahKertas(d169, 'a3').perangkat.every((p, i) => Math.abs(p.y - d.perangkat[i].y) < 1.2 && Math.abs(p.w - d.perangkat[i].w) < 1.2));
+  cek('16:9: kertas tersimpan & posisi dibatasi ke bidang 16:9', bersihkanDok({ ...d169, perangkat: [{ ...d169.perangkat[0], y: 280 }] })!.perangkat[0].y <= 236.25 - 9
+    && bersihkanDok(d169)!.kertas === '169' && bersihkanDok({ ...d, kertas: 'x' })!.kertas === 'a3');
+  const v169 = await bacaZip(buatVsdx({ dok: d169, gambar: new Map() })), halV = new TextDecoder().decode(v169.get('visio/pages/pages.xml'));
+  const tinggiV = [...halV.matchAll(/N=['"]PageHeight['"] V=['"]([\d.]+)['"]/g)].map(m => Number(m[1]));
+  cek('16:9: Visio sheet 1 setinggi 236,25 mm, sheet 2 tetap A3', Math.abs(tinggiV[0] - 236.25 / 25.4) < 1e-6 && Math.abs(tinggiV[1] - 297 / 25.4) < 1e-6, tinggiV.join(','));
+  const tb = { ...teksBaru(120, 60, 'Ruang server\nLantai 2'), ukuran: 4, warna: 'merah' as const, tebal: true, putar: 90 };
+  const dt = { ...dokBaru(), teks: [tb] }, st = svgLembar1(dt);
+  cek('teks bebas: dua baris, ukuran, warna, tebal & putar tergambar di sheet 1', st.includes('>Ruang server<') && st.includes('>Lantai 2<') && st.includes('font-size="4"')
+    && st.includes('fill="#e00000" font-weight="700"') && /rotate\(90 [\d.]+ [\d.]+\)">/.test(st));
+  const tbs = bersihkanDok({ ...dt, teks: [{ ...tb, warna: 'ungu', ukuran: 99, isi: '' }, { isi: 'tanpa id' }] })!.teks;
+  cek('teks bebas: dibersihkan (warna dikenal, ukuran dibatasi, tanpa id dibuang)', tbs.length === 1 && tbs[0].warna === 'hitam' && tbs[0].ukuran === 20 && tbs[0].isi === 'Teks');
+  const vt = new TextDecoder().decode((await bacaZip(buatVsdx({ dok: dt, gambar: new Map() }))).get('visio/pages/page1.xml'));
+  cek('teks bebas: ikut ke Visio sebagai shape teks', vt.includes("NameU='Teks'") && vt.includes('Ruang server'));
+  const pBesar = { ...perangkatBaru('tv-tcl', 60, 60), nama: 'TV Besar', huruf: 2 }, kBesar = { ...kabelBaru(pBesar.id, pBesar.id), huruf: 1.5 };
+  const sh = svgLembar1({ ...dokBaru(), perangkat: [pBesar, { ...perangkatBaru('tv-tcl', 160, 60), nama: 'TV Kecil' }] });
+  cek('ukuran huruf label perangkat bisa diubah per perangkat', sh.includes('font-size="5.5" fill="#1f2328" font-weight="700" text-anchor="start">#TV Besar')
+    && sh.includes('font-size="2.75" fill="#1f2328" font-weight="700" text-anchor="start">#TV Kecil'));
+  const p2 = { ...perangkatBaru('tv-tcl', 160, 60), id: 'p2' }, kb2 = { ...kabelBaru(pBesar.id, 'p2'), huruf: 1.5 };
+  const gk = geometri({ ...dokBaru(), perangkat: [pBesar, p2], kabel: [kb2] });
+  cek('ukuran huruf label kabel bisa diubah per kabel', gk[0].huruf === 1.5 && svgLembar1({ ...dokBaru(), perangkat: [pBesar, p2], kabel: [kb2] }).includes('font-size="3"'));
+  const gDok = geometri({ ...dokBaru(), huruf: { kabel: 2 }, perangkat: [pBesar, p2], kabel: [{ ...kb2, huruf: undefined }] });
+  cek('ukuran huruf semua label dari pengaturan dokumen; dibatasi 0,5x - 3x', gDok[0].huruf === 2 && hurufSah(5) === 3 && hurufSah(0.1) === 0.5 && hurufSah(1) === undefined && !!kBesar);
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

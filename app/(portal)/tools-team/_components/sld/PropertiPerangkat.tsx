@@ -7,6 +7,8 @@ import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
 import type { Perangkat } from '@/lib/sld/tipe';
 import { noOtomatis } from '@/lib/sld/turunan';
+import { LABEL_PERANGKAT } from '@/lib/sld/gaya';
+import { IsianHurufLabel } from './IsianHuruf';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
@@ -81,6 +83,8 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
       </div>
       <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />
       <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
+      <IsianHurufLabel label="Ukuran huruf label (baris #nama)" dasarMm={LABEL_PERANGKAT.nama.ukuran} faktor={p.huruf} bawaan={a.dok.huruf?.perangkat}
+        onUbah={f => ubah({ huruf: f })} bantuan="Baris *peran dan keterangan ikut membesar / mengecil." />
       <div className="grid grid-cols-2 gap-2">
         <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
         <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />

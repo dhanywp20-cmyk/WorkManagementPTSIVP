@@ -5,7 +5,7 @@ import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDia
 import { Ikon } from '@/components/shared/Ikon';
 import { isiLembar1 } from '@/lib/sld/lembar1';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
-import { HALAMAN, type DokSLD } from '@/lib/sld/tipe';
+import { type DokSLD, halamanDok } from '@/lib/sld/tipe';
 import { type DataSld, type TautanSld, dokTautanSld, namaTautanSld, ringkasanSld, tautanSldKeTools } from './sld-request';
 
 interface SldTim { id: string; nama: string; versi: number; jumlah_perangkat: number; dibuat_oleh_nama: string; updated_at: string }
@@ -25,7 +25,7 @@ function Ringkasan({ requestId, t }: { requestId: string; t: TautanSld }) {
   const baris = ringkasanSld(dok);
   return (
     <div className="mt-2 rounded-lg border border-gray-100 bg-gray-50 p-2 space-y-2">
-      <svg viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`} className="block w-full h-auto rounded border border-gray-200 bg-white" style={{ colorScheme: 'light' }}
+      <svg viewBox={`0 0 ${halamanDok(dok).w} ${halamanDok(dok).h}`} className="block w-full h-auto rounded border border-gray-200 bg-white" style={{ colorScheme: 'light' }}
         role="img" aria-label={`Pratinjau Sheet 1 ${namaTautanSld(t)}`} dangerouslySetInnerHTML={{ __html: svg }} />
       {baris.length > 0 && (
         <table className="w-full text-[11px]">

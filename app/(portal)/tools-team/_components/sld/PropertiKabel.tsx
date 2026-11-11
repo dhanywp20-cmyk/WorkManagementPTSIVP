@@ -5,6 +5,8 @@ import { GAYA_KABEL, URUTAN_JENIS } from '@/lib/sld/gaya';
 import { kodeKabel } from '@/lib/sld/geometri';
 import type { JenisKabel, Kabel, PilihSisi, Ujung } from '@/lib/sld/tipe';
 import { fungsiOtomatis } from '@/lib/sld/turunan';
+import { LABEL_GARIS } from '@/lib/sld/gaya';
+import { IsianHurufLabel } from './IsianHuruf';
 import { Centang, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -80,6 +82,7 @@ export function PropertiKabel({ a, c }: { a: KeadaanSLD; c: Kabel }) {
       <Teks label="Fungsi" nilai={c.fungsi} onUbah={v => ubah({ fungsi: v })} placeholder={fungsiOtomatis(c) ? `otomatis: ${fungsiOtomatis(c)}` : undefined} />
       <Teks label="Catatan" nilai={c.catatan} onUbah={v => ubah({ catatan: v })} />
       <Centang label="Label garis di sisi seberang" nilai={c.labelBalik} onUbah={v => ubah({ labelBalik: v })} />
+      <IsianHurufLabel label="Ukuran huruf label kabel" dasarMm={LABEL_GARIS.ukuran} faktor={c.huruf} bawaan={a.dok.huruf?.kabel} onUbah={f => ubah({ huruf: f })} />
       <div className="flex flex-wrap gap-1.5 pt-1">
         {c.tengah !== undefined && <button type="button" className={kelasTombol} onClick={() => ubah({ tengah: undefined })}><RotateCcw size={15} /> Jalur otomatis</button>}
         <button type="button" className={`${kelasTombol} text-rose-700`} onClick={() => a.hapus({ jenis: 'k', id: c.id })}><Trash2 size={15} /> Hapus kabel</button>
