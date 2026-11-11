@@ -19,6 +19,7 @@ import { kelasTombol } from './sld/isian';
 import { KanvasSLD } from './sld/KanvasSLD';
 import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
+import { PopupGeser } from './sld/PopupGeser';
 import { useKeadaanSLD } from './sld/useKeadaanSLD';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
@@ -247,9 +248,9 @@ export function SLD() {
             <PanelKatalog a={a} />
           </section>
           {!kiri && <button type="button" onClick={() => setKiri(true)} className={TAB_KIRI}>Perangkat</button>}
-          <div inert={!kanan} className={`${POPUP_KANAN} ${kanan ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}>
+          <PopupGeser buka={kanan} judul="Properti · seret untuk pindah" className={POPUP_KANAN}>
             <PanelSamping a={a} onTutup={tutupKanan} />
-          </div>
+          </PopupGeser>
         </>)}
       </div>
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />

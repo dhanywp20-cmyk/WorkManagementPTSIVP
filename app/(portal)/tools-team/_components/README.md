@@ -90,6 +90,7 @@ _components/sld/
   KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
   PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (unduh PDF A3 / PNG / Visio)
   PanelPilihan.tsx  banyak item (salin / tempel / ratakan), posisi teks keterangan 8 arah, properti area
+  PopupGeser.tsx    popup properti bisa diseret, dikecilkan & dikembalikan (posisi diingat di browser)
   PilihModel.tsx    grup BOQ: pilih model yang sudah ada di proyek atau buat model baru (satu / banyak item sekaligus)
   useSimpanSLD.ts   simpan / buka server + cek versi server lebih baru (muat otomatis bila tidak ada perubahan lokal)
   ImporBom.tsx      foto & perangkat dari BOM;  AmbilBrosur.tsx  potong foto produk dari brosur PDF
