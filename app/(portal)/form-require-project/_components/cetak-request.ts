@@ -8,12 +8,12 @@ const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', {
 
 export async function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = [], sld: TautanSld[] = []): Promise<void> {
   if (!asli) return;
+  const selectedRequest = escObjek(asli);
   const w = window.open('', '_blank');
   if (!w) return;
   if (sld.length) w.document.write('<p style="font-family:Arial;padding:24px">Menyiapkan dokumen...</p>');
   const namaRuangSld = (i: number) => (i === 0 ? asli.room_name : asli.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`;
   const seksiSld = sld.length ? htmlSeksiSld(await isiSeksiSld(asli.id, sld, true), namaRuangSld) : '';
-  const selectedRequest = escObjek(asli);
   ccLabel = esc(ccLabel);
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);

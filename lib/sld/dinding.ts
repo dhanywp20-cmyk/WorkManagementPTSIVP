@@ -84,17 +84,12 @@ function videowall(teks: string): Dinding {
 function led(teks: string): Dinding {
   const u = ukuranLed(teks);
   const aspek = u.w / u.h, b = bidang(aspek, 0.09);
-  const CH = 100, CW = CH * aspek, tw = CW / u.kol, th = CH / u.bar, id = `sldd-led-${Math.round(aspek * 100)}`;
-  const tile: string[] = [];
-  for (let j = 0; j < u.bar; j++) for (let i = 0; i < u.kol; i++) {
-    const a = b.titik(i / u.kol, j / u.bar), c = b.titik((i + 1) / u.kol, j / u.bar), d = b.titik(i / u.kol, (j + 1) / u.bar);
-    tile.push(`<g transform="${matriks(a, c, d, tw, th)}"><svg width="${n(tw)}" height="${n(th)}" overflow="hidden"><use href="#${id}" x="${n(-i * tw)}" y="${n(-j * th)}"/></svg>`
-      + `<rect width="${n(tw)}" height="${n(th)}" fill="none" stroke="#000" stroke-opacity=".45" stroke-width="${n(th * 0.012)}"/></g>`);
-  }
-  const { tl, t, h0 } = b;
+  const { tl, tr, br, bl, t, h0 } = b;
+  const CH = 100, CW = CH * aspek, id = `sldd-led-${Math.round(aspek * 100)}`;
+  const layar = `<clipPath id="${id}"><polygon points="${poligon(tl, tr, br, bl)}"/></clipPath><g clip-path="url(#${id})">`
+    + `<image href="${ISI_LED}" width="${n(CW)}" height="${CH}" preserveAspectRatio="xMidYMid slice" transform="${matriks(tl, tr, bl, CW, CH)}"/></g>`;
   const sisi = `<image href="${PROFIL_LED}" x="${n(tl.x - t)}" y="${n(tl.y - 0.4)}" width="${n(t)}" height="${n(h0 + 0.8)}" preserveAspectRatio="none"/>`;
-  const defs = `<image id="${id}" href="${ISI_LED}" width="${n(CW)}" height="${CH}" preserveAspectRatio="xMidYMid slice"/>`;
-  return { vb: [LEBAR, b.vh], rasio: LEBAR / b.vh, isi: `<defs>${DEFS}${defs}</defs>${bingkai(b, tile.join(''), sisi)}` };
+  return { vb: [LEBAR, b.vh], rasio: LEBAR / b.vh, isi: `<defs>${DEFS}</defs>${bingkai(b, layar, sisi)}` };
 }
 
 const simpanan = new Map<string, Dinding>();

@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { GAYA_KABEL } from '@/lib/sld/gaya';
 import { barisKoneksi } from '@/lib/sld/turunan';
 import { PanelDokumen } from './PanelDokumen';
 import { PropertiKabel } from './PropertiKabel';
 import { PropertiPerangkat } from './PropertiPerangkat';
+import { PropertiTeks } from './PropertiTeks';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 type Tab = 'properti' | 'koneksi' | 'dokumen' | 'periksa';
@@ -29,10 +31,11 @@ function DaftarKoneksi({ a, onPilih }: { a: KeadaanSLD; onPilih: () => void }) {
   );
 }
 
-export function PanelSamping({ a }: { a: KeadaanSLD }) {
+export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => void }) {
   const [tab, setTab] = useState<Tab>('properti');
   const p = a.pilih?.jenis === 'p' ? a.dok.perangkat.find(x => x.id === a.pilih!.id) : undefined;
   const c = a.pilih?.jenis === 'k' ? a.dok.kabel.find(x => x.id === a.pilih!.id) : undefined;
+  const tk = a.pilih?.jenis === 't' ? a.dok.teks.find(x => x.id === a.pilih!.id) : undefined;
   const awas = a.temuan.filter(t => t.tingkat === 'awas').length;
   const TAB: { k: Tab; l: string }[] = [
     { k: 'properti', l: 'Properti' }, { k: 'koneksi', l: `Koneksi (${a.dok.kabel.length})` }, { k: 'dokumen', l: 'Judul & catatan' },
@@ -50,14 +53,20 @@ export function PanelSamping({ a }: { a: KeadaanSLD }) {
             {t.l}
           </button>
         ))}
+        {onTutup && (
+          <button type="button" onClick={onTutup} aria-label="Tutup panel properti" className="ml-auto w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100">
+            <X size={16} />
+          </button>
+        )}
       </div>
-      {aktif === 'properti' && (p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : (
+      {aktif === 'properti' && (p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
         <div className="text-[13px] text-slate-600 space-y-2">
           <p>Klik perangkat atau garis kabel di diagram untuk mengubahnya.</p>
           <ul className="list-disc pl-5 space-y-1 text-slate-500">
             <li>Seret perangkat untuk memindahkan; kotak kecil di pojok kanan bawah untuk mengubah ukuran.</li>
             <li>Tarik tombol <b className="text-blue-700">+</b> biru ke perangkat lain untuk membuat kabel (K1, K2, ...).</li>
             <li>Kotak putih di tengah garis menggeser jalur kabel.</li>
+            <li>Tombol <b>Teks</b> atau klik dua kali di area kosong menambah tulisan bebas.</li>
             <li>Delete menghapus yang dipilih; Ctrl+Z / Ctrl+Y untuk batal / ulang.</li>
           </ul>
         </div>

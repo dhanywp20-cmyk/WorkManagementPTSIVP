@@ -1,16 +1,19 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getSession } from '@/lib/auth/sesi';
 import { contohVoiceKamar } from '@/lib/sld/contoh';
 import {
-  bersihkanDok, dokBaru, hapusPerangkat, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, ujungBaru,
+  bersihkanDok, dokBaru, hapusPerangkat, hurufSah, idBaru, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru,
 } from '@/lib/sld/dok';
 import { rasioDinding } from '@/lib/sld/dinding';
+import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
 import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
-import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat, UKURAN_MIN } from '@/lib/sld/tipe';
+import {
+  AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, type Perangkat, type TeksBebas, UKURAN_MIN,
+} from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
 import {
   type FotoGaleri, type IngatanFoto, kunciModel, muatFotoDraf, muatGaleri, muatIngatan, muatLogo, simpanFotoDraf, simpanGaleri, simpanIngatan, simpanLogo,
@@ -21,7 +24,7 @@ const KUNCI = 'tools-team-sld-v1';
 const KUNCI_PRESET = 'tools-team-sld-kabel';
 const TEKS_DINDING = ['nama', 'model', 'ket', 'subGambar', 'ikon'];
 
-export type Pilihan = { jenis: 'p' | 'k'; id: string } | null;
+export type Pilihan = { jenis: 'p' | 'k' | 't'; id: string } | null;
 
 const namaPengguna = () => {
   const u = getSession<{ full_name?: string; username?: string }>();
@@ -29,11 +32,23 @@ const namaPengguna = () => {
 };
 
 function muatDraf(): DokSLD | null {
-  try { return bersihkanDok(JSON.parse(localStorage.getItem(KUNCI) ?? 'null')); } catch { return null; }
+  try {
+    const mentah = JSON.parse(localStorage.getItem(KUNCI) ?? 'null') as Record<string, unknown> | null;
+    const d = bersihkanDok(mentah);
+    return d && mentah && !('kertas' in mentah) ? ubahKertas(d, '169') : d;
+  } catch { return null; }
 }
 
 export function useKeadaanSLD() {
-  const [dok, setDok] = useState<DokSLD>(() => dokBaru());
+  const [proyek, setProyek] = useState<DokSLD>(() => dokBaru());
+  const [ruangAktif, setRuangAktifState] = useState(0);
+  const ruangRef = useRef(0);
+  const aktif = Math.min(ruangAktif, jumlahRuang(proyek) - 1);
+  const dok = useMemo(() => dokRuang(proyek, aktif), [proyek, aktif]);
+  const setDok = useCallback((f: SetStateAction<DokSLD>) => setProyek(p => {
+    const i = Math.min(ruangRef.current, jumlahRuang(p) - 1), lama = dokRuang(p, i), baru = typeof f === 'function' ? f(lama) : f;
+    return baru === lama ? p : gabungRuang(p, i, baru);
+  }), []);
   const [siap, setSiap] = useState(false);
   const [pilih, setPilih] = useState<Pilihan>(null);
   const [galatSimpan, setGalatSimpan] = useState(false);
@@ -49,26 +64,27 @@ export function useKeadaanSLD() {
       if (batal) return;
       ingatan.current = m;
       const awal = pasangFoto(d, peta);
-      setDok(awal); setGaleri(g); setLogoState(l); setSiap(true); mulaiRef.current(awal);
+      setProyek(awal); setGaleri(g); setLogoState(l); setSiap(true); mulaiRef.current(awal);
     });
     return () => { batal = true; };
   }, []);
   useEffect(() => {
     if (!siap) return;
     const t = setTimeout(() => {
-      try { localStorage.setItem(KUNCI, JSON.stringify(tanpaFoto(dok))); setGalatSimpan(false); } catch { setGalatSimpan(true); }
+      try { localStorage.setItem(KUNCI, JSON.stringify(tanpaFoto(proyek))); setGalatSimpan(false); } catch { setGalatSimpan(true); }
     }, 500);
     return () => clearTimeout(t);
-  }, [dok, siap]);
-  const kunciFoto = dok.perangkat.map(p => (p.gambar ? `${p.id}:${p.gambar.length}` : '')).join('|');
+  }, [proyek, siap]);
+  const kunciFoto = semuaPerangkat(proyek).map(p => (p.gambar ? `${p.id}:${p.gambar.length}` : '')).join('|');
   const dokRef = useRef(dok); dokRef.current = dok;
+  const proyekRef = useRef(proyek); proyekRef.current = proyek;
   useEffect(() => {
     if (!siap) return;
-    const t = setTimeout(() => { simpanFotoDraf(petaFoto(dokRef.current)).catch(() => setGalatSimpan(true)); }, 600);
+    const t = setTimeout(() => { simpanFotoDraf(petaFoto(proyekRef.current)).catch(() => setGalatSimpan(true)); }, 600);
     return () => clearTimeout(t);
   }, [kunciFoto, siap]);
 
-  const riwayat = useRiwayat(dok, setDok);
+  const riwayat = useRiwayat(proyek, setProyek);
   mulaiRef.current = riwayat.mulaiBaru;
   const geo = useMemo(() => geometri(dok), [dok]);
   const temuan = useMemo(() => periksaDok(dok), [dok]);
@@ -79,10 +95,13 @@ export function useKeadaanSLD() {
     ingatan.current = { ...ingatan.current, [k]: { gambar: f.dataUrl, rasio: f.rasio } };
     void simpanIngatan(ingatan.current).catch(() => {});
   }, []);
-  const pasangIngatan = useCallback((d: DokSLD): DokSLD => ({ ...d, perangkat: d.perangkat.map(p => {
-    const m = !p.gambar && p.model.trim() ? ingatan.current[kunciModel(p.model)] : undefined;
-    return m ? { ...p, gambar: m.gambar, rasio: m.rasio } : p;
-  }) }), []);
+  const pasangIngatan = useCallback((d: DokSLD): DokSLD => {
+    const ingat = (p: Perangkat) => {
+      const m = !p.gambar && p.model.trim() ? ingatan.current[kunciModel(p.model)] : undefined;
+      return m ? { ...p, gambar: m.gambar, rasio: m.rasio } : p;
+    };
+    return { ...d, perangkat: d.perangkat.map(ingat), ...(d.ruangLain ? { ruangLain: d.ruangLain.map(r => ({ ...r, perangkat: r.perangkat.map(ingat) })) } : {}) };
+  }, []);
   const tambahGaleri = useCallback((baru: FotoGaleri[]) => setGaleri(g => {
     const ada = new Set(g.map(x => x.gambar));
     const hasil = [...baru.filter(x => !ada.has(x.gambar)), ...g];
@@ -95,7 +114,7 @@ export function useKeadaanSLD() {
     return hasil;
   }), []);
   const setLogo = useCallback((l: string | null) => { setLogoState(l); void simpanLogo(l).catch(() => setGalatSimpan(true)); }, []);
-  const setWatermark = useCallback((aktif: boolean) => setDok(d => ({ ...d, watermark: aktif })), []);
+  const setWatermark = useCallback((aktif: boolean) => setDok(d => ({ ...d, watermark: aktif })), [setDok]);
 
   const pasangFotoKe = useCallback((id: string, f: FotoSiap, nama = 'Foto') => {
     const p = dokRef.current.perangkat.find(x => x.id === id);
@@ -103,9 +122,9 @@ export function useKeadaanSLD() {
     setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (p.id === id
       ? { ...p, gambar: f.dataUrl, rasio: f.rasio, h: Math.max(10, Math.min(80, Math.round((p.w / f.rasio) * 2) / 2)) } : p)) }));
     tambahGaleri([{ id: idBaru('g'), nama, gambar: f.dataUrl, rasio: f.rasio }]);
-  }, [tambahGaleri, ingatFoto]);
+  }, [tambahGaleri, ingatFoto, setDok]);
 
-  const ubahBlok = useCallback((p: Partial<BlokJudul>) => setDok(d => ({ ...d, blok: { ...d.blok, ...p } })), []);
+  const ubahBlok = useCallback((p: Partial<BlokJudul>) => setDok(d => ({ ...d, blok: { ...d.blok, ...p } })), [setDok]);
   const ubahPerangkat = useCallback((id: string, p: Partial<Perangkat>) =>
     setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
       if (x.id !== id) return x;
@@ -113,16 +132,20 @@ export function useKeadaanSLD() {
       const baru = ingat ? { ...x, ...p, gambar: ingat.gambar, rasio: ingat.rasio } : { ...x, ...p };
       const rd = !baru.gambar && !baru.foto && TEKS_DINDING.some(k => k in p) ? rasioDinding(baru.ikon, baru) : null;
       return rd && p.h === undefined ? { ...baru, h: Math.round(Math.min(AREA.h, Math.max(UKURAN_MIN.h, baru.w / rd)) * 2) / 2 } : baru;
-    }) })), []);
+    }) })), [setDok]);
   const putarPerangkat = useCallback((id: string, delta: number) => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
     if (x.id !== id) return x;
     const putar = sudutSah((x.putar ?? 0) + delta) || undefined;
     if (Math.abs(delta) % 180 !== 90) return { ...x, putar };
     const w = Math.max(UKURAN_MIN.w, x.h), h = Math.max(UKURAN_MIN.h, x.w);
     return { ...x, putar, w, h, x: x.x + (x.w - w) / 2, y: x.y + (x.h - h) / 2 };
-  }) })), []);
+  }) })), [setDok]);
+  const balikPerangkat = useCallback((id: string, sumbu: 'h' | 'v') => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
+    if (x.id !== id) return x;
+    return sumbu === 'h' ? { ...x, balikH: !x.balikH || undefined } : { ...x, balikV: !x.balikV || undefined };
+  }) })), [setDok]);
   const ubahKabel = useCallback((id: string, p: Partial<Kabel>) =>
-    setDok(d => ({ ...d, kabel: d.kabel.map(x => (x.id === id ? { ...x, ...p } : x)) })), []);
+    setDok(d => ({ ...d, kabel: d.kabel.map(x => (x.id === id ? { ...x, ...p } : x)) })), [setDok]);
 
   const tambahPerangkat = useCallback((k: string, posisi?: { x: number; y: number }) => {
     const t = cariTemplat(k);
@@ -134,7 +157,7 @@ export function useKeadaanSLD() {
       return { ...d, perangkat: [...d.perangkat, { ...perangkatBaru(k, x - (posisi ? t.w / 2 : 0), y - (posisi ? t.h / 2 : 0)), id }] };
     });
     setPilih({ jenis: 'p', id });
-  }, []);
+  }, [setDok]);
 
   const duplikat = useCallback((id: string) => {
     const baru = idBaru('p');
@@ -144,7 +167,7 @@ export function useKeadaanSLD() {
       return { ...d, perangkat: [...d.perangkat, { ...p, id: baru, x: p.x + 8, y: p.y + 8 }] };
     });
     setPilih({ jenis: 'p', id: baru });
-  }, []);
+  }, [setDok]);
 
   const [presetTerakhir, setPresetTerakhirState] = useState(() => {
     try { return localStorage.getItem(KUNCI_PRESET) ?? 'cat6'; } catch { return 'cat6'; }
@@ -160,13 +183,13 @@ export function useKeadaanSLD() {
     setDok(d => (d.kabel.length >= MAKS_KABEL ? d : { ...d, kabel: [...d.kabel, c] }));
     setPilih({ jenis: 'k', id: c.id });
     setKabelBaruId(c.id);
-  }, [presetTerakhir]);
+  }, [presetTerakhir, setDok]);
 
   const kabelBebas = useCallback(() => {
     const c = { ...kabelBaru('', '', { jenis: 'ac', daya: true, media: 'Kabel listrik 230 VAC' }), dari: { ...ujungBaru(), nama: 'MCB panel listrik' } };
     setDok(d => (d.kabel.length >= MAKS_KABEL ? d : { ...d, kabel: [...d.kabel, c] }));
     setPilih({ jenis: 'k', id: c.id });
-  }, []);
+  }, [setDok]);
 
   const geserKabel = useCallback((id: string, arah: -1 | 1) => setDok(d => {
     const i = d.kabel.findIndex(c => c.id === id), j = i + arah;
@@ -174,21 +197,63 @@ export function useKeadaanSLD() {
     const kabel = [...d.kabel];
     [kabel[i], kabel[j]] = [kabel[j], kabel[i]];
     return { ...d, kabel };
-  }), []);
+  }), [setDok]);
 
   const hapus = useCallback((p: Pilihan) => {
     if (!p) return;
-    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
+    setDok(d => (p.jenis === 'p' ? hapusPerangkat(d, p.id) : p.jenis === 't' ? { ...d, teks: d.teks.filter(t => t.id !== p.id) } : { ...d, kabel: d.kabel.filter(c => c.id !== p.id) }));
     setPilih(null);
-  }, []);
+  }, [setDok]);
 
-  const muat = useCallback((d: DokSLD) => { setDok(d); riwayat.mulaiBaru(d); setPilih(null); }, [riwayat]);
+  const tambahTeks = useCallback((posisi?: { x: number; y: number }, isi?: string) => {
+    const id = idBaru('t');
+    setDok(d => {
+      if (d.teks.length >= MAKS_TEKS) return d;
+      const a = areaDok(d), n = d.teks.length;
+      const t = { ...teksBaru(posisi?.x ?? a.x + a.w / 2 - 10 + (n % 5) * 4, posisi?.y ?? a.y + a.h / 2 + (n % 5) * 4, isi), id };
+      return { ...d, teks: [...d.teks, t] };
+    });
+    setPilih({ jenis: 't', id });
+  }, [setDok]);
+  const ubahTeks = useCallback((id: string, p: Partial<TeksBebas>) => setDok(d => ({ ...d, teks: d.teks.map(t => (t.id === id ? { ...t, ...p } : t)) })), [setDok]);
+  const duplikatTeks = useCallback((id: string) => {
+    const baru = idBaru('t');
+    setDok(d => {
+      const t = d.teks.find(x => x.id === id);
+      return !t || d.teks.length >= MAKS_TEKS ? d : { ...d, teks: [...d.teks, { ...t, id: baru, x: t.x + 6, y: t.y + 6 }] };
+    });
+    setPilih({ jenis: 't', id: baru });
+  }, [setDok]);
+  const ubahBoq = useCallback((ruang: number, kunci: string, isi: IsiBoqItem) => setProyek(p => {
+    const r = dokRuang(p, ruang);
+    return gabungRuang(p, ruang, { ...r, boq: { ...r.boq, [kunci]: { ...r.boq?.[kunci], ...isi } } });
+  }), []);
+  const aturKertas = useCallback((k: Kertas) => setProyek(p => ubahKertas(p, k)), []);
+  const pilihRuang = useCallback((i: number) => { ruangRef.current = i; setRuangAktifState(i); setPilih(null); }, []);
+  const tambahRuangBaru = useCallback(() => {
+    const p = proyekRef.current, baru = tambahRuang(p);
+    if (baru === p) return;
+    setProyek(baru);
+    pilihRuang(jumlahRuang(baru) - 1);
+  }, [pilihRuang]);
+  const hapusRuangKe = useCallback((i: number) => {
+    const baru = hapusRuang(proyekRef.current, i), aktif = ruangRef.current;
+    setProyek(baru);
+    pilihRuang(Math.max(0, Math.min(jumlahRuang(baru) - 1, aktif > i ? aktif - 1 : aktif === i ? i - 1 : aktif)));
+  }, [pilihRuang]);
+  const namaiRuangKe = useCallback((i: number, nama: string) => setProyek(p => namaiRuang(p, i, nama)), []);
+  const aturHurufDok = useCallback((kunci: 'perangkat' | 'kabel', nilai: number | undefined) => setDok(d => {
+    const huruf = { ...d.huruf, [kunci]: hurufSah(nilai) };
+    return { ...d, huruf: huruf.perangkat || huruf.kabel ? huruf : undefined };
+  }), [setDok]);
+
+  const muat = useCallback((d: DokSLD) => { ruangRef.current = 0; setRuangAktifState(0); setProyek(d); riwayat.mulaiBaru(d); setPilih(null); }, [riwayat]);
   const baru = useCallback(() => muat(dokBaru(namaPengguna())), [muat]);
-  const contoh = useCallback(() => muat(contohVoiceKamar(namaPengguna())), [muat]);
+  const contoh = useCallback(() => muat(ubahKertas(contohVoiceKamar(namaPengguna()), '169')), [muat]);
 
   return {
-    dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
-    ubahBlok, ubahPerangkat, putarPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
+    ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

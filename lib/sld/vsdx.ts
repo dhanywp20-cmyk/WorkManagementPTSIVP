@@ -1,16 +1,19 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, WATERMARK } from './gaya';
-import { geometri, kotakTampak, rasioPerangkat, teksLabel } from './geometri';
+import { geometri, hurufPerangkat, kotakTampak, rasioPerangkat, teksLabel } from './geometri';
 import { barisLabel, primRangka1 } from './lembar1';
 import { primLembar2 } from './lembar2';
 import type { Prim } from './primitif';
 import { lebarTeks } from './teks';
-import type { DokSLD, Titik } from './tipe';
-import { bentukPrim, f, geomKotak, INCI, pisahTeks, sel, teksRun, vy, xe } from './vsdx-bentuk';
+import { type DokSLD, halamanDok, HALAMAN, type Titik } from './tipe';
+import { aturTinggiHalaman, bentukPrim, bentukTeksBebas, f, geomKotak, INCI, pisahTeks, sel, teksRun, vy, xe } from './vsdx-bentuk';
 import { STYLE_DASAR } from './vsdx-gaya';
 import { tulisZip } from './zip';
 
 export interface GambarVsdx { isi: Uint8Array; jpeg: boolean }
-export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; kartu?: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean }
+export interface MasukanVsdx {
+  dok: DokSLD; gambar: Map<string, GambarVsdx>; kartu?: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean;
+  ruang?: { dok: DokSLD; nama: string }[];
+}
 
 const NS = "xmlns='http://schemas.microsoft.com/office/visio/2012/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xml:space='preserve'";
 const KEPALA = "<?xml version='1.0' encoding='utf-8' ?>\n";
@@ -43,14 +46,14 @@ class Media {
   }
 }
 
-function watermark(h: Halaman, media: Media, g?: GambarVsdx) {
+function watermark(h: Halaman, media: Media, g?: GambarVsdx, tinggi: number = HALAMAN.h) {
   if (!g) return;
-  const rid = h.rid(media.tambah('__watermark', g));
+  const rid = h.rid(media.tambah('__watermark', g)), skala = tinggi / HALAMAN.h;
   WATERMARK.baris.forEach((cy, i) => {
     for (const cx of i % 2 ? WATERMARK.kolomGanjil : WATERMARK.kolomGenap) {
       const w = WATERMARK.w, hh = WATERMARK.h;
       h.bentuk.push(`<Shape ID='${h.baru()}' NameU='Watermark' Type='Foreign' LineStyle='2' FillStyle='2' TextStyle='2'>`
-        + `${sel('PinX', INCI(cx))}${sel('PinY', vy(cy))}${sel('Width', INCI(w))}${sel('Height', INCI(hh))}${sel('LocPinX', INCI(w / 2), " F='Width*0.5'")}`
+        + `${sel('PinX', INCI(cx))}${sel('PinY', vy(cy * skala))}${sel('Width', INCI(w))}${sel('Height', INCI(hh))}${sel('LocPinX', INCI(w / 2), " F='Width*0.5'")}`
         + `${sel('LocPinY', INCI(hh / 2), " F='Height*0.5'")}${sel('Angle', (-WATERMARK.sudut * Math.PI) / 180)}${sel('ImgWidth', INCI(w), " F='Width*1'")}`
         + `${sel('ImgHeight', INCI(hh), " F='Height*1'")}${sel('Transparency', 1 - WATERMARK.tembus)}${sel('LayerMember', '0')}${geomKotak(false, false)}`
         + `<ForeignData ForeignType='Bitmap' CompressionType='${g.jpeg ? 'JPEG' : 'PNG'}'><Rel r:id='${rid}'/></ForeignData></Shape>`);
@@ -90,7 +93,7 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
       return `<Row T='Connection' IX='${i}'>${sel('X', INCI(k.w) * fx, ` F='Width*${f(fx)}'`)}${sel('Y', INCI(k.h) * fy, ` F='Height*${f(fy)}'`)}`
         + `${sel('DirX', 0)}${sel('DirY', 0)}${sel('Type', 0)}${sel('AutoGen', 0)}</Row>`;
     }).join('');
-    const baris = barisLabel(p);
+    const baris = barisLabel(p, hurufPerangkat(p, d));
     const lebarLabel = Math.max(k.w, ...baris.map(b => lebarTeks(b.isi, b.ukuran, b.tebal) * 1.15 + 2));
     const tinggiLabel = baris.reduce((s, b) => s + b.ukuran * LABEL_PERANGKAT.spasi, 0) + 1;
     const kiri = p.x + LABEL_PERANGKAT.geserKiri - k.x, atas = p.y + p.h + LABEL_PERANGKAT.jarakAtas - (k.y + k.h);
@@ -125,7 +128,7 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
       }).join('');
       const label = i === 0 ? teksLabel(c, g.kode) : '';
       const lp = lokal(g.label);
-      const lw = INCI(g.lebarLabel), lh = INCI(LABEL_GARIS.tinggi);
+      const lw = INCI(g.lebarLabel), lh = INCI(LABEL_GARIS.tinggi * g.huruf);
       const glue = (n: number, k: number) => `PAR(PNT(Sheet.${n}!Connections.X${k + 1},Sheet.${n}!Connections.Y${k + 1}))`;
       h.bentuk.push(`<Shape ID='${id}' NameU='Kabel ${xe(g.kode)}' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>`
         + `${sel('PinX', INCI((awal.x + akhir.x) / 2), " F='GUARD((BeginX+EndX)/2)'")}${sel('PinY', vy((awal.y + akhir.y) / 2), " F='GUARD((BeginY+EndY)/2)'")}`
@@ -143,15 +146,16 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
           + `${sel('TextBkgnd', '#ffffff')}${sel('LeftMargin', 0)}${sel('RightMargin', 0)}${sel('TopMargin', 0)}${sel('BottomMargin', 0)}`
           + `<Section N='Control'><Row N='TextPosition'>${sel('X', lp.x)}${sel('Y', lp.y)}${sel('XDyn', lp.x, " F='Controls.TextPosition'")}`
           + `${sel('YDyn', lp.y, " F='Controls.TextPosition.Y'")}${sel('XCon', 0)}${sel('YCon', 0)}${sel('CanGlue', 0)}</Row></Section>` : '')
-        + (label ? pisahTeks(teksRun([{ isi: label, ukuran: LABEL_GARIS.ukuran, warna: s.warna, tebal: true }], 1))[0] : '')
+        + (label ? pisahTeks(teksRun([{ isi: label, ukuran: LABEL_GARIS.ukuran * g.huruf, warna: s.warna, tebal: true }], 1))[0] : '')
         + `<Section N='Geometry' IX='0'>${sel('NoFill', 1)}${sel('NoLine', 0)}${sel('NoShow', 0)}<Row T='MoveTo' IX='1'><Cell N='X' V='0'/><Cell N='Y' V='0'/></Row>${baris}</Section>`
-        + (label ? pisahTeks(teksRun([{ isi: label, ukuran: LABEL_GARIS.ukuran, warna: s.warna, tebal: true }], 1))[1] : '')
+        + (label ? pisahTeks(teksRun([{ isi: label, ukuran: LABEL_GARIS.ukuran * g.huruf, warna: s.warna, tebal: true }], 1))[1] : '')
         + '</Shape>');
       h.sambung.push(`<Connect FromSheet='${id}' FromCell='BeginX' FromPart='9' ToSheet='${a.id}' ToCell='Connections.X${ia + 1}' ToPart='${100 + ia}'/>`);
       h.sambung.push(`<Connect FromSheet='${id}' FromCell='EndX' FromPart='12' ToSheet='${b.id}' ToCell='Connections.X${ib + 1}' ToPart='${100 + ib}'/>`);
     });
   }
-  if (d.watermark !== false) watermark(h, media, m.watermark);
+  for (const t of d.teks ?? []) h.bentuk.push(bentukTeksBebas(t, h.baru()));
+  if (d.watermark !== false) watermark(h, media, m.watermark, halamanDok(d).h);
   return h;
 }
 
@@ -176,9 +180,9 @@ const relsHalaman = (h: Halaman) => `${KEPALA}<Relationships xmlns='${REL}'>`
   + [...h.rels].map(([nama, id]) => `<Relationship Id='${id}' Type='http://schemas.openxmlformats.org/officeDocument/2006/relationships/image' Target='../media/${nama}'/>`).join('')
   + '</Relationships>';
 
-function lembarHalaman(id: number, nama: string, rid: string): string {
+function lembarHalaman(id: number, nama: string, rid: string, tinggi: number = HALAMAN.h): string {
   return `<Page ID='${id}' NameU='${xe(nama)}' IsCustomNameU='1' Name='${xe(nama)}' IsCustomName='1' ViewScale='-1'><PageSheet LineStyle='0' FillStyle='0' TextStyle='0'>`
-    + `${sel('PageWidth', INCI(420), " U='MM'")}${sel('PageHeight', INCI(297), " U='MM'")}${sel('PageScale', INCI(1), " U='MM'")}${sel('DrawingScale', INCI(1), " U='MM'")}`
+    + `${sel('PageWidth', INCI(420), " U='MM'")}${sel('PageHeight', INCI(tinggi), " U='MM'")}${sel('PageScale', INCI(1), " U='MM'")}${sel('DrawingScale', INCI(1), " U='MM'")}`
     + `${sel('DrawingSizeType', 0)}${sel('DrawingScaleType', 0)}${sel('PrintPageOrientation', 2)}${sel('PaperKind', 8)}${sel('RouteStyle', 1)}`
     + `<Section N='Layer'><Row IX='0'>${sel('Name', 'Watermark')}${sel('Visible', 1)}${sel('Print', 1)}${sel('Active', 0)}${sel('Lock', 1)}${sel('Snap', 0)}`
     + `${sel('Glue', 0)}${sel('NameUniv', 'Watermark')}</Row></Section></PageSheet><Rel r:id='${rid}'/></Page>`;
@@ -197,7 +201,16 @@ function dokumen(): string {
 
 export function buatVsdx(m: MasukanVsdx): Uint8Array {
   const media = new Media();
-  const hal = [{ h: lembar1(m, media), nama: 'Sheet 1 - Diagram' }, ...(m.simple ? [] : [{ h: lembar2(m, media), nama: 'Sheet 2 - Koneksi & catatan' }])];
+  const daftar = m.ruang?.length ? m.ruang : [{ dok: m.dok, nama: '' }];
+  const hal: { h: Halaman; nama: string; tinggi: number }[] = [];
+  for (const [i, r] of daftar.entries()) {
+    const mr = { ...m, dok: r.dok }, awalan = daftar.length > 1 ? `R${i + 1} ${r.nama} - `.slice(0, 40) : '';
+    const tinggi1 = halamanDok(r.dok).h;
+    let h1: Halaman;
+    try { aturTinggiHalaman(tinggi1); h1 = lembar1(mr, media); } finally { aturTinggiHalaman(HALAMAN.h); }
+    hal.push({ h: h1, nama: `${awalan}Sheet 1 - Diagram`, tinggi: tinggi1 });
+    if (!m.simple) hal.push({ h: lembar2(mr, media), nama: `${awalan}Sheet 2 - Koneksi & catatan`, tinggi: HALAMAN.h });
+  }
   const judul = xe(m.judul ?? 'Single Line Diagram');
   const tipeGambar = "<Default Extension='png' ContentType='image/png'/><Default Extension='jpeg' ContentType='image/jpeg'/>";
   const berkas = [
@@ -219,7 +232,7 @@ export function buatVsdx(m: MasukanVsdx): Uint8Array {
     { nama: 'visio/windows.xml', isi: `${KEPALA}<Windows ClientWidth='1600' ClientHeight='900' ${NS}><Window ID='0' WindowType='Drawing' WindowState='1073741824'`
       + " ContainerType='Page' Page='0' ViewScale='-1'><ShowRulers>1</ShowRulers><ShowGrid>0</ShowGrid><ShowPageBreaks>0</ShowPageBreaks><ShowGuides>1</ShowGuides>"
       + '<ShowConnectionPoints>1</ShowConnectionPoints><GlueSettings>9</GlueSettings><SnapSettings>65847</SnapSettings></Window></Windows>' },
-    { nama: 'visio/pages/pages.xml', isi: `${KEPALA}<Pages ${NS}>${hal.map((x, i) => lembarHalaman(i, x.nama, `rId${i + 1}`)).join('')}</Pages>` },
+    { nama: 'visio/pages/pages.xml', isi: `${KEPALA}<Pages ${NS}>${hal.map((x, i) => lembarHalaman(i, x.nama, `rId${i + 1}`, x.tinggi)).join('')}</Pages>` },
     { nama: 'visio/pages/_rels/pages.xml.rels', isi: `${KEPALA}<Relationships xmlns='${REL}'>`
       + hal.map((_, i) => `<Relationship Id='rId${i + 1}' Type='http://schemas.microsoft.com/visio/2010/relationships/page' Target='page${i + 1}.xml'/>`).join('') + '</Relationships>' },
     ...hal.flatMap((x, i) => [{ nama: `visio/pages/page${i + 1}.xml`, isi: isiHalaman(x.h) }, { nama: `visio/pages/_rels/page${i + 1}.xml.rels`, isi: relsHalaman(x.h) }]),

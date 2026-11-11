@@ -35,6 +35,9 @@ export function kotakPutar(k: Kotak, r: number, sudut = 0): { kotak: Kotak; cx: 
 }
 
 export const kotakTampak = (p: Perangkat): Kotak => kotakPutar(p, rasioPerangkat(p), p.putar).kotak;
+
+export const hurufPerangkat = (p: Pick<Perangkat, 'huruf'>, d: Pick<DokSLD, 'huruf'>) => p.huruf ?? d.huruf?.perangkat ?? 1;
+export const hurufKabel = (c: Pick<Kabel, 'huruf'>, d: Pick<DokSLD, 'huruf'>) => c.huruf ?? d.huruf?.kabel ?? 1;
 const datar = (s: Sisi) => s === 'kiri' || s === 'kanan';
 
 export function sisiOtomatis(a: Kotak, b: Kotak): Sisi {
@@ -74,7 +77,7 @@ export function teksLabel(c: Kabel, kode: string) {
   return isi ? `${kode} · ${isi}` : kode;
 }
 
-function letakLabel(titik: Titik[], lebar: number, balik: boolean): Titik {
+function letakLabel(titik: Titik[], lebar: number, balik: boolean, f = 1): Titik {
   let terbaik = 0, panjang = -1;
   for (let i = 0; i < titik.length - 1; i++) {
     const l = Math.hypot(titik[i + 1].x - titik[i].x, titik[i + 1].y - titik[i].y);
@@ -82,8 +85,8 @@ function letakLabel(titik: Titik[], lebar: number, balik: boolean): Titik {
   }
   const a = titik[terbaik], b = titik[terbaik + 1] ?? a;
   const m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-  if (Math.abs(a.y - b.y) < 0.01) return { x: m.x, y: m.y + (balik ? LABEL_GARIS.jarakH : -LABEL_GARIS.jarakH) };
-  const d = LABEL_GARIS.jarakV + lebar / 2;
+  if (Math.abs(a.y - b.y) < 0.01) return { x: m.x, y: m.y + (balik ? LABEL_GARIS.jarakH * f : -LABEL_GARIS.jarakH * f) };
+  const d = LABEL_GARIS.jarakV * f + lebar / 2;
   return { x: m.x + (balik ? -d : d), y: m.y };
 }
 
@@ -130,8 +133,8 @@ export function geometri(d: DokSLD): GeoKabel[] {
       return { titik: rute(a, sa, b, sb, i === 0 ? c.tengah : tengahBersama), awal: i === 0 };
     });
     const k = kode.get(c.id)!;
-    const lebar = lebarTeks(teksLabel(c, k), LABEL_GARIS.ukuran, true) + 1.2;
-    hasil.push({ id: c.id, kode: k, garis: garisList, label: letakLabel(garisList[0].titik, lebar, c.labelBalik), lebarLabel: lebar });
+    const f = hurufKabel(c, d), lebar = lebarTeks(teksLabel(c, k), LABEL_GARIS.ukuran * f, true) + 1.2 * f;
+    hasil.push({ id: c.id, kode: k, garis: garisList, label: letakLabel(garisList[0].titik, lebar, c.labelBalik, f), lebarLabel: lebar, huruf: f });
   }
   return hasil;
 }

@@ -80,13 +80,13 @@ function catatan(daftar: CatatanPasang[], x: number, atas: number, lebar: number
   return o;
 }
 
-export function blokJudul2(b: BlokJudul, hal: string): Prim[] {
+export function blokJudul2(b: BlokJudul, hal: string, ruang?: string): Prim[] {
   const o: Prim[] = [garis(7, 250, 413, 250, 0.35), garis(262, 250, 262, 290, 0.35)];
   bungkus(b.catatanRev, 245, 1.9).slice(0, 10).forEach((s, i) => o.push(teks(10, 254.5 + i * 2.66, s, { ukuran: 1.9, warna: R })));
   o.push(teks(265, 255.01, 'SINGLE LINE DIAGRAM', { ukuran: 3.6, warna: T, tebal: true, pusatV: true }));
-  o.push(teks(265, 259.97, potong([b.proyek, b.lokasi].filter(Boolean).join(' - '), 145, 2.3, true), { ukuran: 2.3, warna: T, tebal: true, pusatV: true }));
+  o.push(teks(265, 259.97, potong([b.proyek, b.lokasi, ruang].filter(Boolean).join(' - '), 145, 2.3, true), { ukuran: 2.3, warna: T, tebal: true, pusatV: true }));
   o.push(garis(262, 263.4, 413, 263.4, 0.25));
-  ([['PROYEK', b.ringkas, 266.9], ['LINGKUP', b.lingkup, 270.5], ['ACUAN', b.acuan, 274.1]] as const).forEach(([l, v, y]) => {
+  ([['PROYEK', b.ringkas, 266.9], ['ROOM', ruang?.trim() || b.lingkup, 270.5], ['ACUAN', b.acuan, 274.1]] as const).forEach(([l, v, y]) => {
     o.push(teks(265, y, l, { ukuran: 1.7, warna: R, tebal: true, pusatV: true }), teks(282, y, potong(v, 128, 1.95), { ukuran: 1.95, warna: T, pusatV: true }));
   });
   o.push(garis(262, 278.4, 413, 278.4, 0.25));
@@ -117,7 +117,7 @@ export function primLembar2(d: DokSLD): { prim: Prim[]; info: InfoLembar2 } {
     judulSeksi(10, yGambar, `GAMBAR PERANGKAT (No. = item ${acuan || 'BOM'})`), ...kartu(d, yGambar + 3.9),
     judulSeksi(262, 14.06, `DAFTAR PERANGKAT (${acuan ? `= ${acuan}` : 'No. = item BOM'})`, 148), ...p.prim,
     ...(d.catatan.length ? [judulSeksi(262, yCatatan, 'CATATAN PEMASANGAN', 148), ...catatan(d.catatan, 262, yCatatan + 3.9, 148)] : []),
-    ...blokJudul2(b, '2 / 2 · Koneksi & catatan'),
+    ...blokJudul2(b, '2 / 2 · Koneksi & catatan', d.namaRuang),
   ];
   return { prim, info: { terpotongKoneksi: k.terpotong, terpotongPerangkat: p.terpotong } };
 }

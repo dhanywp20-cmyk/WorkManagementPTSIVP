@@ -27,6 +27,19 @@ export const FOTO_PRODUK: Record<string, FotoProduk> = {
   'pontus-vwc': f('pontus-vwc', 428, 143, 'Pontus video wall controller'),
   'elite-layar-motor': f('elite-layar-motor', 480, 376, 'Elite Screens Evanesce Tension B'),
   'elite-layar-frame': f('elite-layar-frame', 480, 412, 'Elite Screens Sable Frame B2'),
+  'fonestar-speaker-plafon': f('fonestar-speaker-plafon', 480, 365, 'Fonestar speaker plafon'),
+  'fonestar-speaker-dinding': f('fonestar-speaker-dinding', 353, 400, 'Fonestar speaker dinding'),
+  'neo-8': f('neo-8', 223, 400, 'Speaker NEO-8'),
+  'mic-array-plafon': f('mic-array-plafon', 480, 249, 'Mic array plafon'),
+  'aver-speakerphone': f('aver-speakerphone', 480, 273, 'AVer speakerphone'),
+  'fonestar-mic-konferensi': f('fonestar-mic-konferensi', 281, 400, 'Fonestar mic konferensi'),
+  'fonestar-sci-750': f('fonestar-sci-750', 480, 234, 'Fonestar SCI-750'),
+  'paperless-mic': f('paperless-mic', 243, 305, 'Terminal paperless + mic'),
+  'tricolor-terminal': f('tricolor-terminal', 384, 296, 'Tricolor terminal paperless'),
+  'monitor-lift-mic': f('monitor-lift-mic', 480, 283, 'Monitor lift motorized + mic'),
+  'sennheiser-md42': f('sennheiser-md42', 216, 400, 'Sennheiser MD 42'),
+  'receiver-mic-wireless': f('receiver-mic-wireless', 192, 88, 'Receiver mic wireless'),
+  'wyrestorm-wallplate': f('wyrestorm-wallplate', 413, 400, 'WyreStorm wallplate HDMI + USB-C'),
 };
 
 export const POLA_FOTO_PRODUK = /^\/sld\/produk\/[a-z0-9-]+\.jpg$/;

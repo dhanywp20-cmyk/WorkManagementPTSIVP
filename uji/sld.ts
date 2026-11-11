@@ -3,13 +3,17 @@ import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { FOTO_PRODUK } from '../lib/sld/foto-produk';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
+import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, kodeKabel, kotakTampak, sisiOtomatis } from '../lib/sld/geometri';
 import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dinding';
 import { DAFTAR_IKON } from '../lib/sld/ikon';
 import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
+import ExcelJS from 'exceljs';
+import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
+import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
+import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
@@ -75,7 +79,7 @@ console.log('\n3. Template ekspor tetap (acuan SLD final)');
   cek('sheet 2: kolom Daftar Perangkat persis', ['>Kategori<', '>Merek / model<', '>Qty<'].every(t => s2.includes(t)));
   cek('sheet 2: judul seksi baku', ['DAFTAR KONEKSI (K = sinyal / kontrol, P = catu daya) - nomor K = label kabel di sheet 1', 'GAMBAR PERANGKAT (No. = item BOM Rev1)',
     'DAFTAR PERANGKAT (= BOM Rev1)', '>CATATAN PEMASANGAN<'].every(t => s2.includes(t)));
-  cek('sheet 2: blok judul baku', ['>SINGLE LINE DIAGRAM<', '>PROYEK<', '>LINGKUP<', '>ACUAN<', '>NO. GAMBAR<', '>REV<', '>TANGGAL<', '>SKALA<', '>KERTAS<', '>HAL<', '>Tanpa skala<', '>A3<',
+  cek('sheet 2: blok judul baku', ['>SINGLE LINE DIAGRAM<', '>PROYEK<', '>ROOM<', '>ACUAN<', '>NO. GAMBAR<', '>REV<', '>TANGGAL<', '>SKALA<', '>KERTAS<', '>HAL<', '>Tanpa skala<', '>A3<',
     '>2 / 2 · Koneksi &amp; catatan<'].every(t => s2.includes(t)));
   cek('sheet 2: warna tabel baku', s2.includes('fill="#eaeef2" stroke="#8c959f"') && s2.includes('fill="#f6f8fa" stroke="#afb8c1"'));
   cek('teks pengguna di-escape', svgLembar1({ ...d, blok: { ...d.blok, proyek: '<script>' } }).includes('PROJECT : &lt;script&gt;'));
@@ -226,8 +230,8 @@ void (async () => {
   const vw = dinding('videowall', { ket: 'Susunan 3 x 3' })!, ld = dinding('led', { nama: 'LED 6 x 2 m' })!;
   const href = [...vw.isi.matchAll(/href="(\/sld\/[^"]+)"/g), ...ld.isi.matchAll(/href="(\/sld\/[^"]+)"/g)].map(m => m[1]);
   cek('videowall otomatis: 9 panel berisi konten dari foto videowall asli', (vw.isi.match(/<use href="#sldd-vw-/g) ?? []).length === 9 && href.includes('/sld/produk/vw-isi-1.jpg'));
-  cek('LED otomatis: satu konten layar penuh dibagi per kabinet + profil kabinet asli', (ld.isi.match(/<use href="#sldd-led-300"/g) ?? []).length === 48
-    && href.includes('/sld/produk/led-profil.jpg') && (ld.isi.match(/href="\/sld\/produk\/led-isi\.jpg"/g) ?? []).length === 1);
+  cek('LED: satu konten layar penuh tanpa garis kabinet (beda dengan videowall) + profil kabinet asli', !ld.isi.includes('<use ') && !ld.isi.includes('stroke="#000"')
+    && ld.isi.includes('clip-path="url(#sldd-led-300)"') && href.includes('/sld/produk/led-profil.jpg') && (ld.isi.match(/href="\/sld\/produk\/led-isi\.jpg"/g) ?? []).length === 1);
   cek('gambar videowall & LED memakai berkas foto yang ada (ikut tersemat saat ekspor)', href.every(h => /^\/sld\/produk\/[a-z0-9-]+\.jpg$/.test(h) && existsSync(`public${h}`)));
   cek('rasio kotak videowall / LED mengikuti ukuran', Math.abs(rasioDinding('led', { nama: 'LED 6 x 2 m' })! - ld.rasio) < 1e-9
     && rasioDinding('led', { ket: '8 x 2 m' })! > rasioDinding('led', { ket: '4 x 2 m' })! && rasioDinding('tv') === null);
@@ -242,11 +246,110 @@ void (async () => {
   cek('putar 90°: kotak sambung kabel ikut berputar (lebar <-> tinggi)', Math.abs(kt.w - 40) < 1e-9 && Math.abs(km.h - 25) < 1e-9 && Math.abs(km.w - 25 / 1.6) < 1e-9);
   const dm2 = { ...dokBaru(), perangkat: [miring] };
   cek('putar: gambar di sheet 1 diputar, kartu sheet 2 tetap tegak', svgLembar1(dm2).includes('rotate(90 ') && !svgLembar2({ ...dm2, perangkat: [{ ...miring, no: '1' }] }).includes('rotate(90 '));
+  const balik = { ...tegak, balikH: true }, dbl = { ...dokBaru(), perangkat: [balik] };
+  cek('balik horizontal / vertikal: gambar sheet 1 dicerminkan, kotak sambung tidak berubah', svgLembar1(dbl).includes('scale(-1 1)')
+    && svgLembar1({ ...dbl, perangkat: [{ ...tegak, balikV: true }] }).includes('scale(1 -1)') && JSON.stringify(kotakTampak(balik)) === JSON.stringify(kt));
+  const sb = bersihkanDok({ perangkat: [{ ...balik, id: 'a', balikV: 'ya' }] })!.perangkat[0];
+  cek('balik: hanya nilai true yang disimpan', sb.balikH === true && sb.balikV === undefined);
+  const petaAudio = { 'Fonestar ceiling speaker 6"': 'speaker-plafon', 'Speaker dinding 5"': 'speaker', 'NEO-8 full range': 'speaker-pa', 'Mic array ceiling tile': 'mic-array',
+    'Sennheiser MD 42': 'mic-handheld', 'Receiver mic wireless 4 ch': 'receiver-wireless', 'Fonestar SCI-750': 'sentral-konferensi', 'Delegate unit': 'mic-konferensi',
+    'Paperless terminal 15"': 'paperless', 'Tricolor terminal': 'paperless-tricolor', 'Monitor lift 17"': 'monitor-lift', 'AVer FONE540': 'speakerphone-aver',
+    'Wallplate HDMI + USB-C': 'wallplate', 'WyreStorm HALO 80': 'speakerphone' } as Record<string, string>;
+  const salah = Object.entries(petaAudio).filter(([t, k]) => tebakTemplat(t) !== k).map(([t]) => `${t} -> ${tebakTemplat(t)}`);
+  cek('katalog speaker, mic, konferensi & wallplate dikenali dari BOM, semuanya berfoto', !salah.length && Object.values(petaAudio).every(k => !!KATALOG.find(t => t.k === k)?.foto), salah.join('; '));
   const sp = bersihkanDok({ perangkat: [{ ...miring, id: 'a', putar: -90 }, { ...miring, id: 'b', putar: 'x' }, { ...miring, id: 'c', putar: 450 }] })!;
   cek('putar: sudut dinormalkan 0-359 saat disimpan', sp.perangkat[0].putar === 270 && sp.perangkat[1].putar === undefined && sp.perangkat[2].putar === 90);
   const gbr = new Map([[miring.id, { isi: new Uint8Array([1]), jpeg: false }]]), kartu = new Map([[miring.id, { isi: new Uint8Array([2]), jpeg: false }]]);
   const zr = await bacaZip(buatVsdx({ dok: { ...dm2, perangkat: [{ ...miring, no: '1' }] }, gambar: gbr, kartu }));
   cek('Visio: perangkat diputar memakai gambar diputar di sheet 1 dan gambar tegak di kartu sheet 2', [...zr.keys()].filter(k => k.startsWith('visio/media/')).length === 2);
+  console.log('\n11. Kanvas 16:9, teks bebas & ukuran huruf label');
+  const d169 = ubahKertas(d, '169'), s169 = svgLembar1(d169);
+  const yMaks = Math.max(...d169.perangkat.map(p => p.y + p.h));
+  cek('16:9: sheet 1 berukuran 420 x 236,25 mm, perangkat diskalakan masuk bidang gambar', s169.includes('height="236.25mm"') && s169.includes('viewBox="0 0 420 236.25"')
+    && yMaks <= 236.25 - 9 + 0.5 && svgLembar1(d).includes('height="297mm"'), `${yMaks}`);
+  cek('16:9: kembali ke A3 mengembalikan tata letak (kurang dari 1 mm)', ubahKertas(d169, 'a3').perangkat.every((p, i) => Math.abs(p.y - d.perangkat[i].y) < 1.2 && Math.abs(p.w - d.perangkat[i].w) < 1.2));
+  cek('16:9: kertas tersimpan & posisi dibatasi ke bidang 16:9', bersihkanDok({ ...d169, perangkat: [{ ...d169.perangkat[0], y: 280 }] })!.perangkat[0].y <= 236.25 - 9
+    && bersihkanDok(d169)!.kertas === '169' && bersihkanDok({ ...d, kertas: 'x' })!.kertas === 'a3');
+  const v169 = await bacaZip(buatVsdx({ dok: d169, gambar: new Map() })), halV = new TextDecoder().decode(v169.get('visio/pages/pages.xml'));
+  const tinggiV = [...halV.matchAll(/N=['"]PageHeight['"] V=['"]([\d.]+)['"]/g)].map(m => Number(m[1]));
+  cek('16:9: Visio sheet 1 setinggi 236,25 mm, sheet 2 tetap A3', Math.abs(tinggiV[0] - 236.25 / 25.4) < 1e-6 && Math.abs(tinggiV[1] - 297 / 25.4) < 1e-6, tinggiV.join(','));
+  const tb = { ...teksBaru(120, 60, 'Ruang server\nLantai 2'), ukuran: 4, warna: 'merah' as const, tebal: true, putar: 90 };
+  const dt = { ...dokBaru(), teks: [tb] }, st = svgLembar1(dt);
+  cek('teks bebas: dua baris, ukuran, warna, tebal & putar tergambar di sheet 1', st.includes('>Ruang server<') && st.includes('>Lantai 2<') && st.includes('font-size="4"')
+    && st.includes('fill="#e00000" font-weight="700"') && /rotate\(90 [\d.]+ [\d.]+\)">/.test(st));
+  const tbs = bersihkanDok({ ...dt, teks: [{ ...tb, warna: 'ungu', ukuran: 99, isi: '' }, { isi: 'tanpa id' }] })!.teks;
+  cek('teks bebas: dibersihkan (warna dikenal, ukuran dibatasi, tanpa id dibuang)', tbs.length === 1 && tbs[0].warna === 'hitam' && tbs[0].ukuran === 20 && tbs[0].isi === 'Teks');
+  const vt = new TextDecoder().decode((await bacaZip(buatVsdx({ dok: dt, gambar: new Map() }))).get('visio/pages/page1.xml'));
+  cek('teks bebas: ikut ke Visio sebagai shape teks', vt.includes("NameU='Teks'") && vt.includes('Ruang server'));
+  const pBesar = { ...perangkatBaru('tv-tcl', 60, 60), nama: 'TV Besar', huruf: 2 }, kBesar = { ...kabelBaru(pBesar.id, pBesar.id), huruf: 1.5 };
+  const sh = svgLembar1({ ...dokBaru(), perangkat: [pBesar, { ...perangkatBaru('tv-tcl', 160, 60), nama: 'TV Kecil' }] });
+  cek('ukuran huruf label perangkat bisa diubah per perangkat', sh.includes('font-size="5.5" fill="#1f2328" font-weight="700" text-anchor="start">#TV Besar')
+    && sh.includes('font-size="2.75" fill="#1f2328" font-weight="700" text-anchor="start">#TV Kecil'));
+  const p2 = { ...perangkatBaru('tv-tcl', 160, 60), id: 'p2' }, kb2 = { ...kabelBaru(pBesar.id, 'p2'), huruf: 1.5 };
+  const gk = geometri({ ...dokBaru(), perangkat: [pBesar, p2], kabel: [kb2] });
+  cek('ukuran huruf label kabel bisa diubah per kabel', gk[0].huruf === 1.5 && svgLembar1({ ...dokBaru(), perangkat: [pBesar, p2], kabel: [kb2] }).includes('font-size="3"'));
+  const gDok = geometri({ ...dokBaru(), huruf: { kabel: 2 }, perangkat: [pBesar, p2], kabel: [{ ...kb2, huruf: undefined }] });
+  cek('ukuran huruf semua label dari pengaturan dokumen; dibatasi 0,5x - 3x', gDok[0].huruf === 2 && hurufSah(5) === 3 && hurufSah(0.1) === 0.5 && hurufSah(1) === undefined && !!kBesar);
+  console.log('\n12. Sheet 3 BOQ (view, PDF & Excel)');
+  const bq = barisBoq(d);
+  cek('BOQ: satu baris per No. BOM, merek & model dipisah, spesifikasi & fungsi kosong', bq.length === 7 && bq[0].no === '1' && bq.every(r => r.spek === '' && r.fungsi === '')
+    && pisahMerek('WyreStorm HALO 80', '').merek === 'WyreStorm' && pisahMerek('Mini PC Windows 11 (sesuai pengadaan)', '').model === 'Mini PC Windows 11'
+    && pisahMerek('', 'Switch #1').merek === 'Sesuai pengadaan', JSON.stringify(bq.map(r => [r.no, r.merek, r.model])));
+  const dBoq = { ...d, boq: { [bq[0].kunci]: { spek: 'Speakerphone USB, 4 mic', fungsi: 'Mic perintah suara' } } };
+  cek('BOQ: isian tim (spesifikasi & fungsi) tersimpan per item dan lolos pembersihan', barisBoq(bersihkanDok(dBoq)!)[0].spek === 'Speakerphone USB, 4 mic'
+    && !bersihkanDok({ ...d, boq: { x: { spek: '', fungsi: '' } } })!.boq);
+  const hb = htmlBoq(dBoq);
+  cek('BOQ HTML: judul, kolom & seksi sesuai contoh; harga kosong, total "-"', hb.includes(judulBoq(d)) && KOLOM_BOQ.every(k => hb.includes(`<th>${k.judul.replace('&', '&amp;')}</th>`))
+    && hb.includes('A. PERANGKAT UTAMA (sesuai daftar)') && (hb.match(/<td class="harga"><\/td>/g) ?? []).length === 7 && (hb.match(/<td class="total">-<\/td>/g) ?? []).length === 7
+    && hb.includes('Speakerphone USB, 4 mic'));
+  cek('BOQ tema: warna & garis sama dengan contoh Excel', ['1F3864', 'D9E2F3', 'FFF2CC', 'BFBFBF', '0000FF'].every(w => CSS_BOQ.includes(w)) && CSS_BOQ.includes('Arial'));
+  const png1 = { data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', ext: 'png' as const, w: 4, h: 3 };
+  const xb = new ExcelJS.Workbook();
+  await xb.xlsx.load((await bukuExcel({ dok: dBoq, lembar1: [png1], gambar: new Map(bq.map(r => [r.contoh.id, png1])) })) as unknown as ArrayBuffer);
+  const wsq = xb.getWorksheet('Sheet 3 - BOQ')!;
+  cek('Excel: 3 sheet (diagram, koneksi, BOQ)', xb.worksheets.map(w => w.name).join('|') === 'Sheet 1 - Diagram|Sheet 2 - Koneksi|Sheet 3 - BOQ' && xb.getWorksheet('Sheet 1 - Diagram')!.getImages().length === 1);
+  const fill = (a: string) => ((wsq.getCell(a).fill as ExcelJS.FillPattern)?.fgColor?.argb ?? '');
+  cek('Excel BOQ: judul, kepala navy huruf putih, seksi biru muda, harga kuning, garis abu', String(wsq.getCell('A1').value).startsWith('BILL OF MATERIALS')
+    && wsq.getCell('F6').value === 'Spesifikasi Singkat' && fill('A6') === 'FF1F3864' && wsq.getCell('A6').font.color?.argb === 'FFFFFFFF' && fill('A7') === 'FFD9E2F3'
+    && fill('J8') === 'FFFFF2CC' && wsq.getCell('A8').border.top?.color?.argb === 'FFBFBFBF' && wsq.getCell('E8').font.bold === true && wsq.getCell('H8').font.color?.argb === 'FF0000FF');
+  cek('Excel BOQ: harga kosong, total = Qty x Harga dengan format Rp, isian tim ikut', wsq.getCell('J8').value === null && (wsq.getCell('K8').value as ExcelJS.CellFormulaValue).formula === 'H8*J8'
+    && String(wsq.getCell('K8').numFmt).includes('Rp') && wsq.getCell('F8').value === 'Speakerphone USB, 4 mic' && wsq.getCell('F9').value === '');
+  cek('Excel BOQ: lebar kolom, tinggi baris, foto per baris, kepala tercetak ulang', wsq.getColumn(6).width === 44 && wsq.getColumn(2).width === 25 && wsq.getRow(8).height === 84
+    && wsq.getImages().length === 7 && wsq.pageSetup.printTitlesRow === '6:6' && wsq.views[0].showGridLines === false && wsq.getCell('A7').isMerged);
+  const xs = new ExcelJS.Workbook();
+  await xs.xlsx.load((await bukuExcel({ dok: d, simple: true, lembar1: [png1] })) as unknown as ArrayBuffer);
+  cek('Excel mode Simple: hanya Sheet 1', xs.worksheets.length === 1);
+  console.log('\n13. Proyek multi ruangan & BOQ bisa disesuaikan');
+  const pr1 = tambahRuang({ ...d, blok: { ...d.blok, proyek: 'Gedung A', lokasi: 'RS Contoh' } }, 'Ruang Rapat');
+  const r2 = dokRuang(pr1, 1), pr2 = gabungRuang(pr1, 1, { ...r2, perangkat: [perangkatBaru('tv-tcl', 60, 40), perangkatBaru('presentasi', 140, 40)] });
+  cek('ruangan: tambah, buka & isi ruangan ke-2 tanpa mengubah ruangan 1', jumlahRuang(pr2) === 2 && pr2.namaRuang === 'Ruangan 1' && pr2.perangkat.length === d.perangkat.length
+    && dokRuang(pr2, 1).perangkat.length === 2 && dokRuang(pr2, 1).namaRuang === 'Ruang Rapat' && dokRuang(pr2, 1).blok.proyek === 'Gedung A');
+  const pr3 = gabungRuang(pr2, 1, { ...dokRuang(pr2, 1), blok: { ...pr2.blok, proyek: 'Gedung B' } });
+  cek('ruangan: nama proyek & blok judul berlaku untuk semua ruangan', dokRuang(pr3, 0).blok.proyek === 'Gedung B' && semuaPerangkat(pr3).length === d.perangkat.length + 2);
+  const s2 = svgLembar1(dokRuang(pr3, 1)), s2b = svgLembar2(dokRuang(pr3, 1));
+  cek('ruangan: nama ruangan tampil di Sheet 1 & 2 (ROOM)', s2.includes('Ruang Rapat') && s2b.includes('Ruang Rapat') && s2b.includes('>ROOM<'));
+  const disimpan = bersihkanDok(JSON.parse(JSON.stringify(tanpaFoto({ ...pr3, ruangLain: pr3.ruangLain!.map(r => ({ ...r, perangkat: r.perangkat.map(p => ({ ...p, gambar: 'data:image/png;base64,AAAA' })) })) }))))!;
+  cek('ruangan: tersimpan & dibersihkan, foto unggahan ruangan lain tidak ikut ke server', jumlahRuang(disimpan) === 2 && disimpan.ruangLain![0].nama === 'Ruang Rapat'
+    && disimpan.ruangLain![0].perangkat.length === 2 && disimpan.ruangLain![0].perangkat.every(p => !p.gambar));
+  cek('ruangan: ganti nama, hapus ruangan ke-1 menaikkan ruangan ke-2', namaiRuang(pr3, 1, 'Lobby').ruangLain![0].nama === 'Lobby'
+    && hapusRuang(pr3, 0).namaRuang === 'Ruang Rapat' && hapusRuang(pr3, 0).perangkat.length === 2 && jumlahRuang(hapusRuang(pr3, 1)) === 1);
+  const k169 = ubahKertas(pr3, '169');
+  cek('ruangan: ganti kertas 16:9 menskala semua ruangan', k169.ruangLain![0].perangkat[0].w < pr3.ruangLain![0].perangkat[0].w && k169.perangkat[0].w < pr3.perangkat[0].w);
+  const bg = bagianBoq(pr3);
+  cek('BOQ multi ruangan: satu section per ruangan, label Room berisi nama ruangan', bg.length === 2 && bg[0].judul === 'A. RUANGAN 1 (sesuai daftar)'
+    && bg[1].judul === 'B. RUANG RAPAT (sesuai daftar)' && bg[1].baris.length === 2 && infoBoq(pr3)[1][0] === 'Room' && infoBoq(pr3)[1][1] === 'Ruangan 1, Ruang Rapat'
+    && bagianBoq(d)[0].judul === 'A. PERANGKAT UTAMA (sesuai daftar)' && htmlBoq(pr3).includes('B. RUANG RAPAT'));
+  const kn = bg[1].baris[0].kunci, pr4 = gabungRuang(pr3, 1, { ...dokRuang(pr3, 1), boq: { [kn]: { kategori: 'Display ruang rapat', merek: 'TCL', model: '65C755' } } });
+  const b4 = bagianBoq(pr4)[1].baris[0];
+  cek('BOQ: kategori, merek & model otomatis bisa disesuaikan tim (hanya di BOQ)', b4.kategori === 'Display ruang rapat' && b4.merek === 'TCL' && b4.model === '65C755'
+    && dokRuang(pr4, 1).perangkat[0].kategori !== 'Display ruang rapat' && bersihkanDok(pr4)!.ruangLain![0].boq![kn].model === '65C755');
+  const xm = new ExcelJS.Workbook();
+  await xm.xlsx.load((await bukuExcel({ dok: pr4, lembar1: [png1, png1] })) as unknown as ArrayBuffer);
+  const namaSheet = xm.worksheets.map(w => w.name), bqx = xm.getWorksheet('Sheet 3 - BOQ')!;
+  cek('Excel multi ruangan: Sheet 1 & 2 per ruangan, BOQ satu sheet dengan section per ruangan', namaSheet.length === 5 && namaSheet[0].startsWith('R1 Sheet 1') && namaSheet[3].includes('Ruang Rapat')
+    && String(bqx.getCell('A7').value).startsWith('A. ') && bqx.getColumn(1).values.some(v => String(v).startsWith('B. RUANG RAPAT')) && String(bqx.getCell('B3').value ?? bqx.getCell('A3').value) !== '', namaSheet.join(' | '));
+  const vm = await bacaZip(buatVsdx({ dok: pr4, gambar: new Map(), ruang: [0, 1].map(i => ({ dok: dokRuang(pr4, i), nama: i ? 'Ruang Rapat' : 'Ruangan 1' })) }));
+  cek('Visio multi ruangan: 2 halaman per ruangan', vm.has('visio/pages/page4.xml') && !vm.has('visio/pages/page5.xml'));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

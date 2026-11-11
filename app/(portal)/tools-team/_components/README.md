@@ -41,6 +41,20 @@ sheet 1 = strip judul kiri + diagram foto perangkat & kabel berwarna; sheet 2 = 
 Gambar Perangkat, Daftar Perangkat, Catatan Pemasangan, blok judul. Warna, huruf & kolom dikunci
 di `lib/sld/gaya.ts`, `lembar1.ts`, `lembar2.ts` dan dijaga `uji/sld.ts` - jangan dibuat bertema.
 
+Sheet 1 bisa berkertas A3 (bawaan, template baku) atau 16:9 (420 x 236,25 mm): strip judul dan bingkai mengikuti tinggi
+kertas, perangkat & teks diskalakan saat kertas diganti; sheet 2 selalu A3. Teks bebas (dok.teks) dan ukuran huruf label
+(per perangkat / kabel atau semua label lewat dok.huruf, 0,5x - 3x) ikut ke PDF, PNG & Visio.
+
+Satu proyek bisa berisi beberapa ruangan (seperti Request Design): ruangan 1 di dok utama (namaRuang), ruangan berikutnya di
+dok.ruangLain. lib/sld/ruang.ts: dokRuang() memberi tampilan satu ruangan (blok judul bersama) sehingga semua fungsi lembar /
+Visio tetap per ruangan; gabungRuang() menulis balik. useKeadaanSLD menyimpan proyek, `dok` = ruangan aktif.
+Editor: nama proyek di samping Simpan, bilah Ruangan, katalog = laci geser dari kiri, Properti = popup kanan atas (Sheet 1 saja).
+
+Sheet 3 = BOQ, meniru BOM Excel acuan pemilik (judul, Proyek / Lingkup / Disusun oleh, kepala navy, seksi "A. PERANGKAT UTAMA",
+foto per baris, Harga kuning kosong, Total = Qty x Harga). Satu sumber (lib/sld/boq.ts) untuk tampilan, PDF (HTML) & Excel
+(lib/sld/excel.ts, exceljs). Spesifikasi Singkat & Fungsi diisi tim di tabel (dok.boq), Harga sengaja kosong untuk sales.
+Kanvas baru & contoh memakai 16:9; draf lama tanpa kertas diubah sekali ke 16:9.
+
 Dua isi ekspor dari SLD yang sama: **Full Detail** (2 sheet, internal - "NO SHARE") dan **Simple** (hanya sheet 1,
 "no dtl", aman dibagikan ke klien). Sheet 2 terisi otomatis: perangkat tanpa No. BOM dinomori setelah No. BOM
 yang ada (model sama digabung, beban non-pasokan seperti tirai/lampu/AC/FCU/MCB tidak masuk), kolom Fungsi kosong
@@ -50,7 +64,7 @@ diisi dari jenis kabel.
 lib/sld/
   tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
   gaya.ts       warna kabel, huruf, watermark (tetap)
-  geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label, putar perangkat (kotak sambung = kotak setelah diputar)
+  geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label, putar & balik perangkat (kotak sambung = kotak setelah diputar)
   primitif.ts   tata letak bersama (kotak, garis, teks, sel tabel) -> SVG & Visio dari sumber yang sama
   lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
   vsdx.ts       ekspor Visio: shape bergambar + titik sambung, kabel = connector yang menempel (glue);
@@ -58,8 +72,11 @@ lib/sld/
   katalog.ts    templat per kelompok (Display TCL & Philips BDL, middleware WyreStorm, sumber input, ...) + saran model
   foto-produk.ts  FOTO PRODUK ASLI bawaan (public/sld/produk/*.jpg, dari situs resmi pabrikan) per item katalog AV
   ikon.ts / ikon-layar.ts  ilustrasi 2D - hanya untuk barang non-AV (tirai, gorden, lampu, AC/FCU, MCB) atau bila foto dihapus
+  teks-bebas.ts teks bebas di sheet 1 (baris, warna, tebal, putar)
+  ruang.ts      proyek multi ruangan (tampilan per ruangan, tambah / hapus / ganti nama)
+  boq.ts        sheet 3 BOQ: baris, gaya & HTML      excel.ts  buku Excel sheet 1 (gambar), sheet 2 (tabel), sheet 3 (BOQ)
   dinding.ts    videowall & LED dari foto asli: susunan "4 x 3" / ukuran "6 x 2 m" / "8 x 4 kabinet" dibaca dari nama & keterangan,
-                konten otomatis per panel (videowall) atau satu gambar dibagi per kabinet (LED), perspektif seperti foto acuan
+                konten otomatis per panel ber-bezel (videowall) atau satu gambar layar penuh tanpa garis (LED), perspektif seperti foto acuan
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
   ekspor.ts     (browser) SVG per sheet + foto tersemat, .vsdx, PNG, berkas paket - dipakai juga Request Design

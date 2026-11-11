@@ -37,7 +37,7 @@ export function contohVoiceKamar(dibuat = ''): DokSLD {
     acuan: 'BOM Voice Kamar Pasien.xlsx', acuanSingkat: 'BOM Rev1', nomor: 'CV-SLD-01', rev: 'A',
   };
   return {
-    versi: 1, blok, watermark: true,
+    versi: 1, blok, watermark: true, kertas: 'a3', teks: [],
     perangkat: [halo, pc, panel, sw, ctl, r1, r2, tirai, gorden, lampu, fcu, tv],
     kabel: [
       k(halo, pc, { jenis: 'usb', duaArah: true, media: 'USB-A ke USB-C', teksGaris: 'USB-A ↔ USB-C', fungsi: 'Mic perintah suara + speaker balasan (satu kabel)' }, 'USB-C', 'USB-A'),
