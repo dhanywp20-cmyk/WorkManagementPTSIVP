@@ -1,7 +1,7 @@
 'use client';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { CSS_BOQ, htmlBoq } from '@/lib/sld/boq';
-import { bytesExcel, bytesVsdx, lembarSvg, namaEkspor, pngDariSvg, type OpsiEkspor, ukuranSvgMm } from '@/lib/sld/ekspor';
+import { bytesExcel, bytesVsdx, lembarSvg, lembarSvgProyek, namaEkspor, pngDariSvg, type OpsiEkspor, ukuranSvgMm } from '@/lib/sld/ekspor';
 import { sematkanFoto } from '@/lib/sld/sematkan';
 import { esc } from '@/lib/sld/teks';
 import type { DokSLD } from '@/lib/sld/tipe';
@@ -11,7 +11,7 @@ export async function cetakPdf(d: DokSLD, o: OpsiEkspor = {}): Promise<void> {
   if (!w) throw new Error('Jendela cetak diblokir peramban. Izinkan pop-up untuk halaman ini.');
   w.document.write('<!doctype html><title>Menyiapkan PDF...</title><p style="font-family:Arial;padding:24px">Menyiapkan SLD...</p>');
   try {
-    const halaman = (await lembarSvg(d, o)).map(s => {
+    const halaman = (await lembarSvgProyek(d, o)).map(s => {
       const h = ukuranSvgMm(s).h;
       return `<div class="hal${h < 297 ? ' lebar' : ''}" style="height:${h}mm">${s}</div>`;
     }).join('') + (o.simple ? '' : `<div class="hal-boq">${await sematkanFoto(htmlBoq(d))}</div>`);

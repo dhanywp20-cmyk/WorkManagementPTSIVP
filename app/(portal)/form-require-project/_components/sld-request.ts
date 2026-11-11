@@ -1,5 +1,6 @@
 import { bersihkanDok } from '@/lib/sld/dok';
 import { barisPerangkat, type BarisPerangkat } from '@/lib/sld/turunan';
+import { jumlahRuang, namaRuangKe, semuaRuang } from '@/lib/sld/ruang';
 import type { DokSLD } from '@/lib/sld/tipe';
 import type { IzinRuang } from './desain-3d-request';
 
@@ -47,7 +48,8 @@ export function dokTautanSld(requestId: string, t: Pick<TautanSld, 'id' | 'versi
   return p;
 }
 
-export const ringkasanSld = (d: DokSLD): BarisPerangkat[] => barisPerangkat(d);
+export const ringkasanSld = (d: DokSLD): BarisPerangkat[] => semuaRuang(d).flatMap((r, i) =>
+  barisPerangkat(r).map(b => (jumlahRuang(d) > 1 ? { ...b, kategori: `${namaRuangKe(d, i)} · ${b.kategori}` } : b)));
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
@@ -61,7 +63,7 @@ export function htmlSeksiSld(isi: IsiSeksiSld[], namaRuang: (idx: number) => str
       ? `<div style="margin-top:4px;font-size:10px;color:#b45309">Versi terbaru di AV Solution Tools: v${t.sumber.versi} (dokumen ini memakai v${t.versi}).</div>` : '';
     return `<div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;page-break-inside:avoid">
   <div style="font-size:13px;font-weight:800">${esc(namaTautanSld(t))} <span style="font-size:10px;font-weight:700;color:#1d4ed8">v${t.versi}</span></div>
-  <div style="font-size:11px;color:#475569;margin-top:2px">${esc(namaRuang(t.room_idx))} · ${dok ? `${dok.perangkat.length} perangkat · ${dok.kabel.length} kabel · ` : ''}ditautkan ${esc(t.dilampirkan_oleh_nama)}</div>
+  <div style="font-size:11px;color:#475569;margin-top:2px">${esc(namaRuang(t.room_idx))} · ${dok ? `${jumlahRuang(dok)} ruangan · ${semuaRuang(dok).reduce((s, r) => s + r.perangkat.length, 0)} perangkat · ` : ''}ditautkan ${esc(t.dilampirkan_oleh_nama)}</div>
   ${baru}
   ${gambar ? `<img src="${gambar}" alt="" style="display:block;width:100%;height:auto;margin-top:8px;border:1px solid #e2e8f0"/>` : ''}
   ${baris ? `<table style="margin-top:6px;border-collapse:collapse;font-size:11px;width:100%">${baris}</table>` : ''}

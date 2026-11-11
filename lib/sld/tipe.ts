@@ -70,6 +70,18 @@ export type WarnaTeks = 'hitam' | 'merah' | 'abu' | 'biru';
 
 export interface TeksBebas { id: string; x: number; y: number; isi: string; ukuran: number; warna: WarnaTeks; tebal: boolean; putar?: number }
 
+export type IsiBoqItem = { kategori?: string; merek?: string; model?: string; spek?: string; fungsi?: string };
+
+export interface RuangSLD {
+  id: string;
+  nama: string;
+  perangkat: Perangkat[];
+  kabel: Kabel[];
+  teks: TeksBebas[];
+  catatan: CatatanPasang[];
+  boq?: Record<string, IsiBoqItem>;
+}
+
 export interface DokSLD {
   versi: 1;
   blok: BlokJudul;
@@ -80,7 +92,9 @@ export interface DokSLD {
   watermark: boolean;
   kertas?: Kertas;
   huruf?: { perangkat?: number; kabel?: number };
-  boq?: Record<string, { spek?: string; fungsi?: string }>;
+  boq?: Record<string, IsiBoqItem>;
+  namaRuang?: string;
+  ruangLain?: RuangSLD[];
 }
 
 export interface Titik { x: number; y: number }
@@ -103,6 +117,7 @@ export const halamanDok = (d: { kertas?: Kertas }) => KERTAS[d.kertas === '169' 
 export const areaDok = (d: { kertas?: Kertas }) => ({ ...AREA, h: halamanDok(d).h - 18 });
 export const HURUF_MIN = 0.5, HURUF_MAKS = 3;
 export const MAKS_TEKS = 60;
+export const MAKS_RUANG = 20;
 export const UKURAN_AWAL = { w: 46, h: 30 } as const;
 export const UKURAN_MIN = { w: 12, h: 8 } as const;
 export const MAKS_PERANGKAT = 60;

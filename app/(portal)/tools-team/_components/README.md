@@ -45,6 +45,11 @@ Sheet 1 bisa berkertas A3 (bawaan, template baku) atau 16:9 (420 x 236,25 mm): s
 kertas, perangkat & teks diskalakan saat kertas diganti; sheet 2 selalu A3. Teks bebas (dok.teks) dan ukuran huruf label
 (per perangkat / kabel atau semua label lewat dok.huruf, 0,5x - 3x) ikut ke PDF, PNG & Visio.
 
+Satu proyek bisa berisi beberapa ruangan (seperti Request Design): ruangan 1 di dok utama (namaRuang), ruangan berikutnya di
+dok.ruangLain. lib/sld/ruang.ts: dokRuang() memberi tampilan satu ruangan (blok judul bersama) sehingga semua fungsi lembar /
+Visio tetap per ruangan; gabungRuang() menulis balik. useKeadaanSLD menyimpan proyek, `dok` = ruangan aktif.
+Editor: nama proyek di samping Simpan, bilah Ruangan, katalog = laci geser dari kiri, Properti = popup kanan atas (Sheet 1 saja).
+
 Sheet 3 = BOQ, meniru BOM Excel acuan pemilik (judul, Proyek / Lingkup / Disusun oleh, kepala navy, seksi "A. PERANGKAT UTAMA",
 foto per baris, Harga kuning kosong, Total = Qty x Harga). Satu sumber (lib/sld/boq.ts) untuk tampilan, PDF (HTML) & Excel
 (lib/sld/excel.ts, exceljs). Spesifikasi Singkat & Fungsi diisi tim di tabel (dok.boq), Harga sengaja kosong untuk sales.
@@ -68,6 +73,7 @@ lib/sld/
   foto-produk.ts  FOTO PRODUK ASLI bawaan (public/sld/produk/*.jpg, dari situs resmi pabrikan) per item katalog AV
   ikon.ts / ikon-layar.ts  ilustrasi 2D - hanya untuk barang non-AV (tirai, gorden, lampu, AC/FCU, MCB) atau bila foto dihapus
   teks-bebas.ts teks bebas di sheet 1 (baris, warna, tebal, putar)
+  ruang.ts      proyek multi ruangan (tampilan per ruangan, tambah / hapus / ganti nama)
   boq.ts        sheet 3 BOQ: baris, gaya & HTML      excel.ts  buku Excel sheet 1 (gambar), sheet 2 (tabel), sheet 3 (BOQ)
   dinding.ts    videowall & LED dari foto asli: susunan "4 x 3" / ukuran "6 x 2 m" / "8 x 4 kabinet" dibaca dari nama & keterangan,
                 konten otomatis per panel ber-bezel (videowall) atau satu gambar layar penuh tanpa garis (LED), perspektif seperti foto acuan

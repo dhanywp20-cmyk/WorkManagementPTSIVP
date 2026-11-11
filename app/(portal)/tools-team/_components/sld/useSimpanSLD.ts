@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { bersihkanDok, tanpaFoto } from '@/lib/sld/dok';
+import { semuaPerangkat } from '@/lib/sld/ruang';
 import type { DokSLD } from '@/lib/sld/tipe';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -33,22 +34,22 @@ export function useSimpanSLD(a: KeadaanSLD) {
     setAktifState(v);
     try { if (v) localStorage.setItem(KUNCI_AKTIF, JSON.stringify(v)); else localStorage.removeItem(KUNCI_AKTIF); } catch {  }
   }, []);
-  const berubah = useMemo(() => (aktif ? kunciDok(a.dok) !== aktif.kunci : a.dok.perangkat.length > 0), [a.dok, aktif]);
+  const berubah = useMemo(() => (aktif ? kunciDok(a.proyek) !== aktif.kunci : semuaPerangkat(a.proyek).length > 0), [a.proyek, aktif]);
 
   const kirim = useCallback(async (nama: string, timpa: boolean): Promise<string | null> => {
     setSibuk('simpan'); setPesan(null);
     try {
       const r = await fetch(API, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: timpa ? aktif?.id : undefined, versi: timpa ? aktif?.versi : undefined, nama, data: a.dok }),
+        body: JSON.stringify({ id: timpa ? aktif?.id : undefined, versi: timpa ? aktif?.versi : undefined, nama, data: a.proyek }),
       }).catch(() => null);
       const j = await jsonDari(r);
       if (!r?.ok || !j?.ok) { setPesan({ t: j?.alasan ?? 'SLD gagal disimpan. Periksa koneksi.', galat: true }); return null; }
-      setAktif({ id: j.sld.id, nama, versi: j.sld.versi, bolehUbah: true, kunci: kunciDok(a.dok) });
+      setAktif({ id: j.sld.id, nama, versi: j.sld.versi, bolehUbah: true, kunci: kunciDok(a.proyek) });
       setPesan({ t: `Tersimpan di server tim: ${nama} v${j.sld.versi}. Foto unggahan tetap hanya di browser ini.` });
       return j.sld.id as string;
     } finally { setSibuk(''); }
-  }, [a.dok, aktif, setAktif]);
+  }, [a.proyek, aktif, setAktif]);
 
   const simpan = useCallback(async () => (aktif?.bolehUbah ? kirim(aktif.nama, true) : null), [aktif, kirim]);
   const tautkan = useCallback(async (sldId: string, requestId: string, roomIdx: number, namaRequest: string) => {

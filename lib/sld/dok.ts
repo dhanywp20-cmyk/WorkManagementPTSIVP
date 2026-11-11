@@ -5,7 +5,7 @@ import { URUTAN_JENIS } from './gaya';
 import { sudutSah } from './geometri';
 import {
   AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
-  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, type Perangkat, type PilihSisi, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks,
+  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_RUANG, MAKS_TEKS, type Perangkat, type PilihSisi, type RuangSLD, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks,
 } from './tipe';
 
 let urut = 0;
@@ -118,6 +118,26 @@ function bersihkanTeks(v: unknown, area: Area): TeksBebas | null {
   };
 }
 
+type Isi = Pick<DokSLD, 'perangkat' | 'kabel' | 'teks' | 'catatan' | 'boq'>;
+const BIDANG_BOQ = { kategori: 120, merek: 120, model: 200, spek: 800, fungsi: 600 } as const;
+
+function bersihkanIsi(d: Record<string, unknown>, area: Area): Isi {
+  const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(x => bersihkanPerangkat(x, area)).filter((p): p is Perangkat => !!p);
+  const teksBebas = (Array.isArray(d.teks) ? d.teks : []).slice(0, MAKS_TEKS).map(x => bersihkanTeks(x, area)).filter((t): t is TeksBebas => !!t);
+  const id = new Set(perangkat.map(p => p.id));
+  const kabel = (Array.isArray(d.kabel) ? d.kabel : []).slice(0, MAKS_KABEL).map(c => bersihkanKabel(c, id)).filter((c): c is Kabel => !!c);
+  const catatan = (Array.isArray(d.catatan) ? d.catatan : []).slice(0, MAKS_CATATAN)
+    .map(x => ({ judul: teks((x as CatatanPasang)?.judul, 120), isi: teks((x as CatatanPasang)?.isi, 1200) }))
+    .filter(x => x.judul || x.isi);
+  const boq = Object.fromEntries(Object.entries((d.boq && typeof d.boq === 'object' ? d.boq : {}) as Record<string, unknown>).slice(0, MAKS_PERANGKAT * 2)
+    .map(([k, v]) => {
+      const x = (v ?? {}) as Record<string, unknown>;
+      return [k.slice(0, 200), Object.fromEntries(Object.entries(BIDANG_BOQ).map(([b, maks]) => [b, teks(x[b], maks)]).filter(([, isi]) => isi))] as const;
+    })
+    .filter(([, v]) => Object.keys(v).length));
+  return { perangkat, kabel, teks: teksBebas, catatan, ...(Object.keys(boq).length ? { boq } : {}) };
+}
+
 export function bersihkanDok(v: unknown): DokSLD | null {
   if (!v || typeof v !== 'object') return null;
   const d = v as Record<string, unknown>;
@@ -126,39 +146,39 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   const blok = Object.fromEntries(Object.keys(awal).map(k => [k, typeof b[k] === 'string' ? (b[k] as string).slice(0, 600) : awal[k as keyof BlokJudul]])) as unknown as BlokJudul;
   if (!blok.disetujui.trim()) blok.disetujui = awal.disetujui;
   const kertas: Kertas = d.kertas === '169' ? '169' : 'a3', area = areaDok({ kertas });
-  const perangkat = (Array.isArray(d.perangkat) ? d.perangkat : []).slice(0, MAKS_PERANGKAT).map(x => bersihkanPerangkat(x, area)).filter((p): p is Perangkat => !!p);
-  const teksBebas = (Array.isArray(d.teks) ? d.teks : []).slice(0, MAKS_TEKS).map(x => bersihkanTeks(x, area)).filter((t): t is TeksBebas => !!t);
   const h = (d.huruf ?? {}) as Record<string, unknown>, huruf = { perangkat: hurufSah(h.perangkat), kabel: hurufSah(h.kabel) };
-  const boq = Object.fromEntries(Object.entries((d.boq && typeof d.boq === 'object' ? d.boq : {}) as Record<string, unknown>).slice(0, MAKS_PERANGKAT * 2)
-    .map(([k, v]) => { const x = (v ?? {}) as Record<string, unknown>; return [k.slice(0, 200), { spek: teks(x.spek, 800) || undefined, fungsi: teks(x.fungsi, 600) || undefined }] as const; })
-    .filter(([, v]) => v.spek || v.fungsi));
-  const id = new Set(perangkat.map(p => p.id));
-  const kabel = (Array.isArray(d.kabel) ? d.kabel : []).slice(0, MAKS_KABEL).map(c => bersihkanKabel(c, id)).filter((c): c is Kabel => !!c);
-  const catatan = (Array.isArray(d.catatan) ? d.catatan : []).slice(0, MAKS_CATATAN)
-    .map(x => ({ judul: teks((x as CatatanPasang)?.judul, 120), isi: teks((x as CatatanPasang)?.isi, 1200) }))
-    .filter(x => x.judul || x.isi);
+  const ruangLain: RuangSLD[] = (Array.isArray(d.ruangLain) ? d.ruangLain : []).slice(0, MAKS_RUANG - 1).map(r => {
+    const x = (r ?? {}) as Record<string, unknown>;
+    return { id: typeof x.id === 'string' && x.id ? x.id.slice(0, 40) : idBaru('r'), nama: teks(x.nama, 80), ...bersihkanIsi(x, area) };
+  });
   return {
-    versi: 1, blok, perangkat, kabel, teks: teksBebas, catatan, watermark: d.watermark !== false, kertas,
+    versi: 1, blok, ...bersihkanIsi(d, area), watermark: d.watermark !== false, kertas,
+    ...(teks(d.namaRuang, 80) ? { namaRuang: teks(d.namaRuang, 80) } : {}),
+    ...(ruangLain.length ? { ruangLain } : {}),
     ...(huruf.perangkat || huruf.kabel ? { huruf } : {}),
-    ...(Object.keys(boq).length ? { boq } : {}),
   };
 }
 
 const setengah = (v: number) => Math.round(v * 2) / 2;
 
-export function ubahKertas(d: DokSLD, kertas: Kertas): DokSLD {
-  const lama = halamanDok(d).h, baru = KERTAS[kertas].h;
-  if (lama === baru) return { ...d, kertas };
-  const k = (baru - 18) / (lama - 18), Y = (y: number) => AREA.y + (y - AREA.y) * k;
+function skalaIsi<T extends Pick<DokSLD, 'perangkat' | 'kabel' | 'teks'>>(r: T, k: number): T {
+  const Y = (y: number) => AREA.y + (y - AREA.y) * k;
   return {
-    ...d, kertas,
-    perangkat: d.perangkat.map(p => {
+    ...r,
+    perangkat: r.perangkat.map(p => {
       const w = setengah(Math.max(UKURAN_MIN.w, p.w * k)), h = setengah(Math.max(UKURAN_MIN.h, p.h * k));
       return { ...p, x: setengah(p.x + (p.w - w) / 2), y: setengah(Y(p.y + p.h / 2) - h / 2), w, h };
     }),
-    kabel: d.kabel.map(c => ({ ...c, tengah: undefined })),
-    teks: d.teks.map(t => ({ ...t, y: setengah(Y(t.y)) })),
+    kabel: r.kabel.map(c => ({ ...c, tengah: undefined })),
+    teks: r.teks.map(t => ({ ...t, y: setengah(Y(t.y)) })),
   };
+}
+
+export function ubahKertas(d: DokSLD, kertas: Kertas): DokSLD {
+  const lama = halamanDok(d).h, baru = KERTAS[kertas].h;
+  if (lama === baru) return { ...d, kertas };
+  const k = (baru - 18) / (lama - 18);
+  return { ...skalaIsi(d, k), kertas, ...(d.ruangLain ? { ruangLain: d.ruangLain.map(r => skalaIsi(r, k)) } : {}) };
 }
 
 export function hapusPerangkat(d: DokSLD, id: string): DokSLD {
@@ -173,16 +193,21 @@ const namaDari = (d: DokSLD, id: string) => d.perangkat.find(p => p.id === id)?.
 
 export type PetaFoto = Record<string, { gambar: string; rasio?: number }>;
 
-export const tanpaFoto = (d: DokSLD): DokSLD => ({ ...d, perangkat: d.perangkat.map(p => ({ ...p, gambar: undefined })) });
+export const tanpaFotoIsi = <T extends { perangkat: Perangkat[] }>(r: T): T => ({ ...r, perangkat: r.perangkat.map(p => ({ ...p, gambar: undefined })) });
+
+export const tanpaFoto = (d: DokSLD): DokSLD => ({ ...tanpaFotoIsi(d), ...(d.ruangLain ? { ruangLain: d.ruangLain.map(tanpaFotoIsi) } : {}) });
+
+const semuaPerangkatDok = (d: DokSLD) => [...d.perangkat, ...(d.ruangLain ?? []).flatMap(r => r.perangkat)];
 
 export function petaFoto(d: DokSLD): PetaFoto {
-  return Object.fromEntries(d.perangkat.filter(p => p.gambar).map(p => [p.id, { gambar: p.gambar!, rasio: p.rasio }]));
+  return Object.fromEntries(semuaPerangkatDok(d).filter(p => p.gambar).map(p => [p.id, { gambar: p.gambar!, rasio: p.rasio }]));
 }
 
 export function pasangFoto(d: DokSLD, peta: PetaFoto): DokSLD {
-  return { ...d, perangkat: d.perangkat.map(p => {
+  const pasang = (p: Perangkat) => {
     const f = peta[p.id];
     const gambar = f ? bersihkanGambarSLD(f.gambar) : undefined;
     return gambar ? { ...p, gambar, rasio: f.rasio ?? p.rasio } : p;
-  }) };
+  };
+  return { ...d, perangkat: d.perangkat.map(pasang), ...(d.ruangLain ? { ruangLain: d.ruangLain.map(r => ({ ...r, perangkat: r.perangkat.map(pasang) })) } : {}) };
 }

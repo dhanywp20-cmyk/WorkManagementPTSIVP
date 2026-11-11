@@ -91,7 +91,7 @@ export function primStrip(d: DokSLD, simple = false): Prim[] {
   });
   o.push(gr(7, 96, 27, 96, 0.3));
   o.push(tk(24.5, 100, potong(`PROJECT : ${b.proyek}`, M(97), 3, true), 3, true));
-  o.push(tk(19.5, 100, potong([b.lokasi, b.sistem].filter(Boolean).join(' - '), M(97), 2.4, true), 2.4, true));
+  o.push(tk(19.5, 100, potong([b.lokasi, d.namaRuang, b.sistem].filter(Boolean).join(' - '), M(97), 2.4, true), 2.4, true));
   o.push(tk(14.5, 100, 'Single Line Diagram', 2.3));
   if (!simple) o.push(tk(9.5, 100, 'Sheet 1 : diagram koneksi perangkat', 2.15, false, WARNA.redup));
   o.push(gr(7, 200, 27, 200, 0.3), gr(7, 226, 27, 226, 0.2));

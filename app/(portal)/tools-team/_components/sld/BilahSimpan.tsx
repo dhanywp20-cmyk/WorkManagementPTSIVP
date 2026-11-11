@@ -67,7 +67,7 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
   const sRef = useRef(s); sRef.current = s;
 
   const bukaSebagai = () => {
-    setNama(s.aktif ? `${s.aktif.nama} (salinan)` : [a.dok.blok.proyek, a.dok.blok.lokasi].filter(Boolean).join(' - ') || 'SLD baru');
+    setNama(s.aktif ? `${s.aktif.nama} (salinan)` : [a.proyek.blok.proyek, a.proyek.blok.lokasi].filter(Boolean).join(' - ') || 'SLD baru');
     setPakaiTautan(false); setTautan(null); setDialog('sebagai');
   };
   const simpan = async () => { if (s.aktif?.bolehUbah) await s.simpan(); else bukaSebagai(); };

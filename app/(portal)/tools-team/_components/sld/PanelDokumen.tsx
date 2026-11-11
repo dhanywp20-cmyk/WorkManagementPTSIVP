@@ -11,7 +11,7 @@ const BIDANG: { k: keyof BlokJudul; l: string; ph?: string; lebar?: boolean }[] 
   { k: 'lokasi', l: 'Lokasi / klien', ph: 'Nama gedung / klien' },
   { k: 'sistem', l: 'Sistem', ph: 'CUE Voice (jalur OFFLINE)' },
   { k: 'ringkas', l: 'Proyek (blok judul sheet 2)', ph: 'Kontrol suara kamar pasien: lampu, TV, AC', lebar: true },
-  { k: 'lingkup', l: 'Lingkup', ph: '1 kamar · ...', lebar: true },
+  { k: 'lingkup', l: 'Room (bila nama ruangan kosong)', ph: '1 kamar · ...', lebar: true },
   { k: 'acuan', l: 'Acuan (nama berkas BOM)', ph: 'BOM ... Rev3.xlsx', lebar: true },
   { k: 'acuanSingkat', l: 'Acuan singkat (judul tabel)', ph: 'BOM Rev3' },
   { k: 'nomor', l: 'Drawing No.', ph: 'CV-SLD-01' },

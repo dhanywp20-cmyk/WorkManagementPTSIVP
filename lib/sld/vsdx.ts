@@ -10,7 +10,10 @@ import { STYLE_DASAR } from './vsdx-gaya';
 import { tulisZip } from './zip';
 
 export interface GambarVsdx { isi: Uint8Array; jpeg: boolean }
-export interface MasukanVsdx { dok: DokSLD; gambar: Map<string, GambarVsdx>; kartu?: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean }
+export interface MasukanVsdx {
+  dok: DokSLD; gambar: Map<string, GambarVsdx>; kartu?: Map<string, GambarVsdx>; watermark?: GambarVsdx; judul?: string; simple?: boolean;
+  ruang?: { dok: DokSLD; nama: string }[];
+}
 
 const NS = "xmlns='http://schemas.microsoft.com/office/visio/2012/main' xmlns:r='http://schemas.openxmlformats.org/officeDocument/2006/relationships' xml:space='preserve'";
 const KEPALA = "<?xml version='1.0' encoding='utf-8' ?>\n";
@@ -198,10 +201,16 @@ function dokumen(): string {
 
 export function buatVsdx(m: MasukanVsdx): Uint8Array {
   const media = new Media();
-  const tinggi1 = halamanDok(m.dok).h;
-  let h1: Halaman;
-  try { aturTinggiHalaman(tinggi1); h1 = lembar1(m, media); } finally { aturTinggiHalaman(HALAMAN.h); }
-  const hal = [{ h: h1, nama: 'Sheet 1 - Diagram', tinggi: tinggi1 }, ...(m.simple ? [] : [{ h: lembar2(m, media), nama: 'Sheet 2 - Koneksi & catatan', tinggi: HALAMAN.h }])];
+  const daftar = m.ruang?.length ? m.ruang : [{ dok: m.dok, nama: '' }];
+  const hal: { h: Halaman; nama: string; tinggi: number }[] = [];
+  for (const [i, r] of daftar.entries()) {
+    const mr = { ...m, dok: r.dok }, awalan = daftar.length > 1 ? `R${i + 1} ${r.nama} - `.slice(0, 40) : '';
+    const tinggi1 = halamanDok(r.dok).h;
+    let h1: Halaman;
+    try { aturTinggiHalaman(tinggi1); h1 = lembar1(mr, media); } finally { aturTinggiHalaman(HALAMAN.h); }
+    hal.push({ h: h1, nama: `${awalan}Sheet 1 - Diagram`, tinggi: tinggi1 });
+    if (!m.simple) hal.push({ h: lembar2(mr, media), nama: `${awalan}Sheet 2 - Koneksi & catatan`, tinggi: HALAMAN.h });
+  }
   const judul = xe(m.judul ?? 'Single Line Diagram');
   const tipeGambar = "<Default Extension='png' ContentType='image/png'/><Default Extension='jpeg' ContentType='image/jpeg'/>";
   const berkas = [

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { GAYA_KABEL } from '@/lib/sld/gaya';
 import { barisKoneksi } from '@/lib/sld/turunan';
 import { PanelDokumen } from './PanelDokumen';
@@ -30,7 +31,7 @@ function DaftarKoneksi({ a, onPilih }: { a: KeadaanSLD; onPilih: () => void }) {
   );
 }
 
-export function PanelSamping({ a }: { a: KeadaanSLD }) {
+export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => void }) {
   const [tab, setTab] = useState<Tab>('properti');
   const p = a.pilih?.jenis === 'p' ? a.dok.perangkat.find(x => x.id === a.pilih!.id) : undefined;
   const c = a.pilih?.jenis === 'k' ? a.dok.kabel.find(x => x.id === a.pilih!.id) : undefined;
@@ -52,6 +53,11 @@ export function PanelSamping({ a }: { a: KeadaanSLD }) {
             {t.l}
           </button>
         ))}
+        {onTutup && (
+          <button type="button" onClick={onTutup} aria-label="Tutup panel properti" className="ml-auto w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100">
+            <X size={16} />
+          </button>
+        )}
       </div>
       {aktif === 'properti' && (p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
         <div className="text-[13px] text-slate-600 space-y-2">

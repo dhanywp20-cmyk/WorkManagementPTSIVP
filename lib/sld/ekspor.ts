@@ -6,7 +6,8 @@ import { adaArah, type Arah, WATERMARK_BAWAAN } from './lembar-umum';
 import { svgLembar1 } from './lembar1';
 import { svgLembar2 } from './lembar2';
 import { fotoData, sematkanFoto } from './sematkan';
-import { barisBoq } from './boq';
+import { bagianBoq } from './boq';
+import { jumlahRuang, namaRuangKe, semuaPerangkat, semuaRuang } from './ruang';
 import type { GambarExcel } from './excel';
 import type { DokSLD } from './tipe';
 import { buatVsdx, type GambarVsdx } from './vsdx';
@@ -33,6 +34,12 @@ export const namaSLD = (d: DokSLD) =>
   namaBerkas('SLD', [d.blok.proyek, d.blok.lokasi].filter(Boolean).join(' '), d.blok.rev ? `Rev ${d.blok.rev}` : '');
 
 export const namaEkspor = (d: DokSLD, simple = false) => `${namaSLD(d)} - ${simple ? 'no dtl' : 'Full Detail (NO SHARE)'}`;
+
+export async function lembarSvgProyek(d: DokSLD, o: OpsiEkspor = {}): Promise<string[]> {
+  const hasil: string[] = [];
+  for (const r of semuaRuang(d)) hasil.push(...await lembarSvg(r, o));
+  return hasil;
+}
 
 export async function lembarSvg(d: DokSLD, o: OpsiEkspor = {}): Promise<string[]> {
   const watermark = d.watermark ? await watermarkData(o.logo) : undefined;
@@ -78,14 +85,15 @@ async function putarPng(url: string, o: Arah, r: number): Promise<GambarVsdx> {
 
 export async function bytesVsdx(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Array> {
   const gambar = new Map<string, GambarVsdx>(), kartu = new Map<string, GambarVsdx>();
-  for (const p of d.perangkat) {
+  for (const p of semuaPerangkat(d)) {
     const r = rasioPerangkat(p);
     const url = p.gambar ?? (p.foto ? await fotoData(p.foto) : await ilustrasiPng(p.ikon, r, p));
     const tegak = /^data:image\/(png|jpe?g);base64,/.test(url) ? dariDataUrl(url) : await kePng(url);
     if (adaArah(p)) { gambar.set(p.id, await putarPng(url, p, r)); kartu.set(p.id, tegak); } else gambar.set(p.id, tegak);
   }
   const watermark = d.watermark ? await kePng(await watermarkData(o.logo)) : undefined;
-  return buatVsdx({ dok: d, gambar, kartu, watermark, judul: namaSLD(d), simple: o.simple });
+  const ruang = jumlahRuang(d) > 1 ? semuaRuang(d).map((r, i) => ({ dok: r, nama: namaRuangKe(d, i) })) : undefined;
+  return buatVsdx({ dok: d, gambar, kartu, watermark, judul: namaSLD(d), simple: o.simple, ruang });
 }
 
 export const ukuranSvgMm = (svg: string) => {
@@ -116,11 +124,12 @@ async function gambarExcel(url: string): Promise<GambarExcel> {
 }
 
 export async function bytesExcel(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Array> {
-  const [{ bukuExcel }, [svg1]] = await Promise.all([import('./excel'), lembarSvg(d, o)]);
-  const lembar1 = await gambarExcel(await keDataUrl(await pngDariSvg(svg1, 3000)));
+  const { bukuExcel } = await import('./excel');
+  const lembar1: GambarExcel[] = [];
+  for (const r of semuaRuang(d)) lembar1.push(await gambarExcel(await keDataUrl(await pngDariSvg((await lembarSvg(r, o))[0], 3000))));
   const gambar = new Map<string, GambarExcel>();
   if (!o.simple) {
-    for (const b of barisBoq(d)) {
+    for (const b of bagianBoq(d).flatMap(x => x.baris)) {
       const p = b.contoh;
       try {
         gambar.set(p.id, await gambarExcel(p.gambar ?? (p.foto ? await fotoData(p.foto) : await ilustrasiPng(p.ikon, rasioPerangkat(p), p))));
@@ -131,10 +140,14 @@ export async function bytesExcel(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Ar
 }
 
 export async function berkasPaket(d: DokSLD, awalan: string): Promise<{ name: string; data: Uint8Array }[]> {
-  const lembar = await lembarSvg(d);
   const hasil: { name: string; data: Uint8Array }[] = [];
-  for (let i = 0; i < lembar.length; i++) {
-    hasil.push({ name: `${awalan}_Sheet${i + 1}.png`, data: new Uint8Array(await (await pngDariSvg(lembar[i], 3000)).arrayBuffer()) });
+  const ruang = semuaRuang(d);
+  for (const [r, dr] of ruang.entries()) {
+    const lembar = await lembarSvg(dr);
+    for (let i = 0; i < lembar.length; i++) {
+      const nama = `${awalan}${ruang.length > 1 ? `_R${r + 1}` : ''}_Sheet${i + 1}.png`;
+      hasil.push({ name: nama, data: new Uint8Array(await (await pngDariSvg(lembar[i], 3000)).arrayBuffer()) });
+    }
   }
   hasil.push({ name: `${awalan}.vsdx`, data: await bytesVsdx(d) });
   hasil.push({ name: `${awalan}_Sheet1-3_BOQ.xlsx`, data: await bytesExcel(d) });

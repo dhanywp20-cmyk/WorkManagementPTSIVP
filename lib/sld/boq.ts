@@ -1,11 +1,13 @@
 import { isiIkon, viewBoxIkon } from './ikon';
+import { dokRuang, jumlahRuang, namaRuangKe } from './ruang';
 import { esc } from './teks';
-import type { DokSLD, Perangkat } from './tipe';
+import type { DokSLD, IsiBoqItem, Perangkat } from './tipe';
 import { judulKartu, kelompokNo, kunciModel } from './turunan';
 
-export interface IsiBoq { spek?: string; fungsi?: string }
+export type IsiBoq = IsiBoqItem;
+export type KolomEditBoq = keyof IsiBoqItem;
 export interface BarisBoq {
-  kunci: string; no: string; kategori: string; merek: string; model: string; spek: string; fungsi: string; qty: number; satuan: string; contoh: Perangkat;
+  ruang: number; kunci: string; no: string; kategori: string; merek: string; model: string; spek: string; fungsi: string; qty: number; satuan: string; contoh: Perangkat;
 }
 
 export const KOLOM_BOQ = [
@@ -38,19 +40,30 @@ export function pisahMerek(model: string, nama: string): { merek: string; model:
   return merek ? { merek, model: m.slice(merek.length).trim() } : { merek: SESUAI_PENGADAAN, model: m };
 }
 
-export function barisBoq(d: DokSLD): BarisBoq[] {
+export function barisBoq(d: DokSLD, ruang = 0): BarisBoq[] {
   return [...kelompokNo(d).entries()].map(([no, daftar]) => {
     const p = daftar[0], kunci = kunciModel(p), isi = d.boq?.[kunci] ?? {};
-    const { merek, model } = pisahMerek(p.model, p.nama);
+    const asal = pisahMerek(p.model, p.nama);
     return {
-      kunci, no, kategori: p.kategori, merek, model, spek: isi.spek ?? '', fungsi: isi.fungsi ?? '', satuan: p.satuan || 'unit',
+      ruang, kunci, no, kategori: isi.kategori ?? p.kategori, merek: isi.merek ?? asal.merek, model: isi.model ?? asal.model, spek: isi.spek ?? '', fungsi: isi.fungsi ?? '', satuan: p.satuan || 'unit',
       qty: daftar.reduce((s, x) => s + (Number.isFinite(x.qty) ? x.qty : 0), 0), contoh: daftar.find(x => x.gambar || x.foto) ?? p,
     };
   });
 }
 
+export interface BagianBoq { ruang: number; judul: string; baris: BarisBoq[] }
+
+export function bagianBoq(d: DokSLD): BagianBoq[] {
+  const n = jumlahRuang(d);
+  return Array.from({ length: n }, (_, i) => ({
+    ruang: i, baris: barisBoq(dokRuang(d, i), i),
+    judul: n === 1 ? SEKSI_BOQ : `${String.fromCharCode(65 + i)}. ${namaRuangKe(d, i).toUpperCase()} (sesuai daftar)`,
+  }));
+}
+
 export const judulBoq = (d: DokSLD) => ['BILL OF MATERIALS', [d.blok.proyek, d.blok.lokasi].filter(Boolean).join(' ').toUpperCase()].filter(Boolean).join(' - ');
-export const infoBoq = (d: DokSLD): [string, string][] => [['Proyek', d.blok.ringkas || d.blok.proyek], ['Lingkup', d.blok.lingkup], ['Disusun oleh', d.blok.dibuat]];
+export const teksRoom = (d: DokSLD) => (jumlahRuang(d) > 1 ? Array.from({ length: jumlahRuang(d) }, (_, i) => namaRuangKe(d, i)).join(', ') : d.namaRuang?.trim() || d.blok.lingkup);
+export const infoBoq = (d: DokSLD): [string, string][] => [['Proyek', d.blok.ringkas || d.blok.proyek], ['Room', teksRoom(d)], ['Disusun oleh', d.blok.dibuat]];
 
 const G = GAYA_BOQ, px = ptPx;
 export const CSS_BOQ = `.boq{font-family:${G.huruf},Helvetica,sans-serif;color:#000;width:${LEBAR_BOQ}px;background:#fff}`
@@ -77,9 +90,10 @@ export const kepalaBoqHtml = () => `<thead><tr>${KOLOM_BOQ.map(k => `<th>${esc(k
 
 export function htmlBoq(d: DokSLD): string {
   const info = infoBoq(d).map(([l, v], i) => `<tr><td class="l">${esc(l)}</td><td${i === 2 ? ' class="biru"' : ''}>${esc(v)}</td></tr>`).join('');
-  const baris = barisBoq(d).map(r => `<tr><td class="c">${esc(r.no)}</td><td class="gbr">${htmlGambarBoq(r.contoh)}</td><td>${esc(r.kategori)}</td><td>${esc(r.merek)}</td>`
+  const baris = (r: BarisBoq) => `<tr><td class="c">${esc(r.no)}</td><td class="gbr">${htmlGambarBoq(r.contoh)}</td><td>${esc(r.kategori)}</td><td>${esc(r.merek)}</td>`
     + `<td class="b">${esc(r.model)}</td><td>${esc(r.spek)}</td><td>${esc(r.fungsi)}</td><td class="qty">${r.qty}</td><td class="c">${esc(r.satuan)}</td>`
-    + '<td class="harga"></td><td class="total">-</td></tr>').join('');
+    + '<td class="harga"></td><td class="total">-</td></tr>';
+  const isi = bagianBoq(d).map(b => `<tr><td class="seksi" colspan="${KOLOM_BOQ.length}">${esc(b.judul)}</td></tr>${b.baris.map(baris).join('')}`).join('');
   return `<div class="boq"><div class="boq-judul">${esc(judulBoq(d))}</div><table class="boq-info">${info}</table>`
-    + `<table class="boq-tabel">${kolomBoqHtml()}${kepalaBoqHtml()}<tbody><tr><td class="seksi" colspan="${KOLOM_BOQ.length}">${esc(SEKSI_BOQ)}</td></tr>${baris}</tbody></table></div>`;
+    + `<table class="boq-tabel">${kolomBoqHtml()}${kepalaBoqHtml()}<tbody>${isi}</tbody></table></div>`;
 }

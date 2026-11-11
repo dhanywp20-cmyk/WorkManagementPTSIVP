@@ -1,11 +1,12 @@
 import ExcelJS from 'exceljs';
-import { barisBoq, FORMAT_RP, GAYA_BOQ as G, infoBoq, judulBoq, KOLOM_BOQ, lebarPx, ptPx, SEKSI_BOQ } from './boq';
+import { bagianBoq, FORMAT_RP, GAYA_BOQ as G, infoBoq, judulBoq, KOLOM_BOQ, lebarPx, ptPx } from './boq';
+import { dokRuang, jumlahRuang, namaRuangKe } from './ruang';
 import { WARNA } from './gaya';
 import type { DokSLD } from './tipe';
 import { barisKoneksi, barisPerangkat } from './turunan';
 
 export interface GambarExcel { data: string; ext: 'png' | 'jpeg'; w: number; h: number }
-export interface MasukanExcel { dok: DokSLD; simple?: boolean; lembar1?: GambarExcel; gambar?: Map<string, GambarExcel> }
+export interface MasukanExcel { dok: DokSLD; simple?: boolean; lembar1?: (GambarExcel | undefined)[]; gambar?: Map<string, GambarExcel> }
 
 const KERTAS_A3 = 8 as unknown as ExcelJS.PaperSize;
 const argb = (hex: string) => `FF${hex.replace('#', '').toUpperCase()}`;
@@ -25,8 +26,8 @@ function lembarGambar(wb: ExcelJS.Workbook, nama: string, g: GambarExcel) {
   ws.addImage(wb.addImage({ base64: g.data, extension: g.ext }), { tl: { col: 0, row: 0 }, ext: { width: lebar, height: tinggi }, editAs: 'oneCell' });
 }
 
-function lembarTabel(wb: ExcelJS.Workbook, d: DokSLD) {
-  const ws = wb.addWorksheet('Sheet 2 - Koneksi', { views: [{ showGridLines: false }], pageSetup: { orientation: 'landscape', paperSize: KERTAS_A3, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+function lembarTabel(wb: ExcelJS.Workbook, d: DokSLD, nama: string) {
+  const ws = wb.addWorksheet(nama, { views: [{ showGridLines: false }], pageSetup: { orientation: 'landscape', paperSize: KERTAS_A3, fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
   ws.columns = [{ width: 6 }, { width: 34 }, { width: 34 }, { width: 24 }, { width: 32 }, { width: 38 }];
   const kecil = (o: Partial<ExcelJS.Font> = {}) => huruf({ size: 9, color: { argb: argb(WARNA.tinta) }, ...o });
   let r = 1;
@@ -43,7 +44,7 @@ function lembarTabel(wb: ExcelJS.Workbook, d: DokSLD) {
     });
     r++;
   };
-  ws.getCell(r, 1).value = `SINGLE LINE DIAGRAM - ${[d.blok.proyek, d.blok.lokasi].filter(Boolean).join(' - ')}`;
+  ws.getCell(r, 1).value = `SINGLE LINE DIAGRAM - ${[d.blok.proyek, d.blok.lokasi, d.namaRuang].filter(Boolean).join(' - ')}`;
   ws.getCell(r, 1).font = kecil({ bold: true, size: 13 });
   r += 2;
   judul('DAFTAR KONEKSI (K = sinyal / kontrol, P = catu daya)');
@@ -62,7 +63,7 @@ function lembarTabel(wb: ExcelJS.Workbook, d: DokSLD) {
 }
 
 function lembarBoq(wb: ExcelJS.Workbook, d: DokSLD, gambar?: Map<string, GambarExcel>) {
-  const baris = barisBoq(d), akhir = 7 + baris.length;
+  const bagian = bagianBoq(d), akhir = 5 + bagian.reduce((t, b) => t + 1 + b.baris.length, 0);
   const ws = wb.addWorksheet('Sheet 3 - BOQ', {
     views: [{ state: 'frozen', xSplit: 0, ySplit: 6, topLeftCell: 'A7', showGridLines: false, zoomScale: 70 }],
     pageSetup: {
@@ -84,36 +85,52 @@ function lembarBoq(wb: ExcelJS.Workbook, d: DokSLD, gambar?: Map<string, GambarE
     alignment: { horizontal: 'center', vertical: 'middle', wrapText: true },
   }));
   ws.getRow(6).height = G.tinggiKepala;
-  ws.mergeCells('A7:K7');
-  Object.assign(ws.getCell('A7'), { value: SEKSI_BOQ, font: huruf({ bold: true, color: { argb: argb(G.navy) } }), fill: isi(G.seksi), border: garis(G.garis) });
-  baris.forEach((b, i) => {
-    const r = 8 + i, nilai: (string | number | null)[] = [Number(b.no) || b.no, null, b.kategori, b.merek, b.model, b.spek, b.fungsi, b.qty, b.satuan, null];
-    nilai.forEach((v, c) => Object.assign(ws.getCell(r, c + 1), {
-      value: v, border: garis(G.garis), font: huruf({ bold: c === 4, ...(c === 7 || c === 9 ? { color: { argb: argb(G.biru) } } : {}) }),
-      alignment: { vertical: 'top', wrapText: true, ...([0, 7, 8].includes(c) ? { horizontal: 'center' as const } : {}) },
-      ...(c === 9 ? { fill: isi(G.harga), numFmt: FORMAT_RP } : {}),
-    }));
-    Object.assign(ws.getCell(r, 11), { value: { formula: `H${r}*J${r}`, result: 0 }, numFmt: FORMAT_RP, border: garis(G.garis), font: huruf(), alignment: { vertical: 'top', wrapText: true } });
-    ws.getRow(r).height = G.tinggiBaris;
-    const g = gambar?.get(b.contoh.id);
-    if (g) {
-      const k = Math.min(G.gambar.w / g.w, G.gambar.h / g.h), w = Math.round(g.w * k), h = Math.round(g.h * k);
-      const x = G.gambar.x + (G.gambar.w - w) / 2, y = G.gambar.y + (G.gambar.h - h) / 2;
-      ws.addImage(wb.addImage({ base64: g.data, extension: g.ext }), {
-        tl: { col: 1 + x / lebarPx(KOLOM_BOQ[1].lebar), row: r - 1 + y / ptPx(G.tinggiBaris) }, ext: { width: w, height: h }, editAs: 'oneCell',
-      });
+  let r = 7;
+  for (const bg of bagian) {
+    ws.mergeCells(`A${r}:K${r}`);
+    Object.assign(ws.getCell(`A${r}`), { value: bg.judul, font: huruf({ bold: true, color: { argb: argb(G.navy) } }), fill: isi(G.seksi), border: garis(G.garis) });
+    r++;
+    for (const b of bg.baris) {
+      const nilai: (string | number | null)[] = [Number(b.no) || b.no, null, b.kategori, b.merek, b.model, b.spek, b.fungsi, b.qty, b.satuan, null];
+      nilai.forEach((v, c) => Object.assign(ws.getCell(r, c + 1), {
+        value: v, border: garis(G.garis), font: huruf({ bold: c === 4, ...(c === 7 || c === 9 ? { color: { argb: argb(G.biru) } } : {}) }),
+        alignment: { vertical: 'top', wrapText: true, ...([0, 7, 8].includes(c) ? { horizontal: 'center' as const } : {}) },
+        ...(c === 9 ? { fill: isi(G.harga), numFmt: FORMAT_RP } : {}),
+      }));
+      Object.assign(ws.getCell(r, 11), { value: { formula: `H${r}*J${r}`, result: 0 }, numFmt: FORMAT_RP, border: garis(G.garis), font: huruf(), alignment: { vertical: 'top', wrapText: true } });
+      ws.getRow(r).height = G.tinggiBaris;
+      const g = gambar?.get(b.contoh.id);
+      if (g) {
+        const k = Math.min(G.gambar.w / g.w, G.gambar.h / g.h), w = Math.round(g.w * k), h = Math.round(g.h * k);
+        const x = G.gambar.x + (G.gambar.w - w) / 2, y = G.gambar.y + (G.gambar.h - h) / 2;
+        ws.addImage(wb.addImage({ base64: g.data, extension: g.ext }), {
+          tl: { col: 1 + x / lebarPx(KOLOM_BOQ[1].lebar), row: r - 1 + y / ptPx(G.tinggiBaris) }, ext: { width: w, height: h }, editAs: 'oneCell',
+        });
+      }
+      r++;
     }
-  });
+  }
 }
+
+const namaLembar = (s: string, pakai: Set<string>) => {
+  const dasar = s.replace(/[\\/?*[\]:]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 31) || 'Sheet';
+  let n = dasar, i = 2;
+  while (pakai.has(n.toLowerCase())) n = `${dasar.slice(0, 28)} ${i++}`;
+  pakai.add(n.toLowerCase());
+  return n;
+};
 
 export async function bukuExcel(m: MasukanExcel): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'AV Solution Tools';
   wb.created = new Date();
-  if (m.lembar1) lembarGambar(wb, 'Sheet 1 - Diagram', m.lembar1);
-  if (!m.simple) {
-    lembarTabel(wb, m.dok);
-    lembarBoq(wb, m.dok, m.gambar);
+  const n = jumlahRuang(m.dok), pakai = new Set<string>();
+  const nama = (lembar: string, i: number) => namaLembar(n === 1 ? lembar : `R${i + 1} ${lembar.replace(/ - .*/, '')} - ${namaRuangKe(m.dok, i)}`, pakai);
+  for (let i = 0; i < n; i++) {
+    const g = m.lembar1?.[i];
+    if (g) lembarGambar(wb, nama('Sheet 1 - Diagram', i), g);
+    if (!m.simple) lembarTabel(wb, dokRuang(m.dok, i), nama('Sheet 2 - Koneksi', i));
   }
+  if (!m.simple) lembarBoq(wb, m.dok, m.gambar);
   return new Uint8Array(await wb.xlsx.writeBuffer());
 }

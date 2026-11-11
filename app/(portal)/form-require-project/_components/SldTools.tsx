@@ -4,6 +4,7 @@ import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { isiLembar1 } from '@/lib/sld/lembar1';
+import { jumlahRuang, semuaPerangkat } from '@/lib/sld/ruang';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { type DokSLD, halamanDok } from '@/lib/sld/tipe';
 import { type DataSld, type TautanSld, dokTautanSld, namaTautanSld, ringkasanSld, tautanSldKeTools } from './sld-request';
@@ -40,7 +41,7 @@ function Ringkasan({ requestId, t }: { requestId: string; t: TautanSld }) {
           </tbody>
         </table>
       )}
-      <p className="text-[11px] text-gray-500">{dok.perangkat.length} perangkat · {dok.kabel.length} kabel. Sheet 2 (daftar koneksi &amp; catatan) dibuka lengkap di AV Solution Tools.</p>
+      <p className="text-[11px] text-gray-500">{jumlahRuang(dok)} ruangan · {semuaPerangkat(dok).length} perangkat. Pratinjau = Sheet 1 ruangan pertama; semua ruangan, Sheet 2 &amp; BOQ dibuka lengkap di AV Solution Tools.</p>
     </div>
   );
 }

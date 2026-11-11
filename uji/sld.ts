@@ -11,7 +11,8 @@ import { DAFTAR_IKON } from '../lib/sld/ikon';
 import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
 import ExcelJS from 'exceljs';
-import { barisBoq, CSS_BOQ, htmlBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
+import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
+import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
@@ -78,7 +79,7 @@ console.log('\n3. Template ekspor tetap (acuan SLD final)');
   cek('sheet 2: kolom Daftar Perangkat persis', ['>Kategori<', '>Merek / model<', '>Qty<'].every(t => s2.includes(t)));
   cek('sheet 2: judul seksi baku', ['DAFTAR KONEKSI (K = sinyal / kontrol, P = catu daya) - nomor K = label kabel di sheet 1', 'GAMBAR PERANGKAT (No. = item BOM Rev1)',
     'DAFTAR PERANGKAT (= BOM Rev1)', '>CATATAN PEMASANGAN<'].every(t => s2.includes(t)));
-  cek('sheet 2: blok judul baku', ['>SINGLE LINE DIAGRAM<', '>PROYEK<', '>LINGKUP<', '>ACUAN<', '>NO. GAMBAR<', '>REV<', '>TANGGAL<', '>SKALA<', '>KERTAS<', '>HAL<', '>Tanpa skala<', '>A3<',
+  cek('sheet 2: blok judul baku', ['>SINGLE LINE DIAGRAM<', '>PROYEK<', '>ROOM<', '>ACUAN<', '>NO. GAMBAR<', '>REV<', '>TANGGAL<', '>SKALA<', '>KERTAS<', '>HAL<', '>Tanpa skala<', '>A3<',
     '>2 / 2 · Koneksi &amp; catatan<'].every(t => s2.includes(t)));
   cek('sheet 2: warna tabel baku', s2.includes('fill="#eaeef2" stroke="#8c959f"') && s2.includes('fill="#f6f8fa" stroke="#afb8c1"'));
   cek('teks pengguna di-escape', svgLembar1({ ...d, blok: { ...d.blok, proyek: '<script>' } }).includes('PROJECT : &lt;script&gt;'));
@@ -304,7 +305,7 @@ void (async () => {
   cek('BOQ tema: warna & garis sama dengan contoh Excel', ['1F3864', 'D9E2F3', 'FFF2CC', 'BFBFBF', '0000FF'].every(w => CSS_BOQ.includes(w)) && CSS_BOQ.includes('Arial'));
   const png1 = { data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', ext: 'png' as const, w: 4, h: 3 };
   const xb = new ExcelJS.Workbook();
-  await xb.xlsx.load((await bukuExcel({ dok: dBoq, lembar1: png1, gambar: new Map(bq.map(r => [r.contoh.id, png1])) })) as unknown as ArrayBuffer);
+  await xb.xlsx.load((await bukuExcel({ dok: dBoq, lembar1: [png1], gambar: new Map(bq.map(r => [r.contoh.id, png1])) })) as unknown as ArrayBuffer);
   const wsq = xb.getWorksheet('Sheet 3 - BOQ')!;
   cek('Excel: 3 sheet (diagram, koneksi, BOQ)', xb.worksheets.map(w => w.name).join('|') === 'Sheet 1 - Diagram|Sheet 2 - Koneksi|Sheet 3 - BOQ' && xb.getWorksheet('Sheet 1 - Diagram')!.getImages().length === 1);
   const fill = (a: string) => ((wsq.getCell(a).fill as ExcelJS.FillPattern)?.fgColor?.argb ?? '');
@@ -316,8 +317,39 @@ void (async () => {
   cek('Excel BOQ: lebar kolom, tinggi baris, foto per baris, kepala tercetak ulang', wsq.getColumn(6).width === 44 && wsq.getColumn(2).width === 25 && wsq.getRow(8).height === 84
     && wsq.getImages().length === 7 && wsq.pageSetup.printTitlesRow === '6:6' && wsq.views[0].showGridLines === false && wsq.getCell('A7').isMerged);
   const xs = new ExcelJS.Workbook();
-  await xs.xlsx.load((await bukuExcel({ dok: d, simple: true, lembar1: png1 })) as unknown as ArrayBuffer);
+  await xs.xlsx.load((await bukuExcel({ dok: d, simple: true, lembar1: [png1] })) as unknown as ArrayBuffer);
   cek('Excel mode Simple: hanya Sheet 1', xs.worksheets.length === 1);
+  console.log('\n13. Proyek multi ruangan & BOQ bisa disesuaikan');
+  const pr1 = tambahRuang({ ...d, blok: { ...d.blok, proyek: 'Gedung A', lokasi: 'RS Contoh' } }, 'Ruang Rapat');
+  const r2 = dokRuang(pr1, 1), pr2 = gabungRuang(pr1, 1, { ...r2, perangkat: [perangkatBaru('tv-tcl', 60, 40), perangkatBaru('presentasi', 140, 40)] });
+  cek('ruangan: tambah, buka & isi ruangan ke-2 tanpa mengubah ruangan 1', jumlahRuang(pr2) === 2 && pr2.namaRuang === 'Ruangan 1' && pr2.perangkat.length === d.perangkat.length
+    && dokRuang(pr2, 1).perangkat.length === 2 && dokRuang(pr2, 1).namaRuang === 'Ruang Rapat' && dokRuang(pr2, 1).blok.proyek === 'Gedung A');
+  const pr3 = gabungRuang(pr2, 1, { ...dokRuang(pr2, 1), blok: { ...pr2.blok, proyek: 'Gedung B' } });
+  cek('ruangan: nama proyek & blok judul berlaku untuk semua ruangan', dokRuang(pr3, 0).blok.proyek === 'Gedung B' && semuaPerangkat(pr3).length === d.perangkat.length + 2);
+  const s2 = svgLembar1(dokRuang(pr3, 1)), s2b = svgLembar2(dokRuang(pr3, 1));
+  cek('ruangan: nama ruangan tampil di Sheet 1 & 2 (ROOM)', s2.includes('Ruang Rapat') && s2b.includes('Ruang Rapat') && s2b.includes('>ROOM<'));
+  const disimpan = bersihkanDok(JSON.parse(JSON.stringify(tanpaFoto({ ...pr3, ruangLain: pr3.ruangLain!.map(r => ({ ...r, perangkat: r.perangkat.map(p => ({ ...p, gambar: 'data:image/png;base64,AAAA' })) })) }))))!;
+  cek('ruangan: tersimpan & dibersihkan, foto unggahan ruangan lain tidak ikut ke server', jumlahRuang(disimpan) === 2 && disimpan.ruangLain![0].nama === 'Ruang Rapat'
+    && disimpan.ruangLain![0].perangkat.length === 2 && disimpan.ruangLain![0].perangkat.every(p => !p.gambar));
+  cek('ruangan: ganti nama, hapus ruangan ke-1 menaikkan ruangan ke-2', namaiRuang(pr3, 1, 'Lobby').ruangLain![0].nama === 'Lobby'
+    && hapusRuang(pr3, 0).namaRuang === 'Ruang Rapat' && hapusRuang(pr3, 0).perangkat.length === 2 && jumlahRuang(hapusRuang(pr3, 1)) === 1);
+  const k169 = ubahKertas(pr3, '169');
+  cek('ruangan: ganti kertas 16:9 menskala semua ruangan', k169.ruangLain![0].perangkat[0].w < pr3.ruangLain![0].perangkat[0].w && k169.perangkat[0].w < pr3.perangkat[0].w);
+  const bg = bagianBoq(pr3);
+  cek('BOQ multi ruangan: satu section per ruangan, label Room berisi nama ruangan', bg.length === 2 && bg[0].judul === 'A. RUANGAN 1 (sesuai daftar)'
+    && bg[1].judul === 'B. RUANG RAPAT (sesuai daftar)' && bg[1].baris.length === 2 && infoBoq(pr3)[1][0] === 'Room' && infoBoq(pr3)[1][1] === 'Ruangan 1, Ruang Rapat'
+    && bagianBoq(d)[0].judul === 'A. PERANGKAT UTAMA (sesuai daftar)' && htmlBoq(pr3).includes('B. RUANG RAPAT'));
+  const kn = bg[1].baris[0].kunci, pr4 = gabungRuang(pr3, 1, { ...dokRuang(pr3, 1), boq: { [kn]: { kategori: 'Display ruang rapat', merek: 'TCL', model: '65C755' } } });
+  const b4 = bagianBoq(pr4)[1].baris[0];
+  cek('BOQ: kategori, merek & model otomatis bisa disesuaikan tim (hanya di BOQ)', b4.kategori === 'Display ruang rapat' && b4.merek === 'TCL' && b4.model === '65C755'
+    && dokRuang(pr4, 1).perangkat[0].kategori !== 'Display ruang rapat' && bersihkanDok(pr4)!.ruangLain![0].boq![kn].model === '65C755');
+  const xm = new ExcelJS.Workbook();
+  await xm.xlsx.load((await bukuExcel({ dok: pr4, lembar1: [png1, png1] })) as unknown as ArrayBuffer);
+  const namaSheet = xm.worksheets.map(w => w.name), bqx = xm.getWorksheet('Sheet 3 - BOQ')!;
+  cek('Excel multi ruangan: Sheet 1 & 2 per ruangan, BOQ satu sheet dengan section per ruangan', namaSheet.length === 5 && namaSheet[0].startsWith('R1 Sheet 1') && namaSheet[3].includes('Ruang Rapat')
+    && String(bqx.getCell('A7').value).startsWith('A. ') && bqx.getColumn(1).values.some(v => String(v).startsWith('B. RUANG RAPAT')) && String(bqx.getCell('B3').value ?? bqx.getCell('A3').value) !== '', namaSheet.join(' | '));
+  const vm = await bacaZip(buatVsdx({ dok: pr4, gambar: new Map(), ruang: [0, 1].map(i => ({ dok: dokRuang(pr4, i), nama: i ? 'Ruang Rapat' : 'Ruangan 1' })) }));
+  cek('Visio multi ruangan: 2 halaman per ruangan', vm.has('visio/pages/page4.xml') && !vm.has('visio/pages/page5.xml'));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();
