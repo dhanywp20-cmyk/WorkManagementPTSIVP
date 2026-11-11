@@ -30,7 +30,7 @@ export function useEfekHalamanRequest(k: EfekHalamanRequestKonteks) {
 
   useEffect(() => {
     if (!appReady || ticketPopupShown) return;
-    const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
+    const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'approved' || r.status === 'in_progress');
     if (activeTickets.length > 0) {
       setShowTicketPopup(true);
       setTicketPopupShown(true);
