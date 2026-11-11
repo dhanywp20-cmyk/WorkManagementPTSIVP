@@ -18,7 +18,7 @@ export function blokBaru(dibuat = ''): BlokJudul {
   };
 }
 
-export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], catatan: [] });
+export const dokBaru = (dibuat = ''): DokSLD => ({ versi: 1, blok: blokBaru(dibuat), perangkat: [], kabel: [], catatan: [], watermark: true });
 
 export function perangkatBaru(k: string, x: number, y: number, isi: Partial<Perangkat> = {}): Perangkat {
   const t = cariTemplat(k);
@@ -94,7 +94,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
   const catatan = (Array.isArray(d.catatan) ? d.catatan : []).slice(0, MAKS_CATATAN)
     .map(x => ({ judul: teks((x as CatatanPasang)?.judul, 120), isi: teks((x as CatatanPasang)?.isi, 1200) }))
     .filter(x => x.judul || x.isi);
-  return { versi: 1, blok, perangkat, kabel, catatan };
+  return { versi: 1, blok, perangkat, kabel, catatan, watermark: d.watermark !== false };
 }
 
 export function hapusPerangkat(d: DokSLD, id: string): DokSLD {

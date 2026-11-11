@@ -2,7 +2,9 @@
 import { useRef, useState } from 'react';
 import { Copy, ImagePlus, Trash2 } from 'lucide-react';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
+import { templatIkon } from '@/lib/sld/katalog';
 import type { Perangkat } from '@/lib/sld/tipe';
+import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
 import { Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import { MiniIkon } from './PanelKatalog';
@@ -14,6 +16,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
   const lain = a.dok.perangkat.filter(x => x.id !== p.id);
+  const saran = templatIkon(p.ikon)?.saran ?? [];
 
   const unggah = async (f?: File | null) => {
     if (!f) return;
@@ -36,6 +39,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
           <button type="button" className={kelasTombol} disabled={sibuk} onClick={() => berkas.current?.click()}>
             <ImagePlus size={15} /> {sibuk ? 'Memproses...' : p.gambar ? 'Ganti foto' : 'Pakai foto'}
           </button>
+          <AmbilBrosur onPakai={(f, nama) => a.pasangFotoKe(p.id, f, nama)} />
           {p.gambar && <button type="button" className={kelasTombol} onClick={() => ubah({ gambar: undefined, rasio: undefined })}>Pakai ilustrasi</button>}
           <input ref={berkas} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => void unggah(e.target.files?.[0])} />
         </div>
@@ -73,7 +77,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
       <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
       <div className="grid grid-cols-2 gap-2">
         <Teks label="Kategori (Daftar Perangkat)" nilai={p.kategori} onUbah={v => ubah({ kategori: v })} />
-        <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} />
+        <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />
       </div>
       <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
         <Isian label="Qty">
@@ -82,6 +86,7 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
         <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
         <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
       </div>
+      <datalist id={`saran-model-${p.id}`}>{saran.map(x => <option key={x} value={x} />)}</datalist>
       <Teks label="Daftar port (pisahkan dengan koma)" nilai={p.port.join(', ')} onUbah={v => ubah({ port: v.split(',').map(s => s.trim()).filter(Boolean).slice(0, 48) })}
         bantuan="Dipakai sebagai pilihan port saat mengisi kabel." />
       <div className="grid grid-cols-2 gap-2">

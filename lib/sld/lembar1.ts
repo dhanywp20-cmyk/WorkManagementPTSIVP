@@ -1,7 +1,8 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, TITIK_UJUNG, WARNA } from './gaya';
 import { geometri, teksLabel } from './geometri';
-import { bingkai, bukaSvg, gambarPerangkat, type OpsiLembar, watermark } from './lembar-umum';
-import { garis, n, potong, teks } from './teks';
+import { bingkaiPrim, bukaSvg, gambarPerangkat, type OpsiLembar, watermark } from './lembar-umum';
+import { type Prim, svgPrimitif } from './primitif';
+import { n, potong, teks } from './teks';
 import { jenisTerpakai } from './turunan';
 import type { DokSLD, GeoKabel, Perangkat, Titik } from './tipe';
 
@@ -74,41 +75,40 @@ export function svgLabelPerangkat(p: Perangkat): string {
 
 const P = { putar: 90, pusatV: true } as const;
 
-function strip(d: DokSLD): string {
+export function primStrip(d: DokSLD): Prim[] {
   const b = d.blok, T = WARNA.tinta;
-  const o: string[] = [garis(27, 7, 27, 290, T, 0.3)];
-  o.push(teks(24.5, 10, 'Legend', { ukuran: 3, warna: T, ...P }));
-  const jenis = jenisTerpakai(d).slice(0, 6);
-  jenis.forEach((j, i) => {
+  const tk = (x: number, y: number, isi: string, ukuran: number, tebal = false, warna: string = T): Prim => ({ t: 'teks', x, y, isi, ukuran, warna, tebal, ...P });
+  const gr = (x1: number, y1: number, x2: number, y2: number, tebal: number): Prim => ({ t: 'garis', x1, y1, x2, y2, warna: T, tebal });
+  const o: Prim[] = [gr(27, 7, 27, 290, 0.3), tk(24.5, 10, 'Legend', 3)];
+  jenisTerpakai(d).slice(0, 6).forEach((j, i) => {
     const kelompok = Math.floor(i / 3), x = 19.5 - (i % 3) * 5;
     const [y1, y2, yt, maks] = kelompok ? [70, 76, 78, 17] : [28, 37, 39, 30];
     const s = GAYA_KABEL[j];
-    o.push(`<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="${s.warna}" stroke-width="${j === 'ac' ? 1.2 : 0.88}"${s.putus ? ` stroke-dasharray="${s.putus}"` : ''}/>`);
-    o.push(teks(x, yt, potong(s.legend, maks, 2.15), { ukuran: 2.15, warna: T, ...P }));
+    o.push({ t: 'garis', x1: x, y1, x2: x, y2, warna: s.warna, tebal: j === 'ac' ? 1.2 : 0.88, putus: s.putus }, tk(x, yt, potong(s.legend, maks, 2.15), 2.15));
   });
-  o.push(garis(7, 96, 27, 96, T, 0.3));
-  o.push(teks(24.5, 100, potong(`PROJECT : ${b.proyek}`, 97, 3, true), { ukuran: 3, warna: T, tebal: true, ...P }));
-  o.push(teks(19.5, 100, potong([b.lokasi, b.sistem].filter(Boolean).join(' - '), 97, 2.4, true), { ukuran: 2.4, warna: T, tebal: true, ...P }));
-  o.push(teks(14.5, 100, 'Single Line Diagram', { ukuran: 2.3, warna: T, ...P }));
-  o.push(teks(9.5, 100, 'Sheet 1 : diagram koneksi perangkat', { ukuran: 2.15, warna: WARNA.redup, ...P }));
-  o.push(garis(7, 200, 27, 200, T, 0.3), garis(7, 226, 27, 226, T, 0.2));
-  for (const x of [12, 17, 22]) o.push(garis(x, 200, x, 290, T, 0.2));
+  o.push(gr(7, 96, 27, 96, 0.3));
+  o.push(tk(24.5, 100, potong(`PROJECT : ${b.proyek}`, 97, 3, true), 3, true));
+  o.push(tk(19.5, 100, potong([b.lokasi, b.sistem].filter(Boolean).join(' - '), 97, 2.4, true), 2.4, true));
+  o.push(tk(14.5, 100, 'Single Line Diagram', 2.3), tk(9.5, 100, 'Sheet 1 : diagram koneksi perangkat', 2.15, false, WARNA.redup));
+  o.push(gr(7, 200, 27, 200, 0.3), gr(7, 226, 27, 226, 0.2));
+  for (const x of [12, 17, 22]) o.push(gr(x, 200, x, 290, 0.2));
   const isian: [number, string, string][] = [[24.5, 'Drawn by', b.dibuat], [19.5, 'Date', b.tanggal], [14.5, 'Checked by', b.diperiksa], [9.5, 'Approved by', b.disetujui]];
-  for (const [x, l, v] of isian) o.push(teks(x, 202, l, { ukuran: 2.15, warna: T, ...P }), teks(x, 228, potong(v, 28, 2.15, true), { ukuran: 2.15, warna: T, tebal: true, ...P }));
-  o.push(garis(7, 258, 27, 258, T, 0.3));
-  o.push(teks(24.5, 260, 'Drawing No.', { ukuran: 2.15, warna: T, ...P }), teks(19.5, 260, potong(b.nomor, 15, 2.15, true), { ukuran: 2.15, warna: T, tebal: true, ...P }));
-  o.push(teks(14.5, 260, 'Scale :', { ukuran: 2.15, warna: T, ...P }), teks(9.5, 260, potong(b.skala, 15, 2.15, true), { ukuran: 2.15, warna: T, tebal: true, ...P }));
-  o.push(garis(7, 276, 27, 276, T, 0.3));
-  o.push(teks(24.5, 278, 'SHEET', { ukuran: 2.15, warna: T, ...P }), teks(19.5, 278, '1 of 2', { ukuran: 2.15, warna: T, tebal: true, ...P }));
-  o.push(teks(14.5, 278, 'Rev.', { ukuran: 2.15, warna: T, ...P }), teks(9.5, 278, potong(b.rev, 11, 2.15, true), { ukuran: 2.15, warna: T, tebal: true, ...P }));
-  return o.join('');
+  for (const [x, l, v] of isian) o.push(tk(x, 202, l, 2.15), tk(x, 228, potong(v, 28, 2.15, true), 2.15, true));
+  o.push(gr(7, 258, 27, 258, 0.3));
+  o.push(tk(24.5, 260, 'Drawing No.', 2.15), tk(19.5, 260, potong(b.nomor, 15, 2.15, true), 2.15, true));
+  o.push(tk(14.5, 260, 'Scale :', 2.15), tk(9.5, 260, potong(b.skala, 15, 2.15, true), 2.15, true));
+  o.push(gr(7, 276, 27, 276, 0.3));
+  o.push(tk(24.5, 278, 'SHEET', 2.15), tk(19.5, 278, '1 of 2', 2.15, true), tk(14.5, 278, 'Rev.', 2.15), tk(9.5, 278, potong(b.rev, 11, 2.15, true), 2.15, true));
+  return o;
 }
+
+export const primRangka1 = (d: DokSLD): Prim[] => [...bingkaiPrim({ x: 4, y: 4, w: 412, h: 289, tebal: 0.7 }, 0.3), ...primStrip(d)];
 
 export function isiLembar1(d: DokSLD, o: OpsiLembar = {}, geo = geometri(d)): string {
   const k = svgKabel(d, geo);
-  return bingkai({ x: 4, y: 4, w: 412, h: 289, tebal: 0.7 }, { tebal: 0.3 }) + strip(d)
+  return svgPrimitif(primRangka1(d), () => '')
     + d.perangkat.map(p => gambarPerangkat(p, p.x, p.y, p.w, p.h)).join('')
-    + k.garis + k.label + d.perangkat.map(svgLabelPerangkat).join('') + watermark(o);
+    + k.garis + k.label + d.perangkat.map(svgLabelPerangkat).join('') + watermark({ ...o, tanpaWatermark: o.tanpaWatermark || d.watermark === false });
 }
 
 export const svgLembar1 = (d: DokSLD, o: OpsiLembar = {}) => `${bukaSvg()}${isiLembar1(d, o)}</svg>`;

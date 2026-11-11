@@ -3,6 +3,9 @@ import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, kodeKabel, sisiOtomatis } from '../lib/sld/geometri';
+import { DAFTAR_IKON } from '../lib/sld/ikon';
+import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
+import { buatVsdx } from '../lib/sld/vsdx';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
 import { bungkus } from '../lib/sld/teks';
@@ -137,6 +140,30 @@ void (async () => {
   cek('merek / model mengikuti gaya Daftar Perangkat',
     modelBom(bom[0]) === 'CUE relayCUE-8' && modelBom(bom[1]) === 'Mini PC (sesuai pengadaan)' && isiDariBom(bom[1]).subGambar === 'sesuai pengadaan');
 
+  console.log('\n6. Visio, watermark & katalog');
+  const wm = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 9, 9]);
+  const gambarV = new Map(d.perangkat.map(p => [p.id, { isi: wm, jpeg: false }]));
+  const paket = await bacaZip(buatVsdx({ dok: d, gambar: gambarV, watermark: { isi: wm, jpeg: false } }));
+  const teks = (nm: string) => new TextDecoder().decode(paket.get(nm));
+  cek('VSDX: semua bagian wajib ada (termasuk windows.xml yang diminta Visio)',
+    ['[Content_Types].xml', '_rels/.rels', 'visio/document.xml', 'visio/windows.xml', 'visio/pages/pages.xml', 'visio/pages/page1.xml', 'visio/pages/page2.xml'].every(x => paket.has(x)));
+  cek('VSDX: bagian paket memakai kutip ganda (dibaca OPC Visio)', teks('[Content_Types].xml').startsWith('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'));
+  const garisV = geometri(d).reduce((s, g) => s + g.garis.length, 0);
+  cek('VSDX: tiap garis kabel jadi connector yang menempel di kedua ujung', (teks('visio/pages/page1.xml').match(/<Connect /g) ?? []).length === garisV * 2, String(garisV));
+  cek('VSDX: ujung connector memakai rumus glue ke titik sambung', /BeginX' V='[^']*' F='PAR\(PNT\(Sheet\.\d+!Connections\.X\d+/.test(teks('visio/pages/page1.xml')));
+  cek('VSDX: tiap baris karakter menulis FontScale (huruf tidak menyempit)', !/<Section N='Character'><Row IX='1'>(?:(?!FontScale).)*?<\/Row>/.test(teks('visio/pages/page1.xml')));
+  cek('VSDX: sheet 2 memuat tabel & blok judul', teks('visio/pages/page2.xml').includes('DAFTAR KONEKSI') && teks('visio/pages/page2.xml').includes('SINGLE LINE DIAGRAM'));
+  const tanpaWm = { ...d, watermark: false };
+  const paket2 = await bacaZip(buatVsdx({ dok: tanpaWm, gambar: gambarV, watermark: { isi: wm, jpeg: false } }));
+  cek('watermark dimatikan: tidak ada di SVG maupun Visio',
+    !svgLembar1(tanpaWm).includes('sld-wm') && !svgLembar2(tanpaWm).includes('sld-wm') && !new TextDecoder().decode(paket2.get('visio/pages/page1.xml')).includes("NameU='Watermark'"));
+  cek('watermark diganti logo sendiri', svgLembar1(d, { watermark: 'data:image/png;base64,AAAA' }).includes('href="data:image/png;base64,AAAA"'));
+  const ikonAda = new Set(DAFTAR_IKON.map(i => i.v));
+  cek('setiap templat katalog punya ilustrasi', KATALOG.every(t => ikonAda.has(t.ikon)), KATALOG.filter(t => !ikonAda.has(t.ikon)).map(t => t.k).join(','));
+  cek('katalog memuat Display TCL & Philips BDL, middleware WyreStorm, sumber input', ['tv-tcl', 'signage-philips', 'matrix', 'presentasi', 'extender', 'avoip', 'laptop', 'pc', 'nvr', 'kamera', 'mediaplayer']
+    .every(k => KATALOG.some(t => t.k === k)));
+  cek('tebak jenis dari kode model', tebakTemplat('WyreStorm MX-0404-SCL') === 'matrix' && tebakTemplat('Philips 55BDL4650D') === 'signage-philips'
+    && tebakTemplat('NHD-120-TX') === 'avoip' && tebakTemplat('EX-70-H2') === 'extender' && tebakTemplat('NVR 16 channel') === 'nvr', tebakTemplat('NHD-120-TX'));
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
 })();

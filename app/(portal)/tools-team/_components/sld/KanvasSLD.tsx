@@ -27,7 +27,8 @@ export function KanvasSLD({ a, zoom }: { a: KeadaanSLD; zoom: number }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [seret, setSeret] = useState<Seret | null>(null);
   const { dok, geo, pilih } = a;
-  const isi = useMemo(() => isiLembar1(dok, { watermark: WATERMARK_BAWAAN }, geo), [dok, geo]);
+  const logo = a.logo ?? WATERMARK_BAWAAN;
+  const isi = useMemo(() => isiLembar1(dok, { watermark: logo }, geo), [dok, geo, logo]);
 
   const titik = (e: { clientX: number; clientY: number }): Titik => {
     const s = svgRef.current, m = s?.getScreenCTM();

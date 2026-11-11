@@ -1,5 +1,6 @@
 import { WARNA, WATERMARK } from './gaya';
 import { svgIkon } from './ikon';
+import type { Prim } from './primitif';
 import { esc, n } from './teks';
 import { HALAMAN, type Perangkat } from './tipe';
 
@@ -11,10 +12,10 @@ export const bukaSvg = (dalam = '') =>
   `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${HALAMAN.w} ${HALAMAN.h}"`
   + ` width="${HALAMAN.w}mm" height="${HALAMAN.h}mm"${dalam}><rect width="${HALAMAN.w}" height="${HALAMAN.h}" fill="${WARNA.putih}"/>`;
 
-export function bingkai(luar: { x: number; y: number; w: number; h: number; tebal: number }, dalam: { tebal: number }): string {
-  return `<rect x="${n(luar.x)}" y="${n(luar.y)}" width="${n(luar.w)}" height="${n(luar.h)}" fill="none" stroke="${WARNA.tinta}" stroke-width="${n(luar.tebal)}"/>`
-    + `<rect x="7" y="7" width="406" height="283" fill="none" stroke="${WARNA.tinta}" stroke-width="${n(dalam.tebal)}"/>`;
-}
+export const bingkaiPrim = (luar: { x: number; y: number; w: number; h: number; tebal: number }, dalam: number): Prim[] => [
+  { t: 'kotak', ...luar, garis: WARNA.tinta, tebal: luar.tebal },
+  { t: 'kotak', x: 7, y: 7, w: 406, h: 283, garis: WARNA.tinta, tebal: dalam },
+];
 
 export function watermark(o: OpsiLembar): string {
   if (o.tanpaWatermark) return '';

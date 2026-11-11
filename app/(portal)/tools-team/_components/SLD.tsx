@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileDown, FilePlus2, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { FileBox, FileDown, FilePlus2, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
 import { HALAMAN } from '@/lib/sld/tipe';
-import { cetakPdf, unduhPng } from './sld/ekspor';
+import { cetakPdf, unduhPng, unduhVsdx } from './sld/ekspor';
+import { PengaturanWatermark } from './sld/PengaturanWatermark';
 import { gambarDariClipboard, kompresGambar } from './sld/gambar';
 import { kelasTombol } from './sld/isian';
 import { KanvasSLD } from './sld/KanvasSLD';
@@ -16,7 +17,8 @@ import { useKeadaanSLD } from './sld/useKeadaanSLD';
 type Sheet = 1 | 2;
 
 function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
-  const h = useMemo(() => isiLembar2(a.dok, { watermark: WATERMARK_BAWAAN }), [a.dok]);
+  const logo = a.logo ?? WATERMARK_BAWAAN;
+  const h = useMemo(() => isiLembar2(a.dok, { watermark: logo }), [a.dok, logo]);
   return (
     <div className="space-y-2">
       {(h.info.terpotongKoneksi > 0 || h.info.terpotongPerangkat > 0) && (
@@ -107,12 +109,19 @@ export function SLD() {
         )}
         <div className="flex flex-wrap gap-1.5 ml-auto">
           <button type="button" className={`${kelasTombol} !bg-blue-700 !text-white !border-blue-700 hover:!bg-blue-800`} disabled={!!sibuk}
-            onClick={() => void jalankan('pdf', () => cetakPdf(a.dok))}><FileDown size={15} /> {sibuk === 'pdf' ? 'Menyiapkan...' : 'PDF A3'}</button>
+            onClick={() => void jalankan('pdf', () => cetakPdf(a.dok, a.logo))}><FileDown size={15} /> {sibuk === 'pdf' ? 'Menyiapkan...' : 'PDF A3'}</button>
+          <button type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan('vsdx', () => unduhVsdx(a.dok, a.logo))}>
+            <FileBox size={15} /> {sibuk === 'vsdx' ? 'Membuat...' : 'Visio (.vsdx)'}
+          </button>
           {([1, 2] as Sheet[]).map(s => (
-            <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s))}>
+            <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s, a.logo))}>
               <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : `PNG sheet ${s}`}
             </button>
           ))}
+        </div>
+        <div className="w-full flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+          <PengaturanWatermark a={a} />
+          <span className="text-[11.5px] text-slate-500">Foto, logo &amp; draf hanya tersimpan di browser ini - tidak diunggah ke server.</span>
         </div>
       </section>
       {pesan && <p className={`rounded-lg px-3 py-2 text-[13px] ${pesan.galat ? 'bg-rose-50 text-rose-800 border border-rose-200' : 'bg-emerald-50 text-emerald-800'}`}>{pesan.t}</p>}

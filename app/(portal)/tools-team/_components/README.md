@@ -46,15 +46,20 @@ lib/sld/
   tipe.ts       DokSLD, Perangkat, Kabel, ukuran halaman
   gaya.ts       warna kabel, huruf, watermark (tetap)
   geometri.ts   nomor K / P, sisi sambung, rute garis siku, letak label
+  primitif.ts   tata letak bersama (kotak, garis, teks, sel tabel) -> SVG & Visio dari sumber yang sama
   lembar1.ts    SVG sheet 1     lembar2.ts  SVG sheet 2     turunan.ts  isi tabel & pemeriksaan
-  katalog.ts    templat perangkat + port      ikon.ts  ilustrasi bila belum ada foto
+  vsdx.ts       ekspor Visio: shape bergambar + titik sambung, kabel = connector yang menempel (glue);
+                vsdx-bentuk.ts / vsdx-gaya.ts (style dasar). Visio WAJIB punya visio/windows.xml
+  katalog.ts    templat per kelompok (Display TCL & Philips BDL, middleware WyreStorm, sumber input, ...) + saran model
+  ikon.ts / ikon-layar.ts  ilustrasi 2D gaya foto produk (bukan kartun) bila belum ada foto
   dok.ts        buat / bersihkan dokumen, tanpaFoto / pasangFoto      contoh.ts  contoh Voice Kamar Pasien
   bom.ts        baca BOM .xlsx (baris + foto kolom Gambar + crop Excel)  zip.ts  baca / tulis ZIP tanpa dependensi
 _components/sld/
   useKeadaanSLD.ts  dokumen + undo/redo + draf localStorage
   KanvasSLD.tsx     seret perangkat, ubah ukuran, tarik "+" untuk kabel, geser jalur
   PanelKatalog, PanelSamping (Properti, Koneksi, Judul & catatan, Periksa), ekspor.ts (PDF A3 / PNG)
-  ImporBom.tsx      foto & perangkat dari BOM;  foto-lokal.ts  foto & galeri di IndexedDB browser
+  ImporBom.tsx      foto & perangkat dari BOM;  AmbilBrosur.tsx  potong foto produk dari brosur PDF
+  foto-lokal.ts     foto, galeri & logo watermark di IndexedDB browser;  PengaturanWatermark.tsx  aktif / ganti logo
 ```
 
 FOTO PERANGKAT HANYA DI BROWSER: tidak pernah diunggah ke Supabase / Vercel (hemat egress). Draf di

@@ -65,6 +65,7 @@ export interface DokSLD {
   perangkat: Perangkat[];
   kabel: Kabel[];
   catatan: CatatanPasang[];
+  watermark: boolean;
 }
 
 export interface Titik { x: number; y: number }

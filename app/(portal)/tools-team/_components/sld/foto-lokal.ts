@@ -31,3 +31,5 @@ export const muatFotoDraf = async () => (await jalankan<PetaFoto>('readonly', s 
 export const simpanFotoDraf = (p: PetaFoto) => jalankan('readwrite', s => s.put(p, 'draf'));
 export const muatGaleri = async () => (await jalankan<FotoGaleri[]>('readonly', s => s.get('galeri'))) ?? [];
 export const simpanGaleri = (g: FotoGaleri[]) => jalankan('readwrite', s => s.put(g.slice(0, MAKS_GALERI), 'galeri'));
+export const muatLogo = async () => (await jalankan<string>('readonly', s => s.get('logo'))) ?? null;
+export const simpanLogo = (logo: string | null) => jalankan('readwrite', s => (logo ? s.put(logo, 'logo') : s.delete('logo')));

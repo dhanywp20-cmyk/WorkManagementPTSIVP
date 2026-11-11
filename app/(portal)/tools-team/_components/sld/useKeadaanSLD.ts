@@ -10,7 +10,7 @@ import { cariTemplat } from '@/lib/sld/katalog';
 import { periksaDok } from '@/lib/sld/turunan';
 import { AREA, type BlokJudul, type DokSLD, type Kabel, MAKS_KABEL, MAKS_PERANGKAT, type Perangkat } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
-import { type FotoGaleri, muatFotoDraf, muatGaleri, simpanFotoDraf, simpanGaleri } from './foto-lokal';
+import { type FotoGaleri, muatFotoDraf, muatGaleri, muatLogo, simpanFotoDraf, simpanGaleri, simpanLogo } from './foto-lokal';
 import type { FotoSiap } from './gambar';
 
 const KUNCI = 'tools-team-sld-v1';
@@ -32,15 +32,16 @@ export function useKeadaanSLD() {
   const [pilih, setPilih] = useState<Pilihan>(null);
   const [galatSimpan, setGalatSimpan] = useState(false);
   const [galeri, setGaleri] = useState<FotoGaleri[]>([]);
+  const [logo, setLogoState] = useState<string | null>(null);
   const mulaiRef = useRef<(d: DokSLD) => void>(() => {});
 
   useEffect(() => {
     let batal = false;
     const d = muatDraf() ?? dokBaru(namaPengguna());
-    void Promise.all([muatFotoDraf().catch(() => ({})), muatGaleri().catch(() => [])]).then(([peta, g]) => {
+    void Promise.all([muatFotoDraf().catch(() => ({})), muatGaleri().catch(() => []), muatLogo().catch(() => null)]).then(([peta, g, l]) => {
       if (batal) return;
       const awal = pasangFoto(d, peta);
-      setDok(awal); setGaleri(g); setSiap(true); mulaiRef.current(awal);
+      setDok(awal); setGaleri(g); setLogoState(l); setSiap(true); mulaiRef.current(awal);
     });
     return () => { batal = true; };
   }, []);
@@ -75,6 +76,9 @@ export function useKeadaanSLD() {
     void simpanGaleri(hasil).catch(() => {});
     return hasil;
   }), []);
+  const setLogo = useCallback((l: string | null) => { setLogoState(l); void simpanLogo(l).catch(() => setGalatSimpan(true)); }, []);
+  const setWatermark = useCallback((aktif: boolean) => setDok(d => ({ ...d, watermark: aktif })), []);
+
   const pasangFotoKe = useCallback((id: string, f: FotoSiap, nama = 'Foto') => {
     setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (p.id === id
       ? { ...p, gambar: f.dataUrl, rasio: f.rasio, h: Math.max(10, Math.min(80, Math.round((p.w / f.rasio) * 2) / 2)) } : p)) }));
@@ -141,7 +145,7 @@ export function useKeadaanSLD() {
   const contoh = useCallback(() => muat(contohVoiceKamar(namaPengguna())), [muat]);
 
   return {
-    dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe,
+    dok, setDok, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, ubahKabel, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
   };
 }
