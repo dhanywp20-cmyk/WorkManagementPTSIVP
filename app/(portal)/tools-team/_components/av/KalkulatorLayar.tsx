@@ -35,6 +35,7 @@ export function KalkulatorLayar() {
   return (
     <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+      <div className="lg:sticky lg:top-24">
       <Kartu judul="Masukan">
         <div className="space-y-3">
           <Segmen nilai={mode} onUbah={setMode} opsi={[{ v: 'dariJarak', l: 'Cari ukuran layar' }, { v: 'dariLayar', l: 'Cek layar yang ada' }]} />
@@ -46,6 +47,7 @@ export function KalkulatorLayar() {
         </div>
         <Catatan>Aturan 4-6-8 (praktik AVIXA): penonton terjauh maksimal 8× tinggi gambar untuk tontonan umum, 6× untuk analitis, 4× untuk detail.</Catatan>
       </Kartu>
+      </div>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(() => lembarAV('Ukuran Layar & Jarak Pandang',
         mode === 'dariJarak'
           ? [['Jarak penonton terjauh', `${f(jarak)} m`], ['Jenis tampilan', JENIS.find(j => j.v === jenis)!.l], ['Rasio', rasioK]]

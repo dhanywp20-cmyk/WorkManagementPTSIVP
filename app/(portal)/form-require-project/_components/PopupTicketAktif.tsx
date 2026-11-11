@@ -13,7 +13,7 @@ export interface PopupTicketAktifProps {
 
 export function PopupTicketAktif({ formatDueDate, handleOpenDetail, requests, setShowTicketPopup, showTicketPopup }: PopupTicketAktifProps) {
   if (!showTicketPopup) return null;
-  const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
+  const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'approved' || r.status === 'in_progress');
   if (activeTickets.length === 0) return null;
   const tutup = () => setShowTicketPopup(false);
   return (
