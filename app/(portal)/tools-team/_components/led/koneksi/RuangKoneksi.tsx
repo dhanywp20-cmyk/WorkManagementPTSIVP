@@ -6,6 +6,7 @@ import { PanelUkuranRC } from './PanelUkuranRC';
 import { PanelPort } from './PanelPort';
 import { KanvasKoneksi } from './KanvasKoneksi';
 import { TabelPort } from './TabelPort';
+import { PanelController } from './PanelController';
 import { useRuangKoneksi, type PropsRuangKoneksi } from './useRuangKoneksi';
 
 export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
@@ -57,6 +58,7 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
         )}
         <KanvasKoneksi a={a} />
         <TabelPort a={a} />
+        <PanelController a={a} />
         <Catatan>Label sel = port-urutan receiving card, angka kecil = ukuran receiving card (px); P1, P2, … = titik masuk kabel LAN{s.cadangan !== 'tidak' ? '; B1, B2, … = kabel cadangan dari ujung rantai' : ''}. Samakan dengan NovaLCT (Screen Configuration → Screen Connection) saat instalasi.</Catatan>
       </div>
     </div>

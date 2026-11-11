@@ -1,3 +1,4 @@
+import { gambarPanelKoneksi } from './panel';
 import { esc } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
 import { type DataKoneksi, kunci, namaCadangan, namaPort, type PengaturanKoneksi, type Susunan, susunKoneksi, warnaPort } from './data';
@@ -149,12 +150,21 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
   const t = susunKoneksi(d, s), k = t.hasil;
   const diagram = svgKoneksi(d, t);
   const dw = Number(/\swidth="([\d.]+)"/.exec(diagram)?.[1] ?? 800), dh = Number(/\sheight="([\d.]+)"/.exec(diagram)?.[1] ?? 400);
-  const W = Math.max(dw, 820) + 40;
+  const panel = gambarPanelKoneksi(d, t);
+  const ukur = (x: string, a: 'width' | 'height') => Number(new RegExp(`\\s${a}="([\\d.]+)"`).exec(x)?.[1] ?? 0);
+  const W = Math.max(dw, 820, ...panel.gambar.map(g => ukur(g.svg, 'width'))) + 40;
   const port = k.port;
   const kolomLegenda = port.length > 24 ? 3 : port.length > 8 ? 2 : 1;
   const barisLegenda = Math.ceil(port.length / kolomLegenda);
   const yDiagram = 92, yLegenda = yDiagram + dh + 16, tinggiBaris = 19;
-  const H = yLegenda + 30 + barisLegenda * tinggiBaris + 46;
+  const yPanel = yLegenda + 30 + barisLegenda * tinggiBaris + (panel.gambar.length ? 24 : 0);
+  let yIsi = yPanel + (panel.gambar.length ? 16 : 0);
+  const blokPanel = panel.gambar.map(g => {
+    const svgPanel = g.svg.replace('<svg ', `<svg x="20" y="${yIsi}" `);
+    yIsi += ukur(g.svg, 'height') + 8;
+    return svgPanel;
+  }).join('');
+  const H = yIsi + (panel.sisa ? 16 : 0) + 46;
   const lebarKolom = (W - 40) / kolomLegenda;
   const huruf = 'font-family="Segoe UI,Arial"';
   const legenda = port.map((p, i) => {
@@ -176,6 +186,9 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
 ${diagram.replace(/ style="[^"]*"/, '').replace('<svg ', `<svg x="${Math.round((W - dw) / 2)}" y="${yDiagram}" `)}
 <text x="20" y="${yLegenda + 12}" font-size="11" font-weight="800" fill="#1e3a8a" letter-spacing="0.6" ${huruf}>PEMBAGIAN PORT LAN</text>
 ${legenda}
+${panel.gambar.length ? `<text x="20" y="${yPanel + 6}" font-size="11" font-weight="800" fill="#1e3a8a" letter-spacing="0.6" ${huruf}>SENDING BOX / VIDEO CONTROLLER · PORT DIPAKAI</text>` : ''}
+${blokPanel}
+${panel.sisa ? `<text x="20" y="${yIsi + 6}" font-size="10.5" fill="#475569" ${huruf}>+${panel.sisa} controller lagi dengan pola port yang sama</text>` : ''}
 ${peringatan ? `<text x="20" y="${H - 30}" font-size="11" fill="#b91c1c" ${huruf}>${esc(peringatan)}</text>` : ''}
 <text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — AV Solution Tools · label sel = port-urutan, angka kecil = ukuran receiving card (px)</text>
 </svg>`;
