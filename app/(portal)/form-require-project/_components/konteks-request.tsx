@@ -1,5 +1,7 @@
 'use client';
 
+import type { DataScreen, TautanScreen } from './screen-connection-request';
+import type { KategoriLampiran } from './shared';
 import { createContext, useContext } from 'react';
 import type { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
 import type { TautanDesain3D, IzinRuang } from './desain-3d-request';
@@ -95,7 +97,7 @@ export interface NilaiKonteksRequest {
     showDetailModal: boolean;
   };
   lampiran: {
-    activeAttachTab: "all" | "sld" | "boq" | "design3d";
+    activeAttachTab: "all" | KategoriLampiran;
     attachments: ProjectAttachment[];
     boqFileRef: import("react").RefObject<HTMLInputElement | null>;
     desain3d: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string; } | null;
@@ -103,12 +105,12 @@ export interface NilaiKonteksRequest {
     design3dFileRef: import("react").RefObject<HTMLInputElement | null>;
     downloadingPackage: boolean;
     fileInputRef: import("react").RefObject<HTMLInputElement | null>;
-    handleCategoryUpload: (file: File, category: "sld" | "boq" | "design3d") => Promise<void>;
+    handleCategoryUpload: (file: File, category: KategoriLampiran) => Promise<void>;
     handleDeleteAttachment: (att: ProjectAttachment) => void;
     handleFileUpload: (file: File) => Promise<void>;
     mintaPilih3D: number;
     muatDesain3D: (id: string) => Promise<void>;
-    setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | "sld" | "boq" | "design3d">>;
+    setActiveAttachTab: import("react").Dispatch<import("react").SetStateAction<"all" | KategoriLampiran>>;
     setDownloadingPackage: import("react").Dispatch<import("react").SetStateAction<boolean>>;
     setMintaPilih3D: import("react").Dispatch<import("react").SetStateAction<number>>;
     setShowUploadChoice: import("react").Dispatch<import("react").SetStateAction<boolean>>;
@@ -119,7 +121,13 @@ export interface NilaiKonteksRequest {
     mintaPilihSld: number;
     setMintaPilihSld: import("react").Dispatch<import("react").SetStateAction<number>>;
     muatSld: (id: string) => Promise<void>;
-    uploadingCategory: "sld" | "boq" | "design3d" | null;
+    screenFileRef: import("react").RefObject<HTMLInputElement | null>;
+    screen: DataScreen | null;
+    screenTools: TautanScreen[];
+    mintaPilihScreen: number;
+    setMintaPilihScreen: import("react").Dispatch<import("react").SetStateAction<number>>;
+    muatScreen: (id: string) => Promise<void>;
+    uploadingCategory: KategoriLampiran | null;
     uploadingFile: boolean;
   };
   pesan: {

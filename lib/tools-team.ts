@@ -194,6 +194,16 @@ export function periksaIsianLED(x: unknown): { ok: true; data: Record<string, un
   return { ok: true, data };
 }
 
+export const MAKS_SVG_KONEKSI = 3_000_000;
+
+export function bersihkanSvgKoneksi(x: unknown): string | null {
+  if (typeof x !== 'string') return null;
+  const s = x.trim();
+  if (!s.startsWith('<svg') || !s.endsWith('</svg>') || s.length > MAKS_SVG_KONEKSI) return null;
+  if (/<script|<foreignObject|javascript:|\son[a-z]+\s*=|<iframe|<image[^>]+href\s*=\s*["']?(?!data:image\/)/i.test(s)) return null;
+  return s;
+}
+
 export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
   const r = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
   const t = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
