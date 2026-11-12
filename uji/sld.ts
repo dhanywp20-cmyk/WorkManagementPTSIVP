@@ -18,7 +18,7 @@ import { letakLabel } from '../lib/sld/lembar1';
 import { labelZona, svgZona } from '../lib/sld/zona';
 import { areaDok } from '../lib/sld/tipe';
 import { jumlahDariNama, labelTertimpa, qtyDiNama, rapikanLabel, terapkanQtyDiNama } from '../lib/sld/rapikan';
-import { tabrak } from '../lib/sld/rute';
+import { potongRuas, tabrak } from '../lib/sld/rute';
 import { dokRuang, duplikatRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, namaRuangKe, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
@@ -254,7 +254,7 @@ void (async () => {
     && tebakTemplat('Pontus video wall controller') === 'videoprocessor' && tebakTemplat('Layar proyektor motorized 100"') === 'layar-motor'
     && tebakTemplat('Fixed frame screen 120"') === 'layar-frame' && tebakTemplat('LED P2.5 indoor') === 'led' && tebakTemplat('LED TV 55') === 'tv-tcl'
     && ['sending-box', 'videoprocessor', 'layar-motor', 'layar-frame'].every(k => !!KATALOG.find(t => t.k === k)?.foto));
-  const tegak = { ...perangkatBaru('tv-tcl', 100, 100), w: 40, h: 25, rasio: 1.6 }, miring = { ...tegak, putar: 90 };
+  const tegak = { ...perangkatBaru('tv-tcl', 100, 100), w: 40, h: 25, foto: undefined, gambar: 'data:image/png;base64,iVBORw0KGgo=', rasio: 1.6 }, miring = { ...tegak, putar: 90 };
   const kt = kotakTampak(tegak), km = kotakTampak(miring);
   cek('putar 90°: kotak sambung kabel ikut berputar (lebar <-> tinggi)', Math.abs(kt.w - 40) < 1e-9 && Math.abs(km.h - 25) < 1e-9 && Math.abs(km.w - 25 / 1.6) < 1e-9);
   const dm2 = { ...dokBaru(), perangkat: [miring] };
@@ -464,6 +464,14 @@ void (async () => {
   const gSpk = geometri(dNyata).find(g => g.id === 'spk')!.garis[0].titik;
   cek('kabel yang jalurnya digeser manual tidak pindah sisi & tidak keluar halaman (kasus nyata)', !luar.length && Math.abs(gSpk[1].x - 355.5) < 0.01 && Math.abs(gSpk[0].y - gSpk[1].y) < 0.01,
     JSON.stringify(luar.slice(0, 3)));
+  const fotoNyata: Record<string, [string, number]> = { rt: ['/sld/produk/mx-0404-scl.jpg', 1], sw: ['/sld/produk/netgear-m4250.jpg', 1.869], pry: ['/sld/produk/panasonic-proyektor.jpg', 1.91] };
+  const dFoto = { ...dNyata, perangkat: dNyata.perangkat.map(p => (fotoNyata[p.id] ? { ...p, foto: fotoNyata[p.id][0], rasio: fotoNyata[p.id][1] } : p)) };
+  const dalam = (k: { x: number; y: number; w: number; h: number }) => ({ x: k.x + 0.5, y: k.y + 0.5, w: k.w - 1, h: k.h - 1 });
+  const tembus = geometri(dFoto).flatMap(g => g.garis.flatMap(gr => gr.titik.slice(1).flatMap((t, i) => dFoto.perangkat
+    .filter(p => g.id !== 'spk' && g.id !== 'hd' && potongRuas(gr.titik[i], t, dalam(kotakTampak(p)), 0)).map(p => `${g.id}->${p.id}`))));
+  cek('kabel tidak menembus perangkat mana pun, termasuk perangkat tujuannya (kasus Router)', !tembus.length, tembus.join(','));
+  const kRt = kotakTampak(dFoto.perangkat.find(p => p.id === 'rt')!);
+  cek('kotak sambung foto bawaan memakai rasio foto asli, bukan rasio lama yang tersimpan', Math.abs(kRt.w / kRt.h - 428 / 194) < 0.01);
   cek('jalur manual di luar halaman dijepit ke dalam halaman', geometri({ ...dNyata, kabel: [{ ...kabelBaru('aud', 'spk'), id: 'x', tengah: 900 }] })[0].garis[0].titik.every(t => t.x <= ar.x + ar.w + 0.01));
   console.log('\n17. Jumlah di nama, duplikat ruangan, rapikan label');
   const jn = (s: string) => jumlahDariNama(s);
