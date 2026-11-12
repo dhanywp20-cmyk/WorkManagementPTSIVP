@@ -1,17 +1,21 @@
 html.gelap {
   color-scheme: dark;
-  --wm-hal: oklch(16.5% 0.025 264);
-  --wm-kartu: oklch(22.5% 0.03 262);
-  --wm-kartu-2: oklch(25.5% 0.03 262);
-  --wm-isi: oklch(28.5% 0.03 260);
-  --wm-garis: oklch(33% 0.025 260);
-  --wm-garis-kuat: oklch(40% 0.025 258);
-  --wm-tinta: oklch(95% 0.01 255);
-  --wm-tinta-2: oklch(80% 0.02 255);
-  --wm-tinta-3: oklch(64% 0.03 257);
+  --wm-hal: #0a0a0d;
+  --wm-kartu: #131317;
+  --wm-kartu-2: #18181d;
+  --wm-isi: #1f1f25;
+  --wm-garis: #25252c;
+  --wm-garis-kuat: #33333c;
+  --wm-tinta: #ededf2;
+  --wm-tinta-2: #b4b4c0;
+  --wm-tinta-3: #7e7e8b;
+  --wm-aksen: #8b5cf6;
+  --wm-aksen-lembut: rgba(139, 92, 246, .16);
+  --wm-latar: radial-gradient(1100px 520px at 12% -8%, rgba(124, 58, 237, .13), transparent 62%),
+    radial-gradient(900px 480px at 108% 4%, rgba(99, 102, 241, .07), transparent 60%), var(--wm-hal);
 
   --halaman: var(--wm-hal);
-  --latar-halaman: var(--wm-hal);
+  --latar-halaman: var(--wm-latar);
   --permukaan: var(--wm-kartu);
   --permukaan-redam: var(--wm-kartu-2);
   --garis: var(--wm-garis);
@@ -40,7 +44,7 @@ html.gelap {
   --gt-334155: var(--wm-tinta-2);
   --gt-475569: var(--wm-tinta-2);
 }
-html.gelap body { background-color: var(--wm-hal); color: var(--wm-tinta); }
+html.gelap body { background: var(--wm-latar); background-attachment: fixed; color: var(--wm-tinta); }
 
 html.gelap .bg-white { background-color: var(--wm-kartu); }
 html.gelap [class*="bg-white/"] { background-color: color-mix(in srgb, var(--wm-kartu) 88%, transparent); }
@@ -60,10 +64,10 @@ html.gelap :is([style^="color: rgb(51, 65, 85)"], [style*="; color: rgb(51, 65, 
 html.gelap :is([style*="solid rgb(226, 232, 240)"], [style*="solid rgb(241, 245, 249)"], [style*="solid rgba(0, 0, 0, 0."], [style*="solid rgba(15, 23, 42, 0."]) { border-color: var(--wm-garis) !important; }
 
 html.gelap .sidebar-3d { box-shadow: 1px 0 0 var(--wm-garis), 10px 0 22px -10px rgba(0, 0, 0, .5) !important; }
-html.gelap :is(.isi-portal, .dasbor-3d) :is(.rounded-2xl, .rounded-xl).bg-white { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 0 var(--wm-garis), 0 10px 24px -12px rgba(0, 0, 0, .6) !important; }
-html.gelap .kartu-miring { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 1px 0 var(--wm-garis), 0 14px 30px -14px rgba(0, 0, 0, .65) !important; }
+html.gelap :is(.isi-portal, .dasbor-3d) :is(.rounded-2xl, .rounded-xl).bg-white { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 0 0 1px var(--wm-garis), 0 14px 34px -18px rgba(0, 0, 0, .85) !important; }
+html.gelap .kartu-miring { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 0 0 1px var(--wm-garis), 0 16px 36px -18px rgba(0, 0, 0, .85) !important; }
 html.gelap .dasbor-3d[style*="background: rgba(241, 245, 249"] { background: color-mix(in srgb, var(--wm-hal) 92%, transparent) !important; }
-html.gelap .bb-tab-geser { background: #2563eb; }
+html.gelap .bb-tab-geser { background: var(--wm-aksen); box-shadow: 0 0 16px -2px rgba(139, 92, 246, .6); }
 html.gelap img:not([src$=".svg"]) { filter: brightness(.92); }
 html.gelap ::-webkit-scrollbar-thumb { background-color: var(--wm-garis-kuat); }
 html.gelap input::placeholder, html.gelap textarea::placeholder { color: var(--wm-tinta-3); }
@@ -387,3 +391,21 @@ html.gelap :is(
   [style*="background: linear-gradient(135deg, rgb(238, 242, 255)"],
   [style*="background: linear-gradient(135deg, rgb(250, 245, 255)"],
   [style*="background: linear-gradient(135deg, rgb(240, 249, 255)"]) { background: color-mix(in srgb, var(--wm-kartu-2) 100%, transparent) !important; }
+
+html.gelap .sidebar-3d { background: #0e0e12 !important; }
+html.gelap .sidebar-3d [aria-current="page"] {
+  background: var(--wm-aksen-lembut) !important;
+  border-color: rgba(139, 92, 246, .38) !important;
+  color: var(--wm-tinta) !important;
+  box-shadow: 0 0 22px -6px rgba(139, 92, 246, .55), inset 0 1px 0 rgba(255, 255, 255, .05) !important;
+}
+html.gelap .sidebar-3d [aria-current="page"] :is(span, div)[style*="background"] { background: rgba(139, 92, 246, .28) !important; color: #ddd6fe !important; }
+html.gelap :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: rgba(139, 92, 246, .55) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, .18) !important;
+}
+html.gelap select { color-scheme: dark; }
+html.gelap option, html.gelap optgroup { background-color: var(--wm-kartu-2); color: var(--wm-tinta); }
+html.gelap ::selection { background: rgba(139, 92, 246, .35); color: #fff; }
+
