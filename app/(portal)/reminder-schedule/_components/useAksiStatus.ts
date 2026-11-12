@@ -7,6 +7,7 @@ import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { appLink } from '@/lib/app-url';
 import { useModePenyelesaian } from './useModePenyelesaian';
 import { useUbahStatus } from './useUbahStatus';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface AksiStatusKonteks {
   bastDate: string;
@@ -181,8 +182,8 @@ export function useAksiStatus(k: AksiStatusKonteks) {
       } else {
         notify('success', `Form review dibuat untuk ${resolvedGuest.full_name}. (Nomor WA tidak ada)`);
       }
-    } catch (ex: any) {
-      notify('error', 'Terjadi kesalahan: ' + ex.message);
+    } catch (ex) {
+      notify('error', 'Terjadi kesalahan: ' + pesanGalat(ex));
     }
     setResendingFormReview(false);
   };

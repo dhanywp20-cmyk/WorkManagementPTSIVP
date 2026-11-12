@@ -15,6 +15,7 @@ import { TabIVPInline } from './TabIVPInline';
 import { TabAtasanInline } from './TabAtasanInline';
 import { TabStrukturOrganisasi } from './TabStrukturOrganisasi';
 import { TabUserCC } from './TabUserCC';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export function UserManagementInline() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -111,7 +112,7 @@ export function UserManagementInline() {
         if (error) { notify('error', 'Gagal: ' + error.message); setCcSaving(false); return; }
       }
       notify('success', 'CC mapping disimpan!'); await fetchAll();
-    } catch (e: any) { notify('error', e.message); }
+    } catch (e) { notify('error', pesanGalat(e)); }
     setCcSaving(false);
   };
 

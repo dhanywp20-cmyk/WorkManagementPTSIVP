@@ -83,14 +83,8 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             })));
           } else { setTicketNotifs([]); }
         } else {
-          const { data: mappings } = await ingat(`guest_mappings:${currentUser.username}`, () => supabase.from('guest_mappings').select('project_name').eq('guest_username', currentUser.username));
-          const mapped = (mappings ?? []).map((m: any) => m.project_name as string);
-          let q = supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved');
-          if (mapped.length > 0) {
-            q = q.or(`created_by.eq.${currentUser.username},project_name.in.(${mapped.map((p: string) => `"${p}"`).join(',')})`);
-          } else {
-            q = q.eq('created_by', currentUser.username);
-          }
+          const q = supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved')
+            .eq('created_by', currentUser.username);
           const { data } = await q.order('created_at', { ascending: false }).limit(30);
           setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         }

@@ -32,6 +32,7 @@ import { useDaftarTicket } from './useDaftarTicket';
 import { useAksiMassalTicket } from './useAksiMassalTicket';
 import { useBukaTicket } from './useBukaTicket';
 import { useEfekLiveTicketing } from './useEfekLiveTicketing';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export function useTicketing() {
   const searchParams = useSearchParams();
@@ -204,9 +205,9 @@ export function useTicketing() {
         if (membersData.data && usersData.data) pendukungDimuat.current = Date.now();
         fetchProjectReminders();
       }
-    } catch (err: any) {
+    } catch (err) {
       setLoading(false);
-      if (!silent) { setTicketsLoading(false); setFetchError(err?.message ?? 'Gagal memuat data. Coba refresh halaman.'); }
+      if (!silent) { setTicketsLoading(false); setFetchError(pesanGalat(err) ?? 'Gagal memuat data. Coba refresh halaman.'); }
     }
   };
 

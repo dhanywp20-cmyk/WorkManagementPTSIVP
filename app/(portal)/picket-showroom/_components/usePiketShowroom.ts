@@ -13,6 +13,7 @@ import { PiketRow, KegiatanEntry, UserRow, DayOfWeek, DAYS_OF_WEEK, KEGIATAN_COL
 import { namaKelompokPTS } from '@/lib/kelompok/inti';
 import { type ConfirmState, type Notif } from '@/components/shared';
 import { exportToExcel } from './excel-export';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export function usePiketShowroom() {
   const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
@@ -93,8 +94,8 @@ export function usePiketShowroom() {
       }
       const hRes = await supabase.from('picket_holidays').select('date');
       if (hRes.data) setHolidays(hRes.data.map((h: any) => h.date));
-    } catch (err: any) {
-      setFetchError(err?.message ?? 'Gagal memuat data');
+    } catch (err) {
+      setFetchError(pesanGalat(err) ?? 'Gagal memuat data');
     }
     setLoading(false);
   },[weekStart,currentUser]);

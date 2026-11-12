@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase';
 import { KATALOG_EVENT } from './katalog';
 import type { PenyediaWA } from './penyedia-wa';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export type Kanal = 'in_app' | 'whatsapp' | 'telegram';
 
@@ -65,7 +66,7 @@ export async function simpanPengaturan(p: PengaturanNotifikasi): Promise<{ ok: b
     if (error) return { ok: false, pesan: error.message };
     cache = p;
     return { ok: true };
-  } catch (e: any) {
-    return { ok: false, pesan: e?.message ?? 'gagal menyimpan' };
+  } catch (e) {
+    return { ok: false, pesan: pesanGalat(e) ?? 'gagal menyimpan' };
   }
 }

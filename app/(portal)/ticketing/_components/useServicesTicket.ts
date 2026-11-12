@@ -6,6 +6,7 @@ import { appLink } from '@/lib/app-url';
 import { createNotification } from '@/lib/notifications';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { type ConfirmState } from '@/components/shared';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface ServicesTicketKonteks {
   currentUser: User | null;
@@ -37,8 +38,8 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
       try {
         const { error: svcErr } = await supabaseServices.from("tickets").update({ services_status: "Pending", status: "Pending" }).eq("id", ticket.id);
         if (svcErr) throw svcErr;
-      } catch (e: any) {
-        notify("error", `Status di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}). Kedua sisi bisa berbeda — periksa ticket ini.`);
+      } catch (e) {
+        notify("error", `Status di basis data Services gagal diperbarui (${pesanGalat(e) ?? "penyebab tidak diketahui"}). Kedua sisi bisa berbeda — periksa ticket ini.`);
       }
       await supabaseServices.from("activity_logs").insert([{
         ticket_id: ticket.id,
@@ -80,7 +81,7 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
       await fetchData();
       setLoadingMessage("✅ Ticket diterima oleh Team Services!");
       setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); setServicesApprovalTicket(null); }, 1500);
-    } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
+    } catch (err) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + pesanGalat(err)); }
   };
 
   const rejectServicesTicket = (ticket: Ticket) => {
@@ -129,8 +130,8 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
               assigned_to_services: false,
               file_url: "", file_name: "", photo_url: "", photo_name: ""
             }]);
-          } catch (e: any) {
-            notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${e?.message ?? "penyebab tidak diketahui"}).`);
+          } catch (e) {
+            notify("error", `Ticket sudah kembali ke PTS, tapi catatan di basis data Services gagal diperbarui (${pesanGalat(e) ?? "penyebab tidak diketahui"}).`);
           }
           try {
             const pihak = [ticket.created_by, ticket.assign_name].filter(Boolean) as string[];
@@ -165,7 +166,7 @@ export function useServicesTicket(k: ServicesTicketKonteks) {
           await fetchData();
           setLoadingMessage("✅ Ticket dikembalikan ke Team PTS IVP.");
           setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowServicesApprovalModal(false); }, 1500);
-        } catch (err: any) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + err.message); }
+        } catch (err) { setShowLoadingPopup(false); setUploading(false); notify("error", "Error: " + pesanGalat(err)); }
       },
     });
   };

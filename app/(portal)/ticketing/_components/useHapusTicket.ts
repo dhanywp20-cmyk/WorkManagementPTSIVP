@@ -3,6 +3,7 @@
 import { hasFullAccess } from '@/lib/constants';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { User, Ticket, OverdueSetting } from './shared';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface HapusTicketKonteks {
   currentUser: User | null;
@@ -52,10 +53,10 @@ export function useHapusTicket(k: HapusTicketKonteks) {
         setDeleteTargetTicket(null);
         setDeleteConfirmText("");
       }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       setShowLoadingPopup(false);
       setUploading(false);
-      notify("error", "Gagal hapus ticket: " + err.message);
+      notify("error", "Gagal hapus ticket: " + pesanGalat(err));
     }
   };
   return { deleteTicket };

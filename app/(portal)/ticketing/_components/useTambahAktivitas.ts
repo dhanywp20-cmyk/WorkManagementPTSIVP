@@ -4,6 +4,7 @@ import { SERVICES_STATUSES, User, TeamMember, Ticket, OverdueSetting } from './s
 import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface TambahAktivitasKonteks {
   currentUser: User | null;
@@ -76,11 +77,11 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
       };
       if (newActivity.file) {
         setLoadingMessage("Uploading PDF file...");
-        try { const result = await uploadFileToBucket(newActivity.file, "reports", isServicesTeam); fileUrl = result.url; fileName = result.name; } catch (uploadErr: any) { throw new Error(`Failed to upload PDF: ${uploadErr.message}`); }
+        try { const result = await uploadFileToBucket(newActivity.file, "reports", isServicesTeam); fileUrl = result.url; fileName = result.name; } catch (uploadErr) { throw new Error(`Failed to upload PDF: ${pesanGalat(uploadErr)}`); }
       }
       if (newActivity.photo) {
         setLoadingMessage("Uploading photo...");
-        try { const result = await uploadFileToBucket(newActivity.photo, "photos", isServicesTeam); photoUrl = result.url; photoName = result.name; } catch (uploadErr: any) { throw new Error(`Failed to upload photo: ${uploadErr.message}`); }
+        try { const result = await uploadFileToBucket(newActivity.photo, "photos", isServicesTeam); photoUrl = result.url; photoName = result.name; } catch (uploadErr) { throw new Error(`Failed to upload photo: ${pesanGalat(uploadErr)}`); }
       }
       setLoadingMessage("Saving activity log...");
       const SVCSS = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
@@ -167,9 +168,9 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
               }).eq("id", selectedTicket.id);
               if (updErr) throw updErr;
             }
-          } catch (e: any) {
+          } catch (e) {
             mirrorBerhasil = false;
-            mirrorPesan = e?.message ?? "penyebab tidak diketahui";
+            mirrorPesan = pesanGalat(e) ?? "penyebab tidak diketahui";
           }
 
           if (mirrorBerhasil) {
@@ -300,10 +301,10 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
       await fetchData();
       setLoadingMessage("✅ Status updated successfully!");
       setTimeout(() => { setShowLoadingPopup(false); setUploading(false); setShowUpdateForm(false); }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       setShowLoadingPopup(false);
       setUploading(false);
-      notify("error", "Error: " + err.message);
+      notify("error", "Error: " + pesanGalat(err));
     }
   };
   return { addActivity };

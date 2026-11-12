@@ -7,6 +7,7 @@ import { useKelompokPTS } from '@/lib/kelompok/inti';
 import { kembaliTerang } from '@/components/shared/Tema';
 import { type HasilMasuk } from './LangkahDuaFaktor';
 import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface LayarMasukKonteks {
   onMasuk: (pengguna: User, dbToken: string | null) => void;
@@ -203,8 +204,8 @@ export function useLayarMasuk(k: LayarMasukKonteks) {
       setRegisterBypass(Boolean(hasilDaftar.bypass));
       setRegisterSuccess(true);
       setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '', event_code: '' });
-    } catch (err: any) {
-      setRegisterErr('Registrasi gagal: ' + err.message);
+    } catch (err) {
+      setRegisterErr('Registrasi gagal: ' + pesanGalat(err));
     }
     setRegisterLoading(false);
   };
