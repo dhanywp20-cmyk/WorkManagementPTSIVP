@@ -9,7 +9,7 @@ name: Backup basis data mingguan
 # Perlu 2 secret (Settings -> Secrets and variables -> Actions):
 #   SUPABASE_DB_URL     connection string "Session pooler" (Supabase -> Connect), IPv4
 #   BACKUP_PASSPHRASE   kata sandi enkripsi - simpan juga di tempat aman, tanpa ini backup tak bisa dibuka
-# Tanpa keduanya workflow berhenti dengan peringatan (tidak gagal).
+# Tanpa keduanya workflow GAGAL (merah) supaya tidak terlihat seolah backup berhasil.
 # Cara restore: docs/BACKUP-DB.md
 
 on:
@@ -32,8 +32,9 @@ jobs:
           SANDI: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           if [ -z "$DB_URL" ] || [ -z "$SANDI" ]; then
-            echo "::warning::SUPABASE_DB_URL / BACKUP_PASSPHRASE belum diisi - backup dilewati."
+            echo "::error::SUPABASE_DB_URL / BACKUP_PASSPHRASE belum diisi - TIDAK ADA backup yang dibuat."
             echo "jalan=false" >> "$GITHUB_OUTPUT"
+            exit 1
           else
             echo "jalan=true" >> "$GITHUB_OUTPUT"
           fi
