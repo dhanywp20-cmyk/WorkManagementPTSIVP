@@ -14,6 +14,7 @@ const VERSI = 'tools_sld_versi';
 const POLA_ID = /^[0-9a-f-]{36}$/i;
 const MAKS_BYTE = 400_000;
 const SIMPAN_VERSI = 20;
+const PER_HALAMAN = 20;
 const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 
 type Db = ReturnType<typeof getAdminClient>;
@@ -55,14 +56,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, sld: { ...data, versiTerbaru: data.versi, bolehUbah } });
   }
 
-  let q = db.from(TABEL).select('id, nama, versi, jumlah_perangkat, dibuat_oleh, dibuat_oleh_nama, diubah_oleh_nama, updated_at')
-    .is('diarsipkan_at', null).order('updated_at', { ascending: false }).limit(100);
+  const hal = Math.max(0, Math.min(500, Math.floor(Number(sp.get('hal')) || 0)));
+  let q = db.from(TABEL).select('id, nama, versi, jumlah_perangkat, dibuat_oleh, dibuat_oleh_nama, diubah_oleh_nama, updated_at', { count: 'exact' })
+    .is('diarsipkan_at', null).order('updated_at', { ascending: false }).range(hal * PER_HALAMAN, hal * PER_HALAMAN + PER_HALAMAN - 1);
   const cari = (sp.get('q') ?? '').trim().slice(0, 80).replace(/[%_,()]/g, ' ');
   if (cari) q = q.or(`nama.ilike.%${cari}%,dibuat_oleh_nama.ilike.%${cari}%`);
-  const { data, error } = await q;
+  const { data, error, count } = await q;
   if (error) return gagal(error.message, 500);
   const daftar = (data ?? []) as { id: string; dibuat_oleh: string | null }[];
-  return NextResponse.json({ ok: true, daftar: daftar.map(d => ({ ...d, bolehUbah: semua || d.dibuat_oleh === jaga.user.id })) });
+  return NextResponse.json({ ok: true, hal, perHalaman: PER_HALAMAN, total: count ?? daftar.length, daftar: daftar.map(d => ({ ...d, bolehUbah: semua || d.dibuat_oleh === jaga.user.id })) });
 }
 
 export async function POST(req: NextRequest) {

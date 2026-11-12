@@ -28,6 +28,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
   const [sibuk, setSibuk] = useState('');
   const [pesan, setPesan] = useState<Pesan>(null);
   const [daftar, setDaftar] = useState<SldTim[] | null>(null);
+  const [halDaftar, setHalDaftar] = useState({ hal: 0, total: 0, perHalaman: 20, q: '' });
 
   useEffect(() => { if (a.siap) setAktifState(muatAktif()); }, [a.siap]);
   const setAktif = useCallback((v: SldAktif | null) => {
@@ -64,13 +65,14 @@ export function useSimpanSLD(a: KeadaanSLD) {
   }, []);
   const simpanSebagai = useCallback((nama: string) => kirim(nama.trim(), false), [kirim]);
 
-  const muatDaftar = useCallback(async (q = '') => {
+  const muatDaftar = useCallback(async (q = '', hal = 0) => {
     setSibuk('daftar');
     try {
-      const r = await fetch(`${API}${q ? `?q=${encodeURIComponent(q)}` : ''}`, { credentials: 'include', cache: 'no-store' }).catch(() => null);
+      const r = await fetch(`${API}?hal=${hal}${q ? `&q=${encodeURIComponent(q)}` : ''}`, { credentials: 'include', cache: 'no-store' }).catch(() => null);
       const j = await jsonDari(r);
       if (!r?.ok || !j?.ok) { setDaftar([]); setPesan({ t: j?.alasan ?? 'Daftar SLD tim tidak bisa dimuat.', galat: true }); return; }
       setDaftar(j.daftar as SldTim[]);
+      setHalDaftar({ hal, q, total: Number(j.total) || (j.daftar as SldTim[]).length, perHalaman: Number(j.perHalaman) || 20 });
     } finally { setSibuk(''); }
   }, []);
 
@@ -81,7 +83,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
       const j = await jsonDari(r);
       const d = j?.ok ? bersihkanDok(j.sld.data) : null;
       if (!r?.ok || !d) { setPesan({ t: j?.alasan ?? 'SLD tidak bisa dibuka.', galat: true }); return false; }
-      a.muat(a.pasangIngatan(d));
+      a.muat(d);
       const lama = versi && versi !== j.sld.versiTerbaru;
       setAktif(lama ? null : { id, nama: j.sld.nama, versi: j.sld.versi, bolehUbah: !!j.sld.bolehUbah, kunci: kunciDok(d) });
       setPesan({ t: lama ? `Membuka ${j.sld.nama} v${versi} (versi lama) - simpan sebagai SLD baru bila ingin mengubahnya.` : `Dibuka: ${j.sld.nama} v${j.sld.versi}` });
@@ -120,7 +122,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
     return () => { hidup = false; document.removeEventListener('visibilitychange', fokus); };
   }, [a.siap, idAktif, versiAktif]);
 
-  return { aktif, berubah, sibuk, pesan, setPesan, daftar, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas, versiServer, tutupVersiServer: () => setVersiServer(null) };
+  return { aktif, berubah, sibuk, pesan, setPesan, daftar, halDaftar, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas, versiServer, tutupVersiServer: () => setVersiServer(null) };
 }
 
 export type KeadaanSimpanSLD = ReturnType<typeof useSimpanSLD>;

@@ -41,6 +41,35 @@ function rapikan(t: Titik[]): Titik[] {
   return h;
 }
 
+class Antrian {
+  private isi: [number, number][] = [];
+  ada() { return this.isi.length > 0; }
+  masuk(biaya: number, kunci: number) {
+    const a = this.isi;
+    a.push([biaya, kunci]);
+    for (let i = a.length - 1; i > 0;) {
+      const j = (i - 1) >> 1;
+      if (a[j][0] <= a[i][0]) break;
+      [a[i], a[j]] = [a[j], a[i]]; i = j;
+    }
+  }
+  keluar(): [number, number] {
+    const a = this.isi, atas = a[0], akhir = a.pop()!;
+    if (a.length) {
+      a[0] = akhir;
+      for (let i = 0; ;) {
+        const l = i * 2 + 1, r = l + 1;
+        let m = i;
+        if (l < a.length && a[l][0] < a[m][0]) m = l;
+        if (r < a.length && a[r][0] < a[m][0]) m = r;
+        if (m === i) break;
+        [a[i], a[m]] = [a[m], a[i]]; i = m;
+      }
+    }
+    return atas;
+  }
+}
+
 export function ruteHindar(a: Titik, sa: Sisi, b: Titik, sb: Sisi, semua: Kotak[]): Titik[] | null {
   const da = arahSisi(sa), db = arahSisi(sb), G = JARAK_HINDAR;
   const a1 = { x: a.x + da.x * KAKI, y: a.y + da.y * KAKI }, b1 = { x: b.x + db.x * KAKI, y: b.y + db.y * KAKI };
@@ -55,35 +84,42 @@ export function ruteHindar(a: Titik, sa: Sisi, b: Titik, sb: Sisi, semua: Kotak[
   const titik = (n: number): Titik => ({ x: xs[n % nx], y: ys[Math.floor(n / nx)] });
   const arah = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
   const arahKe = (d: Titik) => arah.findIndex(r => r.x === d.x && r.y === d.y);
-  const biaya = new Map<number, number>(), asal = new Map<number, number>();
-  const kunci = (n: number, r: number) => n * 4 + r;
-  const awal = kunci(mulai, arahKe(da));
-  biaya.set(awal, 0);
-  const buka = new Set([awal]), selesai = new Set<number>();
-  const g = G - 0.5;
-  while (buka.size) {
-    let s = -1, bs = Infinity;
-    for (const k of buka) { const c = biaya.get(k)!; if (c < bs) { bs = c; s = k; } }
-    buka.delete(s); selesai.add(s);
+  const g = G - 0.5, tutupH = new Uint8Array(nx * ny), tutupV = new Uint8Array(nx * ny);
+  for (const k of rintangan) {
+    const x0 = k.x - g + E, x1 = k.x + k.w + g - E, y0 = k.y - g + E, y1 = k.y + k.h + g - E;
+    for (let j = 0; j < ny; j++) if (ys[j] > y0 && ys[j] < y1) for (let i = 0; i + 1 < nx; i++) if (xs[i + 1] > x0 && xs[i] < x1) tutupH[j * nx + i] = 1;
+    for (let i = 0; i < nx; i++) if (xs[i] > x0 && xs[i] < x1) for (let j = 0; j + 1 < ny; j++) if (ys[j + 1] > y0 && ys[j] < y1) tutupV[i * ny + j] = 1;
+  }
+  const terhalang = (i: number, j: number, rd: number) =>
+    (rd === 0 ? tutupH[j * nx + i] : rd === 1 ? tutupH[j * nx + i - 1] : rd === 2 ? tutupV[i * ny + j] : tutupV[i * ny + j - 1]) === 1;
+  const total = nx * ny * 4, biaya = new Float64Array(total).fill(Infinity), asal = new Int32Array(total).fill(-1), selesai = new Uint8Array(total);
+  const awal = mulai * 4 + arahKe(da);
+  biaya[awal] = 0;
+  const antrian = new Antrian();
+  antrian.masuk(0, awal);
+  while (antrian.ada()) {
+    const [bs, s] = antrian.keluar();
+    if (selesai[s] || bs > biaya[s]) continue;
+    selesai[s] = 1;
     const n = Math.floor(s / 4), r = s % 4;
     if (n === akhir) {
       const jalur: Titik[] = [];
-      for (let k: number | undefined = s; k !== undefined; k = asal.get(k)) jalur.unshift(titik(Math.floor(k / 4)));
+      for (let k = s; k >= 0; k = asal[k]) jalur.unshift(titik(Math.floor(k / 4)));
       return rapikan([a, ...jalur, b]);
     }
-    const i = n % nx, j = Math.floor(n / nx), p = titik(n);
-    arah.forEach((d, rd) => {
-      if (d.x === -arah[r].x && d.y === -arah[r].y) return;
+    const i = n % nx, j = Math.floor(n / nx);
+    for (let rd = 0; rd < 4; rd++) {
+      const d = arah[rd];
+      if (d.x === -arah[r].x && d.y === -arah[r].y) continue;
       const i2 = i + d.x, j2 = j + d.y;
-      if (i2 < 0 || j2 < 0 || i2 >= nx || j2 >= ny) return;
-      const n2 = idx(i2, j2), q = titik(n2);
-      if (rintangan.some(k => potongRuas(p, q, k, g))) return;
-      let c = bs + Math.abs(q.x - p.x) + Math.abs(q.y - p.y) + (rd === r ? 0 : TEKUK);
+      if (i2 < 0 || j2 < 0 || i2 >= nx || j2 >= ny || terhalang(i, j, rd)) continue;
+      const n2 = idx(i2, j2);
+      let c = bs + Math.abs(xs[i2] - xs[i]) + Math.abs(ys[j2] - ys[j]) + (rd === r ? 0 : TEKUK);
       if (n2 === akhir && (d.x !== -db.x || d.y !== -db.y)) c += TEKUK;
-      const k2 = kunci(n2, rd);
-      if (selesai.has(k2) || c >= (biaya.get(k2) ?? Infinity)) return;
-      biaya.set(k2, c); asal.set(k2, s); buka.add(k2);
-    });
+      const k2 = n2 * 4 + rd;
+      if (selesai[k2] || c >= biaya[k2]) continue;
+      biaya[k2] = c; asal[k2] = s; antrian.masuk(c, k2);
+    }
   }
   return null;
 }

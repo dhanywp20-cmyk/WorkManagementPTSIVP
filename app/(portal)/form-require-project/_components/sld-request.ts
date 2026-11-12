@@ -70,7 +70,8 @@ export function htmlSeksiSld(isi: IsiSeksiSld[], namaRuang: (idx: number) => str
 </div>`;
   }).join('');
   return `<div class="section"><div class="section-title" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">📐 Single Line Diagram (AV Solution Tools)</div>${kartu}
-<div style="padding:6px 14px;font-size:10px;color:#94a3b8">SLD lengkap (Sheet 1 &amp; 2, PDF A3 / Visio) dibuka dari AV Solution Tools. Foto unggahan pembuat SLD hanya tersimpan di browser pembuat, jadi di sini memakai foto bawaan atau ilustrasi.</div></div>`;
+<div style="padding:6px 14px;font-size:10px;color:#94a3b8">SLD lengkap (Sheet 1 &amp; 2, PDF A3 / Visio) dibuka dari AV Solution Tools.
+Foto bawaan &amp; foto katalog tim tampil sama untuk semua; foto yang hanya diunggah di browser pembuat (belum disimpan ke katalog tim) diganti ilustrasi.</div></div>`;
 }
 
 export async function isiSeksiSld(requestId: string, tautan: TautanSld[], gambar: boolean): Promise<IsiSeksiSld[]> {

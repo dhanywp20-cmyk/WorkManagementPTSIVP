@@ -11,6 +11,7 @@ interface RequestPilihan { id: string; nama: string; dibuat: string; ruang: { id
 type Dialog = null | 'sebagai' | 'tautkan' | 'buka';
 
 const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+const jam = (s: string) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
 function PilihRequest({ nilai, onUbah }: { nilai: { req: RequestPilihan; ruang: number } | null; onUbah: (v: { req: RequestPilihan; ruang: number } | null) => void }) {
   const [cari, setCari] = useState('');
@@ -145,21 +146,23 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
         <PilihRequest nilai={tautan} onUbah={setTautan} />
       </Modal>
 
-      <Modal buka={dialog === 'buka'} onTutup={() => setDialog(null)} judul="Buka SLD tim" ikon={<FolderOpen size={18} />} ukuran="lg">
+      <Modal buka={dialog === 'buka'} onTutup={() => setDialog(null)} judul="Buka SLD tim" ikon={<FolderOpen size={18} />} ukuran="penuh"
+        keterangan={s.halDaftar.total ? `${s.halDaftar.total} SLD tersimpan · terbaru di atas` : undefined}>
         <div className="space-y-2">
           <label className="relative block">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input value={cari} onChange={e => setCari(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void s.muatDaftar(cari); }}
               placeholder="Cari nama SLD / pembuat, lalu Enter" aria-label="Cari SLD" className={`${kelasKecil} pl-8`} />
           </label>
-          <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
-            {s.sibuk === 'daftar' && <p className="p-3 text-[12.5px] text-slate-500">Memuat...</p>}
-            {s.daftar?.length === 0 && s.sibuk !== 'daftar' && <p className="p-3 text-[12.5px] text-slate-500">Belum ada SLD tersimpan di server tim.</p>}
+          {s.sibuk === 'daftar' && <p className="p-3 text-[12.5px] text-slate-500">Memuat...</p>}
+          {s.daftar?.length === 0 && s.sibuk !== 'daftar' && <p className="p-3 text-[12.5px] text-slate-500">{s.halDaftar.q ? 'Tidak ada SLD yang cocok.' : 'Belum ada SLD tersimpan di server tim.'}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {s.daftar?.map((x: SldTim) => (
-              <div key={x.id} className={`flex items-center gap-2 p-2.5 ${s.aktif?.id === x.id ? 'bg-blue-50/60' : ''}`}>
+              <div key={x.id} className={`flex items-start gap-1 rounded-xl border p-2.5 ${s.aktif?.id === x.id ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
                 <button type="button" className="flex-1 min-w-0 text-left" onClick={() => void s.buka(x.id).then(ok => { if (ok) setDialog(null); })}>
-                  <p className="text-[13px] font-semibold text-slate-800 truncate">{x.nama} <span className="text-[11px] font-bold text-blue-700">v{x.versi}</span></p>
-                  <p className="text-[11.5px] text-slate-500">{x.jumlah_perangkat} perangkat · {x.diubah_oleh_nama || x.dibuat_oleh_nama} · {tgl(x.updated_at)}</p>
+                  <p className="text-[13px] font-semibold text-slate-800 line-clamp-2">{x.nama} <span className="text-[11px] font-bold text-blue-700">v{x.versi}</span></p>
+                  <p className="mt-1 text-[11.5px] text-slate-600">{tgl(x.updated_at)} · <b>{jam(x.updated_at)}</b></p>
+                  <p className="text-[11.5px] text-slate-500 truncate">{x.diubah_oleh_nama || x.dibuat_oleh_nama || '-'} · {x.jumlah_perangkat} perangkat</p>
                 </button>
                 {x.bolehUbah && (
                   <button type="button" aria-label={`Hapus ${x.nama}`} onClick={() => setKonfirmasi({ message: `Hapus SLD "${x.nama}"?`, confirmLabel: 'Hapus', danger: true,
@@ -168,6 +171,14 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
               </div>
             ))}
           </div>
+          {s.halDaftar.total > s.halDaftar.perHalaman && (
+            <nav className="flex items-center justify-center gap-2 pt-1" aria-label="Halaman daftar SLD">
+              <button type="button" className={kelasTombol} disabled={s.halDaftar.hal === 0 || s.sibuk === 'daftar'} onClick={() => void s.muatDaftar(s.halDaftar.q, s.halDaftar.hal - 1)}>‹ Sebelumnya</button>
+              <span className="text-[12.5px] text-slate-600">Halaman <b>{s.halDaftar.hal + 1}</b> dari {Math.ceil(s.halDaftar.total / s.halDaftar.perHalaman)}</span>
+              <button type="button" className={kelasTombol} disabled={(s.halDaftar.hal + 1) * s.halDaftar.perHalaman >= s.halDaftar.total || s.sibuk === 'daftar'}
+                onClick={() => void s.muatDaftar(s.halDaftar.q, s.halDaftar.hal + 1)}>Berikutnya ›</button>
+            </nav>
+          )}
         </div>
       </Modal>
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />

@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { Users, X } from 'lucide-react';
 import { GAYA_KABEL } from '@/lib/sld/gaya';
+import { fotoLokal } from '@/lib/sld/katalog-tim';
 import { barisKoneksi } from '@/lib/sld/turunan';
 import { PanelDokumen } from './PanelDokumen';
 import { PropertiKabel } from './PropertiKabel';
 import { PropertiPerangkat } from './PropertiPerangkat';
 import { PropertiTeks } from './PropertiTeks';
+import type { KatalogTim } from './useKatalogTim';
 import { PanelBanyak, PropertiZona } from './PanelPilihan';
 import { kabelYatim } from '@/lib/sld/dok';
 import type { KeadaanSLD } from './useKeadaanSLD';
@@ -33,17 +35,20 @@ function DaftarKoneksi({ a, onPilih }: { a: KeadaanSLD; onPilih: () => void }) {
   );
 }
 
-export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => void }) {
+export function PanelSamping({ a, onTutup, tim }: { a: KeadaanSLD; onTutup?: () => void; tim?: KatalogTim }) {
   const [tab, setTab] = useState<Tab>('properti');
   const p = a.pilih?.jenis === 'p' ? a.dok.perangkat.find(x => x.id === a.pilih!.id) : undefined;
   const c = a.pilih?.jenis === 'k' ? a.dok.kabel.find(x => x.id === a.pilih!.id) : undefined;
   const tk = a.pilih?.jenis === 't' ? a.dok.teks.find(x => x.id === a.pilih!.id) : undefined;
   const zn = a.pilih?.jenis === 'z' ? a.dok.zona?.find(x => x.id === a.pilih!.id) : undefined;
   const yatim = kabelYatim(a.dok).length;
+  const lokal = fotoLokal(a.dok);
+  const lokalUnik = [...new Map(lokal.map(x => [(x.model.trim() || x.nama).toLowerCase(), x])).values()].slice(0, 12);
   const awas = a.temuan.filter(t => t.tingkat === 'awas').length;
+  const jumlahPeriksa = a.temuan.length + (yatim ? 1 : 0) + (lokal.length ? 1 : 0);
   const TAB: { k: Tab; l: string }[] = [
     { k: 'properti', l: 'Properti' }, { k: 'koneksi', l: `Koneksi (${a.dok.kabel.length})` }, { k: 'dokumen', l: 'Judul & catatan' },
-    { k: 'periksa', l: `Periksa${a.temuan.length ? ` (${a.temuan.length})` : ''}` },
+    { k: 'periksa', l: `Periksa${jumlahPeriksa ? ` (${jumlahPeriksa})` : ''}` },
   ];
   const aktif = tab;
   const idPilih = a.pilih?.id;
@@ -63,7 +68,7 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
           </button>
         )}
       </div>
-      {aktif === 'properti' && (a.terpilih.length > 1 ? <PanelBanyak a={a} /> : zn ? <PropertiZona key={zn.id} a={a} z={zn} /> : p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
+      {aktif === 'properti' && (a.terpilih.length > 1 ? <PanelBanyak a={a} /> : zn ? <PropertiZona key={zn.id} a={a} z={zn} /> : p ? <PropertiPerangkat key={p.id} a={a} p={p} tim={tim} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
         <div className="text-[13px] text-slate-600 space-y-2">
           <p>Klik perangkat atau garis kabel di diagram untuk mengubahnya.</p>
           <ul className="list-disc pl-5 space-y-1 text-slate-500">
@@ -81,6 +86,24 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
         <div className="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2 text-[12.5px] text-amber-900">
           {yatim} kabel tidak lagi tersambung ke perangkat (perangkatnya sudah dihapus) tetapi masih tercatat di Sheet 2.
           <button type="button" onClick={a.bersihkanKabelYatim} className="ml-1 underline font-bold">Hapus kabel tersebut</button>
+        </div>
+      )}
+      {aktif === 'periksa' && lokal.length > 0 && (
+        <div className="mb-2 rounded-lg bg-sky-50 border border-sky-200 px-2.5 py-2 text-[12.5px] text-sky-900">
+          <p>
+            <b>{lokal.length} perangkat</b> memakai foto yang hanya ada di browser ini. Di akun lain (dan di Request Design) tampil foto bawaan / ilustrasi.
+            {tim ? ' Simpan ke katalog tim supaya sama untuk semua:' : ''}
+          </p>
+          <p className="mt-1">Foto salah / tidak sengaja (mis. screenshot)? <button type="button" onClick={a.hapusSemuaFotoLokal} className="underline font-bold">Hapus semua foto lokal</button> <span className="text-sky-700">(kembali ke foto bawaan / ilustrasi, bisa Ctrl+Z)</span></p>
+          {tim && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {lokalUnik.map(x => (
+                <button key={x.id} type="button" onClick={() => tim.bukaDari(x)} className="inline-flex items-center gap-1 rounded-md border border-sky-300 bg-white px-2 py-1 text-[11.5px] font-semibold hover:bg-sky-100">
+                  <Users size={12} aria-hidden="true" /> {x.model.trim() || x.nama || 'Perangkat'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {aktif === 'periksa' && (a.temuan.length ? (

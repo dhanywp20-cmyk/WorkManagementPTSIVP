@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import { Copy, FlipHorizontal2, FlipVertical2, ImagePlus, RotateCcw, RotateCw, Trash2 } from 'lucide-react';
+import { Copy, FlipHorizontal2, FlipVertical2, ImagePlus, RotateCcw, RotateCw, Trash2, Users } from 'lucide-react';
 import { sudutSah } from '@/lib/sld/geometri';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
@@ -16,10 +16,11 @@ import { kompresGambar } from './gambar';
 import { Angka, Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import { MiniIkon } from './PanelKatalog';
 import type { KeadaanSLD } from './useKeadaanSLD';
+import type { KatalogTim } from './useKatalogTim';
 
 const fotoRasio = (src: string) => Object.values(FOTO_PRODUK).find(f => f.src === src)?.rasio;
 
-export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
+export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; tim?: KatalogTim }) {
   const ubah = (x: Partial<Perangkat>) => a.ubahPerangkat(p.id, x);
   const berkas = useRef<HTMLInputElement>(null);
   const [galat, setGalat] = useState('');
@@ -49,13 +50,16 @@ export function PropertiPerangkat({ a, p }: { a: KeadaanSLD; p: Perangkat }) {
             <ImagePlus size={15} /> {sibuk ? 'Memproses...' : p.gambar ? 'Ganti foto' : 'Pakai foto'}
           </button>
           <AmbilBrosur onPakai={(f, nama) => a.pasangFotoKe(p.id, f, nama)} />
+          {tim && <button type="button" className={`${kelasTombol} text-blue-700`} onClick={() => tim.bukaDari(p)} title="Bagikan perangkat ini (dengan fotonya) ke katalog semua akun tim"><Users size={15} /> Simpan ke katalog tim</button>}
           {p.gambar && <button type="button" className={kelasTombol} onClick={() => ubah({ gambar: undefined, rasio: p.foto ? fotoRasio(p.foto) : undefined })}>{p.foto ? 'Foto bawaan' : 'Pakai ilustrasi'}</button>}
           {!p.gambar && p.foto && <button type="button" className={kelasTombol} onClick={() => ubah({ foto: undefined, rasio: undefined })}>Pakai ilustrasi</button>}
           <input ref={berkas} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => void unggah(e.target.files?.[0])} />
         </div>
       </div>
       {galat && <p className="text-[12px] text-rose-700">{galat}</p>}
-      <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto hanya disimpan di browser ini, tidak diunggah ke server.</p>
+      {p.gambar
+        ? <p className="rounded-md bg-sky-50 border border-sky-200 px-2 py-1.5 text-[11.5px] text-sky-900">Foto ini <b>hanya ada di browser Anda</b> - akun lain melihat foto bawaan / ilustrasi. Klik <b>Simpan ke katalog tim</b> agar sama untuk semua.</p>
+        : <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto unggahan hanya disimpan di browser ini, kecuali disimpan ke katalog tim.</p>}
       <div className="grid grid-cols-[72px_1fr] gap-2">
         <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder={noOtomatis(a.dok).has(p.id) ? `${noOtomatis(a.dok).get(p.id)} (otomatis)` : "luar BOM"} />
         <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />

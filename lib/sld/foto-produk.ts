@@ -45,4 +45,5 @@ export const FOTO_PRODUK: Record<string, FotoProduk> = {
 };
 
 export const POLA_FOTO_PRODUK = /^\/sld\/produk\/[a-z0-9-]+\.jpg$/;
-export const fotoSah = (v: unknown): v is string => typeof v === 'string' && POLA_FOTO_PRODUK.test(v);
+export const POLA_FOTO_TIM = /^\/api\/tools-team\/sld\/katalog\/[0-9a-f-]{36}\/\d{1,6}$/;
+export const fotoSah = (v: unknown): v is string => typeof v === 'string' && (POLA_FOTO_PRODUK.test(v) || POLA_FOTO_TIM.test(v));

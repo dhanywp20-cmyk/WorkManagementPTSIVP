@@ -21,8 +21,11 @@ import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
 import { PopupGeser } from './sld/PopupGeser';
 import { useKeadaanSLD } from './sld/useKeadaanSLD';
+import { useKatalogTim } from './sld/useKatalogTim';
+import { DialogObjekTim } from './sld/KatalogTim';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
+const PENANDA_KLIP = '[SLD-AV]';
 const GERAK = 'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none';
 const LACI_KIRI = `absolute left-2 top-2 bottom-2 z-20 w-[260px] max-w-[85%] overflow-auto rounded-2xl bg-white border border-slate-200 shadow-xl p-3 ${GERAK}`;
 const POPUP_KANAN = `absolute right-2 top-2 z-20 w-[350px] max-w-[90%] max-h-[calc(100%-16px)] overflow-auto rounded-2xl shadow-xl origin-top-right ${GERAK}`;
@@ -35,14 +38,21 @@ function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
   const h = useMemo(() => isiLembar2(a.dok, { watermark: logo }), [a.dok, logo]);
   return (
     <div className="space-y-2">
-      {(h.info.terpotongKoneksi > 0 || h.info.terpotongPerangkat > 0) && (
-        <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12.5px] text-amber-900">
-          Tabel terlalu panjang untuk satu lembar A3: {h.info.terpotongKoneksi} baris koneksi dan {h.info.terpotongPerangkat} baris perangkat tidak tercetak. Persingkat isi kolom.
+      {h.info.halaman > 1 && (
+        <p className="rounded-lg bg-sky-50 border border-sky-200 px-3 py-2 text-[12.5px] text-sky-900">
+          Isi Sheet 2 tidak muat satu lembar A3, jadi otomatis berlanjut ke {h.info.halaman} lembar (ikut di PDF, PNG &amp; Visio).
         </p>
       )}
-      <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-100 max-h-[78vh]" style={{ colorScheme: 'light' }}>
-        <svg viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`} style={{ width: '100%', minWidth: 640, display: 'block', background: '#fff', userSelect: 'none' }} role="img" aria-label="Pratinjau sheet 2"
-          dangerouslySetInnerHTML={{ __html: h.svg }} />
+      {(h.info.terpotongKoneksi > 0 || h.info.terpotongPerangkat > 0) && (
+        <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12.5px] text-amber-900">
+          Masih ada {h.info.terpotongKoneksi} baris koneksi dan {h.info.terpotongPerangkat} baris perangkat yang tidak tercetak (batas lembar lanjutan). Persingkat isi kolom.
+        </p>
+      )}
+      <div className="overflow-auto rounded-xl border border-slate-200 bg-slate-100 max-h-[78vh] space-y-3" style={{ colorScheme: 'light' }}>
+        {h.svgs.map((s, i) => (
+          <svg key={i} viewBox={`0 0 ${HALAMAN.w} ${HALAMAN.h}`} style={{ width: '100%', minWidth: 640, display: 'block', background: '#fff', userSelect: 'none' }} role="img"
+            aria-label={`Pratinjau sheet 2${h.svgs.length > 1 ? ` lembar ${i + 1}` : ''}`} dangerouslySetInnerHTML={{ __html: s }} />
+        ))}
       </div>
     </div>
   );
@@ -50,6 +60,9 @@ function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
 
 export function SLD() {
   const a = useKeadaanSLD();
+  const tim = useKatalogTim();
+  const { segarkanFotoTim, proyek } = a;
+  useEffect(() => { if (tim.status === 'siap') segarkanFotoTim(tim.daftar); }, [tim.status, tim.daftar, proyek, segarkanFotoTim]);
   const [sheet, setSheet] = useState<Sheet>(1);
   const [zoom, setZoom] = useState(1);
   const [sibuk, setSibuk] = useState('');
@@ -66,7 +79,7 @@ export function SLD() {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const x = aRef.current, p = x.pilih, ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
-      if (ctrl && k === 'c') { if (x.salin()) e.preventDefault(); return; }
+      if (ctrl && k === 'c') return;
       if (ctrl && k === 'a') { e.preventDefault(); x.pilihBanyak([...x.dok.perangkat, ...x.dok.teks, ...(x.dok.zona ?? [])].map(o => o.id)); return; }
       if (ctrl && k === 'd') { e.preventDefault(); if (x.salin()) x.tempel(); return; }
       if (x.terpilih.length > 1) {
@@ -100,17 +113,31 @@ export function SLD() {
       if (per) x.ubahPerangkat(per.id, { x: per.x + d[0] * s, y: per.y + d[1] * s });
       else if (t) x.ubahTeks(t.id, { x: t.x + d[0] * s, y: t.y + d[1] * s });
     };
-    const tempel = (e: ClipboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName))) return;
-      const x = aRef.current, p = x.pilih, f = gambarDariClipboard(e);
-      if (!f || p?.jenis !== 'p') { if (!f && x.tempel()) e.preventDefault(); return; }
+    const diIsian = (e: Event) => { const el = e.target as HTMLElement | null; return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName)); };
+    const salin = (e: ClipboardEvent) => {
+      if (diIsian(e) || window.getSelection()?.toString() || !aRef.current.salin()) return;
+      e.clipboardData?.setData('text/plain', `${PENANDA_KLIP} ${aRef.current.terpilih.length || 1} item`);
       e.preventDefault();
-      kompresGambar(f).then(g => x.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true }));
+    };
+    const tempel = (e: ClipboardEvent) => {
+      if (diIsian(e)) return;
+      const x = aRef.current, p = x.pilih;
+      if ((e.clipboardData?.getData('text/plain') ?? '').startsWith(PENANDA_KLIP)) { if (x.tempel()) e.preventDefault(); return; }
+      const f = gambarDariClipboard(e);
+      if (!f || p?.jenis !== 'p') return;
+      e.preventDefault();
+      const per = x.dok.perangkat.find(q => q.id === p.id);
+      setKonfirmasi({
+        message: `Pakai gambar dari clipboard sebagai foto "${per?.nama || 'perangkat'}"?`,
+        description: 'Gambar yang ditempel (Ctrl+V) menjadi foto perangkat ini dan hanya tersimpan di browser Anda. Bila maksudnya menempel item, pilih Batal lalu salin item dengan Ctrl+C dulu.',
+        confirmLabel: 'Pakai sebagai foto',
+        onConfirm: () => kompresGambar(f).then(g => aRef.current.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true })),
+      });
     };
     window.addEventListener('keydown', tekan);
+    window.addEventListener('copy', salin);
     window.addEventListener('paste', tempel);
-    return () => { window.removeEventListener('keydown', tekan); window.removeEventListener('paste', tempel); };
+    return () => { window.removeEventListener('keydown', tekan); window.removeEventListener('copy', salin); window.removeEventListener('paste', tempel); };
   }, []);
 
   const jalankan = async (label: string, f: () => Promise<void>) => {
@@ -245,14 +272,15 @@ export function SLD() {
               <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">Perangkat</h2>
               <button type="button" onClick={() => setKiri(false)} aria-label="Tutup katalog perangkat" className="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={16} /></button>
             </div>
-            <PanelKatalog a={a} />
+            <PanelKatalog a={a} tim={tim} konfirmasi={setKonfirmasi} />
           </section>
           {!kiri && <button type="button" onClick={() => setKiri(true)} className={TAB_KIRI}>Perangkat</button>}
           <PopupGeser buka={kanan} judul="Properti · seret untuk pindah" className={POPUP_KANAN}>
-            <PanelSamping a={a} onTutup={tutupKanan} />
+            <PanelSamping a={a} onTutup={tutupKanan} tim={tim} />
           </PopupGeser>
         </>)}
       </div>
+      {tim.form && <DialogObjekTim key={`${tim.form.item?.id ?? 'baru'}|${tim.form.sumberFoto ?? ''}`} tim={tim} form={tim.form} />}
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );
