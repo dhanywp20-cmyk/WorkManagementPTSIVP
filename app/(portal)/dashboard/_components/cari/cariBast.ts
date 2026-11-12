@@ -28,8 +28,8 @@ export async function cariBast(k: KonteksCariBast) {
     const { data } = await qf;
     let reviews = (data ?? []);
     if (isSalesSup) {
-      reviews = reviews.filter((r: any) =>
-        salesDivisions.includes(r.sales_division) || salesSubNames.some(n => n === r.sales_name));
+      reviews = reviews.filter((r) =>
+        salesDivisions.includes(r.sales_division ?? '') || salesSubNames.some(n => n === r.sales_name));
     }
     reviews.forEach((r) => res.push({
       id: `review-${r.id}`, type: 'review', icon: '⭐',

@@ -50,7 +50,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
         return;
       }
       const rows = attempts ?? [];
-      const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))];
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter((x): x is string => !!x))];
       const userMap: Record<string, any> = {};
       if (userIds.length > 0) {
         const { data: us } = await supabase
@@ -58,7 +58,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
         (us ?? []).forEach((u) => { userMap[u.id] = u; });
       }
       if (dibatalkan) return;
-      setData(rows.map((r: any) => ({ ...r, users: userMap[r.user_id] ?? null })));
+      setData(rows.map((r) => ({ ...r, users: (r.user_id ? userMap[r.user_id] : undefined) ?? null })));
       setLoading(false);
     })();
     return () => { dibatalkan = true; };
@@ -111,13 +111,13 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
         {data.length > 0 && (
           <>
             {(() => {
-              const graded = data.filter((a: any) => a.grading_status !== 'pending_review');
+              const graded = data.filter((a) => a.grading_status !== 'pending_review');
               const pendingCount = data.length - graded.length;
               const cards = [
                 { label: 'Peserta', value: data.length },
                 { label: 'Rata-rata', value: graded.length ? (graded.reduce((s: number, a: any) => s+(a.score??0),0)/graded.length).toFixed(1) : '—' },
-                { label: 'Lulus', value: graded.filter((a: any) => a.passed).length },
-                { label: 'Pass Rate', value: graded.length ? `${Math.round(graded.filter((a: any) => a.passed).length/graded.length*100)}%` : '—' },
+                { label: 'Lulus', value: graded.filter((a) => a.passed).length },
+                { label: 'Pass Rate', value: graded.length ? `${Math.round(graded.filter((a) => a.passed).length/graded.length*100)}%` : '—' },
               ];
               if (session?.session_type === 'essay') cards.push({ label: '⏳ Menunggu Dinilai', value: pendingCount });
               return (
@@ -153,7 +153,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
                   {filtered.length === 0 && (
                     <tr><td colSpan={9} className="text-center py-10 text-slate-500">Tidak ada peserta yang cocok</td></tr>
                   )}
-                  {filtered.map((a: any) => {
+                  {filtered.map((a) => {
                     const pr = peringkatPerAttempt.get(a.id) ?? 0;
                     return (
                     <tr key={a.id} className="stagger-item hover:bg-slate-50 transition-colors">

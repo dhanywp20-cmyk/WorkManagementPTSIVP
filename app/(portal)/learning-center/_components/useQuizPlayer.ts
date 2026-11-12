@@ -48,7 +48,7 @@ export function useQuizPlayer(k: QuizPlayerKonteks) {
       const { data } = await supabase.from('lc_questions')
         .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format, gambar_url')
         .in('id', session.question_ids);
-      const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as QuizQuestion[];
+      const ordered = session.question_ids.map(id => data?.find((q) => q.id === id)).filter(Boolean) as QuizQuestion[];
       setQuestions(session.acak_soal ? acakDenganBenih(ordered, attempt.id) : ordered);
     };
     load();
@@ -56,8 +56,10 @@ export function useQuizPlayer(k: QuizPlayerKonteks) {
       const { data } = await supabase.from('lc_answers').select('*').eq('attempt_id', attempt.id);
       const map: Record<string, string> = {};
       const gbr: Record<string, string> = {};
-      (data ?? []).forEach((a: any) => {
-        map[a.question_id] = a.essay_text || a.answer_image_url || a.answer;
+      (data ?? []).forEach((a) => {
+        if (!a.question_id) return;
+        const isi = a.essay_text || a.answer_image_url || a.answer;
+        if (isi) map[a.question_id] = isi;
         if (a.answer_thumb_url) gbr[a.question_id] = a.answer_thumb_url;
       });
       setSavedAnswers(map); setAnswers(map); setGambarJawaban(gbr);

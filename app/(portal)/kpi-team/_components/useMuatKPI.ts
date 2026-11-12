@@ -79,35 +79,35 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const lcAttempts = (lcSessionsRes.data ?? []);
 
       if (scope.kind === 'pts_sup') {
-        movements = movements.filter((m: any) => scope.ptsMemberNames?.includes(m.nama_pts));
+        movements = movements.filter((m) => scope.ptsMemberNames?.includes(m.nama_pts ?? ''));
       }
 
-      const open           = tickets.filter((t: any)=>!['Solved','Cancelled'].includes(t.status)).length;
-      const solved         = tickets.filter((t: any)=>t.status==='Solved').length;
-      const waitingApproval= tickets.filter((t: any)=>t.status==='Waiting Approval').length;
+      const open           = tickets.filter((t: any) =>!['Solved','Cancelled'].includes(t.status)).length;
+      const solved         = tickets.filter((t: any) =>t.status==='Solved').length;
+      const waitingApproval= tickets.filter((t: any) =>t.status==='Waiting Approval').length;
 
-      const scopedTicketIds = new Set(tickets.map((t: any)=>t.id as string));
+      const scopedTicketIds = new Set(tickets.map((t: any) =>t.id as string));
       const resolvedToday = actLogs.filter((a)=>
         a.new_status==='Solved' && a.created_at?.startsWith(today) && scopedTicketIds.has(a.ticket_id)
       ).length;
 
       const handlerMap: Record<string,number> = {};
-      tickets.filter((t: any)=>t.assign_name && !['Solved','Cancelled'].includes(t.status))
-        .forEach((t: any)=>{ handlerMap[t.assign_name]=(handlerMap[t.assign_name]||0)+1; });
+      tickets.filter((t: any) =>t.assign_name && !['Solved','Cancelled'].includes(t.status))
+        .forEach((t: any) =>{ handlerMap[t.assign_name]=(handlerMap[t.assign_name]||0)+1; });
       const byHandler = Object.entries(handlerMap).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count);
 
       const statusMap: Record<string,number> = {};
-      tickets.forEach((t: any)=>{ statusMap[t.status]=(statusMap[t.status]||0)+1; });
+      tickets.forEach((t: any) =>{ statusMap[t.status]=(statusMap[t.status]||0)+1; });
       const byStatus = Object.entries(statusMap).map(([status,count])=>({ status,count,color:STATUS_COLORS[status]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
 
       const divMap: Record<string,number> = {};
-      tickets.forEach((t: any)=>{ if(t.sales_division) divMap[t.sales_division]=(divMap[t.sales_division]||0)+1; });
+      tickets.forEach((t: any) =>{ if(t.sales_division) divMap[t.sales_division]=(divMap[t.sales_division]||0)+1; });
       const byDivision = Object.entries(divMap).map(([div,count])=>({div,count})).sort((a,b)=>b.count-a.count);
       const productTicketMap: Record<string,number> = {};
-      tickets.forEach((t: any)=>{ if(t.product) productTicketMap[t.product]=(productTicketMap[t.product]||0)+1; });
+      tickets.forEach((t: any) =>{ if(t.product) productTicketMap[t.product]=(productTicketMap[t.product]||0)+1; });
       const byProduct = Object.entries(productTicketMap).map(([product,count])=>({product,count})).sort((a,b)=>b.count-a.count);
 
-      const solvedT = tickets.filter((t: any)=>t.status==='Solved'&&t.date&&t.created_at);
+      const solvedT = tickets.filter((t: any) =>t.status==='Solved'&&t.date&&t.created_at);
       const totalDays = solvedT.reduce((acc:number,t: any)=>{
         const d=(new Date(t.date).getTime()-new Date(t.created_at).getTime())/86400000;
         return acc+Math.max(0,d);
@@ -123,12 +123,12 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       );
 
       const catMap: Record<string,number> = {};
-      reminders.forEach((r: any)=>{ catMap[r.category]=(catMap[r.category]||0)+1; });
+      reminders.forEach((r: any) =>{ catMap[r.category]=(catMap[r.category]||0)+1; });
       const byCategory = Object.entries(catMap).map(([cat,count])=>({ cat,count,color:CATEGORY_COLORS[cat]??'#94a3b8' })).sort((a,b)=>b.count-a.count);
-      const dueSoon     = reminders.filter((r: any)=>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
-      const overdueCount= reminders.filter((r: any)=>r.status==='pending'&&r.due_date<today).length;
+      const dueSoon     = reminders.filter((r: any) =>r.status==='pending'&&r.due_date>=today&&r.due_date<=oneWeekStr).length;
+      const overdueCount= reminders.filter((r: any) =>r.status==='pending'&&r.due_date<today).length;
       const reminderProdMap: Record<string, Record<string,number>> = {};
-      reminders.forEach((r: any)=>{ 
+      reminders.forEach((r: any) =>{ 
         if(r.product) {
           if(!reminderProdMap[r.product]) reminderProdMap[r.product]={};
           reminderProdMap[r.product][r.category||'Lainnya']=(reminderProdMap[r.product][r.category||'Lainnya']||0)+1;
@@ -146,9 +146,9 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       users.forEach((u)=>{ const r = typeof u.role === 'string' && u.role.trim() ? u.role.trim() : 'belum diatur'; roleMap[r]=(roleMap[r]||0)+1; });
 
       const lcSubmitted = lcAttempts.length;
-      const lcPassed = lcAttempts.filter((a: any) => a.passed === true).length;
-      const lcParticipants = new Set(lcAttempts.map((a: any) => a.user_id as string).filter(Boolean)).size;
-      const lcScores = lcAttempts.filter((a: any) => a.score != null).map((a: any) => a.score as number);
+      const lcPassed = lcAttempts.filter((a) => a.passed === true).length;
+      const lcParticipants = new Set(lcAttempts.map((a) => a.user_id as string).filter(Boolean)).size;
+      const lcScores = lcAttempts.filter((a) => a.score != null).map((a) => a.score as number);
       const lcAvgScore = lcScores.length ? Math.round(lcScores.reduce((a:number,b:number)=>a+b,0)/lcScores.length) : 0;
 
       const tglLokal = (iso: string) => {
@@ -157,35 +157,35 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       };
 
       const kiniLokal = tglLokal(new Date().toISOString());
-      const jadwalAktif = reminders.filter((r: any)=>r.status!=='cancelled' && r.due_date>=kiniLokal && (r.due_date===kiniLokal || r.status!=='done'));
+      const jadwalAktif = reminders.filter((r: any) =>r.status!=='cancelled' && r.due_date>=kiniLokal && (r.due_date===kiniLokal || r.status!=='done'));
       const tglDekat = jadwalAktif.reduce((m:string,r: any)=>(!m||r.due_date<m?r.due_date:m),'');
-      const jadwalTgl = jadwalAktif.filter((r: any)=>r.due_date===tglDekat).sort((a: any,b: any)=>String(a.due_time??'').localeCompare(String(b.due_time??'')));
+      const jadwalTgl = jadwalAktif.filter((r: any) =>r.due_date===tglDekat).sort((a: any, b: any) =>String(a.due_time??'').localeCompare(String(b.due_time??'')));
       const jadwalDekat = !tglDekat ? null : {
         hariIni: tglDekat===kiniLokal,
         label: new Date(`${tglDekat}T00:00:00`).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'short'}),
         total: jadwalTgl.length,
-        selesai: jadwalTgl.filter((r: any)=>r.status==='done').length,
-        daftar: jadwalTgl.slice(0,6).map((r: any)=>({ id:r.id as string, proyek:(r.project_name as string)||'—', kategori:(r.category as string)||'—', pic:(r.assign_name as string)||'Belum di-assign', jam:String(r.due_time??'').slice(0,5), selesai:r.status==='done' })),
+        selesai: jadwalTgl.filter((r: any) =>r.status==='done').length,
+        daftar: jadwalTgl.slice(0,6).map((r: any) =>({ id:r.id as string, proyek:(r.project_name as string)||'—', kategori:(r.category as string)||'—', pic:(r.assign_name as string)||'Belum di-assign', jam:String(r.due_time??'').slice(0,5), selesai:r.status==='done' })),
       };
       const bebanHari = Array.from({length:5},(_,i)=>{
         const d = new Date(); d.setDate(d.getDate()+i+1);
         const kunci = tglLokal(d.toISOString());
-        return { kunci, label:d.toLocaleDateString('id-ID',{weekday:'short'}), jumlah:reminders.filter((r: any)=>r.due_date===kunci&&!['cancelled','done'].includes(r.status)).length };
+        return { kunci, label:d.toLocaleDateString('id-ID',{weekday:'short'}), jumlah:reminders.filter((r: any) =>r.due_date===kunci&&!['cancelled','done'].includes(r.status)).length };
       });
-      const tiketTua = tickets.filter((t: any)=>!['Solved','Cancelled'].includes(t.status)&&t.created_at)
-        .sort((a: any,b: any)=>String(a.created_at).localeCompare(String(b.created_at))).slice(0,4)
-        .map((t: any)=>({ id:t.id as string, proyek:(t.project_name as string)||'—', handler:(t.assign_name as string)||'Belum di-assign', status:t.status as string, hari:Math.max(0,Math.floor((Date.now()-new Date(t.created_at).getTime())/86400000)) }));
+      const tiketTua = tickets.filter((t: any) =>!['Solved','Cancelled'].includes(t.status)&&t.created_at)
+        .sort((a: any, b: any) =>String(a.created_at).localeCompare(String(b.created_at))).slice(0,4)
+        .map((t: any) =>({ id:t.id as string, proyek:(t.project_name as string)||'—', handler:(t.assign_name as string)||'Belum di-assign', status:t.status as string, hari:Math.max(0,Math.floor((Date.now()-new Date(t.created_at).getTime())/86400000)) }));
 
       setKpi({
         jadwalDekat,
         bebanHari,
         tiketTua,
         deret:{
-          tiket:tickets.map((t: any)=>({ t:tglLokal(t.created_at), s:t.status as string })),
-          jadwal:reminders.map((r: any)=>({ t:r.due_date as string, s:r.status as string })),
+          tiket:tickets.map((t: any) =>({ t:tglLokal(t.created_at), s:t.status as string })),
+          jadwal:reminders.map((r: any) =>({ t:r.due_date as string, s:r.status as string })),
         },
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays,monthlyTickets },
-        reminders:{ total:reminders.length,pending:reminders.filter((r: any)=>r.status==='pending').length,done:reminders.filter((r: any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
+        reminders:{ total:reminders.length,pending:reminders.filter((r: any) =>r.status==='pending').length,done:reminders.filter((r: any) =>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMvi:piketToday?.pic_mvi_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
         units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },

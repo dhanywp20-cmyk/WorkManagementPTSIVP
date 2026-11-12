@@ -36,19 +36,19 @@ export async function cariRequestDesain(k: KonteksCariRequestDesain) {
         ? await supabase.from('users').select('id').in('full_name', salesSubNames)
         : { data: [] };
       const subIds = (allSubIdsRes.data ?? []).map((u) => u.id as string);
-      projects = projects.filter((p: any) =>
-        salesDivisions.includes(p.sales_division) || subIds.includes(p.requester_id)
+      projects = projects.filter((p) =>
+        salesDivisions.includes(p.sales_division ?? '') || subIds.includes(p.requester_id)
       );
     } else if (currentUser.role?.toLowerCase() === 'team' && !isAdmin) {
       projects = [];
     }
 
-    projects.forEach((p: any) => res.push({
+    projects.forEach((p) => res.push({
       id: `proj-${p.id}`, type: 'project', icon: '🏗️',
       title: p.project_name ?? '-',
       sub: p.sales_name ?? '-',
       meta: p.status ?? '-',
-      badge: p.status,
+      badge: p.status ?? undefined,
       badgeColor: p.status === 'Done' ? '#10b981' : p.status === 'Pending' ? '#f59e0b' : '#3b82f6',
       url: '/form-require-project',
     }));

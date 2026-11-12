@@ -32,18 +32,18 @@ export async function cariTiket(k: KonteksCariTiket) {
 
     if (tanpaBatas) {
     } else if (isSalesSup) {
-      tickets = tickets.filter((t: any) =>
-        salesDivisions.includes(t.sales_division) ||
+      tickets = tickets.filter((t) =>
+        salesDivisions.includes(t.sales_division ?? '') ||
         salesSubNames.some(n => n === t.sales_name || n === t.created_by)
       );
     }
 
-    tickets.forEach((t: any) => res.push({
+    tickets.forEach((t) => res.push({
       id: `ticket-${t.id}`, type: 'ticket', icon: '🎫',
       title: t.project_name ?? '-',
       sub: t.issue_case ?? '-',
       meta: `${t.status} · ${t.assign_name ?? '-'}`,
-      badge: t.status,
+      badge: t.status ?? undefined,
       badgeColor: t.status === 'Solved' ? '#10b981' : t.status === 'Waiting Approval' ? '#f59e0b' : '#3b82f6',
       url: '/ticketing',
     }));

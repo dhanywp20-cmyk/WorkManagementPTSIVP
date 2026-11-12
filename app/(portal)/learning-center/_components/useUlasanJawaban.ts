@@ -70,7 +70,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
         const rows = data ?? [];
         setAttempts(rows);
         if (autoOpenAttemptId) {
-          const target = rows.find((a: any) => a.id === autoOpenAttemptId);
+          const target = rows.find((a) => a.id === autoOpenAttemptId);
           if (target) handleViewDetail(target);
         }
       });
@@ -88,13 +88,14 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
         ? supabase.from('lc_questions').select('*').in('id', questionIds)
         : Promise.resolve({ data: [] }),
     ]);
-    const orderedQs = questionIds.map((id: string) => (qs ?? []).find((q: any) => q.id === id)).filter(Boolean) as Question[];
+    const orderedQs = questionIds.map((id: string) => (qs ?? []).find((q) => q.id === id)).filter(Boolean) as Question[];
     setQuestions(orderedQs);
     setAnswerDetails(ans ?? []);
     const scoreMap: Record<string, string> = {};
     const feedbackMap: Record<string, string> = {};
     const aiScoreMap: Record<string, number> = {};
-    (ans ?? []).forEach((a: any) => {
+    (ans ?? []).forEach((a) => {
+      if (!a.question_id) return;
       const adaManual = a.manual_score !== null && a.manual_score !== undefined;
       const adaAi     = a.ai_score !== null && a.ai_score !== undefined;
       if (a.ai_feedback) feedbackMap[a.question_id] = a.ai_feedback;
@@ -124,7 +125,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
         id: q.id,
         question: q.question,
         modelAnswer: q.model_answer,
-        studentAnswer: (jawaban.find((x: any) => x.question_id === q.id)?.essay_text ?? '').trim(),
+        studentAnswer: (jawaban.find((x) => x.question_id === q.id)?.essay_text ?? '').trim(),
       }))
       .filter(x => x.studentAnswer.length > 0);
     if (bahan.length === 0) {

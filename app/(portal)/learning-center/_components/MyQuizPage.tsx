@@ -269,7 +269,7 @@ export function MyQuizPage({ user }: { user: User }) {
 
     const { data: a } = await supabase.from('lc_quiz_attempts').select('*').eq('user_id', user.id).eq('is_submitted', false);
     const map: Record<string, QuizAttempt> = {};
-    (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
+    (a ?? []).forEach((att) => { if (att.quiz_session_id) map[att.quiz_session_id] = att as QuizAttempt; });
     setActiveAttempts(map);
 
     const { data: submitted } = await supabase
@@ -277,8 +277,8 @@ export function MyQuizPage({ user }: { user: User }) {
       .select('*')
       .eq('user_id', user.id)
       .eq('is_submitted', true);
-    setSubmittedIds(new Set((submitted ?? []).map((r: any) => r.quiz_session_id)));
-    setPendingReviewIds(new Set((submitted ?? []).filter((r: any) => r.grading_status === 'pending_review').map((r: any) => r.quiz_session_id)));
+    setSubmittedIds(new Set((submitted ?? []).map((r) => r.quiz_session_id).filter((x): x is string => !!x)));
+    setPendingReviewIds(new Set((submitted ?? []).filter((r) => r.grading_status === 'pending_review').map((r) => r.quiz_session_id).filter((x): x is string => !!x)));
   }, [user.id]);
   useEffect(() => { load(); }, [load]);
 
