@@ -2,7 +2,7 @@ import { idBaru } from './dok';
 import { POLA_FOTO_TIM } from './foto-produk';
 import { DAFTAR_IKON } from './ikon';
 import { URUTAN_KELOMPOK, type KelompokKatalog } from './katalog';
-import type { Perangkat } from './tipe';
+import type { DokSLD, Perangkat } from './tipe';
 
 export interface IsiItemTim { nama: string; kategori: string; kelompok: KelompokKatalog; ikon: string; model: string; port: string[]; ket: string; lebar: number }
 export interface ItemTim extends IsiItemTim { id: string; versi: number; adaFoto: boolean; rasio: number | null; oleh: string; bolehUbah: boolean }
@@ -29,6 +29,25 @@ export function bersihkanItemTim(v: unknown): IsiItemTim | null {
 
 export const urlFotoTim = (id: string, versi: number) => `/api/tools-team/sld/katalog/${id}/${versi}`;
 export const idFotoTim = (src?: string) => (src && POLA_FOTO_TIM.test(src) ? src.split('/')[5] : undefined);
+
+export function segarkanFotoTim(d: DokSLD, daftar: ItemTim[]): DokSLD | null {
+  if (!daftar.length) return null;
+  const peta = new Map(daftar.map(t => [t.id, t]));
+  let berubah = false;
+  const segar = (p: Perangkat): Perangkat => {
+    const t = peta.get(idFotoTim(p.foto) ?? '');
+    if (!t) return p;
+    if (!t.adaFoto || !t.rasio) { berubah = true; return { ...p, foto: undefined, rasio: undefined }; }
+    const url = urlFotoTim(t.id, t.versi);
+    if (p.foto === url && p.rasio === t.rasio) return p;
+    berubah = true;
+    return { ...p, foto: url, rasio: t.rasio };
+  };
+  const hasil = { ...d, perangkat: d.perangkat.map(segar), ...(d.ruangLain ? { ruangLain: d.ruangLain.map(r => ({ ...r, perangkat: r.perangkat.map(segar) })) } : {}) };
+  return berubah ? hasil : null;
+}
+
+export const fotoLokal = (d: Pick<DokSLD, 'perangkat'>) => d.perangkat.filter(p => !!p.gambar);
 
 export function perangkatDariTim(t: ItemTim, x: number, y: number): Perangkat {
   const rasio = t.adaFoto && t.rasio ? t.rasio : undefined;

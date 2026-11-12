@@ -1,7 +1,7 @@
 import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, WATERMARK } from './gaya';
 import { geometri, hurufPerangkat, kotakTampak, rasioPerangkat, teksLabel } from './geometri';
 import { barisLabel, letakLabel, primRangka1 } from './lembar1';
-import { primLembar2 } from './lembar2';
+import { halamanLembar2 } from './lembar2';
 import type { Prim } from './primitif';
 import { lebarTeks } from './teks';
 import { type DokSLD, halamanDok, HALAMAN, type Titik } from './tipe';
@@ -160,9 +160,10 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
   return h;
 }
 
-function lembar2(m: MasukanVsdx, media: Media): Halaman {
+const lembar2 = (m: MasukanVsdx, media: Media): Halaman[] => halamanLembar2(m.dok).halaman.map(prim => lembar2Satu(m, media, prim));
+
+function lembar2Satu(m: MasukanVsdx, media: Media, prim: Prim[]): Halaman {
   const h = new Halaman();
-  const prim: Prim[] = primLembar2(m.dok).prim;
   for (const p of prim) {
     const id = h.baru();
     h.bentuk.push(bentukPrim(p, id, pid => {
@@ -210,7 +211,7 @@ export function buatVsdx(m: MasukanVsdx): Uint8Array {
     let h1: Halaman;
     try { aturTinggiHalaman(tinggi1); h1 = lembar1(mr, media); } finally { aturTinggiHalaman(HALAMAN.h); }
     hal.push({ h: h1, nama: `${awalan}Sheet 1 - Diagram`, tinggi: tinggi1 });
-    if (!m.simple) hal.push({ h: lembar2(mr, media), nama: `${awalan}Sheet 2 - Koneksi & catatan`, tinggi: HALAMAN.h });
+    if (!m.simple) lembar2(mr, media).forEach((h2, j, semua) => hal.push({ h: h2, nama: `${awalan}Sheet 2 - Koneksi & catatan${semua.length > 1 ? ` (${j + 1})` : ''}`, tinggi: HALAMAN.h }));
   }
   const judul = xe(m.judul ?? 'Single Line Diagram');
   const tipeGambar = "<Default Extension='png' ContentType='image/png'/><Default Extension='jpeg' ContentType='image/jpeg'/>";

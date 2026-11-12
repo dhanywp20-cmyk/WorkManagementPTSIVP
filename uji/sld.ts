@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
 import { FOTO_PRODUK, fotoSah } from '../lib/sld/foto-produk';
-import { bersihkanItemTim, idFotoTim, perangkatDariTim, POLA_DATA_FOTO_TIM, urlFotoTim, type ItemTim } from '../lib/sld/katalog-tim';
+import { bersihkanItemTim, fotoLokal, idFotoTim, perangkatDariTim, POLA_DATA_FOTO_TIM, segarkanFotoTim, urlFotoTim, type ItemTim } from '../lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelYatim, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
@@ -89,7 +89,10 @@ console.log('\n3. Template ekspor tetap (acuan SLD final)');
   cek('sheet 2: warna tabel baku', s2.includes('fill="#eaeef2" stroke="#8c959f"') && s2.includes('fill="#f6f8fa" stroke="#afb8c1"'));
   cek('teks pengguna di-escape', svgLembar1({ ...d, blok: { ...d.blok, proyek: '<script>' } }).includes('PROJECT : &lt;script&gt;'));
   const banyak = { ...d, kabel: Array.from({ length: 90 }, (_, i) => kabelBaru(d.perangkat[0].id, d.perangkat[1].id, { fungsi: `fungsi ${i}` })) };
-  cek('tabel kepanjangan dipotong di batas lembar dan dilaporkan', isiLembar2(banyak).info.terpotongKoneksi > 0);
+  const lanjut = isiLembar2(banyak), semuaHal = lanjut.svgs.join('');
+  cek('tabel kepanjangan berlanjut ke lembar berikutnya, tidak ada baris hilang', lanjut.info.halaman >= 2 && lanjut.info.terpotongKoneksi === 0 && lanjut.info.terpotongPerangkat === 0
+    && semuaHal.includes('DAFTAR KONEKSI - lanjutan') && semuaHal.includes('2 / 2 · hal 2 dari') && semuaHal.includes('>fungsi 89<') && semuaHal.includes('>fungsi 0<')
+    && lanjut.svgs[0] !== lanjut.svgs[1] && isiLembar2(d).info.halaman === 1, `${lanjut.info.halaman} hal`);
   cek('bungkus teks memecah baris panjang', bungkus('Pilih HALO 80 di 4-ATUR-MIKROFON.bat & jadikan Output default Windows', 52, 2.3).length === 2);
 }
 
@@ -425,6 +428,17 @@ void (async () => {
   cek('foto tim hanya JPEG data URL', POLA_DATA_FOTO_TIM.test('data:image/jpeg;base64,/9j/4AAQ') && !POLA_DATA_FOTO_TIM.test('data:image/png;base64,iVBOR') && !POLA_DATA_FOTO_TIM.test('data:image/jpeg;base64,<x>'));
   const tanpaFotoTim = perangkatDariTim({ ...itemT, adaFoto: false, rasio: null }, 0, 0);
   cek('object tim tanpa foto memakai ilustrasi', !tanpaFotoTim.foto && tanpaFotoTim.ikon === 'kamera');
+  const dTim = { ...dokBaru(), perangkat: [pT, { ...perangkatBaru('tv-tcl', 200, 50), id: 'lok', gambar: 'data:image/jpeg;base64,/9j/', model: 'TV X' }],
+    ruangLain: [{ id: 'r2', nama: 'R2', perangkat: [pT2], kabel: [], teks: [], catatan: [] }] };
+  const segar = segarkanFotoTim(dTim, [{ ...itemT, versi: 7, rasio: 1.5 }]);
+  cek('foto tim lama otomatis ikut versi terbaru (semua ruangan)', !!segar && segar.perangkat[0].foto === urlFotoTim(idT, 7) && segar.perangkat[0].rasio === 1.5
+    && segar.ruangLain![0].perangkat[0].foto === urlFotoTim(idT, 7) && segarkanFotoTim(segar, [{ ...itemT, versi: 7, rasio: 1.5 }]) === null
+    && !segarkanFotoTim(dTim, [{ ...itemT, adaFoto: false, rasio: null }])!.perangkat[0].foto);
+  cek('foto lokal (hanya di browser ini) terdeteksi', fotoLokal(dTim).map(p => p.id).join(',') === 'lok');
+  const banyakV = { ...dokBaru(), perangkat: [pT, pT2].map((p, i) => ({ ...p, id: `v${i}` })),
+    kabel: Array.from({ length: 90 }, (_, i) => ({ ...kabelBaru('v0', 'v1', { fungsi: `fungsi ${i}` }), id: `kv${i}` })) };
+  const vLanjut = await bacaZip(buatVsdx({ dok: banyakV, gambar: new Map() }));
+  cek('Visio: lembar lanjutan sheet 2 ikut jadi halaman', !!vLanjut.get('visio/pages/page3.xml') && new TextDecoder().decode(vLanjut.get('visio/pages/pages.xml')).includes('Sheet 2 - Koneksi &amp; catatan (2)'));
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);

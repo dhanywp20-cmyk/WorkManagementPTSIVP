@@ -9,7 +9,7 @@ import { rasioDinding } from '@/lib/sld/dinding';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
 import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
-import { perangkatDariTim, type ItemTim } from '@/lib/sld/katalog-tim';
+import { perangkatDariTim, segarkanFotoTim as segarkanFotoTimDok, type ItemTim } from '@/lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
 import { hapusObjek, type Klip, type Rata, ratakan, salinObjek, tempelKlip, geserObjek } from '@/lib/sld/pilih';
@@ -313,6 +313,7 @@ export function useKeadaanSLD() {
     return { ...d, huruf: huruf.perangkat || huruf.kabel ? huruf : undefined };
   }), [setDok]);
 
+  const segarkanFotoTim = useCallback((daftar: ItemTim[]) => setProyek(p => segarkanFotoTimDok(p, daftar) ?? p), []);
   const muat = useCallback((d: DokSLD) => { ruangRef.current = 0; setRuangAktifState(0); setProyek(d); riwayat.mulaiBaru(d); setPilih(null); }, [riwayat]);
   const baru = useCallback(() => muat(dokBaru(namaPengguna())), [muat]);
   const contoh = useCallback(() => muat(ubahKertas(contohVoiceKamar(namaPengguna()), '169')), [muat]);
@@ -320,7 +321,7 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
-    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

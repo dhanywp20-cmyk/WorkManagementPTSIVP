@@ -39,9 +39,12 @@ function unduhBlob(b: Blob, nama: string) {
 }
 
 export async function unduhPng(d: DokSLD, hal: 1 | 2, o: OpsiEkspor = {}): Promise<void> {
-  const svg = (await lembarSvg(d, o))[hal - 1];
-  if (!svg) throw new Error('Sheet 2 tidak ada di mode Simple.');
-  unduhBlob(await pngDariSvg(svg), `${namaEkspor(d, o.simple)}${o.simple ? '' : ` - Sheet ${hal}`}.png`);
+  const semua = await lembarSvg(d, o), pilih = hal === 1 ? semua.slice(0, 1) : semua.slice(1);
+  if (!pilih.length) throw new Error('Sheet 2 tidak ada di mode Simple.');
+  for (const [i, svg] of pilih.entries()) {
+    unduhBlob(await pngDariSvg(svg), `${namaEkspor(d, o.simple)}${o.simple ? '' : ` - Sheet ${hal}${pilih.length > 1 ? ` (${i + 1} dari ${pilih.length})` : ''}`}.png`);
+    if (i < pilih.length - 1) await new Promise(r => setTimeout(r, 400));
+  }
 }
 
 export async function unduhExcel(d: DokSLD, o: OpsiEkspor = {}): Promise<void> {

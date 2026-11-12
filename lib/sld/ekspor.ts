@@ -4,7 +4,7 @@ import { rasioPerangkat, sudutSah } from './geometri';
 import { ilustrasiPng } from './ilustrasi';
 import { adaArah, type Arah, WATERMARK_BAWAAN } from './lembar-umum';
 import { svgLembar1 } from './lembar1';
-import { svgLembar2 } from './lembar2';
+import { svgLembar2Semua } from './lembar2';
 import { fotoData, sematkanFoto } from './sematkan';
 import { bagianBoq } from './boq';
 import { jumlahRuang, namaRuangKe, semuaPerangkat, semuaRuang } from './ruang';
@@ -44,7 +44,7 @@ export async function lembarSvgProyek(d: DokSLD, o: OpsiEkspor = {}): Promise<st
 export async function lembarSvg(d: DokSLD, o: OpsiEkspor = {}): Promise<string[]> {
   const watermark = d.watermark ? await watermarkData(o.logo) : undefined;
   const opsi = { watermark, simple: o.simple };
-  return Promise.all([svgLembar1(d, opsi), ...(o.simple ? [] : [svgLembar2(d, opsi)])].map(sematkanFoto));
+  return Promise.all([svgLembar1(d, opsi), ...(o.simple ? [] : svgLembar2Semua(d, opsi))].map(sematkanFoto));
 }
 
 function dariDataUrl(url: string): GambarVsdx {
@@ -145,7 +145,7 @@ export async function berkasPaket(d: DokSLD, awalan: string): Promise<{ name: st
   for (const [r, dr] of ruang.entries()) {
     const lembar = await lembarSvg(dr);
     for (let i = 0; i < lembar.length; i++) {
-      const nama = `${awalan}${ruang.length > 1 ? `_R${r + 1}` : ''}_Sheet${i + 1}.png`;
+      const nama = `${awalan}${ruang.length > 1 ? `_R${r + 1}` : ''}_Sheet${Math.min(i + 1, 2)}${i > 1 ? `-${i}` : ''}.png`;
       hasil.push({ name: nama, data: new Uint8Array(await (await pngDariSvg(lembar[i], 3000)).arrayBuffer()) });
     }
   }

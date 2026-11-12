@@ -57,7 +57,9 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
         </div>
       </div>
       {galat && <p className="text-[12px] text-rose-700">{galat}</p>}
-      <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto hanya disimpan di browser ini, tidak diunggah ke server.</p>
+      {p.gambar
+        ? <p className="rounded-md bg-sky-50 border border-sky-200 px-2 py-1.5 text-[11.5px] text-sky-900">Foto ini <b>hanya ada di browser Anda</b> - akun lain melihat foto bawaan / ilustrasi. Klik <b>Simpan ke katalog tim</b> agar sama untuk semua.</p>
+        : <p className="text-[11px] text-slate-500">Foto juga bisa diseret ke perangkat di diagram atau ditempel (Ctrl+V). Foto unggahan hanya disimpan di browser ini, kecuali disimpan ke katalog tim.</p>}
       <div className="grid grid-cols-[72px_1fr] gap-2">
         <Teks label="No. BOM" nilai={p.no} onUbah={v => ubah({ no: v.slice(0, 12) })} placeholder={noOtomatis(a.dok).has(p.id) ? `${noOtomatis(a.dok).get(p.id)} (otomatis)` : "luar BOM"} />
         <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} />
