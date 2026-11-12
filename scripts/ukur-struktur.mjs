@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import ts from 'typescript';
 
-export const BATAS = { baris: 600, karakter: 300, props: 25 };
+export const BATAS = { baris: 500, karakter: 300, props: 25 };
 
 export function daftarBerkas() {
   return execSync('git ls-files --cached --others --exclude-standard -- app lib components', { encoding: 'utf8' })

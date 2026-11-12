@@ -1,9 +1,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import PDFDocument from 'pdfkit';
 import {
-  bacaDraf, bacaPdf, bacaTabel, barisTeks, type DokCek, type DokChecklist, dokBaru, gambarChecklist, itemBaru,
+  bacaDraf, bacaPdf, bacaTabel, barisTeks, type DokChecklist, dokBaru, itemBaru,
   namaBerkasPdf, type PotongPdf, ringkas, tglIndo,
 } from '../lib/checklist/barang';
+import { type DokCek, gambarChecklist } from '../lib/checklist/barang-gambar';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean, info?: unknown) => {

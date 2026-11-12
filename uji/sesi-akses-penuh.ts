@@ -43,7 +43,7 @@ process.env.NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY ??= 'x';
   cek('pimpinan true tetap dipertahankan (perilaku lama)', getSession<U>()!.pimpinan === true);
 
   console.log('\n2. KerangkaPortal memuat access_level saat menyegarkan profil');
-  const k = readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8');
+  const k = (readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'));
   cek('select memuat access_level & piket_akses', /select\('id,username,[^']*kpi_enabled,access_level,piket_akses'\)/.test(k));
   cek('jalur mundur tanpa kolom baru', /profilPenuh\.error\s*\?\s*await supabase\.from\('users'\)\.select\('id,username,[^']*kpi_enabled'\)/.test(k));
 

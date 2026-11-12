@@ -30,7 +30,7 @@ cek("muat ulang otomatis: penanda lama '1' tidak mengunci selamanya", bolehMuatU
 cek('LayarGalat menyimpan waktu, bukan penanda sekali-seumur-tab', /bolehMuatUlang\(sessionStorage\.getItem\(KUNCI_MUAT_ULANG\), Date\.now\(\)\)/.test(readFileSync('components/shared/LayarGalat.tsx', 'utf8')));
 
 console.log('\n2b. Sesi panjang di Chrome: pindah menu tidak macet, tidak menumpuk');
-const kerangka = readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8');
+const kerangka = (readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'));
 cek('perpindahan menu yang menggantung 12 dtk -> muat penuh ke alamat tujuan', /window\.location\.assign\(url\)/.test(kerangka) && /\}, 12_000\);/.test(kerangka) && /urlTujuan\.current = url/.test(kerangka));
 cek('ResizeObserver area isi dipasang sekali per elemen (bukan tiap render)', /\}, \[isiEl\]\);/.test(kerangka) && /ref=\{setIsiEl\}/.test(kerangka) && !/isiRef/.test(kerangka));
 cek('Desain 3D melepas konteks WebGL saat ditutup (batas ±16 konteks per tab)', /renderer\.forceContextLoss\(\)/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/useMesin.ts', 'utf8')));

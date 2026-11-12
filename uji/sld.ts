@@ -217,7 +217,7 @@ void (async () => {
   cek('migrasi: fungsi simpan hanya untuk service role (optimistic locking)', mig.includes("raise exception 'konflik'")
     && /revoke all on function public\.tools_simpan_sld[^;]*from public, anon, authenticated/.test(mig) && /grant execute on function public\.tools_simpan_sld[^;]*to service_role/.test(mig));
   const rute = readFileSync('app/api/tools-team/sld/route.ts', 'utf8');
-  cek('route simpan membuang foto pengguna sebelum ke server', rute.includes('tanpaFoto(dok)') && rute.includes('pastikanMasuk'));
+  cek('route simpan membuang foto pengguna sebelum ke server', rute.includes('tanpaFoto(dok)') && rute.includes('pastikanMenu'));
   console.log('\n9. Mode Simple & tautan Request Design');
   const s1 = svgLembar1(d, { simple: true }), f1 = svgLembar1(d);
   cek('Simple: strip Sheet 1 menulis 1 of 1 tanpa sub judul sheet', s1.includes('1 of 1') && !s1.includes('Sheet 1 : diagram') && f1.includes('1 of 2') && f1.includes('Sheet 1 : diagram'));

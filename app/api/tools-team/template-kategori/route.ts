@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
@@ -20,7 +20,7 @@ async function bolehAtur(db: Db, userId: string): Promise<boolean> {
 }
 
 export async function GET(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   const kategori = req.nextUrl.searchParams.get('kategori');
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   if (await pimpinanDiDb(db, jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   if (!(await bolehAtur(db, jaga.user.id))) return gagal('Hanya Admin yang boleh mengatur template default kategori.', 403);

@@ -4,7 +4,7 @@ let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
 }
-const kp = readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8');
+const kp = (readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'));
 const css = readFileSync('app/globals.css', 'utf8');
 
 console.log('\n1. Sorotan langsung saat diklik');

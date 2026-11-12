@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
@@ -40,7 +40,7 @@ function bacaFoto(v: unknown): { foto: string | null } | { galat: string } | nul
 }
 
 export async function GET(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   const semua = await kelolaSemua(db, jaga.user.id);
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   if (await pimpinanDiDb(db, jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const id = req.nextUrl.searchParams.get('id') ?? '';
   if (!POLA_ID.test(id)) return gagal('ID tidak sah.');

@@ -1,151 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { bacaPengaturan, simpanPengaturan, type Kanal, type PengaturanNotifikasi } from '@/lib/notifikasi/pengaturan';
-import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI,
-  ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
+import { useState } from 'react';
+import { simpanPengaturan, type Kanal, type PengaturanNotifikasi } from '@/lib/notifikasi/pengaturan';
+import { simpanPengaturanAI, simpanPengaturanPenilai } from '@/lib/ai-pengaturan';
 import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { penyediaWA } from '@/lib/notifikasi/penyedia-wa';
-import { supabase } from '@/lib/supabase';
-import { ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { ConfirmDialog } from '@/components/shared';
 import { SeksiAI } from './integrasi/SeksiAI';
 import { SeksiTim } from './integrasi/SeksiTim';
 import { SeksiPush } from './integrasi/SeksiPush';
 import { SeksiTelegram } from './integrasi/SeksiTelegram';
 import { SeksiWhatsApp } from './integrasi/SeksiWhatsApp';
 import { SeksiKanal } from './integrasi/SeksiKanal';
+import { useIntegrasi } from './useIntegrasi';
+import { StatusRahasia, PesanKotak } from './integrasi-bagian';
+export { PilihModel, Saklar, PesanKotak, LencanaStatus, Cek } from './integrasi-bagian';
+export type { StatusRahasia, StatusKoneksi } from './integrasi-bagian';
 
 export const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
   reminder: 'Reminder', schedule: 'Jadwal', project: 'Project', system: 'Sistem',
 };
-
-export function PilihModel({ nilai, profil, onGanti, warna }: {
-  nilai: string;
-  profil?: 'penilai';
-  onGanti: (m: string) => void;
-  warna: 'sky' | 'violet';
-}) {
-  const [daftar, setDaftar] = useState<{ id: string; nama: string }[]>([]);
-  const [galat, setGalat] = useState('');
-  const [memuat, setMemuat] = useState(true);
-
-  useEffect(() => {
-    let batal = false;
-    fetch(`/api/ai/model${profil ? `?profil=${profil}` : ''}`)
-      .then(async r => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d?.error?.message ?? 'Gagal membaca daftar model.');
-        return d;
-      })
-      .then(d => { if (!batal) { setDaftar(d?.model ?? []); setGalat(''); } })
-      .catch(e => { if (!batal) setGalat(e instanceof Error ? e.message : 'Gagal membaca daftar model.'); })
-      .finally(() => { if (!batal) setMemuat(false); });
-    return () => { batal = true; };
-  }, [profil]);
-
-  const fokus = warna === 'violet' ? 'focus:border-violet-400' : 'focus:border-sky-400';
-
-  if (memuat) return <p className="text-[11px] text-slate-500 py-2">Memuat daftar model…</p>;
-
-  if (daftar.length === 0) {
-    return (
-      <>
-        <input value={nilai} onChange={e => onGanti(e.target.value)}
-          aria-label="Nama model AI"
-          className={`w-full text-xs px-2.5 py-2 rounded-lg border border-amber-300 focus:outline-hidden ${fokus}`} />
-        <p className="text-[10px] text-amber-700 mt-1 leading-relaxed">
-          Daftar model tidak bisa dibaca{galat ? ` (${galat})` : ''} — ketik nama modelnya.
-          Periksa tokennya lebih dulu; nama yang salah baru ketahuan saat AI dipakai.
-        </p>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <select value={nilai} onChange={e => onGanti(e.target.value)}
-        aria-label="Model AI"
-        className={`w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-hidden ${fokus}`}>
-        {nilai && !daftar.some(m => m.id === nilai) && (
-          <option value={nilai}>{nilai} — tidak ada di daftar</option>
-        )}
-        {daftar.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
-      </select>
-      <p className="text-[10px] text-slate-500 mt-1">
-        {daftar.length} model tersedia untuk token ini — dibaca langsung dari Google, jadi tidak pernah basi.
-      </p>
-    </>
-  );
-}
-
-export function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; warna: string }) {
-  return (
-    <button type="button" onClick={onKlik} role="switch" aria-checked={aktif}
-      className="relative w-9 h-5 rounded-full transition-colors shrink-0"
-      style={{ background: aktif ? warna : '#cbd5e1' }}>
-      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
-        style={{ left: aktif ? 18 : 2 }} />
-    </button>
-  );
-}
-
-export interface StatusRahasia {
-  terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string;
-  dariEnv?: boolean;
-}
-
-export type StatusKoneksi =
-  | { keadaan: 'memuat' }
-  | { keadaan: 'terhubung'; info: string }
-  | { keadaan: 'putus'; alasan: string };
-
-export type PesanKotak = { tipe: 'ok' | 'gagal'; teks: string };
-
-export function LencanaStatus({ status }: { status: StatusKoneksi }) {
-  const gaya = status.keadaan === 'terhubung'
-    ? { bg: '#dcfce7', fg: '#15803d', titik: '#22c55e', teks: 'Terhubung' }
-    : status.keadaan === 'memuat'
-      ? { bg: '#f1f5f9', fg: '#64748b', titik: '#94a3b8', teks: 'Mengecek…' }
-      : { bg: '#fef3c7', fg: '#b45309', titik: '#f59e0b', teks: 'Belum Terhubung' };
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
-      style={{ background: gaya.bg, color: gaya.fg }}
-      title={status.keadaan === 'putus' ? status.alasan
-             : status.keadaan === 'terhubung' ? status.info : 'Sedang memeriksa koneksi…'}>
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: gaya.titik }} />
-      {gaya.teks}
-    </span>
-  );
-}
-
-export function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
-  if (!pesan) return null;
-  const ok = pesan.tipe === 'ok';
-  return (
-    <div className="mt-2 rounded-lg px-2.5 py-2 flex items-start gap-1.5"
-      role="status" aria-live="polite"
-      style={{
-        background: ok ? '#f0fdf4' : '#fef2f2',
-        border: `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`,
-      }}>
-      <span className="text-[11px] leading-none mt-px shrink-0">{ok ? '✅' : '⚠️'}</span>
-      <span className={`text-[11px] font-semibold leading-relaxed ${ok ? 'text-green-700' : 'text-red-600'}`}>
-        {pesan.teks}
-      </span>
-    </div>
-  );
-}
-
-export function Cek({ ya }: { ya?: boolean }) {
-  return (
-    <span className={`inline-grid place-items-center w-[19px] h-[19px] rounded-full text-[11px] font-black ${
-      ya ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-      {ya ? '✓' : '✕'}
-    </span>
-  );
-}
 
 export function BlokToken({
   judul, kunci, status, petunjuk, onSimpan, onHapus,
@@ -205,144 +80,13 @@ export function BlokToken({
 }
 
 export function IntegrasiInline() {
-  const [p, setP] = useState<PengaturanNotifikasi | null>(null);
-  const [simpan, setSimpan] = useState(false);
-  const [pesan, setPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
-  const [ujiJalan, setUjiJalan] = useState<string | null>(null);
-  const [rahasia, setRahasia] = useState<Record<string, StatusRahasia>>({});
-  const [waTujuan, setWaTujuan] = useState('');
-  const [koneksi, setKoneksi] = useState<Record<'telegram' | 'whatsapp', StatusKoneksi>>({
-    telegram: { keadaan: 'memuat' }, whatsapp: { keadaan: 'memuat' },
-  });
-  const [pesanKanal, setPesanKanal] = useState<Record<string, PesanKotak | null>>({});
-  const [chatTerdeteksi, setChatTerdeteksi] = useState<{ id: string; nama: string; jenis: string }[] | null>(null);
-  const [deteksiJalan, setDeteksiJalan] = useState(false);
-  const [seksi, setSeksi] = useState<'kanal' | 'wa' | 'tg' | 'push' | 'tim' | 'ai'>('kanal');
-  const [pushInfo, setPushInfo] = useState<{ aktif: boolean; jumlahPerangkat: number } | null>(null);
-  const [pushMemuat, setPushMemuat] = useState(false);
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
-  const [pushPesan, setPushPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
-  const [tim, setTim] = useState<{ nama: string; tim: string; jabatan: string; wa: boolean; tg: boolean }[]>([]);
-  const [cariEvent, setCariEvent] = useState('');
-  const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
-  const [penilai, setPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
-
-  const muatPushInfo = async () => {
-    try {
-      const r = await fetch('/api/push/setup', { credentials: 'include' });
-      const j = await r.json() as { ok?: boolean; aktif?: boolean; jumlahPerangkat?: number };
-      if (j?.ok) setPushInfo({ aktif: !!j.aktif, jumlahPerangkat: j.jumlahPerangkat ?? 0 });
-    } catch {  }
-  };
-
-  const aktifkanPushServer = async (paksa: boolean) => {
-    setPushMemuat(true);
-    setPushPesan(null);
-    try {
-      const r = await fetch(`/api/push/setup${paksa ? '?force=1' : ''}`, { method: 'POST', credentials: 'include' });
-      const j = await r.json() as { ok?: boolean; alasan?: string };
-      if (j?.ok) {
-        setPushPesan({ tipe: 'ok', teks: paksa ? 'Kunci baru dibuat. Semua perangkat lama perlu mendaftar ulang.' : 'Push notification aktif!' });
-        await muatPushInfo();
-      } else {
-        setPushPesan({ tipe: 'gagal', teks: j?.alasan ?? 'Gagal mengaktifkan.' });
-      }
-    } catch {
-      setPushPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' });
-    } finally {
-      setPushMemuat(false);
-    }
-  };
-
-  const muatRahasia = async () => {
-    try {
-      const r = await fetch('/api/integrasi/rahasia', { credentials: 'include' });
-      const j = await r.json() as { ok?: boolean; status?: Record<string, StatusRahasia> };
-      if (j?.ok && j.status) setRahasia(j.status);
-    } catch {  }
-  };
-
-  const cekKoneksi = async (kanal: 'telegram' | 'whatsapp') => {
-    setKoneksi(s => ({ ...s, [kanal]: { keadaan: 'memuat' } }));
-    try {
-      const r = await fetch(`/api/notifikasi/${kanal}`, {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aksi: 'cek' }),
-      });
-      const j = await r.json() as { ok?: boolean; alasan?: string; bot?: string; perangkat?: string };
-      setKoneksi(s => ({
-        ...s,
-        [kanal]: j?.ok
-          ? { keadaan: 'terhubung', info: kanal === 'telegram' ? (j.bot ?? '') : (j.perangkat ?? '') }
-          : { keadaan: 'putus', alasan: j?.alasan ?? 'Tidak diketahui.' },
-      }));
-    } catch {
-      setKoneksi(s => ({ ...s, [kanal]: { keadaan: 'putus', alasan: 'Tidak bisa menghubungi server.' } }));
-    }
-  };
-
-  const muatTim = async () => {
-    const { data } = await supabase.from('users')
-      .select('full_name, team_type, jabatan, phone_number, telegram_chat_id')
-      .eq('role', 'team')
-      .order('full_name');
-    setTim((data ?? []).map((u: {
-      full_name: string; team_type: string | null; jabatan: string | null;
-      phone_number: string | null; telegram_chat_id: string | null;
-    }) => ({
-      nama: u.full_name,
-      tim: u.team_type ?? '-',
-      jabatan: u.jabatan ?? 'Staff',
-      wa: !!(u.phone_number ?? '').trim(),
-      tg: !!u.telegram_chat_id,
-    })));
-  };
-
-  useEffect(() => {
-    bacaPengaturan(true).then(setP);
-    muatRahasia();
-    ambilPengaturanAI().then(setAi);
-    ambilPengaturanPenilai().then(setPenilai);
-    void muatTim();
-    void cekKoneksi('telegram');
-    void cekKoneksi('whatsapp');
-    void muatPushInfo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const simpanRahasia = async (kunci: string, nilai: string) => {
-    try {
-      const r = await fetch('/api/integrasi/rahasia', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kunci, nilai }),
-      });
-      const j = await r.json() as { ok?: boolean; alasan?: string };
-      setPesan(j?.ok ? { tipe: 'ok', teks: 'Token tersimpan.' }
-                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menyimpan token.' });
-      if (j?.ok) {
-        await muatRahasia();
-        await segarkanKoneksiUntuk(kunci);
-      }
-    } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
-  };
-
-  const segarkanKoneksiUntuk = async (kunci: string) => {
-    if (kunci.startsWith('telegram.')) await cekKoneksi('telegram');
-    else if (kunci.startsWith('whatsapp.')) await cekKoneksi('whatsapp');
-  };
-
-  const hapusRahasia = async (kunci: string) => {
-    try {
-      const r = await fetch(`/api/integrasi/rahasia?kunci=${encodeURIComponent(kunci)}`,
-        { method: 'DELETE', credentials: 'include' });
-      const j = await r.json() as { ok?: boolean; alasan?: string };
-      setPesan(j?.ok ? { tipe: 'ok', teks: 'Token dihapus.' }
-                     : { tipe: 'gagal', teks: j?.alasan ?? 'Gagal menghapus.' });
-      if (j?.ok) { await muatRahasia(); await segarkanKoneksiUntuk(kunci); }
-    } catch { setPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' }); }
-  };
+  const {
+    p, setP, setPesan, setSimpan, ai, penilai, setUjiJalan, setPesanKanal,
+    waTujuan, setKoneksi, cekKoneksi, setDeteksiJalan, setChatTerdeteksi, cariEvent, tim, seksi,
+    koneksi, pushInfo, setSeksi, setCariEvent, hapusRahasia, pesanKanal, rahasia, setWaTujuan,
+    simpanRahasia, ujiJalan, chatTerdeteksi, deteksiJalan, aktifkanPushServer, pushMemuat, pushPesan, setConfirmState,
+    setAi, setPenilai, pesan, simpan, confirmState,
+  } = useIntegrasi();
 
   if (!p) return <div className="text-xs text-slate-500 py-8 text-center">Memuat…</div>;
 
