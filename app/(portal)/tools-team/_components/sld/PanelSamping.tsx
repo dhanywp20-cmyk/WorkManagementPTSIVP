@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Users, X } from 'lucide-react';
 import { GAYA_KABEL } from '@/lib/sld/gaya';
 import { fotoLokal } from '@/lib/sld/katalog-tim';
+import { labelTertimpa, qtyDiNama } from '@/lib/sld/rapikan';
 import { barisKoneksi } from '@/lib/sld/turunan';
 import { PanelDokumen } from './PanelDokumen';
 import { PropertiKabel } from './PropertiKabel';
@@ -43,9 +44,12 @@ export function PanelSamping({ a, onTutup, tim }: { a: KeadaanSLD; onTutup?: () 
   const zn = a.pilih?.jenis === 'z' ? a.dok.zona?.find(x => x.id === a.pilih!.id) : undefined;
   const yatim = kabelYatim(a.dok).length;
   const lokal = fotoLokal(a.dok);
+  const salahQty = qtyDiNama(a.dok);
+  const tertimpa = tab === 'periksa' ? labelTertimpa(a.dok, a.geo).length : 0;
+  const [hasilRapi, setHasilRapi] = useState('');
   const lokalUnik = [...new Map(lokal.map(x => [(x.model.trim() || x.nama).toLowerCase(), x])).values()].slice(0, 12);
   const awas = a.temuan.filter(t => t.tingkat === 'awas').length;
-  const jumlahPeriksa = a.temuan.length + (yatim ? 1 : 0) + (lokal.length ? 1 : 0);
+  const jumlahPeriksa = a.temuan.length + (yatim ? 1 : 0) + (lokal.length ? 1 : 0) + (salahQty.length ? 1 : 0);
   const TAB: { k: Tab; l: string }[] = [
     { k: 'properti', l: 'Properti' }, { k: 'koneksi', l: `Koneksi (${a.dok.kabel.length})` }, { k: 'dokumen', l: 'Judul & catatan' },
     { k: 'periksa', l: `Periksa${jumlahPeriksa ? ` (${jumlahPeriksa})` : ''}` },
@@ -86,6 +90,23 @@ export function PanelSamping({ a, onTutup, tim }: { a: KeadaanSLD; onTutup?: () 
         <div className="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2 text-[12.5px] text-amber-900">
           {yatim} kabel tidak lagi tersambung ke perangkat (perangkatnya sudah dihapus) tetapi masih tercatat di Sheet 2.
           <button type="button" onClick={a.bersihkanKabelYatim} className="ml-1 underline font-bold">Hapus kabel tersebut</button>
+        </div>
+      )}
+      {aktif === 'periksa' && salahQty.length > 0 && (
+        <div className="mb-2 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-2 text-[12.5px] text-amber-900">
+          <p><b>{salahQty.length} perangkat</b> menyebut jumlah di nama tetapi Qty masih 1, jadi Sheet 2 &amp; BOQ menghitung 1 unit:
+            {' '}{salahQty.slice(0, 6).map(p => `"${p.nama}"`).join(', ')}{salahQty.length > 6 ? ', ...' : ''}.</p>
+          <button type="button" onClick={a.qtyDariNama} className="mt-1 underline font-bold">Jadikan Qty (nama dirapikan, label tetap tampil 4X)</button>
+        </div>
+      )}
+      {aktif === 'periksa' && (tertimpa > 0 || hasilRapi) && (
+        <div className="mb-2 rounded-lg bg-slate-50 border border-slate-200 px-2.5 py-2 text-[12.5px] text-slate-700">
+          {tertimpa > 0 ? <>
+            <b>{tertimpa} teks keterangan</b> tertimpa kabel / perangkat lain.
+            <button type="button" onClick={() => { const n = a.rapikanSemuaLabel(); setHasilRapi(n ? `${n} label dipindah ke posisi kosong (bisa Ctrl+Z).` : 'Tidak ada posisi kosong yang lebih baik - geser perangkat sedikit.'); }}
+              className="ml-1 underline font-bold">Rapikan otomatis</button>
+          </> : null}
+          {hasilRapi && <p className="mt-0.5 text-slate-600">{hasilRapi}</p>}
         </div>
       )}
       {aktif === 'periksa' && lokal.length > 0 && (

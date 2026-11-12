@@ -31,6 +31,20 @@ export function tambahRuang(d: DokSLD, nama?: string): DokSLD {
   return { ...d, namaRuang: d.namaRuang?.trim() || 'Ruangan 1', ruangLain: [...(d.ruangLain ?? []), baru] };
 }
 
+export function duplikatRuang(d: DokSLD, i: number): DokSLD {
+  if (jumlahRuang(d) >= MAKS_RUANG) return d;
+  const r = dokRuang(d, i), peta = new Map(r.perangkat.map(p => [p.id, idBaru('p')]));
+  const ganti = <U extends { p: string }>(u: U): U => ({ ...u, p: peta.get(u.p) ?? u.p });
+  const baru: RuangSLD = {
+    id: idBaru('r'), nama: `${namaRuangKe(d, i)} (salinan)`.slice(0, 80),
+    perangkat: r.perangkat.map(p => ({ ...p, id: peta.get(p.id)! })),
+    kabel: r.kabel.map(c => ({ ...c, id: idBaru('k'), dari: ganti(c.dari), ke: ganti(c.ke), cabang: c.cabang.map(ganti) })),
+    teks: r.teks.map(t => ({ ...t, id: idBaru('t') })), catatan: r.catatan.map(c => ({ ...c })),
+    ...(r.boq ? { boq: { ...r.boq } } : {}), ...(r.zona?.length ? { zona: r.zona.map(z => ({ ...z, id: idBaru('z') })) } : {}),
+  };
+  return { ...d, namaRuang: d.namaRuang?.trim() || 'Ruangan 1', ruangLain: [...(d.ruangLain ?? []), baru] };
+}
+
 export function hapusRuang(d: DokSLD, i: number): DokSLD {
   const lain = d.ruangLain ?? [];
   if (!lain.length) return d;

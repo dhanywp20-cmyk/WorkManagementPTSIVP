@@ -1,9 +1,10 @@
 import { rasioDinding } from './dinding';
+import { FOTO_PRODUK } from './foto-produk';
 import { LABEL_GARIS } from './gaya';
 import { lebarTeks } from './teks';
 import { areaDok, type DokSLD, type GeoGaris, type GeoKabel, type Kabel, type Perangkat, type Sisi, type Titik, type Ujung } from './tipe';
 
-import { koridor, potongKotak, ruteHindar, tabrak, type Kotak } from './rute';
+import { koridor, potongKotak, potongRuas, ruteHindar, tabrak, type Kotak } from './rute';
 
 export type { Kotak } from './rute';
 
@@ -19,7 +20,9 @@ export const tergambar = (c: Kabel, peta: Map<string, Perangkat>) =>
 
 const pusat = (b: Kotak): Titik => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 });
 
-export const rasioPerangkat = (p: Perangkat) => (p.gambar || p.foto ? (p.rasio ?? p.w / p.h) : (rasioDinding(p.ikon, p) ?? 1.6));
+const RASIO_BAWAAN = new Map(Object.values(FOTO_PRODUK).map(f => [f.src, f.rasio]));
+export const rasioPerangkat = (p: Perangkat) => (p.gambar ? (p.rasio ?? p.w / p.h)
+  : p.foto ? (RASIO_BAWAAN.get(p.foto) ?? p.rasio ?? p.w / p.h) : (rasioDinding(p.ikon, p) ?? 1.6));
 
 function muat(k: Kotak, r: number): Kotak {
   if (k.w / k.h > r) { const w = k.h * r; return { x: k.x + (k.w - w) / 2, y: k.y, w, h: k.h }; }
@@ -145,17 +148,45 @@ export function geometri(d: DokSLD): GeoKabel[] {
     if (!tergambar(c, peta)) continue;
     const a = posisi.get(`${c.id}|dari`)!, sa = sisiDariPeta.get(`${c.id}|dari`)!;
     const tengahBersama = c.tengah ?? tengahUtama(a, sa, posisi.get(`${c.id}|ke0`)!, sisiDariPeta.get(`${c.id}|ke0`)!);
+    const ka = kotak.get(c.dari.p)!;
     const garisList: GeoGaris[] = tujuan(c).map((u, i) => {
-      const b = posisi.get(`${c.id}|ke${i}`)!, sb = sisiDariPeta.get(`${c.id}|ke${i}`)!;
-      const r = rute(a, sa, b, sb, i === 0 ? c.tengah : tengahBersama, batas);
-      const manual = i === 0 && c.tengah !== undefined;
-      return { titik: !manual && tabrak(r, selain(c.dari.p, u.p), 1) ? (ruteHindar(a, sa, b, sb, semua, batas) ?? r) : r, awal: i === 0 };
+      const b = posisi.get(`${c.id}|ke${i}`)!, sb = sisiDariPeta.get(`${c.id}|ke${i}`)!, kb = kotak.get(u.p)!, tengah = i === 0 ? c.tengah : tengahBersama;
+      const r = rute(a, sa, b, sb, tengah, batas);
+      if (i === 0 && c.tengah !== undefined) return { titik: r, awal: true };
+      const lain = selain(c.dari.p, u.p), sah = (t: Titik[], s2: Sisi) => !tabrak(t, lain, 1) && !tembusUjung(t, ka, sa, kb, s2);
+      if (sah(r, sb)) return { titik: r, awal: i === 0 };
+      for (const s2 of urutSisi(kb, r[r.length - 2] ?? a).filter(s => s !== sb)) {
+        const b2 = titikSisi(kb, s2, 0, 1), r2 = rute(a, sa, b2, s2, tengah, batas);
+        if (sah(r2, s2)) return { titik: r2, awal: i === 0 };
+      }
+      return { titik: ruteHindar(a, sa, b, sb, semua, batas) ?? r, awal: i === 0 };
     });
     const k = kode.get(c.id)!;
     const f = hurufKabel(c, d), lebar = lebarTeks(teksLabel(c, k), LABEL_GARIS.ukuran * f, true) + 1.2 * f;
     hasil.push({ id: c.id, kode: k, garis: garisList, label: letakLabel(garisList[0].titik, lebar, c.labelBalik, f), lebarLabel: lebar, huruf: f });
   }
   return hasil;
+}
+
+const dalamKotak = (k: Kotak): Kotak => ({ x: k.x + 0.4, y: k.y + 0.4, w: Math.max(0, k.w - 0.8), h: Math.max(0, k.h - 0.8) });
+
+function keluarSisi(dari: Titik, ujung: Titik, s: Sisi): boolean {
+  const e = 0.05;
+  return s === 'kiri' ? dari.x <= ujung.x + e : s === 'kanan' ? dari.x >= ujung.x - e : s === 'atas' ? dari.y <= ujung.y + e : dari.y >= ujung.y - e;
+}
+
+function tembusUjung(t: Titik[], ka: Kotak, sa: Sisi, kb: Kotak, sb: Sisi): boolean {
+  if (t.length < 2) return false;
+  if (!keluarSisi(t[1], t[0], sa) || !keluarSisi(t[t.length - 2], t[t.length - 1], sb)) return true;
+  const da = dalamKotak(ka), db = dalamKotak(kb);
+  return t.some((q, i) => i > 0 && ((i > 1 && potongRuas(t[i - 1], q, da)) || (i < t.length - 1 && potongRuas(t[i - 1], q, db))));
+}
+
+function urutSisi(k: Kotak, dari: Titik): Sisi[] {
+  const c = pusat(k), dx = dari.x - c.x, dy = dari.y - c.y;
+  const h: Sisi = dx >= 0 ? 'kanan' : 'kiri', v: Sisi = dy >= 0 ? 'bawah' : 'atas';
+  const utama: Sisi[] = Math.abs(dx) / (k.w || 1) >= Math.abs(dy) / (k.h || 1) ? [h, v] : [v, h];
+  return [...utama, ...(['kiri', 'kanan', 'atas', 'bawah'] as Sisi[]).filter(s => !utama.includes(s))];
 }
 
 function tengahUtama(a: Titik, sa: Sisi, b: Titik, sb: Sisi): number | undefined {

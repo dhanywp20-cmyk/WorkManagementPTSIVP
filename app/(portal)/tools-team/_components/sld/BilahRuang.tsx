@@ -1,5 +1,5 @@
 'use client';
-import { Plus, Trash2 } from 'lucide-react';
+import { CopyPlus, Plus, Trash2 } from 'lucide-react';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { jumlahRuang, namaRuangKe } from '@/lib/sld/ruang';
 import { MAKS_RUANG } from '@/lib/sld/tipe';
@@ -23,6 +23,9 @@ export function BilahRuang({ a, konfirmasi }: { a: KeadaanSLD; konfirmasi: (s: C
       <button type="button" className={kelasTombol} onClick={a.tambahRuangBaru} disabled={n >= MAKS_RUANG}><Plus size={15} /> Ruangan</button>
       <input value={nama} onChange={e => a.namaiRuangKe(i, e.target.value)} placeholder={`Nama ruangan ${i + 1}`} aria-label="Nama ruangan yang dibuka"
         className="h-9 w-52 rounded-xl border border-slate-200 px-3 text-[13px] font-semibold text-slate-800" />
+      <button type="button" className={kelasTombol} onClick={() => a.duplikatRuangKe(i)} disabled={n >= MAKS_RUANG} title="Salin ruangan ini beserta perangkat, kabel, teks, area & isian BOQ">
+        <CopyPlus size={15} /> Duplikat ruangan
+      </button>
       {n > 1 && (
         <button type="button" className={`${kelasTombol} text-rose-700`} onClick={() => konfirmasi({
           message: `Hapus ${namaRuangKe(a.proyek, i)}?`, description: 'Semua perangkat, kabel & teks di ruangan ini ikut terhapus. Bisa dibatalkan dengan Ctrl+Z.',

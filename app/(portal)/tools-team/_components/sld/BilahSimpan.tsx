@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, Link2, Save, SaveAll, Search, Trash2 } from 'lucide-react';
+import { FolderOpen, History, Link2, Save, SaveAll, Search, Trash2 } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Modal } from '@/components/shared/Modal';
 import { Centang, kelasKecil, kelasTombol } from './isian';
@@ -8,7 +8,7 @@ import type { KeadaanSimpanSLD, SldTim } from './useSimpanSLD';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 interface RequestPilihan { id: string; nama: string; dibuat: string; ruang: { idx: number; nama: string; boleh: boolean; alasan: string }[] }
-type Dialog = null | 'sebagai' | 'tautkan' | 'buka';
+type Dialog = null | 'sebagai' | 'tautkan' | 'buka' | 'riwayat';
 
 const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 const jam = (s: string) => new Date(s).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
@@ -104,6 +104,7 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
         </button>
         <button type="button" className={kelasTombol} onClick={bukaSebagai} title="Simpan sebagai SLD baru (Ctrl+Shift+S)"><SaveAll size={15} /> Simpan sebagai</button>
         <button type="button" className={kelasTombol} onClick={bukaDaftar}><FolderOpen size={15} /> Buka</button>
+        {s.aktif && <button type="button" className={kelasTombol} onClick={() => { setDialog('riwayat'); void s.muatRiwayat(s.aktif!.id); }} title="Riwayat versi" aria-label="Riwayat versi"><History size={15} /></button>}
         {s.aktif && <button type="button" className={kelasTombol} onClick={() => { setTautan(null); setDialog('tautkan'); }} title="Tautkan ke Request Design (opsional)"><Link2 size={15} /></button>}
         <span className={`hidden xl:inline text-[11.5px] font-semibold px-2 py-1 rounded-lg ${s.aktif ? (s.berubah ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800') : 'bg-slate-100 text-slate-600'}`}>
           {s.aktif ? `${s.aktif.nama} · v${s.aktif.versi}${s.berubah ? ' · belum disimpan' : ' · tersimpan'}` : 'Draf (belum disimpan ke server)'}
@@ -179,6 +180,23 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
                 onClick={() => void s.muatDaftar(s.halDaftar.q, s.halDaftar.hal + 1)}>Berikutnya ›</button>
             </nav>
           )}
+        </div>
+      </Modal>
+      <Modal buka={dialog === 'riwayat'} onTutup={() => setDialog(null)} judul={`Riwayat versi${s.aktif ? `: ${s.aktif.nama}` : ''}`} ikon={<History size={18} />} ukuran="md"
+        keterangan="Buka untuk melihat saja, atau Pulihkan untuk menjadikan isinya versi terbaru saat disimpan. Versi lama tidak pernah dihapus.">
+        <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+          {s.riwayatVersi === null && <p className="p-3 text-[12.5px] text-slate-500">Memuat...</p>}
+          {s.riwayatVersi?.length === 0 && <p className="p-3 text-[12.5px] text-slate-500">Riwayat tidak tersedia.</p>}
+          {s.riwayatVersi?.map(v => (
+            <div key={v.versi} className="flex items-center gap-2 px-3 py-2">
+              <span className="text-[13px] font-bold text-blue-700 w-10">v{v.versi}</span>
+              <span className="flex-1 min-w-0 text-[12.5px] text-slate-700">{tgl(v.created_at)} · <b>{jam(v.created_at)}</b> · {v.dibuat_oleh_nama || '-'}</span>
+              {v.versi === s.aktif?.versi ? <span className="text-[11.5px] font-semibold text-emerald-700">dibuka</span> : (<>
+                <button type="button" className={`${kelasTombol} !py-1 !text-[12px]`} onClick={() => void s.buka(s.aktif!.id, v.versi).then(ok => { if (ok) setDialog(null); })}>Lihat</button>
+                {s.aktif?.bolehUbah && <button type="button" className={`${kelasTombol} !py-1 !text-[12px]`} onClick={() => void s.pulihkan(s.aktif!.id, v.versi).then(ok => { if (ok) setDialog(null); })}>Pulihkan</button>}
+              </>)}
+            </div>
+          ))}
         </div>
       </Modal>
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
