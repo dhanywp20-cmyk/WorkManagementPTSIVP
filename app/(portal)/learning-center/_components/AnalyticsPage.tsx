@@ -1,144 +1,17 @@
 'use client';
-
-import { useState, useEffect } from 'react';
-import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
-import { useKelompokCabang } from '@/lib/kelompok/inti';
-import { supabase, SearchInput } from './shared';
+import { TeamSwitch, TEAM_FILTER_CONFIG } from './team-filter';
+import { SearchInput } from './shared';
 import { ModalPortal, DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { useAnalyticsLC } from './useAnalyticsLC';
+import { TabelDivisiLC } from './TabelDivisiLC';
+import { KartuSesiKuis } from './KartuSesiKuis';
 
 export function AnalyticsPage() {
-  const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
-  const [sessionStats, setSessionStats] = useState<any[]>([]);
-  const [divisionStats, setDivisionStats] = useState<any[]>([]);
-  const [nationalAvg, setNationalAvg] = useState<number | null>(null);
-  const [divisionFilter, setDivisionFilter] = useState<string>('');
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [activeTeam, setActiveTeam] = useState<TeamFilter>('PTS');
-
-  const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
-  const [userAttempts, setUserAttempts] = useState<any[]>([]);
-  const [loadingUser, setLoadingUser] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      const [{ data: mentah }, { data: pengguna }] = await Promise.all([
-        supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
-        supabase.from('users').select('id, full_name, sales_division, team_type, role'),
-      ]);
-      const petaUser: Record<string, any> = {};
-      (pengguna ?? []).forEach((u: any) => { petaUser[u.id] = u; });
-      const a = mentah ? mentah.map((x: any) => ({ ...x, users: petaUser[x.user_id] ?? null })) : null;
-
-      if (a) {
-        const graded = a.filter((att: any) => att.grading_status !== 'pending_review');
-        const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; times: number[]; passed: number; flags: number }> = {};
-        graded.forEach((att: any) => {
-          if (!byUser[att.user_id]) byUser[att.user_id] = {
-            name: att.users?.full_name ?? '-',
-            division: att.users?.sales_division ?? null,
-            teamType: att.users?.team_type ?? null,
-            role: att.users?.role ?? null,
-            salesDivision: att.users?.sales_division ?? null,
-            scores: [], times: [], passed: 0, flags: 0,
-          };
-          byUser[att.user_id].scores.push(att.score ?? 0);
-          if (typeof att.time_taken_sec === 'number') byUser[att.user_id].times.push(att.time_taken_sec);
-          if (att.passed) byUser[att.user_id].passed++;
-          byUser[att.user_id].flags += att.tab_switches ?? 0;
-        });
-        const allUsers = Object.entries(byUser).map(([uid, v]) => ({
-          uid, name: v.name, division: v.division, teamType: v.teamType,
-          role: v.role, salesDivision: v.salesDivision,
-          avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
-          avgTime: v.times.length ? v.times.reduce((s: number, n: number) => s + n, 0) / v.times.length : Infinity,
-          total: v.scores.length, passed: v.passed, flags: v.flags,
-        })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime || a.uid.localeCompare(b.uid));
-        setAllTopUsers(allUsers);
-        setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
-
-        const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
-        graded.forEach((att: any) => {
-          const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
-          if (!byDiv[div]) byDiv[div] = { scores: [], passed: 0, userIds: new Set() };
-          byDiv[div].scores.push(att.score ?? 0);
-          if (att.passed) byDiv[div].passed++;
-          byDiv[div].userIds.add(att.user_id);
-        });
-        setDivisionStats(Object.entries(byDiv).map(([div, v]) => ({
-          div,
-          avg: v.scores.reduce((s, n) => s + n, 0) / v.scores.length,
-          total: v.scores.length,
-          passed: v.passed,
-          users: v.userIds.size,
-          scoreGood: v.scores.filter(s => s >= 80).length,
-          scoreMid:  v.scores.filter(s => s >= 60 && s < 80).length,
-          scoreLow:  v.scores.filter(s => s < 60).length,
-        })).sort((a, b) => b.avg - a.avg));
-
-        const allScores = graded.map((att: any) => att.score ?? 0);
-        setNationalAvg(allScores.length ? allScores.reduce((s: number, n: number) => s + n, 0) / allScores.length : null);
-      }
-
-      const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
-      if (ss) {
-        const perSesi = new Map<string, any[]>();
-        for (const x of (a ?? []) as any[]) {
-          const daftar = perSesi.get(x.quiz_session_id);
-          if (daftar) daftar.push(x); else perSesi.set(x.quiz_session_id, [x]);
-        }
-        const stats = ss.map((s: any) => {
-          const att = perSesi.get(s.id);
-          if (!att?.length) return null;
-          const avg = att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length;
-          const passed = att.filter((a: any) => a.passed).length;
-          const durations = att
-            .filter((a: any) => a.started_at && a.submitted_at)
-            .map((a: any) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
-          const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
-          return {
-            id: s.id, name: s.session_name,
-            total: att.length, avg, passed, failed: att.length - passed,
-            avgMin,
-            scoreGood: att.filter((a: any) => (a.score ?? 0) >= 80).length,
-            scoreMid: att.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
-            scoreLow: att.filter((a: any) => (a.score ?? 0) < 60).length,
-          };
-        });
-        setSessionStats(stats.filter(Boolean));
-      }
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (allTopUsers.length > 0) {
-      setTopUsers(allTopUsers.filter(u => matchesTeamFilter(u, activeTeam)).slice(0, 20));
-      setSearch('');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTeam, allTopUsers, kunciCabang]);
-
-  useEffect(() => {
-    if (!selectedUser) return;
-    setLoadingUser(true);
-    setUserAttempts([]);
-    supabase
-      .from('lc_quiz_attempts')
-      .select('id, score, passed, total_correct, total_questions, time_taken_sec, submitted_at, tab_switches, lc_quiz_sessions(session_name, materi_name, passing_grade)')
-      .eq('user_id', selectedUser.uid)
-      .eq('is_submitted', true)
-      .order('submitted_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
-  }, [selectedUser]);
-
-  const filteredUsers = topUsers
-    .filter(u => !divisionFilter || u.salesDivision === divisionFilter)
-    .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()));
+  const {
+    activeTeam, setActiveTeam, search, setSearch, sessionStats, nationalAvg, divisionStats, divisionFilter,
+    setDivisionFilter, filteredUsers, setSelectedUser, loading, selectedUser, loadingUser, userAttempts,
+  } = useAnalyticsLC();
 
   return (
     <div>
@@ -156,79 +29,7 @@ export function AnalyticsPage() {
 
       <div className="p-4 sm:p-8 space-y-10">
 
-        {sessionStats.length > 0 && (
-          <section>
-            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs">Statistik Per Sesi</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {sessionStats.map((s: any) => (
-                <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
-                  <p className="text-sm font-bold text-slate-800 mb-4 leading-snug line-clamp-2">{s.name}</p>
-                  <div className="flex items-start gap-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <DonutChart
-                        segments={[
-                          { value: s.passed, color: '#10b981' },
-                          { value: s.failed, color: '#f43f5e' },
-                        ]}
-                        size={68} strokeWidth={10}
-                        label={s.total > 0 ? `${Math.round(s.passed / s.total * 100)}%` : '-'}
-                      />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lulus</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <DonutChart
-                        segments={[
-                          { value: s.scoreGood, color: '#3b82f6' },
-                          { value: s.scoreMid, color: '#f59e0b' },
-                          { value: s.scoreLow, color: '#ef4444' },
-                        ]}
-                        size={68} strokeWidth={10}
-                        label={s.avg.toFixed(0)}
-                      />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nilai</span>
-                    </div>
-                    {s.avgMin !== null && (
-                      <div className="flex flex-col items-center gap-1">
-                        <DonutChart
-                          segments={[
-                            { value: Math.min(s.avgMin, 60), color: '#8b5cf6' },
-                            { value: Math.max(60 - Math.min(s.avgMin, 60), 0), color: '#ede9fe' },
-                          ]}
-                          size={68} strokeWidth={10}
-                          label={`${Math.round(s.avgMin)}m`}
-                        />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Waktu</span>
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-1.5 pt-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">Peserta</span>
-                        <span className="font-bold text-slate-700">{s.total}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-slate-500">Avg</span>
-                        <span className={`font-bold ${s.avg >= 80 ? 'text-emerald-700' : s.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</span>
-                      </div>
-                      {s.avgMin !== null && (
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-500">Waktu</span>
-                          <span className="font-bold text-violet-600">{s.avgMin.toFixed(0)} mnt</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-4 pt-3 border-t border-slate-100">
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{s.passed} lulus</span>
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{s.failed} gagal</span>
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {s.scoreGood}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {s.scoreMid}</span>
-                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {s.scoreLow}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <KartuSesiKuis sessionStats={sessionStats} />
 
         <section>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
@@ -318,99 +119,7 @@ export function AnalyticsPage() {
           </div>
         </section>
 
-        {divisionStats.length > 0 && (
-          <section>
-            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
-            <p className="text-xs text-slate-500 mb-4 ml-1">Ranking performa per divisi penjualan, diurutkan berdasarkan rata-rata nilai</p>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm table-zebra">
-                <thead className="border-b border-slate-200 bg-slate-50">
-                  <tr>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Division</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">User</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">vs Nasional</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Distribusi Nilai</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {divisionStats.map((d: any, i: number) => {
-                    const passRate = d.total > 0 ? Math.round(d.passed / d.total * 100) : 0;
-                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
-                    return (
-                      <tr key={d.div} className="hover:bg-orange-50/40 transition-colors">
-                        <td className="px-5 py-3.5 text-center text-sm font-black text-slate-500">{i + 1}</td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                            <div>
-                              <p className="font-bold text-slate-800 text-sm">{d.div}</p>
-                              {medal && <p className="text-[11px] text-slate-500">{medal} Top {i + 1}</p>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600">{d.users}</td>
-                        <td className="px-5 py-3.5 text-center text-sm font-semibold text-slate-600">{d.total}</td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center justify-center gap-2">
-                            <DonutChart
-                              segments={[
-                                { value: d.avg, color: d.avg >= 80 ? '#10b981' : d.avg >= 70 ? '#f59e0b' : '#f43f5e' },
-                                { value: 100 - d.avg, color: '#f1f5f9' },
-                              ]}
-                              size={40} strokeWidth={7}
-                              label={d.avg.toFixed(0)}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-5 py-3.5 text-center">
-                          {nationalAvg !== null ? (() => {
-                            const gap = d.avg - nationalAvg;
-                            const up = gap >= 0;
-                            return (
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${up ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
-                                {up ? '▲' : '▼'} {Math.abs(gap).toFixed(1)}
-                              </span>
-                            );
-                          })() : <span className="text-slate-400 text-xs">—</span>}
-                        </td>
-                        <td className="px-5 py-3.5 text-center">
-                          <span className="text-sm font-bold text-emerald-700">{d.passed}</span>
-                          <span className="text-xs text-slate-500"> / {d.total}</span>
-                        </td>
-                        <td className="px-5 py-3.5 text-center">
-                          <span className={`text-xs font-black px-2.5 py-1 rounded-full border ${passRate >= 80 ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : passRate >= 60 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
-                            {passRate}%
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-1.5 justify-center">
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                              <span className="text-slate-500">≥80: <strong>{d.scoreGood}</strong></span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                              <span className="text-slate-500">60–79: <strong>{d.scoreMid}</strong></span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
-                              <span className="text-slate-500">&lt;60: <strong>{d.scoreLow}</strong></span>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
+        <TabelDivisiLC divisionStats={divisionStats} nationalAvg={nationalAvg} />
       </div>
 
       {selectedUser && (

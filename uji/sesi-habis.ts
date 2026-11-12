@@ -10,10 +10,10 @@ console.log('\n1. Sesi praktis tidak habis');
 cek('cookie & baris sesi 400 hari (batas umur cookie Chrome)', SESSION_HOURS === 400 * 24);
 cek('jam sesi di peramban sama dengan cookie', SESSION_DURATION_MS === SESSION_HOURS * 3600 * 1000);
 cek('banner "Sesi akan berakhir / Perpanjang Sesi" dihapus', !existsSync('app/_components/SessionExpiryBanner.tsx')
-  && !/SessionExpiryBanner/.test(baca('app/(portal)/_kerangka/KerangkaPortal.tsx')));
+  && !/SessionExpiryBanner/.test((baca('app/(portal)/_kerangka/KerangkaPortal.tsx') + baca('app/(portal)/_kerangka/useKerangkaPortal.ts'))));
 
 console.log('\n2. Cookie hilang -> layar masuk, bukan menu macet');
-const portal = baca('app/(portal)/_kerangka/KerangkaPortal.tsx');
+const portal = (baca('app/(portal)/_kerangka/KerangkaPortal.tsx') + baca('app/(portal)/_kerangka/useKerangkaPortal.ts'));
 const awalEfek = portal.lastIndexOf('useEffect(', portal.indexOf('void cekSesiServer()'));
 const efek = portal.slice(awalEfek, portal.indexOf('}, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);', awalEfek) + 70);
 cek('server ditanya HANYA bila alamat membawa ?lanjut= (tanpa polling)',

@@ -3,9 +3,9 @@ import { readFileSync } from 'fs';
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
 
-const portal = readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8');
+const portal = (readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'));
 const sidebar = readFileSync('app/(portal)/_kerangka/SidebarPortal.tsx', 'utf8');
-const masuk = readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8');
+const masuk = (readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useLayarMasuk.ts', 'utf8'));
 const css = readFileSync('app/globals.css', 'utf8');
 
 console.log('\n1. Menu tanpa penundaan buatan');

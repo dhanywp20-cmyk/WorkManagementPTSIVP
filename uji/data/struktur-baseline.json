@@ -1,6 +1,6 @@
 {
   "batas": {
-    "baris": 600,
+    "baris": 500,
     "karakter": 300,
     "props": 25
   },
@@ -11,14 +11,14 @@
       "propsMaks": 2
     },
     "app/(portal)/_kerangka/LayarMasuk.tsx": {
-      "baris": 516,
+      "baris": 330,
       "barisPanjang": 5,
       "propsMaks": 3
     },
     "app/(portal)/_kerangka/SidebarPortal.tsx": {
-      "baris": 419,
+      "baris": 432,
       "barisPanjang": 2,
-      "propsMaks": 2
+      "propsMaks": 3
     },
     "app/(portal)/daily-report/_components/DaftarLaporanHarian.tsx": {
       "baris": 227,
@@ -61,7 +61,7 @@
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/modal-admin-panel.tsx": {
-      "baris": 437,
+      "baris": 475,
       "barisPanjang": 8,
       "propsMaks": 3
     },
@@ -71,7 +71,7 @@
       "propsMaks": 15
     },
     "app/(portal)/dashboard/_components/modal-integrasi.tsx": {
-      "baris": 566,
+      "baris": 310,
       "barisPanjang": 3,
       "propsMaks": 15
     },
@@ -91,7 +91,7 @@
       "propsMaks": 16
     },
     "app/(portal)/dashboard/_components/NavBawahMobile.tsx": {
-      "baris": 83,
+      "baris": 88,
       "barisPanjang": 1,
       "propsMaks": 3
     },
@@ -121,7 +121,7 @@
       "propsMaks": 1
     },
     "app/(portal)/form-require-project/_components/detail/HeaderDetail.tsx": {
-      "baris": 125,
+      "baris": 126,
       "barisPanjang": 6,
       "propsMaks": 2
     },
@@ -156,8 +156,8 @@
       "propsMaks": 2
     },
     "app/(portal)/form-require-project/_components/detail/PanelLampiranDetail.tsx": {
-      "baris": 220,
-      "barisPanjang": 6,
+      "baris": 256,
+      "barisPanjang": 5,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/form-baru/FormRuanganUtama.tsx": {
@@ -166,7 +166,7 @@
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/halaman/KontenHalamanRequest.tsx": {
-      "baris": 148,
+      "baris": 151,
       "barisPanjang": 2,
       "propsMaks": 14
     },
@@ -206,18 +206,18 @@
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/_components/usePesanLampiran.ts": {
-      "baris": 150,
+      "baris": 156,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/form-require-project/page.tsx": {
-      "baris": 496,
-      "barisPanjang": 8,
+      "baris": 194,
+      "barisPanjang": 2,
       "propsMaks": 19
     },
     "app/(portal)/form-review/_components/FormReviewPageInner.tsx": {
-      "baris": 591,
-      "barisPanjang": 10,
+      "baris": 235,
+      "barisPanjang": 9,
       "propsMaks": 16
     },
     "app/(portal)/form-review/_components/ModalFormReview.tsx": {
@@ -228,11 +228,6 @@
     "app/(portal)/incentive-pts/_components/DaftarProyekInsentifHP.tsx": {
       "baris": 84,
       "barisPanjang": 2,
-      "propsMaks": 2
-    },
-    "app/(portal)/incentive-pts/_components/ModalGenerateTranche.tsx": {
-      "baris": 81,
-      "barisPanjang": 1,
       "propsMaks": 2
     },
     "app/(portal)/incentive-pts/_components/TabelProyekInsentif.tsx": {
@@ -246,7 +241,7 @@
       "propsMaks": 0
     },
     "app/(portal)/incentive-pts/page.tsx": {
-      "baris": 283,
+      "baris": 289,
       "barisPanjang": 2,
       "propsMaks": 11
     },
@@ -261,7 +256,7 @@
       "propsMaks": 0
     },
     "app/(portal)/kpi-team/page.tsx": {
-      "baris": 584,
+      "baris": 167,
       "barisPanjang": 2,
       "propsMaks": 17
     },
@@ -286,7 +281,7 @@
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/MyQuizPage.tsx": {
-      "baris": 554,
+      "baris": 336,
       "barisPanjang": 1,
       "propsMaks": 13
     },
@@ -336,7 +331,7 @@
       "propsMaks": 3
     },
     "app/(portal)/picket-showroom/page.tsx": {
-      "baris": 594,
+      "baris": 342,
       "barisPanjang": 5,
       "propsMaks": 6
     },
@@ -415,11 +410,6 @@
       "barisPanjang": 1,
       "propsMaks": 0
     },
-    "app/(portal)/reminder-schedule/page.tsx": {
-      "baris": 591,
-      "barisPanjang": 8,
-      "propsMaks": 8
-    },
     "app/(portal)/tech-note/_components/bagian-tech-note.tsx": {
       "baris": 389,
       "barisPanjang": 2,
@@ -436,7 +426,7 @@
       "propsMaks": 0
     },
     "app/(portal)/ticketing/_components/FilterBar.tsx": {
-      "baris": 193,
+      "baris": 194,
       "barisPanjang": 4,
       "propsMaks": 2
     },
@@ -456,7 +446,7 @@
       "propsMaks": 6
     },
     "app/(portal)/ticketing/_components/TicketDetailPopup.tsx": {
-      "baris": 447,
+      "baris": 448,
       "barisPanjang": 3,
       "propsMaks": 2
     },
@@ -486,8 +476,8 @@
       "propsMaks": 0
     },
     "app/(portal)/ticketing/page.tsx": {
-      "baris": 592,
-      "barisPanjang": 7,
+      "baris": 285,
+      "barisPanjang": 2,
       "propsMaks": 19
     },
     "app/(portal)/tools-team/_components/av/audio/AudioAkustik.tsx": {
@@ -496,12 +486,12 @@
       "propsMaks": 4
     },
     "app/(portal)/tools-team/_components/av/KalkulatorDaya.tsx": {
-      "baris": 77,
+      "baris": 79,
       "barisPanjang": 1,
       "propsMaks": 4
     },
     "app/(portal)/tools-team/_components/av/KalkulatorProyektor.tsx": {
-      "baris": 249,
+      "baris": 252,
       "barisPanjang": 2,
       "propsMaks": 4
     },
@@ -526,22 +516,22 @@
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/ekspor/useEkspor.ts": {
-      "baris": 224,
+      "baris": 225,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/mesin/alatBantu.ts": {
-      "baris": 159,
+      "baris": 163,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/mesin/sinar.ts": {
-      "baris": 383,
+      "baris": 386,
       "barisPanjang": 2,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/mesin/useAdegan.ts": {
-      "baris": 120,
+      "baris": 121,
       "barisPanjang": 2,
       "propsMaks": 0
     },
@@ -556,12 +546,12 @@
       "propsMaks": 5
     },
     "app/(portal)/tools-team/_components/desain3d/panel/InfoProyektor.tsx": {
-      "baris": 249,
+      "baris": 266,
       "barisPanjang": 4,
       "propsMaks": 4
     },
     "app/(portal)/tools-team/_components/desain3d/panel/KartuKabel.tsx": {
-      "baris": 49,
+      "baris": 58,
       "barisPanjang": 1,
       "propsMaks": 2
     },
@@ -581,12 +571,12 @@
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts": {
-      "baris": 146,
+      "baris": 163,
       "barisPanjang": 1,
       "propsMaks": 0
     },
     "app/(portal)/tools-team/_components/led/koneksi/RuangKoneksi.tsx": {
-      "baris": 64,
+      "baris": 66,
       "barisPanjang": 1,
       "propsMaks": 3
     },
@@ -615,13 +605,8 @@
       "barisPanjang": 1,
       "propsMaks": 4
     },
-    "app/(portal)/unit-movement/page.tsx": {
-      "baris": 555,
-      "barisPanjang": 4,
-      "propsMaks": 3
-    },
     "app/analytics-dashboard/_components/AnalyticsPlatform.tsx": {
-      "baris": 530,
+      "baris": 348,
       "barisPanjang": 4,
       "propsMaks": 8
     },

@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
+import { useState, useEffect } from 'react';
+import { matchesTeamFilter, type TeamFilter } from './team-filter';
 import { useKelompokCabang } from '@/lib/kelompok/inti';
-import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
-import { StatCardGrid, DonutChart } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { supabase, User, SearchInput } from './shared';
+import { StatCardGrid } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 import { ModalNilaiPengguna } from './ModalNilaiPengguna';
-import { RingkasanKuis, SectionHeader } from './RingkasanKuis';
+import { RingkasanKuis } from './RingkasanKuis';
+import { AktivitasTerbaru } from './AktivitasTerbaru';
+import { StatistikDivisi } from './StatistikDivisi';
+import { StatistikSesiKuis } from './StatistikSesiKuis';
+import { PapanPerforma } from './PapanPerforma';
 
 export function AdminDashboard({ user }: { user: User }) {
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
@@ -232,328 +236,17 @@ export function AdminDashboard({ user }: { user: User }) {
 
           <RingkasanKuis o={overviewStats} />
 
-          <div className="min-w-0">
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-wrap min-w-0">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap"
-                    title="Diurutkan dari skor rata-rata tertinggi. Jika skor sama, rata-rata waktu pengerjaan tercepat menang.">
-                    <IkonTeks nama="🏆" />Top Performers
-                  </span>
-                  {nationalAvg !== null && (
-                    <span className="text-[11px] text-slate-500 whitespace-nowrap">
-                      <IkonTeks nama="🌏" />Nasional: <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
-                      {activeTeam === 'Sales' && performerDivisionFilter && (() => {
-                        const d = divisionStats.find(d => d.name === performerDivisionFilter);
-                        if (!d) return null;
-                        const gap = d.avg - nationalAvg;
-                        return (
-                          <span className={`ml-1.5 font-bold ${gap >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                            · {performerDivisionFilter} {d.avg.toFixed(1)} ({gap >= 0 ? '▲' : '▼'}{Math.abs(gap).toFixed(1)})
-                          </span>
-                        );
-                      })()}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
-                  <select aria-label="Filter divisi" value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
-                    disabled={activeTeam !== 'Sales'}
-                    aria-hidden={activeTeam !== 'Sales'}
-                    className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-hidden focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
-                    <option value="">Semua Divisi</option>
-                    {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
-                  </select>
-                  <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
-                </div>
-              </div>
-
-              <div className="overflow-x-auto overflow-y-auto max-h-[440px]">
-              <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
-                <thead className="border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Flags</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredPerformers.map((u, i) => (
-                    <tr key={u.uid}
-                      className="stagger-item hover:bg-indigo-50/60 cursor-pointer transition-colors group"
-                      onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
-                      <td className="px-4 py-3 text-center text-sm font-black text-slate-500">{i + 1}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-indigo-400 font-semibold"><Ikon nama="👁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                          {u.consistency !== null && u.consistency > 40 && (
-                            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⚡" />Inkonsisten</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center">
-                          <DonutChart
-                            segments={[
-                              { value: u.avg, color: u.avg >= 80 ? '#10b981' : u.avg >= 70 ? '#f59e0b' : '#f43f5e' },
-                              { value: 100 - u.avg, color: '#f1f5f9' },
-                            ]}
-                            size={34} strokeWidth={5} label={u.avg.toFixed(0)}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${u.passed > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500'}`}>
-                          {u.passed}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {u.tabSw > 0 && (
-                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.tabSw}×</span>
-                          )}
-                          {u.fastCount > 0 && (
-                            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
-                          )}
-                          {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-400">—</span>}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredPerformers.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-10 text-slate-500 text-sm">
-                      {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : `Belum ada data untuk ${TEAM_FILTER_CONFIG[activeTeam].label}`}
-                    </td></tr>
-                  )}
-                </tbody>
-              </table>
-              </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
-                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
-                  Pindah tab
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="🚨" />N×</span>
-                  Submit &lt;5det/soal
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚡" />Inkonsisten</span>
-                  Nilai selisih &gt;40pt
-                </span>
-              </div>
-            </div>
-          </div>
+          <PapanPerforma
+            nationalAvg={nationalAvg} activeTeam={activeTeam} performerDivisionFilter={performerDivisionFilter} divisionStats={divisionStats} setActiveTeam={setActiveTeam} setPerformerDivisionFilter={setPerformerDivisionFilter}
+            searchPerformer={searchPerformer} setSearchPerformer={setSearchPerformer} filteredPerformers={filteredPerformers} setSelectedUser={setSelectedUser} loadingAnalytics={loadingAnalytics}
+          />
         </div>
 
-        {sessionStats.length > 0 && (() => {
-          const totalPeserta = sessionStats.reduce((n: number, s: any) => n + s.total, 0);
-          const totalPassed  = sessionStats.reduce((n: number, s: any) => n + s.passed, 0);
-          const totalFailed  = sessionStats.reduce((n: number, s: any) => n + s.failed, 0);
-          const scoreGood    = sessionStats.reduce((n: number, s: any) => n + s.scoreGood, 0);
-          const scoreMid     = sessionStats.reduce((n: number, s: any) => n + s.scoreMid, 0);
-          const scoreLow     = sessionStats.reduce((n: number, s: any) => n + s.scoreLow, 0);
-          const avgScore     = totalPeserta > 0
-            ? sessionStats.reduce((n: number, s: any) => n + s.avg * s.total, 0) / totalPeserta : 0;
-          const sesiDenganWaktu = sessionStats.filter((s: any) => s.avgMin !== null);
-          const avgMin = sesiDenganWaktu.length
-            ? sesiDenganWaktu.reduce((n: number, s: any) => n + s.avgMin, 0) / sesiDenganWaktu.length : null;
-          const sesiUrut = [...sessionStats].sort((a: any, b: any) => a.avg - b.avg);
+        <StatistikSesiKuis sessionStats={sessionStats} />
 
-          return (
-            <section>
-              <SectionHeader><IkonTeks nama="📈" />Statistik Per Sesi Quiz</SectionHeader>
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-5">
-                <div className="flex flex-wrap items-start gap-8">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <DonutChart size={92} strokeWidth={13}
-                      segments={[{ value: totalPassed, color: '#10b981' }, { value: totalFailed, color: '#f43f5e' }]}
-                      label={totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-'}
-                    />
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lulus vs Gagal</span>
-                    <div className="flex gap-3">
-                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{totalPassed} lulus</span>
-                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{totalFailed} gagal</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5">
-                    <DonutChart size={92} strokeWidth={13}
-                      segments={[
-                        { value: scoreGood, color: '#3b82f6' },
-                        { value: scoreMid, color: '#f59e0b' },
-                        { value: scoreLow, color: '#ef4444' },
-                      ]}
-                      label={avgScore.toFixed(0)}
-                    />
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sebaran Nilai</span>
-                    <div className="flex gap-3">
-                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
-                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
-                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
-                    </div>
-                  </div>
-                  {avgMin !== null && (
-                    <div className="flex flex-col items-center gap-1.5">
-                      <DonutChart size={92} strokeWidth={13}
-                        segments={[
-                          { value: Math.min(avgMin, 60), color: '#8b5cf6' },
-                          { value: Math.max(60 - Math.min(avgMin, 60), 0), color: '#ede9fe' },
-                        ]}
-                        label={`${Math.round(avgMin)}m`}
-                      />
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata Waktu</span>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-5 pt-1 overflow-x-auto">
-                  <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
-                    <thead className="border-b border-slate-200">
-                      <tr>
-                        <th className="px-3 py-2 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Sesi</th>
-                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Peserta</th>
-                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Avg</th>
-                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Waktu</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sesiUrut.map((s: any) => (
-                        <tr key={s.id}>
-                          <td className="px-3 py-2 font-semibold text-slate-700 truncate max-w-[240px]">{s.name}</td>
-                          <td className="px-3 py-2 text-center text-slate-500">{s.total}</td>
-                          <td className={`px-3 py-2 text-center font-bold ${s.avg >= 80 ? 'text-emerald-700' : s.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</td>
-                          <td className="px-3 py-2 text-center text-slate-500">{s.passed}/{s.total}</td>
-                          <td className="px-3 py-2 text-center text-slate-500">{s.avgMin !== null ? `${s.avgMin.toFixed(0)} mnt` : '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <p className="text-[11px] text-slate-500 pt-2">Diurutkan dari nilai rata-rata terendah</p>
-                </div>
-              </div>
-            </section>
-          );
-        })()}
+        <StatistikDivisi divisionStats={divisionStats} nationalAvg={nationalAvg} />
 
-        {divisionStats.length > 0 && (
-          <section>
-            <SectionHeader><IkonTeks nama="🏢" />Ranking Per Divisi / Jabatan</SectionHeader>
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
-                <thead className="border-b border-slate-200 bg-slate-50">
-                  <tr>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-10">#</th>
-                    <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Sales Division / Jabatan</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Attempt</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Avg Score</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">vs Nasional</th>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Pass Rate</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {divisionStats.map((d, i) => (
-                    <tr key={d.name} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 text-center text-sm font-black text-slate-500">{i + 1}</td>
-                      <td className="px-5 py-3.5">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-800 text-sm">{d.name}</span>
-                            {d.source === 'division' && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase tracking-wide">Sales Div</span>
-                            )}
-                            {d.source === 'jabatan' && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">Jabatan</span>
-                            )}
-                          </div>
-                          {d.source === 'division' && d.jabatan && (
-                            <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-center text-xs text-slate-500 font-semibold">{d.total}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 bg-slate-100 rounded-full h-1.5">
-                            <div className="h-1.5 rounded-full"
-                              style={{ width: `${d.avg}%`, background: d.avg >= 80 ? '#10b981' : d.avg >= 60 ? '#f59e0b' : '#f43f5e' }} />
-                          </div>
-                          <span className={`text-xs font-bold w-8 text-right ${d.avg >= 80 ? 'text-emerald-700' : d.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>
-                            {d.avg.toFixed(0)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-center">
-                        {nationalAvg !== null ? (() => {
-                          const gap = d.avg - nationalAvg;
-                          return (
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${gap >= 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
-                              {gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(1)}
-                            </span>
-                          );
-                        })() : <span className="text-slate-400 text-xs">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5 text-center">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                          d.passRate >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : d.passRate >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                        }`}>{d.passRate}%</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        <section>
-          <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru</SectionHeader>
-          <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-xs" style={{ background: 'rgba(255,255,255,0.90)' }}>
-            <div className="divide-y divide-slate-100">
-              {filteredRecent.length === 0 && (
-                <div className="text-center text-slate-500 py-10 text-sm">
-                  {search ? 'Tidak ada hasil yang cocok' : 'Belum ada aktivitas quiz'}
-                </div>
-              )}
-              {filteredRecent.slice(0, 10).map((a: any, _ri: number) => {
-                const tq = a.total_questions ?? 0;
-                const ts = a.time_taken_sec ?? Infinity;
-                const isFast = tq >= 5 && ts < tq * 5;
-                return (
-                  <div key={a.id} className="stagger-item flex items-center gap-4 px-6 py-3.5">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0">
-                      {a.users?.full_name?.[0] ?? '?'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{a.users?.full_name ?? '-'}</p>
-                      <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.session_name ?? '-'}</p>
-                    </div>
-                    <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
-                    {isFast && (
-                      <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shrink-0">
-                        <Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.round(ts)}s
-                      </span>
-                    )}
-                    {(a.tab_switches ?? 0) > 0 && (
-                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
-                        <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.tab_switches}× tab
-                      </span>
-                    )}
-                    <span className="text-xs text-slate-500 shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+        <AktivitasTerbaru filteredRecent={filteredRecent} search={search} />
 
       </div>
 

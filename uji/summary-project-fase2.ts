@@ -6,7 +6,7 @@ function cek(nama: string, syarat: boolean) {
 }
 
 console.log('\n1. P2-1 deep link ticket di luar jendela muat');
-const src = readFileSync('app/(portal)/ticketing/page.tsx', 'utf8');
+const src = (readFileSync('app/(portal)/ticketing/page.tsx', 'utf8') + readFileSync('app/(portal)/ticketing/_components/useTicketing.ts', 'utf8'));
 const awal = src.indexOf('const sudahBukaDariNotif = useRef(false);');
 const efek = src.slice(awal, src.indexOf('}, [searchParams, tickets, ticketsLoading, currentUser]', awal));
 cek('efek deep link ditemukan', awal > 0 && efek.length > 0);

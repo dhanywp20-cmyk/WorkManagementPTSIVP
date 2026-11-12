@@ -25,7 +25,7 @@ for (const f of ['ReminderListBody', 'ReminderDetailPopup']) {
 }
 const header = baca('app/(portal)/form-require-project/_components/detail/HeaderDetail.tsx');
 cek('Design detail: Setujui tampil untuk bisaKelolaRequest tanpa kunci internal_review', /\{bisaKelolaRequest && detailIsPending && \(/.test(header));
-const halaman = baca('app/(portal)/form-require-project/page.tsx');
+const halaman = (baca('app/(portal)/form-require-project/page.tsx') + baca('app/(portal)/form-require-project/_components/useHalamanRequest.tsx'));
 cek('Design daftar: Setujui tanpa kunci internal_review', /\{bisaKelolaRequest && req\.status === 'pending' && \(/.test(halaman));
 cek('bisaKelolaRequest = admin/superadmin/Full Access (bukan jabatan)', /const bisaKelolaRequest = isAdmin \|\| isSuperAdmin \|\| hasFullAccess\(/.test(halaman));
 const assign = baca('app/(portal)/form-require-project/_components/Modals-AssignPTSModal.tsx');

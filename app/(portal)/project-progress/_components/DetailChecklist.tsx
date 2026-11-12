@@ -1,39 +1,28 @@
 'use client';
-
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ArrowLeft, CalendarDays, Copy, Download, HardHat, Link2, Pencil, Plus, RefreshCw, Trash2, Upload, Users,
-} from 'lucide-react';
-import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
+import { Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { ConfirmDialog, Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { loadXLSX } from '@/lib/xlsx-loader';
-import {
-  BATAS, KOLOM_TEMPLATE, formatTanggal, formatWaktu, keadaanJadwal, statDari,
-  type ChecklistAnggota, type ChecklistBagian, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
-  type DraftChecklist,
-} from '@/lib/checklist/inti';
-import {
-  BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
-  itemPerBagian, kirimFoto, progresDariStat,
-} from './tampilan';
-import { ringkasChecklist } from './ringkasan/hitung';
+import { BATAS, formatWaktu, keadaanJadwal, type ChecklistAnggota, type ChecklistBagian, type ChecklistItem } from '@/lib/checklist/inti';
+import { ModalKendala, TEMA } from './tampilan';
 import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from './ringkasan/Ringkasan';
 import { ModalImpor } from './ModalImpor';
 import { ModalShare } from './ModalShare';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
 import { ModalSalinChecklist, type ProyekPilihan } from './FormProyek';
-import { BilahSimpan, useTertunda } from './tertunda';
-import { panggil, pesanGalat } from './api';
+import { BilahSimpan } from './tertunda';
+import { useDetailChecklist } from './useDetailChecklist';
+import { RingkasanDetailChecklist } from './RingkasanDetailChecklist';
+import { KepalaDetailChecklist } from './KepalaDetailChecklist';
 
-type FormItem = { mode: 'tambah' | 'ubah'; bagianId: string; item?: ChecklistItem; teks: string; kelompok: string; catatan: string };
-type FormBagian = { bagian: ChecklistBagian | null; judul: string; catatan: string };
-type FormInfo = { judul: string; keterangan: string; support_lokasi: string; start_date: string; target_date: string };
+export type FormItem = { mode: 'tambah' | 'ubah'; bagianId: string; item?: ChecklistItem; teks: string; kelompok: string; catatan: string };
+export type FormBagian = { bagian: ChecklistBagian | null; judul: string; catatan: string };
+export type FormInfo = { judul: string; keterangan: string; support_lokasi: string; start_date: string; target_date: string };
 
 const LABEL_AKSI: Record<string, string> = {
   centang: 'mencentang', batal: 'membatalkan centang', kendala: 'menandai kendala', kendala_selesai: 'menyelesaikan kendala',
 };
 
-const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold transition-colors';
+export const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold transition-colors';
 
 export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggota, namaSaya, daftarProyek, onBukaChecklist }: {
   id: string;
@@ -45,171 +34,14 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   daftarProyek: ProyekPilihan[];
   onBukaChecklist: (id: string, proyekId: string) => void;
 }) {
-  const [detail, setDetail] = useState<ChecklistDetail | null>(null);
-  const [galat, setGalat] = useState('');
-  const [sedangId, setSedangId] = useState<string | null>(null);
-  const [sembunyikan, setSembunyikan] = useState(false);
-  const [hanyaKendala, setHanyaKendala] = useState(false);
-  const [formItem, setFormItem] = useState<FormItem | null>(null);
-  const [formBagian, setFormBagian] = useState<FormBagian | null>(null);
-  const [formInfo, setFormInfo] = useState<FormInfo | null>(null);
-  const [formAnggota, setFormAnggota] = useState<string[] | null>(null);
-  const [kendalaUntuk, setKendalaUntuk] = useState<ChecklistItem | null>(null);
-  const [imporBuka, setImporBuka] = useState(false);
-  const [shareBuka, setShareBuka] = useState(false);
-  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
-  const [menyimpan, setMenyimpan] = useState(false);
-  const [menyimpanCentang, setMenyimpanCentang] = useState(false);
-  const [salinBuka, setSalinBuka] = useState(false);
-
-  const muat = useCallback(async () => {
-    try {
-      setDetail(await panggil<ChecklistDetail>(`/api/project-progress/checklist/${id}`));
-      setGalat('');
-    } catch (e) {
-      setGalat(pesanGalat(e, 'Gagal memuat checklist.'));
-    }
-  }, [id]);
-
-  useEffect(() => { muat(); }, [muat]);
-
-  const ubah = useCallback(async (body: Record<string, unknown>) => {
-    const hasil = await panggil<Record<string, unknown>>(`/api/project-progress/checklist/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-    onBerubah();
-    return hasil;
-  }, [id, onBerubah]);
-
-  const gantiItem = (baru: ChecklistItem) => setDetail(d => d && { ...d, items: d.items.map(i => (i.id === baru.id ? baru : i)) });
-
-  const hak = detail?.hak ?? { admin: false, edit: false };
-  const t = useTertunda(detail?.items, namaSaya, 'admin');
-  const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
-  const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
-  const stat = detail ? statDari(itemsTampil) : null;
-  const ringkasan = useMemo(() => ringkasChecklist(detail?.daftar ?? { start_date: null, target_date: null }, itemsTampil, detail?.anggota ?? []), [detail, itemsTampil]);
-
-  const toggle = (item: ChecklistItem) => t.toggle(item);
-
-  const simpanKendala = async (item: ChecklistItem, kendala: boolean, catatan: string) => {
-    t.aturKendala(item, kendala, catatan);
-  };
-
-  const simpanCentang = async () => {
-    if (!t.jumlah || menyimpanCentang) return;
-    setMenyimpanCentang(true);
-    try {
-      const hasil = await ubah({ aksi: 'simpan', perubahan: t.daftar }) as { items: ChecklistItem[]; riwayat: ChecklistRiwayat[] };
-      const baru = new Map(hasil.items.map(i => [i.id, i]));
-      setDetail(d => d && {
-        ...d,
-        items: d.items.map(i => baru.get(i.id) ?? i),
-        riwayat: [...hasil.riwayat, ...(d.riwayat ?? [])].slice(0, 80),
-      });
-      t.reset();
-      beritahu('success', `${hasil.items.length} item tersimpan.`);
-    } catch (e) {
-      beritahu('error', pesanGalat(e, 'Gagal menyimpan. Perubahan Anda masih ada - coba Simpan lagi.'));
-    } finally {
-      setMenyimpanCentang(false);
-    }
-  };
-
-  const kembali = () => {
-    if (!t.jumlah) { onKembali(); return; }
-    setKonfirmasi({
-      message: `${t.jumlah} perubahan belum disimpan`, description: 'Perubahan akan hilang bila kembali sekarang.',
-      confirmLabel: 'Tetap kembali', danger: true, onConfirm: () => { setKonfirmasi(null); onKembali(); },
-    });
-  };
-
-  const unggahFoto = async (item: ChecklistItem, file: File) => {
-    setSedangId(item.id);
-    try {
-      gantiItem(await kirimFoto(`/api/project-progress/checklist/${id}/foto`, item.id, file));
-      onBerubah();
-      beritahu('success', 'Foto bukti tersimpan.');
-    } catch (e) {
-      beritahu('error', pesanGalat(e, 'Gagal mengunggah foto.'));
-    } finally {
-      setSedangId(null);
-    }
-  };
-
-  const jalankan = async (body: Record<string, unknown>, sukses: string, tutup: () => void,
-    terapkan: (hasil: Record<string, unknown>) => void) => {
-    setMenyimpan(true);
-    try { const hasil = await ubah(body); terapkan(hasil); tutup(); beritahu('success', sukses); }
-    catch (e) { beritahu('error', pesanGalat(e, 'Gagal menyimpan.')); }
-    finally { setMenyimpan(false); }
-  };
-
-  const hapusItem = (item: ChecklistItem) => setKonfirmasi({
-    message: 'Hapus item ini?',
-    description: `"${item.teks}" dihapus dari checklist. Riwayat centangnya tetap tersimpan.`,
-    confirmLabel: 'Hapus', danger: true,
-    onConfirm: async () => {
-      setKonfirmasi(null);
-      try {
-        await ubah({ aksi: 'hapusItem', itemId: item.id });
-        setDetail(d => d && { ...d, items: d.items.filter(i => i.id !== item.id) });
-        beritahu('success', 'Item dihapus.');
-      }
-      catch (e) { beritahu('error', pesanGalat(e, 'Gagal menghapus.')); }
-    },
-  });
-
-  const hapusChecklist = () => setKonfirmasi({
-    message: `Hapus checklist "${detail?.daftar.judul}"?`,
-    description: 'Semua item, centang, foto, kendala, dan riwayatnya ikut terhapus permanen. Link tim berhenti berfungsi.',
-    confirmLabel: 'Hapus permanen', danger: true,
-    onConfirm: async () => {
-      setKonfirmasi(null);
-      try {
-        await panggil(`/api/project-progress/checklist/${id}`, { method: 'DELETE' });
-        onBerubah();
-        beritahu('success', 'Checklist dihapus.');
-        onKembali();
-      } catch (e) { beritahu('error', pesanGalat(e, 'Gagal menghapus.')); }
-    },
-  });
-
-  const imporIsi = async (draft: DraftChecklist) => {
-    const { jumlah } = await ubah({ aksi: 'impor', draft }) as { jumlah: number };
-    setImporBuka(false);
-    await muat();
-    beritahu('success', `${jumlah} item ditambahkan.`);
-  };
-
-  const ubahShare = async (aksi: 'share' | 'tokenBaru', aktif?: boolean) => {
-    const hasil = await ubah({ aksi, aktif }) as { share_aktif: boolean; share_token: string };
-    setDetail(d => d && { ...d, daftar: { ...d.daftar, ...hasil } });
-  };
-
-  const ekspor = () => {
-    if (!detail) return;
-    loadXLSX(XLSX => {
-      const rows: string[][] = [[...KOLOM_TEMPLATE, 'Oleh', 'Waktu', 'Lewat', 'Kendala', 'Foto']];
-      for (const b of detail.bagian) {
-        const items = peta.get(b.id) ?? [];
-        if (!items.length && b.catatan) rows.push([b.judul, '', '', b.catatan.replace(/\n/g, ' '), '', '', '', '', '', '']);
-        for (const it of items) {
-          rows.push([b.judul, it.kelompok, it.teks, it.catatan, it.selesai ? 'Selesai' : it.kendala ? 'Kendala' : 'Belum',
-            it.selesai_oleh ?? '', formatWaktu(it.selesai_pada), it.selesai_lewat === 'link' ? 'link' : it.selesai ? 'aplikasi' : '',
-            it.kendala ? `${it.kendala_catatan} (${it.kendala_oleh ?? ''} ${formatWaktu(it.kendala_pada)})` : '', it.foto_url ?? '']);
-        }
-      }
-      const ws = XLSX.utils.aoa_to_sheet(rows);
-      ws['!cols'] = [{ wch: 26 }, { wch: 18 }, { wch: 60 }, { wch: 30 }, { wch: 9 }, { wch: 18 }, { wch: 16 }, { wch: 8 }, { wch: 40 }, { wch: 30 }];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Checklist');
-      const nama = `${detail.proyek.nama} - ${detail.daftar.judul}`.replace(/[\\/:*?"<>|]+/g, '-').slice(0, 100);
-      XLSX.writeFile(wb, `${nama}.xlsx`);
-    });
-  };
-
-  const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-hidden focus:ring-2';
-  const gayaIsian = { border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan };
-  const label = (t: string) => <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>{t}</span>;
+  const {
+    galat, detail, muat, stat, hak, toggle, setKendalaUntuk, unggahFoto,
+    setFormItem, hapusItem, hanyaKendala, kembali, setShareBuka, setImporBuka, ekspor, setSalinBuka,
+    setFormInfo, hapusChecklist, setFormAnggota, ringkasan, setHanyaKendala, sembunyikan, setSembunyikan, peta,
+    sedangId, setFormBagian, formItem, menyimpan, jalankan, setDetail, label, isian,
+    gayaIsian, formBagian, formInfo, formAnggota, kendalaUntuk, simpanKendala, t, menyimpanCentang,
+    simpanCentang, salinBuka, imporBuka, imporIsi, ubahShare, shareBuka, konfirmasi, setKonfirmasi,
+  } = useDetailChecklist({ id, onBerubah, namaSaya, beritahu, onKembali });
 
   if (galat && !detail) {
     return (
@@ -251,94 +83,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
-        <div className="flex items-start gap-3 flex-wrap">
-          <button onClick={kembali} aria-label="Kembali ke proyek"
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-            style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-            <ArrowLeft size={16} />
-          </button>
-          <div className="flex-1 min-w-[220px]">
-            <p className="text-[11.5px] font-semibold" style={{ color: TEMA.samar }}>
-              {proyek.nama}{proyek.client ? ` · ${proyek.client}` : ''}{proyek.sales_name ? ` · Sales ${proyek.sales_name}` : ''}
-            </p>
-            <h2 className="text-[17px] font-bold leading-tight" style={{ color: NETRAL.tinta }}>{daftar.judul}</h2>
-            <p className="text-[12px] mt-1 flex items-center gap-1.5 flex-wrap" style={{ color: NETRAL.tinta2 }}>
-              <CalendarDays size={13} />
-              {daftar.start_date || daftar.target_date
-                ? `${formatTanggal(daftar.start_date)} – ${formatTanggal(daftar.target_date)}`
-                : 'Belum ada jadwal'}
-              <span className="font-bold" style={{ color: warnaJadwal }}>· {jadwal.label}</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {hak.edit && (
-              <button onClick={() => setShareBuka(true)} className={kecil}
-                style={{ background: daftar.share_aktif ? TEMA.selesaiTint : TEMA.warna, color: daftar.share_aktif ? TEMA.selesai : '#fff',
-                  border: daftar.share_aktif ? '1px solid #bbf7d0' : 'none' }}>
-                <Link2 size={14} /> {daftar.share_aktif ? 'Link tim aktif' : 'Link untuk tim'}
-              </button>
-            )}
-            {hak.edit && (
-              <button onClick={() => setImporBuka(true)} className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-                <Upload size={14} /> Impor isi
-              </button>
-            )}
-            <button onClick={ekspor} className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-              <Download size={14} /> Ekspor Excel
-            </button>
-            {hak.admin && (
-              <button onClick={() => setSalinBuka(true)} className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}
-                title="Salin checklist ini ke lokasi lain - centang dikosongkan, tinggal edit yang perlu">
-                <Copy size={14} /> Salin ke lokasi lain
-              </button>
-            )}
-            {hak.admin && (
-              <>
-                <button onClick={() => setFormInfo({ judul: daftar.judul, keterangan: daftar.keterangan, support_lokasi: daftar.support_lokasi ?? '', start_date: daftar.start_date ?? '', target_date: daftar.target_date ?? '' })}
-                  aria-label="Ubah nama, keterangan & jadwal" title="Ubah info & jadwal" className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-                  <Pencil size={14} />
-                </button>
-                <button onClick={hapusChecklist} aria-label="Hapus checklist" title="Hapus checklist" className={kecil}
-                  style={{ border: `1px solid ${NETRAL.garis}`, color: TEMA.bahaya }}>
-                  <Trash2 size={14} />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-[220px]"><BarProgres progres={progresDariStat(stat)} tebal={10} /></div>
-          <KepingKendala jumlah={stat.kendala} />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Users size={14} style={{ color: TEMA.samar }} />
-          {detail.anggota.length === 0 && <span className="text-[12px]" style={{ color: TEMA.samar }}>Belum ada yang di-assign</span>}
-          {detail.anggota.map(a => (
-            <span key={a.user_id} className="px-2 py-0.5 rounded-full text-[11.5px] font-semibold"
-              style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>{a.nama}</span>
-          ))}
-          {hak.admin && (
-            <button onClick={() => setFormAnggota(detail.anggota.map(a => a.user_id))} className="text-[12px] font-bold" style={{ color: TEMA.warna }}>
-              Atur anggota
-            </button>
-          )}
-          {!hak.edit && (
-            <span className="text-[11.5px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#f1f5f9', color: NETRAL.tinta2 }}>
-              Hanya lihat · Anda tidak di-assign
-            </span>
-          )}
-        </div>
-        {daftar.support_lokasi && (
-          <p className="flex items-center gap-2 text-[12px]" style={{ color: NETRAL.tinta2 }}>
-            <HardHat size={14} style={{ color: TEMA.samar }} />
-            <span>Support di lokasi: <b style={{ color: NETRAL.tinta }}>{daftar.support_lokasi}</b></span>
-          </p>
-        )}
-        {daftar.keterangan && <CatatanTeks teks={daftar.keterangan} />}
-      </div>
+      <KepalaDetailChecklist
+        kembali={kembali} proyek={proyek} daftar={daftar} warnaJadwal={warnaJadwal} jadwal={jadwal} hak={hak}
+        setShareBuka={setShareBuka} setImporBuka={setImporBuka} ekspor={ekspor} setSalinBuka={setSalinBuka} setFormInfo={setFormInfo} hapusChecklist={hapusChecklist}
+        stat={stat} detail={detail} setFormAnggota={setFormAnggota}
+      />
 
       {adaRingkasanChecklist(ringkasan) && (
         <LipatRingkasan hpTerlipat>
@@ -347,71 +96,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
       )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
-        <div className="space-y-3 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap rounded-xl px-4 py-2.5 shadow-xs"
-            style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
-            <p className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>
-              <span style={fontAngka}>{detail.bagian.length}</span> bagian · <span style={fontAngka}>{stat.total - stat.selesai}</span> item belum selesai
-            </p>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-[12px] font-semibold cursor-pointer" style={{ color: NETRAL.tinta2 }}>
-                <input type="checkbox" checked={hanyaKendala} onChange={e => setHanyaKendala(e.target.checked)} className="w-4 h-4 accent-amber-600" />
-                Hanya kendala
-              </label>
-              <label className="flex items-center gap-2 text-[12px] font-semibold cursor-pointer" style={{ color: NETRAL.tinta2 }}>
-                <input type="checkbox" checked={sembunyikan} onChange={e => setSembunyikan(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                Sembunyikan yang selesai
-              </label>
-            </div>
-          </div>
-
-          {detail.bagian.length === 0 && (
-            <div className="rounded-xl p-8 text-center space-y-3" style={{ background: NETRAL.permukaan, border: `1px dashed ${NETRAL.garisKuat}` }}>
-              <p className="text-[14px] font-bold" style={{ color: NETRAL.tinta }}>Checklist ini masih kosong</p>
-              <p className="text-[12.5px]" style={{ color: NETRAL.tinta2 }}>
-                {hak.edit ? 'Impor dari teks/Markdown atau Excel, atau tambahkan bagian satu per satu.' : 'Admin atau anggota yang di-assign belum mengisi checklist ini.'}
-              </p>
-              {hak.edit && (
-                <button onClick={() => setImporBuka(true)} className={kecil} style={{ background: TEMA.warna, color: '#fff' }}>
-                  <Upload size={14} /> Impor isi checklist
-                </button>
-              )}
-            </div>
-          )}
-
-          {detail.bagian.map(b => {
-            const items = itemTampil(peta.get(b.id) ?? []);
-            if (hanyaKendala && !items.length) return null;
-            return (
-              <PanelBagian key={b.id} bagian={b} items={items} sedangId={sedangId} sembunyikanSelesai={sembunyikan} aksi={aksi}
-                aksiKepala={hak.edit ? (
-                  <button onClick={() => setFormBagian({ bagian: b, judul: b.judul, catatan: b.catatan })}
-                    aria-label={`Ubah bagian ${b.judul}`} className="p-1.5 rounded-md" style={{ color: TEMA.samar }}>
-                    <Pencil size={14} />
-                  </button>
-                ) : undefined}
-                kaki={hak.edit ? (
-                  <div className="px-3 sm:px-4 py-2" style={{ borderTop: `1px solid ${NETRAL.garis}` }}>
-                    <button onClick={() => {
-                      const ada = peta.get(b.id) ?? [];
-                      setFormItem({ mode: 'tambah', bagianId: b.id, teks: '', kelompok: ada[ada.length - 1]?.kelompok ?? '', catatan: '' });
-                    }} className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: TEMA.warna }}>
-                      <Plus size={14} /> Tambah item
-                    </button>
-                  </div>
-                ) : undefined}
-              />
-            );
-          })}
-
-          {hak.edit && detail.bagian.length > 0 && (
-            <button onClick={() => setFormBagian({ bagian: null, judul: '', catatan: '' })}
-              className="inline-flex items-center gap-1 text-[12px] font-bold rounded-lg px-3 py-1.5 shadow-xs"
-              style={{ color: TEMA.warna, background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
-              <Plus size={14} /> Tambah bagian
-            </button>
-          )}
-        </div>
+        <RingkasanDetailChecklist
+          detail={detail} stat={stat} hanyaKendala={hanyaKendala} setHanyaKendala={setHanyaKendala} sembunyikan={sembunyikan} setSembunyikan={setSembunyikan}
+          hak={hak} setImporBuka={setImporBuka} itemTampil={itemTampil} peta={peta} sedangId={sedangId} aksi={aksi}
+          setFormBagian={setFormBagian} setFormItem={setFormItem}
+        />
 
         <aside className="rounded-xl overflow-hidden lg:sticky lg:top-20" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>

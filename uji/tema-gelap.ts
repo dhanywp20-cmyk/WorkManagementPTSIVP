@@ -18,7 +18,7 @@ cek('setiap variabel warna punya pengganti gelap', [...new Set(variabel.map(v =>
 cek('tema dipasang sebelum halaman tergambar (tanpa kedip putih)', SKRIP_TEMA_AWAL.includes(KUNCI_TEMA) && /SKRIP_TEMA_AWAL/.test(readFileSync('app/layout.tsx', 'utf8')) && /tema-gelap\.css/.test(readFileSync('app/layout.tsx', 'utf8')));
 cek('tombol tema di samping Sign out (sidebar) dan Keluar (HP)', /tukarTema/.test(readFileSync('app/(portal)/_kerangka/SidebarPortal.tsx', 'utf8')) && /__tema/.test(readFileSync('app/(portal)/dashboard/_components/NavBawahMobile.tsx', 'utf8')));
 cek('bawaan Light Mode: gelap hanya bila dipilih sendiri', SKRIP_TEMA_AWAL.includes(`==='gelap'`) && !/prefers-color-scheme/.test(gelap + global));
-cek('masuk & keluar akun selalu kembali ke Light Mode', /kembaliTerang\(\)/.test(readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8')) && /kembaliTerang\(\)/.test(readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8')));
+cek('masuk & keluar akun selalu kembali ke Light Mode', /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useLayarMasuk.ts', 'utf8'))) && /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'))));
 cek('baris CSS tidak melebihi 300 karakter', gelap.split('\n').every(b => b.length <= 300));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
