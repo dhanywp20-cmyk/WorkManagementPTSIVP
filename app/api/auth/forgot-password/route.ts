@@ -16,11 +16,6 @@ function hashOTP(otp: string): string {
   return crypto.createHash('sha256').update(otp).digest('hex');
 }
 
-function maskPhone(phone: string): string {
-  if (!phone || phone.length < 6) return '****';
-  return phone.slice(0, 4) + '****' + phone.slice(-3);
-}
-
 export async function POST(request: NextRequest) {
   const supabase = getAdminClient();
 
@@ -53,8 +48,8 @@ export async function POST(request: NextRequest) {
 
     const jawabanNetral = NextResponse.json({
       success: true,
-      maskedPhone: '****',
-      message: 'Jika username terdaftar dan memiliki nomor WA, OTP akan dikirim.',
+      maskedPhone: '',
+      message: 'Jika username terdaftar dan memiliki nomor WA, OTP dikirim ke WA terdaftar.',
     });
     if (!user || !user.phone_number) return jawabanNetral;
 
@@ -77,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (insertErr) {
       console.error('[forgot-password] insert error:', insertErr);
       return NextResponse.json({
-        error: `Gagal insert OTP: ${insertErr.message} [code: ${insertErr.code}]`,
+        error: 'Gagal membuat OTP. Coba lagi beberapa saat.',
       }, { status: 500 });
     }
 
@@ -96,14 +91,8 @@ export async function POST(request: NextRequest) {
     ].join('\n');
 
     const waResult = await sendWA(user.phone_number, waMsg, 'forgot_password_otp', 'system.password_reset');
-
-    return NextResponse.json({
-      success: true,
-      maskedPhone: maskPhone(user.phone_number),
-      message: waResult.ok
-        ? `OTP dikirim ke WA ${maskPhone(user.phone_number)}`
-        : `OTP dibuat tapi WA gagal dikirim. Coba kirim ulang.`,
-    });
+    if (!waResult.ok) console.error('[forgot-password] WA gagal dikirim untuk user', user.id);
+    return jawabanNetral;
 
   } catch (e) {
     console.error('[forgot-password] error:', e);

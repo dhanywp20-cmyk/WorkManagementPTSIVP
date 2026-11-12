@@ -484,7 +484,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Masukkan kode 6-digit yang dikirim ke WA <strong>{forgotMaskedPhone}</strong>, lalu buat password baru.</p>
+                  <p className="text-xs text-slate-500">Masukkan kode 6-digit yang dikirim ke WA {forgotMaskedPhone ? <strong>{forgotMaskedPhone}</strong> : 'terdaftar'}, lalu buat password baru.</p>
                   <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
                     placeholder="Kode OTP (6 digit)" maxLength={6}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-bold focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-hidden" />
