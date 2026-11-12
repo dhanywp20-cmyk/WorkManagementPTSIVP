@@ -19,7 +19,8 @@ import { MiniIkon } from './PanelKatalog';
 import type { KeadaanSLD } from './useKeadaanSLD';
 import type { KatalogTim } from './useKatalogTim';
 
-const fotoRasio = (src: string) => Object.values(FOTO_PRODUK).find(f => f.src === src)?.rasio;
+const QTY_CEPAT = [1, 2, 3, 4, 6, 8];
+const fotoRasio =(src: string) => Object.values(FOTO_PRODUK).find(f => f.src === src)?.rasio;
 
 export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; tim?: KatalogTim }) {
   const ubah = (x: Partial<Perangkat>) => a.ubahPerangkat(p.id, x);
@@ -86,10 +87,15 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
       </div>
       <Isian label="1 gambar mewakili" bantuan="Ringkas banyak unit jadi 1 gambar: tampil (4X) di Sheet 1, Sheet 2 & BOQ ikut menghitung qty-nya.">
         <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Jumlah unit yang diwakili gambar">
-          {[1, 2, 3, 4, 6, 8].map(n => (
+          {QTY_CEPAT.map(n => (
             <button key={n} type="button" role="radio" aria-checked={p.qty === n} onClick={() => ubah({ qty: n })}
               className={`${kelasTombol} !px-2.5 !py-1 !text-[12px] ${p.qty === n ? '!bg-blue-700 !text-white !border-blue-700' : ''}`}>{n}X</button>
           ))}
+          <span className="inline-flex items-center gap-1 ml-1" title="Isi jumlah lain, mis. 12, 16, 24">
+            <Angka nilai={p.qty} min={1} maks={9999} onUbah={v => ubah({ qty: Math.max(1, Math.round(v)) })} label="Jumlah unit lain (manual)"
+              className={`${kelasKecil} !w-20 !py-1 ${QTY_CEPAT.includes(p.qty) ? '' : '!border-blue-500 ring-2 ring-blue-200'}`} />
+            <span className="text-[12px] font-bold text-slate-600">X</span>
+          </span>
         </div>
       </Isian>
       <datalist id={`saran-model-${p.id}`}>{saran.map(x => <option key={x} value={x} />)}</datalist>
