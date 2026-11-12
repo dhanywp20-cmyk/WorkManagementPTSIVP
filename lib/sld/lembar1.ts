@@ -56,10 +56,17 @@ export function svgKabel(d: DokSLD, geo: GeoKabel[]): { garis: string; label: st
   return { garis: g.join(''), label: l.join('') };
 }
 
+const SATUAN_BIJI = /^(unit|units|pcs|pc|buah|bh|set|ea|nos|titik)?$/i;
+export const jumlahLabel = (p: Pick<Perangkat, 'qty' | 'satuan'>) => {
+  if (!(p.qty > 1)) return '';
+  const n = p.qty.toLocaleString('id-ID');
+  return SATUAN_BIJI.test((p.satuan ?? '').trim()) ? ` (${n}X)` : ` (${n} ${p.satuan.trim()})`;
+};
+
 export function barisLabel(p: Perangkat, f = 1): { isi: string; ukuran: number; warna: string; tebal: boolean }[] {
   const L = LABEL_PERANGKAT;
   return [
-    ...(p.nama.trim() ? [{ isi: `#${p.nama.trim()}`, ukuran: L.nama.ukuran * f, warna: L.nama.warna, tebal: true }] : []),
+    ...(p.nama.trim() ? [{ isi: `#${p.nama.trim()}${jumlahLabel(p)}`, ukuran: L.nama.ukuran * f, warna: L.nama.warna, tebal: true }] : []),
     ...(p.peran.trim() ? [{ isi: `*${p.peran.trim()}`, ukuran: L.peran.ukuran * f, warna: L.peran.warna, tebal: true }] : []),
     ...p.ket.split('\n').filter(s => s.trim()).map(s => ({ isi: s.trim(), ukuran: L.ket.ukuran * f, warna: L.ket.warna, tebal: false })),
   ];
@@ -118,7 +125,7 @@ export function primStrip(d: DokSLD, simple = false): Prim[] {
   o.push(tk(24.5, 260, 'Drawing No.', 2.15), tk(19.5, 260, potong(b.nomor, 15, 2.15, true), 2.15, true));
   o.push(tk(14.5, 260, 'Scale :', 2.15), tk(9.5, 260, potong(b.skala, 15, 2.15, true), 2.15, true));
   o.push(gr(7, 276, 27, 276, 0.3));
-  o.push(tk(24.5, 278, 'SHEET', 2.15), tk(19.5, 278, simple ? '1 of 1' : '1 of 2', 2.15, true), tk(14.5, 278, 'Rev.', 2.15), tk(9.5, 278, potong(b.rev, 11, 2.15, true), 2.15, true));
+  o.push(tk(24.5, 278, 'SHEET', 2.15), tk(19.5, 278, simple || d.tanpaKoneksi ? '1 of 1' : '1 of 2', 2.15, true), tk(14.5, 278, 'Rev.', 2.15), tk(9.5, 278, potong(b.rev, 11, 2.15, true), 2.15, true));
   return o;
 }
 

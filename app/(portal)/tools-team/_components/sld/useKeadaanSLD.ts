@@ -276,6 +276,7 @@ export function useKeadaanSLD() {
     const r = dokRuang(p, ruang);
     return gabungRuang(p, ruang, { ...r, boq: { ...r.boq, [kunci]: { ...r.boq?.[kunci], ...isi } } });
   }), []);
+  const aturSheet2 = useCallback((aktif: boolean) => setProyek(p => ({ ...p, tanpaKoneksi: aktif ? undefined : true })), []);
   const aturKertas = useCallback((k: Kertas) => setProyek(p => ubahKertas(p, k)), []);
   const pilihRuang = useCallback((i: number) => { ruangRef.current = i; setRuangAktifState(i); setPilih(null); }, []);
   const tambahRuangBaru = useCallback(() => {
@@ -304,7 +305,7 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
-    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturSheet2, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId,
   };
 }

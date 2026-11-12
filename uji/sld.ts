@@ -330,6 +330,18 @@ void (async () => {
   const xs = new ExcelJS.Workbook();
   await xs.xlsx.load((await bukuExcel({ dok: d, simple: true, lembar1: [png1] })) as unknown as ArrayBuffer);
   cek('Excel mode Simple: hanya Sheet 1', xs.worksheets.length === 1);
+  const sp4 = { ...perangkatBaru('speaker', 60, 60), id: 'sp4', nama: 'Speaker Ceiling', qty: 4 }, kb100 = { ...perangkatBaru('tv-tcl', 160, 60), id: 'kb', nama: 'Kabel LAN', qty: 100, satuan: 'm' };
+  const dQty = { ...dokBaru(), perangkat: [sp4, kb100] }, sQty = svgLembar1(dQty);
+  cek('qty: 1 gambar mewakili banyak unit tampil (4X) di sheet 1, sheet 2 & BOQ ikut menghitung', sQty.includes('>#Speaker Ceiling (4X)<') && sQty.includes('>#Kabel LAN (100 m)<')
+    && !svgLembar1({ ...dQty, perangkat: [{ ...sp4, qty: 1 }] }).includes('(1X)') && barisBoq(dQty).find(b => b.contoh.id === 'sp4')!.qty === 4
+    && barisPerangkat(dQty).some(b => b.qty === '4 unit') && kartuGambar(dQty).some(k => k.sub.includes('(4 unit)')));
+  const dTk = bersihkanDok({ ...dQty, tanpaKoneksi: true })!;
+  const xt = new ExcelJS.Workbook();
+  await xt.xlsx.load((await bukuExcel({ dok: dTk, lembar1: [png1] })) as unknown as ArrayBuffer);
+  const vTk = await bacaZip(buatVsdx({ dok: dTk, gambar: new Map() }));
+  cek('Sheet 2 bisa dimatikan: tersimpan, sheet 1 "1 of 1", tidak ada di Visio & Excel (BOQ tetap)', dTk.tanpaKoneksi === true && svgLembar1(dTk).includes('>1 of 1<')
+    && !vTk.get('visio/pages/page2.xml') && xt.worksheets.map(w => w.name).join('|') === 'Sheet 1 - Diagram|Sheet 3 - BOQ'
+    && gabungRuang(tambahRuang(dTk), 1, dokRuang(tambahRuang(dTk), 1)).tanpaKoneksi === true && bersihkanDok(dQty)!.tanpaKoneksi === undefined);
   console.log('\n13. Proyek multi ruangan & BOQ bisa disesuaikan');
   const pr1 = tambahRuang({ ...d, blok: { ...d.blok, proyek: 'Gedung A', lokasi: 'RS Contoh' } }, 'Ruang Rapat');
   const r2 = dokRuang(pr1, 1), pr2 = gabungRuang(pr1, 1, { ...r2, perangkat: [perangkatBaru('tv-tcl', 60, 40), perangkatBaru('presentasi', 140, 40)] });

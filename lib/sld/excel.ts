@@ -129,7 +129,7 @@ export async function bukuExcel(m: MasukanExcel): Promise<Uint8Array> {
   for (let i = 0; i < n; i++) {
     const g = m.lembar1?.[i];
     if (g) lembarGambar(wb, nama('Sheet 1 - Diagram', i), g);
-    if (!m.simple) lembarTabel(wb, dokRuang(m.dok, i), nama('Sheet 2 - Koneksi', i));
+    if (!m.simple && !m.dok.tanpaKoneksi) lembarTabel(wb, dokRuang(m.dok, i), nama('Sheet 2 - Koneksi', i));
   }
   if (!m.simple) lembarBoq(wb, m.dok, m.gambar);
   return new Uint8Array(await wb.xlsx.writeBuffer());

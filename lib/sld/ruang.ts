@@ -17,7 +17,7 @@ export function dokRuang(d: DokSLD, i: number): DokSLD {
 }
 
 export function gabungRuang(d: DokSLD, i: number, v: DokSLD): DokSLD {
-  const bersama = { blok: v.blok, watermark: v.watermark, kertas: v.kertas, huruf: v.huruf };
+  const bersama = { blok: v.blok, watermark: v.watermark, kertas: v.kertas, huruf: v.huruf, tanpaKoneksi: v.tanpaKoneksi };
   const isi = { perangkat: v.perangkat, kabel: v.kabel, teks: v.teks, catatan: v.catatan, boq: v.boq, zona: v.zona };
   if (i <= 0 || !d.ruangLain?.[i - 1]) return { ...d, ...bersama, ...isi, ...(i <= 0 && jumlahRuang(d) === 1 ? { namaRuang: v.namaRuang } : {}) };
   return { ...d, ...bersama, ruangLain: d.ruangLain.map((r, k) => (k === i - 1 ? { ...r, ...isi } : r)) };
