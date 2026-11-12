@@ -4,7 +4,7 @@ import { cobaIdentitas, idDariNama, tanpaIdentitas } from '@/lib/identitas';
 import { appLink } from '@/lib/app-url';
 import type { NotifPayload } from '@/lib/notifications';
 import { gagal, hariIniWIB, idSah, peranDari, penerimaAdminServer, teks, tglSah } from '@/lib/integrasi/bantu';
-import { adalahGalat } from '@/lib/integrasi/menu';
+import { adalahGalat } from '@/lib/integrasi/menu-desain';
 
 import { type Aksi, GARIS, type Orang, anggotaDitawarkan, daftarSupervisor, diriSendiri, cariOrang, contoh, kirimWA, audit, targetCC } from '@/lib/integrasi/tulis-bersama';
 

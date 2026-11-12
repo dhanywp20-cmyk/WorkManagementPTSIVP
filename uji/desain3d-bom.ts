@@ -3,7 +3,7 @@ import {
   bendaBaru, bomDesain, checklistDariBom, daftarBenda, daftarRuang, faktorCahayaRuang, jalurKabel, KATEGORI_RUANG, kontrasProyektor, luxCahayaDi, luxRuangDari, templateRuang,
   URUTAN_KATEGORI, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { validasiDraft } from '../lib/checklist/inti';
+import { validasiDraft } from '../lib/checklist/inti-baca';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };

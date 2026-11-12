@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { AKSI_BACA, AKSI_TULIS, jalankanAksi, type KonteksAksi } from '../lib/integrasi/aksi';
 import { AKSI_MENU_TULIS } from '../lib/integrasi/tulis';
-import { hakDesain, type RequestDesain } from '../lib/integrasi/menu';
+import { hakDesain, type RequestDesain } from '../lib/integrasi/menu-desain';
 import { periodeAnalisa } from '../lib/integrasi/analisa';
 import type { AkunTambahan } from '../lib/integrasi/bantu';
 import type { UserLengkap } from '../lib/ai-server';

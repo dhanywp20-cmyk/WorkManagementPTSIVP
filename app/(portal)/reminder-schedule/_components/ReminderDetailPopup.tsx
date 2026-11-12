@@ -1,18 +1,18 @@
 'use client';
 import { appBaseUrl } from '@/lib/app-url';
 import { useRouter } from 'next/navigation';
-import {
-  SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan, KepalaModal,
-} from '@/components/shared';
+import { SectionHeaderSmall, InfoRow, Username, ModalPortal, TombolSetujui, TombolTolak, TombolTugaskan } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { ModePenyelesaianPanel } from './ModePenyelesaianPanel';
-import { Reminder, Status, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, STATUS_CONFIG, REPEAT_OPTIONS, formatDate, cleanRequestNotes } from './shared';
+import { Reminder, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, REPEAT_OPTIONS, formatDate, cleanRequestNotes } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { buatIcs } from '@/lib/ics';
 import { unduhUrl } from '@/lib/lembar-cetak';
 import { hasFullAccess } from '@/lib/constants';
 import { useKonteksJadwal } from './konteks-jadwal';
 import { SeksiPelaksanaan } from './SeksiPelaksanaan';
+import { RiwayatJadwal } from './RiwayatJadwal';
+import { EditJadwalCepat } from './EditJadwalCepat';
 
 export function ReminderDetailPopup({ detailReminder }: { detailReminder: Reminder }) {
   const k = useKonteksJadwal();
@@ -257,110 +257,12 @@ export function ReminderDetailPopup({ detailReminder }: { detailReminder: Remind
               </div>
             </div>
           )}
-          {bolehEditReminder(detailReminder) && detailReminder.assigned_to && (
-          <div>
-            <p className="text-[11px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
-            {detailReminder.status === 'done' ? (
-              <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-3" style={{ background: 'rgba(16,185,129,0.1)', border: '1.5px solid rgba(16,185,129,0.35)' }}>
-                <span className="text-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <div>
-                  <p className="text-xs font-bold text-emerald-700">Jadwal Selesai</p>
-                  <p className="text-[11px] text-emerald-700">Status completed tidak dapat diubah kembali.</p>
-                </div>
-              </div>
-            ) : (
-            <div className="flex flex-wrap gap-2 mb-3">
-              {(Object.keys(STATUS_CONFIG) as Status[]).filter(s => s !== 'done' || detailReminder.status !== 'done').map(s => {
-                const c = STATUS_CONFIG[s];
-                const isActive = (pendingStatus ?? detailReminder.status) === s;
-                return (
-                  <button key={s}
-                    onClick={() => {
-                      setPendingStatus(s);
-                      if (s !== 'done') { setStatusPhoto(null); setStatusPhotoPreview(null); setShowModeModal(false); }
-                      else if ((INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)) {
-                        setPendingPhotoUrl(undefined);
-                        setModePenyelesaian(null); setInstallerName(''); setInstallerUserId(null); setInstallerDaerah('');
-                        setBastDate(new Date().toISOString().split('T')[0]);
-                        setDisplayType(null); setRequiresMiddleware(false);
-                        setRequiresControllerAuto(false); setControllerBrand(null);
-                        setShowModeModal(true);
-                      }
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive ? 'ring-2 ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'}`}
-                    style={{ background: c.bg, color: c.color, border: `2px solid ${c.border}`, '--tw-ring-color': c.border } as React.CSSProperties}>
-                    <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {c.label}
-                  </button>
-                );
-              })}
-            </div>
-            )}
-
-            {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && !showModeModal && (
-              <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
-                <p className="text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: '#047857' }}>
-                  <IkonTeks nama="📸" />Foto Bukti Selesai <span className="text-gray-500 font-normal normal-case">(opsional)</span>
-                </p>
-                <input
-                  ref={statusPhotoRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setStatusPhoto(file);
-                      const reader = new FileReader();
-                      reader.onload = ev => setStatusPhotoPreview(ev.target?.result as string);
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                {statusPhotoPreview ? (
-                  <div className="relative">
-                    <img src={statusPhotoPreview} alt="preview" className="w-full max-h-40 object-cover rounded-lg" />
-                    <button aria-label="Tutup"
-                      onClick={() => { setStatusPhoto(null); setStatusPhotoPreview(null); if (statusPhotoRef.current) statusPhotoRef.current.value = ''; }}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600">
-                      ✕
-                    </button>
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1.5"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {statusPhoto?.name}</p>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => statusPhotoRef.current?.click()}
-                    className="w-full border-2 border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-all hover:bg-emerald-50"
-                    style={{ borderColor: 'rgba(16,185,129,0.5)' }}>
-                    <span className="text-2xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                    <span className="text-xs font-bold text-emerald-700">Klik untuk upload foto</span>
-                    <span className="text-[11px] text-gray-500">JPG, PNG, WEBP — maks. 10MB</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {pendingStatus && pendingStatus !== detailReminder.status && !showModeModal && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
-                  className="flex-1 py-2 rounded-xl text-xs font-bold transition-all"
-                  style={{ background: 'rgba(0,0,0,0.06)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
-                  Batal
-                </button>
-                <button
-                  onClick={handleConfirmStatusUpdate}
-                  disabled={updatingStatus}
-                  className="tombol-utama flex-1 py-2 rounded-kontrol text-xs font-bold flex items-center justify-center gap-2">
-                  {updatingStatus
-                    ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                  }
-                  {updatingStatus ? 'Menyimpan...' : 'Konfirmasi Update'}
-                </button>
-              </div>
-            )}
-          </div>
-          )}
+          <EditJadwalCepat
+            bolehEditReminder={bolehEditReminder} detailReminder={detailReminder} pendingStatus={pendingStatus} setPendingStatus={setPendingStatus} setStatusPhoto={setStatusPhoto} setStatusPhotoPreview={setStatusPhotoPreview}
+            setShowModeModal={setShowModeModal} setPendingPhotoUrl={setPendingPhotoUrl} setModePenyelesaian={setModePenyelesaian} setInstallerName={setInstallerName} setInstallerUserId={setInstallerUserId} setInstallerDaerah={setInstallerDaerah}
+            setBastDate={setBastDate} setDisplayType={setDisplayType} setRequiresMiddleware={setRequiresMiddleware} setRequiresControllerAuto={setRequiresControllerAuto} setControllerBrand={setControllerBrand} showModeModal={showModeModal}
+            statusPhotoRef={statusPhotoRef} statusPhotoPreview={statusPhotoPreview} statusPhoto={statusPhoto} handleConfirmStatusUpdate={handleConfirmStatusUpdate} updatingStatus={updatingStatus}
+          />
 
           {detailReminder.status === 'done' && detailReminder.completion_photo_url && (
             <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)' }}>
@@ -392,76 +294,7 @@ export function ReminderDetailPopup({ detailReminder }: { detailReminder: Remind
         </div>
       </div>
 
-      {showRiwayat && !showModeModal && (
-        <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-40 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full shrink-0 md:self-start overflow-hidden flex flex-col"
-          style={{ maxHeight: '100%' }}>
-          <KepalaModal judul="Riwayat Perubahan" keterangan={detailReminder.project_name} onTutup={() => setShowRiwayat(false)} />
-          <div className="flex-1 overflow-y-auto">
-            <AuditTrailPanel targetId={detailReminder.id} modul="reminder"
-              selaluTerbuka sembunyikanBilaKosong={false}
-              awal={{
-                oleh: (detailReminder.created_by
-                  ? (guestUsers.find(g => g.username === detailReminder.created_by)?.full_name ?? detailReminder.created_by)
-                  : detailReminder.sales_name) || null,
-                waktu: detailReminder.created_at ?? null,
-                keterangan: `Diajukan${detailReminder.sales_division ? ` — ${detailReminder.sales_division}` : ''} · kategori ${detailReminder.category}`
-                  + (() => {
-                    const namaPembuat = detailReminder.created_by
-                      ? (guestUsers.find(g => g.username === detailReminder.created_by)?.full_name ?? detailReminder.created_by)
-                      : null;
-                    return namaPembuat && detailReminder.sales_name && namaPembuat !== detailReminder.sales_name
-                      ? ` · atas nama Sales ${detailReminder.sales_name}` : '';
-                  })(),
-              }}
-              turunan={[
-                ...(detailReminder.assign_name?.trim()
-                  ? [{ aksi: 'assign', oleh: detailReminder.assign_name,
-                       waktu: detailReminder.due_date ?? detailReminder.created_at ?? null,
-                       keterangan: `Dikerjakan ${detailReminder.assign_name} — dari data jadwal` }]
-                  : []),
-                ...(detailReminder.status === 'done'
-                  ? [{ aksi: 'status_change', oleh: detailReminder.assign_name || null,
-                       waktu: detailReminder.bast_date ?? detailReminder.due_date ?? null,
-                       keterangan: 'Ditandai selesai — dari data jadwal' }]
-                  : []),
-              ]} />
-
-            {(() => {
-              const r = detailReminder as { routing_status?: string | null; assigned_to?: string | null; assign_name?: string | null; status?: string };
-              const sudahAssign = !!((r.assigned_to && r.assigned_to.trim() !== '') || (r.assign_name && r.assign_name.trim() !== ''));
-              const selesai     = r.status === 'done';
-              const batal       = r.status === 'cancelled';
-              const aktif = selesai      ? 5
-                : sudahAssign            ? 3
-                : r.routing_status === 'internal_review' ? 1
-                : 2;
-              return (
-                <FlowSteps
-                  judul="Alur Request"
-                  aktif={aktif}
-                  dibatalkan={batal}
-                  steps={[
-                    { label: 'Diajukan',  pelaku: detailReminder.sales_name || 'Sales' },
-                    { label: 'Diteruskan', pelaku: (() => {
-                      const namaDari = (id?: string | null) => id ? guestUsers.find(g => g.id === id)?.full_name : undefined;
-                      const r1 = namaDari(detailReminder.internal_sales_id);
-                      const r2 = namaDari(detailReminder.internal_sales_id_2);
-                      if (r1 && r2) return `${r1} & ${r2}`;
-                      if (r1) return r1;
-                      const pembuat = guestUsers.find(g => g.username === detailReminder.created_by);
-                      if (pembuat?.is_internal_sales) return pembuat.full_name;
-                      return 'Sales Internal';
-                    })() },
-                    { label: 'Di-assign', pelaku: 'Admin' },
-                    { label: 'Dikerjakan', pelaku: detailReminder.assign_name || 'Team PTS' },
-                    { label: 'Selesai',   pelaku: 'BAST' },
-                  ]}
-                />
-              );
-            })()}
-          </div>
-        </div>
-      )}
+      <RiwayatJadwal showRiwayat={showRiwayat} showModeModal={showModeModal} detailReminder={detailReminder} setShowRiwayat={setShowRiwayat} guestUsers={guestUsers} />
 
       {showModeModal && (
         <ModePenyelesaianPanel

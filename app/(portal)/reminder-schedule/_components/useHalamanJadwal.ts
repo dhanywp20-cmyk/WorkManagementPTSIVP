@@ -6,11 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { clearSession, getSession } from '@/lib/auth/sesi';
-import { logAudit } from '@/lib/audit';
 import { muatKategoriInsentif } from '@/lib/incentive/scheme';
 import { syncRemindersToProjectProgress, triggersProjectProgress, type ReminderSnapshot } from '@/lib/checklist/sinkron-progress';
 import { kutipNilai, cobaIdentitas } from '@/lib/identitas';
-import { Status, Reminder, TeamUser, GuestUser, resolveSupervisorsForProductType, diluarIncentive } from './shared';
+import { Status, Reminder, TeamUser, GuestUser, resolveSupervisorsForProductType } from './shared';
 import { type JadwalRequest } from './RequestJadwalModal';
 import { useAlurPersetujuan } from './useAlurPersetujuan';
 import { useAksiStatus } from './useAksiStatus';
@@ -27,6 +26,7 @@ import { useStateModePenyelesaian } from './useStateModePenyelesaian';
 import { hitungPerluAksi } from './perlu-aksi';
 import { buatFormKosong } from './form-kosong';
 import { siapkanSinkronInsentif } from './siapkanSinkronInsentif';
+import { useBukaJadwalDariTautan } from './useBukaJadwalDariTautan';
 
 export function useHalamanJadwal() {
   const router = useRouter();
@@ -302,33 +302,10 @@ export function useHalamanJadwal() {
       .then(n => { setPendingReviewCount(n); setJumlahReviewSiap(true); });
   }, [isGuest, currentUser?.full_name]);
 
-  useEffect(() => {
-    if (!currentUser || searchParams.get('buat') !== '1' || pintasanTerpakai.current) return;
-    if (isGuest) {
-      if (!jumlahReviewSiap) return;
-      pintasanTerpakai.current = true;
-      if (pendingReviewCount === 0) { mulaiRequestJadwal(); return; }
-      setToast({ type: 'error', msg: `Selesaikan dulu ${pendingReviewCount} form review Demo/BAST yang belum dinilai.` });
-      setTimeout(() => setToast(null), 5000);
-      return;
-    }
-    if (canAddReminder) {
-      pintasanTerpakai.current = true;
-      mulaiBuatReminder();
-    }
-  }, [searchParams, currentUser, isGuest, jumlahReviewSiap, pendingReviewCount, canAddReminder]);
-
-  const sudahBukaDariNotif = useRef(false);
-  useEffect(() => {
-    if (sudahBukaDariNotif.current) return;
-    const openId = searchParams.get('open');
-    if (!openId || reminders.length === 0) return;
-    const target = reminders.find(r => r.id === openId);
-    if (target) {
-      sudahBukaDariNotif.current = true;
-      setDetailReminder(target);
-    }
-  }, [searchParams, reminders]);
+  useBukaJadwalDariTautan({
+    currentUser, searchParams, pintasanTerpakai, isGuest, jumlahReviewSiap, pendingReviewCount, mulaiRequestJadwal, setToast,
+    canAddReminder, mulaiBuatReminder, reminders, setDetailReminder,
+  });
 
   useEffect(() => {
     if (!approveTarget) { setApproveSupervisors([]); return; }

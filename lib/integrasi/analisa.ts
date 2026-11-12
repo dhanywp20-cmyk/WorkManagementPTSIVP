@@ -1,5 +1,5 @@
 import { BARIS, adalahAtasan, gagal, hariIniWIB, type HasilAksi, type KonteksAksi } from '@/lib/integrasi/bantu';
-import { terlihatTeamPTS } from '@/lib/integrasi/menu';
+import { terlihatTeamPTS } from '@/lib/integrasi/menu-desain';
 
 type Baris = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v));

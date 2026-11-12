@@ -1,7 +1,5 @@
-import {
-  keadaanJadwal, hitungProgres, progresDari, statDari, bersihkanSebaris,
-  bacaTeks, bacaBaris, validasiDraft, validasiNama, kelompokkan, hitungItemDraft, BATAS,
-} from '../lib/checklist/inti';
+import { keadaanJadwal, hitungProgres, progresDari, statDari, validasiNama, kelompokkan, BATAS } from '../lib/checklist/inti';
+import { bersihkanSebaris, bacaTeks, bacaBaris, validasiDraft, hitungItemDraft } from '../lib/checklist/inti-baca';
 import { isianProyek, tanggal, daftarId, statusProyek } from '../lib/checklist/isian';
 import { triggersProjectProgress } from '../lib/checklist/sinkron-progress';
 

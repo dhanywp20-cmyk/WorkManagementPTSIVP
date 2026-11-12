@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ModalPortal } from '@/components/shared';
-import { supabase, User, Material, Question, FolderNode, buildFolderTree, AppDialog, DialogState, ambilDaftarModel, type ModelAI } from './shared';
+import { supabase, User, Material, Question, FolderNode, buildFolderTree, AppDialog, DialogState } from './shared';
+import { ambilDaftarModel, type ModelAI } from './penilai-ai';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { HeaderBankSoal } from './soal/HeaderBankSoal';
 import { IsiFolderSoal } from './soal/IsiFolderSoal';
@@ -183,7 +184,13 @@ export function QuestionsPage({ user }: { user: User }) {
     correct_answer: 'A', model_answer: '', gambar_url: '',
   } as const;
 
-  const { hasilkanSoal, simpanHasil, handleGenerate, handleBanding } = useBuatSoal({ batchName, genCount, genDiff, genExtraPrompt, genType, kolomUrutanAda, load, materials, modelBandingA, modelBandingB, pdfFile, pdfRef, questions, selectedMat, setBatchName, setDialog, setGenExtraPrompt, setGenStatus, setGenerating, setHasilBanding, setPdfFile, setShowGenerate, user });
+  const {
+    hasilkanSoal, simpanHasil, handleGenerate, handleBanding,
+  } = useBuatSoal({
+    batchName, genCount, genDiff, genExtraPrompt, genType, kolomUrutanAda, load, materials, modelBandingA, modelBandingB, pdfFile,
+    pdfRef, questions, selectedMat, setBatchName, setDialog, setGenExtraPrompt, setGenStatus, setGenerating, setHasilBanding,
+    setPdfFile, setShowGenerate, user,
+  });
 
   const { handleDelete, handleDeleteMatGroup, handleSaveEdit, handleAddManual } = useKelolaSoal({ KOSONG_SOAL, editQ, kolomUrutanAda, load, materials, modeGrup, newQ, questions, setDialog, setEditQ, setNewQ, setShowAddManual, user });
 

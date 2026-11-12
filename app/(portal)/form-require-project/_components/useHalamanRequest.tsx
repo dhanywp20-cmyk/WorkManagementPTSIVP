@@ -21,6 +21,7 @@ import { useMuatRequest } from './useMuatRequest';
 import { useStatistikRequest } from './halaman/useStatistikRequest';
 import { useEfekHalamanRequest } from './halaman/useEfekHalamanRequest';
 import { useFilterRequest } from './useFilterRequest';
+import { buatFormAwal } from './buatFormAwal';
 
 export interface HalamanRequestKonteks {
   currentUser: User;
@@ -196,27 +197,7 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
     return false;
   };
 
-  const initialForm: InitialFormType = {
-    project_name: '', room_name: '', project_location: '',
-    sales_name: !isPTS ? (currentUser.full_name || '') : '',
-    sales_division: !isPTS ? (currentUser.sales_division?.trim() || '') : '',
-    kebutuhan: [], kebutuhan_other: '',
-    solution_product: [], solution_other: '',
-    layout_signage: [], jaringan_cms: [],
-    jumlah_input: '', jumlah_output: '',
-    source: [], source_other: '',
-    camera_conference: 'No', camera_jumlah: '', camera_tracking: [],
-    audio_system: 'No', audio_mixer: '', audio_detail: [],
-    wallplate_input: 'No', wallplate_jumlah: '',
-    tabletop_input: 'No', tabletop_jumlah: '',
-    wireless_presentation: 'No', wireless_mode: [], wireless_dongle: 'No',
-    controller_automation: 'No', controller_type: [],
-    ukuran_ruangan: '', suggest_tampilan: '', keterangan_lain: '',
-    brand_display: '', brand_display_pic_id: '', brand_display_pic_name: '',
-  brand_display_2: '', brand_display_2_pic_id: '', brand_display_2_pic_name: '',
-    brand_middleware: '', brand_middleware_pic_id: '', brand_middleware_pic_name: '',
-    source_laptop_qty: '', source_pc_qty: '',
-  };
+  const { initialForm } = buatFormAwal({ isPTS, currentUser });
 
   const [salesGuestUsers, setSalesGuestUsers] = useState<{id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[]>([]);
   const [myIsInternalSales, setMyIsInternalSales] = useState(false);
