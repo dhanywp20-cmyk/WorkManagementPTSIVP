@@ -21,6 +21,8 @@ import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
 import { PopupGeser } from './sld/PopupGeser';
 import { useKeadaanSLD } from './sld/useKeadaanSLD';
+import { useKatalogTim } from './sld/useKatalogTim';
+import { DialogObjekTim } from './sld/KatalogTim';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
 const GERAK = 'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none';
@@ -50,6 +52,7 @@ function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
 
 export function SLD() {
   const a = useKeadaanSLD();
+  const tim = useKatalogTim();
   const [sheet, setSheet] = useState<Sheet>(1);
   const [zoom, setZoom] = useState(1);
   const [sibuk, setSibuk] = useState('');
@@ -245,14 +248,15 @@ export function SLD() {
               <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">Perangkat</h2>
               <button type="button" onClick={() => setKiri(false)} aria-label="Tutup katalog perangkat" className="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X size={16} /></button>
             </div>
-            <PanelKatalog a={a} />
+            <PanelKatalog a={a} tim={tim} konfirmasi={setKonfirmasi} />
           </section>
           {!kiri && <button type="button" onClick={() => setKiri(true)} className={TAB_KIRI}>Perangkat</button>}
           <PopupGeser buka={kanan} judul="Properti · seret untuk pindah" className={POPUP_KANAN}>
-            <PanelSamping a={a} onTutup={tutupKanan} />
+            <PanelSamping a={a} onTutup={tutupKanan} tim={tim} />
           </PopupGeser>
         </>)}
       </div>
+      {tim.form && <DialogObjekTim key={`${tim.form.item?.id ?? 'baru'}|${tim.form.sumberFoto ?? ''}`} tim={tim} form={tim.form} />}
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );

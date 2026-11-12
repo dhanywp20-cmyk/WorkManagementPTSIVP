@@ -9,6 +9,7 @@ import { rasioDinding } from '@/lib/sld/dinding';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
 import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
+import { perangkatDariTim, type ItemTim } from '@/lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
 import { hapusObjek, type Klip, type Rata, ratakan, salinObjek, tempelKlip, geserObjek } from '@/lib/sld/pilih';
@@ -150,6 +151,13 @@ export function useKeadaanSLD() {
   const ubahKabel = useCallback((id: string, p: Partial<Kabel>) =>
     setDok(d => ({ ...d, kabel: d.kabel.map(x => (x.id === id ? { ...x, ...p } : x)) })), [setDok]);
 
+  const tambahObjekTim = useCallback((t: ItemTim) => {
+    const n = dokRef.current.perangkat.length;
+    if (n >= MAKS_PERANGKAT) return;
+    const p = perangkatDariTim(t, AREA.x + 20 + (n % 6) * 60, AREA.y + 15 + (Math.floor(n / 6) % 4) * 65);
+    setDok(d => (d.perangkat.length >= MAKS_PERANGKAT ? d : { ...d, perangkat: [...d.perangkat, p] }));
+    setPilih({ jenis: 'p', id: p.id });
+  }, [setDok]);
   const tambahPerangkat = useCallback((k: string, posisi?: { x: number; y: number }) => {
     const t = cariTemplat(k);
     const id = idBaru('p');
@@ -312,7 +320,7 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, ingatFoto, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
-    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, pasangIngatan,
   };
 }

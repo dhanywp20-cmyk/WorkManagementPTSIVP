@@ -5,7 +5,10 @@ import { isiIkon, viewBoxIkon } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { KATALOG, LABEL_KELOMPOK, URUTAN_KELOMPOK } from '@/lib/sld/katalog';
 import { kelasInput } from '../bersama/ui';
+import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { ImporBom } from './ImporBom';
+import { SeksiKatalogTim } from './KatalogTim';
+import type { KatalogTim } from './useKatalogTim';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 const KELAS_KARTU = 'group flex flex-col items-center gap-1 rounded-xl border border-slate-200 bg-white px-1.5 pt-1.5 pb-2 min-h-[76px] text-center cursor-pointer '
@@ -15,7 +18,7 @@ export function MiniIkon({ ikon, className = 'w-12 h-8' }: { ikon: string; class
   return <svg viewBox={viewBoxIkon(ikon)} className={className} aria-hidden="true" dangerouslySetInnerHTML={{ __html: isiIkon(ikon) }} />;
 }
 
-export function PanelKatalog({ a }: { a: KeadaanSLD }) {
+export function PanelKatalog({ a, tim, konfirmasi }: { a: KeadaanSLD; tim: KatalogTim; konfirmasi: (s: ConfirmState) => void }) {
   const [cari, setCari] = useState('');
   const daftar = useMemo(() => {
     const q = cari.trim().toLowerCase();
@@ -31,6 +34,7 @@ export function PanelKatalog({ a }: { a: KeadaanSLD }) {
       </label>
       <p className="text-[11px] text-slate-500">Klik untuk menaruh di diagram, lalu seret ke posisinya.</p>
       <div className="max-h-[56vh] overflow-y-auto pr-0.5 space-y-3">
+        <SeksiKatalogTim a={a} tim={tim} cari={cari} konfirmasi={konfirmasi} />
         {daftar.map(g => (
           <div key={g.k}>
             <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-slate-500 mb-1.5">{LABEL_KELOMPOK[g.k]}</p>
@@ -47,7 +51,7 @@ export function PanelKatalog({ a }: { a: KeadaanSLD }) {
             </div>
           </div>
         ))}
-        {!daftar.length && <p className="text-[12px] text-slate-500">Tidak ada perangkat yang cocok.</p>}
+        {!daftar.length && !cari.trim() && <p className="text-[12px] text-slate-500">Tidak ada perangkat yang cocok.</p>}
       </div>
       <button type="button" onClick={a.kabelBebas}
         className="w-full rounded-xl border border-dashed border-slate-300 px-3 py-2 text-[12px] font-semibold text-slate-600 hover:bg-slate-50">

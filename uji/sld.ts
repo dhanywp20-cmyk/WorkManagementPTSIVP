@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { bacaBom, isiDariBom, modelBom } from '../lib/sld/bom';
-import { FOTO_PRODUK } from '../lib/sld/foto-produk';
+import { FOTO_PRODUK, fotoSah } from '../lib/sld/foto-produk';
+import { bersihkanItemTim, idFotoTim, perangkatDariTim, POLA_DATA_FOTO_TIM, urlFotoTim, type ItemTim } from '../lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
 import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelYatim, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
@@ -411,6 +412,19 @@ void (async () => {
   cek('area: ukuran huruf & tebal garis bisa diatur, tersimpan & dibatasi', svgZona(zBesar).includes('stroke-width="1.2"') && labelZona(zBesar).h > labelZona({ ...zBesar, huruf: undefined }).h
     && zDok[0].huruf === 2 && zDok[0].tebal === 1.2 && zDok[1].tebal === 3 && zDok[1].huruf === undefined
     && new TextDecoder().decode((await bacaZip(buatVsdx({ dok: { ...dokBaru(), zona: [zBesar] }, gambar: new Map() }))).get('visio/pages/page1.xml')).includes("NameU='Area'"));
+  console.log('\n16. Katalog object tim');
+  const idT = '0b8a4c1e-5d2f-4a7b-9c3d-1e2f3a4b5c6d';
+  const itemT: ItemTim = { id: idT, versi: 3, adaFoto: true, rasio: 2, oleh: 'Tim', bolehUbah: true, ...bersihkanItemTim({ nama: '  Kamera  PTZ X ', kategori: 'Kamera', kelompok: 'sumber', ikon: 'kamera', port: 'HDMI out, LAN, ', lebar: 500 })! };
+  cek('object tim: isian dibersihkan & dibatasi', itemT.nama === 'Kamera PTZ X' && itemT.port.length === 2 && itemT.lebar === 200 && bersihkanItemTim({ nama: ' ' }) === null
+    && bersihkanItemTim({ nama: 'x', ikon: 'ngawur', kelompok: 'ngawur' })!.ikon === 'umum' && bersihkanItemTim({ nama: 'x', kelompok: 'ngawur' })!.kelompok === 'sumber');
+  const pT = perangkatDariTim(itemT, 50, 50), pT2 = { ...perangkatDariTim({ ...itemT, versi: 4 }, 120, 50), nama: 'Kamera 2' };
+  cek('object tim: perangkat memakai foto tim (URL ber-versi) & model = nama', pT.foto === urlFotoTim(idT, 3) && pT.rasio === 2 && pT.model === 'Kamera PTZ X' && idFotoTim(pT.foto) === idT);
+  cek('foto tim tersimpan di SLD, URL lain ditolak', fotoSah(pT.foto) && !fotoSah('/api/tools-team/sld/katalog/../x/1') && !fotoSah('https://contoh.com/a.jpg')
+    && bersihkanDok({ ...dokBaru(), perangkat: [pT] })!.perangkat[0].foto === pT.foto && tanpaFoto({ ...dokBaru(), perangkat: [pT] }).perangkat[0].foto === pT.foto);
+  cek('object tim beda versi foto tetap satu baris BOQ', barisBoq({ ...dokBaru(), perangkat: [pT, pT2] }).length === 1 && barisBoq({ ...dokBaru(), perangkat: [pT, pT2] })[0].qty === 2);
+  cek('foto tim hanya JPEG data URL', POLA_DATA_FOTO_TIM.test('data:image/jpeg;base64,/9j/4AAQ') && !POLA_DATA_FOTO_TIM.test('data:image/png;base64,iVBOR') && !POLA_DATA_FOTO_TIM.test('data:image/jpeg;base64,<x>'));
+  const tanpaFotoTim = perangkatDariTim({ ...itemT, adaFoto: false, rasio: null }, 0, 0);
+  cek('object tim tanpa foto memakai ilustrasi', !tanpaFotoTim.foto && tanpaFotoTim.ikon === 'kamera');
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);

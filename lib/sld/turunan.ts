@@ -49,7 +49,7 @@ const angkaNo = (no: string) => { const x = parseFloat(no); return Number.isFini
 export const BUKAN_PASOKAN = new Set(['tirai', 'gorden', 'lampu', 'ac', 'fcu', 'mcb']);
 export const ikutDaftar = (p: Perangkat) => !!p.no.trim() || !BUKAN_PASOKAN.has(p.ikon);
 export const kunciNama = (p: Perangkat) => `${p.kategori.trim().toLowerCase()}|${(p.model.trim() || judulKartu(p.nama)).toLowerCase()}`;
-const jenisFoto = (p: Perangkat) => (p.foto && !p.foto.startsWith('data:') ? p.foto : `ikon:${p.ikon}`);
+const jenisFoto = (p: Perangkat) => (p.foto && !p.foto.startsWith('data:') ? p.foto.replace(/^(\/api\/tools-team\/sld\/katalog\/[0-9a-f-]{36})\/\d+$/, '$1') : `ikon:${p.ikon}`);
 export const kunciModel = (p: Perangkat) => (p.model.trim() || IKON_DINDING.has(p.ikon) ? kunciNama(p) : `${p.kategori.trim().toLowerCase()}|jenis:${jenisFoto(p).toLowerCase()}`);
 const namaTemplat = (p: Perangkat) =>
   (KATALOG.find(t => t.foto && FOTO_PRODUK[t.foto]?.src === p.foto) ?? KATALOG.find(t => t.ikon === p.ikon && t.kategori === p.kategori))?.nama;

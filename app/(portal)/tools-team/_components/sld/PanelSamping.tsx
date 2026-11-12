@@ -7,6 +7,7 @@ import { PanelDokumen } from './PanelDokumen';
 import { PropertiKabel } from './PropertiKabel';
 import { PropertiPerangkat } from './PropertiPerangkat';
 import { PropertiTeks } from './PropertiTeks';
+import type { KatalogTim } from './useKatalogTim';
 import { PanelBanyak, PropertiZona } from './PanelPilihan';
 import { kabelYatim } from '@/lib/sld/dok';
 import type { KeadaanSLD } from './useKeadaanSLD';
@@ -33,7 +34,7 @@ function DaftarKoneksi({ a, onPilih }: { a: KeadaanSLD; onPilih: () => void }) {
   );
 }
 
-export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => void }) {
+export function PanelSamping({ a, onTutup, tim }: { a: KeadaanSLD; onTutup?: () => void; tim?: KatalogTim }) {
   const [tab, setTab] = useState<Tab>('properti');
   const p = a.pilih?.jenis === 'p' ? a.dok.perangkat.find(x => x.id === a.pilih!.id) : undefined;
   const c = a.pilih?.jenis === 'k' ? a.dok.kabel.find(x => x.id === a.pilih!.id) : undefined;
@@ -63,7 +64,7 @@ export function PanelSamping({ a, onTutup }: { a: KeadaanSLD; onTutup?: () => vo
           </button>
         )}
       </div>
-      {aktif === 'properti' && (a.terpilih.length > 1 ? <PanelBanyak a={a} /> : zn ? <PropertiZona key={zn.id} a={a} z={zn} /> : p ? <PropertiPerangkat key={p.id} a={a} p={p} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
+      {aktif === 'properti' && (a.terpilih.length > 1 ? <PanelBanyak a={a} /> : zn ? <PropertiZona key={zn.id} a={a} z={zn} /> : p ? <PropertiPerangkat key={p.id} a={a} p={p} tim={tim} /> : c ? <PropertiKabel key={c.id} a={a} c={c} /> : tk ? <PropertiTeks key={tk.id} a={a} t={tk} /> : (
         <div className="text-[13px] text-slate-600 space-y-2">
           <p>Klik perangkat atau garis kabel di diagram untuk mengubahnya.</p>
           <ul className="list-disc pl-5 space-y-1 text-slate-500">
