@@ -85,7 +85,7 @@ export function IsiBankSoal() {
                 ) : (['a','b','c','d'] as const).map(opt => (
                   <div key={opt} className="flex items-center gap-2">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
-                    <input aria-label={`Pilihan jawaban ${opt.toUpperCase()}`} value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
+                    <input aria-label={`Pilihan jawaban ${opt.toUpperCase()}`} value={(editQ)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
                       className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-hidden focus:border-blue-400" />
                     <button onClick={() => setEditQ(p => p && ({ ...p, correct_answer: opt.toUpperCase() as any }))}
                       className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50'}`}>

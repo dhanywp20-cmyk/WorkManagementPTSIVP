@@ -19,11 +19,11 @@ export async function ambilTiketUntuk(
       .eq("id", activeUser.id)
       .maybeSingle();
     const resolvedUser = { ...activeUser, ...(freshUser ?? {}) };
-    const selfJabatan = (resolvedUser as any).jabatan as string | undefined;
+    const selfJabatan = (resolvedUser).jabatan as string | undefined;
     const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
     const selfUsername = resolvedUser.username;
     const selfDiv = resolvedUser.sales_division;
-    const selfFullName = (freshUser?.full_name || (resolvedUser as any).full_name) as string | undefined;
+    const selfFullName = (freshUser?.full_name || (resolvedUser).full_name) as string | undefined;
     const selfFirstName = selfFullName?.split(' ')[0];
     const isMyTicket = (t: Ticket) =>
       t.created_by === selfUsername ||

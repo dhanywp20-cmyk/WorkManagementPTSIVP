@@ -183,7 +183,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                             return (
                               <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
                                 <span className={`w-4 h-4 rounded-sm flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
-                                <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
+                                <span className="leading-snug">{(q)[`option_${opt}`]}</span>
                               </div>
                             );
                           })}

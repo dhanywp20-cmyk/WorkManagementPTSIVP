@@ -113,7 +113,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     }));
   };
 
-  const uniqueDivisions = [...new Set(teamUsers.map(u => (u as any).sales_division).filter(Boolean))].sort();
+  const uniqueDivisions = [...new Set(teamUsers.map(u => (u).sales_division).filter(Boolean))].sort();
 
   const handleCreate = async () => {
     if (!form.session_name.trim()) { setDialog({ type: 'error', message: 'Nama sesi wajib diisi!' }); return; }
@@ -127,8 +127,8 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     const mat = materials.find(m => m.id === form.material_id);
     const pool = questions.filter(q =>
       q.material_id === form.material_id &&
-      (!form.batch_filter || (q as any).batch_name === form.batch_filter) &&
-      ((q as any).question_type ?? 'abcd') === form.session_type
+      (!form.batch_filter || (q).batch_name === form.batch_filter) &&
+      ((q).question_type ?? 'abcd') === form.session_type
     );
     if (pool.length < form.question_count) {
       const batchInfo = form.batch_filter ? ` di grup "${form.batch_filter}"` : '';
@@ -145,7 +145,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       resolvedTargetIds = form.target_user_ids;
     } else if (form.target_mode === 'division') {
       resolvedTargetIds = teamUsers
-        .filter(u => form.target_divisions.includes((u as any).sales_division ?? ''))
+        .filter(u => form.target_divisions.includes((u).sales_division ?? ''))
         .map(u => u.id);
     }
     setSaving(true);
@@ -247,7 +247,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       resolvedTargetIds = reassignForm.target_user_ids;
     } else if (reassignForm.target_mode === 'division') {
       resolvedTargetIds = teamUsers
-        .filter(u => reassignForm.target_divisions.includes((u as any).sales_division ?? ''))
+        .filter(u => reassignForm.target_divisions.includes((u).sales_division ?? ''))
         .map(u => u.id);
     }
     setReassigning(true);

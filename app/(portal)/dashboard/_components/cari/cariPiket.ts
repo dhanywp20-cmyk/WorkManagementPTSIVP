@@ -23,7 +23,7 @@ export async function cariPiket(k: KonteksCariPiket) {
       .select('id, day_date, day_of_week, pic, pic_ivp_name, pic_ump_name, pic_mvi_name, pic_ivp_id, pic_ump_id, pic_mvi_id')
       .or(`pic_ivp_name.ilike.%${q}%,pic_ump_name.ilike.%${q}%,pic_mvi_name.ilike.%${q}%,day_date.ilike.%${q}%`)
       .order('day_date', { ascending: false }).limit(10);
-    let pikets = (pkData ?? []) as any[];
+    let pikets = (pkData ?? []);
 
     if (isSalesBiasa || isSalesSup) {
       pikets = [];
@@ -36,7 +36,7 @@ export async function cariPiket(k: KonteksCariPiket) {
       });
     }
 
-    pikets.forEach((p: any) => res.push({
+    pikets.forEach((p) => res.push({
       id: `piket-${p.id}`, type: 'piket', icon: '🏪',
       title: `Piket ${p.day_of_week ?? ''} ${p.day_date ?? ''}`,
       sub: [p.pic_ivp_name, p.pic_ump_name, p.pic_mvi_name].filter(Boolean).join(' · ') || '-',

@@ -222,7 +222,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
     setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
     setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
 
-    const judulSesi = (selectedAttempt as any)?.lc_quiz_sessions?.title as string | undefined;
+    const judulSesi = (selectedAttempt)?.lc_quiz_sessions?.title as string | undefined;
     void createNotification({
       user_id: selectedAttempt.user_id,
       type: 'system',

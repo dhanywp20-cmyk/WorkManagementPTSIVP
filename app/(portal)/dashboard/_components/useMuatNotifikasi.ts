@@ -34,10 +34,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
     try {
       const { data: allMembers } = await ingat('team_members:nama-kelompok', () => supabase.from('team_members').select('name, team_type, username'));
       if (allMembers && allMembers.length > 0) {
-        for (const m of allMembers as any[]) {
+        for (const m of allMembers) {
           if (m?.name && m?.team_type) kelompokDariNama.set(String(m.name).trim().toLowerCase(), String(m.team_type));
         }
-        const found = (allMembers as any[]).find(m =>
+        const found = (allMembers).find(m =>
           (m.username ?? '').toLowerCase().trim() === currentUser.username.toLowerCase().trim()
         );
         if (found?.name) assignedName = found.name;
@@ -46,7 +46,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
     } catch {  }
     try {
       const { data: semuaAkun } = await ingat('users:team-kelompok', () => supabase.from('users').select('full_name, team_type').eq('role', 'team'));
-      for (const u of (semuaAkun ?? []) as any[]) {
+      for (const u of (semuaAkun ?? [])) {
         const n = String(u?.full_name ?? '').trim().toLowerCase();
         if (n && u?.team_type && !kelompokDariNama.has(n)) kelompokDariNama.set(n, String(u.team_type));
       }
@@ -148,7 +148,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const isIVPUser2 = currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI';
         const BRAND_DIVS = ['MLDS', 'UMP', 'OSS'];
         const isBrandPICNotif = BRAND_DIVS.includes(currentUser.sales_division || '');
-        const selfJabatanN = (currentUser as any).jabatan as string | undefined;
+        const selfJabatanN = (currentUser).jabatan as string | undefined;
         const TIER_MAP: Record<string, number> = { 'Staff': 1, 'Supervisor': 2, 'Manager': 3, 'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6 };
         const selfTierN = selfJabatanN ? (TIER_MAP[selfJabatanN] ?? 0) : 0;
         const selfDivN = currentUser.sales_division;
@@ -170,7 +170,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
                 .eq('sales_name', currentUser.full_name)
             ).order('created_at', { ascending: false }).limit(50)
-            : Promise.resolve({ data: [] as any[] }),
+            : Promise.resolve({ data: [] }),
         ]);
 
         const baseMap = new Map<string, any>();
@@ -263,7 +263,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           menuTitle: 'Request Schedule',
         })));
       } else if (roleLC === 'team') {
-        const selfJabatanTeam = (currentUser as any).jabatan as string | undefined;
+        const selfJabatanTeam = (currentUser).jabatan as string | undefined;
         const isManagerTeam = selfJabatanTeam === 'Manager';
         const [{ data: assignedToMe }, { data: needsMyAssign }, { data: needsMyApproval }] = await Promise.all([
           supabase.from('reminders')
@@ -280,14 +280,14 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, category, due_date, status, assigned_to, created_at')
                 .eq('routing_status', 'admin_review')
                 .order('created_at', { ascending: false }).limit(20)
-            : Promise.resolve({ data: [] as any[] }),
+            : Promise.resolve({ data: [] }),
         ]);
-        const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r: any) => !r.assigned_to);
+        const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r) => !r.assigned_to);
         const needsAssignIds = new Set((needsMyAssign ?? []).map((r) => r.id));
-        const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r: any) => r.id));
+        const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r) => r.id));
         const seenTeam = new Set<string>();
         const combinedTeam = [...needsMyApprovalFiltered, ...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
-          .filter((r: any) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
+          .filter((r) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
         setReminderNotifs(combinedTeam.map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,

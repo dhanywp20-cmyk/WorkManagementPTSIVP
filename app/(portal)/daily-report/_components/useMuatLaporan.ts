@@ -53,8 +53,8 @@ export function useMuatLaporan(k: MuatLaporanKonteks) {
         fetchAllReminders(opts),
         fetchAllTickets(opts),
       ]);
-      setLiveReminders(rem as any);
-      setLiveTickets(tick as any);
+      setLiveReminders(rem);
+      setLiveTickets(tick);
     } catch { }
     setLiveLoading(false);
   }, [currentUser, lihatSemua, teamUsers, filterDate, filterUser]);

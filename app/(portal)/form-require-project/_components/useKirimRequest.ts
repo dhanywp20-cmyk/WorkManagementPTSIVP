@@ -208,7 +208,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             `Sales External *${currentUser.full_name}* mengajukan request untuk *${form.project_name.trim()}*.\n` +
             `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
           await Promise.allSettled(
-            (adminUsersWA as any[]).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp, event: 'project.approval_needed' }))
+            (adminUsersWA).map((a) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp, event: 'project.approval_needed' }))
           );
         }
         if (adminUsersWA && adminUsersWA.length > 0 && routingStatus !== 'internal_review') {
@@ -224,7 +224,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             `🔗 ${appLink()}`,
           ].join('\n');
           await Promise.allSettled(
-            (adminUsersWA as any[]).map((a: any) =>
+            (adminUsersWA).map((a) =>
               sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: approvalWaMsg, event: 'project.approval_needed' })
             )
           );
@@ -304,7 +304,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             });
             if (brandPicIds.size > 0) {
               const { data: picUsers } = await supabase.from('users').select('id, full_name, phone_number').in('id', Array.from(brandPicIds));
-              for (const pic of (picUsers || []) as any[]) {
+              for (const pic of (picUsers || [])) {
                 if (!pic.phone_number) continue;
                 const picRooms = allRooms.filter(r => r.brand_display_pic_id===pic.id || r.brand_display_2_pic_id===pic.id || r.brand_middleware_pic_id===pic.id);
                 const brandMsg = [

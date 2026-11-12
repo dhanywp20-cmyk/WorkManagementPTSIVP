@@ -31,7 +31,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
       <div className="flex flex-wrap gap-2">
         {['Yes','No'].map(opt => (
-          <button key={opt} type="button" onClick={() => onUpdate({ [field]: opt } as any)}
+          <button key={opt} type="button" onClick={() => onUpdate({ [field]: opt })}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>
               {value === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}
@@ -51,7 +51,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           const active = value.includes(opt);
           return (
             <button aria-pressed={active} key={opt} type="button"
-              onClick={() => onUpdate({ [field]: multi ? toggleArr(value, opt) : (active ? [] : [opt]) } as any)}
+              onClick={() => onUpdate({ [field]: multi ? toggleArr(value, opt) : (active ? [] : [opt]) })}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
               <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
                 {active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}

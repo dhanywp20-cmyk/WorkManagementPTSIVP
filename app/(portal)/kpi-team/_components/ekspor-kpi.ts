@@ -123,9 +123,9 @@ export function exportKPIExcel(
     const sc = (R: number, C: number, s: object) => {
       const a = XLSX.utils.encode_cell({ r: R, c: C });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!(ws as any)[a]) (ws as any)[a] = { t: 's', v: '' };
+      if (!(ws)[a]) (ws)[a] = { t: 's', v: '' };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (ws as any)[a].s = s;
+      (ws)[a].s = s;
     };
     const fr = (R: number, s: object) => { for (let C = 0; C < COL_COUNT; C++) sc(R, C, s); };
     const rng = (r1: number, r2: number, s: object) => { for (let R = r1; R <= r2; R++) fr(R, s); };
@@ -185,7 +185,7 @@ export function exportKPIExcel(
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ws as any)['!rows'] = rows.map((_, i) => {
+    (ws)['!rows'] = rows.map((_, i) => {
       if (i === 0)  return { hpx: 28 };
       if (i === 2)  return { hpx: 22 };
       if (i === 8)  return { hpx: 30 };
@@ -225,5 +225,5 @@ export function exportKPIExcel(
   const today = fmt(new Date());
   const filename = `KPI-IVP-${periodLabel.replace(/\s/g, '-')}-${today}.xlsx`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  XLSX.writeFile(wb, filename, { bookType: 'xlsx', cellStyles: true } as any);
+  XLSX.writeFile(wb, filename, { bookType: 'xlsx', cellStyles: true });
 }

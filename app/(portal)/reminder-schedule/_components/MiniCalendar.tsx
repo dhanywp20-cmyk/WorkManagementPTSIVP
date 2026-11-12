@@ -84,7 +84,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
                 style={{ background: 'white', borderColor: 'rgba(0,0,0,0.08)' }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
+                    <p className="text-sm font-bold text-gray-800 truncate">{(r.project_name || '').trim() || ((r).title || '').trim() || '—'}</p>
                     <p className="text-[11px] text-gray-500 mt-0.5"><Ikon nama="⏰" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.due_time} · 👤 {r.assign_name}</p>
                   </div>
                   <CategoryBadge category={r.category} />

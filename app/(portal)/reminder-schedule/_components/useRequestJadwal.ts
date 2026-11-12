@@ -30,7 +30,7 @@ export function useRequestJadwal(k: RequestJadwalKonteks) {
   const handleRequestJadwal = async (data: JadwalRequest) => {
     if (!currentUser) return;
 
-    let salesDivision = (data as any).sales_division || currentUser.sales_division || '';
+    let salesDivision = (data).sales_division || currentUser.sales_division || '';
     if (!salesDivision) {
       try {
         const { data: freshUser } = await supabase

@@ -67,16 +67,16 @@ export function useMuatKPI(k: MuatKPIKonteks) {
             : Promise.resolve({ data: [] }),
         ]);
 
-      const tickets   = (ticketsRes.data   ?? []) as any[];
-      const reminders = (remindersRes.data ?? []) as any[];
-      let movements = (movRes.data       ?? []) as any[];
-      const actLogs       = (actLogsRes.data     ?? []) as any[];
+      const tickets   = (ticketsRes.data   ?? []);
+      const reminders = (remindersRes.data ?? []);
+      let movements = (movRes.data       ?? []);
+      const actLogs       = (actLogsRes.data     ?? []);
       const piketHolidays = (piketHolidaysRes.data ?? []).map((h) => h.date as string);
       const piketWeek     = (piketWeekRes.data   ?? []) as (PiketPic & { day_date: string; id: string })[];
       const piketToday    = computeCascadedPiketToday(piketWeek, piketHolidays, today);
-      const kegiatan   = (kegiatanRes.data   ?? []) as any[];
-      const users      = (usersRes.data      ?? []) as any[];
-      const lcAttempts = (lcSessionsRes.data ?? []) as any[];
+      const kegiatan   = (kegiatanRes.data   ?? []);
+      const users      = (usersRes.data      ?? []);
+      const lcAttempts = (lcSessionsRes.data ?? []);
 
       if (scope.kind === 'pts_sup') {
         movements = movements.filter((m: any) => scope.ptsMemberNames?.includes(m.nama_pts));
@@ -87,7 +87,7 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const waitingApproval= tickets.filter((t: any)=>t.status==='Waiting Approval').length;
 
       const scopedTicketIds = new Set(tickets.map((t: any)=>t.id as string));
-      const resolvedToday = actLogs.filter((a: any)=>
+      const resolvedToday = actLogs.filter((a)=>
         a.new_status==='Solved' && a.created_at?.startsWith(today) && scopedTicketIds.has(a.ticket_id)
       ).length;
 
@@ -143,7 +143,7 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const weekWorkDays = 5;
 
       const roleMap: Record<string,number> = {};
-      users.forEach((u: any)=>{ const r = typeof u.role === 'string' && u.role.trim() ? u.role.trim() : 'belum diatur'; roleMap[r]=(roleMap[r]||0)+1; });
+      users.forEach((u)=>{ const r = typeof u.role === 'string' && u.role.trim() ? u.role.trim() : 'belum diatur'; roleMap[r]=(roleMap[r]||0)+1; });
 
       const lcSubmitted = lcAttempts.length;
       const lcPassed = lcAttempts.filter((a: any) => a.passed === true).length;
@@ -187,7 +187,7 @@ export function useMuatKPI(k: MuatKPIKonteks) {
         tickets:{ total:tickets.length,open,solved,waitingApproval,byHandler,byStatus,byDivision,byProduct,resolvedToday,avgResolutionDays,monthlyTickets },
         reminders:{ total:reminders.length,pending:reminders.filter((r: any)=>r.status==='pending').length,done:reminders.filter((r: any)=>r.status==='done').length,dueSoon,byCategory,byProduct:remindersByProduct,overdueCount },
         piket:{ todayIVP:piketToday?.pic_ivp_name??null,todayUMP:piketToday?.pic_ump_name??null,todayMvi:piketToday?.pic_mvi_name??null,weekFilled,weekTotal:weekWorkDays,kegiatanToday:kegiatan.length },
-        units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m: any)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m: any)=>m.status_barang==='Masuk').length },
+        units:{ totalLogs:movements.length,keluarThisMonth:movements.filter((m)=>m.status_barang==='Keluar').length,masukThisMonth:movements.filter((m)=>m.status_barang==='Masuk').length },
         users:{ total:users.length,byRole:Object.entries(roleMap).map(([role,count])=>({role,count})) },
         learning:{ totalSessions:lcSubmitted, completedSessions:lcPassed, totalParticipants:lcParticipants, avgScore:lcAvgScore },
       });

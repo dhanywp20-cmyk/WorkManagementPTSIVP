@@ -28,7 +28,7 @@ export async function cariTiket(k: KonteksCariTiket) {
     if (!tanpaBatas) q2 = batasiLingkup(lingkup, q2, ['sales_name', 'created_by']);
 
     const { data: tData } = await q2;
-    let tickets = (tData ?? []) as any[];
+    let tickets = (tData ?? []);
 
     if (tanpaBatas) {
     } else if (isSalesSup) {

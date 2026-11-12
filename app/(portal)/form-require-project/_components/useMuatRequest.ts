@@ -38,7 +38,7 @@ export function useMuatRequest(k: MuatRequestKonteks) {
         atasNama(currentUser.full_name), divFilter,
       ].filter(Boolean).join(','));
     } else {
-      const selfJabatan = (currentUser as any).jabatan as string | undefined;
+      const selfJabatan = (currentUser).jabatan as string | undefined;
       const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
       const selfDiv = currentUser.sales_division;
 
@@ -97,7 +97,7 @@ export function useMuatRequest(k: MuatRequestKonteks) {
           if (isBrandPic) filtered.push(r as ProjectRequest);
         });
       }
-      const selfJabatanPTS = (currentUser as any).jabatan as string | undefined;
+      const selfJabatanPTS = (currentUser).jabatan as string | undefined;
       const isManagerPTS = isTeamPTS && selfJabatanPTS === 'Manager';
       if (isTeamPTS && !isManagerPTS) {
         filtered = filtered.filter(r => !!r.assign_name || r.assigned_supervisor_id === currentUser.id);
@@ -126,7 +126,7 @@ export function useMuatRequest(k: MuatRequestKonteks) {
     }
     setLoading(false);
     setAppReady(true);
-  }, [currentUser.id, currentUser.sales_division, (currentUser as any).jabatan, isPTS, isIVPGuest]);
+  }, [currentUser.id, currentUser.sales_division, (currentUser).jabatan, isPTS, isIVPGuest]);
 
   const fetchMessages = useCallback(async (requestId: string) => {
     const { data, error } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', requestId).order('created_at', { ascending: true });

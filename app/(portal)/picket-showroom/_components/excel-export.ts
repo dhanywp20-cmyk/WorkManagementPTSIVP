@@ -95,7 +95,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs = i%2===0?cellStyle:altStyle;
         data.push([
           cell(s.label,{...rs,font:{name:'Arial',sz:10,bold:true,color:{rgb:s.fg}}}),
-          (s as any).isText
+          (s).isText
             ? cell(s.val,{...rs,font:{name:'Arial',sz:10,bold:true,color:{rgb:s.fg}}})
             : ctr(s.val,{...rs,alignment:{horizontal:'center',vertical:'center'}}),
           cell(s.note,{...rs,font:{name:'Arial',sz:9,color:{rgb:'6B7280'}}}),
@@ -222,7 +222,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
             cell(kg?.sales_division||'-',rs),
             cell(kg?.kebutuhan?.join(', ')||'-',rs),
             cell(kg?.keterangan||'-',{...rs,alignment:{horizontal:'left',vertical:'center',wrapText:true}}),
-            cell((kg as any)?.edited_by_name||'-',{...rs,font:{name:'Arial',sz:9,color:{rgb:'6B7280'}}}),
+            cell((kg)?.edited_by_name||'-',{...rs,font:{name:'Arial',sz:9,color:{rgb:'6B7280'}}}),
           ]);
           rowIdx++;
         });

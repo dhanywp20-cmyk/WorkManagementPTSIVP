@@ -90,7 +90,7 @@ function KartuReminder({ r, onBuka, lencana, warnaGaris }: { r: Reminder; onBuka
             <CategoryBadge category={r.category} />
             {!lencana && <PriorityBadge priority={r.priority} />}
           </div>
-          <p className="font-bold text-sm text-slate-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
+          <p className="font-bold text-sm text-slate-800 truncate">{(r.project_name || '').trim() || ((r).title || '').trim() || '—'}</p>
           {r.address && <p className="text-xs text-slate-500 mt-0.5">{r.address}</p>}
         </div>
         <div className="shrink-0 text-right">

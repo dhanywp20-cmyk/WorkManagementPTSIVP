@@ -36,7 +36,7 @@ export async function cariJadwal(k: KonteksCariJadwal) {
     if (rErr) console.error('[search] reminders (pendukung):', rErr.message);
 
     const terlihat = new Set<string>();
-    let reminders = [...namaRes.data, ...((rData ?? []) as any[])]
+    let reminders = [...namaRes.data, ...((rData ?? []))]
       .filter((r: any) => !terlihat.has(String(r.id)) && terlihat.add(String(r.id)));
 
     if (tanpaBatas) {

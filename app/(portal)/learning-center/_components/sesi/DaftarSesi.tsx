@@ -110,11 +110,11 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
                       <span className="text-xs text-slate-500 italic">—</span>
                     ) : (() => {
                       const divMatches = [...new Set(
-                        teamUsers.filter(u => s.target_user_ids?.includes(u.id) && (u as any).sales_division)
-                          .map(u => (u as any).sales_division as string)
+                        teamUsers.filter(u => s.target_user_ids?.includes(u.id) && (u).sales_division)
+                          .map(u => (u).sales_division as string)
                       )];
                       const allFromDivisions = divMatches.length > 0 &&
-                        teamUsers.filter(u => divMatches.includes((u as any).sales_division ?? '')).length === targetNames.length;
+                        teamUsers.filter(u => divMatches.includes((u).sales_division ?? '')).length === targetNames.length;
                       if (allFromDivisions) {
                         return (
                           <div className="flex flex-wrap gap-1 items-center">

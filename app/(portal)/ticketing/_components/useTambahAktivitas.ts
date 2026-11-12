@@ -269,7 +269,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
           } catch { }
         }
       }
-      const optimisticLog = { ...activityData, id: `tmp-${Date.now()}`, created_at: new Date().toISOString() } as any;
+      const optimisticLog = { ...activityData, id: `tmp-${Date.now()}`, created_at: new Date().toISOString() };
       setSelectedTicket(prev => prev && prev.id === selectedTicket.id ? {
         ...prev,
         status: isServicesTeam ? prev.status : effectiveStatus,

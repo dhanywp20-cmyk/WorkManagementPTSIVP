@@ -54,13 +54,13 @@ export function useSumberKpi(k: SumberKpiKonteks) {
         .gte('reviewed_at', start).lte('reviewed_at', endFull),
     ]);
     return {
-      tickets: (ticketsR.data ?? []) as any[],
-      actLogs: (actR.data ?? []) as any[],
-      reminders: (remR.data ?? []) as any[],
-      lcAttempts: (lcR.data ?? []) as any[],
-      piketRows: (piketR.data ?? []) as any[],
-      formReviews: (formRevR.data ?? []) as any[],
-      techNotes: (techNotesR.data ?? []) as any[],
+      tickets: (ticketsR.data ?? []),
+      actLogs: (actR.data ?? []),
+      reminders: (remR.data ?? []),
+      lcAttempts: (lcR.data ?? []),
+      piketRows: (piketR.data ?? []),
+      formReviews: (formRevR.data ?? []),
+      techNotes: (techNotesR.data ?? []),
     };
   }, []);
 

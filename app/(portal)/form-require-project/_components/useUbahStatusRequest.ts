@@ -57,9 +57,9 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
       const idOrang = [req.requester_id].filter(Boolean) as string[];
       const [resNama, resId] = await Promise.all([
         nama.length ? supabase.from('users').select('id,full_name,username,phone_number').in('full_name', nama)
-                    : Promise.resolve({ data: [] as any[] }),
+                    : Promise.resolve({ data: [] }),
         idOrang.length ? supabase.from('users').select('id,full_name,username,phone_number').in('id', idOrang)
-                       : Promise.resolve({ data: [] as any[] }),
+                       : Promise.resolve({ data: [] }),
       ]);
       const penerima = new Map<string, any>();
       for (const u of [...(resNama.data ?? []), ...(resId.data ?? [])]) if (u?.id) penerima.set(u.id, u);

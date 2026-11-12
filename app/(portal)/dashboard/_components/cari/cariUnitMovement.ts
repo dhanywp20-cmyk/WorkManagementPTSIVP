@@ -20,10 +20,10 @@ export async function cariUnitMovement(k: KonteksCariUnitMovement) {
         .select('id, project_name, event, status_barang, nama_pts, tanggal, serial_number')
         .or(`project_name.ilike.%${q}%,event.ilike.%${q}%,nama_pts.ilike.%${q}%,serial_number.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
-      let units = (uData ?? []) as any[];
+      let units = (uData ?? []);
 
       if (isPTSsup && ptsMemberNames.length) {
-        units = units.filter((u: any) => ptsMemberNames.some(n => n === u.nama_pts));
+        units = units.filter((u) => ptsMemberNames.some(n => n === u.nama_pts));
       }
 
       units.forEach((u: any) => res.push({
