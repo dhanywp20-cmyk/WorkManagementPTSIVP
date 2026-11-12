@@ -172,6 +172,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
     ...(teks(d.namaRuang, 80) ? { namaRuang: teks(d.namaRuang, 80) } : {}),
     ...(ruangLain.length ? { ruangLain } : {}),
     ...(huruf.perangkat || huruf.kabel ? { huruf } : {}),
+    ...(d.tanpaKoneksi === true ? { tanpaKoneksi: true } : {}),
   };
 }
 

@@ -76,6 +76,14 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
         <Teks label="Satuan" nilai={p.satuan} onUbah={v => ubah({ satuan: v })} />
         <Teks label="Teks di kartu gambar" nilai={p.subGambar} onUbah={v => ubah({ subGambar: v })} placeholder={p.model || 'otomatis'} />
       </div>
+      <Isian label="1 gambar mewakili" bantuan="Ringkas banyak unit jadi 1 gambar: tampil (4X) di Sheet 1, Sheet 2 & BOQ ikut menghitung qty-nya.">
+        <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Jumlah unit yang diwakili gambar">
+          {[1, 2, 3, 4, 6, 8].map(n => (
+            <button key={n} type="button" role="radio" aria-checked={p.qty === n} onClick={() => ubah({ qty: n })}
+              className={`${kelasTombol} !px-2.5 !py-1 !text-[12px] ${p.qty === n ? '!bg-blue-700 !text-white !border-blue-700' : ''}`}>{n}X</button>
+          ))}
+        </div>
+      </Isian>
       <datalist id={`saran-model-${p.id}`}>{saran.map(x => <option key={x} value={x} />)}</datalist>
       {a.galeri.length > 0 && (
         <Isian label={`Galeri foto di browser ini (${a.galeri.length})`}>

@@ -211,7 +211,7 @@ export function buatVsdx(m: MasukanVsdx): Uint8Array {
     let h1: Halaman;
     try { aturTinggiHalaman(tinggi1); h1 = lembar1(mr, media); } finally { aturTinggiHalaman(HALAMAN.h); }
     hal.push({ h: h1, nama: `${awalan}Sheet 1 - Diagram`, tinggi: tinggi1 });
-    if (!m.simple) lembar2(mr, media).forEach((h2, j, semua) => hal.push({ h: h2, nama: `${awalan}Sheet 2 - Koneksi & catatan${semua.length > 1 ? ` (${j + 1})` : ''}`, tinggi: HALAMAN.h }));
+    if (!m.simple && !r.dok.tanpaKoneksi) lembar2(mr, media).forEach((h2, j, semua) => hal.push({ h: h2, nama: `${awalan}Sheet 2 - Koneksi & catatan${semua.length > 1 ? ` (${j + 1})` : ''}`, tinggi: HALAMAN.h }));
   }
   const judul = xe(m.judul ?? 'Single Line Diagram');
   const tipeGambar = "<Default Extension='png' ContentType='image/png'/><Default Extension='jpeg' ContentType='image/jpeg'/>";

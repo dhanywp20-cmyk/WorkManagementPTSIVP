@@ -61,6 +61,7 @@ function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
 export function SLD() {
   const a = useKeadaanSLD();
   const tim = useKatalogTim();
+  const tanpaKoneksi = !!a.proyek.tanpaKoneksi;
   const { segarkanFotoTim, proyek } = a;
   useEffect(() => { if (tim.status === 'siap') segarkanFotoTim(tim.daftar); }, [tim.status, tim.daftar, proyek, segarkanFotoTim]);
   const [sheet, setSheet] = useState<Sheet>(1);
@@ -192,12 +193,17 @@ export function SLD() {
         <span className="w-px h-6 bg-slate-200 mx-0.5" aria-hidden="true" />
         <div className="flex rounded-xl border border-slate-200 p-0.5" role="tablist" aria-label="Lembar">
           {([1, 2, 3] as Sheet[]).map(s => (
-            <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)}
-              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-              {s === 1 ? 'Sheet 1 · Diagram' : `${s === 2 ? 'Sheet 2 · Koneksi & catatan' : 'Sheet 3 · BOQ'}${simpleMode ? ' (tidak diekspor)' : ''}`}
+            <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)} disabled={s === 2 && tanpaKoneksi}
+              title={s === 2 && tanpaKoneksi ? 'Sheet 2 dimatikan untuk proyek ini' : undefined}
+              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 disabled:cursor-not-allowed ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+              {s === 1 ? 'Sheet 1 · Diagram' : s === 2 && tanpaKoneksi ? 'Sheet 2 · tidak dipakai' : `${s === 2 ? 'Sheet 2 · Koneksi & catatan' : 'Sheet 3 · BOQ'}${simpleMode ? ' (tidak diekspor)' : ''}`}
             </button>
           ))}
         </div>
+        <label className={`${kelasTombol} cursor-pointer select-none`} title="Matikan bila proyek tidak butuh Sheet 2 (daftar koneksi, daftar perangkat, gambar & catatan). Tidak tampil, tidak dihitung & tidak ikut ekspor.">
+          <input type="checkbox" className="w-4 h-4 accent-blue-700" checked={!tanpaKoneksi} onChange={e => { a.aturSheet2(e.target.checked); if (!e.target.checked && sheet === 2) setSheet(1); }} />
+          Pakai Sheet 2
+        </label>
         <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Ukuran kertas sheet 1">
           {(['169', 'a3'] as Kertas[]).map(k => (
             <button key={k} type="button" role="radio" aria-checked={(a.dok.kertas ?? 'a3') === k} onClick={() => a.aturKertas(k)}
@@ -242,9 +248,9 @@ export function SLD() {
             title={simpleMode ? 'Excel: Sheet 1 (diagram)' : 'Excel: Sheet 1 diagram, Sheet 2 koneksi, Sheet 3 BOQ'}>
             <FileSpreadsheet size={15} /> {sibuk === 'xlsx' ? 'Membuat...' : 'Excel'}
           </button>
-          {(simpleMode ? [1] as const : [1, 2] as const).map(s => (
+          {(simpleMode || tanpaKoneksi ? [1] as const : [1, 2] as const).map(s => (
             <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s, opsi))}>
-              <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : simpleMode ? 'PNG' : `PNG ${s}`}
+              <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : simpleMode || tanpaKoneksi ? 'PNG' : `PNG ${s}`}
             </button>
           ))}
         </div>
@@ -265,7 +271,11 @@ export function SLD() {
       )}
       <BilahRuang a={a} konfirmasi={setKonfirmasi} />
       <div className={`relative overflow-hidden rounded-xl ${penuh ? 'flex-1 min-h-0' : ''}`}>
-        {sheet === 1 ? <KanvasSLD a={a} zoom={zoom} penuh={penuh} simple={simpleMode} /> : sheet === 2 ? <Sheet2 a={a} /> : <LembarBoq a={a} />}
+        {sheet === 1 ? <KanvasSLD a={a} zoom={zoom} penuh={penuh} simple={simpleMode} /> : sheet === 3 ? <LembarBoq a={a} /> : !tanpaKoneksi ? <Sheet2 a={a} /> : (
+          <p className="rounded-xl border border-slate-200 bg-white p-6 text-[13px] text-slate-600">
+            Sheet 2 tidak dipakai untuk proyek ini. Centang <b>Pakai Sheet 2</b> bila perlu daftar koneksi.
+          </p>
+        )}
         {sheet === 1 && (<>
           <section aria-label="Katalog perangkat" inert={!kiri} className={`${LACI_KIRI} ${kiri ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0 pointer-events-none'}`}>
             <div className="flex items-center justify-between mb-2">

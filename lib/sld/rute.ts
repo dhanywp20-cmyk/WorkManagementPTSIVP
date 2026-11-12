@@ -70,14 +70,16 @@ class Antrian {
   }
 }
 
-export function ruteHindar(a: Titik, sa: Sisi, b: Titik, sb: Sisi, semua: Kotak[]): Titik[] | null {
+export function ruteHindar(a: Titik, sa: Sisi, b: Titik, sb: Sisi, semua: Kotak[], batas?: Kotak): Titik[] | null {
   const da = arahSisi(sa), db = arahSisi(sb), G = JARAK_HINDAR;
   const a1 = { x: a.x + da.x * KAKI, y: a.y + da.y * KAKI }, b1 = { x: b.x + db.x * KAKI, y: b.y + db.y * KAKI };
   const tepi = 60;
   const bx = { x: Math.min(a1.x, b1.x) - tepi, y: Math.min(a1.y, b1.y) - tepi, w: Math.abs(a1.x - b1.x) + tepi * 2, h: Math.abs(a1.y - b1.y) + tepi * 2 };
   const rintangan = semua.filter(k => potongKotak(k, bx));
-  const xs = unik([a1.x, b1.x, ...rintangan.flatMap(k => [k.x - G, k.x + k.w + G])]);
-  const ys = unik([a1.y, b1.y, ...rintangan.flatMap(k => [k.y - G, k.y + k.h + G])]);
+  const dalamX = (v: number) => !batas || (v >= batas.x - 0.5 && v <= batas.x + batas.w + 0.5);
+  const dalamY = (v: number) => !batas || (v >= batas.y - 0.5 && v <= batas.y + batas.h + 0.5);
+  const xs = unik([a1.x, b1.x, ...rintangan.flatMap(k => [k.x - G, k.x + k.w + G]).filter(dalamX)]);
+  const ys = unik([a1.y, b1.y, ...rintangan.flatMap(k => [k.y - G, k.y + k.h + G]).filter(dalamY)]);
   const nx = xs.length, ny = ys.length, idx = (i: number, j: number) => j * nx + i;
   const cari = (v: number[], x: number) => v.findIndex(t => Math.abs(t - Math.round(x * 100) / 100) < 0.006);
   const mulai = idx(cari(xs, a1.x), cari(ys, a1.y)), akhir = idx(cari(xs, b1.x), cari(ys, b1.y));

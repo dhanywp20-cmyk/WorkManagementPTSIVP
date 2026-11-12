@@ -99,6 +99,7 @@ export interface DokSLD {
   catatan: CatatanPasang[];
   watermark: boolean;
   kertas?: Kertas;
+  tanpaKoneksi?: boolean;
   huruf?: { perangkat?: number; kabel?: number };
   boq?: Record<string, IsiBoqItem>;
   namaRuang?: string;

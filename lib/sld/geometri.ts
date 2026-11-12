@@ -1,7 +1,7 @@
 import { rasioDinding } from './dinding';
 import { LABEL_GARIS } from './gaya';
 import { lebarTeks } from './teks';
-import type { DokSLD, GeoGaris, GeoKabel, Kabel, Perangkat, Sisi, Titik, Ujung } from './tipe';
+import { areaDok, type DokSLD, type GeoGaris, type GeoKabel, type Kabel, type Perangkat, type Sisi, type Titik, type Ujung } from './tipe';
 
 import { koridor, potongKotak, ruteHindar, tabrak, type Kotak } from './rute';
 
@@ -68,14 +68,18 @@ function titikSisi(b: Kotak, sisi: Sisi, ke: number, dari: number): Titik {
   return { x: b.x + b.w / 2 + geser, y: b.y + b.h };
 }
 
-function rute(a: Titik, sa: Sisi, b: Titik, sb: Sisi, tengah?: number): Titik[] {
+const jepit = (v: number, min: number, maks: number) => Math.min(maks, Math.max(min, v));
+
+function rute(a: Titik, sa: Sisi, b: Titik, sb: Sisi, tengahMentah?: number, batas?: Kotak): Titik[] {
   if (datar(sa) && datar(sb)) {
     if (Math.abs(a.y - b.y) < 0.3 && sa !== sb) return [a, b];
+    const tengah = tengahMentah === undefined || !batas ? tengahMentah : jepit(tengahMentah, batas.x, batas.x + batas.w);
     const mx = tengah ?? (sa === sb ? (sa === 'kanan' ? Math.max(a.x, b.x) + 8 : Math.min(a.x, b.x) - 8) : (a.x + b.x) / 2);
     return [a, { x: mx, y: a.y }, { x: mx, y: b.y }, b];
   }
   if (!datar(sa) && !datar(sb)) {
     if (Math.abs(a.x - b.x) < 0.3 && sa !== sb) return [a, b];
+    const tengah = tengahMentah === undefined || !batas ? tengahMentah : jepit(tengahMentah, batas.y, batas.y + batas.h);
     const my = tengah ?? (sa === sb ? (sa === 'bawah' ? Math.max(a.y, b.y) + 8 : Math.min(a.y, b.y) - 8) : (a.y + b.y) / 2);
     return [a, { x: a.x, y: my }, { x: b.x, y: my }, b];
   }
@@ -108,8 +112,9 @@ export function geometri(d: DokSLD): GeoKabel[] {
   const tujuan = (c: Kabel) => [c.ke, ...c.cabang].filter(u => peta.has(u.p));
   const semua = [...kotak.values()];
   const selain = (...id: string[]) => d.perangkat.filter(p => !id.includes(p.id)).map(p => kotak.get(p.id)!);
-  const sisiDari = (c: Kabel, u: Ujung, lain: Ujung) =>
-    (u.sisi !== 'auto' ? u.sisi : sisiPintar(kotak.get(u.p)!, kotak.get(lain.p)!, selain(u.p, lain.p)));
+  const batas = areaDok(d);
+  const sisiDari = (c: Kabel, u: Ujung, lain: Ujung) => (u.sisi !== 'auto' ? u.sisi
+    : c.tengah !== undefined ? sisiOtomatis(kotak.get(u.p)!, kotak.get(lain.p)!) : sisiPintar(kotak.get(u.p)!, kotak.get(lain.p)!, selain(u.p, lain.p)));
 
   for (const c of d.kabel) {
     if (!tergambar(c, peta)) continue;
@@ -142,9 +147,9 @@ export function geometri(d: DokSLD): GeoKabel[] {
     const tengahBersama = c.tengah ?? tengahUtama(a, sa, posisi.get(`${c.id}|ke0`)!, sisiDariPeta.get(`${c.id}|ke0`)!);
     const garisList: GeoGaris[] = tujuan(c).map((u, i) => {
       const b = posisi.get(`${c.id}|ke${i}`)!, sb = sisiDariPeta.get(`${c.id}|ke${i}`)!;
-      const r = rute(a, sa, b, sb, i === 0 ? c.tengah : tengahBersama);
+      const r = rute(a, sa, b, sb, i === 0 ? c.tengah : tengahBersama, batas);
       const manual = i === 0 && c.tengah !== undefined;
-      return { titik: !manual && tabrak(r, selain(c.dari.p, u.p), 1) ? (ruteHindar(a, sa, b, sb, semua) ?? r) : r, awal: i === 0 };
+      return { titik: !manual && tabrak(r, selain(c.dari.p, u.p), 1) ? (ruteHindar(a, sa, b, sb, semua, batas) ?? r) : r, awal: i === 0 };
     });
     const k = kode.get(c.id)!;
     const f = hurufKabel(c, d), lebar = lebarTeks(teksLabel(c, k), LABEL_GARIS.ukuran * f, true) + 1.2 * f;

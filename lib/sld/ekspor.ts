@@ -44,7 +44,7 @@ export async function lembarSvgProyek(d: DokSLD, o: OpsiEkspor = {}): Promise<st
 export async function lembarSvg(d: DokSLD, o: OpsiEkspor = {}): Promise<string[]> {
   const watermark = d.watermark ? await watermarkData(o.logo) : undefined;
   const opsi = { watermark, simple: o.simple };
-  return Promise.all([svgLembar1(d, opsi), ...(o.simple ? [] : svgLembar2Semua(d, opsi))].map(sematkanFoto));
+  return Promise.all([svgLembar1(d, opsi), ...(o.simple || d.tanpaKoneksi ? [] : svgLembar2Semua(d, opsi))].map(sematkanFoto));
 }
 
 function dariDataUrl(url: string): GambarVsdx {
