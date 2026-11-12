@@ -7,6 +7,7 @@ import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
 import type { Perangkat } from '@/lib/sld/tipe';
 import { noOtomatis } from '@/lib/sld/turunan';
+import { jumlahDariNama } from '@/lib/sld/rapikan';
 import { LABEL_PERANGKAT } from '@/lib/sld/gaya';
 import { IsianHurufLabel } from './IsianHuruf';
 import { PilihPosisiLabel } from './PanelPilihan';
@@ -27,6 +28,7 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
   const [sibuk, setSibuk] = useState(false);
   const lain = a.dok.perangkat.filter(x => x.id !== p.id);
   const saran = templatIkon(p.ikon)?.saran ?? [];
+  const jumlahNama = jumlahDariNama(p.nama);
 
   const unggah = async (f?: File | null) => {
     if (!f) return;
@@ -69,6 +71,12 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
         <Teks label="Merek / model" nilai={p.model} onUbah={v => ubah({ model: v })} daftar={`saran-model-${p.id}`} placeholder={saran[0] ?? ''} />
       </div>
       <PilihModel a={a} ids={[p.id]} saran={saran} />
+      {!(p.qty > 1) && jumlahNama && (
+        <p className="rounded-md bg-amber-50 border border-amber-200 px-2 py-1.5 text-[11.5px] text-amber-900">
+          Nama menyebut {jumlahNama.n} unit tetapi Qty masih 1.{' '}
+          <button type="button" className="underline font-bold" onClick={() => ubah({ qty: jumlahNama.n, nama: jumlahNama.nama })}>Jadikan Qty {jumlahNama.n}</button>
+        </p>
+      )}
       <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
         <Isian label="Qty">
           <Angka nilai={p.qty} min={0} onUbah={v => ubah({ qty: v })} />

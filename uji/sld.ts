@@ -17,8 +17,9 @@ import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, sali
 import { letakLabel } from '../lib/sld/lembar1';
 import { labelZona, svgZona } from '../lib/sld/zona';
 import { areaDok } from '../lib/sld/tipe';
+import { jumlahDariNama, labelTertimpa, qtyDiNama, rapikanLabel, terapkanQtyDiNama } from '../lib/sld/rapikan';
 import { tabrak } from '../lib/sld/rute';
-import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
+import { dokRuang, duplikatRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, namaRuangKe, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
 import { svgLembar1 } from '../lib/sld/lembar1';
 import { isiLembar2, svgLembar2 } from '../lib/sld/lembar2';
@@ -464,6 +465,22 @@ void (async () => {
   cek('kabel yang jalurnya digeser manual tidak pindah sisi & tidak keluar halaman (kasus nyata)', !luar.length && Math.abs(gSpk[1].x - 355.5) < 0.01 && Math.abs(gSpk[0].y - gSpk[1].y) < 0.01,
     JSON.stringify(luar.slice(0, 3)));
   cek('jalur manual di luar halaman dijepit ke dalam halaman', geometri({ ...dNyata, kabel: [{ ...kabelBaru('aud', 'spk'), id: 'x', tengah: 900 }] })[0].garis[0].titik.every(t => t.x <= ar.x + ar.w + 0.01));
+  console.log('\n17. Jumlah di nama, duplikat ruangan, rapikan label');
+  const jn = (s: string) => jumlahDariNama(s);
+  cek('jumlah di nama terbaca ("x 8", "(4X)", "8x"), bukan ukuran / matrix', jn('Speaker x 8')?.n === 8 && jn('Speaker x 8')?.nama === 'Speaker' && jn('Proyektor x 4')?.n === 4
+    && jn('TV (4X)')?.n === 4 && jn('Mic 8x')?.n === 8 && !jn('Matrix 4x4') && !jn('Panel sentuh 10"') && !jn('TV 65') && !jn('Speaker x 1') && !jn('x 4'));
+  const dNm = { ...dokBaru(), perangkat: [{ ...perangkatBaru('speaker', 60, 60), id: 'n1', nama: 'Speaker x 8' }, { ...perangkatBaru('tv-tcl', 150, 60), id: 'n2', nama: 'TV x 2', qty: 3 }] };
+  const dNm2 = terapkanQtyDiNama(dNm);
+  cek('Jadikan Qty: qty dari nama, nama dirapikan, qty yang sudah diisi tidak ditimpa', qtyDiNama(dNm).length === 1 && dNm2.perangkat[0].qty === 8 && dNm2.perangkat[0].nama === 'Speaker'
+    && dNm2.perangkat[1].qty === 3 && dNm2.perangkat[1].nama === 'TV x 2' && qtyDiNama(dNm2).length === 0 && svgLembar1(dNm2).includes('>#Speaker (8X)<'));
+  const prD = tambahRuang({ ...dokBaru(), perangkat: [{ ...perangkatBaru('tv-tcl', 50, 50), id: 'a1' }, { ...perangkatBaru('presentasi', 150, 50), id: 'a2' }], kabel: [{ ...kabelBaru('a1', 'a2'), id: 'ka' }] });
+  const dup = duplikatRuang(prD, 0), salinan = dokRuang(dup, 2);
+  cek('duplikat ruangan: perangkat & kabel ikut dengan id baru, kabel tersambung ke salinan', jumlahRuang(dup) === 3 && salinan.perangkat.length === 2 && !salinan.perangkat.some(p => p.id === 'a1')
+    && salinan.kabel[0].dari.p === salinan.perangkat[0].id && salinan.kabel[0].ke.p === salinan.perangkat[1].id && namaRuangKe(dup, 2).endsWith('(salinan)'));
+  const tumpuk = { ...dokBaru(), perangkat: [{ ...perangkatBaru('tv-tcl', 100, 60), id: 't1', nama: 'Layar utama ruang rapat' }, { ...perangkatBaru('presentasi', 102, 140), id: 't2', nama: 'Presentasi' }],
+    kabel: [{ ...kabelBaru('t1', 't2'), id: 'kt' }] };
+  const rapi = rapikanLabel(tumpuk);
+  cek('rapikan label: label yang tertimpa kabel dipindah ke posisi kosong', labelTertimpa(tumpuk).includes('t1') && rapi.dipindah >= 1 && !labelTertimpa(rapi.dok).includes('t1'), labelTertimpa(rapi.dok).join(','));
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);

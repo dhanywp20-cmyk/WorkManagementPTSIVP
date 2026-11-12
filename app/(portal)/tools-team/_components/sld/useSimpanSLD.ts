@@ -76,6 +76,25 @@ export function useSimpanSLD(a: KeadaanSLD) {
     } finally { setSibuk(''); }
   }, []);
 
+  const [riwayatVersi, setRiwayatVersi] = useState<{ versi: number; created_at: string; dibuat_oleh_nama: string }[] | null>(null);
+  const muatRiwayat = useCallback(async (id: string) => {
+    setRiwayatVersi(null);
+    const j = await jsonDari(await fetch(`${API}?id=${encodeURIComponent(id)}&riwayat=1`, { credentials: 'include', cache: 'no-store' }).catch(() => null));
+    setRiwayatVersi(j?.ok ? j.versi : []);
+  }, []);
+  const pulihkan = useCallback(async (id: string, versi: number): Promise<boolean> => {
+    setSibuk('buka'); setPesan(null);
+    try {
+      const r = await fetch(`${API}?id=${encodeURIComponent(id)}&versi=${versi}`, { credentials: 'include', cache: 'no-store' }).catch(() => null);
+      const j = await jsonDari(r);
+      const d = j?.ok ? bersihkanDok(j.sld.data) : null;
+      if (!r?.ok || !d) { setPesan({ t: j?.alasan ?? 'Versi tidak bisa dibuka.', galat: true }); return false; }
+      a.muat(d);
+      setAktif({ id, nama: j.sld.nama, versi: j.sld.versiTerbaru ?? j.sld.versi, bolehUbah: !!j.sld.bolehUbah, kunci: '' });
+      setPesan({ t: `Isi v${versi} dimuat. Klik Simpan untuk menjadikannya versi terbaru (v${(j.sld.versiTerbaru ?? versi) + 1}); versi lain tetap tersimpan.` });
+      return true;
+    } finally { setSibuk(''); }
+  }, [a, setAktif]);
   const buka = useCallback(async (id: string, versi?: number): Promise<boolean> => {
     setSibuk('buka'); setPesan(null);
     try {
@@ -122,7 +141,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
     return () => { hidup = false; document.removeEventListener('visibilitychange', fokus); };
   }, [a.siap, idAktif, versiAktif]);
 
-  return { aktif, berubah, sibuk, pesan, setPesan, daftar, halDaftar, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas, versiServer, tutupVersiServer: () => setVersiServer(null) };
+  return { aktif, berubah, sibuk, pesan, setPesan, daftar, halDaftar, riwayatVersi, muatRiwayat, pulihkan, simpan, simpanSebagai, tautkan, muatDaftar, buka, hapus, lepas, versiServer, tutupVersiServer: () => setVersiServer(null) };
 }
 
 export type KeadaanSimpanSLD = ReturnType<typeof useSimpanSLD>;

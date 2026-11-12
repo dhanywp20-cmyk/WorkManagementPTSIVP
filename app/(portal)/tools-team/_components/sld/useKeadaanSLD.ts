@@ -6,7 +6,8 @@ import {
   bersihkanDok, dokBaru, hapusFotoLokal, hapusPerangkat, hurufSah, idBaru, kabelBaru, kabelYatim, pasangFoto, zonaBaru, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru,
 } from '@/lib/sld/dok';
 import { rasioDinding } from '@/lib/sld/dinding';
-import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
+import { dokRuang, duplikatRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
+import { rapikanLabel, terapkanQtyDiNama } from '@/lib/sld/rapikan';
 import { geometri, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { perangkatDariTim, segarkanFotoTim as segarkanFotoTimDok, type ItemTim } from '@/lib/sld/katalog-tim';
@@ -285,6 +286,14 @@ export function useKeadaanSLD() {
     setProyek(baru);
     pilihRuang(jumlahRuang(baru) - 1);
   }, [pilihRuang]);
+  const duplikatRuangKe = useCallback((i: number) => {
+    const p = proyekRef.current, baru = duplikatRuang(p, i);
+    if (baru === p) return;
+    setProyek(baru);
+    pilihRuang(jumlahRuang(baru) - 1);
+  }, [pilihRuang]);
+  const qtyDariNama = useCallback(() => setDok(d => terapkanQtyDiNama(d)), [setDok]);
+  const rapikanSemuaLabel = useCallback(() => { const h = rapikanLabel(dokRef.current); if (h.dipindah) setDok(h.dok); return h.dipindah; }, [setDok]);
   const hapusRuangKe = useCallback((i: number) => {
     const baru = hapusRuang(proyekRef.current, i), aktif = ruangRef.current;
     setProyek(baru);
@@ -303,7 +312,7 @@ export function useKeadaanSLD() {
   const contoh = useCallback(() => muat(ubahKertas(contohVoiceKamar(namaPengguna()), '169')), [muat]);
 
   return {
-    dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
+    dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, duplikatRuangKe, qtyDariNama, rapikanSemuaLabel, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
     aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturSheet2, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
     presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId,
