@@ -49,7 +49,7 @@ export function useMuatRequest(k: MuatRequestKonteks) {
 
         const { data: allGuests } = await supabase.from('users').select('id, full_name, jabatan, sales_division').eq('role', 'guest');
         const subIds = (allGuests ?? [])
-          .filter((u: any) => (JABATAN_TIER[(u.jabatan as string) || ''] ?? 0) < selfTier && supDivisions.includes(u.sales_division))
+          .filter((u) => (JABATAN_TIER[(u.jabatan as string) || ''] ?? 0) < selfTier && supDivisions.includes(u.sales_division ?? ''))
           .map((u) => u.id as string);
 
         const { data: manualSubs } = await supabase.from('user_supervisor_mappings').select('user_id').eq('supervisor_id', currentUser.id);

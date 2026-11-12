@@ -62,18 +62,18 @@ export function AdminDashboard({ user }: { user: User }) {
         supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
       const userMap: Record<string, any> = {};
-      (usersRes.data ?? []).forEach((u: any) => { userMap[u.id] = u; });
-      setRecentAttempts((recentRes.data ?? []).map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null })));
+      (usersRes.data ?? []).forEach((u) => { userMap[u.id] = u; });
+      setRecentAttempts((recentRes.data ?? []).map((a) => ({ ...a, users: (a.user_id ? userMap[a.user_id] : undefined) ?? null })));
 
       const allAtt = (allAttRes.data ?? [])
-        .filter((a: any) => a.grading_status !== 'pending_review')
-        .map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null }));
+        .filter((a) => a.grading_status !== 'pending_review')
+        .map((a) => ({ ...a, users: (a.user_id ? userMap[a.user_id] : undefined) ?? null }));
 
-      const participants = new Set(allAtt.map((a: any) => a.user_id)).size;
-      const passCount    = allAtt.filter((a: any) => a.passed).length;
-      const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
-      const scoreMid     = allAtt.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
-      const scoreLow     = allAtt.filter((a: any) => (a.score ?? 0) < 60).length;
+      const participants = new Set(allAtt.map((a) => a.user_id)).size;
+      const passCount    = allAtt.filter((a) => a.passed).length;
+      const scoreGood    = allAtt.filter((a) => (a.score ?? 0) >= 80).length;
+      const scoreMid     = allAtt.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
+      const scoreLow     = allAtt.filter((a) => (a.score ?? 0) < 60).length;
       const mulai = new Set(ringkas.map(a => a.user_id)).size;
       setOverviewStats({
         totalUsers: totalUsersRes.count ?? 0,
@@ -91,7 +91,8 @@ export function AdminDashboard({ user }: { user: User }) {
         minScore: number; maxScore: number; fastCount: number;
         role: string | null; teamType: string | null; salesDivision: string | null;
       }> = {};
-      allAtt.forEach((a: any) => {
+      allAtt.forEach((a) => {
+        if (!a.user_id) return;
         if (!byUser[a.user_id]) byUser[a.user_id] = {
           name: a.users?.full_name ?? '-', scores: [], times: [], passed: 0, tabSw: 0,
           minScore: Infinity, maxScore: -Infinity, fastCount: 0,
@@ -127,7 +128,7 @@ export function AdminDashboard({ user }: { user: User }) {
         source: 'division' | 'jabatan' | 'other';
         jabatanSet: Set<string>;
       }> = {};
-      allAtt.forEach((a: any) => {
+      allAtt.forEach((a) => {
         const sd = a.users?.sales_division?.trim();
         const jb = a.users?.jabatan?.trim();
         const dk = sd || jb || 'Lainnya';
@@ -147,7 +148,7 @@ export function AdminDashboard({ user }: { user: User }) {
         passed: v.passed,
       })).sort((a, b) => b.avg - a.avg));
 
-      const allScoresNational = allAtt.map((a: any) => a.score ?? 0);
+      const allScoresNational = allAtt.map((a) => a.score ?? 0);
       setNationalAvg(allScoresNational.length ? allScoresNational.reduce((s: number, n: number) => s + n, 0) / allScoresNational.length : null);
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
@@ -161,17 +162,17 @@ export function AdminDashboard({ user }: { user: User }) {
           const sa = perSesi.get(s.id);
           if (!sa?.length) return null;
           const avg = sa.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / sa.length;
-          const passed = sa.filter((a: any) => a.passed).length;
+          const passed = sa.filter((a) => a.passed).length;
           const durations = sa
-            .filter((a: any) => a.started_at && a.submitted_at)
-            .map((a: any) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
+            .filter((a) => a.started_at && a.submitted_at)
+            .map((a) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
           const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
           return {
             id: s.id, name: s.session_name, total: sa.length, avg, passed,
             failed: sa.length - passed, avgMin,
-            scoreGood: sa.filter((a: any) => (a.score ?? 0) >= 80).length,
-            scoreMid: sa.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
-            scoreLow: sa.filter((a: any) => (a.score ?? 0) < 60).length,
+            scoreGood: sa.filter((a) => (a.score ?? 0) >= 80).length,
+            scoreMid: sa.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
+            scoreLow: sa.filter((a) => (a.score ?? 0) < 60).length,
           };
         });
         setSessionStats(sStats.filter(Boolean));

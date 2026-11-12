@@ -28,13 +28,14 @@ export function useAnalyticsLC() {
         supabase.from('users').select('id, full_name, sales_division, team_type, role'),
       ]);
       const petaUser: Record<string, any> = {};
-      (pengguna ?? []).forEach((u: any) => { petaUser[u.id] = u; });
-      const a = mentah ? mentah.map((x: any) => ({ ...x, users: petaUser[x.user_id] ?? null })) : null;
+      (pengguna ?? []).forEach((u) => { petaUser[u.id] = u; });
+      const a = mentah ? mentah.map((x) => ({ ...x, users: (x.user_id ? petaUser[x.user_id] : undefined) ?? null })) : null;
 
       if (a) {
-        const graded = a.filter((att: any) => att.grading_status !== 'pending_review');
+        const graded = a.filter((att) => att.grading_status !== 'pending_review');
         const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; times: number[]; passed: number; flags: number }> = {};
-        graded.forEach((att: any) => {
+        graded.forEach((att) => {
+          if (!att.user_id) return;
           if (!byUser[att.user_id]) byUser[att.user_id] = {
             name: att.users?.full_name ?? '-',
             division: att.users?.sales_division ?? null,
@@ -59,7 +60,8 @@ export function useAnalyticsLC() {
         setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
         const byDiv: Record<string, { scores: number[]; passed: number; userIds: Set<string> }> = {};
-        graded.forEach((att: any) => {
+        graded.forEach((att) => {
+          if (!att.user_id) return;
           const div: string = att.users?.sales_division ?? '(Tidak ada divisi)';
           if (!byDiv[div]) byDiv[div] = { scores: [], passed: 0, userIds: new Set() };
           byDiv[div].scores.push(att.score ?? 0);
@@ -77,7 +79,7 @@ export function useAnalyticsLC() {
           scoreLow:  v.scores.filter(s => s < 60).length,
         })).sort((a, b) => b.avg - a.avg));
 
-        const allScores = graded.map((att: any) => att.score ?? 0);
+        const allScores = graded.map((att) => att.score ?? 0);
         setNationalAvg(allScores.length ? allScores.reduce((s: number, n: number) => s + n, 0) / allScores.length : null);
       }
 
@@ -92,18 +94,18 @@ export function useAnalyticsLC() {
           const att = perSesi.get(s.id);
           if (!att?.length) return null;
           const avg = att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length;
-          const passed = att.filter((a: any) => a.passed).length;
+          const passed = att.filter((a) => a.passed).length;
           const durations = att
-            .filter((a: any) => a.started_at && a.submitted_at)
-            .map((a: any) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
+            .filter((a) => a.started_at && a.submitted_at)
+            .map((a) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
           const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
           return {
             id: s.id, name: s.session_name,
             total: att.length, avg, passed, failed: att.length - passed,
             avgMin,
-            scoreGood: att.filter((a: any) => (a.score ?? 0) >= 80).length,
-            scoreMid: att.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
-            scoreLow: att.filter((a: any) => (a.score ?? 0) < 60).length,
+            scoreGood: att.filter((a) => (a.score ?? 0) >= 80).length,
+            scoreMid: att.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
+            scoreLow: att.filter((a) => (a.score ?? 0) < 60).length,
           };
         });
         setSessionStats(stats.filter(Boolean));

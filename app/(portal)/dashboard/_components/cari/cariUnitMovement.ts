@@ -26,12 +26,12 @@ export async function cariUnitMovement(k: KonteksCariUnitMovement) {
         units = units.filter((u) => ptsMemberNames.some(n => n === u.nama_pts));
       }
 
-      units.forEach((u: any) => res.push({
+      units.forEach((u) => res.push({
         id: `unit-${u.id}`, type: 'unit', icon: '🚚',
         title: u.project_name ?? u.event ?? '-',
         sub: `${u.status_barang} · ${u.nama_pts ?? '-'}`,
         meta: u.tanggal ?? '-',
-        badge: u.status_barang,
+        badge: u.status_barang ?? undefined,
         badgeColor: u.status_barang === 'Masuk' ? '#10b981' : '#f59e0b',
         url: '/unit-movement',
       }));
