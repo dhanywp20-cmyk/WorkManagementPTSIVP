@@ -1,5 +1,5 @@
-
-import { pesanGalat } from '@/lib/galat/pesan';'use client';
+'use client';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
