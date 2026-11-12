@@ -45,13 +45,13 @@ export function ScorePage({ user }: { user: User }) {
     load();
   }, [user.id]);
 
-  const gradedAttempts = attempts.filter((a: any) => a.grading_status !== 'pending_review');
+  const gradedAttempts = attempts.filter((a) => a.grading_status !== 'pending_review');
   const total      = gradedAttempts.length;
   const avg        = total ? gradedAttempts.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / total : 0;
-  const passed     = gradedAttempts.filter((a: any) => a.passed).length;
-  const scoreGood  = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 80).length;
-  const scoreMid   = gradedAttempts.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
-  const scoreLow   = gradedAttempts.filter((a: any) => (a.score ?? 0) < 60).length;
+  const passed     = gradedAttempts.filter((a) => a.passed).length;
+  const scoreGood  = gradedAttempts.filter((a) => (a.score ?? 0) >= 80).length;
+  const scoreMid   = gradedAttempts.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
+  const scoreLow   = gradedAttempts.filter((a) => (a.score ?? 0) < 60).length;
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
   const papan      = peringkat?.papan ?? [];
   const pakaiDivisi = isSalesGuest({ role: user.role });
@@ -248,7 +248,7 @@ export function ScorePage({ user }: { user: User }) {
           <section>
             <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
-              {attempts.slice(0, 5).map((a: any) => {
+              {attempts.slice(0, 5).map((a) => {
                 const pending = a.grading_status === 'pending_review';
                 const score   = a.score ?? 0;
                 const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
@@ -295,7 +295,7 @@ export function ScorePage({ user }: { user: User }) {
                     {search ? 'Tidak ada hasil' : 'Belum ada quiz yang diselesaikan'}
                   </td></tr>
                 )}
-                {filtered.map((a: any) => {
+                {filtered.map((a) => {
                   const ps = peringkat?.peringkatSesi?.[a.id];
                   return (
                   <tr key={a.id} className="hover:bg-slate-50">

@@ -30,8 +30,8 @@ export function useSumberKpi(k: SumberKpiKonteks) {
 
   const ambilSumber = useCallback(async (membersData: any[], start: string, end: string): Promise<SumberKPI> => {
     const endFull   = end + 'T23:59:59';
-    const mNames    = membersData.map((m: any) => m.full_name as string);
-    const mIds      = membersData.map((m: any) => m.id as string);
+    const mNames    = membersData.map((m) => m.full_name as string);
+    const mIds      = membersData.map((m) => m.id as string);
     const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR] = await Promise.all([
       supabase.from('tickets').select('id,assign_name,status,date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
@@ -66,7 +66,7 @@ export function useSumberKpi(k: SumberKpiKonteks) {
 
   const buildMembers = useCallback(async (membersData: any[], start: string, end: string, sumberGabung?: SumberKPI): Promise<KPIMember[]> => {
     const todayStr  = fmt(new Date());
-    const mIds      = membersData.map((m: any) => m.id as string);
+    const mIds      = membersData.map((m) => m.id as string);
     const tahun     = new Date(end).getFullYear();
 
     const [sumber, rekapLC] = await Promise.all([
@@ -79,46 +79,46 @@ export function useSumberKpi(k: SumberKpiKonteks) {
       const name = m.full_name as string;
       const uid  = m.id as string;
 
-      const myT   = tickets.filter((t: any) => t.assign_name === name);
-      const tSol  = myT.filter((t: any) => t.status === 'Solved');
-      const tOver = myT.filter((t: any) =>
+      const myT   = tickets.filter((t) => t.assign_name === name);
+      const tSol  = myT.filter((t) => t.status === 'Solved');
+      const tOver = myT.filter((t) =>
         !['Solved','Cancelled'].includes(t.status) && t.date && t.date < todayStr);
       const tDays = tSol.reduce((acc: number, t: any) => {
         const d = (new Date(t.date).getTime() - new Date(t.created_at).getTime()) / 86400000;
         return acc + Math.max(0, d);
       }, 0);
 
-      const myRem  = reminders.filter((r: any) => r.assign_name === name);
-      const remDone = myRem.filter((r: any) => r.status === 'done').length;
+      const myRem  = reminders.filter((r) => r.assign_name === name);
+      const remDone = myRem.filter((r) => r.status === 'done').length;
 
-      const myLC     = lcAttempts.filter((a: any) => a.user_id === uid && a.grading_status !== 'pending_review');
-      const lcScoreArr = myLC.filter((a: any) => a.score != null).map((a: any) => a.score as number);
+      const myLC     = lcAttempts.filter((a) => a.user_id === uid && a.grading_status !== 'pending_review');
+      const lcScoreArr = myLC.filter((a) => a.score != null).map((a) => a.score as number);
       const lcScores = lcScoreArr;
       const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;
 
-      const myReviews = formReviews.filter((r: any) => r.assign_name === name);
+      const myReviews = formReviews.filter((r) => r.assign_name === name);
       const formReviewTotal = myReviews.length;
-      const formReviewLowRating = myReviews.filter((r: any) => {
+      const formReviewLowRating = myReviews.filter((r) => {
         const g1 = r.grade_product_knowledge ?? 5;
         const g2 = r.grade_training_customer ?? 5;
         const g3 = r.grade_product_knowledge_bast ?? 5;
         return g1 < 3 || g2 < 3 || g3 < 3;
       }).length;
 
-      const techNotesApproved = techNotes.filter((tn: any) => tn.author_id === uid).length;
+      const techNotesApproved = techNotes.filter((tn) => tn.author_id === uid).length;
 
-      const piketFilled = piketRows.filter((p: any) => bacaPicPiket(p)?.name === name).length;
+      const piketFilled = piketRows.filter((p) => bacaPicPiket(p)?.name === name).length;
 
-      const myTIds = new Set(myT.map((t: any) => t.id as string));
+      const myTIds = new Set(myT.map((t) => t.id as string));
       const firstAct: Record<string, string> = {};
-      actLogs.filter((a: any) => myTIds.has(a.ticket_id) && a.handler_name === name)
-        .forEach((a: any) => { if (!firstAct[a.ticket_id]) firstAct[a.ticket_id] = a.created_at; });
-      const resTimes = myT.filter((t: any) => firstAct[t.id])
-        .map((t: any) => Math.max(0, (new Date(firstAct[t.id]).getTime() - new Date(t.created_at).getTime()) / 3600000));
+      actLogs.filter((a) => myTIds.has(a.ticket_id) && a.handler_name === name)
+        .forEach((a) => { if (!firstAct[a.ticket_id]) firstAct[a.ticket_id] = a.created_at; });
+      const resTimes = myT.filter((t) => firstAct[t.id])
+        .map((t) => Math.max(0, (new Date(firstAct[t.id]).getTime() - new Date(t.created_at).getTime()) / 3600000));
       const avgRT = resTimes.length ? Math.round(resTimes.reduce((a: number, b: number) => a + b, 0) / resTimes.length) : 0;
 
       const monthlyTickets = Array.from({ length: 12 }, (_, mi) =>
-        myT.filter((t: any) => new Date(t.created_at).getMonth() === mi).length
+        myT.filter((t) => new Date(t.created_at).getMonth() === mi).length
       );
 
       return {
@@ -128,7 +128,7 @@ export function useSumberKpi(k: SumberKpiKonteks) {
         avgResolutionDays: tSol.length ? Math.round(tDays / tSol.length) : 0,
         remindersAssigned: myRem.length, remindersDone: remDone,
         lcAttempts: myLC.length, lcAvgScore: lcAvg,
-        lcPassed: myLC.filter((a: any) => a.passed === true).length,
+        lcPassed: myLC.filter((a) => a.passed === true).length,
         lcScores,
         piketFilled, ticketAvgResponseHours: avgRT,
         formReviewTotal, formReviewLowRating,

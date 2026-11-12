@@ -37,7 +37,7 @@ const kolomExcel = (n: number) => { let s = ''; for (let x = n; x >= 0; x = Math
 
 export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new Promise((ok, gagal) => loadXLSX((XLSX: any) => {
+  return new Promise((ok, gagal) => loadXLSX((XLSX) => {
     try {
       const tanggal = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
       const { aoa, kepala } = susunAoa(e, tanggal);

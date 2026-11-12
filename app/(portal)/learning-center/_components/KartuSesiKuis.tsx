@@ -14,7 +14,7 @@ export function KartuSesiKuis({
       <section>
         <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs">Statistik Per Sesi</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {sessionStats.map((s: any) => (
+          {sessionStats.map((s) => (
             <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
               <p className="text-sm font-bold text-slate-800 mb-4 leading-snug line-clamp-2">{s.name}</p>
               <div className="flex items-start gap-4">

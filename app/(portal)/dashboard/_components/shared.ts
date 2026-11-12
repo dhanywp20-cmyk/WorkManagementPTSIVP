@@ -23,7 +23,7 @@ export interface NotificationItem {
   type: 'ticket' | 'require' | 'reminder';
   title: string;
   subtitle: string;
-  time: string;
+  time: string | null;
   url: string;
   internalUrl?: string;
   menuTitle: string;

@@ -23,7 +23,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     };
   }, []);
 
-  const formatTime = (ts: string) => {
+  const formatTime = (ts: string | null) => {
     if (!ts) return '';
     const d = new Date(ts);
     const now = new Date();

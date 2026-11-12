@@ -4,7 +4,7 @@ import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { daftarPilihan, denganNilai, produkSpesifik } from '@/lib/daftar-pilihan';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
-  const runExport = (XLSX:any) => {
+  const runExport = (XLSX: any) => {
     const exportDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
     const sorted = [...allRows].sort((a,b)=>a.day_date.localeCompare(b.day_date));
 
@@ -20,7 +20,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
     const altStyle = {...cellStyle,fill:{fgColor:{rgb:'FFF5F5'},patternType:'solid'}};
     const titleStyle = {font:{name:'Arial',bold:true,sz:16,color:{rgb:'991B1B'}},alignment:{horizontal:'left',vertical:'center'}};
     const subTitleStyle = {font:{name:'Arial',sz:10,color:{rgb:'6B7280'}},alignment:{horizontal:'left',vertical:'center'}};
-    const ctr = (v:any,s:any) => ({v,s,t:typeof v==='number'?'n':'s'});
+    const ctr = (v: any, s: any) => ({v,s,t:typeof v==='number'?'n':'s'});
     const cell = (v:any,s?:any) => ({v,s:s||cellStyle,t:typeof v==='number'?'n':'s'});
     const empty = (s?:any) => ({v:'',s:s||cellStyle,t:'s'});
     const row0 = (n:number,s?:any) => Array(n).fill(null).map(()=>empty(s));
