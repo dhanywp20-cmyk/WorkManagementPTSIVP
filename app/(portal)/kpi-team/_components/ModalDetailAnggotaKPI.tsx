@@ -51,7 +51,7 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
               </div>
 
               <div className="p-4 space-y-3">
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { label: 'Ticketing',      raw: Math.round(tickScore * 100), pct: Math.round(tickScore * _s.ticketOverdueWeight * 100), w: Math.round(_s.ticketOverdueWeight * 100), color: '#ef4444', icon: '🎫', bg: '#fef2f2', border: '#ef444440' },
                     { label: 'BAST & Demo',    raw: Math.round(bastScore * 100),  pct: Math.round(bastScore * _s.bastWeight * 100),          w: Math.round(_s.bastWeight * 100),          color: '#f59e0b', icon: '⭐', bg: '#fffbeb', border: '#f59e0b40' },
@@ -80,7 +80,7 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                         {rekapLC.tidakIkut > 0 && <> · {rekapLC.tidakIkut} tidak dikerjakan</>}
                       </div>
                     </div>
-                    <div className="text-right text-xs">
+                    <div className="text-left sm:text-right text-xs">
                       <div className="text-slate-500">KPI dasar <b className="text-slate-700">{kpiDasar}%</b> × {Math.round(faktorLC * 100)}%</div>
                       <div className="font-black" style={{ color: potonganLC > 0 ? '#b91c1c' : '#15803d' }}>
                         {potonganLC > 0 ? `−${potonganLC} poin` : 'Tanpa potongan'}
@@ -91,12 +91,12 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
 
                 <div>
                   <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2"><IkonTeks nama="✅" />Data Platform (Otomatis)</div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
 
                     <div className="rounded-xl border p-3" style={{ borderColor: '#ef444440', background: '#fef2f2' }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-[11px] font-bold text-red-600 uppercase tracking-wider"><IkonTeks nama="🎫" />Ticketing</div>
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: tickScore >= 1 ? '#d1fae5' : '#fee2e2', color: tickScore >= 1 ? '#065f46' : '#991b1b' }}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 text-[11px] font-bold text-red-600 uppercase tracking-wider"><IkonTeks nama="🎫" />Ticketing</div>
+                        <span className="shrink-0 whitespace-nowrap text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: tickScore >= 1 ? '#d1fae5' : '#fee2e2', color: tickScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(tickScore * _s.ticketOverdueWeight * 100)}/{Math.round(_s.ticketOverdueWeight * 100)}%
                         </span>
                       </div>
@@ -112,9 +112,9 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                     </div>
 
                     <div className="rounded-xl border p-3" style={{ borderColor: '#f59e0b40', background: '#fffbeb' }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider"><IkonTeks nama="⭐" />BAST &amp; Demo</div>
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: bastScore >= 1 ? '#d1fae5' : '#fee2e2', color: bastScore >= 1 ? '#065f46' : '#991b1b' }}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 text-[11px] font-bold text-amber-700 uppercase tracking-wider"><IkonTeks nama="⭐" />BAST &amp; Demo</div>
+                        <span className="shrink-0 whitespace-nowrap text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: bastScore >= 1 ? '#d1fae5' : '#fee2e2', color: bastScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(bastScore * _s.bastWeight * 100)}/{Math.round(_s.bastWeight * 100)}%
                         </span>
                       </div>
@@ -131,9 +131,9 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                     </div>
 
                     <div className="rounded-xl border p-3" style={{ borderColor: '#6366f140', background: '#f5f3ff' }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-[11px] font-bold text-violet-600 uppercase tracking-wider"><IkonTeks nama="🎓" />Learning Center</div>
-                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: lcScore >= 1 ? '#d1fae5' : '#fee2e2', color: lcScore >= 1 ? '#065f46' : '#991b1b' }}>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 text-[11px] font-bold text-violet-600 uppercase tracking-wider"><IkonTeks nama="🎓" />Learning Center</div>
+                        <span className="shrink-0 whitespace-nowrap text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: lcScore >= 1 ? '#d1fae5' : '#fee2e2', color: lcScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(lcScore * _s.lcWeight * 100)}/{Math.round(_s.lcWeight * 100)}%
                         </span>
                       </div>
@@ -160,9 +160,9 @@ export function ModalDetailAnggotaKPI({ kpiMembers, kpiSettings, kpiYear, select
                 </div>
 
                 <div className="rounded-xl border p-3" style={{ borderColor: '#ec489940', background: '#fdf4ff' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-[11px] font-bold text-pink-600 uppercase tracking-wider"><IkonTeks nama="📝" />R&amp;D Tech Note (Otomatis dari Platform)</div>
-                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: rndScore >= 1 ? '#d1fae5' : '#fee2e2', color: rndScore >= 1 ? '#065f46' : '#991b1b' }}>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 text-[11px] font-bold text-pink-600 uppercase tracking-wider"><IkonTeks nama="📝" />R&amp;D Tech Note (Otomatis dari Platform)</div>
+                    <span className="shrink-0 whitespace-nowrap text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: rndScore >= 1 ? '#d1fae5' : '#fee2e2', color: rndScore >= 1 ? '#065f46' : '#991b1b' }}>
                       {Math.round(rndScore * _s.rndWeight * 100)}/{Math.round(_s.rndWeight * 100)}%
                     </span>
                   </div>
