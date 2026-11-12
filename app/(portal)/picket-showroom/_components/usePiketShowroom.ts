@@ -89,7 +89,7 @@ export function usePiketShowroom() {
       if(uRes.data)setPtUsers(uRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as UserRow[]);
       if(kgRes.data){
         const plByKg:Record<string,{nama:string;watt:number}[]>={};
-        (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
+        (plRes.data||[]).forEach((pl)=>{if(!pl.kegiatan_id)return;(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
         setKegiatanList((kgRes.data as KegiatanEntry[]).map(k=>({...k,produk_lain:plByKg[k.id||'']||[]})));
       }
       const hRes = await supabase.from('picket_holidays').select('date');

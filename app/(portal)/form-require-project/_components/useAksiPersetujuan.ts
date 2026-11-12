@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { supabase } from '@/lib/supabase';
 import { User, ProjectRequest, ProjectAttachment, sendWANotif } from './shared';
 import { logAudit } from '@/lib/audit';
@@ -80,7 +81,7 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
   const jalankanInternalApprove = async (req: ProjectRequest) => {
     const now = new Date().toISOString();
     const isSecondReviewer = !!req.internal_sales_id_2 && req.internal_sales_id_2 === currentUser.id;
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<'project_requests'> = {};
     if (isSecondReviewer) patch.internal_approved_at_2 = now;
     else { patch.internal_approved_by = currentUser.id; patch.internal_approved_at = now; }
     const needBoth = !!req.internal_sales_id_2;
@@ -93,7 +94,7 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
       notify('success', 'Approve kamu tersimpan. Menunggu approve Sales Internal brand satunya (Kedua Brand).');
       logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved (menunggu reviewer kedua)' }).catch(() => {});
       fetchRequests();
-      if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, ...patch });
+      if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, ...(patch as Partial<ProjectRequest>) });
       return;
     }
     notify('success', 'Request diteruskan ke Admin!');
@@ -117,7 +118,7 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
     const { error } = await supabase.from('project_requests').update({ status: 'pending', rejection_reason: null }).eq('id', req.id);
     if (error) { notify('error', 'Gagal re-submit: ' + error.message); return; }
     notify('success', 'Request berhasil di-submit ulang!');
-    await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Request di-submit ulang oleh ${currentUser.full_name}.` }]);
+    await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: `🔄 Request di-submit ulang oleh ${currentUser.full_name}.` }]);
     fetchRequests();
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'resubmit', module: 'project', target_id: req.id, target_name: req.project_name }).catch(() => {});

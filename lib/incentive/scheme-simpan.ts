@@ -1,4 +1,5 @@
 import { SKEMA_BAWAAN, periksaSkema } from './scheme-aturan';
+import type { Json } from '@/types/database';
 import { aturKategoriBerlaku } from './scheme-kategori';
 import { SkemaInsentif } from './scheme-tipe';
 import { supabase } from '../supabase';
@@ -58,7 +59,7 @@ export async function simpanSkema(sk: SkemaInsentif, olehNama: string): Promise<
   const galat = periksaSkema(sk).filter(m => !m.peringatan);
   if (galat.length) return { error: galat.map(m => m.pesan).join(' ') };
   const { error } = await supabase.from('incentive_scheme_settings').insert({
-    scheme: sk as unknown as Record<string, unknown>,
+    scheme: sk as unknown as Json,
     updated_at: new Date().toISOString(),
     updated_by: olehNama,
   });

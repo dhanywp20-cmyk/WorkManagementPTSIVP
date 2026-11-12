@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { Reminder, TeamUser, sendFonnteWA, fetchManagerTargets } from './shared';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
@@ -33,7 +34,7 @@ export function useTinjauInternal(k: TinjauInternalKonteks) {
     setInternalApproveSaving(true);
     const now = new Date().toISOString();
     const isSecondReviewer = !!r.internal_sales_id_2 && r.internal_sales_id_2 === currentUser?.id;
-    const patch: Record<string, unknown> = {};
+    const patch: TablesUpdate<'reminders'> = {};
     if (isSecondReviewer) patch.internal_approved_at_2 = now;
     else { patch.internal_approved_by = currentUser?.id ?? null; patch.internal_approved_at = now; }
     const needBoth = !!r.internal_sales_id_2;

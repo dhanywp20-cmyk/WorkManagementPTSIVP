@@ -50,7 +50,7 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
       try {
         const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
         if (data?.settings) {
-          setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings });
+          setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...(data.settings as Partial<KPISettings>) });
           return;
         }
       } catch {  }

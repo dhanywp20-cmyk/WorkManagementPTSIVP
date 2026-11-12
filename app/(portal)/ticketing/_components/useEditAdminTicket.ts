@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { sendWANotif, User, TeamMember, Ticket, TICKET_ADMIN_FIELDS } from './shared';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from '@/lib/admin-edit';
 import { supabase } from '@/lib/supabase';
@@ -69,7 +70,7 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
         }
       }
 
-      const { error, data } = await supabase.from('tickets').update(payload).eq('id', t.id).select('id');
+      const { error, data } = await supabase.from('tickets').update(payload as TablesUpdate<'tickets'>).eq('id', t.id).select('id');
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Perubahan ditolak sistem (RLS). Hubungi admin.');
 

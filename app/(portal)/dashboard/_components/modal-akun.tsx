@@ -332,7 +332,7 @@ export function AccountSettingsInline() {
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
-                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role)}</span></td>
+                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role ?? '')}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>

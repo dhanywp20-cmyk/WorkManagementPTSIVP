@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { User, ProjectRequest, RoomDetail, sendWANotif, emptyRoom } from './shared';
 import { EDIT_ROOM_LABELS, ambilFieldRuangan, namaRuangan, type EditRoomFields } from './ruangan';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField, type Perubahan } from '@/lib/admin-edit';
@@ -111,7 +112,7 @@ export function useEditRequest(k: EditRequestKonteks) {
       if (!orang) throw new Error('Tujuan tidak ditemukan');
       const dari = rerouteTarget.assign_name || '(belum ada)';
 
-      const payload: Record<string, unknown> = orang.jabatan === 'Supervisor'
+      const payload: TablesUpdate<'project_requests'> = orang.jabatan === 'Supervisor'
         ? { assign_name: null, assign_user_id: null, assigned_supervisor_id: orang.id, routing_status: 'supervisor_assign', status: 'approved' }
         : { assign_name: orang.full_name, assign_user_id: orang.id, assigned_supervisor_id: null, routing_status: null, status: 'approved' };
 
@@ -168,7 +169,7 @@ export function useEditRequest(k: EditRequestKonteks) {
     let butuhApprovalRuanganBaru = false;
     if (editanLama.length > 0 || ruanganBaru.length > 0) {
       const { data: segar } = await supabase.from('project_requests').select('rooms, status').eq('id', selectedRequest.id).maybeSingle();
-      const dbRooms: RoomDetail[] = Array.isArray(segar?.rooms) ? segar.rooms : (selectedRequest.rooms || []);
+      const dbRooms: RoomDetail[] = Array.isArray(segar?.rooms) ? (segar.rooms as unknown as RoomDetail[]) : (selectedRequest.rooms || []);
       const statusRequest = (segar?.status ?? selectedRequest.status) as string;
       let adaPerubahan = false;
       const merged = dbRooms.map((dbR, i) => {
@@ -265,8 +266,8 @@ export function useEditRequest(k: EditRequestKonteks) {
     setSelectedRequest(prev => prev ? { ...prev, ...editFormData, due_date: editDueDate || undefined, ...(roomsPayload ? { rooms: roomsPayload } : {}) } : null);
     setDetailRoomIdx(editRoomIdx);
     await supabase.from('project_messages').insert([
-      { request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `✏️ Kebutuhan project diperbarui oleh ${currentUser.full_name}.` },
-      ...namaRuanganBaru.map(nama => ({ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `[${nama}] ➕ Ruangan ditambahkan oleh ${currentUser.full_name}.` })),
+      { request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: `✏️ Kebutuhan project diperbarui oleh ${currentUser.full_name}.` },
+      ...namaRuanganBaru.map(nama => ({ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: `[${nama}] ➕ Ruangan ditambahkan oleh ${currentUser.full_name}.` })),
     ]);
     fetchMessages(selectedRequest.id);
   };

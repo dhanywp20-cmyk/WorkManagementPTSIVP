@@ -82,7 +82,7 @@ export function useKpiTeam() {
     const load = async () => {
       try {
         const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
-        if (data?.settings) { setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings }); return; }
+        if (data?.settings) { setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...(data.settings as Partial<KPISettings>) }); return; }
       } catch {  }
       try {
         const s = typeof window !== 'undefined' ? localStorage.getItem('kpi_global_settings') : null;
@@ -164,7 +164,7 @@ export function useKpiTeam() {
       const { data: snapInserted } = await supabase.from('kpi_period_snapshots').insert({
         period_label: snapshotLabel,
         year: kpiYear, period: kpiPeriodLen, start_month: kpiStartMonth, end_month: endMonth,
-        team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType : 'all',
+        team_type: scope.kind === 'pts_sup' ? scope.ptsTeamType ?? 'all' : 'all',
         created_by: currentUser.full_name, members_json: membersJson, settings_json: _s,
       }).select('id').single();
       if (snapInserted?.id) {

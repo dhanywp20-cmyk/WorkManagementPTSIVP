@@ -203,8 +203,8 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
   const [myIsInternalSales, setMyIsInternalSales] = useState(false);
   const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
   useEffect(() => {
-    supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
-      if (data) muatIdPimpinan(supabase).then(idPim => setSalesGuestUsers(data.filter(u => !idPim.has(u.id))));
+    supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }) => {
+      if (data) muatIdPimpinan(supabase).then(idPim => setSalesGuestUsers(data.filter(u => !idPim.has(u.id)).map(u => ({ ...u, sales_division: u.sales_division ?? undefined }))));
     });
     supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle().then(({ data }: { data: { is_internal_sales: boolean | null } | null }) => {
       const internal = !!data?.is_internal_sales;
@@ -213,8 +213,8 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
         setForm(prev => ({ ...prev, sales_name: '', sales_division: '' }));
       }
     });
-    supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }: { data: BrandPicMapping[] | null }) => {
-      if (data) setBrandPicMappings(data);
+    supabase.from('brand_pic_mappings').select('id,brand_type,brand_name,pic_user_id,pic_user_name').order('brand_name').then(({ data }) => {
+      if (data) setBrandPicMappings(data as BrandPicMapping[]);
     });
   }, []);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { TechNote, TechNoteHistory } from './shared';
 import { KATEGORI_FOLDER, linkOneDriveSah } from '@/lib/aturan-tech-note';
 import { supabase } from '@/lib/supabase';
@@ -106,7 +107,7 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
 
     if (editingNote) {
       const resubmit = !canManage && (editingNote.status === 'revision' || editingNote.status === 'rejected');
-      const payload: Record<string, unknown> = {
+      const payload: TablesUpdate<'tech_notes'> = {
         title: uploadForm.title.trim(), description: uploadForm.description.trim(),
         folder_id: uploadForm.folder_id, one_drive_link: uploadForm.one_drive_link.trim(),
         product: uploadForm.product.trim(), tags,

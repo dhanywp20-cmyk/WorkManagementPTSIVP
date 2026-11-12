@@ -31,7 +31,7 @@ export function useMateriPage(k: MateriPageKonteks) {
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('lc_materials').select('*').order('folder_path', { ascending: true }).order('materi_name', { ascending: true });
-    setMaterials(data ?? []);
+    setMaterials((data ?? []) as Material[]);
   }, []);
   useEffect(() => { load(); }, [load]);
 

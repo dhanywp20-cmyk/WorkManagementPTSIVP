@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesInsert } from '@/types/database';
 import { compressImage } from '@/lib/image-compress';
 import { supabase } from '@/lib/supabase';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
@@ -76,7 +77,7 @@ export function useBuatTicket(k: BuatTicketKonteks) {
           if (ticketBrand === "BOTH" && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) brandInternalId2 = rb.ivp.id;
         } catch {  }
       }
-      const ticketData: Record<string, unknown> = {
+      const ticketData: TablesInsert<'tickets'> = {
         project_name: newTicket.project_name,
         address: newTicket.address || null,
         customer_phone: newTicket.customer_phone || null,

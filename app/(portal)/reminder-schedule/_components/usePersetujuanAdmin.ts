@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { Reminder, TeamUser, formatDate, sendFonnteWA, type SupervisorCandidate, cleanRequestNotes } from './shared';
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
@@ -54,7 +55,7 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
     if (approveBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
         const sibNotes = cleanRequestNotes(sib.notes);
-        const patch: Record<string, unknown> = { routing_status: 'supervisor_assign', assigned_supervisor_id: primarySupervisor.id, notes: sibNotes };
+        const patch: TablesUpdate<'reminders'> = { routing_status: 'supervisor_assign', assigned_supervisor_id: primarySupervisor.id, notes: sibNotes };
         if (approveTime) patch.due_time = approveTime;
         return supabase.from('reminders').update(patch).eq('id', sib.id);
       }));
@@ -151,7 +152,7 @@ export function usePersetujuanAdmin(k: PersetujuanAdminKonteks) {
     if (approveBatchSiblings.length > 0) {
       const siblingResults: { error: { message: string } | null }[] = await Promise.all(approveBatchSiblings.map(sib => {
         const sibNotes = cleanRequestNotes(sib.notes);
-        const patch: Record<string, unknown> = {
+        const patch: TablesUpdate<'reminders'> = {
           assigned_to: assignee.username,
           assign_name: assignee.full_name,
           assign_user_id: assignee.id,

@@ -62,7 +62,7 @@ export function StatusBadge({ status }: { status: TechNote['status'] }) {
 export function TechNoteKPISummary({ technotes, currentUser, year }:
   { technotes: TechNote[]; currentUser: User; year: number }) {
   const isAdmin = hasFullAccess(currentUser as never)
-    || ['admin','superadmin','supervisor'].includes(currentUser.role);
+    || ['admin','superadmin','supervisor'].includes(currentUser.role ?? '');
 
   if (isAdmin) {
     const totalApproved = technotes.filter(t => t.status === 'approved').length;

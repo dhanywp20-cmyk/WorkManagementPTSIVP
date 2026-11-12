@@ -9,7 +9,7 @@ export interface User {
   id: string;
   full_name: string;
   username: string;
-  role: string;
+  role: string | null;
   jabatan?: string | null;
   sales_division?: string | null;
   phone_number?: string | null;

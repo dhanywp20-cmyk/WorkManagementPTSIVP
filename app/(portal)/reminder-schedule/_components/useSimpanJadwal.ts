@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesInsert } from '@/types/database';
 import { Reminder, TeamUser, GuestUser, newBatchId, sendFonnteWA, REMINDER_FIELDS } from './shared';
 import { supabase } from '@/lib/supabase';
 import { adalahKategoriInsentif } from '@/lib/incentive/scheme';
@@ -104,7 +105,7 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
         ...progressTimelinePayload(),
       })));
       const { data: bulkRows, error: bulkErr } = await cobaIdentitas(async pakaiUuid =>
-        await supabase.from('reminders').insert(pakaiUuid ? payloads : payloads.map(tanpaIdentitas))
+        await supabase.from('reminders').insert((pakaiUuid ? payloads : payloads.map(tanpaIdentitas)) as TablesInsert<'reminders'>[])
           .select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date'));
       if (bulkErr) { notify('error', 'Gagal menyimpan: ' + bulkErr.message); setSaving(false); return; }
       void syncNewRemindersToProgress((bulkRows ?? []) as ReminderSnapshot[]);
@@ -206,7 +207,7 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
         }));
         const r = await cobaIdentitas(async pakaiUuid =>
           await supabase.from('reminders')
-            .insert((pakaiUuid ? tambahan : tambahan.map(x => tanpaIdentitas(x as typeof payload))) as typeof tambahan));
+            .insert((pakaiUuid ? tambahan : tambahan.map(x => tanpaIdentitas(x as typeof payload))) as TablesInsert<'reminders'>[]));
         if (r.error) galatSunting.push(r.error.message);
       }
       error = galatSunting.length > 0 ? { message: galatSunting[0] } : null;

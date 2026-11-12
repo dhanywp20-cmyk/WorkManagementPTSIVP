@@ -4,6 +4,8 @@ import { hasFullAccess } from "@/lib/constants";
 import { kutipNilai, cobaIdentitas } from "@/lib/identitas";
 import { JABATAN_TIER, KOLOM_LOG_RINGKAS, type User, type ActivityLog, type Ticket } from "./shared";
 
+const sebagaiTicket = (baris: unknown): Ticket[] => (baris ?? []) as Ticket[];
+
 export interface RentangTiket { dari: string; sebelum: string }
 
 export async function ambilTiketUntuk(
@@ -58,7 +60,7 @@ export async function ambilTiketUntuk(
           .order("created_at", { ascending: false })
         : supabase.from("user_supervisor_mappings").select("user_id").eq("supervisor_id", resolvedUser.id),
     ]);
-    (milikSaya ?? []).forEach(addOwn);
+    sebagaiTicket(milikSaya).forEach(addOwn);
 
     if (isIVP) {
       const ivpDivMaps = pemetaanA.data;
@@ -69,7 +71,7 @@ export async function ambilTiketUntuk(
       if (handledDivisions.length > 0) {
         const { data: divTickets } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("sales_division", handledDivisions).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-        (divTickets ?? []).forEach((t: Ticket) => {
+        sebagaiTicket(divTickets).forEach((t: Ticket) => {
           const tBrand = (t.brand ?? null) as string | null;
           const myBrands = myBrandMaps.filter(m => m.sales_division === t.sales_division).map(m => m.brand_type);
           const match = !tBrand || tBrand === "BOTH" || myBrands.includes(tBrand) || myBrands.includes(null);
@@ -171,7 +173,7 @@ export async function ambilTiketUntuk(
             .eq("sales_division", selfDiv)
             .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-          (divTickets ?? []).forEach((t: Ticket) => {
+          sebagaiTicket(divTickets).forEach((t: Ticket) => {
             if (isMyTicket(t)) addUnique(t);
           });
         }
@@ -183,7 +185,7 @@ export async function ambilTiketUntuk(
   } else {
     const { data: ticketsData } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-    const mergedTickets = await gabungLogServices(saringTimBiasa(activeUser, ticketsData || []));
+    const mergedTickets = await gabungLogServices(saringTimBiasa(activeUser, sebagaiTicket(ticketsData)));
     return { tickets: mergedTickets, periksaPilihan: false };
   }
 }
@@ -229,7 +231,7 @@ export async function ambilTiketTertentu(activeUser: User | null | undefined, id
   if (!ids.length) return [];
   const { data, error } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("id", ids);
   if (error) throw error;
-  const hasil: Ticket[] = data ?? [];
+  const hasil: Ticket[] = sebagaiTicket(data);
   if (activeUser?.role === "guest" && !isPimpinan(activeUser)) return hasil;
   return gabungLogServices(saringTimBiasa(activeUser, hasil));
 }

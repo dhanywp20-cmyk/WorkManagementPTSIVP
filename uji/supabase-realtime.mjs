@@ -48,7 +48,7 @@ async function jalankan(denganAccessToken) {
 
 console.log('\n1. Konfigurasi klien utama');
 const src = readFileSync('lib/supabase.ts', 'utf8');
-const blok = src.slice(src.indexOf('export const supabase = createClient('));
+const blok = src.slice(src.indexOf('export const supabase = createClient'));
 cek('lib/supabase.ts memasang opsi accessToken', /accessToken:\s*tokenAkses/.test(blok.slice(0, 300)));
 
 console.log('\n2. Perilaku soket (soket tiruan, heartbeat 30 ms)');

@@ -20,7 +20,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
 
   useEffect(() => {
     supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false })
-      .then(({ data: s }: { data: QuizSession[] | null }) => setSessions(s ?? []));
+      .then(({ data: s }) => setSessions((s ?? []) as QuizSession[]));
   }, []);
 
   useEffect(() => {

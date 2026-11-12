@@ -10,9 +10,9 @@ import { Panel, Empty, Row, ACTION_STYLE, MODULE_ICON } from './panel-analitik';
 import { useAnalyticsPlatform } from './useAnalyticsPlatform';
 
 export interface User {
-  id: string; full_name: string; role: string;
-  team_type?: string; jabatan?: string; allowed_menus?: string[];
-  username?: string; sales_division?: string; access_level?: string;
+  id: string; full_name: string; role: string | null;
+  team_type?: string | null; jabatan?: string | null; allowed_menus?: string[] | null;
+  username?: string; sales_division?: string | null; access_level?: string | null;
 }
 
 export interface TicketRow   { id: string; project_name: string; assign_name: string; status: string; date: string; created_at: string; }

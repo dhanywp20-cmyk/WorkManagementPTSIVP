@@ -1,10 +1,10 @@
 
 export const KUNCI_BRIEFING = 'briefing_pagi';
 
-export interface PengaturanBriefing {
+export type PengaturanBriefing = {
   aktif: boolean;
   pengingatDailyReport: boolean;
-}
+};
 
 export const BRIEFING_BAWAAN: PengaturanBriefing = { aktif: true, pengingatDailyReport: true };
 

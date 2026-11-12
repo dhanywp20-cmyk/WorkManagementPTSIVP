@@ -75,7 +75,7 @@ export function useMuatRequest(k: MuatRequestKonteks) {
     }
     const { data, error } = await query;
     if (!error && data) {
-      let filtered = data as ProjectRequest[];
+      let filtered = data as unknown as ProjectRequest[];
       if (!isPTS && !isIVPGuest && !pimpinan && currentUser.team_type === 'Marketing') {
         const KOLOM_DASAR = 'id, project_name, status, sales_name, created_at, rooms, requester_id';
         const KOLOM_BRAND = 'brand_display_pic_id, brand_display_2_pic_id, brand_middleware_pic_id';

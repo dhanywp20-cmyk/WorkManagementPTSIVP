@@ -26,7 +26,7 @@ export function useMuatLaporan(k: MuatLaporanKonteks) {
     const { data } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,allowed_menus').order('full_name');
     if (!data) return;
     const kelompokPTS = namaKelompokPTSDitugaskan();
-    setTeamUsers(data.filter((u: TeamUser) =>
+    setTeamUsers((data as TeamUser[]).filter((u: TeamUser) =>
       kelompokPTS.includes(u.team_type ?? '') && u.role !== 'admin' && u.role !== 'superadmin'));
   };
   const loadGuestUsers = async () => {

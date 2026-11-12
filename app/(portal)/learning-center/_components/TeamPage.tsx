@@ -17,8 +17,8 @@ export function TeamPage() {
       supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
       supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
     ]);
-    setUsers((u ?? []).filter((u: any) => u.role !== 'guest'));
-    setAttempts(a ?? []);
+    setUsers((u ?? []).filter(x => x.role !== 'guest') as User[]);
+    setAttempts((a ?? []) as QuizAttempt[]);
   }, []);
   useEffect(() => { load(); }, [load]);
 

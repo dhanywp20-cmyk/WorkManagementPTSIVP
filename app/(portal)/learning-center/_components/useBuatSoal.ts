@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesInsert } from '@/types/database';
 import type { SisiBanding } from './QuestionsPage';
 import { supabase, User, Material, Question, DialogState } from './shared';
 import { generateWithGemini } from './penilai-ai';
@@ -110,7 +111,7 @@ export function useBuatSoal(k: BuatSoalKonteks) {
       const barisFinal = kolomUrutanAda
         ? (rows as Record<string, unknown>[]).map((r, i) => ({ ...r, urutan: nomorMulai + i + 1 }))
         : rows;
-      const { error } = await supabase.from('lc_questions').insert(barisFinal);
+      const { error } = await supabase.from('lc_questions').insert(barisFinal as TablesInsert<'lc_questions'>[]);
       if (error) throw error;
       const today = new Date().toISOString().slice(0, 10);
       const storageKey = `gemini_usage_${today}`;

@@ -75,7 +75,7 @@ export interface ProjectRequest {
   assigned_supervisor_id?: string | null;
 }
 
-export interface RoomDetail {
+export type RoomDetail = {
   id: string;
   room_name: string;
   kebutuhan: string[];
@@ -123,7 +123,7 @@ export interface RoomDetail {
   assign_user_id?: string | null;
   approved_by?: string | null;
   approved_at?: string | null;
-}
+};
 
 export interface BrandPicMapping {
   id: string;

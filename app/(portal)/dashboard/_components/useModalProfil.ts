@@ -25,8 +25,8 @@ export function useModalProfil(k: ModalProfilKonteks) {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [cariIzin, setCariIzin] = useState('');
-  const [supervisors, setSupervisors] = useState<{ full_name: string; phone_number?: string; sales_division?: string; jabatan?: string }[]>([]);
-  const [subordinates, setSubordinates] = useState<{ full_name: string; username: string; sales_division?: string; jabatan?: string }[]>([]);
+  const [supervisors, setSupervisors] = useState<{ full_name: string; phone_number?: string | null; sales_division?: string | null; jabatan?: string | null }[]>([]);
+  const [subordinates, setSubordinates] = useState<{ full_name: string; username: string; sales_division?: string | null; jabatan?: string | null }[]>([]);
   const [telegramBot, setTelegramBot] = useState<{ status: 'memuat' | 'siap' | 'galat'; username?: string; alasan?: string }>({ status: 'memuat' });
   const [menghubungkan, setMenghubungkan] = useState(false);
   const [pesanTelegram, setPesanTelegram] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
@@ -235,7 +235,7 @@ export function useModalProfil(k: ModalProfilKonteks) {
     setSaving(false);
   };
 
-  const roleClass = ROLE_BADGE[userData.role?.toLowerCase()] || 'bg-slate-100 text-slate-700 border-slate-200';
+  const roleClass = ROLE_BADGE[userData.role?.toLowerCase() ?? ''] || 'bg-slate-100 text-slate-700 border-slate-200';
   const jabatanCfg = userData.jabatan ? JABATAN_CONFIG[userData.jabatan as JabatanType] : null;
 
   const sortedSupervisors = [...supervisors].sort((a, b) => {

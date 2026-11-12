@@ -60,7 +60,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       supabase.from('lc_quiz_attempts').select('quiz_session_id, user_id, is_submitted'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
-    setMaterials(m ?? []);
+    setMaterials((m ?? []) as Material[]);
     setQuestions((q ?? []) as unknown as Question[]);
     setTeamUsers((u ?? []) as User[]);
 
