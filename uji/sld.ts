@@ -16,6 +16,7 @@ import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pi
 import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, tempelKlip } from '../lib/sld/pilih';
 import { letakLabel } from '../lib/sld/lembar1';
 import { labelZona, svgZona } from '../lib/sld/zona';
+import { areaDok } from '../lib/sld/tipe';
 import { tabrak } from '../lib/sld/rute';
 import { dokRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '../lib/sld/ruang';
 import { bukuExcel } from '../lib/sld/excel';
@@ -451,6 +452,18 @@ void (async () => {
     kabel: Array.from({ length: 90 }, (_, i) => ({ ...kabelBaru('v0', 'v1', { fungsi: `fungsi ${i}` }), id: `kv${i}` })) };
   const vLanjut = await bacaZip(buatVsdx({ dok: banyakV, gambar: new Map() }));
   cek('Visio: lembar lanjutan sheet 2 ikut jadi halaman', !!vLanjut.get('visio/pages/page3.xml') && new TextDecoder().decode(vLanjut.get('visio/pages/pages.xml')).includes('Sheet 2 - Koneksi &amp; catatan (2)'));
+  const pos: [string, string, number, number, number, number][] = [['scr', 'layar-frame', 298.5, 39.5, 39, 37.5], ['pry', 'proyektor', 304, 108.5, 30.5, 25.5], ['tx', 'encoder', 309, 159.5, 26, 13],
+    ['sw', 'switch', 129, 106, 46.5, 30.5], ['txa', 'encoder', 100.5, 48.5, 26, 13], ['wp', 'encoder', 75, 85.5, 23, 19], ['ctl', 'encoder', 75.5, 127, 26, 17], ['pro', 'controller', 105, 164.5, 17, 13],
+    ['aud', 'minipc', 156.5, 22, 29.5, 25], ['spk', 'speaker', 365.5, 43, 13, 22], ['rt', 'matrix', 171.5, 154, 26, 31.5], ['pnl', 'panel', 177, 74, 24, 12.5]];
+  const ujung = (p: string) => ({ p, nama: '', port: '', sisi: 'auto' as const });
+  const dNyata = { ...dokBaru(), kertas: '169' as const, perangkat: pos.map(([id, ikon, x, y, w, h]) => ({ ...perangkatBaru('umum', x, y), id, ikon, w, h, nama: id })),
+    kabel: [{ ...kabelBaru('sw', 'pry'), id: 'b1', cabang: ['tx', 'rt', 'pnl'].map(ujung) }, { ...kabelBaru('sw', 'wp'), id: 'b2', cabang: ['txa', 'ctl', 'pro'].map(ujung) },
+      { ...kabelBaru('txa', 'aud'), id: 'au' }, { ...kabelBaru('aud', 'spk', { jenis: 'speaker' }), id: 'spk', tengah: 355.5 }, { ...kabelBaru('tx', 'pry'), id: 'hd', tengah: 141.5 }] };
+  const ar = areaDok(dNyata), luar = geometri(dNyata).flatMap(g => g.garis.flatMap(gr => gr.titik)).filter(t => t.x < ar.x - 1 || t.x > ar.x + ar.w + 1 || t.y < ar.y - 1 || t.y > ar.y + ar.h + 1);
+  const gSpk = geometri(dNyata).find(g => g.id === 'spk')!.garis[0].titik;
+  cek('kabel yang jalurnya digeser manual tidak pindah sisi & tidak keluar halaman (kasus nyata)', !luar.length && Math.abs(gSpk[1].x - 355.5) < 0.01 && Math.abs(gSpk[0].y - gSpk[1].y) < 0.01,
+    JSON.stringify(luar.slice(0, 3)));
+  cek('jalur manual di luar halaman dijepit ke dalam halaman', geometri({ ...dNyata, kabel: [{ ...kabelBaru('aud', 'spk'), id: 'x', tengah: 900 }] })[0].garis[0].titik.every(t => t.x <= ar.x + ar.w + 0.01));
   cek('isian BOQ lama (kunci per nama) tetap terbaca', barisBoq({ ...h1, boq: { 'display|ifp 1': { spek: '86 inci' } } })[1].spek === '86 inci');
   console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
   process.exit(gagal ? 1 : 0);
