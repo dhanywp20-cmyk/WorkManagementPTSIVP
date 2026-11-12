@@ -92,7 +92,7 @@ kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id';
 
   const fetchTeamMembers = async () => {
     const {data} = await supabase.from('users').select('full_name').in('team_type', namaKelompokPTSDitugaskan()).order('full_name');
-    if (data&&data.length>0) setTeamMembers(data.map((u:any)=>u.full_name));
+    if (data&&data.length>0) setTeamMembers(data.map((u)=>u.full_name));
   };
 
   const handleDelete = async () => {

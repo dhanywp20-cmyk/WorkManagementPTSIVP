@@ -1,3 +1,4 @@
+import type { TablesInsert } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { ambilAkun, bolehLihatProyek, galat, NO_STORE, type Db } from '@/lib/checklist/server';
 import { hasFullAccess } from '@/lib/constants';
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
   const boleh = await bolehLihatProyek(s.db, s.akun, isian.proyek_id);
   if (boleh === 'tidak-ada') return galat('Proyek tidak ditemukan.', 404);
   if (!boleh) return galat('Anda tidak punya akses ke proyek ini.', 403);
-  const { data, error } = await s.db.from(TABEL).insert({ ...isian, dibuat_oleh: s.akun.id, dibuat_oleh_nama: s.akun.nama }).select('id').single();
+  const { data, error } = await s.db.from(TABEL).insert({ ...isian, dibuat_oleh: s.akun.id, dibuat_oleh_nama: s.akun.nama } as unknown as TablesInsert<'tools_av_hasil'>).select('id').single();
   if (error) return galat(error.message, 500);
   return NextResponse.json({ ok: true, id: (data as { id: string }).id }, { headers: NO_STORE });
 }

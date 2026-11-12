@@ -55,7 +55,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
       if (userIds.length > 0) {
         const { data: us } = await supabase
           .from('users').select('id, full_name, username, jabatan, role, sales_division').in('id', userIds);
-        (us ?? []).forEach((u: any) => { userMap[u.id] = u; });
+        (us ?? []).forEach((u) => { userMap[u.id] = u; });
       }
       if (dibatalkan) return;
       setData(rows.map((r: any) => ({ ...r, users: userMap[r.user_id] ?? null })));

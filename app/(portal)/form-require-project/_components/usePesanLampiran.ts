@@ -121,7 +121,7 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
       if (ccUsers?.length) {
         setInternalSalesNames(prev => {
           const next = { ...prev };
-          ccUsers.forEach((u: any) => { next[u.id] = u.full_name; });
+          ccUsers.forEach((u) => { next[u.id] = u.full_name; });
           return next;
         });
       }

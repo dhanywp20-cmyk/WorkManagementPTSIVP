@@ -18,7 +18,7 @@ export async function cariTechNote(k: KonteksCariTechNote) {
         .select('id, title, description, product, author_name, status')
         .or(`title.ilike.%${q}%,description.ilike.%${q}%,product.ilike.%${q}%,author_name.ilike.%${q}%`)
         .order('submitted_at', { ascending: false }).limit(10);
-      (data ?? []).forEach((t: any) => res.push({
+      (data ?? []).forEach((t) => res.push({
         id: `technote-${t.id}`, type: 'technote', icon: '📝',
         title: t.title ?? '-',
         sub: t.product ?? '-',

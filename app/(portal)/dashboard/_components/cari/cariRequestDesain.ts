@@ -35,7 +35,7 @@ export async function cariRequestDesain(k: KonteksCariRequestDesain) {
       const allSubIdsRes = salesSubNames.length
         ? await supabase.from('users').select('id').in('full_name', salesSubNames)
         : { data: [] };
-      const subIds = (allSubIdsRes.data ?? []).map((u: any) => u.id as string);
+      const subIds = (allSubIdsRes.data ?? []).map((u) => u.id as string);
       projects = projects.filter((p: any) =>
         salesDivisions.includes(p.sales_division) || subIds.includes(p.requester_id)
       );

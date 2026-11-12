@@ -107,8 +107,8 @@ export function useAksiPersetujuan(k: AksiPersetujuanKonteks) {
         `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
         `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
         `🔗 ${appLink()}`;
-      await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg, event: 'project.approval_needed' })));
-      (admins ?? []).forEach((a: any) => { if (a.id) void createNotification({ user_id: a.id, type: 'project', title: '✅ Request lolos review Sales Internal', body: `${req.sales_name} — ${req.project_name}`, action_url: '/form-require-project', ref_id: req.id, created_by: currentUser.full_name }); });
+      await Promise.allSettled((admins ?? []).filter((a) => a.phone_number).map((a) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg, event: 'project.approval_needed' })));
+      (admins ?? []).forEach((a) => { if (a.id) void createNotification({ user_id: a.id, type: 'project', title: '✅ Request lolos review Sales Internal', body: `${req.sales_name} — ${req.project_name}`, action_url: '/form-require-project', ref_id: req.id, created_by: currentUser.full_name }); });
     } catch { }
   };
 

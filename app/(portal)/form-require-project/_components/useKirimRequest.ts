@@ -76,7 +76,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
         const ids = [internalSalesId, internalSalesId2].filter(Boolean) as string[];
         if (ids.length) {
           const { data: hs } = await supabase.from('users').select('id, full_name, phone_number').in('id', ids);
-          (hs ?? []).forEach((h: any) => internalHandlers.push({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
+          (hs ?? []).forEach((h) => internalHandlers.push({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
         }
       }
       const payload = {

@@ -57,7 +57,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           team_rnd:(d as any).team_rnd||'',
         })));
       }
-      if(usersRes.data)setPtUsers(usersRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as any[]);
+      if(usersRes.data)setPtUsers(usersRes.data.filter((u)=>u.role!=='admin'&&u.role!=='superadmin') as any[]);
       setLoadingE(false);
     })();
   },[row.id]);

@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanAdmin } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -22,7 +23,7 @@ export async function PUT(req: NextRequest) {
   if (!body || typeof body !== 'object') return gagal('Format aturan tidak sah.');
   const aturan = rapikanAturan(body);
   const { error } = await getAdminClient().from('app_settings')
-    .upsert({ key: KUNCI_ATURAN_PERBANDINGAN, value: aturan, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    .upsert({ key: KUNCI_ATURAN_PERBANDINGAN, value: aturan as unknown as Json, updated_at: new Date().toISOString() }, { onConflict: 'key' });
   if (error) return gagal('Gagal menyimpan aturan.', 500);
   return NextResponse.json({ ok: true, aturan });
 }

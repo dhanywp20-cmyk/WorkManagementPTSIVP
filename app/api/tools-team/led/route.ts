@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -67,13 +68,13 @@ export async function POST(req: NextRequest) {
     if (lama.dibuat_oleh !== jaga.user.id && !(await kelolaSemua(db, jaga.user.id))) {
       return gagal('Hitungan ini milik orang lain - simpan sebagai salinan.', 403);
     }
-    const { data, error } = await db.from(TABEL).update({ nama, data: cek.data, ringkasan, svg_koneksi: svgKoneksi, diubah_oleh_nama: jaga.user.full_name, updated_at: waktu })
+    const { data, error } = await db.from(TABEL).update({ nama, data: cek.data as unknown as Json, ringkasan: ringkasan as unknown as Json, svg_koneksi: svgKoneksi, diubah_oleh_nama: jaga.user.full_name, updated_at: waktu })
       .eq('id', id).select('id, nama, updated_at').single();
     if (error) return gagal(error.message, 500);
     return NextResponse.json({ ok: true, file: { ...data, bolehUbah: true } });
   }
   const { data, error } = await db.from(TABEL).insert({
-    nama, data: cek.data, ringkasan, svg_koneksi: svgKoneksi, dibuat_oleh: jaga.user.id, dibuat_oleh_nama: jaga.user.full_name, diubah_oleh_nama: jaga.user.full_name,
+    nama, data: cek.data as unknown as Json, ringkasan: ringkasan as unknown as Json, svg_koneksi: svgKoneksi, dibuat_oleh: jaga.user.id, dibuat_oleh_nama: jaga.user.full_name, diubah_oleh_nama: jaga.user.full_name,
   }).select('id, nama, updated_at').single();
   if (error) return gagal(error.message, 500);
   return NextResponse.json({ ok: true, file: { ...data, bolehUbah: true } });

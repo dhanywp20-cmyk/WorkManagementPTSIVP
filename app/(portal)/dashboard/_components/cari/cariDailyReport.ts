@@ -22,7 +22,7 @@ export async function cariDailyReport(k: KonteksCariDailyReport) {
       .order('report_date', { ascending: false }).limit(10);
     if (!tanpaBatas) qd = batasiLingkup(lingkup, qd, ['user_name']);
     const { data } = await qd;
-    (data ?? []).forEach((d: any) => res.push({
+    (data ?? []).forEach((d) => res.push({
       id: `daily-${d.id}`, type: 'daily', icon: '📋',
       title: `Laporan ${d.user_name ?? '-'}`,
       sub: d.reminder_notes || 'Tanpa catatan',

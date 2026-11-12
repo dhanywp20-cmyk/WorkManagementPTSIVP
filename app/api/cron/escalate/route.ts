@@ -112,7 +112,7 @@ async function runEscalation(supabase: ReturnType<typeof klienCron>) {
 
     const targets: string[] = [];
     if (handlerUser?.phone_number) targets.push(handlerUser.phone_number);
-    (admins ?? []).forEach((a: any) => {
+    (admins ?? []).forEach((a) => {
       if (a.phone_number && !targets.includes(a.phone_number)) targets.push(a.phone_number);
     });
 

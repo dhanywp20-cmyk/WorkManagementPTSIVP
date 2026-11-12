@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { data: hasilRpc, error } = await db.rpc('tools_simpan_sld', {
-    p_id: id, p_versi: versiLama, p_nama: nama, p_data: data, p_jumlah: semuaPerangkat(data).length, p_user: jaga.user.id, p_user_nama: jaga.user.full_name,
+    p_id: id as string, p_versi: versiLama as number, p_nama: nama, p_data: data as unknown as Json, p_jumlah: semuaPerangkat(data).length, p_user: jaga.user.id, p_user_nama: jaga.user.full_name,
   });
   if (error) {
     if (/konflik/.test(error.message)) return gagal('SLD ini baru saja diubah orang lain. Buka ulang versi terbaru.', 409);

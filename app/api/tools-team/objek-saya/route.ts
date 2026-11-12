@@ -1,3 +1,4 @@
+import type { TablesInsert } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await db.from(TABEL).insert(sah.map(o => ({
     user_id: jaga.user.id, nama: o.nama, ket: o.ket, jenis: o.jenis, atur: o.atur,
     model: o.model ?? null, ukuran_model: o.model?.length ?? 0, updated_at: sekarang,
-  }))).select(KOLOM_DAFTAR);
+  })) as unknown as TablesInsert<'tools_objek_saya'>[]).select(KOLOM_DAFTAR);
   if (error) return gagal(error.message, 500);
   const baru = ((data ?? []) as { ukuran_model: number }[]).map(({ ukuran_model, ...o }) => ({ ...o, adaModel: ukuran_model > 0, ukuranModel: ukuran_model }));
   return NextResponse.json({ ok: true, baru, ditolak });

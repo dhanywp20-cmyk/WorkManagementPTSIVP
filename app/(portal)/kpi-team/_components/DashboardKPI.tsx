@@ -87,7 +87,7 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
         setScope({
           kind: 'pts_sup',
           ptsTeamType: currentUser.team_type ?? '',
-          ptsMemberNames: (data ?? []).map((u:any) => u.full_name as string),
+          ptsMemberNames: (data ?? []).map((u) => u.full_name as string),
         });
         setScopeReady(true); return;
       }

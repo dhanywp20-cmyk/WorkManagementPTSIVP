@@ -94,7 +94,7 @@ export function useGlobalSearch(k: GlobalSearchKonteks) {
       .select('full_name')
       .eq('role', 'team')
       .eq('team_type', currentUser.team_type ?? '');
-    return (data ?? []).map((u: any) => u.full_name as string);
+    return (data ?? []).map((u) => u.full_name as string);
   }, [currentUser]);
 
   const getSalesScope = useCallback(async (): Promise<{ divisions: string[]; subNames: string[] }> => {
@@ -108,29 +108,29 @@ export function useGlobalSearch(k: GlobalSearchKonteks) {
       supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id),
       supabase.from('user_supervisor_mappings').select('user_id').eq('supervisor_id', currentUser.id),
     ]);
-    const divisions = (divMapsRes.data ?? []).map((m: any) => m.sales_division as string);
+    const divisions = (divMapsRes.data ?? []).map((m) => m.sales_division as string);
     if (currentUser.sales_division && !divisions.includes(currentUser.sales_division)) {
       divisions.push(currentUser.sales_division);
     }
 
-    const directUserIds = (userSupMapsRes.data ?? []).map((m: any) => m.user_id as string);
+    const directUserIds = (userSupMapsRes.data ?? []).map((m) => m.user_id as string);
     const subFromDivRes = await supabase.from('users')
       .select('id, full_name, sales_division, jabatan')
       .in('sales_division', divisions.length ? divisions : ['__none__'])
       .in('role', ['guest','sales']);
-    const divUsers = (subFromDivRes.data ?? []).filter((u: any) => {
+    const divUsers = (subFromDivRes.data ?? []).filter((u) => {
       const tier = u.jabatan === 'Supervisor' ? 2 : u.jabatan === 'Manager' ? 3 : u.jabatan === 'Deputy General Manager' ? 4 : u.jabatan === 'General Manager' ? 5 : u.jabatan === 'Direktur' ? 6 : 1;
       return tier <= selfTier && u.id !== currentUser.id;
     });
 
-    const allSubIds = [...new Set([...divUsers.map((u: any) => u.id as string), ...directUserIds])];
+    const allSubIds = [...new Set([...divUsers.map((u) => u.id as string), ...directUserIds])];
     const allSubNamesRes = allSubIds.length
       ? await supabase.from('users').select('full_name').in('id', allSubIds)
       : { data: [] };
     const subNames = [...new Set([
       currentUser.full_name,
-      ...(allSubNamesRes.data ?? []).map((u: any) => u.full_name as string),
-      ...divUsers.map((u: any) => u.full_name as string),
+      ...(allSubNamesRes.data ?? []).map((u) => u.full_name as string),
+      ...divUsers.map((u) => u.full_name as string),
     ])];
 
     return { divisions, subNames };

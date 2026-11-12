@@ -1,9 +1,10 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 function fetchTanpaCache(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   return fetch(input, { ...init, cache: 'no-store' });
 }
-let cached: SupabaseClient | null = null;
+let cached: SupabaseClient<Database> | null = null;
 let sudahDiperingatkan = false;
 
 export function hasServiceRole(): boolean {
@@ -15,7 +16,7 @@ export function serviceRoleWajib(): boolean {
   return v === '1' || v === 'true' || v === 'yes';
 }
 
-export function getAdminClient(): SupabaseClient {
+export function getAdminClient(): SupabaseClient<Database> {
   if (cached) return cached;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -37,7 +38,7 @@ export function getAdminClient(): SupabaseClient {
     }
   }
 
-  cached = createClient(url, serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  cached = createClient<Database>(url, serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { fetch: fetchTanpaCache },
   });

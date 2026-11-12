@@ -157,7 +157,7 @@ export async function fetchAllReminders(opts: {
 
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllReminders:', error.message); return []; }
-  return (data ?? []).map((r: any) => ({
+  return (data ?? []).map((r) => ({
     reminder_id: r.id,
     title: r.project_name,
     category: r.category ?? 'Internal',
@@ -233,7 +233,7 @@ export async function fetchReminderActivities(username: string, date: string): P
     .eq('due_date', date)
     .order('due_time', { ascending: true });
   if (error) { console.error('[DR] fetchReminderActivities:', error.message); return []; }
-  return (data ?? []).map((r: any) => ({
+  return (data ?? []).map((r) => ({
     reminder_id: r.id,
     title: r.project_name,
     category: r.category ?? 'Internal',

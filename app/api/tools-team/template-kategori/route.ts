@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   if (!rujuk.ok) return gagal(rujuk.alasan);
   const updated_at = new Date().toISOString();
   const { error } = await db.from(TABEL).upsert({
-    kategori: b.kategori, nama, data: rujuk.data,
+    kategori: b.kategori, nama, data: rujuk.data as unknown as Json,
     ditetapkan_oleh: jaga.user.id, ditetapkan_oleh_nama: jaga.user.full_name ?? jaga.user.username ?? null, updated_at,
   }, { onConflict: 'kategori' });
   if (error) return gagal(error.message, 500);

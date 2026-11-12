@@ -288,7 +288,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           .eq('quiz_session_id', id);
 
         if (attempts && attempts.length > 0) {
-          const attemptIds = attempts.map((a: any) => a.id);
+          const attemptIds = attempts.map((a) => a.id);
           await supabase.from('lc_answers').delete().in('attempt_id', attemptIds);
         }
 

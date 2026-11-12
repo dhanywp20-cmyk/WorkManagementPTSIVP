@@ -28,7 +28,7 @@ export async function resolveBrandInternals(salesDivision: string, brand: Brand)
   const usersById: Record<string, BrandInternal> = {};
   if (ids.length) {
     const { data: us } = await supabase.from('users').select('id, full_name, phone_number').in('id', ids);
-    (us ?? []).forEach((u: any) => { usersById[u.id] = { id: u.id, full_name: u.full_name, phone_number: u.phone_number ?? null }; });
+    (us ?? []).forEach((u) => { usersById[u.id] = { id: u.id, full_name: u.full_name, phone_number: u.phone_number ?? null }; });
   }
   const pick = (bt: 'MVI' | 'IVP'): BrandInternal | null => {
     const exact = rows.find(m => m.brand_type === bt);

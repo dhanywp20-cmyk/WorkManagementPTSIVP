@@ -32,10 +32,10 @@ export function useDaftarTim(): DaftarTim {
           ingat(`daily-tim:lapor:${today}`, () => supabase.from('daily_reports').select('user_id').eq('report_date', today), UMUR_HARIAN),
           ingat(`daily-tim:jadwal:${today}`, () => supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'), UMUR_HARIAN),
         ]);
-        const reported = new Set((reports ?? []).map((r: any) => r.user_id));
+        const reported = new Set((reports ?? []).map((r) => r.user_id));
         const activeBy: Record<string, number> = {};
-        (rems ?? []).forEach((r: any) => { if (r.assigned_to) activeBy[r.assigned_to] = (activeBy[r.assigned_to] ?? 0) + 1; });
-        const rows: Anggota[] = (team ?? []).map((m: any) => ({
+        (rems ?? []).forEach((r) => { if (r.assigned_to) activeBy[r.assigned_to] = (activeBy[r.assigned_to] ?? 0) + 1; });
+        const rows: Anggota[] = (team ?? []).map((m) => ({
           id: m.id as string, name: m.full_name as string, reported: reported.has(m.id),
           active: activeBy[m.username] ?? 0,
           jabatan: (m.jabatan as string) ?? '', atasanId: (m.atasan_id as string) ?? null,
@@ -45,7 +45,7 @@ export function useDaftarTim(): DaftarTim {
         const atasan: DaftarTim['atasan'] = {};
         if (idAtasan.length) {
           const { data: bos } = await ingat(`users:atasan:${[...idAtasan].sort().join(',')}`, () => supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan));
-          (bos ?? []).forEach((b: any) => { atasan[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
+          (bos ?? []).forEach((b) => { atasan[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
         if (alive) setHasil({ loading: false, rows, atasan });
       } catch {

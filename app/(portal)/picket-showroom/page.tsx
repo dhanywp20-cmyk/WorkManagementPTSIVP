@@ -273,7 +273,7 @@ function PiketShowroomPageInner() {
                               {(()=>{
                                 const lastEdited = (kgToShow as any[])
                                   .filter(k => k != null && !!(k as KegiatanEntry).edited_by_name)
-                                  .sort((a:any,b:any)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0] as KegiatanEntry|undefined;
+                                  .sort((a: any,b: any)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0] as KegiatanEntry|undefined;
                                 return lastEdited
                                   ?<div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-1"><span className="text-[10px]"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-[11px] font-semibold text-slate-600 leading-tight">{lastEdited.edited_by_name}</span></div>
