@@ -56,8 +56,8 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                 className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white">
                 <option value="">-- Pilih Materi --</option>
                 {materials.map(m => {
-                  const total = questions.filter(q => q.material_id === m.id && ((q as any).question_type ?? 'abcd') === form.session_type).length;
-                  const batches = [...new Set(questions.filter(q => q.material_id === m.id && (q as any).batch_name && ((q as any).question_type ?? 'abcd') === form.session_type).map(q => (q as any).batch_name))];
+                  const total = questions.filter(q => q.material_id === m.id && ((q).question_type ?? 'abcd') === form.session_type).length;
+                  const batches = [...new Set(questions.filter(q => q.material_id === m.id && (q).batch_name && ((q).question_type ?? 'abcd') === form.session_type).map(q => (q).batch_name))];
                   return (
                     <option key={m.id} value={m.id} disabled={total === 0}>
                       {m.materi_name} ({total} soal {form.session_type === 'essay' ? 'essay' : 'ABCD'}{batches.length > 0 ? `, ${batches.length} grup` : ''})
@@ -69,8 +69,8 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
             {(() => {
               if (!form.material_id) return null;
               const batches = [...new Set(
-                questions.filter(q => q.material_id === form.material_id && (q as any).batch_name && ((q as any).question_type ?? 'abcd') === form.session_type)
-                  .map(q => (q as any).batch_name as string)
+                questions.filter(q => q.material_id === form.material_id && (q).batch_name && ((q).question_type ?? 'abcd') === form.session_type)
+                  .map(q => (q).batch_name as string)
               )].sort();
               if (batches.length === 0) return null;
               return (
@@ -84,9 +84,9 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                     onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white"
                   >
-                    <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id && ((q as any).question_type ?? 'abcd') === form.session_type).length} soal dicampur) --</option>
+                    <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id && ((q).question_type ?? 'abcd') === form.session_type).length} soal dicampur) --</option>
                     {batches.map(b => {
-                      const count = questions.filter(q => q.material_id === form.material_id && (q as any).batch_name === b && ((q as any).question_type ?? 'abcd') === form.session_type).length;
+                      const count = questions.filter(q => q.material_id === form.material_id && (q).batch_name === b && ((q).question_type ?? 'abcd') === form.session_type).length;
                       return <option key={b} value={b}>📌 {b} ({count} soal)</option>;
                     })}
                   </select>
@@ -216,7 +216,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                         || div.toLowerCase().includes(cariDivisi.trim().toLowerCase()))
                       .map(div => {
                       const checked = form.target_divisions.includes(div);
-                      const count = teamUsers.filter(u => (u as any).sales_division === div).length;
+                      const count = teamUsers.filter(u => (u).sales_division === div).length;
                       return (
                         <label key={div} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleTargetDivision(div)}
@@ -234,7 +234,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                   </div>
                   {form.target_divisions.length > 0 && (
                     <p className="text-xs text-orange-600 font-semibold mt-1.5">
-                      ✓ {form.target_divisions.length} divisi dipilih · {teamUsers.filter(u => form.target_divisions.includes((u as any).sales_division ?? '')).length} user
+                      ✓ {form.target_divisions.length} divisi dipilih · {teamUsers.filter(u => form.target_divisions.includes((u).sales_division ?? '')).length} user
                     </p>
                   )}
                 </div>

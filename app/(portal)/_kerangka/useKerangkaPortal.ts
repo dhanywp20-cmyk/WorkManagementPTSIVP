@@ -314,8 +314,8 @@ export function useKerangkaPortal() {
           .eq('status', 'pending')
           .ilike('notes', '%[REQUEST SALES]%'),
       ]).then(([userRes, reminderRes]) => {
-        setPendingUsers((userRes as any).count ?? 0);
-        setPendingRequests((reminderRes as any).count ?? 0);
+        setPendingUsers((userRes).count ?? 0);
+        setPendingRequests((reminderRes).count ?? 0);
       });
     };
 

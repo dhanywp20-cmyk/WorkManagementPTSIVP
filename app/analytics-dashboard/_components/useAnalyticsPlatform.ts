@@ -74,7 +74,7 @@ export function useAnalyticsPlatform(k: AnalyticsPlatformKonteks) {
       setStats({
         ticketOpen: openTickets.length, ticketOverdue: overdueTickets.length,
         reminderPending: pendingReminders.length, projectPending: pendingProjects.length,
-        userPending: (uRes as any).count ?? 0,
+        userPending: (uRes).count ?? 0,
         overdueTickets: overdueTickets.slice(0,6), pendingReminders: pendingReminders.slice(0,6),
         pendingProjects: pendingProjects.slice(0,6),
         myOpenTickets: myTickets.slice(0,6), myTodayReminders: myToday.slice(0,6),

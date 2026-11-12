@@ -31,16 +31,16 @@ export function useDataLaporan(k: DataLaporanKonteks) {
 
     const ticketKeySet = new Set<string>(
       liveTickets.map(t => {
-        const hu = ((t as any).handler_username ?? '').toLowerCase();
-        const rd = ((t as any).report_date ?? '').split('T')[0];
+        const hu = ((t).handler_username ?? '').toLowerCase();
+        const rd = ((t).report_date ?? '').split('T')[0];
         return `${(t.project_name ?? '').trim().toLowerCase()}|${hu}|${rd}`;
       })
     );
 
     liveReminders.forEach(r => {
-      const hr = (r as any).handler_username ?? '';
+      const hr = (r).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hr);
-      const rd = ((r as any).report_date ?? '').split('T')[0];
+      const rd = ((r).report_date ?? '').split('T')[0];
 
       if ((r.category ?? '').toLowerCase() === 'troubleshooting') {
         const key = `${(r.project_name ?? '').trim().toLowerCase()}|${hr.toLowerCase()}|${rd}`;
@@ -68,9 +68,9 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     });
 
     liveTickets.forEach(t => {
-      const hu = (t as any).handler_username ?? '';
+      const hu = (t).handler_username ?? '';
       const tu = teamUsers.find(u => u.username === hu);
-      const rd = (t as any).report_date ?? '';
+      const rd = (t).report_date ?? '';
       rows.push({
         id: 'tck_' + t.ticket_id,
         source: 'ticket',

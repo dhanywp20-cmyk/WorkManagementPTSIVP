@@ -26,12 +26,12 @@ export async function cariBast(k: KonteksCariBast) {
       .order('created_at', { ascending: false }).limit(10);
     if (!tanpaBatas) qf = batasiLingkup(lingkup, qf, ['sales_name']);
     const { data } = await qf;
-    let reviews = (data ?? []) as any[];
+    let reviews = (data ?? []);
     if (isSalesSup) {
       reviews = reviews.filter((r: any) =>
         salesDivisions.includes(r.sales_division) || salesSubNames.some(n => n === r.sales_name));
     }
-    reviews.forEach((r: any) => res.push({
+    reviews.forEach((r) => res.push({
       id: `review-${r.id}`, type: 'review', icon: '⭐',
       title: r.project_name ?? '-',
       sub: r.address ?? '-',

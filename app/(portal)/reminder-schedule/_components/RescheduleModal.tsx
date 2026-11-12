@@ -28,7 +28,7 @@ export function RescheduleModal({
   return (
   <Modal buka onTutup={() => { if (!saving) onClose(); }} judul="Re-Schedule Jadwal" lapisan="atas" tutupDiLuar={false}
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    keterangan={reminder.project_name || (reminder as any).title || '—'}
+    keterangan={reminder.project_name || (reminder).title || '—'}
     footer={<>
       <TombolModal onClick={onClose} disabled={saving}>Batal</TombolModal>
       <TombolModal jenis="utama" onClick={handleSave} disabled={!newDate || saving}>{saving ? 'Menyimpan...' : 'Simpan Re-Schedule'}</TombolModal>

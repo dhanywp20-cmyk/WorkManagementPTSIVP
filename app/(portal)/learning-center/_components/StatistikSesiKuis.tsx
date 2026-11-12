@@ -21,10 +21,10 @@ export function StatistikSesiKuis({
       const scoreLow     = sessionStats.reduce((n: number, s: any) => n + s.scoreLow, 0);
       const avgScore     = totalPeserta > 0
         ? sessionStats.reduce((n: number, s: any) => n + s.avg * s.total, 0) / totalPeserta : 0;
-      const sesiDenganWaktu = sessionStats.filter((s: any) => s.avgMin !== null);
+      const sesiDenganWaktu = sessionStats.filter((s) => s.avgMin !== null);
       const avgMin = sesiDenganWaktu.length
         ? sesiDenganWaktu.reduce((n: number, s: any) => n + s.avgMin, 0) / sesiDenganWaktu.length : null;
-      const sesiUrut = [...sessionStats].sort((a: any, b: any) => a.avg - b.avg);
+      const sesiUrut = [...sessionStats].sort((a, b) => a.avg - b.avg);
     
       return (
         <section>
@@ -83,7 +83,7 @@ export function StatistikSesiKuis({
                   </tr>
                 </thead>
                 <tbody>
-                  {sesiUrut.map((s: any) => (
+                  {sesiUrut.map((s) => (
                     <tr key={s.id}>
                       <td className="px-3 py-2 font-semibold text-slate-700 truncate max-w-[240px]">{s.name}</td>
                       <td className="px-3 py-2 text-center text-slate-500">{s.total}</td>

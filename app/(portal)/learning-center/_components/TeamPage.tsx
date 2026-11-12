@@ -72,7 +72,7 @@ export function TeamPage() {
               )}
               {filtered.map(u => {
                 const ua = attempts.filter((a) => a.user_id === u.id);
-                const gradedUa = ua.filter((a) => (a as any).grading_status !== 'pending_review');
+                const gradedUa = ua.filter((a) => (a).grading_status !== 'pending_review');
                 const pendingCount = ua.length - gradedUa.length;
                 const avg = gradedUa.length ? gradedUa.reduce((s: number, a) => s + (a.score ?? 0), 0) / gradedUa.length : null;
                 const passed = gradedUa.filter((a) => a.passed).length;

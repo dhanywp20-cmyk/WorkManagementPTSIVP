@@ -21,7 +21,8 @@ export function PanelNotifBagian({ bagian, onTutup, onItemClick }: {
     return () => window.removeEventListener('keydown', esc);
   }, [onTutup]);
 
-  const waktu = (iso: string) => {
+  const waktu = (iso: string | null) => {
+    if (!iso) return '';
     const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
     if (m < 1) return 'baru saja';
     if (m < 60) return `${m}m lalu`;

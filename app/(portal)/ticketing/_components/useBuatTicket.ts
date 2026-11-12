@@ -101,7 +101,7 @@ export function useBuatTicket(k: BuatTicketKonteks) {
         assign_user_id: idDariNama(users, resolvedAssignName),
         photo_url: photoUrl || null,
         photo_name: photoName || null,
-        reminder_id: (newTicket as any).reminder_id || null,
+        reminder_id: (newTicket).reminder_id || null,
       };
       if (ticketBrand) {
         ticketData.brand = ticketBrand;

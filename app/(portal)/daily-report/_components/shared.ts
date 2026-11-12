@@ -173,7 +173,7 @@ export async function fetchAllReminders(opts: {
     description: r.description ?? '',
     handler_username: r.assigned_to ?? '',
     report_date: r.due_date ?? '',
-  } as any));
+  }));
 }
 
 export async function fetchAllTickets(opts: {
@@ -201,8 +201,8 @@ export async function fetchAllTickets(opts: {
   if (error) { console.error('[DR] fetchAllTickets:', error.message); return []; }
 
   const seen = new Map<string, TicketActivity & { handler_username: string; report_date: string }>();
-  for (const log of (data ?? []) as any[]) {
-    const t = log.tickets as any;
+  for (const log of (data ?? [])) {
+    const t = log.tickets;
     const key = log.ticket_id ?? log.id;
     if (!seen.has(key)) {
       const createdAt = log.created_at ?? '';
@@ -218,7 +218,7 @@ export async function fetchAllTickets(opts: {
         sales_division: t?.sales_division ?? '',
         handler_username: log.handler_username ?? '',
         report_date: createdAt ? getBusinessDateJakarta(new Date(createdAt)) : '',
-      } as any);
+      });
     }
   }
   return Array.from(seen.values());
@@ -299,7 +299,7 @@ export async function fetchReports(filters: {
 }
 
 export async function saveReport(
-  payload: Omit<DailyReport, 'id' | 'created_at'> & { id?: string }
+  payload: Omit<DailyReport, 'id' | 'created_at' | 'manual_activities'> & { id?: string; manual_activities: Omit<ManualActivity, '_key'>[] }
 ): Promise<{ ok: boolean; error?: string }> {
   const { id, ...rest } = payload;
   if (id) {

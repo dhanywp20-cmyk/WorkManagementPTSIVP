@@ -149,7 +149,7 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                         || div.toLowerCase().includes(cariDivisiUlang.trim().toLowerCase()))
                       .map(div => {
                       const checked = reassignForm.target_divisions.includes(div);
-                      const count = teamUsers.filter(u => (u as any).sales_division === div).length;
+                      const count = teamUsers.filter(u => (u).sales_division === div).length;
                       return (
                         <label key={div} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked}
@@ -210,7 +210,7 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
                 )}
                 {reassignForm.target_mode === 'division' && reassignForm.target_divisions.length > 0 && (
                   <p className="text-xs text-orange-600 font-semibold mt-1.5">
-                    ✓ {reassignForm.target_divisions.length} divisi · {teamUsers.filter(u => reassignForm.target_divisions.includes((u as any).sales_division ?? '')).length} user
+                    ✓ {reassignForm.target_divisions.length} divisi · {teamUsers.filter(u => reassignForm.target_divisions.includes((u).sales_division ?? '')).length} user
                   </p>
                 )}
                 {reassignForm.target_mode === 'user' && reassignForm.target_user_ids.length > 0 && (

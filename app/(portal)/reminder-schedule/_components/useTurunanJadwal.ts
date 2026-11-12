@@ -32,7 +32,7 @@ export function useTurunanJadwal(k: TurunanJadwalKonteks) {
     if (filterStatus !== 'all' && r.status !== filterStatus) return false;
     if (filterYear !== 'all' && !r.due_date.startsWith(filterYear)) return false;
     if (filterCategory !== 'all' && r.category !== filterCategory) return false;
-    const rName = ((r.project_name || '').trim() || ((r as any).title || '').trim()).toLowerCase();
+    const rName = ((r.project_name || '').trim() || ((r).title || '').trim()).toLowerCase();
     if (searchProject && !rName.includes(searchProject.toLowerCase()) &&
         !r.address?.toLowerCase().includes(searchProject.toLowerCase())) return false;
     if (searchSales && !r.sales_name?.toLowerCase().includes(searchSales.toLowerCase())) return false;

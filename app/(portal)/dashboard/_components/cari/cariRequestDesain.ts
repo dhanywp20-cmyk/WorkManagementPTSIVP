@@ -29,7 +29,7 @@ export async function cariRequestDesain(k: KonteksCariRequestDesain) {
       .order('created_at', { ascending: false }).limit(15);
     if (!tanpaBatas) qp = batasiLingkup(lingkup, qp, ['sales_name']);
     const { data: pData } = await qp;
-    let projects = (pData ?? []) as any[];
+    let projects = (pData ?? []);
 
     if (isSalesSup) {
       const allSubIdsRes = salesSubNames.length

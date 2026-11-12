@@ -115,7 +115,7 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
       }
       try {
         const creatorUser = tk.created_by ? users.find((u) => u.username === tk.created_by) : null;
-        const ccDiv = (tk as any).sales_division ?? creatorUser?.sales_division ?? "";
+        const ccDiv = (tk).sales_division ?? creatorUser?.sales_division ?? "";
         if (ccDiv && ccDiv !== "IVP" && creatorUser?.id) {
           const ccTargets = await fetchWACCTargets(creatorUser.id, ccDiv);
           if (ccTargets.length > 0) {

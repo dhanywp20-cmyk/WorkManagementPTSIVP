@@ -46,7 +46,7 @@ export async function kirimPushKeUser(userIds: string[], payload: PushPayload): 
     });
 
     const matiIds: string[] = [];
-    await Promise.all(subs.map(async (s: any) => {
+    await Promise.all(subs.map(async (s) => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },

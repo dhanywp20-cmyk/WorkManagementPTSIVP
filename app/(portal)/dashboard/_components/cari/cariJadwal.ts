@@ -36,18 +36,18 @@ export async function cariJadwal(k: KonteksCariJadwal) {
     if (rErr) console.error('[search] reminders (pendukung):', rErr.message);
 
     const terlihat = new Set<string>();
-    let reminders = [...namaRes.data, ...((rData ?? []) as any[])]
-      .filter((r: any) => !terlihat.has(String(r.id)) && terlihat.add(String(r.id)));
+    let reminders = [...namaRes.data, ...((rData ?? []))]
+      .filter((r) => !terlihat.has(String(r.id)) && terlihat.add(String(r.id)));
 
     if (tanpaBatas) {
     } else if (isSalesSup) {
-      reminders = reminders.filter((r: any) =>
+      reminders = reminders.filter((r) =>
         salesDivisions.includes(r.sales_division) ||
         salesSubNames.some(n => n === r.sales_name)
       );
     }
 
-    reminders.forEach((r: any) => res.push({
+    reminders.forEach((r) => res.push({
       id: `reminder-${r.id}`, type: 'reminder', icon: '🗓️',
       title: r.project_name || r.title || '-',
       sub: `${r.category} · ${r.due_date ?? '-'}`,

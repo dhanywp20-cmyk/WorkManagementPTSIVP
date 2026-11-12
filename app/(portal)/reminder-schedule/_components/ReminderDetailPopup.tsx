@@ -61,7 +61,7 @@ export function ReminderDetailPopup({ detailReminder }: { detailReminder: Remind
             )}
           </div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
-          <h2 className="text-lg sm:text-xl sm:leading-7 font-bold text-slate-800 leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder as any).title || '').trim() || '—'}</h2>
+          <h2 className="text-lg sm:text-xl sm:leading-7 font-bold text-slate-800 leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder).title || '').trim() || '—'}</h2>
           {detailReminder.address && (
             <>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2 mb-0.5">Lokasi</p>

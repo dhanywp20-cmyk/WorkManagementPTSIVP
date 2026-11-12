@@ -38,7 +38,7 @@ export function SeksiPelaksanaan({ detailReminder }: { detailReminder: Reminder 
       })()}
 
       {(detailReminder.category === 'Konfigurasi' || detailReminder.category === 'Konfigurasi & Training') && (() => {
-        const wy = (detailReminder as any).warranty_years as 1 | 2 | 3 | null | undefined;
+        const wy = (detailReminder).warranty_years as 1 | 2 | 3 | null | undefined;
         const bastDate = detailReminder.due_date;
         if (!wy || !bastDate) return (
           <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(100,116,139,0.07)', border: '1px solid rgba(100,116,139,0.2)' }}>

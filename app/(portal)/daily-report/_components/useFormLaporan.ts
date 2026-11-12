@@ -123,7 +123,7 @@ export function useFormLaporan(k: FormLaporanKonteks) {
       reminder_activities: formReminders, ticket_activities: formTickets,
       manual_activities: cleanManual, reminder_notes: reminderNotes,
       created_by: currentUser?.username ?? 'system',
-      } as any);
+      });
     } catch {
       result = { ok: false, error: 'koneksi terputus. Isian masih ada - coba simpan lagi.' };
     }

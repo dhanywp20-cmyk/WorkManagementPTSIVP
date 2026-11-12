@@ -57,7 +57,7 @@ export function usePiketShowroom() {
     if(!u.username) return;
     supabase.from('users').select('piket_akses,piket_ubah,access_level,role,team_type').eq('username',u.username).single()
       .then(({data}:{data:{piket_akses:string|null;piket_ubah:boolean|null;access_level:string|null;role:string|null;team_type:string|null}|null})=>{
-        if(data) setCurrentUser((prev:any)=>prev?{...prev,...data}:prev);
+        if(data) setCurrentUser((prev: any) =>prev?{...prev,...data}:prev);
       });
   },[]);
   const isAdmin=hasFullAccess(currentUser);

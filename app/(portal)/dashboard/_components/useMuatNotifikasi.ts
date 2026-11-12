@@ -34,10 +34,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
     try {
       const { data: allMembers } = await ingat('team_members:nama-kelompok', () => supabase.from('team_members').select('name, team_type, username'));
       if (allMembers && allMembers.length > 0) {
-        for (const m of allMembers as any[]) {
+        for (const m of allMembers) {
           if (m?.name && m?.team_type) kelompokDariNama.set(String(m.name).trim().toLowerCase(), String(m.team_type));
         }
-        const found = (allMembers as any[]).find(m =>
+        const found = (allMembers).find(m =>
           (m.username ?? '').toLowerCase().trim() === currentUser.username.toLowerCase().trim()
         );
         if (found?.name) assignedName = found.name;
@@ -46,7 +46,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
     } catch {  }
     try {
       const { data: semuaAkun } = await ingat('users:team-kelompok', () => supabase.from('users').select('full_name, team_type').eq('role', 'team'));
-      for (const u of (semuaAkun ?? []) as any[]) {
+      for (const u of (semuaAkun ?? [])) {
         const n = String(u?.full_name ?? '').trim().toLowerCase();
         if (n && u?.team_type && !kelompokDariNama.has(n)) kelompokDariNama.set(n, String(u.team_type));
       }
@@ -63,7 +63,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
     try {
       if (isAdmin) {
         const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved').order('created_at', { ascending: false }).limit(50);
-        setTicketNotifs((data ?? []).filter((t: any) => dalamLingkup(t.assign_name)).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+        setTicketNotifs((data ?? []).filter((t) => dalamLingkup(t.assign_name)).map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
       } else if (roleLC === 'guest') {
         const isIVPUser = currentUser.sales_division === 'IVP';
         if (isIVPUser) {
@@ -75,7 +75,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
               .select('id, project_name, issue_case, assign_name, status, created_at, sales_division')
               .in('sales_division', handledDivs).neq('status', 'Solved')
               .order('created_at', { ascending: false }).limit(50);
-            setTicketNotifs((data ?? []).map((t: any) => ({
+            setTicketNotifs((data ?? []).map((t) => ({
               id: t.id, type: 'ticket' as const,
               title: t.project_name,
               subtitle: `${t.status} · ${t.issue_case} · ${t.sales_division}`,
@@ -86,12 +86,12 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           const q = supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved')
             .eq('created_by', currentUser.username);
           const { data } = await q.order('created_at', { ascending: false }).limit(30);
-          setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+          setTicketNotifs((data ?? []).map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         }
       } else if (roleLC === 'team' || roleLC === 'team_pts') {
         if (memberTeamType === 'Team Services') {
           const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, services_status, created_at').in('assign_name', namesToCheck).neq('services_status', 'Solved').not('services_status', 'is', null).order('created_at', { ascending: false }).limit(30);
-          setTicketNotifs((data ?? []).map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `Svc: ${t.services_status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+          setTicketNotifs((data ?? []).map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `Svc: ${t.services_status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         } else {
           const { data: assignedT } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
           let supRoutedT: any[] = [];
@@ -99,10 +99,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
             supRoutedT = data ?? [];
           } catch { supRoutedT = []; }
-          const supTIds = new Set((supRoutedT ?? []).map((t: any) => t.id));
+          const supTIds = new Set((supRoutedT ?? []).map((t) => t.id));
           const seenT = new Set<string>();
-          const combinedT = [...(supRoutedT ?? []), ...(assignedT ?? [])].filter((t: any) => { if (seenT.has(t.id)) return false; seenT.add(t.id); return true; });
-          setTicketNotifs(combinedT.map((t: any) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: supTIds.has(t.id) ? `🎯 Perlu di-assign ke tim · ${t.issue_case}` : `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+          const combinedT = [...(supRoutedT ?? []), ...(assignedT ?? [])].filter((t) => { if (seenT.has(t.id)) return false; seenT.add(t.id); return true; });
+          setTicketNotifs(combinedT.map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: supTIds.has(t.id) ? `🎯 Perlu di-assign ke tim · ${t.issue_case}` : `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         }
       }
     } catch (e) { console.error('[notif] ticket fetch error:', e); }
@@ -136,11 +136,11 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             .order('created_at', { ascending: false }).limit(30);
           supRouted = data ?? [];
         } catch { supRouted = []; }
-        const supIds = new Set((supRouted ?? []).map((r: any) => r.id));
+        const supIds = new Set((supRouted ?? []).map((r) => r.id));
         const seenReq = new Set<string>();
         const combinedReq = [...(supRouted ?? []), ...(assignedData ?? [])]
-          .filter((r: any) => { if (seenReq.has(r.id)) return false; seenReq.add(r.id); return true; });
-        setRequireNotifs(combinedReq.map((r: any) => supIds.has(r.id)
+          .filter((r) => { if (seenReq.has(r.id)) return false; seenReq.add(r.id); return true; });
+        setRequireNotifs(combinedReq.map((r) => supIds.has(r.id)
           ? { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `🎯 Perlu di-assign ke tim · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' }
           : toRequireNotif(r)));
 
@@ -148,7 +148,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const isIVPUser2 = currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI';
         const BRAND_DIVS = ['MLDS', 'UMP', 'OSS'];
         const isBrandPICNotif = BRAND_DIVS.includes(currentUser.sales_division || '');
-        const selfJabatanN = (currentUser as any).jabatan as string | undefined;
+        const selfJabatanN = (currentUser).jabatan as string | undefined;
         const TIER_MAP: Record<string, number> = { 'Staff': 1, 'Supervisor': 2, 'Manager': 3, 'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6 };
         const selfTierN = selfJabatanN ? (TIER_MAP[selfJabatanN] ?? 0) : 0;
         const selfDivN = currentUser.sales_division;
@@ -170,11 +170,11 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
                 .eq('sales_name', currentUser.full_name)
             ).order('created_at', { ascending: false }).limit(50)
-            : Promise.resolve({ data: [] as any[] }),
+            : Promise.resolve({ data: [] }),
         ]);
 
         const baseMap = new Map<string, any>();
-        [...(ownReqs ?? []), ...(ivpAssignedReqs ?? []), ...(atasNamaReqs ?? [])].forEach((r: any) => {
+        [...(ownReqs ?? []), ...(ivpAssignedReqs ?? []), ...(atasNamaReqs ?? [])].forEach((r) => {
           if (!baseMap.has(r.id)) baseMap.set(r.id, r);
         });
 
@@ -214,7 +214,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           const { data: allGuestsN } = await ingat('users:guest-sales', () => supabase.from('users')
             .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']));
           const bawahanN = (allGuestsN ?? [])
-            .filter((u: any) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division));
+            .filter((u) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division ?? ''));
           const subIdsN = bawahanN.map((u) => u.id as string);
           const subNamesN = bawahanN.map((u) => u.full_name as string).filter(Boolean);
 
@@ -250,7 +250,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           .neq('status', 'cancelled')
           .order('due_date', { ascending: true })
           .limit(30);
-        setReminderNotifs((data ?? []).filter((r: any) => dalamLingkup(r.assign_name)).map((r: any) => ({
+        setReminderNotifs((data ?? []).filter((r) => dalamLingkup(r.assign_name)).map((r) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
@@ -263,7 +263,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           menuTitle: 'Request Schedule',
         })));
       } else if (roleLC === 'team') {
-        const selfJabatanTeam = (currentUser as any).jabatan as string | undefined;
+        const selfJabatanTeam = (currentUser).jabatan as string | undefined;
         const isManagerTeam = selfJabatanTeam === 'Manager';
         const [{ data: assignedToMe }, { data: needsMyAssign }, { data: needsMyApproval }] = await Promise.all([
           supabase.from('reminders')
@@ -280,15 +280,15 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, category, due_date, status, assigned_to, created_at')
                 .eq('routing_status', 'admin_review')
                 .order('created_at', { ascending: false }).limit(20)
-            : Promise.resolve({ data: [] as any[] }),
+            : Promise.resolve({ data: [] }),
         ]);
-        const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r: any) => !r.assigned_to);
+        const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r) => !r.assigned_to);
         const needsAssignIds = new Set((needsMyAssign ?? []).map((r) => r.id));
-        const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r: any) => r.id));
+        const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r) => r.id));
         const seenTeam = new Set<string>();
         const combinedTeam = [...needsMyApprovalFiltered, ...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
-          .filter((r: any) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
-        setReminderNotifs(combinedTeam.map((r: any) => ({
+          .filter((r) => { if (seenTeam.has(r.id)) return false; seenTeam.add(r.id); return true; });
+        setReminderNotifs(combinedTeam.map((r) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
@@ -317,7 +317,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const seen = new Set<string>();
         const combined = [...(awaitingReview ?? []), ...(ownReminders ?? [])]
           .filter((r) => { if (seen.has(r.id)) return false; seen.add(r.id); return true; });
-        setReminderNotifs(combined.map((r: any) => ({
+        setReminderNotifs(combined.map((r) => ({
           id: r.id,
           type: 'reminder' as const,
           title: r.project_name,
@@ -340,13 +340,13 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         ).filter((r) => dalamLingkup(r.assign_name));
-        setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
+        setReviewNotifs(pending.map((r) => ({ id: r.id, type: 'require' as const, title: r.project_name ?? '-', subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
       } else if (roleLC === 'team' && bolehReview) {
         const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').in('assign_name', namesToCheck).order('created_at', { ascending: false }).limit(30);
         const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         );
-        setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
+        setReviewNotifs(pending.map((r) => ({ id: r.id, type: 'require' as const, title: r.project_name ?? '-', subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
       } else if (roleLC === 'guest' || roleLC === 'sales') {
         const { data } = await supabase.from('form_reviews')
           .select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
@@ -355,7 +355,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         );
-        setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
+        setReviewNotifs(pending.map((r) => ({ id: r.id, type: 'require' as const, title: r.project_name ?? '-', subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
       } else { setReviewNotifs([]); }
     } catch (e) { console.error('[notif] review fetch error:', e); }
 
@@ -367,7 +367,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         .eq('is_read', false)
         .order('created_at', { ascending: false })
         .limit(30);
-      setPersonalNotifs((pn ?? []).map((n: any) => ({
+      setPersonalNotifs((pn ?? []).map((n) => ({
         id: n.id,
         type: 'ticket' as const,
         title: n.title,
