@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface EditAdminTicketKonteks {
   adminEditForm: Record<string, unknown>;
@@ -123,8 +124,8 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
       setAdminEditTicket(null);
       await fetchData();
       notify('success', adaReroute ? `Dialihkan ke ${penerimaBaru}` : `${perubahan.length} perubahan tersimpan`);
-    } catch (err: any) {
-      notify('error', 'Gagal menyimpan: ' + err.message);
+    } catch (err) {
+      notify('error', 'Gagal menyimpan: ' + pesanGalat(err));
     } finally { setAdminEditSaving(false); }
   };
   return { bukaAdminEdit, simpanAdminEdit };

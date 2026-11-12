@@ -113,7 +113,6 @@ export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel,
     notify('info', 'Menyiapkan paket download...');
   try {
     const enc = new TextEncoder();
-    const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
     const dateStr = new Date().toISOString().split('T')[0];
     const projectSlug = selectedRequest.project_name.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
     const folderName = `FormRequire_${projectSlug}_${dateStr}`;

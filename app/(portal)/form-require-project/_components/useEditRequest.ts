@@ -9,6 +9,7 @@ import { logAudit } from '@/lib/audit';
 import { appLink } from '@/lib/app-url';
 import { createNotification } from '@/lib/notifications';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface EditRequestKonteks {
   currentUser: User;
@@ -148,8 +149,8 @@ export function useEditRequest(k: EditRequestKonteks) {
       notify('success', `Dialihkan ke ${orang.full_name}`);
       setRerouteTarget(null); setRerouteTo('');
       fetchRequests();
-    } catch (e: any) {
-      notify('error', 'Gagal mengalihkan: ' + e.message);
+    } catch (e) {
+      notify('error', 'Gagal mengalihkan: ' + pesanGalat(e));
     } finally { setRerouteSaving(false); }
   };
 

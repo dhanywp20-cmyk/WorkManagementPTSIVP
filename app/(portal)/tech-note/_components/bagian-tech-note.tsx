@@ -18,7 +18,6 @@ import { ModalBuatFolder } from './ModalBuatFolder';
 import { IsiTechNote } from './IsiTechNote';
 export { DOMAIN_ONEDRIVE, linkOneDriveSah, KATEGORI_FOLDER, type KategoriFolder } from '@/lib/aturan-tech-note';
 
-
 export const hrefAman = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : undefined);
 
 export function Spinner() {
@@ -298,7 +297,6 @@ export function TechNotePageInner() {
 
   const canManage = hasFullAccess(currentUser as never)
     || ['admin','superadmin','supervisor'].includes(currentUser?.role ?? '');
-  const isTeam = !canManage;
 
   const bolehEditNote = (n: TechNote): boolean =>
     canManage || (!!currentUser?.id && n.author_id === currentUser.id);

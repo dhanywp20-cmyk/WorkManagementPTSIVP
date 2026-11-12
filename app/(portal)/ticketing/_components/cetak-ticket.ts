@@ -17,15 +17,6 @@ export async function cetakTicket(asli: Ticket): Promise<void> {
     : ticket.status === "Waiting Approval" ? "#ea580c"
     : "#64748b";
 
-  const row = (label: string, value: string | null | undefined) =>
-    value ? `<tr>
-      <td style="font-weight:600;color:#475569;width:160px;padding:7px 12px;border:1px solid #e2e8f0;font-size:12px;background:#f8fafc">${label}</td>
-      <td style="padding:7px 12px;border:1px solid #e2e8f0;font-size:12px;color:#1e293b">${value}</td>
-    </tr>` : "";
-
-  const badge = (text: string, bg = "#fef3c7", color = "#92400e") =>
-    `<span style="display:inline-block;padding:2px 10px;border-radius:20px;background:${bg};color:${color};font-size:11px;font-weight:700;margin:2px 2px 2px 0">${text}</span>`;
-
   const activityRows = (ticket.activity_logs || [])
     .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .map((log: any, idx: number) => {

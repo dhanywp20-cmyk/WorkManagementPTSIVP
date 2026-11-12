@@ -5,6 +5,7 @@ import '@/lib/wa/server';
 import { appLink } from '@/lib/app-url';
 import { catatCron } from '@/lib/cron-catat';
 import { kirimAlertKesehatan } from '@/lib/kesehatan/server';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,8 +138,8 @@ export async function GET(request: NextRequest) {
   try {
     const result = await jalankanCron();
     return NextResponse.json(result);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: pesanGalat(e) }, { status: 500 });
   }
 }
 
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await jalankanCron();
     return NextResponse.json(result);
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: pesanGalat(e) }, { status: 500 });
   }
 }

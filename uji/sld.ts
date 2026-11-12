@@ -226,7 +226,7 @@ void (async () => {
   const halVs = new TextDecoder().decode(vs.get('visio/pages/pages.xml'));
   cek('Simple: Visio hanya 1 halaman, Full Detail 2 halaman', vs.has('visio/pages/page1.xml') && !vs.has('visio/pages/page2.xml') && vl.has('visio/pages/page2.xml')
     && (halVs.match(/<Page /g) ?? []).length === 1 && !new TextDecoder().decode(vs.get('[Content_Types].xml')).includes('page2.xml'));
-  const ruteReq = readFileSync('app/api/form-require-project/[id]/sld/route.ts', 'utf8');
+  const ruteReq = readFileSync('app/api/form-require-project/[id]/sld/route.ts', 'utf8') + readFileSync('lib/request-desain/lampiran-server.ts', 'utf8');
   cek('isi SLD tertaut hanya lewat request yang boleh diakses pengguna', ruteReq.includes("searchParams.get('tautan')") && ruteReq.includes(".eq('request_id', request.id)") && ruteReq.includes('klienSebagaiUser(user)'));
   const panelReq = readFileSync('app/(portal)/form-require-project/_components/detail/PanelLampiranDetail.tsx', 'utf8');
   const paketReq = readFileSync('app/(portal)/form-require-project/_components/paket-unduhan.ts', 'utf8');

@@ -111,7 +111,7 @@ export default function IncentivePTSPage() {
   const [konfirmGabung, setKonfirmGabung] = useState<KandidatGabung | null>(null);
   const [menggabung, setMenggabung] = useState(false);
 
-  const { jalankanGabung, pilihHapus, setPilihHapus, konfirmHapus, setKonfirmHapus, menghapus, setMenghapus, togglePilih, mintaKonfirmasiHapus, jalankanHapus } = useGabungHapusProyek({ currentUser, konfirmGabung, loadAll, notify, setKonfirmGabung, setMenggabung });
+  const { jalankanGabung, pilihHapus, setPilihHapus, konfirmHapus, setKonfirmHapus, menghapus, togglePilih, mintaKonfirmasiHapus, jalankanHapus } = useGabungHapusProyek({ currentUser, konfirmGabung, loadAll, notify, setKonfirmGabung, setMenggabung });
 
   const canSeeAll = bisaInput(currentUser);
   const orgListAll = allUsers as unknown as OrgUser[];
@@ -170,9 +170,9 @@ export default function IncentivePTSPage() {
 
   const { handleSaveNominal, handleGenerateTranches, kandidatBulkGenerate, jalankanBulkGenerate, handleBatchProcess, jalankanBatalBatch, jalankanHapusTahapan } = useTahapanInsentif({ batalBatch, batchYear, bulkGenerateConfirm, currentUser, filterBastYear, filteredProjects, generateProject, hapusTahapan, loadAll, nominalBast, nominalProject, nominalValue, notify, setBatalBatch, setBatchConfirm, setBatchProcessing, setBulkGenerateConfirm, setBulkGenerateResult, setBulkGenerating, setGenerateProject, setGenerating, setHapusTahapan, setKetikBatalBatch, setKetikHapusTahapan, setMembatalkan, setNominalBast, setNominalProject, setNominalValue, setSavingNominal, setShowGenerateModal, skema, tranches });
 
-  const { siapkanDataExport, handleExportSummary, handleExportInsentifSaya, handleExportBatch } = useEksporInsentif({ allUsers, currentUser, filterBastYear, mySplitsInYear, notify, projects, setExporting, setExportingSaya, summaryExportYear, tahunAktif, trancheById, tranches });
+  const { handleExportSummary, handleExportInsentifSaya, handleExportBatch } = useEksporInsentif({ allUsers, currentUser, filterBastYear, mySplitsInYear, notify, projects, setExporting, setExportingSaya, summaryExportYear, tahunAktif, trancheById, tranches });
 
-  const { handleMarkPaid, konfirmasiMarkPaid, cariUser, setCariUser, handleSetBrandScope, handleSetAkses, handleSetProjectBrand } = usePengaturanInsentif({ currentUser, detailProject, loadAll, notify, openProjectDetail, setAllUsers, setConfirmState, setMarkingPaid, setProjects });
+  const { konfirmasiMarkPaid, cariUser, setCariUser, handleSetBrandScope, handleSetAkses, handleSetProjectBrand } = usePengaturanInsentif({ currentUser, detailProject, loadAll, notify, openProjectDetail, setAllUsers, setConfirmState, setMarkingPaid, setProjects });
 
   if (!appReady) return (
     <div className="flex items-center justify-center" style={{ minHeight: '100%', background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>

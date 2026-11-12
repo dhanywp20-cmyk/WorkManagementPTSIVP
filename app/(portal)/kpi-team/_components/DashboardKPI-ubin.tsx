@@ -108,7 +108,7 @@ export function RelSeksi({ judul }: { judul: string }) {
   );
 }
 
-export function KepalaUbin({ ikon, judul, warna, catatan }: {
+export function KepalaUbin({ judul, catatan }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
 }) {
   return (

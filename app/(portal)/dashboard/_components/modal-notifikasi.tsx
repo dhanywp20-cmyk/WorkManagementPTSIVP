@@ -158,8 +158,6 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
 
   const totalCount = ticketNotifs.length + requireNotifs.length + reminderNotifs.length + reviewNotifs.length + personalNotifs.length;
 
-  const hasAnyBell = true;
-
   const bagianNotif: BagianNotif[] = [
     ...(bolehTiket ? [{ kunci: 'tiket', label: 'Ticket', icon: IconTicket, color: '#be123c', bgColor: 'rgba(254,205,211,0.6)', dotColor: '#e11d48', items: ticketNotifs }] : []),
     ...(bolehRequire ? [{ kunci: 'require', label: 'Require', icon: IconBriefcase, color: '#7e22ce', bgColor: 'rgba(233,213,255,0.6)', dotColor: '#9333ea', items: requireNotifs }] : []),

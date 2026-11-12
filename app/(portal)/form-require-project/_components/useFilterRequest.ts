@@ -35,7 +35,7 @@ export function useFilterRequest(k: FilterRequestKonteks) {
       .then((res: { data: unknown }) => setRosterPTS((res.data ?? []) as never));
   }, []);
   const [unreadMsgMap, setUnreadMsgMap] = useState<Record<string, number>>({});
-  const [lastSeenMap, setLastSeenMap] = useState<Record<string, number>>({});
+  const [, setLastSeenMap] = useState<Record<string, number>>({});
   useEffect(() => { try { sessionStorage.setItem('frp_filterStatus', filterStatus); } catch {} }, [filterStatus]);
   useEffect(() => { try { sessionStorage.setItem('frp_filterYear', filterYear); } catch {} }, [filterYear]);
   useEffect(() => { try { sessionStorage.setItem('frp_filterMonth', filterMonth); } catch {} }, [filterMonth]);

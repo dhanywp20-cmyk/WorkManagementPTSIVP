@@ -19,7 +19,8 @@ cek('createNotificationForAdmins memakai penerimaAdmin()', /createNotificationFo
 
 console.log('\n2. Admin / Full Access melewati review Sales Internal');
 for (const f of ['ReminderListBody', 'ReminderDetailPopup']) {
-  const s = baca(`app/(portal)/reminder-schedule/_components/${f}.tsx`);
+  const s = baca(`app/(portal)/reminder-schedule/_components/${f}.tsx`)
+    + (f === 'ReminderListBody' ? baca('app/(portal)/reminder-schedule/_components/TabelJadwal.tsx') + baca('app/(portal)/reminder-schedule/_components/DaftarJadwalHp.tsx') : '');
   cek(`${f}: bolehLewatiReview = admin || Full Access`, /const bolehLewatiReview = isAdmin \|\| hasFullAccess\(currentUser as never\);/.test(s));
   cek(`${f}: tombol approve tidak lagi terkunci internal_review untuk mereka`, /routing_status !== 'internal_review' \|\| bolehLewatiReview\)/.test(s));
 }

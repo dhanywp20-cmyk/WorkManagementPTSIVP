@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
-import { hakAtas, simpanPerubahan } from '@/lib/checklist/server';
+import { hakAtas } from '@/lib/checklist/server';
+import { simpanPerubahan } from '@/lib/checklist/server-simpan';
 import { KOLOM_KABAR_TIKET, kabarkanTicketSelesai, tutupJadwalTicket, type TiketUntukKabar } from '@/lib/tiket-selesai';
 import { hasFullAccess } from '@/lib/constants';
 import { adalahAtasan, bersih, gagal, hariIniWIB, idSah, jamSah, jamWIB, teks, tglSah, type HasilAksi, type KonteksAksi } from '@/lib/integrasi/bantu';

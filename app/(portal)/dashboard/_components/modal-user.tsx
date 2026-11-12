@@ -11,6 +11,7 @@ import { maskPhone } from './modal-bersama';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { TabIVP } from './pengguna/TabIVP';
 import { TabAtasan } from './pengguna/TabAtasan';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 interface UserManagementModalProps {
   onClose: () => void;
@@ -107,7 +108,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
       void terhapus;
       notify('success', 'CC mapping disimpan!');
       await fetchAll();
-    } catch (e: any) { notify('error', e.message); }
+    } catch (e) { notify('error', pesanGalat(e)); }
     setCcSaving(false);
   };
 

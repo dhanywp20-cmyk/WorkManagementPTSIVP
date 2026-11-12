@@ -5,6 +5,7 @@ import { notifyTicketAssigned } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
 import { sendWANotif, User, TeamMember, Ticket } from './shared';
 import { logAudit } from '@/lib/audit';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface TugaskanSupervisorKonteks {
   currentUser: User | null;
@@ -60,7 +61,7 @@ export function useTugaskanSupervisor(k: TugaskanSupervisorKonteks) {
       setSupAssignTicket(null); setSupAssignTo("");
       await fetchData();
       notify("success", isSelf ? "Kamu jadi handler ticket ini!" : `Ticket di-assign ke ${assigneeName}`);
-    } catch (err: any) { notify("error", "Error: " + err.message); }
+    } catch (err) { notify("error", "Error: " + pesanGalat(err)); }
     finally { setSupAssignSaving(false); }
   };
   return { handleSupervisorAssignTicket };

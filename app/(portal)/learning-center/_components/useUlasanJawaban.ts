@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, User, Question, DialogState, gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai, ambilDaftarModel, type ModelAI } from './shared';
+import { supabase, User, Question, DialogState } from './shared';
+import { gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai, ambilDaftarModel, type ModelAI } from './penilai-ai';
 import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';

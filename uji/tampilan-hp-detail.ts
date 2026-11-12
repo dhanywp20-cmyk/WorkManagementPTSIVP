@@ -5,7 +5,7 @@ function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
 }
 const D = 'app/(portal)/reminder-schedule/_components/';
-const popup = readFileSync(D + 'ReminderDetailPopup.tsx', 'utf8');
+const popup = readFileSync(D + 'ReminderDetailPopup.tsx', 'utf8') + readFileSync(D + 'RiwayatJadwal.tsx', 'utf8');
 const mode = readFileSync(D + 'ModePenyelesaianPanel.tsx', 'utf8');
 const state = readFileSync(D + 'useStateApproval.ts', 'utf8');
 const alur = readFileSync('components/shared/FlowSteps.tsx', 'utf8');

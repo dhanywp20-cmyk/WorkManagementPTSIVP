@@ -117,7 +117,7 @@ function UnitMovementPageInner() {
                 <tbody>
                   {fetchError ? (
                     <tr><td colSpan={8} className="py-2"><ErrorState message={fetchError} onRetry={fetchLogs} /></td></tr>
-                  ) : openLoans.map((loan, idx)=>{
+                  ) : openLoans.map((loan, _idx)=>{
                     const daysLate = Math.max(0, Math.round((new Date().getTime() - new Date(loan.expected_return_date!).getTime())/(24*60*60*1000)));
                     const typeLines = splitTypeLines(loan.type_barang);
                     return (

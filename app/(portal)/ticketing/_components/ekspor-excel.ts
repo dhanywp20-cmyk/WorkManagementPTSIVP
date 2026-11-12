@@ -13,7 +13,7 @@ export interface ArgEkspor {
   notify: (tipe: 'success' | 'error', pesan: string) => void;
 }
 
-export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify }: ArgEkspor): void {
+export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify }: ArgEkspor): void {
   const runExport = (XLSX: any) => {
     const exportTickets = filteredTickets;
     const isServicesExport = currentUserTeamType === "Team Services";

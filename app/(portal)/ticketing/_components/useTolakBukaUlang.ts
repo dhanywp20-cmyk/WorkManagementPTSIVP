@@ -3,6 +3,7 @@
 import { sendWANotif, User, TeamMember, Ticket } from './shared';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { appLink } from '@/lib/app-url';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface TolakBukaUlangKonteks {
   currentUser: User | null;
@@ -95,7 +96,7 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
       setRejectTargetTicket(null);
       setRejectReason("");
       notify("success", "Ticket ditolak. Sales dapat melihat alasan penolakan.");
-    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); }
+    } catch (err) { notify("error", "Error: " + pesanGalat(err)); } finally { setUploading(false); }
   };
 
   const reopenTicket = async () => {
@@ -149,10 +150,10 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
         setShowTicketDetailPopup(false);
         setSelectedTicket(null);
       }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       setShowLoadingPopup(false);
       setUploading(false);
-      notify("error", "Error: " + err.message);
+      notify("error", "Error: " + pesanGalat(err));
     }
   };
 
@@ -181,8 +182,8 @@ export function useTolakBukaUlang(k: TolakBukaUlangKonteks) {
       notify("success", "Sisi Services dibuka kembali - status kembali Pending.");
       await fetchData();
       setReopenServicesTarget(null);
-    } catch (err: any) {
-      notify("error", "Error: " + err.message);
+    } catch (err) {
+      notify("error", "Error: " + pesanGalat(err));
     } finally {
       setReopeningServices(false);
     }

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { notifyTicketAssigned, createNotification } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
 import { logAudit } from '@/lib/audit';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface ApproveTicketKonteks {
   approvalAssignee: string;
@@ -108,8 +109,8 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", event: "ticket.assigned", target: handlerUser.phone_number, message: waMsg });
         }
-      } catch (err: any) {
-        console.warn('[ticket] WA to handler (approval) failed:', err?.message);
+      } catch (err) {
+        console.warn('[ticket] WA to handler (approval) failed:', pesanGalat(err));
         notify('error', 'WA ke handler gagal dikirim. Ticket berhasil di-approve.');
       }
       try {
@@ -135,7 +136,7 @@ export function useApproveTicket(k: ApproveTicketKonteks) {
       selesaikanSatuApproval(tk.id);
       await fetchData();
       notify("success", `Ticket approved & assigned to ${asg}`);
-    } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); setApprovingId(null); }
+    } catch (err) { notify("error", "Error: " + pesanGalat(err)); } finally { setUploading(false); setApprovingId(null); }
   };
 
   const jalankanApproveTicket = async (ticket: Ticket) => {

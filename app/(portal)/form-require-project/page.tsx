@@ -58,7 +58,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const detailIsPending = detailRoomStatus === 'pending';
   const detailRoomAssignName = selectedRequest ? getRoomAssignName(selectedRequest, detailRoomIdx) : undefined;
   const detailDueStatus = selectedRequest ? getDueStatus(selectedRequest.due_date, detailRoomStatus ?? selectedRequest.status) : null;
-  const isFileType = (type: string) => type.startsWith('image/');
 
   const konteksRequest: NilaiKonteksRequest = {
     sesi: { currentUser, isIVPGuest, isNonIVPGuest, isPTS, isTeamPTS, pimpinan },

@@ -1,34 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { muatUser, klienSebagaiUser } from '@/lib/ai-server';
+import { POLA_ID, gagal, jumlahRuang, muatRequest, type Req } from '@/lib/request-desain/lampiran-server';
 import { bersihkanSvgKoneksi, bolehUbahTautan, statusRuangan } from '@/lib/tools-team';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const TABEL = 'request_screen_connection';
-const POLA_ID = /^[0-9a-f-]{36}$/i;
-const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 const PESAN_TANPA_GAMBAR = 'Hitungan LED ini belum menyimpan gambar Screen Connection. Buka di AV Solution Tools → LED Videotron, lalu simpan ulang.';
 
-type Req = { id: string; project_name: string; room_name: string | null; status: string; rooms: { room_name?: string; status?: string }[] | null };
 type Db = ReturnType<typeof getAdminClient>;
 
-async function muatRequest(req: NextRequest, id: string) {
-  const jaga = await pastikanMasuk(req);
-  if (!jaga.ok) return { galat: gagal(jaga.alasan, jaga.status) };
-  if (!POLA_ID.test(id)) return { galat: gagal('ID request tidak sah.') };
-  const user = await muatUser(jaga.user.id);
-  if (!user) return { galat: gagal('Akun tidak ditemukan.', 401) };
-  const { data } = await klienSebagaiUser(user).from('project_requests')
-    .select('id, project_name, room_name, status, rooms').eq('id', id).maybeSingle();
-  if (!data) return { galat: gagal('Request tidak ditemukan atau Anda tidak punya akses.', 404) };
-  return { user, request: data as Req };
-}
-
 const namaRuang = (r: Req, idx: number) => (idx === 0 ? r.room_name : r.rooms?.[idx - 1]?.room_name)?.trim() || `Ruangan ${idx + 1}`;
-const jumlahRuang = (r: Req) => 1 + (r.rooms?.length ?? 0);
 const awalan = (r: Req, idx: number) => (idx > 0 ? `[${namaRuang(r, idx)}] ` : '');
 const izinUbah = (role: string | null, r: Req, idx: number) => {
   const izin = bolehUbahTautan(role, statusRuangan(r, idx));

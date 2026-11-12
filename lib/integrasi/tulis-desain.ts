@@ -1,7 +1,7 @@
 import { cobaIdentitas, tanpaIdentitas } from '@/lib/identitas';
 import { appLink } from '@/lib/app-url';
 import { akunTambahan, gagal, penerimaAdminServer, teks, type KonteksAksi } from '@/lib/integrasi/bantu';
-import { adalahGalat, hakDesain, indeksRuangan, muatRequestDesain, namaRuangan, statusRuangan, type RequestDesain, type RuanganDesain } from '@/lib/integrasi/menu';
+import { adalahGalat, hakDesain, indeksRuangan, muatRequestDesain, namaRuangan, statusRuangan, type RequestDesain, type RuanganDesain } from '@/lib/integrasi/menu-desain';
 
 import { type Aksi, GARIS, type Orang, anggotaDitawarkan, daftarSupervisor, diriSendiri, cariOrang, contoh, kirimWA, audit } from '@/lib/integrasi/tulis-bersama';
 

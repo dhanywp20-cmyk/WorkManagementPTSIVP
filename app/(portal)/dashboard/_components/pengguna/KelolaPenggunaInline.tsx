@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { supabase } from '@/lib/supabase';
 import { adminUpdateUser } from '@/lib/admin-users';
@@ -15,6 +15,7 @@ import { TabIVPInline } from './TabIVPInline';
 import { TabAtasanInline } from './TabAtasanInline';
 import { TabStrukturOrganisasi } from './TabStrukturOrganisasi';
 import { TabUserCC } from './TabUserCC';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export function UserManagementInline() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -79,7 +80,6 @@ export function UserManagementInline() {
   const supervisorCandidates = allUsers.filter(u => ['guest', 'team'].includes(u.role?.toLowerCase() ?? '') && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
-  const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
   const INTERNAL_GROUPS = ['PTS', 'IVP'];
   const ccEligibleUsers = allUsers
@@ -112,7 +112,7 @@ export function UserManagementInline() {
         if (error) { notify('error', 'Gagal: ' + error.message); setCcSaving(false); return; }
       }
       notify('success', 'CC mapping disimpan!'); await fetchAll();
-    } catch (e: any) { notify('error', e.message); }
+    } catch (e) { notify('error', pesanGalat(e)); }
     setCcSaving(false);
   };
 

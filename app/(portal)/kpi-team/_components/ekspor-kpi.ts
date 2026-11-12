@@ -1,6 +1,5 @@
 'use client';
 
-
 import * as XLSX from 'xlsx-js-style';
 
 import { KPIMember, KPISettings, fmt, MONTHS_ID } from './shared';
@@ -65,7 +64,7 @@ export function exportKPIExcel(
       [null, 'CUSTOMER PERSPECTIVE', ...Array(COL_COUNT - 2).fill(null)],
       ['I', 'Technical Knowledge\n(Troubleshooting)', null, ...Array(14).fill(null)],
       [null, null, 'Target', ...Array(12).fill('0 Overdue'), 100, BOBOT_TECH, null],
-      [null, null, 'Aktual', ...member.monthlyTickets.map((t, i) => {
+      [null, null, 'Aktual', ...member.monthlyTickets.map((t, _i) => {
         return t;
       }), member.ticketsHandled, null, null],
       [null, null, '% Pencapaian', ...Array(12).fill(null), techPct + '%', null, Math.round(BOBOT_TECH * (techPct / 100) * 100) / 100],

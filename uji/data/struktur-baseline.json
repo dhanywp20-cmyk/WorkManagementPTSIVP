@@ -1,6 +1,6 @@
 {
   "batas": {
-    "baris": 500,
+    "baris": 400,
     "karakter": 300,
     "props": 25
   },
@@ -16,9 +16,9 @@
       "propsMaks": 3
     },
     "app/(portal)/_kerangka/SidebarPortal.tsx": {
-      "baris": 432,
+      "baris": 202,
       "barisPanjang": 2,
-      "propsMaks": 3
+      "propsMaks": 6
     },
     "app/(portal)/daily-report/_components/DaftarLaporanHarian.tsx": {
       "baris": 227,
@@ -61,7 +61,7 @@
       "propsMaks": 2
     },
     "app/(portal)/dashboard/_components/modal-admin-panel.tsx": {
-      "baris": 475,
+      "baris": 276,
       "barisPanjang": 8,
       "propsMaks": 3
     },
@@ -161,8 +161,8 @@
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/form-baru/FormRuanganUtama.tsx": {
-      "baris": 410,
-      "barisPanjang": 21,
+      "baris": 345,
+      "barisPanjang": 19,
       "propsMaks": 3
     },
     "app/(portal)/form-require-project/_components/halaman/KontenHalamanRequest.tsx": {
@@ -286,8 +286,8 @@
       "propsMaks": 13
     },
     "app/(portal)/learning-center/_components/QuestionsPage.tsx": {
-      "baris": 376,
-      "barisPanjang": 4,
+      "baris": 383,
+      "barisPanjang": 3,
       "propsMaks": 16
     },
     "app/(portal)/learning-center/_components/sesi/FormSesi.tsx": {
@@ -305,18 +305,13 @@
       "barisPanjang": 3,
       "propsMaks": 19
     },
-    "app/(portal)/learning-center/_components/shared.tsx": {
-      "baris": 481,
-      "barisPanjang": 1,
-      "propsMaks": 4
-    },
     "app/(portal)/learning-center/_components/soal/DialogFormSoal.tsx": {
       "baris": 159,
       "barisPanjang": 2,
       "propsMaks": 2
     },
     "app/(portal)/learning-center/_components/useBuatSoal.ts": {
-      "baris": 167,
+      "baris": 168,
       "barisPanjang": 2,
       "propsMaks": 0
     },
@@ -351,14 +346,9 @@
       "propsMaks": 2
     },
     "app/(portal)/reminder-schedule/_components/ReminderDetailPopup.tsx": {
-      "baris": 490,
+      "baris": 323,
       "barisPanjang": 1,
-      "propsMaks": 3
-    },
-    "app/(portal)/reminder-schedule/_components/ReminderListBody.tsx": {
-      "baris": 430,
-      "barisPanjang": 4,
-      "propsMaks": 2
+      "propsMaks": 6
     },
     "app/(portal)/reminder-schedule/_components/useAksiStatus.ts": {
       "baris": 190,
@@ -446,9 +436,9 @@
       "propsMaks": 6
     },
     "app/(portal)/ticketing/_components/TicketDetailPopup.tsx": {
-      "baris": 448,
-      "barisPanjang": 3,
-      "propsMaks": 2
+      "baris": 133,
+      "barisPanjang": 1,
+      "propsMaks": 6
     },
     "app/(portal)/ticketing/_components/TicketListBody.tsx": {
       "baris": 334,

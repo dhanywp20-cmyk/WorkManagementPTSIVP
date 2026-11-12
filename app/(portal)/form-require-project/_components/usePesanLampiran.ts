@@ -48,8 +48,6 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     const canChat = isPTS || isOwner || isLinkedIVP;
     if (!canChat) { notify('error', 'Anda tidak memiliki akses untuk mengirim pesan.'); return; }
     setSendingMsg(true);
-    const roomRooms = selectedRequest.rooms || [];
-    const totalDetailRooms = 1 + roomRooms.length;
     let finalMessage = msgText.trim();
     if (chatRoomFilter !== 'all') {
       finalMessage = `[${chatRoomFilter}] ${finalMessage}`;

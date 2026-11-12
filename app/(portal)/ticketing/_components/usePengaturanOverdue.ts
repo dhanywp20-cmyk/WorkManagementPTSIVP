@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { User, Ticket, OverdueSetting } from './shared';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface PengaturanOverdueKonteks {
   currentUser: User | null;
@@ -35,7 +36,7 @@ export function usePengaturanOverdue(k: PengaturanOverdueKonteks) {
       setShowOverdueSetting(false);
       setOverdueForm({ due_hours: "48" });
       setOverdueTargetTicket(null);
-    } catch (e: any) { notify("error", "Error: " + e.message); }
+    } catch (e) { notify("error", "Error: " + pesanGalat(e)); }
   };
 
   const deleteOverdueSetting = async (ticketId: string) => {

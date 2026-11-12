@@ -236,7 +236,6 @@ export function useModalProfil(k: ModalProfilKonteks) {
   };
 
   const roleClass = ROLE_BADGE[userData.role?.toLowerCase()] || 'bg-slate-100 text-slate-700 border-slate-200';
-  const initials = userData.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   const jabatanCfg = userData.jabatan ? JABATAN_CONFIG[userData.jabatan as JabatanType] : null;
 
   const sortedSupervisors = [...supervisors].sort((a, b) => {

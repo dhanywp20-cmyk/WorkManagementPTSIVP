@@ -1,7 +1,7 @@
 'use client';
 import { Ikon } from '@/components/shared/Ikon';
 import { SEVERITY_STYLE } from './DashboardKPI-bantu';
-import { AuditEntry, Scope } from './DashboardKPI-tipe';
+import { AuditEntry } from './DashboardKPI-tipe';
 
 export { TrenBulanan } from '@/components/shared/grafik-kpi';
 
@@ -30,20 +30,5 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
         {entry.detail && <p className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.3)' }}>{entry.detail}</p>}
       </div>
     </div>
-  );
-}
-
-function ScopeBadge({ scope }: { scope: Scope }) {
-  const cfg = {
-    admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
-    pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0e7490', icon: '🏪' },
-    team:      { label: 'Team Member',        color: '#7c3aed', icon: '👤' },
-    none:      { label: '-',                  color: '#6b7280', icon: '—'  },
-  }[scope.kind];
-  return (
-    <span className="flex items-center gap-1 text-sm font-bold px-2 py-1 rounded-full"
-      style={{ background:`${cfg.color}18`, color:cfg.color, border:`1px solid ${cfg.color}30` }}>
-      <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}
-    </span>
   );
 }

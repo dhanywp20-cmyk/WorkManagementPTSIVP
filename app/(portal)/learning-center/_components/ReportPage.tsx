@@ -5,7 +5,7 @@ import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView,
 import { UserAnswerReview } from './UlasanJawaban';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
-export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
+export function ReportPage({ initialSessionId, onSessionConsumed }: {
   currentUser: User;
   initialSessionId?: string | null;
   onSessionConsumed?: () => void;

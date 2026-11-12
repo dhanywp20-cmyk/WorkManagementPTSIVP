@@ -1,0 +1,319 @@
+'use client';
+
+import type { useRouter } from 'next/navigation';
+import type { GuestUser, Reminder } from './shared';
+import type { Dispatch, SetStateAction } from 'react';
+import type { HasilPaginasi } from '@/components/shared/Paginasi';
+import type { TeamUser } from '@/lib/jadwal/tampilan';
+import type { CSSProperties } from 'react';
+import { ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup, Paginasi } from '@/components/shared';
+import { StatusBadge } from './Badges';
+import { REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, formatDatetime, isDueToday, layakIncentive, diluarIncentive } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+
+export interface TabelJadwalProps {
+  selectMode: boolean;
+  isAdmin: boolean;
+  isManager: boolean;
+  selectedIds: Set<string>;
+  filteredReminders: Reminder[];
+  toggleSelectAll: () => void;
+  hal: HasilPaginasi<Reminder[]>;
+  setSelectedIds: Dispatch<SetStateAction<Set<string>>>;
+  setProductFilter: Dispatch<SetStateAction<string | null>>;
+  productFilter: string | null;
+  router: ReturnType<typeof useRouter>;
+  guestUsers: GuestUser[];
+  setDetailReminder: Dispatch<SetStateAction<Reminder | null>>;
+  bolehEditReminder: (r: Reminder) => boolean;
+  setRescheduleTarget: Dispatch<SetStateAction<Reminder | null>>;
+  canInternalApprove: (r: Reminder) => boolean;
+  setInternalApproveTarget: Dispatch<SetStateAction<Reminder | null>>;
+  handleInternalReject: (r: Reminder) => void;
+  canApproveAssign: boolean;
+  bolehLewatiReview: boolean;
+  setApproveTarget: Dispatch<SetStateAction<Reminder | null>>;
+  setApproveBatchSiblings: Dispatch<SetStateAction<Reminder[]>>;
+  setApproveAssignTo: Dispatch<SetStateAction<string>>;
+  setApproveDate: Dispatch<SetStateAction<string>>;
+  setApproveTime: Dispatch<SetStateAction<string>>;
+  handleAdminReject: (r: Reminder) => void;
+  currentUser: TeamUser | null;
+  openSupervisorAssign: (r: Reminder, group: Reminder[]) => void;
+  syncKeIncentive: (r: Reminder) => Promise<void>;
+  syncing: string | null;
+  openDeleteModal: (r: Reminder) => void;
+  groupedReminders: Reminder[][];
+  reminders: Reminder[];
+}
+
+export function TabelJadwal({
+  selectMode, isAdmin, isManager, selectedIds, filteredReminders, toggleSelectAll, hal, setSelectedIds,
+  setProductFilter, productFilter, router, guestUsers, setDetailReminder, bolehEditReminder, setRescheduleTarget, canInternalApprove,
+  setInternalApproveTarget, handleInternalReject, canApproveAssign, bolehLewatiReview, setApproveTarget, setApproveBatchSiblings, setApproveAssignTo, setApproveDate,
+  setApproveTime, handleAdminReject, currentUser, openSupervisorAssign, syncKeIncentive, syncing, openDeleteModal, groupedReminders,
+  reminders,
+}: TabelJadwalProps) {
+  return (
+    <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+      <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+        <colgroup>
+          <col style={{ width: '4%'  }} />
+          <col style={{ width: '16%' }} />
+          <col style={{ width: '13%' }} />
+          <col style={{ width: '11%' }} />
+          <col style={{ width: '12%' }} />
+          <col style={{ width: '14%' }} />
+          <col style={{ width: '9%'  }} />
+          <col style={{ width: '8%'  }} />
+          <col style={{ width: '13%' }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <th className="px-3 py-2.5 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
+      {selectMode && (isAdmin || isManager)
+        ? <input type="checkbox"
+            checked={selectedIds.size === filteredReminders.length && filteredReminders.length > 0}
+            onChange={toggleSelectAll} className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" title="Pilih Semua" />
+        : 'No'}
+    </th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Project</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Product</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Kegiatan</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Sales</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
+            <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
+            <th className="px-1 py-2 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {hal.potongan.map((group, idx) => {
+            const r = group[0];
+            const today = isDueToday(r.due_date);
+            const uniqueDates = Array.from(new Set(group.map(gr => gr.due_date))).sort();
+            const uniqueAssignNames = Array.from(new Set(group.map(gr => gr.assign_name).filter(Boolean)));
+            const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+            return (
+              <tr key={r.id}
+                className="cursor-pointer"
+                style={{
+                  '--aksen-baris': today ? '#f87171' : '#cbd5e1',
+                  '--bg-baris': today ? '#fef2f2' : '#ffffff',
+                  '--bg-baris-sorot': today ? '#fee2e2' : '#fff5f5',
+                } as CSSProperties}
+                >
+                <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
+            {selectMode && (isAdmin || isManager)
+              ? <input type="checkbox"
+                  checked={group.every(gr => selectedIds.has(gr.id))}
+                  onChange={() => {
+                    const allSelected = group.every(gr => selectedIds.has(gr.id));
+                    setSelectedIds(prev => {
+                      const next = new Set(prev);
+                      for (const gr of group) allSelected ? next.delete(gr.id) : next.add(gr.id);
+                      return next;
+                    });
+                  }}
+                  className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" />
+              : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
+          </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                  <div className="font-bold text-gray-800 text-xs leading-tight wrap-break-word">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
+                  {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
+                  <div className="text-[11px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
+                </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                  {r.product ? (
+                    <button
+                      onClick={e => { e.stopPropagation(); setProductFilter(productFilter === r.product ? null : (r.product ?? null)); }}
+                      className="text-[11px] font-semibold px-1.5 py-0.5 rounded-sm text-left wrap-break-word leading-tight transition-all"
+                      style={{ background: productFilter === r.product ? '#6366f1' : '#eef2ff', color: productFilter === r.product ? 'white' : '#4338ca' }}>
+                      {r.product}
+                    </button>
+                  ) : <span className="text-gray-400 text-xs">—</span>}
+                  {r.product_type && (
+                    <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm inline-block"
+                      style={{ background: '#fef3c7', color: '#92400e' }}>
+                      <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.product_type}
+                    </div>
+                  )}
+                </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm"><Ikon nama={(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                    <span className="text-[11px] font-semibold text-gray-700 leading-tight wrap-break-word">{r.category}</span>
+                    {r.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && (
+                    <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-1"
+                      >
+                      <Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" />
+                    </div>
+                  )}
+                  </div>
+                  {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && r.mode_penyelesaian && (
+                    <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
+                      style={r.mode_penyelesaian === 'onsite'
+                        ? { background: '#d1fae5', color: '#047857' }
+                        : { background: '#dbeafe', color: '#1d4ed8' }}>
+                      {r.mode_penyelesaian === 'onsite' ? '🏠 ONSITE' : '📡 REMOTE'}
+                    </div>
+                  )}
+                  {r.category === 'Troubleshooting' && (
+                    <button
+                      onClick={e => { e.stopPropagation(); router.push('/ticketing'); }}
+                      className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm text-blue-600 hover:text-blue-800 transition-colors"
+                      style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                      <IkonTeks nama="🎫" />Ticketing
+                    </button>
+                  )}
+                </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                  <div className="text-xs font-semibold text-gray-700 leading-tight truncate">{r.sales_name || '—'}</div>
+                  {r.sales_division && <div className="text-[11px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
+                </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle overflow-hidden">
+                  <div className="flex flex-nowrap gap-0.5">
+                    {uniqueAssignNames.slice(0, 3).map(name => (
+                      <div key={name} title={name}
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                        {name?.charAt(0)?.toUpperCase() || '?'}
+                      </div>
+                    ))}
+                    {uniqueAssignNames.length > 3 && (
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 shrink-0">+{uniqueAssignNames.length - 3}</div>
+                    )}
+                  </div>
+                  {uniqueAssignNames.length === 1
+                    ? <span className="text-[11px] font-bold text-gray-800 block mt-0.5 truncate">{uniqueAssignNames[0]}</span>
+                    : <span className="text-[10px] text-gray-500 mt-0.5 block">{uniqueAssignNames.length} orang</span>
+                  }
+                </td>
+                <td className="px-3 py-3 border-r border-gray-200 align-middle">
+                  {(() => {
+                    const counts: Record<string,number> = {};
+                    for (const gr of group) counts[gr.status] = (counts[gr.status]||0)+1;
+                    const entries = Object.entries(counts);
+                    if (entries.length === 1) {
+                      return <>
+                        <StatusBadge status={group[0].status} />
+                        {group[0].wa_sent_h1 && <p className="text-[10px] font-bold text-green-700 mt-0.5"><IkonTeks nama="✅" />WA H-1</p>}
+                      </>;
+                    }
+                    return (
+                      <div className="space-y-0.5">
+                        {entries.map(([s,n]) => (
+                          <div key={s} className="flex items-center gap-1">
+                            <StatusBadge status={s as any} />
+                            <span className="text-[10px] text-gray-500 font-bold">{n}×</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  {!group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
+                    group[0].routing_status === 'internal_review'
+                      ? <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#f59e0b' }} title="Menunggu review Sales Internal sebelum Admin bisa proses">
+                          <IkonTeks nama="🔍" />Review: {guestUsers.find(g => g.id === group[0].internal_sales_id)?.full_name ?? '—'}
+                        </span>
+                      : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#2563eb' }}
+                          title={group[0].created_by ? `Diinput oleh: ${group[0].created_by}${group[0].sales_name ? ` — atas nama Sales: ${group[0].sales_name}` : ''}` : undefined}>
+                          <IkonTeks nama="📩" />Req. Sales
+                        </span>
+                  )}
+                </td>
+                <td className="px-2 py-1 border-r border-gray-200 align-middle">
+                  {uniqueDates.length > 1 ? (
+                    <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
+                      style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                      <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> {uniqueDates.length}h</span>
+                      <span className="text-[10px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
+                        {fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}
+                      </span>
+                      {r.due_time && <span className="text-[10px] text-gray-500 leading-tight">{r.due_time}</span>}
+                    </div>
+                  ) : (
+                    <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
+                      style={{
+                        background: today ? 'rgba(220,38,38,0.12)' : 'rgba(99,102,241,0.08)',
+                        border: today ? '1px solid rgba(220,38,38,0.35)' : '1px solid rgba(99,102,241,0.2)',
+                      }}>
+                      <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>
+                        {new Date(r.due_date + 'T00:00:00').getDate()}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
+                        {new Date(r.due_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}
+                      </span>
+                      {r.due_time && <span className="text-[10px] text-gray-500 leading-tight">{r.due_time}</span>}
+                    </div>
+                  )}
+                </td>
+                <td className="px-1 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
+                  <ActionGroup>
+                    <ViewIconBtn onClick={() => setDetailReminder(group[0])} title="Detail" />
+                    {bolehEditReminder(group[0]) && group[0].status !== 'done' && (
+                      <RescheduleIconBtn onClick={() => setRescheduleTarget(group[0])} title="Re-Schedule" />
+                    )}
+                    {canInternalApprove(group[0]) && (
+                      <>
+                        <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Setujui & Teruskan ke Admin" pulse />
+                        <button aria-label="Tolak" onClick={() => handleInternalReject(group[0])} title="Tolak"
+                          className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </>
+                    )}
+                    {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (group[0].routing_status !== 'internal_review' || bolehLewatiReview) && (
+                      <>
+                        <ApproveIconBtn onClick={() => {
+                          setApproveTarget(group[0]);
+                          setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to));
+                          setApproveAssignTo('');
+                          setApproveDate(group[0].due_date);
+                          setApproveTime(group[0].due_time);
+                        }} title="Setujui & Tugaskan" pulse />
+                        <button aria-label="Tolak" onClick={() => handleAdminReject(group[0])} title="Tolak"
+                          className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                          <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </>
+                    )}
+                    {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
+                      <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Tugaskan Tim" pulse />
+                    )}
+                    {(isAdmin || isManager) && layakIncentive(group[0]) && (
+                      <button aria-label={`Sync ${group[0].project_name} ke Incentive PTS`}
+                        onClick={() => syncKeIncentive(group[0])} disabled={syncing === group[0].id}
+                        title={diluarIncentive(group[0])
+                          ? 'Sedang DI LUAR Incentive PTS — klik untuk memasukkannya kembali'
+                          : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
+                        className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
+                          diluarIncentive(group[0])
+                            ? 'bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border-amber-300'
+                            : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border-emerald-200'}`}>
+                        {syncing === group[0].id
+                          ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
+                          : 
+                            <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>}
+                      </button>
+                    )}
+                    {(isAdmin || isManager) && (
+                      <DeleteIconBtn onClick={() => openDeleteModal(group[0])} title="Hapus" />
+                    )}
+                  </ActionGroup>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
+        <span className="text-[11px] text-gray-500">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
+        <span className="text-[11px] text-gray-500">dari {reminders.length} jadwal keseluruhan</span>
+      </div>
+      <Paginasi {...hal} satuan="event" />
+    </div>
+  );
+}

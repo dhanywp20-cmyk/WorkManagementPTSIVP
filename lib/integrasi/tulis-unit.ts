@@ -4,7 +4,7 @@ import { daftarTimDitugaskan } from '@/lib/teams';
 import { bisaIsiKegiatan } from '@/lib/piket/akses';
 import { bacaDaftarPilihan, KUNCI_DAFTAR_PILIHAN, type KunciDaftar } from '@/lib/daftar-pilihan-bawaan';
 import { akunTambahan, gagal, hariIniWIB, idSah, jamSah, peranDari, samaNama, teks, tglSah, type KonteksAksi } from '@/lib/integrasi/bantu';
-import { orangDalamUnit } from '@/lib/integrasi/menu';
+import { orangDalamUnit } from '@/lib/integrasi/menu-lain';
 
 import { type Aksi, audit } from '@/lib/integrasi/tulis-bersama';
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, ambilAkun, galat, hakAtas, simpanFoto } from '@/lib/checklist/server';
+import { NO_STORE, ambilAkun, galat, hakAtas } from '@/lib/checklist/server';
+import { simpanFoto } from '@/lib/checklist/server-simpan';
 
 export const dynamic = 'force-dynamic';
 

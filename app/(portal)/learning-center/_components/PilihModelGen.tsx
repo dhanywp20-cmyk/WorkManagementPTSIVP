@@ -1,6 +1,6 @@
 'use client';
 
-import { type ModelAI } from './shared';
+import { type ModelAI } from './penilai-ai';
 import { type SisiBanding } from './QuestionsPage';
 
 export interface PilihModelGenProps {

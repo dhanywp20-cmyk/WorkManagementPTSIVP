@@ -24,7 +24,7 @@ const MEMAKAI: Record<string, RegExp> = {
   'ticketing/_components/SimpleActionModals.tsx': /ModalTolak/,
   'ticketing/_components/ApprovalModal.tsx': /TombolSetujui/,
   'ticketing/_components/AssignApprovalModals.tsx': /ModalSetujui/,
-  'ticketing/_components/TicketDetailPopup.tsx': /TombolTugaskan/,
+  'ticketing/_components/IsiDetailTicket.tsx': /TombolTugaskan/,
   'reminder-schedule/_components/ApproveAssignModals.tsx': /PilihPenugasan/,
   'reminder-schedule/_components/RejectReasonModal.tsx': /ModalTolak/,
   'reminder-schedule/_components/PopupRingkas.tsx': /ModalSetujui/,

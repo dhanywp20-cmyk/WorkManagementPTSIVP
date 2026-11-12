@@ -23,7 +23,7 @@ export const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
 };
 
 export function BlokToken({
-  judul, kunci, status, petunjuk, onSimpan, onHapus,
+  judul, status, petunjuk, onSimpan, onHapus,
 }: {
   judul: string; kunci: string; status?: StatusRahasia; petunjuk: React.ReactNode;
   onSimpan: (nilai: string) => Promise<void>; onHapus: () => Promise<void>;

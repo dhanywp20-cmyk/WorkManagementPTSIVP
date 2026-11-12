@@ -7,7 +7,7 @@ function cek(nama: string, syarat: boolean, info = '') {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}${info ? ` - ${info}` : ''}`); }
 }
 
-const PENJAGA = /pastikanMasuk|pastikanMenu|pastikanAdmin|getSessionUser|ambilAkun|verifikasiToken|jawabMonitor|CRON_SECRET|cariChecklistShare|tokenSah|pesertaDari|muatKelasToken/;
+const PENJAGA = /pastikanMasuk|pastikanMenu|muatRequest|pastikanAdmin|getSessionUser|ambilAkun|verifikasiToken|jawabMonitor|CRON_SECRET|cariChecklistShare|tokenSah|pesertaDari|muatKelasToken/;
 const PUBLIK: Record<string, string> = {
   'auth/login': 'masuk', 'auth/login-2fa': 'masuk tahap 2 (tantangan bertanda tangan)', 'auth/logout': 'keluar',
   'auth/forgot-password': 'minta OTP (dibatasi per username)', 'auth/verify-otp': 'ganti password dengan OTP (dibatasi)',
@@ -40,6 +40,10 @@ cek('teks di-escape (termasuk di dalam array log)', t.project_name === '&lt;img 
 cek('angka & boolean tidak diubah', t.n === 3 && t.activity_logs[0].ok === true);
 cek('urlAman: https & jalur aplikasi lolos', urlAman('https://x.supabase.co/a.png') === 'https://x.supabase.co/a.png' && urlAman('/ticketing') === '/ticketing');
 cek('urlAman: javascript:, data:, //luar ditolak', urlAman('javascript:alert(1)') === '' && urlAman(' JaVaScRiPt:x') === '' && urlAman('data:text/html,x') === '' && urlAman('//evil.com') === '');
+cek('lampiran Request Design: muatRequest memeriksa sesi lalu membaca request sebagai user (RLS)', (() => {
+  const l = readFileSync('lib/request-desain/lampiran-server.ts', 'utf8');
+  return l.includes('pastikanMasuk(req)') && l.includes("klienSebagaiUser(user).from('project_requests')");
+})());
 for (const r of ['desain', 'led', 'sld', 'sld/katalog', 'objek-saya', 'produk', 'referensi-led', 'template-kategori']) {
   const isi = readFileSync(`app/api/tools-team/${r}/route.ts`, 'utf8');
   cek(`tools-team/${r}: wajib izin menu tools-team`, isi.includes("pastikanMenu(req, 'tools-team')") && !isi.includes('pastikanMasuk('));

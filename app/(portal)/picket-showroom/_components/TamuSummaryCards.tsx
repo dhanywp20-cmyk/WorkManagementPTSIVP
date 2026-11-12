@@ -26,7 +26,6 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
     return true;
   });
 
-  const demoList=activeKg.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
 
   const divMap:Record<string,number>={};
   activeKg.forEach(k=>{if(k.sales_division)divMap[k.sales_division]=(divMap[k.sales_division]||0)+1;});

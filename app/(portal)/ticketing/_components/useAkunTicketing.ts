@@ -2,6 +2,7 @@
 
 import { adminCreateUser } from '@/lib/admin-users';
 import { User } from './shared';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface AkunTicketingKonteks {
   changePassword: { current: string; new: string; confirm: string; };
@@ -36,7 +37,7 @@ export function useAkunTicketing(k: AkunTicketingKonteks) {
       setNewUser({ username: "", password: "", full_name: "", team_member: "", role: "team", team_type: "Team PTS IVP" });
       await fetchData();
       notify("success", "User created successfully!");
-    } catch (err: any) { notify("error", "Error: " + err.message); }
+    } catch (err) { notify("error", "Error: " + pesanGalat(err)); }
   };
 
   const updatePassword = async () => {
@@ -56,7 +57,7 @@ export function useAkunTicketing(k: AkunTicketingKonteks) {
       notify("success", "Password changed successfully!");
       setChangePassword({ current: "", new: "", confirm: "" });
       setSelectedUserForPassword("");
-    } catch (err: any) { notify("error", "Error: " + err.message); }
+    } catch (err) { notify("error", "Error: " + pesanGalat(err)); }
   };
   return { createUser, updatePassword };
 }

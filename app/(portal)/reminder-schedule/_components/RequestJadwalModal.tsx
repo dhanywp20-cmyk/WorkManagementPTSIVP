@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
-import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
-import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
-import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
-import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
+import { type SalesPickerUser } from '@/components/shared/SalesPicker';
+import { type Brand } from '@/lib/brand-routing';
+import { Ikon } from '@/components/shared/Ikon';
+import { RequestJadwalWaktu } from './RequestJadwalWaktu';
+import { RequestJadwalProyek } from './RequestJadwalProyek';
 
 export interface JadwalRequest {
   project_name: string;
@@ -39,14 +40,14 @@ interface RequestJadwalModalProps {
   initial?: Partial<JadwalRequest>;
 }
 
-const inputCls =
+export const inputCls =
   'w-full rounded-lg px-3 py-2 text-xs outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
-const inputStyle = {
+export const inputStyle = {
   background: '#ffffff',
   border: '1px solid rgba(0,0,0,0.12)',
 };
 
-const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training', 'Maintenance'];
+export const ALLOWED_CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Training', 'Maintenance'];
 
 export function RequestJadwalModal({
   salesName,
@@ -108,268 +109,12 @@ export function RequestJadwalModal({
         <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
           <div className="p-4 grid grid-cols-1 satulayar:grid-cols-3 gap-4 satulayar:h-full satulayar:overflow-hidden">
 
-          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
+          <RequestJadwalProyek
+            salesName={salesName} salesDivision={salesDivision} isInternalSales={isInternalSales} form={form} externalSalesUsers={externalSalesUsers} f={f}
+            setFormErr={setFormErr} initial={initial}
+          />
 
-          <div
-            className="rounded-xl p-3 flex items-center gap-3"
-            style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' }}
-            >
-              {salesName.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">Requested by</p>
-              <p className="text-sm font-bold text-slate-800">{salesName}</p>
-              {salesDivision && <p className="text-xs text-blue-500">{salesDivision}</p>}
-            </div>
-            <div className="ml-auto text-right">
-              <span
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
-                style={{ background: 'rgba(59,130,246,0.6)' }}
-              >
-                <IkonTeks nama="⏳" />Menunggu Approval
-              </span>
-            </div>
-          </div>
-
-          {isInternalSales && (
-            <div>
-              <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                SBU <span className="normal-case text-slate-500 font-medium tracking-normal">(opsional — buat atas nama Sales External)</span>
-              </label>
-              <SalesPicker
-                value={form.sbu_name ?? ''}
-                users={externalSalesUsers}
-                onChange={(name, division, userId) => f({ sbu_name: name, sbu_division: division, sbu_user_id: userId })}
-                placeholder="— Pilih Sales External (opsional) —"
-                triggerClassName="rounded-xl px-4 py-3"
-                triggerStyle={inputStyle}
-                dropdownZIndex={130}
-              />
-              {form.sbu_name && (
-                <p className="text-[11px] text-blue-500 mt-1">
-                  Schedule ini akan diatasnamakan <strong>{form.sbu_name}</strong>{form.sbu_division ? ` · ${form.sbu_division}` : ''}.
-                </p>
-              )}
-            </div>
-          )}
-
-          {!isInternalSales && (
-            <div>
-              <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(Sales Internal yang handle)</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {BRAND_OPTIONS.map(opt => {
-                  const sel = form.brand === opt.value;
-                  return (
-                    <button key={opt.value} type="button" onClick={() => { f({ brand: opt.value }); setFormErr(''); }}
-                      className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all leading-tight"
-                      style={sel
-                        ? { borderColor: '#2563eb', background: 'rgba(37,99,235,0.1)', color: '#1d4ed8' }
-                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-                      {opt.value === 'MVI' ? '🏠 ' : opt.value === 'IVP' ? '🌐 ' : '🏠🌐 '}{opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {!!initial?.project_name && (
-            <div className="rounded-xl px-3.5 py-2.5" style={{ background: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)' }}>
-              <p className="text-[12px] font-bold" style={{ color: '#0e7490' }}>
-                ✓ Detail diisi dari project Anda sebelumnya
-              </p>
-              <p className="text-[11px] mt-0.5 leading-relaxed" style={{ color: '#155e75' }}>
-                Serah-terima (BAST) request ini akan digabung dengan yang lama saat disetujui admin -
-                tidak terhitung sebagai project baru. Tinggal tentukan kategori dan tanggal di bawah.
-              </p>
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Nama Project *
-            </label>
-            <input id="f-reminder-schedule-components-requestjadwalmodal-1"
-              value={form.project_name}
-              onChange={e => f({ project_name: e.target.value })}
-              className={inputCls} style={inputStyle}
-              placeholder="Contoh: PT. Maju Bersama — Instalasi LED Wall"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Lokasi Project *
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <input
-                value={form.address}
-                onChange={e => f({ address: e.target.value })}
-                className={`${inputCls} pl-9`} style={inputStyle}
-                placeholder="Gedung / Alamat lengkap..."
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Deskripsi Kebutuhan
-            </label>
-            <textarea id="f-reminder-schedule-components-requestjadwalmodal-2"
-              value={form.description}
-              onChange={e => f({ description: e.target.value })}
-              rows={2}
-              className={`${inputCls} resize-none`} style={inputStyle}
-              placeholder="Jelaskan kebutuhan / tujuan kegiatan..."
-            />
-          </div>
-
-          </div>
-
-          <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
-          <div>
-            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Kategori *
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {ALLOWED_CATEGORIES.map(cat => {
-                const c = CATEGORY_CONFIG[cat] ?? {
-                  icon: '📁', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)',
-                  border: 'rgba(148,163,184,0.3)', accent: '#64748b',
-                };
-                const sel = form.category === cat;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => f({ category: cat })}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all"
-                    style={
-                      sel
-                        ? { borderColor: c.accent, background: c.bg, color: c.color }
-                        : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }
-                    }
-                  >
-                    <span className="text-xl"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                    <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
-                    {sel && (
-                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Tipe Produk *
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {PRODUCT_TYPES.map(pt => {
-                const sel = form.product_type === pt;
-                return (
-                  <button key={pt} type="button" onClick={() => { f({ product_type: pt }); setFormErr(''); }}
-                    className="px-3 py-3 rounded-xl border-2 text-center text-sm font-bold transition-all"
-                    style={sel
-                      ? { borderColor: '#e11d48', background: 'rgba(225,29,72,0.1)', color: '#e11d48' }
-                      : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-                    {pt}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Product / Unit (Opsional)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <input
-                value={form.product}
-                onChange={e => f({ product: e.target.value })}
-                className={`${inputCls} pl-9`} style={inputStyle}
-                placeholder="Contoh: Sony VPL-FHZ85, Samsung IF Series..."
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                Tanggal Usulan *
-              </label>
-              <input id="f-reminder-schedule-components-requestjadwalmodal-3"
-                type="date"
-                value={form.due_date}
-                onChange={e => f({ due_date: e.target.value })}
-                className={inputCls} style={inputStyle}
-              />
-            </div>
-            <div>
-              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-4" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                Waktu Usulan
-              </label>
-              <input id="f-reminder-schedule-components-requestjadwalmodal-4"
-                type="time"
-                value={form.due_time}
-                onChange={e => f({ due_time: e.target.value })}
-                className={inputCls} style={inputStyle}
-              />
-            </div>
-          </div>
-
-          {(form.category === 'Konfigurasi' || form.category === 'Konfigurasi & Training') && (
-            <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <p className="text-sm font-bold" style={{ color: '#0e7490' }}>Usulan Timeline Pengerjaan</p>
-              </div>
-              <p className="text-xs mb-3" style={{ color: '#0e7490' }}>
-                Perkiraan rentang pengerjaan di lokasi, untuk dipantau di Project Progress.
-                Boleh dikosongkan — Admin dapat menetapkannya saat menyetujui request.
-              </p>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-5" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                    Mulai Pengerjaan
-                  </label>
-                  <input id="f-reminder-schedule-components-requestjadwalmodal-5" type="date" value={form.progress_start_date}
-                    onChange={e => f({ progress_start_date: e.target.value })}
-                    className={inputCls} style={inputStyle} />
-                </div>
-                <div>
-                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-6" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-                    Target Selesai
-                  </label>
-                  <input id="f-reminder-schedule-components-requestjadwalmodal-6" type="date" value={form.progress_target_date}
-                    min={form.progress_start_date || undefined}
-                    onChange={e => f({ progress_target_date: e.target.value })}
-                    className={inputCls} style={inputStyle} />
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="hidden satulayar:block">
-            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              Tambah Hari Lain (Opsional)
-            </label>
-            <MultiDatePicker dates={form.extra_dates} onChange={dates => f({ extra_dates: dates })} accentColor="#2563eb" />
-          </div>
-
-          </div>
+          <RequestJadwalWaktu form={form} f={f} setFormErr={setFormErr} />
 
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <div className="grid grid-cols-1 gap-4">

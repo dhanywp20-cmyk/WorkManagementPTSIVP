@@ -11,6 +11,7 @@ import { appLink } from '@/lib/app-url';
 import { sendWANotif, fetchWACCTargets, User, TeamMember } from './shared';
 import { createNotification } from '@/lib/notifications';
 import { type NewTicketForm } from './NewTicketModal';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface BuatTicketKonteks {
   currentUser: User | null;
@@ -54,7 +55,7 @@ export function useBuatTicket(k: BuatTicketKonteks) {
           const { data } = supabase.storage.from("ticket-photos").getPublicUrl(`photos/${fileName}`);
           photoUrl = data.publicUrl;
           photoName = newTicket.photo.name;
-        } catch (uploadErr: any) { throw new Error(`Failed to upload photo: ${uploadErr.message}`); }
+        } catch (uploadErr) { throw new Error(`Failed to upload photo: ${pesanGalat(uploadErr)}`); }
       }
       setLoadingMessage("Saving new ticket...");
       const rawAssign = isElevated ? (newTicket.assign_name || "") : "";
@@ -224,8 +225,8 @@ export function useBuatTicket(k: BuatTicketKonteks) {
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", event: "ticket.assigned", target: handlerInfo.phone_number, message: waMsg });
           }
-        } catch (err: any) {
-          console.warn('[ticket] WA to handler (new ticket) failed:', err?.message);
+        } catch (err) {
+          console.warn('[ticket] WA to handler (new ticket) failed:', pesanGalat(err));
           notify('error', 'WA ke handler gagal dikirim. Ticket berhasil disimpan.');
         }
       }
@@ -238,10 +239,10 @@ export function useBuatTicket(k: BuatTicketKonteks) {
       const successMsg = isElevated ? "✅ Ticket saved successfully!" : "✅ Ticket submitted! Waiting for Admin approval.";
       setLoadingMessage(successMsg);
       setTimeout(() => { setShowLoadingPopup(false); setUploading(false); }, 1500);
-    } catch (err: any) {
+    } catch (err) {
       setShowLoadingPopup(false);
       setUploading(false);
-      notify("error", "Error: " + err.message);
+      notify("error", "Error: " + pesanGalat(err));
     }
   };
   return { createTicket };

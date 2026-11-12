@@ -3,6 +3,7 @@
 import { Reminder, TeamUser } from './shared';
 import { ambilReminderUntuk } from './data-reminder';
 import { getSession } from '@/lib/auth/sesi';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 export interface MuatJadwalKonteks {
   currentUser: TeamUser | null;
@@ -31,8 +32,8 @@ export function useMuatJadwal(k: MuatJadwalKonteks) {
     try {
       const data = await fetchRemindersForUser(activeUser);
       setReminders(data);
-    } catch (err: any) {
-      setFetchError(err?.message ?? 'Gagal memuat data');
+    } catch (err) {
+      setFetchError(pesanGalat(err) ?? 'Gagal memuat data');
     }
     setListLoading(false);
   };

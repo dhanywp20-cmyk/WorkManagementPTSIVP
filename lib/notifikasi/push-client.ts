@@ -1,4 +1,5 @@
 'use client';
+import { pesanGalat } from '@/lib/galat/pesan';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -81,8 +82,8 @@ export async function aktifkanPushNotif(): Promise<{ ok: boolean; alasan?: strin
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
-    } catch (e: any) {
-      return { ok: false, alasan: 'Gagal berlangganan push: ' + (e?.message ?? 'tidak diketahui') };
+    } catch (e) {
+      return { ok: false, alasan: 'Gagal berlangganan push: ' + (pesanGalat(e) ?? 'tidak diketahui') };
     }
   }
 

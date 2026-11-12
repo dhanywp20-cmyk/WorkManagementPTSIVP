@@ -1,7 +1,8 @@
 'use client';
 
 import type { SisiBanding } from './QuestionsPage';
-import { supabase, User, Material, Question, generateWithGemini, DialogState } from './shared';
+import { supabase, User, Material, Question, DialogState } from './shared';
+import { generateWithGemini } from './penilai-ai';
 import { nomorBerikutnya } from '@/lib/kuis/urutan-soal';
 
 export interface BuatSoalKonteks {

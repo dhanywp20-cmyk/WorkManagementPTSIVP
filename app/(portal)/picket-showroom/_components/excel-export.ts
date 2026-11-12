@@ -204,7 +204,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const picNames=picInfoRow?.name||'-';
         const teamKey=picInfoRow?(labelKelompokPTS(picInfoRow.team_type)||picInfoRow.team_type):'';
         const picTeams=teamKey||'-';
-        toR.forEach((kg,ki)=>{
+        toR.forEach((kg,_ki)=>{
           const rs = rowIdx%2===0?cellStyle:altStyle;
           const ctrStyle = {...rs,alignment:{horizontal:'center',vertical:'center'}};
           data.push([

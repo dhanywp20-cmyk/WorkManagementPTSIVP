@@ -8,7 +8,7 @@ import { useAngkaNaik } from '@/components/shared/AngkaNaik';
 export { InfoLine } from '@/components/shared';
 
 export function StatusDonutCard({
-  data, total, onSliceClick, title, icon,
+  data, onSliceClick, title, icon,
 }: {
   data: { name: string; value: number; color: string }[];
   total: number;
@@ -27,7 +27,7 @@ export function StatusDonutCard({
 }
 
 export function SalesDivisionDonutCard({
-  data, total, onSliceClick, activeDivision,
+  data, onSliceClick, activeDivision,
 }: {
   data: { name: string; value: number; color: string }[];
   total: number;
@@ -46,7 +46,7 @@ export function SalesDivisionDonutCard({
 }
 
 export function ProductDonutCard({
-  data, total, onSliceClick, activeProduct,
+  data, onSliceClick, activeProduct,
 }: {
   data: { name: string; value: number; color: string }[];
   total: number;
