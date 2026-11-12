@@ -50,7 +50,7 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
       try {
         const { data } = await supabase.from('kpi_global_settings').select('settings').eq('id', 1).single();
         if (data?.settings) {
-          setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...data.settings });
+          setKpiSettings({ ...DEFAULT_KPI_SETTINGS, ...(data.settings as Partial<KPISettings>) });
           return;
         }
       } catch {  }
@@ -87,7 +87,7 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
         setScope({
           kind: 'pts_sup',
           ptsTeamType: currentUser.team_type ?? '',
-          ptsMemberNames: (data ?? []).map((u:any) => u.full_name as string),
+          ptsMemberNames: (data ?? []).map((u) => u.full_name as string),
         });
         setScopeReady(true); return;
       }

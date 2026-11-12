@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -39,7 +40,7 @@ export async function PUT(req: NextRequest) {
   const ref = bersihkanReferensiLED(b.referensi);
   if (!ref) return gagal('Tabel referensi tidak sah - periksa isian yang kosong atau di luar batas.');
   const { error } = await db.from('app_settings').upsert({
-    key: KUNCI_REFERENSI_LED, value: { data: ref, oleh: jaga.user.full_name }, updated_at: new Date().toISOString(),
+    key: KUNCI_REFERENSI_LED, value: { data: ref, oleh: jaga.user.full_name } as unknown as Json, updated_at: new Date().toISOString(),
   }, { onConflict: 'key' });
   if (error) return gagal(error.message, 500);
   return NextResponse.json({ ok: true });

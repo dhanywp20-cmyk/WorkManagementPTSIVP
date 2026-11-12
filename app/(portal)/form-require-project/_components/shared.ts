@@ -75,7 +75,7 @@ export interface ProjectRequest {
   assigned_supervisor_id?: string | null;
 }
 
-export interface RoomDetail {
+export type RoomDetail = {
   id: string;
   room_name: string;
   kebutuhan: string[];
@@ -123,7 +123,7 @@ export interface RoomDetail {
   assign_user_id?: string | null;
   approved_by?: string | null;
   approved_at?: string | null;
-}
+};
 
 export interface BrandPicMapping {
   id: string;
@@ -183,9 +183,9 @@ export async function fetchWACCTargets(
         if (supMaps?.length) {
           const { data: sups } = await supabase.from('users')
             .select('full_name, phone_number, jabatan')
-            .in('id', supMaps.map((m: any) => m.supervisor_id))
+            .in('id', supMaps.map((m) => m.supervisor_id))
             .not('phone_number', 'is', null).neq('phone_number', '');
-          sups?.forEach((s: any) => {
+          sups?.forEach((s) => {
             if (s.jabatan && ccJabatanList.includes(s.jabatan)) {
               targets.push({ phone: s.phone_number, name: s.full_name, relation: 'supervisor' });
             }
@@ -196,9 +196,9 @@ export async function fetchWACCTargets(
         if (userSupMaps?.length) {
           const { data: manualSups } = await supabase.from('users')
             .select('full_name, phone_number, jabatan')
-            .in('id', userSupMaps.map((m: any) => m.supervisor_id))
+            .in('id', userSupMaps.map((m) => m.supervisor_id))
             .not('phone_number', 'is', null).neq('phone_number', '');
-          manualSups?.forEach((s: any) => {
+          manualSups?.forEach((s) => {
             if (!targets.find(t => t.phone === s.phone_number)) {
               targets.push({ phone: s.phone_number, name: s.full_name, relation: 'supervisor' });
             }
@@ -212,9 +212,9 @@ export async function fetchWACCTargets(
         .from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDiv);
       if (ivpRes?.length) {
         const { data: ivps } = await supabase.from('users').select('full_name, phone_number')
-          .in('id', ivpRes.map((s: any) => s.ivp_id))
+          .in('id', ivpRes.map((s) => s.ivp_id))
           .not('phone_number', 'is', null).neq('phone_number', '');
-        ivps?.forEach((s: any) => {
+        ivps?.forEach((s) => {
           if (!targets.find(t => t.phone === s.phone_number)) {
             targets.push({ phone: s.phone_number, name: s.full_name, relation: 'ivp_handler' });
           }

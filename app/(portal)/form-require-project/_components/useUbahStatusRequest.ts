@@ -1,5 +1,6 @@
 'use client';
 
+import type { TablesUpdate } from '@/types/database';
 import { User, ProjectRequest, RoomDetail, sendWANotif } from './shared';
 import { supabase } from '@/lib/supabase';
 import { notifyProjectStatusChange } from '@/lib/notifications';
@@ -23,7 +24,7 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
     statusUpdatingRef.current.add(req.id);
     try {
     let updatedRooms: RoomDetail[] | undefined;
-    const updatePayload: Record<string, unknown> = roomIdx === 0
+    const updatePayload: TablesUpdate<'project_requests'> = roomIdx === 0
       ? { status: newStatus }
       : (() => {
           const rooms = [...(req.rooms || [])];
@@ -42,7 +43,7 @@ export function useUbahStatusRequest(k: UbahStatusRequestKonteks) {
         ? { ...selectedRequest, status: newStatus as ProjectRequest['status'] }
         : { ...selectedRequest, rooms: updatedRooms });
     }
-    await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `🔄 Status diupdate menjadi: ${newStatus.replace('_', ' ').toUpperCase()}` }]);
+    await supabase.from('project_messages').insert([{ request_id: req.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: `🔄 Status diupdate menjadi: ${newStatus.replace('_', ' ').toUpperCase()}` }]);
     if (selectedRequest?.id === req.id) fetchMessages(req.id);
     try {
       if (req.requester_id) {

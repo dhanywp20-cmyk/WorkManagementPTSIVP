@@ -69,7 +69,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         if (isIVPUser) {
           const { data: ivpDivMaps } = await supabase
             .from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
-          const handledDivs = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
+          const handledDivs = (ivpDivMaps ?? []).map((m) => m.sales_division as string);
           if (handledDivs.length > 0) {
             const { data } = await supabase.from('tickets')
               .select('id, project_name, issue_case, assign_name, status, created_at, sales_division')
@@ -181,7 +181,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         if (isIVPUser2) {
           const { data: ivpDivMaps2 } = await supabase
             .from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
-          const handledDivs2 = (ivpDivMaps2 ?? []).map((m: any) => m.sales_division as string);
+          const handledDivs2 = (ivpDivMaps2 ?? []).map((m) => m.sales_division as string);
           if (handledDivs2.length > 0) {
             const { data: divReqs } = await excludeDone(
               supabase.from('project_requests')
@@ -208,15 +208,15 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         } else if (selfTierN > 1 && selfDivN) {
           const { data: supMapsN } = await ingat(`division_supervisor_mappings:${currentUser.id}`, () => supabase.from('division_supervisor_mappings')
             .select('sales_division').eq('supervisor_id', currentUser.id));
-          const supDivsN = (supMapsN ?? []).map((m: any) => m.sales_division as string);
+          const supDivsN = (supMapsN ?? []).map((m) => m.sales_division as string);
           if (!supDivsN.includes(selfDivN)) supDivsN.push(selfDivN);
 
           const { data: allGuestsN } = await ingat('users:guest-sales', () => supabase.from('users')
             .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']));
           const bawahanN = (allGuestsN ?? [])
             .filter((u: any) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division));
-          const subIdsN = bawahanN.map((u: any) => u.id as string);
-          const subNamesN = bawahanN.map((u: any) => u.full_name as string).filter(Boolean);
+          const subIdsN = bawahanN.map((u) => u.id as string);
+          const subNamesN = bawahanN.map((u) => u.full_name as string).filter(Boolean);
 
           if (subNamesN.length > 0) {
             const { data: subAtasNama } = await excludeDone(
@@ -283,7 +283,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             : Promise.resolve({ data: [] as any[] }),
         ]);
         const needsMyApprovalFiltered = (needsMyApproval ?? []).filter((r: any) => !r.assigned_to);
-        const needsAssignIds = new Set((needsMyAssign ?? []).map((r: any) => r.id));
+        const needsAssignIds = new Set((needsMyAssign ?? []).map((r) => r.id));
         const needsApprovalIds = new Set(needsMyApprovalFiltered.map((r: any) => r.id));
         const seenTeam = new Set<string>();
         const combinedTeam = [...needsMyApprovalFiltered, ...(needsMyAssign ?? []), ...(assignedToMe ?? [])]
@@ -313,10 +313,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             .eq('internal_sales_id', currentUser.id).eq('routing_status', 'internal_review')
             .order('created_at', { ascending: false }).limit(20),
         ]);
-        const reviewIds = new Set((awaitingReview ?? []).map((r: any) => r.id));
+        const reviewIds = new Set((awaitingReview ?? []).map((r) => r.id));
         const seen = new Set<string>();
         const combined = [...(awaitingReview ?? []), ...(ownReminders ?? [])]
-          .filter((r: any) => { if (seen.has(r.id)) return false; seen.add(r.id); return true; });
+          .filter((r) => { if (seen.has(r.id)) return false; seen.add(r.id); return true; });
         setReminderNotifs(combined.map((r: any) => ({
           id: r.id,
           type: 'reminder' as const,
@@ -337,13 +337,13 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const { data } = await supabase.from('form_reviews')
           .select('id, project_name, reminder_category, sales_name, assign_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
           .order('created_at', { ascending: false }).limit(50);
-        const pending = (data ?? []).filter((r: any) =>
+        const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
-        ).filter((r: any) => dalamLingkup(r.assign_name));
+        ).filter((r) => dalamLingkup(r.assign_name));
         setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
       } else if (roleLC === 'team' && bolehReview) {
         const { data } = await supabase.from('form_reviews').select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer').in('assign_name', namesToCheck).order('created_at', { ascending: false }).limit(30);
-        const pending = (data ?? []).filter((r: any) =>
+        const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         );
         setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));
@@ -352,7 +352,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           .select('id, project_name, reminder_category, sales_name, created_at, grade_product_knowledge, grade_product_knowledge_bast, grade_training_customer')
           .eq('sales_name', currentUser.full_name)
           .order('created_at', { ascending: false }).limit(30);
-        const pending = (data ?? []).filter((r: any) =>
+        const pending = (data ?? []).filter((r) =>
           !r.grade_product_knowledge && !r.grade_product_knowledge_bast && !r.grade_training_customer
         );
         setReviewNotifs(pending.map((r: any) => ({ id: r.id, type: 'require' as const, title: r.project_name, subtitle: `⭐ ${r.reminder_category} · ${r.sales_name}`, time: r.created_at, url: '/form-review', internalUrl: '/form-review', menuTitle: 'Form Review Demo & BAST' })));

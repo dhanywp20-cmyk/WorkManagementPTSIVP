@@ -94,8 +94,8 @@ export default function IncentivePTSPage() {
     if (!u) { const target = window.top !== window ? window.top : window; if (target) target.location.href = '/dashboard'; return; }
     setCurrentUser(u);
     supabase.from('users').select('incentive_akses, allow_incentive_input, incentive_brand_scope').eq('username', u.username as string).single()
-      .then(({ data }: { data: { incentive_akses: string | null; allow_incentive_input: boolean; incentive_brand_scope: string | null } | null }) => {
-        if (data) setCurrentUser(prev => prev ? { ...prev, incentive_akses: data.incentive_akses, allow_incentive_input: data.allow_incentive_input, incentive_brand_scope: data.incentive_brand_scope } : prev);
+      .then(({ data }) => {
+        if (data) setCurrentUser(prev => prev ? { ...prev, incentive_akses: data.incentive_akses, allow_incentive_input: data.allow_incentive_input ?? false, incentive_brand_scope: data.incentive_brand_scope } : prev);
       });
     loadAll().then(() => setAppReady(true));
     const cleanup = startSessionWatcher();

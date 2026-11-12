@@ -16,7 +16,7 @@ export async function cariMateri(k: KonteksCariMateri) {
       .select('id, materi_name')
       .ilike('materi_name', `%${q}%`)
       .order('materi_name').limit(8);
-    (data ?? []).forEach((m: any) => res.push({
+    (data ?? []).forEach((m) => res.push({
       id: `materi-${m.id}`, type: 'materi', icon: '🎓',
       title: m.materi_name ?? '-',
       sub: 'Materi Learning Center',

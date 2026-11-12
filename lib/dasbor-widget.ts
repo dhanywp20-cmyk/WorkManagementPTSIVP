@@ -22,10 +22,10 @@ export const DAFTAR_WIDGET = [
 
 export type KunciWidget = (typeof DAFTAR_WIDGET)[number]['kunci'];
 
-export interface PengaturanDasbor {
+export type PengaturanDasbor = {
   sembunyi: KunciWidget[];
   latarRedup: boolean;
-}
+};
 
 export const DASBOR_BAWAAN: PengaturanDasbor = { sembunyi: [], latarRedup: true };
 

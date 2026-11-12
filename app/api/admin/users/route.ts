@@ -1,3 +1,4 @@
+import type { TablesInsert, TablesUpdate } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getSessionUser, isAdminRole } from '@/lib/auth/server';
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       if (!payload.username || !payload.full_name) {
         return NextResponse.json({ error: 'Username & nama wajib diisi.' }, { status: 400 });
       }
-      const { data, error } = await supabase.from('users').insert([payload]).select('id').single();
+      const { data, error } = await supabase.from('users').insert([payload as TablesInsert<'users'>]).select('id').single();
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ id: data?.id });
     }
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
       const userId = body.userId as string;
       const payload = pick(body.payload || {});
       if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
-      const { error } = await supabase.from('users').update(payload).eq('id', userId);
+      const { error } = await supabase.from('users').update(payload as TablesUpdate<'users'>).eq('id', userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
       return NextResponse.json({ success: true });
     }

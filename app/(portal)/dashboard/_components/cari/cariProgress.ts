@@ -22,7 +22,7 @@ export async function cariProgress(k: KonteksCariProgress) {
       .order('created_at', { ascending: false }).limit(10);
     if (!tanpaBatas) qpp = batasiLingkup(lingkup, qpp, ['sales_name']);
     const { data } = await qpp;
-    (data ?? []).forEach((p: any) => res.push({
+    (data ?? []).forEach((p) => res.push({
       id: `progress-${p.id}`, type: 'progress', icon: '📊',
       title: p.nama ?? '-',
       sub: p.client ?? 'Tanpa client',

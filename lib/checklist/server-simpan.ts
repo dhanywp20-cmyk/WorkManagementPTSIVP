@@ -1,3 +1,4 @@
+import type { TablesInsert } from '@/types/database';
 import { BATAS, type ChecklistItem, type ChecklistRiwayat, type LewatCentang, type PerubahanItem } from './inti';
 import { Db, KOLOM_ITEM, sentuh, RIWAYAT_KOLOM } from './server';
 
@@ -61,9 +62,9 @@ export async function simpanPerubahan(
   }
 
   if (!tulis.length) return { items: [], riwayat: [] };
-  const { data: hasil, error: uErr } = await db.from('checklist_item').upsert(tulis, { onConflict: 'id' }).select(KOLOM_ITEM);
+  const { data: hasil, error: uErr } = await db.from('checklist_item').upsert(tulis as TablesInsert<'checklist_item'>[], { onConflict: 'id' }).select(KOLOM_ITEM);
   if (uErr) return { galat: uErr.message, status: 500 };
-  const { data: rw } = await db.from('checklist_riwayat').insert(riwayat).select(RIWAYAT_KOLOM);
+  const { data: rw } = await db.from('checklist_riwayat').insert(riwayat as TablesInsert<'checklist_riwayat'>[]).select(RIWAYAT_KOLOM);
   await sentuh(db, daftarId);
   return {
     items: (hasil ?? []) as ChecklistItem[],

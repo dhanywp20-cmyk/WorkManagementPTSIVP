@@ -18,8 +18,8 @@ export async function cetakTicket(asli: Ticket): Promise<void> {
     : "#64748b";
 
   const activityRows = (ticket.activity_logs || [])
-    .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .map((log: any, idx: number) => {
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .map((log, idx: number) => {
       const ts = formatDateTime(log.created_at);
       const teamColor = log.team_type === "Team Services" ? "#92400e" : "#1d4ed8";
       const statusCol = log.new_status === "Solved" ? "#065f46"

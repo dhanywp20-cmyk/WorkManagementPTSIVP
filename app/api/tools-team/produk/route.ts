@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -23,7 +24,7 @@ async function baca(db: Db): Promise<ProdukTim[]> {
 }
 
 async function tulis(db: Db, daftar: ProdukTim[]) {
-  const { error } = await db.from('app_settings').upsert({ key: KUNCI_PRODUK, value: { daftar }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  const { error } = await db.from('app_settings').upsert({ key: KUNCI_PRODUK, value: { daftar } as unknown as Json, updated_at: new Date().toISOString() }, { onConflict: 'key' });
   if (error) throw new Error(error.message);
 }
 

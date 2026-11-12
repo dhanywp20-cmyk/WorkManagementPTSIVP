@@ -17,7 +17,7 @@ export async function cariPengguna(k: KonteksCariPengguna) {
         .select('id, full_name, username, role, team_type, sales_division')
         .or(`full_name.ilike.%${q}%,username.ilike.%${q}%,sales_division.ilike.%${q}%`)
         .limit(8);
-      (usrData ?? []).forEach((u: any) => res.push({
+      (usrData ?? []).forEach((u) => res.push({
         id: `user-${u.id}`, type: 'user', icon: '👤',
         title: u.full_name ?? '-',
         sub: u.username ?? '-',

@@ -185,9 +185,9 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
           ingat(`users:kelompok-pts:${namaKelompokPTS().join(',')}`, () => supabase.from('users').select('full_name, team_type').in('team_type', namaKelompokPTS())),
         ]);
         const allRows = (rowsRes.data ?? []) as unknown as PiketRow[];
-        const holidays = (holRes.data ?? []).map((h: any) => h.date as string);
+        const holidays = (holRes.data ?? []).map((h) => h.date as string);
         const teamByName: Record<string, string> = {};
-        (usersRes.data ?? []).forEach((u: any) => { if (u.full_name) teamByName[u.full_name] = u.team_type ?? ''; });
+        (usersRes.data ?? []).forEach((u) => { if (u.full_name) teamByName[u.full_name] = u.team_type ?? ''; });
         const monday = getMonday(new Date());
         const todayKey = toKey(new Date());
         const list: PicketDay[] = DAYS_OF_WEEK.map((day) => {

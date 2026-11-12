@@ -60,7 +60,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       supabase.from('lc_quiz_attempts').select('quiz_session_id, user_id, is_submitted'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
-    setMaterials(m ?? []);
+    setMaterials((m ?? []) as Material[]);
     setQuestions((q ?? []) as unknown as Question[]);
     setTeamUsers((u ?? []) as User[]);
 
@@ -288,7 +288,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           .eq('quiz_session_id', id);
 
         if (attempts && attempts.length > 0) {
-          const attemptIds = attempts.map((a: any) => a.id);
+          const attemptIds = attempts.map((a) => a.id);
           await supabase.from('lc_answers').delete().in('attempt_id', attemptIds);
         }
 

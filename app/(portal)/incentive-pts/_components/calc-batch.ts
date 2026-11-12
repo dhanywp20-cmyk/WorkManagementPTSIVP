@@ -1,4 +1,5 @@
 import { ambilPetaNominal } from '@/lib/incentive/nominal-api';
+import type { TablesInsert } from '@/types/database';
 import { SkemaInsentif, ambilSkema, bagikanTepat, labelSkema } from '@/lib/incentive/scheme';
 import { createNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +20,7 @@ export async function insertTranches(sk: SkemaInsentif, projectId: string, bastD
     scheme_snapshot: sk as unknown as Record<string, unknown>,
     scheme_label: label,
   }));
-  return supabase.from('incentive_tranches').insert(rows);
+  return supabase.from('incentive_tranches').insert(rows as TablesInsert<'incentive_tranches'>[]);
 }
 
 export async function insertSplits(

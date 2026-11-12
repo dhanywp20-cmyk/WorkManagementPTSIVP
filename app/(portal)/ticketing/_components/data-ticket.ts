@@ -4,6 +4,8 @@ import { hasFullAccess } from "@/lib/constants";
 import { kutipNilai, cobaIdentitas } from "@/lib/identitas";
 import { JABATAN_TIER, KOLOM_LOG_RINGKAS, type User, type ActivityLog, type Ticket } from "./shared";
 
+const sebagaiTicket = (baris: unknown): Ticket[] => (baris ?? []) as Ticket[];
+
 export interface RentangTiket { dari: string; sebelum: string }
 
 export async function ambilTiketUntuk(
@@ -58,7 +60,7 @@ export async function ambilTiketUntuk(
           .order("created_at", { ascending: false })
         : supabase.from("user_supervisor_mappings").select("user_id").eq("supervisor_id", resolvedUser.id),
     ]);
-    (milikSaya ?? []).forEach(addOwn);
+    sebagaiTicket(milikSaya).forEach(addOwn);
 
     if (isIVP) {
       const ivpDivMaps = pemetaanA.data;
@@ -69,7 +71,7 @@ export async function ambilTiketUntuk(
       if (handledDivisions.length > 0) {
         const { data: divTickets } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("sales_division", handledDivisions).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-        (divTickets ?? []).forEach((t: Ticket) => {
+        sebagaiTicket(divTickets).forEach((t: Ticket) => {
           const tBrand = (t.brand ?? null) as string | null;
           const myBrands = myBrandMaps.filter(m => m.sales_division === t.sales_division).map(m => m.brand_type);
           const match = !tBrand || tBrand === "BOTH" || myBrands.includes(tBrand) || myBrands.includes(null);
@@ -85,14 +87,14 @@ export async function ambilTiketUntuk(
       const addUnique = (t: Ticket) => { if (!finalTickets.find(x => x.id === t.id)) finalTickets.push(t); };
 
       const supMaps = pemetaanA.data;
-      const supervisedDivisions = (supMaps ?? []).map((m: any) => m.sales_division as string);
+      const supervisedDivisions = (supMaps ?? []).map((m) => m.sales_division as string);
 
       if (selfDiv && selfTier > 1 && !supervisedDivisions.includes(selfDiv)) {
         supervisedDivisions.push(selfDiv);
       }
 
       const userSupMapsData = pemetaanB.data as { user_id: string }[] | null;
-      const manualSubordinateIds = new Set((userSupMapsData ?? []).map((m: any) => m.user_id as string));
+      const manualSubordinateIds = new Set((userSupMapsData ?? []).map((m) => m.user_id as string));
 
       const isSupervisor = (supervisedDivisions.length > 0 && selfTier > 0) || manualSubordinateIds.size > 0;
 
@@ -104,7 +106,7 @@ export async function ambilTiketUntuk(
         const idToTier: Record<string, number> = {};
         const nameTierMap: Record<string, number> = {};
         const nameToId: Record<string, string> = {};
-        (allGuestUsers ?? []).forEach((u: any) => {
+        (allGuestUsers ?? []).forEach((u) => {
           const tier = u.jabatan ? (JABATAN_TIER[u.jabatan as string] ?? 0) : 0;
           idToTier[u.id] = tier;
           if (u.full_name) { nameTierMap[u.full_name] = tier; nameToId[u.full_name] = u.id; }
@@ -116,23 +118,23 @@ export async function ambilTiketUntuk(
         });
 
         const subordinateIds = new Set(
-          (allGuestUsers ?? []).filter((u: any) => {
+          (allGuestUsers ?? []).filter((u) => {
             if (idToTier[u.id] >= selfTier) return false;
             const inSupervisedDiv = supervisedDivisions.length > 0 && u.sales_division && supervisedDivisions.includes(u.sales_division);
             const inManualMap = manualSubordinateIds.has(u.id);
             return inSupervisedDiv || inManualMap;
-          }).map((u: any) => u.id as string)
+          }).map((u) => u.id as string)
         );
         const subordinateUsernames = new Set(
-          (allGuestUsers ?? []).filter((u: any) => subordinateIds.has(u.id)).map((u: any) => u.username as string)
+          (allGuestUsers ?? []).filter((u) => subordinateIds.has(u.id)).map((u) => u.username as string)
         );
 
         const manualUsernames = manualSubordinateIds.size > 0
-          ? (allGuestUsers ?? []).filter((u: any) => manualSubordinateIds.has(u.id)).map((u: any) => u.username).filter(Boolean)
+          ? (allGuestUsers ?? []).filter((u) => manualSubordinateIds.has(u.id)).map((u) => u.username).filter(Boolean)
           : [];
         const subordinateNames = Array.from(new Set(
-          (allGuestUsers ?? []).filter((u: any) => subordinateIds.has(u.id) || manualSubordinateIds.has(u.id))
-            .flatMap((u: any) => [u.full_name, u.username, u.full_name ? u.full_name.split(' ')[0] : null].filter(Boolean))
+          (allGuestUsers ?? []).filter((u) => subordinateIds.has(u.id) || manualSubordinateIds.has(u.id))
+            .flatMap((u) => [u.full_name, u.username, u.full_name ? u.full_name.split(' ')[0] : null].filter(Boolean))
         )) as string[];
         const tiketDari = (q: (b: any) => any) => q(supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`))
           .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
@@ -171,7 +173,7 @@ export async function ambilTiketUntuk(
             .eq("sales_division", selfDiv)
             .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-          (divTickets ?? []).forEach((t: Ticket) => {
+          sebagaiTicket(divTickets).forEach((t: Ticket) => {
             if (isMyTicket(t)) addUnique(t);
           });
         }
@@ -183,7 +185,7 @@ export async function ambilTiketUntuk(
   } else {
     const { data: ticketsData } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-    const mergedTickets = await gabungLogServices(saringTimBiasa(activeUser, ticketsData || []));
+    const mergedTickets = await gabungLogServices(saringTimBiasa(activeUser, sebagaiTicket(ticketsData)));
     return { tickets: mergedTickets, periksaPilihan: false };
   }
 }
@@ -229,7 +231,7 @@ export async function ambilTiketTertentu(activeUser: User | null | undefined, id
   if (!ids.length) return [];
   const { data, error } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("id", ids);
   if (error) throw error;
-  const hasil: Ticket[] = data ?? [];
+  const hasil: Ticket[] = sebagaiTicket(data);
   if (activeUser?.role === "guest" && !isPimpinan(activeUser)) return hasil;
   return gabungLogServices(saringTimBiasa(activeUser, hasil));
 }

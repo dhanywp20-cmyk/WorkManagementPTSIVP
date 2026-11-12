@@ -1,4 +1,5 @@
 'use client';
+import type { TablesUpdate } from '@/types/database';
 import { KotakInfo, Modal, PilihPenugasan, TombolModal, TombolSetujui } from '@/components/shared';
 import { appLink } from '@/lib/app-url';
 import { cobaIdentitas, tanpaIdentitas } from '@/lib/identitas';
@@ -16,7 +17,7 @@ export function AssignPTSModal({
   roomIdx?: number;
 }) {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
-  const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string; phone_number?: string }[]>([]);
+  const [supervisors, setSupervisors] = useState<{ id: string; full_name: string; team_type?: string | null; phone_number?: string | null }[]>([]);
   const [selectedPTSId, setSelectedPTSId] = useState('');
   const [selectedSupervisorId, setSelectedSupervisorId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -45,11 +46,11 @@ export function AssignPTSModal({
       supabase.from('users')
         .select('id, full_name, team_type, phone_number')
         .eq('jabatan', 'Supervisor')
-        .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
+        .then(({ data }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
     }
   }, [allowSupervisorRoute, req, roomIdx, currentUser]);
 
-  const calonHandler: { id: string; full_name: string; phone_number?: string } | undefined =
+  const calonHandler: { id: string; full_name: string; phone_number?: string | null } | undefined =
     selectedPTSId === 'SELF' ? currentUser : teamMembers.find(m => m.id === selectedPTSId);
 
   const anggotaLain = teamMembers.filter(m => m.id !== currentUser.id);
@@ -59,7 +60,7 @@ export function AssignPTSModal({
     setFormErr('');
     setRouteSaving(true);
     const sup = supervisors.find(s => s.id === selectedSupervisorId);
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload: TablesUpdate<'project_requests'> = {
       status: 'approved',
       approved_by: currentUser.full_name,
       approved_at: new Date().toISOString(),
@@ -107,7 +108,7 @@ export function AssignPTSModal({
     setFormErr('');
     setSaving(true);
 
-    let updatePayload: Record<string, unknown>;
+    let updatePayload: TablesUpdate<'project_requests'>;
     if (roomIdx === 0) {
       updatePayload = {
         assign_name: calonHandler.full_name,
@@ -216,7 +217,7 @@ export function AssignPTSModal({
             <p className="mb-2">Supervisor yang dipilih menerima WA untuk menugaskan anggota timnya, atau mengerjakan sendiri.</p>
             <div className="space-y-2">
               <PilihPenugasan nilai={selectedSupervisorId} onUbah={v => { setSelectedSupervisorId(v); setFormErr(''); }} label="Supervisor" kosong="- Pilih Supervisor -"
-                pilihan={supervisors.map(s => ({ v: s.id, l: s.full_name, ket: s.team_type }))} />
+                pilihan={supervisors.map(s => ({ v: s.id, l: s.full_name, ket: s.team_type ?? undefined }))} />
               <TombolSetujui onClick={handleRouteToSupervisor} disabled={routeSaving || !selectedSupervisorId} className="w-full">
                 {routeSaving ? 'Memproses...' : 'Setujui & Teruskan ke Supervisor'}
               </TombolSetujui>
@@ -231,7 +232,7 @@ export function AssignPTSModal({
             label={adaRute ? 'Atau tugaskan langsung ke' : 'Tugaskan ke'} kosong="- Pilih anggota Team PTS -"
             pilihan={[
               { v: 'SELF', l: 'Saya kerjakan sendiri', grup: 'Saya' },
-              ...anggotaLain.map(m => ({ v: m.id, l: m.full_name, ket: m.team_type, grup: 'Anggota Tim' })),
+              ...anggotaLain.map(m => ({ v: m.id, l: m.full_name, ket: m.team_type ?? undefined, grup: 'Anggota Tim' })),
             ]} />
         )}
 

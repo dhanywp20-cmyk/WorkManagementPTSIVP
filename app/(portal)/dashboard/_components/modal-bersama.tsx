@@ -20,10 +20,10 @@ export async function propagateUserRename(
 
   const { data, error } = await supabase.rpc('propagate_user_rename', {
     p_user_id: edited.id,
-    p_old_username: orig.username ?? null,
-    p_new_username: edited.username ?? null,
-    p_old_name: orig.full_name ?? null,
-    p_new_name: edited.full_name ?? null,
+    p_old_username: (orig.username ?? null) as string,
+    p_new_username: (edited.username ?? null) as string,
+    p_old_name: (orig.full_name ?? null) as string,
+    p_new_name: (edited.full_name ?? null) as string,
   });
   if (error) return { taraf: 'gagal', pesan: error.message };
 
@@ -107,7 +107,7 @@ export function Baris({ icon, label, value, children }: {
 
 export function Kelompok({ label, kosong, orang, warna }: {
   label: string; kosong: string; warna: string;
-  orang: { full_name: string; jabatan?: string; sales_division?: string; phone_number?: string }[];
+  orang: { full_name: string; jabatan?: string | null; sales_division?: string | null; phone_number?: string | null }[];
 }) {
   return (
     <div>

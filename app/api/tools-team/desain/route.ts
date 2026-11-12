@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
@@ -101,8 +102,8 @@ export async function POST(req: NextRequest) {
   const rujuk = await rujukGambarDesain(db, cek.data, jaga.user.id);
   if (!rujuk.ok) return gagal(rujuk.alasan);
   const { data, error } = await db.rpc('tools_simpan_desain', {
-    p_id: id, p_versi: versiLama, p_nama: nama, p_data: rujuk.data, p_jumlah: cek.jumlah,
-    p_ringkasan: ringkasanDesain(cek.data), p_gambar: gambar, p_user: jaga.user.id, p_user_nama: jaga.user.full_name,
+    p_id: id as string, p_versi: versiLama as number, p_nama: nama, p_data: rujuk.data as unknown as Json, p_jumlah: cek.jumlah,
+    p_ringkasan: ringkasanDesain(cek.data) as unknown as Json, p_gambar: gambar as string, p_user: jaga.user.id, p_user_nama: jaga.user.full_name,
   });
   if (error) {
     if (/konflik/.test(error.message)) return gagal('Desain ini baru saja diubah orang lain. Buka ulang versi terbaru.', 409);
@@ -119,7 +120,7 @@ async function pangkasRiwayat(db: Db, id: string, versiKini: number) {
   try {
     const { data: t } = await db.from('request_desain_ruang').select('versi').eq('desain_id', id);
     const dipakai = [...new Set(((t ?? []) as { versi: number }[]).map(x => x.versi))];
-    const kecuali = (q: ReturnType<ReturnType<Db['from']>['update']> | ReturnType<ReturnType<Db['from']>['delete']>) =>
+    const kecuali = <Q extends { not(kolom: string, op: string, nilai: string): Q }>(q: Q) =>
       (dipakai.length ? q.not('versi', 'in', `(${dipakai.join(',')})`) : q);
     await kecuali(db.from(VERSI).update({ gambar_hd: null }).eq('desain_id', id).lt('versi', versiKini).not('gambar_hd', 'is', null));
     if (versiKini > SIMPAN_VERSI) {

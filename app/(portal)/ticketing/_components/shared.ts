@@ -28,13 +28,13 @@ export async function fetchWACCTargets(
           .select("supervisor_id")
           .eq("sales_division", salesDiv);
         if (supMaps?.length) {
-          const supIds = supMaps.map((m: any) => m.supervisor_id);
+          const supIds = supMaps.map((m) => m.supervisor_id);
           const { data: sups } = await supabase.from("users")
             .select("full_name, phone_number, jabatan")
             .in("id", supIds)
             .not("phone_number", "is", null)
             .neq("phone_number", "");
-          sups?.forEach((s: any) => {
+          sups?.forEach((s) => {
             if (s.jabatan && ccJabatanList.includes(s.jabatan)) {
               targets.push({ phone: s.phone_number, name: s.full_name, relation: "supervisor" });
             }
@@ -46,13 +46,13 @@ export async function fetchWACCTargets(
           .select("supervisor_id")
           .eq("user_id", userId);
         if (userSupMaps?.length) {
-          const manualSupIds = userSupMaps.map((m: any) => m.supervisor_id);
+          const manualSupIds = userSupMaps.map((m) => m.supervisor_id);
           const { data: manualSups } = await supabase.from("users")
             .select("full_name, phone_number, jabatan")
             .in("id", manualSupIds)
             .not("phone_number", "is", null)
             .neq("phone_number", "");
-          manualSups?.forEach((s: any) => {
+          manualSups?.forEach((s) => {
             if (!targets.find(t => t.phone === s.phone_number)) {
               targets.push({ phone: s.phone_number, name: s.full_name, relation: "supervisor" });
             }
@@ -66,9 +66,9 @@ export async function fetchWACCTargets(
         .from("division_ivp_mappings").select("ivp_id").eq("sales_division", salesDiv);
       if (ivpRes?.length) {
         const { data: ivps } = await supabase.from("users").select("full_name, phone_number")
-          .in("id", ivpRes.map((s: any) => s.ivp_id))
+          .in("id", ivpRes.map((s) => s.ivp_id))
           .not("phone_number", "is", null).neq("phone_number", "");
-        ivps?.forEach((s: any) => {
+        ivps?.forEach((s) => {
           if (!targets.find(t => t.phone === s.phone_number)) {
             targets.push({ phone: s.phone_number, name: s.full_name, relation: "ivp_handler" });
           }

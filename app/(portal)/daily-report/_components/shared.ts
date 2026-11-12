@@ -7,7 +7,7 @@ export type { Priority, RepeatType, TeamUser, GuestUser } from '@/lib/jadwal/tam
 
 export type EntrySource = 'reminder' | 'ticket' | 'manual';
 
-export interface ReminderActivity {
+export type ReminderActivity = {
   reminder_id: string;
   title: string;
   category: string;
@@ -23,9 +23,9 @@ export interface ReminderActivity {
   description?: string;
   handler_name?: string;
   report_date?: string;
-}
+};
 
-export interface TicketActivity {
+export type TicketActivity = {
   ticket_id: string;
   project_name: string;
   address?: string;
@@ -37,9 +37,9 @@ export interface TicketActivity {
   sales_division?: string;
   handler_name?: string;
   report_date?: string;
-}
+};
 
-export interface ManualActivity {
+export type ManualActivity = {
   _key: string;
   category: string;
   project_name: string;
@@ -50,7 +50,7 @@ export interface ManualActivity {
   pic_name: string;
   pic_phone: string;
   submitted_by?: string;
-}
+};
 
 export interface TeamEntry {
   _key: string;
@@ -157,7 +157,7 @@ export async function fetchAllReminders(opts: {
 
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllReminders:', error.message); return []; }
-  return (data ?? []).map((r: any) => ({
+  return (data ?? []).map((r) => ({
     reminder_id: r.id,
     title: r.project_name,
     category: r.category ?? 'Internal',
@@ -233,7 +233,7 @@ export async function fetchReminderActivities(username: string, date: string): P
     .eq('due_date', date)
     .order('due_time', { ascending: true });
   if (error) { console.error('[DR] fetchReminderActivities:', error.message); return []; }
-  return (data ?? []).map((r: any) => ({
+  return (data ?? []).map((r) => ({
     reminder_id: r.id,
     title: r.project_name,
     category: r.category ?? 'Internal',
@@ -282,7 +282,7 @@ export async function fetchTicketActivities(username: string, date: string): Pro
 
 export async function fetchExistingReport(userId: string, date: string): Promise<DailyReport | null> {
   const { data } = await supabase.from('daily_reports').select('id,report_date,user_id,user_name,sales_division,reminder_activities,ticket_activities,manual_activities,reminder_notes,created_by,created_at,updated_at').eq('user_id', userId).eq('report_date', date).maybeSingle();
-  return data ?? null;
+  return (data ?? null) as DailyReport | null;
 }
 
 export async function fetchReports(filters: {

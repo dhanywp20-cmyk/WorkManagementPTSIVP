@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: session } = await supabase
-    .from('lc_quiz_sessions').select('*').eq('id', attempt.quiz_session_id).maybeSingle();
+    .from('lc_quiz_sessions').select('*').eq('id', attempt.quiz_session_id ?? '').maybeSingle();
   if (!session) return NextResponse.json({ error: 'Sesi quiz tidak ditemukan.' }, { status: 404 });
   if (session.session_type === 'essay') {
     return NextResponse.json({ error: 'Quiz essay tidak lewat jalur ini.' }, { status: 400 });
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   type AnswerRow = { id: string; question_id: string; answer: string };
   const answerRows = (answers ?? []) as AnswerRow[];
   const answerByQuestion = new Map(answerRows.map(a => [a.question_id, a]));
-  const perQuestion: Record<string, { correct_answer: string; is_correct: boolean }> = {};
+  const perQuestion: Record<string, { correct_answer: string | null; is_correct: boolean }> = {};
   let correct = 0;
 
   for (const q of questions ?? []) {
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
 
   const total = questionIds.length;
   const score = total ? (correct / total) * 100 : 0;
-  const passed = score >= session.passing_grade;
-  const timeTakenSec = Math.round((Date.now() - new Date(attempt.started_at).getTime()) / 1000);
+  const passed = score >= (session.passing_grade ?? 70);
+  const timeTakenSec = attempt.started_at ? Math.round((Date.now() - new Date(attempt.started_at).getTime()) / 1000) : 0;
 
   const tabSwitchesFinal = Math.max(attempt.tab_switches ?? 0, typeof tabSwitches === 'number' ? tabSwitches : 0);
 

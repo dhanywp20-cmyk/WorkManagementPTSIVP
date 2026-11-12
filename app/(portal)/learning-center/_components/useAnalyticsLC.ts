@@ -88,7 +88,7 @@ export function useAnalyticsLC() {
           const daftar = perSesi.get(x.quiz_session_id);
           if (daftar) daftar.push(x); else perSesi.set(x.quiz_session_id, [x]);
         }
-        const stats = ss.map((s: any) => {
+        const stats = ss.map((s) => {
           const att = perSesi.get(s.id);
           if (!att?.length) return null;
           const avg = att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length;

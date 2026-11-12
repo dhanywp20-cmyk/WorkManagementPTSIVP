@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 import { periksaJawabanTulis } from './galat/tulis';
 import { denganUnggahTahan } from './unggah-tahan';
 
@@ -87,7 +88,7 @@ async function tokenAkses(): Promise<string | null> {
   return dbToken;
 }
 
-export const supabase = createClient(
+export const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   { accessToken: tokenAkses, global: { fetch: denganUnggahTahan(fetchWithToken) } },

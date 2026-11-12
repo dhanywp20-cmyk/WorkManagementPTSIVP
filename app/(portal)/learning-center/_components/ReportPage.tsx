@@ -20,7 +20,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
 
   useEffect(() => {
     supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false })
-      .then(({ data: s }: { data: QuizSession[] | null }) => setSessions(s ?? []));
+      .then(({ data: s }) => setSessions((s ?? []) as QuizSession[]));
   }, []);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export function ReportPage({ initialSessionId, onSessionConsumed }: {
       if (userIds.length > 0) {
         const { data: us } = await supabase
           .from('users').select('id, full_name, username, jabatan, role, sales_division').in('id', userIds);
-        (us ?? []).forEach((u: any) => { userMap[u.id] = u; });
+        (us ?? []).forEach((u) => { userMap[u.id] = u; });
       }
       if (dibatalkan) return;
       setData(rows.map((r: any) => ({ ...r, users: userMap[r.user_id] ?? null })));

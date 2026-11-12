@@ -17,8 +17,8 @@ export function TeamPage() {
       supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
       supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
     ]);
-    setUsers((u ?? []).filter((u: any) => u.role !== 'guest'));
-    setAttempts(a ?? []);
+    setUsers((u ?? []).filter(x => x.role !== 'guest') as User[]);
+    setAttempts((a ?? []) as QuizAttempt[]);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -71,11 +71,11 @@ export function TeamPage() {
                 </td></tr>
               )}
               {filtered.map(u => {
-                const ua = attempts.filter((a: any) => a.user_id === u.id);
-                const gradedUa = ua.filter((a: any) => (a as any).grading_status !== 'pending_review');
+                const ua = attempts.filter((a) => a.user_id === u.id);
+                const gradedUa = ua.filter((a) => (a as any).grading_status !== 'pending_review');
                 const pendingCount = ua.length - gradedUa.length;
-                const avg = gradedUa.length ? gradedUa.reduce((s: number, a: any) => s + (a.score ?? 0), 0) / gradedUa.length : null;
-                const passed = gradedUa.filter((a: any) => a.passed).length;
+                const avg = gradedUa.length ? gradedUa.reduce((s: number, a) => s + (a.score ?? 0), 0) / gradedUa.length : null;
+                const passed = gradedUa.filter((a) => a.passed).length;
                 return (
                   <tr key={u.id} className="stagger-item hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3.5">

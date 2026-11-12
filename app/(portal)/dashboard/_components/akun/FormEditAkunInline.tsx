@@ -41,7 +41,7 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-          <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+          <select id="f-dashboard-components-modal-akun-23" value={editingUser.role ?? ''} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
             <option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest / Sales</option>
           </select>
         </div>

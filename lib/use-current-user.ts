@@ -6,13 +6,13 @@ export interface CurrentUser {
   id?: string;
   username?: string;
   full_name?: string;
-  role?: string;
-  team_type?: string;
-  jabatan?: string;
-  sales_division?: string;
-  phone_number?: string;
-  allowed_menus?: string[];
-  access_level?: string;
+  role?: string | null;
+  team_type?: string | null;
+  jabatan?: string | null;
+  sales_division?: string | null;
+  phone_number?: string | null;
+  allowed_menus?: string[] | null;
+  access_level?: string | null;
   [key: string]: unknown;
 }
 

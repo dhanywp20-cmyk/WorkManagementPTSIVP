@@ -157,7 +157,7 @@ export function AdminDashboard({ user }: { user: User }) {
           const daftar = perSesi.get(a.quiz_session_id);
           if (daftar) daftar.push(a); else perSesi.set(a.quiz_session_id, [a]);
         }
-        const sStats = ss.map((s: any) => {
+        const sStats = ss.map((s) => {
           const sa = perSesi.get(s.id);
           if (!sa?.length) return null;
           const avg = sa.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / sa.length;

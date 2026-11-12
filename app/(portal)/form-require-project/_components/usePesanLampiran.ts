@@ -52,7 +52,7 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     if (chatRoomFilter !== 'all') {
       finalMessage = `[${chatRoomFilter}] ${finalMessage}`;
     }
-    const { error } = await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: finalMessage }]);
+    const { error } = await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: finalMessage }]);
     setSendingMsg(false);
     if (error) { notify('error', 'Gagal kirim pesan.'); return; }
     setMsgText('');
@@ -72,7 +72,7 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     notify('success', `File "${file.name}" berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
     const roomLabelChat = detailRoomIdx > 0 ? (selectedRequest.rooms?.[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`) : null;
-    await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📎 Melampirkan file: ${file.name}` }]);
+    await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '', message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📎 Melampirkan file: ${file.name}` }]);
   };
 
   const handleCategoryUpload = async (file: File, category: KategoriLampiran) => {
@@ -96,7 +96,10 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
     notify('success', `${label} Rev-${revisionNum} berhasil diupload!`);
     fetchAttachments(selectedRequest.id);
     const roomLabelChat = detailRoomIdx > 0 ? (selectedRequest.rooms?.[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`) : null;
-    await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📁 ${label} Revision ${revisionNum} diupload: ${file.name}` }]);
+    await supabase.from('project_messages').insert([{
+      request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role ?? '',
+      message: `${roomLabelChat ? `[${roomLabelChat}] ` : ''}📁 ${label} Revision ${revisionNum} diupload: ${file.name}`,
+    }]);
   };
 
   const handleOpenDetail = async (req: ProjectRequest) => {
@@ -118,7 +121,7 @@ export function usePesanLampiran(k: PesanLampiranKonteks) {
       if (ccUsers?.length) {
         setInternalSalesNames(prev => {
           const next = { ...prev };
-          ccUsers.forEach((u: any) => { next[u.id] = u.full_name; });
+          ccUsers.forEach((u) => { next[u.id] = u.full_name; });
           return next;
         });
       }

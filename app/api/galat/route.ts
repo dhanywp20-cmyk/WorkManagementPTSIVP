@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
     }
     const pengguna = await getSessionUser(request).catch(() => null);
     await db.rpc('catat_galat_klien', {
-      p_sidik: sidik, p_pesan: l.pesan, p_jalur: l.jalur ?? null, p_sumber: l.sumber, p_digest: l.digest ?? null,
-      p_ua: (request.headers.get('user-agent') ?? '').slice(0, 160), p_user: pengguna?.id ?? null,
+      p_sidik: sidik, p_pesan: l.pesan, p_jalur: (l.jalur ?? null) as string, p_sumber: l.sumber, p_digest: (l.digest ?? null) as string,
+      p_ua: (request.headers.get('user-agent') ?? '').slice(0, 160), p_user: (pengguna?.id ?? null) as string,
     });
     if (Math.random() < 0.02) {
       const batas = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);

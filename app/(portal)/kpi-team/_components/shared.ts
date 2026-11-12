@@ -24,14 +24,14 @@ export interface KPIMember {
   lcTahunan?: RekapLCTahunan;
 }
 
-export interface KPISettings {
+export type KPISettings = {
   lcMinScore: number;
   rndTarget: number;
   ticketOverdueWeight: number;
   bastWeight: number;
   lcWeight: number;
   rndWeight: number;
-}
+};
 
 export const DEFAULT_KPI_SETTINGS: KPISettings = {
   lcMinScore: 70, rndTarget: 2,

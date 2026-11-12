@@ -130,11 +130,11 @@ export function QuestionsPage({ user }: { user: User }) {
 
   const load = useCallback(async () => {
     const { data: mats } = await supabase.from('lc_materials').select('*').order('materi_name');
-    setMaterials(mats ?? []);
+    setMaterials((mats ?? []) as Material[]);
     let q = supabase.from('lc_questions').select('*').order('created_at', { ascending: false });
     if (selectedMat) q = q.eq('material_id', selectedMat);
     const { data } = await q;
-    setQuestions(data ?? []);
+    setQuestions((data ?? []) as Question[]);
   }, [selectedMat]);
   useEffect(() => { load(); }, [load]);
 

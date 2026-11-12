@@ -44,7 +44,7 @@ export async function bacaPengaturan(paksa = false): Promise<PengaturanNotifikas
   try {
     const { data } = await supabase.from('app_settings').select('value').eq('key', KUNCI).maybeSingle();
     if (data?.value) {
-      const j = JSON.parse(data.value) as Partial<PengaturanNotifikasi>;
+      const j = (typeof data.value === 'string' ? JSON.parse(data.value) : data.value) as Partial<PengaturanNotifikasi>;
       cache = {
         aktif: { ...BAWAAN.aktif, ...(j.aktif ?? {}) },
         telegramChatId: j.telegramChatId ?? '',

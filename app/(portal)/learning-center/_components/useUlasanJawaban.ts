@@ -111,7 +111,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
       const belum = orderedQs
         .filter(q => q.question_type === 'essay')
         .filter(q => scoreMap[q.id] === undefined && !feedbackMap[q.id])
-        .map(q => ({ q, teks: (ans ?? []).find((x: any) => x.question_id === q.id)?.essay_text?.trim() }))
+        .map(q => ({ q, teks: (ans ?? []).find((x) => x.question_id === q.id)?.essay_text?.trim() }))
         .filter((x): x is { q: Question; teks: string } => !!x.teks);
       if (belum.length > 0) void nilaiBorongan(attempt.id, belum.map(x => x.q), ans ?? []);
     }

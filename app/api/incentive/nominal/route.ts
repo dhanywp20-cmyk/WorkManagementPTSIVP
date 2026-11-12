@@ -1,3 +1,4 @@
+import type { Json } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getSessionUser } from '@/lib/auth/server';
@@ -121,7 +122,7 @@ export async function PUT(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const aturan = rapikanAturanNominal(body);
   const { error } = await supabase.from('app_settings')
-    .upsert({ key: KUNCI_ATURAN_NOMINAL, value: aturan, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    .upsert({ key: KUNCI_ATURAN_NOMINAL, value: aturan as unknown as Json, updated_at: new Date().toISOString() }, { onConflict: 'key' });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true, aturan });
 }

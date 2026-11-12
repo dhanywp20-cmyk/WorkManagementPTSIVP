@@ -33,8 +33,8 @@ export function BlokAssignPTS({ assignModal, currentUser, fetchMessages, fetchRe
                 setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
               } else {
                 supabase.from('project_requests').select('rooms').eq('id', assignModal.req!.id).maybeSingle()
-                  .then(({ data }: { data: { rooms: RoomDetail[] } | null }) => {
-                    if (data) setSelectedRequest(prev => prev ? { ...prev, rooms: data.rooms } : null);
+                  .then(({ data }) => {
+                    if (data) setSelectedRequest(prev => prev ? { ...prev, rooms: data.rooms as unknown as RoomDetail[] } : null);
                   });
               }
               fetchMessages(assignModal.req!.id);

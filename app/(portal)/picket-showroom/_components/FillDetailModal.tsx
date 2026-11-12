@@ -1,4 +1,5 @@
 'use client';
+import type { TablesUpdate } from '@/types/database';
 import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -45,7 +46,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt').eq('piket_id',row.id),
       ]);
       const plByKg:Record<string,ProdukLain[]>={};
-      (plRes.data||[]).forEach((pl:{kegiatan_id:string;nama:string;watt:number})=>{(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
+      (plRes.data||[]).forEach((pl)=>{if(!pl.kegiatan_id)return;(plByKg[pl.kegiatan_id]=plByKg[pl.kegiatan_id]||[]).push({nama:pl.nama||'',watt:pl.watt||0});});
       if(detailRes.data&&detailRes.data.length>0){
         setEntries((detailRes.data as KegiatanEntry[]).map(d=>({
           id:d.id,jenis_kegiatan:d.jenis_kegiatan||'Demo Product',
@@ -56,7 +57,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           team_rnd:(d as any).team_rnd||'',
         })));
       }
-      if(usersRes.data)setPtUsers(usersRes.data.filter((u:any)=>u.role!=='admin'&&u.role!=='superadmin') as any[]);
+      if(usersRes.data)setPtUsers(usersRes.data.filter((u)=>u.role!=='admin'&&u.role!=='superadmin') as any[]);
       setLoadingE(false);
     })();
   },[row.id]);
@@ -113,7 +114,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       if(plRows.length>0){const{error:plErr}=await supabase.from('piket_produk_lain').insert(plRows);if(plErr)console.warn('Gagal simpan produk_lain:',plErr.message);}
       const fd=ins.find(e=>e.jenis_kegiatan==='Demo Product');
 
-      const updatePayload: Record<string,any> = {
+      const updatePayload: TablesUpdate<'piket_schedules'> = {
         tamu_instansi:fd?.tamu_instansi||null,
         kebutuhan:fd?.kebutuhan||[],
         updated_at:now,

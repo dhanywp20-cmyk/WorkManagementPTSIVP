@@ -19,7 +19,7 @@ export interface PengaturanOverdueKonteks {
 export function usePengaturanOverdue(k: PengaturanOverdueKonteks) {
   const { currentUser, getOverdueSetting, notify, overdueForm, overdueTargetTicket, setOverdueForm, setOverdueSettings, setOverdueTargetTicket, setShowOverdueSetting } = k;
   const fetchOverdueSettings = async () => {
-    try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data); } catch { }
+    try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data as OverdueSetting[]); } catch { }
   };
 
   const saveOverdueSetting = async () => {

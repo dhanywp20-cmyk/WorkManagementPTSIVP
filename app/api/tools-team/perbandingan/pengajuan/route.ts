@@ -1,3 +1,4 @@
+import type { Json, TablesUpdate } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import '@/lib/wa/server';
 import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   const { count } = await db.from(TABEL).select('id', { count: 'exact', head: true }).eq('dibuat_oleh', u.id).eq('status', 'menunggu');
   if ((count ?? 0) >= aturan.maksMenunggu) return gagal(`Masih ada ${count} pengajuan menunggu verifikasi - tunggu diproses dulu.`, 429);
   const judul = k.data.judul || k.data.produk.map(p => p.nama).join(' vs ');
-  const { data: baru, error } = await db.from(TABEL).insert({ dibuat_oleh: u.id, dibuat_nama: u.full_name, judul, data: k.data }).select('id').single();
+  const { data: baru, error } = await db.from(TABEL).insert({ dibuat_oleh: u.id, dibuat_nama: u.full_name, judul, data: k.data as unknown as Json }).select('id').single();
   if (error || !baru) return gagal('Gagal menyimpan pengajuan.', 500);
   const kutip = (xs: string[]) => xs.map(t => `"${t.replace(/"/g, '')}"`).join(',');
   const filter = [`role.in.(${kutip(aturan.verifikatorRole)})`, ...(aturan.verifikatorTim.length ? [`team_type.in.(${kutip(aturan.verifikatorTim)})`] : [])].join(',');
@@ -99,7 +100,7 @@ export async function PATCH(req: NextRequest) {
     ubah.data = k.data;
   }
   if (body.aksi === 'tolak' && !catatan) return gagal('Tulis alasan penolakan supaya pengaju tahu yang harus diperbaiki.');
-  const { error } = await db.from(TABEL).update(ubah).eq('id', r.id).eq('status', 'menunggu');
+  const { error } = await db.from(TABEL).update(ubah as TablesUpdate<'tools_perbandingan'>).eq('id', r.id).eq('status', 'menunggu');
   if (error) return gagal('Gagal menyimpan verifikasi.', 500);
   const { data: pengaju } = await db.from('users').select('id, phone_number').eq('id', r.dibuat_oleh).maybeSingle();
   if (pengaju) {
