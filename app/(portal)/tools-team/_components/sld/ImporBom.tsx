@@ -46,7 +46,6 @@ export function ImporBom({ a }: { a: KeadaanSLD }) {
           ...(fo && !p.gambar ? { gambar: fo.dataUrl, rasio: fo.rasio, h: Math.max(10, Math.min(80, Math.round((p.w / fo.rasio) * 2) / 2)) } : {}),
         };
       }) }));
-      for (const r of h.baris) { const fo = h.foto.get(r.no); if (fo) a.ingatFoto(isiDariBom(r).model, fo); }
       a.tambahGaleri(h.baris.filter(r => h.foto.has(r.no)).map(r => ({ id: idBaru('g'), nama: `${r.no}. ${r.model || r.merek}`, gambar: h.foto.get(r.no)!.dataUrl, rasio: h.foto.get(r.no)!.rasio })));
       setHasil({ ...h, dipasang, belum: h.baris.filter(r => !sudah.has(r.no)) });
     } catch (e) { setGalat(e instanceof Error ? e.message : 'BOM gagal dibaca.'); } finally {

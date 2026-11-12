@@ -225,6 +225,12 @@ export function petaFoto(d: DokSLD): PetaFoto {
   return Object.fromEntries(semuaPerangkatDok(d).filter(p => p.gambar).map(p => [p.id, { gambar: p.gambar!, rasio: p.rasio }]));
 }
 
+export function hapusFotoLokal(d: DokSLD): DokSLD {
+  const rasioBawaan = (src?: string) => Object.values(FOTO_PRODUK).find(f => f.src === src)?.rasio;
+  const bersih = (p: Perangkat) => (p.gambar ? { ...p, gambar: undefined, rasio: p.foto ? (rasioBawaan(p.foto) ?? p.rasio) : undefined } : p);
+  return { ...d, perangkat: d.perangkat.map(bersih), ...(d.ruangLain ? { ruangLain: d.ruangLain.map(r => ({ ...r, perangkat: r.perangkat.map(bersih) })) } : {}) };
+}
+
 export function pasangFoto(d: DokSLD, peta: PetaFoto): DokSLD {
   const pasang = (p: Perangkat) => {
     const f = peta[p.id];

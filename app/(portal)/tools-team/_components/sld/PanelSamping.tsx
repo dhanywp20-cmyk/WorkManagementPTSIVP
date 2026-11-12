@@ -94,6 +94,7 @@ export function PanelSamping({ a, onTutup, tim }: { a: KeadaanSLD; onTutup?: () 
             <b>{lokal.length} perangkat</b> memakai foto yang hanya ada di browser ini. Di akun lain (dan di Request Design) tampil foto bawaan / ilustrasi.
             {tim ? ' Simpan ke katalog tim supaya sama untuk semua:' : ''}
           </p>
+          <p className="mt-1">Foto salah / tidak sengaja (mis. screenshot)? <button type="button" onClick={a.hapusSemuaFotoLokal} className="underline font-bold">Hapus semua foto lokal</button> <span className="text-sky-700">(kembali ke foto bawaan / ilustrasi, bisa Ctrl+Z)</span></p>
           {tim && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {lokalUnik.map(x => (

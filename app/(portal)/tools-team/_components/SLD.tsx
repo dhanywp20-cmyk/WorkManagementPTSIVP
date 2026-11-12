@@ -25,6 +25,7 @@ import { useKatalogTim } from './sld/useKatalogTim';
 import { DialogObjekTim } from './sld/KatalogTim';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
+const PENANDA_KLIP = '[SLD-AV]';
 const GERAK = 'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none';
 const LACI_KIRI = `absolute left-2 top-2 bottom-2 z-20 w-[260px] max-w-[85%] overflow-auto rounded-2xl bg-white border border-slate-200 shadow-xl p-3 ${GERAK}`;
 const POPUP_KANAN = `absolute right-2 top-2 z-20 w-[350px] max-w-[90%] max-h-[calc(100%-16px)] overflow-auto rounded-2xl shadow-xl origin-top-right ${GERAK}`;
@@ -78,7 +79,7 @@ export function SLD() {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const x = aRef.current, p = x.pilih, ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
-      if (ctrl && k === 'c') { if (x.salin()) e.preventDefault(); return; }
+      if (ctrl && k === 'c') return;
       if (ctrl && k === 'a') { e.preventDefault(); x.pilihBanyak([...x.dok.perangkat, ...x.dok.teks, ...(x.dok.zona ?? [])].map(o => o.id)); return; }
       if (ctrl && k === 'd') { e.preventDefault(); if (x.salin()) x.tempel(); return; }
       if (x.terpilih.length > 1) {
@@ -112,17 +113,31 @@ export function SLD() {
       if (per) x.ubahPerangkat(per.id, { x: per.x + d[0] * s, y: per.y + d[1] * s });
       else if (t) x.ubahTeks(t.id, { x: t.x + d[0] * s, y: t.y + d[1] * s });
     };
-    const tempel = (e: ClipboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName))) return;
-      const x = aRef.current, p = x.pilih, f = gambarDariClipboard(e);
-      if (!f || p?.jenis !== 'p') { if (!f && x.tempel()) e.preventDefault(); return; }
+    const diIsian = (e: Event) => { const el = e.target as HTMLElement | null; return !!el && (el.isContentEditable || ['INPUT', 'TEXTAREA'].includes(el.tagName)); };
+    const salin = (e: ClipboardEvent) => {
+      if (diIsian(e) || window.getSelection()?.toString() || !aRef.current.salin()) return;
+      e.clipboardData?.setData('text/plain', `${PENANDA_KLIP} ${aRef.current.terpilih.length || 1} item`);
       e.preventDefault();
-      kompresGambar(f).then(g => x.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true }));
+    };
+    const tempel = (e: ClipboardEvent) => {
+      if (diIsian(e)) return;
+      const x = aRef.current, p = x.pilih;
+      if ((e.clipboardData?.getData('text/plain') ?? '').startsWith(PENANDA_KLIP)) { if (x.tempel()) e.preventDefault(); return; }
+      const f = gambarDariClipboard(e);
+      if (!f || p?.jenis !== 'p') return;
+      e.preventDefault();
+      const per = x.dok.perangkat.find(q => q.id === p.id);
+      setKonfirmasi({
+        message: `Pakai gambar dari clipboard sebagai foto "${per?.nama || 'perangkat'}"?`,
+        description: 'Gambar yang ditempel (Ctrl+V) menjadi foto perangkat ini dan hanya tersimpan di browser Anda. Bila maksudnya menempel item, pilih Batal lalu salin item dengan Ctrl+C dulu.',
+        confirmLabel: 'Pakai sebagai foto',
+        onConfirm: () => kompresGambar(f).then(g => aRef.current.pasangFotoKe(p.id, g, 'Tempelan')).catch(err => setPesan({ t: err instanceof Error ? err.message : 'Foto gagal ditempel.', galat: true })),
+      });
     };
     window.addEventListener('keydown', tekan);
+    window.addEventListener('copy', salin);
     window.addEventListener('paste', tempel);
-    return () => { window.removeEventListener('keydown', tekan); window.removeEventListener('paste', tempel); };
+    return () => { window.removeEventListener('keydown', tekan); window.removeEventListener('copy', salin); window.removeEventListener('paste', tempel); };
   }, []);
 
   const jalankan = async (label: string, f: () => Promise<void>) => {

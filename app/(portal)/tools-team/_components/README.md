@@ -102,6 +102,10 @@ FOTO PERANGKAT HANYA DI BROWSER: tidak pernah diunggah ke Supabase / Vercel (hem
 localStorage disimpan lewat `tanpaFoto()`, foto terpisah di IndexedDB. Fitur simpan ke server nanti
 WAJIB memakai `tanpaFoto()` - dijaga uji/sld.ts.
 
+Foto lokal TIDAK diingat per model lagi (dulu terpasang otomatis ke setiap SLD yang dibuka dan menyebar salah,
+mis. screenshot). Ctrl+C mengisi clipboard sistem dengan penanda `[SLD-AV]`, Ctrl+V hanya menempel item bila
+penanda itu ada; gambar dari clipboard selalu dikonfirmasi dulu sebelum jadi foto. Periksa: "Hapus semua foto lokal".
+
 SATU-SATUNYA PENGECUALIAN: katalog tim. Object yang sengaja dibagikan lewat "Tambah object" / "Simpan ke
 katalog tim" disimpan dengan foto JPEG kecil (maks 400 px, dikompres di browser, maks 160 ribu karakter) di
 tabel tools_sld_katalog. Daftar katalog tidak memuat foto; foto disajikan per object lewat
