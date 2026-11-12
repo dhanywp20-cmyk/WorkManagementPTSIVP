@@ -58,6 +58,18 @@ export async function pastikanAdmin(req: NextRequest): Promise<HasilPenjaga> {
   return masuk;
 }
 
+const PERAN_SEMUA_MENU = ['admin', 'superadmin', 'team', 'team_pts'];
+
+export async function pastikanMenu(req: NextRequest, kunci: string): Promise<HasilPenjaga> {
+  const masuk = await pastikanMasuk(req);
+  if (!masuk.ok) return masuk;
+  if (PERAN_SEMUA_MENU.includes((masuk.user.role ?? '').toLowerCase())) return masuk;
+  const { data } = await getAdminClient().from('users').select('allowed_menus, pimpinan').eq('id', masuk.user.id).maybeSingle();
+  const u = data as { allowed_menus?: string[] | null; pimpinan?: boolean | null } | null;
+  if (u?.pimpinan || (Array.isArray(u?.allowed_menus) && u.allowed_menus.includes(kunci))) return masuk;
+  return { ok: false, status: 403, alasan: 'Menu ini tidak diberikan untuk akun Anda.' };
+}
+
 export async function pastikanAksesPenuh(req: NextRequest, alasan: string): Promise<HasilPenjaga> {
   const masuk = await pastikanMasuk(req);
   if (!masuk.ok) return masuk;

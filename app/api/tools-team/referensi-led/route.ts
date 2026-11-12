@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { KUNCI_REFERENSI_LED, bersihkanReferensiLED } from '@/lib/tools-team';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 
 async function penjaga(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return { jaga, boleh: false, db: null };
   const db = getAdminClient();
   const { data } = await db.from('users').select('role, access_level').eq('id', jaga.user.id).maybeSingle();

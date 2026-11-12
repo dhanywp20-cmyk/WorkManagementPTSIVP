@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pastikanMasuk } from '@/lib/auth/penjaga-admin';
+import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
 import { MAKS_IMPOR_SEKALI, MAKS_MODEL_PER_AKUN, MAKS_OBJEK_PER_AKUN, MAKS_TOTAL_MODEL, periksaObjekSaya, type IsiObjekSaya } from '@/lib/objek-saya';
@@ -22,7 +22,7 @@ async function kuota(db: Db, userId: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   const sp = req.nextUrl.searchParams;
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   if (await pimpinanDiDb(db, jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
+  const jaga = await pastikanMenu(req, 'tools-team');
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   if (await pimpinanDiDb(db, jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
