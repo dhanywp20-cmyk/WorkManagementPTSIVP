@@ -20,7 +20,7 @@ export function useFormReview() {
   const searchParams = useSearchParams();
 
   const [currentUser, setCurrentUser] = useState<GuestUser | null>(null);
-  const [dashLoading, setDashLoading] = useState(false);
+  const [dashLoading, ] = useState(false);
   const [appReady, setAppReady] = useState(false);
   const [loadingBar, setLoadingBar] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('Loading...');
@@ -336,7 +336,6 @@ updated_at';
     setDeleteConfirmText('');
     setShowDeleteModal(true);
   };
-
 
   const filteredReviews = reviews.filter(r => {
     if (filterReviewCat !== 'all' && r.review_category !== filterReviewCat) return false;

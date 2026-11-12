@@ -25,8 +25,6 @@ export const SEVERITY_STYLE = {
 
 export const todayStr   = () => new Date().toISOString().split('T')[0];
 
-const dayOfWeek  = () => ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][new Date().getDay()];
-
 export const monthStart = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0]; };
 
 export function getMonday() {

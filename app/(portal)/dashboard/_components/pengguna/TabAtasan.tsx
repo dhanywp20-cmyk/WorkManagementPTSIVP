@@ -86,7 +86,6 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
             ) : (
               <div className="space-y-3">
                 {Object.entries(atasanByDiv).sort(([a], [b]) => a.localeCompare(b)).map(([division, maps]) => {
-                  const supIdsInDiv = new Set(maps.map(m => m.supervisor_id));
                   const maxAtasanTier = maps.reduce((max, m) => {
                     const atasan = allUsers.find(a => a.id === m.supervisor_id);
                     const t = atasan?.jabatan ? (JABATAN_CONFIG[atasan.jabatan as JabatanType]?.tier ?? 0) : 0;

@@ -93,7 +93,7 @@ export function DaftarReview() {
                   switchTab === 'Demo Product' ? 'Product Demo' : 'Product BAST',
                   switchTab === 'Demo Product' ? 'Grade PK' : 'Grade Training',
                   switchTab === 'BAST' ? 'Grade PK' : null,
-                  'Status', 'Action'].filter(Boolean).map((h, i, arr) => (
+                  'Status', 'Action'].filter(Boolean).map((h, i, _arr) => (
                   <th key={i} className={`px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${h === 'Action' || h === 'No' ? 'text-center' : 'text-left'}`}>
                     {h === 'No' && selectMode && isAdmin
                       ? <input type="checkbox"

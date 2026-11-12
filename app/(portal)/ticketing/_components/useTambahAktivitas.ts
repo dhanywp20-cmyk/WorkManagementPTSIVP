@@ -264,7 +264,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
               ticket_id: selectedTicket.id,
               notes: `Ticket ID: ${selectedTicket.id} | Project: ${selectedTicket.project_name} | Dibuat otomatis dari Platform Ticketing saat status Onsite dijadwalkan`,
             };
-            const { error: reminderErr } = await supabase.from("reminders").insert([reminderPayload]);
+            await supabase.from("reminders").insert([reminderPayload]);
           } catch { }
         }
       }

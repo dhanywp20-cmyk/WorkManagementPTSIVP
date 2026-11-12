@@ -194,7 +194,7 @@ function gambarPeta(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
 }
 
 export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
-  const { THREE, scene, renderer } = m;
+  const { THREE, scene } = m;
   let peta = simpanan.get(m);
   if (!peta) { peta = new Map(); simpanan.set(m, peta); }
   const ada = new Set(daftar.map(x => x.p.id));

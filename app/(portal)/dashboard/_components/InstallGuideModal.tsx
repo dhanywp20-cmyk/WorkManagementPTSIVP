@@ -2,7 +2,7 @@
 import { ModalPortal } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string; onClose: () => void }) {
+export function InstallGuideModal({ onClose }: { warnaUtama: string; onClose: () => void }) {
   return (
     <ModalPortal>
       <div role="dialog" aria-modal="true" aria-label="Panduan pasang aplikasi"

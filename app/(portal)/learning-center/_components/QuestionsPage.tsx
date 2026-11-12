@@ -185,7 +185,7 @@ export function QuestionsPage({ user }: { user: User }) {
   } as const;
 
   const {
-    hasilkanSoal, simpanHasil, handleGenerate, handleBanding,
+    simpanHasil, handleGenerate, handleBanding,
   } = useBuatSoal({
     batchName, genCount, genDiff, genExtraPrompt, genType, kolomUrutanAda, load, materials, modelBandingA, modelBandingB, pdfFile,
     pdfRef, questions, selectedMat, setBatchName, setDialog, setGenExtraPrompt, setGenStatus, setGenerating, setHasilBanding,

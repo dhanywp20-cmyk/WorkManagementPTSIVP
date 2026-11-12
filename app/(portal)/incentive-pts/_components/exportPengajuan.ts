@@ -36,7 +36,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   let row = 2;
 
-  const { daftarProyek, akumulasi, namaBelumFinal, orangUrut, perOrangTahun, installerList, tahunUrut, sufiksTahun, urutPeran } = siapkanDataSummary({
+  const { daftarProyek, namaBelumFinal, orangUrut, perOrangTahun, installerList, tahunUrut, sufiksTahun, urutPeran } = siapkanDataSummary({
     projects, supportsMap, orgList, managerUserId, managerName, sk, tahapUrut, totalPersenTahap,
   });
 

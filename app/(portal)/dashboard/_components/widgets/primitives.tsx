@@ -23,7 +23,7 @@ export interface WidgetDef {
 import { UBIN, BAYANG_UBIN, AKSEN_UTAMA, LABEL_UBIN, RelAksen } from '@/components/shared/ubin';
 export { UBIN, BAYANG_UBIN, AKSEN_UTAMA, LABEL_UBIN, RelAksen };
 
-export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
+export function WidgetCard({ title, children, onSeeAll, seeAllLabel }: {
   title: string; icon: string; accent: string;
   children: React.ReactNode; onSeeAll?: () => void; seeAllLabel?: string;
 }) {

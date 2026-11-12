@@ -1,23 +1,11 @@
 'use client';
 import ExcelJS from 'exceljs';
 
-const NAVY = '1B3A6B';
-
-const LIGHT_GRAY = 'F5F5F5';
-
 const BORDER_COLOR = 'CCCCCC';
 
 export function thinBorder(): Partial<ExcelJS.Borders> {
   const side: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: BORDER_COLOR } };
   return { top: side, bottom: side, left: side, right: side };
-}
-
-function headerFont(size = 10): Partial<ExcelJS.Font> {
-  return { bold: true, color: { argb: 'FFFFFF' }, size, name: 'Arial' };
-}
-
-function headerFill(): ExcelJS.Fill {
-  return { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
 }
 
 export function dataFont(size = 10): Partial<ExcelJS.Font> {
@@ -27,11 +15,6 @@ export function dataFont(size = 10): Partial<ExcelJS.Font> {
 export function sumCell(formula: string, result: number): { formula: string; result: number } {
   return { formula, result };
 }
-
-const ROLE_JUDUL: Record<string, string> = {
-  pic: 'PIC', support: 'Support', supervisor: 'Supervisor',
-  manager: 'Manager', installer: 'PTS Daerah',
-};
 
 export const NAVY_HDR = '1F3864';
 

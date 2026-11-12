@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { clearSession, getSession } from '@/lib/auth/sesi';
@@ -29,18 +29,17 @@ import { siapkanSinkronInsentif } from './siapkanSinkronInsentif';
 import { useBukaJadwalDariTautan } from './useBukaJadwalDariTautan';
 
 export function useHalamanJadwal() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [appReady, setAppReady]             = useState(false);
-  const [dashLoading, setDashLoading]       = useState(false);
-  const [loginTime, setLoginTime]           = useState<number | null>(null);
+  const [, ]       = useState(false);
+  const [, setLoginTime]           = useState<number | null>(null);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [showBellPopup, setShowBellPopup]   = useState(false);
   const [myReminders, setMyReminders]       = useState<Reminder[]>([]);
   const [currentUser, setCurrentUser]       = useState<TeamUser | null>(null);
   const [teamUsers, setTeamUsers]           = useState<TeamUser[]>([]);
   const [managerUserId, setManagerUserId]   = useState('');
-  const [myJabatan, setMyJabatan]           = useState('');
+  const [, setMyJabatan]           = useState('');
   const [myIsInternalSales, setMyIsInternalSales] = useState(false);
   const [guestUsers, setGuestUsers]         = useState<GuestUser[]>([]);
   const [reminders, setReminders]           = useState<Reminder[]>([]);
@@ -159,10 +158,9 @@ export function useHalamanJadwal() {
 
   const emptyForm = buatFormKosong();
   const [formData, setFormData] = useState(emptyForm);
-  const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
 
   const {
-    daftarProyekLama, hasilCarianProyek, mulaiBuatReminder, mulaiRequestJadwal, konfirmasiProyekLama,
+    hasilCarianProyek, mulaiBuatReminder, mulaiRequestJadwal, konfirmasiProyekLama,
   } = useProyekLama({
     buatUntukGuest, carianProyek, emptyForm, praPilihProyek, reminders, setBuatUntukGuest, setCarianProyek, setEditingReminder,
     setExtraDates, setFormData, setLangkahBuat, setPraFillGuest, setPraPilihProyek, setProyekLamaTerpilih, setShowFormModal,
@@ -251,14 +249,14 @@ export function useHalamanJadwal() {
 
   const { fetchTeamUsers, fetchGuestUsers, fetchPTSCabangUsers } = useMuatPengguna({ setGuestUsers, setPtsCabangUsers, setTeamUsers });
 
-  const { fetchRemindersForUser, fetchRemindersQuiet, fetchReminders } = useMuatJadwal({ currentUser, managerUserId, setFetchError, setListLoading, setReminders });
+  const { fetchRemindersQuiet, fetchReminders } = useMuatJadwal({ currentUser, managerUserId, setFetchError, setListLoading, setReminders });
 
   const [syncing, setSyncing] = useState<string | null>(null);
 
   const { syncKeIncentive } = siapkanSinkronInsentif({ setSyncing, notify, fetchRemindersQuiet, currentUser });
 
   const {
-    resolveGrupInsentif, cariProyekSerupa, handleSave,
+    resolveGrupInsentif, handleSave,
   } = useSimpanJadwal({
     bulkTarget, currentUser, editingReminder, emptyForm, extraDates, fetchRemindersQuiet, formData, guestUsers, notify,
     progressTimelinePayload, proyekLamaTerpilih, reminders, setBulkTarget, setEditingReminder, setExtraDates, setFormData,
@@ -266,7 +264,7 @@ export function useHalamanJadwal() {
   });
 
   const {
-    handleDelete, openDeleteModal, handleStatusChange, handleConfirmStatusUpdate, bukaEditDetailPelaksanaan, handleModeConfirm,
+    handleDelete, openDeleteModal, handleConfirmStatusUpdate, bukaEditDetailPelaksanaan, handleModeConfirm,
     handleResendFormReview,
   } = useAksiStatus({
     bastDate, controllerBrand, currentUser, deleteTarget, detailReminder, displayType, fetchRemindersQuiet, guestUsers,
@@ -279,15 +277,14 @@ export function useHalamanJadwal() {
   });
 
   const {
-    availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, sourceReminders,
-    projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign,
+    availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign,
     isMyReviewStage, bolehEditReminder, canInternalApprove, canAddReminder, isGuest,
   } = useTurunanJadwal({
     currentUser, filterCategory, filterStatus, filterYear, managerUserId, productFilter, reminders, searchDivisionSales,
     searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay, teamUsers,
   });
 
-  const { jalankanBulkDelete, toggleSelectId, toggleSelectAll } = useAksiMassalJadwal({ filteredReminders, notify, selectedIds, setBulkConfirm, setBulkDeleting, setReminders, setSelectMode, setSelectedIds });
+  const { jalankanBulkDelete, toggleSelectAll } = useAksiMassalJadwal({ filteredReminders, notify, selectedIds, setBulkConfirm, setBulkDeleting, setReminders, setSelectMode, setSelectedIds });
 
   const {
     openEdit, handleReschedule, handleSendWA, handleExportExcel,
@@ -333,17 +330,6 @@ export function useHalamanJadwal() {
   const perluAksiSaya = hitungPerluAksi(reminders, currentUser, isAdmin, isManager, isMyReviewStage);
 
   const myActiveReminders = perluAksiSaya.map(x => x.r);
-
-  const handleLogout = () => {
-    setSelectMode(false); setSelectedIds(new Set()); setFilterStatus('all'); setFilterYear('all'); setFilterCategory('all');
-    setSearchProject(''); setSearchSales(''); setSearchDivisionSales('');
-    setSearchTeamHandler(''); setSearchProduct(''); setProductFilter(null);
-    setSelectedCalDay(null);
-    clearSession();
-    setCurrentUser(null); setLoginTime(null);
-    const target = window.top !== window ? window.top : window;
-    if (target) target.location.href = '/dashboard';
-  };
 
   const konteksJadwal: NilaiKonteksJadwal = {
     sesi: { currentUser, isAdmin, isGuest, isManager },

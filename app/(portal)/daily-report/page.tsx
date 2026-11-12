@@ -127,9 +127,9 @@ export default function DailyReportPage() {
     loadReports();
   }, [currentUser, lihatSemua, teamUsers, filterDate, filterUser]);
 
-  const { allRows, filteredRows, dataEkspor, hal, stats, belumLaporHariIni, PIE_C, catPieData, handlerPieData, divisionPieData, productPieData } = useDataLaporan({ filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, lihatSemua, liveReminders, liveTickets, reports, searchProject, teamUsers });
+  const { filteredRows, dataEkspor, hal, stats, belumLaporHariIni, catPieData, handlerPieData, divisionPieData, productPieData } = useDataLaporan({ filterCategory, filterDate, filterDivision, filterHandler, filterProduct, filterSource, filterStatus, filterUser, lihatSemua, liveReminders, liveTickets, reports, searchProject, teamUsers });
 
-  const { kunciDraf, bacaDraf, hapusDraf, adaIsian, pulihkanDraf } = useDrafLaporan({ currentUser, editingId, formDate, formOpen, formUserId, manualActs, notify, reminderNotes, saving, setManualActs, setReminderNotes });
+  const { bacaDraf, hapusDraf, pulihkanDraf } = useDrafLaporan({ currentUser, editingId, formDate, formOpen, formUserId, manualActs, notify, reminderNotes, saving, setManualActs, setReminderNotes });
 
   const { openNewForm, openEditForm, handleSave, updM, updT } = useFormLaporan({ bacaDraf, currentUser, editingId, formDate, formOpen, formReminders, formTickets, formUserId, hapusDraf, isAdmin, loadLiveData, loadReports, manualActs, notify, pulihkanDraf, reminderNotes, setEditingId, setFormDate, setFormLoading, setFormOpen, setFormReminders, setFormTickets, setFormUserId, setManualActs, setReminderNotes, setSaving, setTeamEntries, teamEntries, teamUsers });
 

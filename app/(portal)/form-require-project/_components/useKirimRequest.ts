@@ -192,7 +192,6 @@ export function useKirimRequest(k: KirimRequestKonteks) {
             body: `${currentUser.full_name} — ${form.project_name.trim()}` });
         }
         const adminUsersWA = await penerimaAdminBernomor();
-        const adminPhonesWA = (adminUsersWA || []).map((u: any) => u.phone_number).filter(Boolean);
         if (adminUsersWA && adminUsersWA.length > 0 && routingStatus === 'internal_review') {
           const internalMsg =
             `📩 *REQUEST DESIGN BARU - PERLU REVIEW KAMU*\n\n` +
@@ -314,7 +313,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
                   `📋 *Project :* ${form.project_name.trim()}`,
                   `👤 *Sales   :* ${currentUser.full_name} (${currentUser.sales_division||'—'})`,
                   '─────────────────',
-                  ...picRooms.map((r,i) => {
+                  ...picRooms.map((r,_i) => {
                     const lines = [`🚪 *Ruangan:* ${r.room_name||'—'}`];
                     if (r.brand_display_pic_id===pic.id) lines.push(`  🖥️ Brand Display: ${r.brand_display} *(Anda PIC-nya)*`);
                     if (r.brand_display_2_pic_id===pic.id) lines.push(`  🖥️ Brand Display 2: ${r.brand_display_2} *(Anda PIC-nya)*`);

@@ -79,7 +79,6 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const lcAttempts = (lcSessionsRes.data ?? []) as any[];
 
       if (scope.kind === 'pts_sup') {
-        const tt = scope.ptsTeamType ?? '';
         movements = movements.filter((m:any) => scope.ptsMemberNames?.includes(m.nama_pts));
       }
 

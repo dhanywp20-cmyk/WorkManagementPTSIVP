@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { supabase } from '@/lib/supabase';
 import { adminUpdateUser } from '@/lib/admin-users';
@@ -79,7 +79,6 @@ export function UserManagementInline() {
   const supervisorCandidates = allUsers.filter(u => ['guest', 'team'].includes(u.role?.toLowerCase() ?? '') && u.jabatan && ATASAN_JABATAN.includes(u.jabatan as JabatanType));
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
-  const salesHandleUsers = [...ivpUsers, ...mviUsers];
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
   const INTERNAL_GROUPS = ['PTS', 'IVP'];
   const ccEligibleUsers = allUsers

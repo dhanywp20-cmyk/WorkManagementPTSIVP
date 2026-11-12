@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { BARIS_PER_HALAMAN } from '@/components/shared';
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
 import { clearSession, getSession } from "@/lib/auth/sesi";
@@ -34,7 +34,6 @@ import { useBukaTicket } from './useBukaTicket';
 import { useEfekLiveTicketing } from './useEfekLiveTicketing';
 
 export function useTicketing() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const ticketListRef = useRef<HTMLDivElement>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -82,7 +81,7 @@ export function useTicketing() {
   const [supAssignSaving, setSupAssignSaving] = useState(false);
   const [projectReminders, setProjectReminders] = useState<Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string; warranty_years?: number | null }[]>>({});
   const [showServicesApprovalModal, setShowServicesApprovalModal] = useState(false);
-  const [servicesApprovalTicket, setServicesApprovalTicket] = useState<Ticket | null>(null);
+  const [, setServicesApprovalTicket] = useState<Ticket | null>(null);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -138,7 +137,7 @@ export function useTicketing() {
   const [selectMode, setSelectMode] = useState(false);
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
-  const [newMapping, setNewMapping] = useState({ guestUsername: "", projectName: "" });
+  const [, ] = useState({ guestUsername: "", projectName: "" });
   const ITEMS_PER_PAGE: typeof BARIS_PER_HALAMAN = BARIS_PER_HALAMAN;
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -166,16 +165,6 @@ export function useTicketing() {
     overdueTargetTicket, setOverdueForm, setOverdueSettings, setOverdueTargetTicket, setShowOverdueSetting });
 
   const getNotifications = () => tiketNotifikasiSaya(currentUser, teamMembers, tickets, isTicketOverdue);
-
-  const handleLogout = () => {
-    setCurrentUser(null); setLoginTime(null); setSelectedTicket(null);
-    setSelectMode(false); setSelectedIds(new Set()); setHandlerFilter(null); setSalesDivisionFilter(null); setProductFilter(null);
-    setSearchProduct(""); setSearchProject(""); setSearchSalesName("");
-    setFilterYear(TAHUN_TERBARU); setFilterStatus("All"); setSelectedHandlerTeam("PTS");
-    clearSession();
-    const target = window.top !== window ? window.top : window;
-    if (target) target.location.href = "/dashboard";
-  };
 
   const pendukungDimuat = useRef(0);
   const fetchData = async (userOverride?: User | null, silent = false) => {
@@ -255,7 +244,7 @@ export function useTicketing() {
     if (!masihAdaLain) setShowApprovalModal(false);
   };
 
-  const { approveTicket, jalankanApproveTicket } = useApproveTicket({ approvalAssignee, approvalAssignees, approvalTicket, currentUser, fetchData, notify, selesaikanSatuApproval, setApprovingId, setUploading, teamMembers, users });
+  const { jalankanApproveTicket } = useApproveTicket({ approvalAssignee, approvalAssignees, approvalTicket, currentUser, fetchData, notify, selesaikanSatuApproval, setApprovingId, setUploading, teamMembers, users });
 
   const { currentUserTeamType, pendingApprovalTickets, pendingServicesApprovalTickets } = useTiketMenunggu({ currentUser, isManagerPTS, teamMembers, tickets });
 
@@ -297,8 +286,7 @@ export function useTicketing() {
   const { createUser, updatePassword } = useAkunTicketing({ changePassword, fetchData, newUser, notify, selectedUserForPassword, setChangePassword, setNewUser, setSelectedUserForPassword, users });
 
   const {
-    filteredTickets, totalPages, paginatedTickets, stats, salesDivisionStats, productStats, tahunTersedia, setTahunTersedia,
-    availableYears, uniqueProjectNames, penugasAdmin, teamPTSMembers, teamServicesMembers, supervisorMembers,
+    filteredTickets, totalPages, paginatedTickets, stats, salesDivisionStats, productStats, availableYears, teamPTSMembers, supervisorMembers,
   } = useDaftarTicket({
     ITEMS_PER_PAGE, currentPage, currentUser, currentUserTeamType, filterStatus, filterYear, handlerFilter, isTicketOverdue,
     overdueSettings, productFilter, salesDivisionFilter, searchProduct, searchProject, searchSalesName, setCurrentPage,

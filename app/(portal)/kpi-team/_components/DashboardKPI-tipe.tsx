@@ -47,31 +47,6 @@ export interface KPITeamState {
   filterTeam: string;
 }
 
-interface KPIPeriodSnapshot {
-  id: string;
-  period_label: string;
-  year: number;
-  period: '6m' | '1y';
-  start_month: number;
-  end_month: number;
-  team_type: string;
-  created_at: string;
-  created_by: string;
-  members_json: {
-    id: string; name: string; jabatan: string; team_type: string;
-    ticketsHandled: number; ticketsSolved: number; ticketsOverdue: number;
-    lcAttempts: number; lcAvgScore: number; lcPassed: number;
-    formReviewTotal: number; formReviewLowRating: number;
-    techNotesApproved: number;
-    tickScore: number; bastScore: number; lcScore: number; rndScore: number;
-    finalKPI: number;
-  }[];
-  settings_json?: {
-    lcMinScore: number; rndTarget: number;
-    ticketOverdueWeight: number; bastWeight: number; lcWeight: number; rndWeight: number;
-  } | null;
-}
-
 export interface AuditEntry {
   id: string; module: string; actor: string; action: string;
   target: string; detail: string; ts: string;

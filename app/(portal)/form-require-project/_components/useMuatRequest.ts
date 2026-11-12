@@ -41,7 +41,6 @@ export function useMuatRequest(k: MuatRequestKonteks) {
       const selfJabatan = (currentUser as any).jabatan as string | undefined;
       const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
       const selfDiv = currentUser.sales_division;
-      const isBrandPICUser = currentUser.team_type === 'Marketing';
 
       if (selfTier > 1 && selfDiv) {
         const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
@@ -77,7 +76,6 @@ export function useMuatRequest(k: MuatRequestKonteks) {
     const { data, error } = await query;
     if (!error && data) {
       let filtered = data as ProjectRequest[];
-      const selfDiv = currentUser.sales_division;
       if (!isPTS && !isIVPGuest && !pimpinan && currentUser.team_type === 'Marketing') {
         const KOLOM_DASAR = 'id, project_name, status, sales_name, created_at, rooms, requester_id';
         const KOLOM_BRAND = 'brand_display_pic_id, brand_display_2_pic_id, brand_middleware_pic_id';

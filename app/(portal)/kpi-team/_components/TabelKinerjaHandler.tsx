@@ -109,8 +109,6 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
               ))}
 
               {!loading && sortedMembers.map((m, idx) => {
-                const solveRate  = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
-                const remRate    = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
                 const teamCol    = warnaTim(m.team_type);
                 const dayColor   = m.avgResolutionDays === 0 ? '#94a3b8'
                   : m.avgResolutionDays <= 3 ? '#10b981'

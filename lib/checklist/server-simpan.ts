@@ -1,5 +1,5 @@
 import { BATAS, type ChecklistItem, type ChecklistRiwayat, type LewatCentang, type PerubahanItem } from './inti';
-import { galat, Db, KOLOM_ITEM, sentuh, RIWAYAT_KOLOM } from './server';
+import { Db, KOLOM_ITEM, sentuh, RIWAYAT_KOLOM } from './server';
 
 export function waktuSah(v: unknown, sekarang: number): string {
   const t = typeof v === 'string' ? Date.parse(v) : NaN;

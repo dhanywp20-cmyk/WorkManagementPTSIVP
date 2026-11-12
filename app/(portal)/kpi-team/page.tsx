@@ -1,7 +1,7 @@
 'use client';
 import { isPimpinan } from '@/lib/pimpinan';
 import { PageHeader } from '@/components/shared';
-import { PERIODS, STATUS_COLORS, KPI_COLOR } from './_components/shared';
+import { PERIODS, KPI_COLOR } from './_components/shared';
 import { DrillModal } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { ModalPengaturanKPI } from './_components/ModalPengaturanKPI';
@@ -15,7 +15,7 @@ import { useKpiTeam } from './_components/useKpiTeam';
 
 export default function KPITeamPage() {
   const {
-    isLoggedIn, appReady, scopeReady, scope, summary, currentUser, fetchAllData, fetchKPIMembers,
+    isLoggedIn, appReady, scopeReady, scope, currentUser, fetchAllData, fetchKPIMembers,
     setShowStartKPI, kpiLoading, kpiMembers, kpiYear, setShowSettings, sortedMembers, period, kpiSettings,
     calcKPI, filterTeam, kpiFiltered, kpiPeriodLabel, kpiPeriodLen, kpiScoreColor, kpiScoreLabel, kpiStartMonth,
     setKpiPeriodLen, setKpiStartMonth, setKpiYear, setSelectedKPIMember, setPeriod, periodLabel, loading, allTeamTypes,
@@ -42,12 +42,6 @@ export default function KPITeamPage() {
       </div>
     </div>
   );
-
-  const donutSegments = [
-    { value: summary.totalS,                                 color: STATUS_COLORS['Solved'] },
-    { value: summary.totalOD,                                color: STATUS_COLORS['Overdue'] },
-    { value: Math.max(0, summary.totalT - summary.totalS - summary.totalOD), color: STATUS_COLORS['Pending'] },
-  ].filter(s => s.value > 0);
 
   return (
     <div className="h-screen overflow-hidden flex flex-col"

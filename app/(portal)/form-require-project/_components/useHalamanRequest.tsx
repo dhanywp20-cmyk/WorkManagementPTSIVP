@@ -44,7 +44,7 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; msg: string } | null>(null);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [, setUnreadCount] = useState(0);
   const [filterStatus, setFilterStatus] = useState<string>(() => {
     try { return sessionStorage.getItem('frp_filterStatus') || 'all'; } catch { return 'all'; }
   });
@@ -306,8 +306,8 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
   };
 
   const {
-    availableYears, filteredRequests, hal, stats, statusPieData, divisionCounts, divisionPieData, assignedCounts, assignedPieData,
-    productCounts, productPieData, kebutuhanCounts, kebutuhanPieData,
+    availableYears, filteredRequests, hal, stats, statusPieData, divisionPieData, assignedPieData,
+    productPieData, kebutuhanPieData,
   } = useStatistikRequest({
     filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, requests, searchQuery, searchSales,
   });
@@ -323,8 +323,7 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
   });
 
   const {
-    handleBulkDelete, toggleSelectId, toggleSelectAll, handleApprove, handleInternalApproveProject, jalankanInternalApprove,
-    handleReject, handleResubmit, handleRejectConfirm, handleDeleteConfirm, handleDeleteAttachment,
+    toggleSelectId, toggleSelectAll, handleApprove, handleInternalApproveProject, handleReject, handleResubmit, handleRejectConfirm, handleDeleteConfirm, handleDeleteAttachment,
   } = useAksiPersetujuan({
     currentUser, deleteModal, displayFileName, fetchMessages, fetchRequests, filteredRequests, notify, rejectModal, rejectNote,
     rejectSaving, selectedIds, selectedRequest, setAssignModal, setAttachments, setBulkDeleting, setConfirmState,
@@ -335,8 +334,7 @@ export function useHalamanRequest(k: HalamanRequestKonteks) {
   const { handleStatusUpdate } = useUbahStatusRequest({ currentUser, fetchMessages, fetchRequests, notify, selectedRequest, setSelectedRequest, statusUpdatingRef });
 
   const {
-    handleOpenEditForm, editCur, editUpd, editRoomAktifBaru, handleEditAddRoom, handleEditRemoveNewRoom, REQUEST_FIELDS,
-    simpanReroute, handleEditFormSubmit,
+    handleOpenEditForm, editCur, editUpd, editRoomAktifBaru, handleEditAddRoom, handleEditRemoveNewRoom, simpanReroute, handleEditFormSubmit,
   } = useEditRequest({
     currentUser, detailRoomIdx, editDueDate, editFormData, editNewRoomIds, editRoomIdx, editRooms, fetchMessages, fetchRequests,
     notify, rerouteTarget, rerouteTo, rosterPTS, selectedRequest, setDetailRoomIdx, setEditDueDate, setEditFormData,

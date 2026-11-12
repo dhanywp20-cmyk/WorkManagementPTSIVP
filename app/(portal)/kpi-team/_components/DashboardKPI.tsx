@@ -1,7 +1,6 @@
 'use client';
 import type { PenggunaPortal as User } from '@/lib/tipe-pengguna';
 import { DEFAULT_KPI_SETTINGS, KPISettings } from '@/app/(portal)/kpi-team/_components/shared';
-import { Ikon } from '@/components/shared/Ikon';
 import { hasFullAccess } from '@/lib/constants';
 import { muatKelompok, namaKelompokPTS } from '@/lib/kelompok/inti';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -28,11 +27,11 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
   const [audit, setAudit]           = useState<AuditEntry[]>([]);
   const [loading, setLoading]       = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
-  const [tab, setTab]               = useState<'analytics'>('analytics');
+  const [tab, ]               = useState<'analytics'>('analytics');
   const [auditFilter, setAuditFilter] = useState<'all'|'ticket'|'reminder'|'piket'|'user'>('all');
   const [auditSearch, setAuditSearch] = useState('');
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-  const [kpiTeam, setKpiTeam] = useState<KPITeamState>({
+  const [, setLastRefresh] = useState(new Date());
+  const [, ] = useState<KPITeamState>({
     members: [],
     loading: false,
     editingMember: null,
@@ -148,32 +147,6 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
     </div>
   );
 
-  const scopeTitle = scope.kind==='admin' ? 'Dashboard'
-    : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`
-    : scope.kind==='team' ? 'Dashboard'
-    : 'KPI Dashboard';
-
-  const TAB_CONFIG = [
-    {key:'analytics' as const, icon:'📊', label:'Analytics'},
-  ];
-
-  function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
-    return (
-      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs border border-slate-200">
-        <span><Ikon nama={icon} ukuran={14} /></span>{children}
-      </h3>
-    );
-  }
-
-  function MiniBar({ value, max, color='#3b82f6', h=4 }: { value:number; max:number; color?:string; h?:number }) {
-    const pct = max>0 ? Math.min(100,(value/max)*100) : 0;
-    return (
-      <div className="w-full rounded-full overflow-hidden flex-1" style={{height:h,background:'#f1f5f9'}}>
-        <div className="h-full rounded-full transition-all duration-500" style={{width:`${pct}%`,background:color}}/>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
         {renderIsi
@@ -187,7 +160,6 @@ export default function DashboardKPI({ currentUser: userProp, renderIsi }: Dashb
   );
 }
 export * from './DashboardKPI-bantu';
-export * from './DashboardKPI-grafik';
 export * from './DashboardKPI-pita';
 export * from './DashboardKPI-tipe';
 export * from './DashboardKPI-tren';
