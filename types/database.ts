@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
@@ -1017,6 +1019,109 @@ export type Database = {
           },
         ]
       }
+      incentive_penetapan: {
+        Row: {
+          cakupan: Json
+          cue: Json
+          diubah_pada: string
+          diusulkan_oleh: string | null
+          diusulkan_pada: string | null
+          divalidasi_oleh: string | null
+          divalidasi_pada: string | null
+          level: string
+          level_status: string
+          net_profit: number | null
+          net_profit_oleh: string | null
+          net_profit_pada: string | null
+          nominal: number | null
+          nominal_dasar: string | null
+          reminder_id: string
+        }
+        Insert: {
+          cakupan?: Json
+          cue?: Json
+          diubah_pada?: string
+          diusulkan_oleh?: string | null
+          diusulkan_pada?: string | null
+          divalidasi_oleh?: string | null
+          divalidasi_pada?: string | null
+          level: string
+          level_status?: string
+          net_profit?: number | null
+          net_profit_oleh?: string | null
+          net_profit_pada?: string | null
+          nominal?: number | null
+          nominal_dasar?: string | null
+          reminder_id: string
+        }
+        Update: {
+          cakupan?: Json
+          cue?: Json
+          diubah_pada?: string
+          diusulkan_oleh?: string | null
+          diusulkan_pada?: string | null
+          divalidasi_oleh?: string | null
+          divalidasi_pada?: string | null
+          level?: string
+          level_status?: string
+          net_profit?: number | null
+          net_profit_oleh?: string | null
+          net_profit_pada?: string | null
+          nominal?: number | null
+          nominal_dasar?: string | null
+          reminder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_penetapan_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: true
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incentive_penetapan_log: {
+        Row: {
+          aksi: string
+          alasan: string | null
+          dari: Json | null
+          id: string
+          ke: Json | null
+          oleh: string
+          pada: string
+          reminder_id: string
+        }
+        Insert: {
+          aksi: string
+          alasan?: string | null
+          dari?: Json | null
+          id?: string
+          ke?: Json | null
+          oleh: string
+          pada?: string
+          reminder_id: string
+        }
+        Update: {
+          aksi?: string
+          alasan?: string | null
+          dari?: Json | null
+          id?: string
+          ke?: Json | null
+          oleh?: string
+          pada?: string
+          reminder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_penetapan_log_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incentive_projects: {
         Row: {
           address: string | null
@@ -1136,6 +1241,63 @@ export type Database = {
           },
         ]
       }
+      incentive_redistribusi: {
+        Row: {
+          dibuat_oleh: string | null
+          dibuat_pada: string
+          id: string
+          nominal: number
+          penerima: Json
+          project_id: string
+          sumber_nama: string
+          sumber_user_id: string | null
+          tahap: number | null
+          tahun: number
+          tranche_id: string | null
+        }
+        Insert: {
+          dibuat_oleh?: string | null
+          dibuat_pada?: string
+          id?: string
+          nominal: number
+          penerima: Json
+          project_id: string
+          sumber_nama: string
+          sumber_user_id?: string | null
+          tahap?: number | null
+          tahun: number
+          tranche_id?: string | null
+        }
+        Update: {
+          dibuat_oleh?: string | null
+          dibuat_pada?: string
+          id?: string
+          nominal?: number
+          penerima?: Json
+          project_id?: string
+          sumber_nama?: string
+          sumber_user_id?: string | null
+          tahap?: number | null
+          tahun?: number
+          tranche_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incentive_redistribusi_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incentive_redistribusi_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "incentive_tranches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incentive_scheme_settings: {
         Row: {
           id: string
@@ -1194,6 +1356,7 @@ export type Database = {
           id: string
           percentage: number
           project_id: string
+          redistribusi_dari: string | null
           role: string
           source_ticket_id: string | null
           tranche_id: string | null
@@ -1206,6 +1369,7 @@ export type Database = {
           id?: string
           percentage: number
           project_id: string
+          redistribusi_dari?: string | null
           role: string
           source_ticket_id?: string | null
           tranche_id?: string | null
@@ -1218,6 +1382,7 @@ export type Database = {
           id?: string
           percentage?: number
           project_id?: string
+          redistribusi_dari?: string | null
           role?: string
           source_ticket_id?: string | null
           tranche_id?: string | null
@@ -1259,6 +1424,7 @@ export type Database = {
           project_id: string
           scheme_label: string | null
           scheme_snapshot: Json | null
+          scheme_snapshot_pra_rev3: Json | null
           status: string | null
           tranche_number: number
         }
@@ -1272,6 +1438,7 @@ export type Database = {
           project_id: string
           scheme_label?: string | null
           scheme_snapshot?: Json | null
+          scheme_snapshot_pra_rev3?: Json | null
           status?: string | null
           tranche_number: number
         }
@@ -1285,6 +1452,7 @@ export type Database = {
           project_id?: string
           scheme_label?: string | null
           scheme_snapshot?: Json | null
+          scheme_snapshot_pra_rev3?: Json | null
           status?: string | null
           tranche_number?: number
         }
@@ -5136,6 +5304,7 @@ export type Database = {
           pts_type: string | null
           role: string | null
           sales_division: string | null
+          tanggal_nonaktif: string | null
           team_type: string | null
           telegram_chat_id: string | null
           telegram_terhubung: boolean | null
@@ -5165,9 +5334,10 @@ export type Database = {
           pts_type?: string | null
           role?: string | null
           sales_division?: string | null
+          tanggal_nonaktif?: string | null
           team_type?: string | null
           telegram_chat_id?: string | null
-          telegram_terhubung?: never
+          telegram_terhubung?: boolean | null
           username: string
         }
         Update: {
@@ -5194,9 +5364,10 @@ export type Database = {
           pts_type?: string | null
           role?: string | null
           sales_division?: string | null
+          tanggal_nonaktif?: string | null
           team_type?: string | null
           telegram_chat_id?: string | null
-          telegram_terhubung?: never
+          telegram_terhubung?: boolean | null
           username?: string
         }
         Relationships: [
