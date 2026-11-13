@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { saringSumberKPI, type SumberKPI } from '../lib/kpi-sumber';
 
 let lulus = 0, gagal = 0;
@@ -7,7 +8,7 @@ function cek(nama: string, syarat: boolean) {
 
 const kosong = (): SumberKPI => ({ tickets: [], actLogs: [], reminders: [], lcAttempts: [], piketRows: [], formReviews: [], techNotes: [] });
 const s = kosong();
-s.tickets = [
+s.tickets = ([
   { id: 'awal-tepat', created_at: '2026-10-01T00:00:00+00:00' },
   { id: 'sebelum', created_at: '2026-09-30T23:59:58+00:00' },
   { id: 'pecahan-detik', created_at: '2026-09-30T23:59:59.999+00:00' },
@@ -15,10 +16,11 @@ s.tickets = [
   { id: 'lewat-sedetik', created_at: '2026-10-31T23:59:59.5+00:00' },
   { id: 'zona-wib', created_at: '2026-11-01T06:00:00+07:00' },
   { id: 'kosong', created_at: null },
-];
-s.lcAttempts = [{ id: 'lc-dalam', started_at: '2026-10-15T08:00:00+00:00', created_at: '2025-01-01T00:00:00+00:00' }];
-s.piketRows = [{ day_date: '2026-10-31' }, { day_date: '2026-11-01' }, { day_date: '2026-09-30' }];
-s.techNotes = [{ id: 'tn', reviewed_at: '2026-10-02T00:00:00+00:00', created_at: '2026-08-01T00:00:00+00:00' }];
+] as SumberKPI['tickets']);
+s.lcAttempts = [{ id: 'lc-dalam', started_at: '2026-10-15T08:00:00+00:00', created_at: '2025-01-01T00:00:00+00:00' }] as unknown as SumberKPI['lcAttempts'];
+s.piketRows = [{ day_date: '2026-10-31' }, { day_date: '2026-11-01' }, { day_date: '2026-09-30' }] as SumberKPI['piketRows'];
+s.techNotes = [{ id: 'tn', reviewed_at: '2026-10-02T00:00:00+00:00', created_at: '2026-08-01T00:00:00+00:00' }] as unknown as SumberKPI['techNotes'];
+s.reminders = [{ id: 'jadwal-okt', created_at: '2026-10-10T00:00:00+00:00' }] as SumberKPI['reminders'];
 
 console.log('\nPemilahan sumber KPI');
 const okt = saringSumberKPI(s, '2026-10-01', '2026-10-31');
@@ -28,6 +30,7 @@ cek('stempel berzona dibaca sebagai waktu mutlak (06:00 WIB = 23:00 UTC hari seb
 cek('LC disaring menurut started_at, bukan created_at', okt.lcAttempts.length === 1);
 cek('tech note disaring menurut reviewed_at', okt.techNotes.length === 1);
 cek('piket memakai tanggal polos: akhir bulan ikut, hari sesudah/sebelum tidak', okt.piketRows.map(p => p.day_date).join() === '2026-10-31');
+cek('jadwal disaring menurut created_at (kolom ini wajib ikut di-select)', okt.reminders.length === 1 && /from\('reminders'\)\.select\('[^']*created_at/.test(readFileSync('app/(portal)/kpi-team/_components/useSumberKpi.ts', 'utf8')));
 cek('baris tanpa tanggal dibuang', !okt.tickets.some(t => t.id === 'kosong'));
 const sep = saringSumberKPI(s, '2026-09-01', '2026-09-30');
 cek('periode sebelumnya mengambil sisanya', sep.tickets.map(t => t.id).join() === 'sebelum' && sep.piketRows.length === 1);

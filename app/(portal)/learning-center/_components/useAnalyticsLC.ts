@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { matchesTeamFilter, type TeamFilter } from './team-filter';
 import { useKelompokCabang } from '@/lib/kelompok/inti';
 import { supabase } from './shared';
+import { hitungStatSesi, type PenggunaLC, type PercobaanPengguna, type StatSesi, type PerformerLC, type DivisiLC } from './tipe-dasbor';
 
 export function useAnalyticsLC() {
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
-  const [topUsers, setTopUsers] = useState<any[]>([]);
-  const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
-  const [sessionStats, setSessionStats] = useState<any[]>([]);
-  const [divisionStats, setDivisionStats] = useState<any[]>([]);
+  const [topUsers, setTopUsers] = useState<PerformerLC[]>([]);
+  const [allTopUsers, setAllTopUsers] = useState<PerformerLC[]>([]);
+  const [sessionStats, setSessionStats] = useState<StatSesi[]>([]);
+  const [divisionStats, setDivisionStats] = useState<DivisiLC[]>([]);
   const [nationalAvg, setNationalAvg] = useState<number | null>(null);
   const [divisionFilter, setDivisionFilter] = useState<string>('');
   const [search, setSearch] = useState('');
@@ -18,7 +19,7 @@ export function useAnalyticsLC() {
   const [activeTeam, setActiveTeam] = useState<TeamFilter>('PTS');
 
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
-  const [userAttempts, setUserAttempts] = useState<any[]>([]);
+  const [userAttempts, setUserAttempts] = useState<PercobaanPengguna[]>([]);
   const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export function useAnalyticsLC() {
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('users').select('id, full_name, sales_division, team_type, role'),
       ]);
-      const petaUser: Record<string, any> = {};
+      const petaUser: Record<string, Pick<PenggunaLC, 'id' | 'full_name' | 'sales_division' | 'team_type' | 'role'>> = {};
       (pengguna ?? []).forEach((u) => { petaUser[u.id] = u; });
       const a = mentah ? mentah.map((x) => ({ ...x, users: (x.user_id ? petaUser[x.user_id] : undefined) ?? null })) : null;
 
@@ -85,30 +86,7 @@ export function useAnalyticsLC() {
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        const perSesi = new Map<string, any[]>();
-        for (const x of (a ?? []) as any[]) {
-          const daftar = perSesi.get(x.quiz_session_id);
-          if (daftar) daftar.push(x); else perSesi.set(x.quiz_session_id, [x]);
-        }
-        const stats = ss.map((s) => {
-          const att = perSesi.get(s.id);
-          if (!att?.length) return null;
-          const avg = att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length;
-          const passed = att.filter((a) => a.passed).length;
-          const durations = att
-            .filter((a) => a.started_at && a.submitted_at)
-            .map((a) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
-          const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
-          return {
-            id: s.id, name: s.session_name,
-            total: att.length, avg, passed, failed: att.length - passed,
-            avgMin,
-            scoreGood: att.filter((a) => (a.score ?? 0) >= 80).length,
-            scoreMid: att.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
-            scoreLow: att.filter((a) => (a.score ?? 0) < 60).length,
-          };
-        });
-        setSessionStats(stats.filter(Boolean));
+        setSessionStats(hitungStatSesi(ss, mentah ?? []));
       }
       setLoading(false);
     };
@@ -133,7 +111,7 @@ export function useAnalyticsLC() {
       .eq('user_id', selectedUser.uid)
       .eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
+      .then(({ data }) => { setUserAttempts((data ?? []) as PercobaanPengguna[]); setLoadingUser(false); });
   }, [selectedUser]);
 
   const filteredUsers = topUsers

@@ -38,7 +38,7 @@ export function useSumberKpi(k: SumberKpiKonteks) {
       supabase.from('activity_logs').select('id,ticket_id,handler_name,created_at')
         .in('handler_name', mNames).gte('created_at', start).lte('created_at', endFull)
         .order('created_at', { ascending: true }),
-      supabase.from('reminders').select('id,assign_name,status,due_date')
+      supabase.from('reminders').select('id,assign_name,status,due_date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
       supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,started_at,grading_status')
         .in('user_id', mIds).eq('is_submitted', true)
@@ -82,9 +82,9 @@ export function useSumberKpi(k: SumberKpiKonteks) {
       const myT   = tickets.filter((t) => t.assign_name === name);
       const tSol  = myT.filter((t) => t.status === 'Solved');
       const tOver = myT.filter((t) =>
-        !['Solved','Cancelled'].includes(t.status) && t.date && t.date < todayStr);
-      const tDays = tSol.reduce((acc: number, t: any) => {
-        const d = (new Date(t.date).getTime() - new Date(t.created_at).getTime()) / 86400000;
+        !['Solved','Cancelled'].includes(t.status ?? '') && t.date && t.date < todayStr);
+      const tDays = tSol.reduce((acc: number, t) => {
+        const d = (new Date(t.date ?? '').getTime() - new Date(t.created_at ?? '').getTime()) / 86400000;
         return acc + Math.max(0, d);
       }, 0);
 
@@ -107,18 +107,18 @@ export function useSumberKpi(k: SumberKpiKonteks) {
 
       const techNotesApproved = techNotes.filter((tn) => tn.author_id === uid).length;
 
-      const piketFilled = piketRows.filter((p) => bacaPicPiket(p)?.name === name).length;
+      const piketFilled = piketRows.filter((p) => bacaPicPiket(p as unknown as Parameters<typeof bacaPicPiket>[0])?.name === name).length;
 
       const myTIds = new Set(myT.map((t) => t.id as string));
       const firstAct: Record<string, string> = {};
-      actLogs.filter((a) => myTIds.has(a.ticket_id) && a.handler_name === name)
-        .forEach((a) => { if (!firstAct[a.ticket_id]) firstAct[a.ticket_id] = a.created_at; });
+      actLogs.filter((a) => myTIds.has(a.ticket_id ?? '') && a.handler_name === name)
+        .forEach((a) => { if (a.ticket_id && a.created_at && !firstAct[a.ticket_id]) firstAct[a.ticket_id] = a.created_at; });
       const resTimes = myT.filter((t) => firstAct[t.id])
-        .map((t) => Math.max(0, (new Date(firstAct[t.id]).getTime() - new Date(t.created_at).getTime()) / 3600000));
+        .map((t) => Math.max(0, (new Date(firstAct[t.id]).getTime() - new Date(t.created_at ?? '').getTime()) / 3600000));
       const avgRT = resTimes.length ? Math.round(resTimes.reduce((a: number, b: number) => a + b, 0) / resTimes.length) : 0;
 
       const monthlyTickets = Array.from({ length: 12 }, (_, mi) =>
-        myT.filter((t) => new Date(t.created_at).getMonth() === mi).length
+        myT.filter((t) => new Date(t.created_at ?? '').getMonth() === mi).length
       );
 
       return {

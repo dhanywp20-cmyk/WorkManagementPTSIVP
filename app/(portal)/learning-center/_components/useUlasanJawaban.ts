@@ -8,6 +8,11 @@ import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import { getSession } from '@/lib/auth/sesi';
 import { createNotification } from '@/lib/notifications';
+import type { Tables } from '@/types/database';
+
+export type PercobaanUlasan = Tables<'lc_quiz_attempts'> & {
+  lc_quiz_sessions: Pick<Tables<'lc_quiz_sessions'>, 'session_name' | 'passing_grade' | 'materi_name' | 'question_ids'> | null;
+};
 
 export interface UlasanJawabanKonteks {
   isAdminView: boolean;
@@ -17,9 +22,9 @@ export interface UlasanJawabanKonteks {
 
 export function useUlasanJawaban(k: UlasanJawabanKonteks) {
   const { isAdminView, user, autoOpenAttemptId } = k;
-  const [attempts, setAttempts] = useState<any[]>([]);
-  const [selectedAttempt, setSelectedAttempt] = useState<any | null>(null);
-  const [answerDetails, setAnswerDetails] = useState<any[]>([]);
+  const [attempts, setAttempts] = useState<PercobaanUlasan[]>([]);
+  const [selectedAttempt, setSelectedAttempt] = useState<PercobaanUlasan | null>(null);
+  const [answerDetails, setAnswerDetails] = useState<Tables<'lc_answers'>[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [manualScores, setManualScores] = useState<Record<string, string>>({});
@@ -66,8 +71,8 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
       .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
       .eq('user_id', user.id).eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => {
-        const rows = data ?? [];
+      .then(({ data }) => {
+        const rows: PercobaanUlasan[] = data ?? [];
         setAttempts(rows);
         if (autoOpenAttemptId) {
           const target = rows.find((a) => a.id === autoOpenAttemptId);
@@ -77,7 +82,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id, autoOpenAttemptId]);
 
-  const handleViewDetail = async (attempt: any) => {
+  const handleViewDetail = async (attempt: PercobaanUlasan) => {
     setSelectedAttempt(attempt);
     setLoadingDetail(true);
     setAiFeedback({}); setAiGradingIds(new Set()); setAiError({}); setAiScores({});
@@ -118,7 +123,7 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
     }
   };
 
-  const nilaiBorongan = async (attemptId: string, daftarSoal: Question[], jawaban: any[]) => {
+  const nilaiBorongan = async (attemptId: string, daftarSoal: Question[], jawaban: Tables<'lc_answers'>[]) => {
     const bahan: SoalDinilai[] = daftarSoal
       .filter(q => q.question_type === 'essay')
       .map(q => ({
@@ -220,11 +225,11 @@ export function useUlasanJawaban(k: UlasanJawabanKonteks) {
       setDialog({ type: 'error', message: 'Gagal menyimpan nilai essay. Coba lagi.' });
       return;
     }
-    setSelectedAttempt((p: any) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
+    setSelectedAttempt((p) => p && ({ ...p, score: finalScore, passed, grading_status: 'graded' }));
     setDialog({ type: 'success', message: 'Nilai essay berhasil disimpan!' });
 
-    const judulSesi = (selectedAttempt)?.lc_quiz_sessions?.title as string | undefined;
-    void createNotification({
+    const judulSesi = selectedAttempt?.lc_quiz_sessions?.session_name;
+    if (selectedAttempt?.user_id) void createNotification({
       user_id: selectedAttempt.user_id,
       type: 'system',
       title: passed ? '✅ Essay kamu sudah dinilai — Lulus' : '📋 Essay kamu sudah dinilai',

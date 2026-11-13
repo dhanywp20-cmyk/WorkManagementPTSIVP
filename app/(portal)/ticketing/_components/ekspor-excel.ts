@@ -31,7 +31,8 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
       Overdue: { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "991B1B" } }, fill: { fgColor: { rgb: "FEE2E2" }, patternType: "solid" } },
       "Waiting Approval": { ...cellStyle, font: { name: "Arial", sz: 10, bold: true, color: { rgb: "9A3412" } }, fill: { fgColor: { rgb: "FFEDD5" }, patternType: "solid" } },
     };
-    const c = (v: any, s: object) => ({ v, s, t: typeof v === "number" ? "n" : "s" });
+    const c = (v: unknown, s: object) => ({ v, s, t: typeof v === "number" ? "n" : "s" });
+    type Sel = ReturnType<typeof c>;
     const empty = () => ({ v: "", s: cellStyle, t: "s" });
     const row = (cells: number) => Array(cells).fill(empty());
     const wb = XLSX.utils.book_new();
@@ -39,7 +40,7 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
     {
       const COLS = 5;
       const dashTitle = isServicesExport ? "📊 TICKET REPORT — TEAM SERVICES" : "📊 TICKET REPORT — DASHBOARD ANALYTICS";
-      const data: any[][] = [
+      const data: Sel[][] = [
         [c(dashTitle, titleStyle), ...row(COLS - 1)],
         [c(`Tanggal Export: ${exportDate}`, { font: { name: "Arial", sz: 10, color: { rgb: "6B7280" } } }), ...row(COLS - 1)],
         row(COLS),
@@ -88,7 +89,7 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
     {
       const headers = ["No.", "Project Name", "Alamat", "Nama & Telepon Customer", "Sales", "Issue / Masalah", "Deskripsi", "SN Unit", "Product", "Handler (Assigned To)", "Status PTS", "Status Services", "Current Team", "Tgl Ticket", "Dibuat Oleh", "Dibuat Pada", "Jumlah Activity Log"];
       const COLS = headers.length;
-      const data: any[][] = [[c(isServicesExport ? "📋 DATA TICKET — TEAM SERVICES" : "📋 DATA SEMUA TICKET", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
+      const data: Sel[][] = [[c(isServicesExport ? "📋 DATA TICKET — TEAM SERVICES" : "📋 DATA SEMUA TICKET", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
       exportTickets.forEach((t: Ticket, idx: number) => {
         const rs = idx % 2 === 0 ? cellStyle : altStyle;
         const overdue = isTicketOverdue(t);
@@ -97,7 +98,7 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
         const ctr = { ...rs, alignment: { horizontal: "center", vertical: "center" } };
         data.push([
           c(idx + 1, ctr), c(t.project_name || "-", rs), c(t.address || "-", rs), c(t.customer_phone || "-", rs),
-          c(t.sales_name || "-", rs), c(t.issue_case || "-", rs), c(t.description || "-", rs), c(t.sn_unit || "-", ctr), c((t as any).product || "-", rs),
+          c(t.sales_name || "-", rs), c(t.issue_case || "-", rs), c(t.description || "-", rs), c(t.sn_unit || "-", ctr), c(t.product || "-", rs),
           c(t.assign_name || "-", rs), c(statusDisplay, statusStyles[effectiveStatus] || rs), c(t.services_status || "-", t.services_status ? statusStyles[t.services_status] || rs : rs),
           c(t.current_team || "-", rs), c(t.date || "-", ctr), c(t.created_by || "-", rs),
           c(t.created_at ? formatDateTime(t.created_at) : "-", ctr), c(t.activity_logs?.length || 0, ctr),
@@ -112,7 +113,7 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
     {
       const headers = ["No.", "Project Name", "Issue", "Status Ticket", "Handler", "Team", "Action Taken", "Notes", "Status Baru", "Ke Services?", "File Lampiran", "Waktu Activity"];
       const COLS = headers.length;
-      const data: any[][] = [[c(isServicesExport ? "📝 ACTIVITY LOG — TEAM SERVICES" : "📝 DETAIL ACTIVITY LOG", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
+      const data: Sel[][] = [[c(isServicesExport ? "📝 ACTIVITY LOG — TEAM SERVICES" : "📝 DETAIL ACTIVITY LOG", { ...titleStyle, font: { name: "Arial", bold: true, sz: 14, color: { rgb: "1E3A5F" } } }), ...row(COLS - 1)], row(COLS), headers.map((h) => c(h, hdrStyle))];
       let rowIdx = 0;
       exportTickets.forEach((ticket: Ticket) => {
         if (!ticket.activity_logs || ticket.activity_logs.length === 0) {
