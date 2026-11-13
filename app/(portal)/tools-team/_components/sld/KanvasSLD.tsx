@@ -1,6 +1,6 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Spline, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import {
   geserRuas, geserSudut, hapusSudut, hurufPerangkat, jalurDari, type Kotak, kotakTampak, ortogonal, pecahRuas, ruasTegak, ruteManual, sisiKeTitik, sudutSah,
 } from '@/lib/sld/geometri';
@@ -129,8 +129,9 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
   const [gambar, setGambar] = useState<{ dari: string | null; titik: Titik[] }>({ dari: null, titik: [] });
   const [kursor, setKursor] = useState<Titik | null>(null);
   const modeGambar = a.gambarKabel;
-  const setModeKabel = a.setGambarKabel;
-  const setGambarKabel = useCallback((aktif: boolean) => { setModeKabel(aktif); setGambar({ dari: null, titik: [] }); setKursor(null); }, [setModeKabel]);
+  const setGambarKabel = a.setGambarKabel;
+  const [modeLalu, setModeLalu] = useState(modeGambar);
+  if (modeLalu !== modeGambar) { setModeLalu(modeGambar); setGambar({ dari: null, titik: [] }); setKursor(null); }
   useEffect(() => {
     if (!modeGambar) return;
     const tekan = (e: KeyboardEvent) => {
@@ -343,19 +344,14 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
       </svg>
       </div>
       </div>
-      {!simple && (
-        <div className="absolute left-2 bottom-2 z-10 flex flex-col items-start gap-1.5 pointer-events-none">
-          {modeGambar && (
-            <p role="status" className="max-w-[min(440px,calc(100vw-48px))] rounded-lg border border-blue-200 bg-white/95 px-3 py-1.5 text-[12px] leading-snug text-slate-700 shadow-sm">
-              {!gambar.dari ? <><b>1.</b> Klik perangkat <b>asal</b> kabel.</>
-                : <><b>2.</b> Klik di kanvas untuk menaruh titik belok ({gambar.titik.length}), lalu klik perangkat <b>tujuan</b>. Shift = titik bebas. Backspace / klik kanan = batalkan titik. Esc = keluar.</>}
-            </p>
-          )}
-          <button type="button" onClick={() => setGambarKabel(!modeGambar)} aria-pressed={modeGambar}
-            className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold shadow-sm transition-colors duration-150 ${
-              modeGambar ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-            {modeGambar ? <><X size={14} /> Selesai gambar kabel</> : <><Spline size={14} /> Gambar kabel manual</>}
-          </button>
+      {modeGambar && (
+        <div className="absolute left-2 bottom-2 z-10 flex items-start gap-1.5 max-w-[min(520px,calc(100%-16px))]">
+          <p role="status" className="rounded-lg border border-blue-200 bg-white/95 px-3 py-1.5 text-[12px] leading-snug text-slate-700 shadow-sm">
+            <b>Alat garis.</b> {!gambar.dari ? <>Klik perangkat <b>asal</b> kabel.</>
+              : <>Klik di kanvas untuk titik belok ({gambar.titik.length}), lalu klik perangkat <b>tujuan</b>. Shift = titik bebas. Backspace / klik kanan = batalkan titik. Esc = keluar.</>}
+          </p>
+          <button type="button" onClick={() => setGambarKabel(false)} aria-label="Keluar dari alat garis" title="Keluar (Esc)"
+            className="shrink-0 grid place-items-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"><X size={15} /></button>
         </div>
       )}
     </div>
