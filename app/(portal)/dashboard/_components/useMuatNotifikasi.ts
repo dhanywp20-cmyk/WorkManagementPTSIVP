@@ -94,7 +94,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           setTicketNotifs((data ?? []).map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: `Svc: ${t.services_status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         } else {
           const { data: assignedT } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
-          let supRoutedT: any[] = [];
+          let supRoutedT: { id: string; project_name: string | null; issue_case: string | null; status: string | null; created_at: string | null }[] = [];
           try {
             const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
             supRoutedT = data ?? [];
@@ -102,16 +102,17 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           const supTIds = new Set((supRoutedT ?? []).map((t) => t.id));
           const seenT = new Set<string>();
           const combinedT = [...(supRoutedT ?? []), ...(assignedT ?? [])].filter((t) => { if (seenT.has(t.id)) return false; seenT.add(t.id); return true; });
-          setTicketNotifs(combinedT.map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name, subtitle: supTIds.has(t.id) ? `🎯 Perlu di-assign ke tim · ${t.issue_case}` : `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
+          setTicketNotifs(combinedT.map((t) => ({ id: t.id, type: 'ticket' as const, title: t.project_name ?? '', subtitle: supTIds.has(t.id) ? `🎯 Perlu di-assign ke tim · ${t.issue_case}` : `${t.status} · ${t.issue_case}`, time: t.created_at, url: '/ticketing', internalUrl: '/ticketing', menuTitle: 'Ticket Troubleshooting' })));
         }
       }
     } catch (e) { console.error('[notif] ticket fetch error:', e); }
 
     const DONE_STATUSES = ['completed', 'rejected', 'cancelled'];
-    const excludeDone = (q: any) => DONE_STATUSES.reduce((acc, s) => acc.neq('status', s), q);
-    const toRequireNotif = (r: any) => {
+    type BarisReq = { id: string; project_name: string | null; status: string | null; sales_name: string | null; created_at: string | null };
+    const excludeDone = <Q extends { neq(c: 'status', v: string): Q }>(q: Q): Q => DONE_STATUSES.reduce((acc, s) => acc.neq('status', s), q);
+    const toRequireNotif = (r: BarisReq): NotificationItem => {
       const _sLbl: Record<string, string> = { pending: '⏳ Pending', approved: '✅ Approved', in_progress: '🔄 In Progress' };
-      return { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `${_sLbl[r.status] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' };
+      return { id: r.id, type: 'require' as const, title: r.project_name ?? '', subtitle: `${_sLbl[r.status ?? ''] ?? ('🏗️ ' + r.status)} · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' };
     };
 
     try {
@@ -119,7 +120,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const { data } = await excludeDone(
           supabase.from('project_requests').select('id, project_name, status, sales_name, assign_name, created_at')
         ).order('created_at', { ascending: false }).limit(50);
-        setRequireNotifs((data ?? []).filter((r: any) => dalamLingkup(r.assign_name)).map(toRequireNotif));
+        setRequireNotifs((data ?? []).filter((r) => dalamLingkup(r.assign_name)).map(toRequireNotif));
 
       } else if (roleLC === 'team' && bolehRequire && !isAdmin) {
         const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))];
@@ -128,7 +129,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             .select('id, project_name, status, sales_name, assign_name, created_at')
             .in('assign_name', namesToCheck)
         ).order('created_at', { ascending: false }).limit(30);
-        let supRouted: any[] = [];
+        let supRouted: BarisReq[] = [];
         try {
           const { data } = await supabase.from('project_requests')
             .select('id, project_name, status, sales_name, assign_name, created_at, routing_status, assigned_supervisor_id')
@@ -141,7 +142,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const combinedReq = [...(supRouted ?? []), ...(assignedData ?? [])]
           .filter((r) => { if (seenReq.has(r.id)) return false; seenReq.add(r.id); return true; });
         setRequireNotifs(combinedReq.map((r) => supIds.has(r.id)
-          ? { id: r.id, type: 'require' as const, title: r.project_name, subtitle: `🎯 Perlu di-assign ke tim · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' }
+          ? { id: r.id, type: 'require' as const, title: r.project_name ?? '', subtitle: `🎯 Perlu di-assign ke tim · ${r.sales_name}`, time: r.created_at, url: '/form-require-project', internalUrl: '/form-require-project', menuTitle: 'Request Design Project' }
           : toRequireNotif(r)));
 
       } else if (roleLC === 'guest' || roleLC === 'sales') {
@@ -173,7 +174,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             : Promise.resolve({ data: [] }),
         ]);
 
-        const baseMap = new Map<string, any>();
+        const baseMap = new Map<string, BarisReq>();
         [...(ownReqs ?? []), ...(ivpAssignedReqs ?? []), ...(atasNamaReqs ?? [])].forEach((r) => {
           if (!baseMap.has(r.id)) baseMap.set(r.id, r);
         });
@@ -188,7 +189,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
                 .in('sales_division', handledDivs2)
             ).order('created_at', { ascending: false }).limit(50);
-            (divReqs ?? []).forEach((r: any) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
+            (divReqs ?? []).forEach((r) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
           }
 
         } else if (isBrandPICNotif) {
@@ -196,10 +197,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             supabase.from('project_requests')
               .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee, rooms')
           ).order('created_at', { ascending: false }).limit(100);
-          (allReqsBrand ?? []).forEach((r: any) => {
+          (allReqsBrand ?? []).forEach((r) => {
             if (baseMap.has(r.id)) return;
             if (!r.rooms || !Array.isArray(r.rooms)) return;
-            const isBrandPic = r.rooms.some((room: any) =>
+            const isBrandPic = (r.rooms as { brand_display_pic_id?: string; brand_middleware_pic_id?: string }[]).some((room) =>
               room.brand_display_pic_id === currentUser.id || room.brand_middleware_pic_id === currentUser.id
             );
             if (isBrandPic) baseMap.set(r.id, r);
@@ -224,7 +225,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
                 .in('sales_name', subNamesN)
             ).order('created_at', { ascending: false }).limit(50);
-            (subAtasNama ?? []).forEach((r: any) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
+            (subAtasNama ?? []).forEach((r) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
           }
 
           if (subIdsN.length > 0) {
@@ -233,7 +234,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
                 .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
                 .in('requester_id', subIdsN)
             ).order('created_at', { ascending: false }).limit(50);
-            (subReqs ?? []).forEach((r: any) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
+            (subReqs ?? []).forEach((r) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
           }
         }
 

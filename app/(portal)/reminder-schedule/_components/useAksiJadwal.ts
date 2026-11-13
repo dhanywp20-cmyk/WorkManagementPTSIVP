@@ -4,7 +4,7 @@ import { Reminder, TeamUser, PRIORITY_CONFIG, STATUS_CONFIG, formatDate, sendFon
 import { supabase } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
 import { appLink } from '@/lib/app-url';
-import { URL_XLSX } from '@/lib/xlsx-loader';
+import { loadXLSX, type PustakaXlsx } from '@/lib/xlsx-loader';
 
 export interface AksiJadwalKonteks {
   currentUser: TeamUser | null;
@@ -139,7 +139,7 @@ export function useAksiJadwal(k: AksiJadwalKonteks) {
   };
 
   const handleExportExcel = () => {
-    const runExport = (XLSX: any) => {
+    const runExport = (XLSX: PustakaXlsx) => {
       const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
       const border = { top:{style:'thin',color:{rgb:'E2E8F0'}},bottom:{style:'thin',color:{rgb:'E2E8F0'}},left:{style:'thin',color:{rgb:'E2E8F0'}},right:{style:'thin',color:{rgb:'E2E8F0'}} };
       const boldBorder = { top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} };
@@ -175,14 +175,7 @@ export function useAksiJadwal(k: AksiJadwalKonteks) {
       XLSX.writeFile(wb, `ReminderSchedule_PTS_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
       notify('success', 'Export Excel berhasil!');
     };
-    if ((window as any).XLSX) runExport((window as any).XLSX);
-    else {
-      const s = document.createElement('script');
-      s.src = URL_XLSX;
-      s.onload = () => runExport((window as any).XLSX);
-      s.onerror = () => notify('error', 'Gagal memuat library Excel.');
-      document.head.appendChild(s);
-    }
+    loadXLSX(runExport, () => notify('error', 'Gagal memuat library Excel.'));
   };
   return { openEdit, handleReschedule, handleSendWA, handleExportExcel };
 }

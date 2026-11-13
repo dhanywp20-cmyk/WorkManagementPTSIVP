@@ -3,9 +3,10 @@
 import { DonutChart } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { SectionHeader } from './RingkasanKuis';
+import type { StatSesi } from './tipe-dasbor';
 
 export interface StatistikSesiKuisProps {
-  sessionStats: any[];
+  sessionStats: StatSesi[];
 }
 
 export function StatistikSesiKuis({
@@ -13,17 +14,17 @@ export function StatistikSesiKuis({
 }: StatistikSesiKuisProps) {
   return (
     <>{sessionStats.length > 0 && (() => {
-      const totalPeserta = sessionStats.reduce((n: number, s: any) => n + s.total, 0);
-      const totalPassed  = sessionStats.reduce((n: number, s: any) => n + s.passed, 0);
-      const totalFailed  = sessionStats.reduce((n: number, s: any) => n + s.failed, 0);
-      const scoreGood    = sessionStats.reduce((n: number, s: any) => n + s.scoreGood, 0);
-      const scoreMid     = sessionStats.reduce((n: number, s: any) => n + s.scoreMid, 0);
-      const scoreLow     = sessionStats.reduce((n: number, s: any) => n + s.scoreLow, 0);
+      const totalPeserta = sessionStats.reduce((n: number, s) => n + s.total, 0);
+      const totalPassed  = sessionStats.reduce((n: number, s) => n + s.passed, 0);
+      const totalFailed  = sessionStats.reduce((n: number, s) => n + s.failed, 0);
+      const scoreGood    = sessionStats.reduce((n: number, s) => n + s.scoreGood, 0);
+      const scoreMid     = sessionStats.reduce((n: number, s) => n + s.scoreMid, 0);
+      const scoreLow     = sessionStats.reduce((n: number, s) => n + s.scoreLow, 0);
       const avgScore     = totalPeserta > 0
-        ? sessionStats.reduce((n: number, s: any) => n + s.avg * s.total, 0) / totalPeserta : 0;
+        ? sessionStats.reduce((n: number, s) => n + s.avg * s.total, 0) / totalPeserta : 0;
       const sesiDenganWaktu = sessionStats.filter((s) => s.avgMin !== null);
       const avgMin = sesiDenganWaktu.length
-        ? sesiDenganWaktu.reduce((n: number, s: any) => n + s.avgMin, 0) / sesiDenganWaktu.length : null;
+        ? sesiDenganWaktu.reduce((n: number, s) => n + (s.avgMin ?? 0), 0) / sesiDenganWaktu.length : null;
       const sesiUrut = [...sessionStats].sort((a, b) => a.avg - b.avg);
     
       return (

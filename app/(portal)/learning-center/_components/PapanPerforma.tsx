@@ -5,17 +5,18 @@ import { TeamSwitch, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
 import { SearchInput } from './shared';
 import { DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import type { StatDivisi, Performer } from './tipe-dasbor';
 
 export interface PapanPerformaProps {
   nationalAvg: number | null;
   activeTeam: TeamFilter;
   performerDivisionFilter: string;
-  divisionStats: any[];
+  divisionStats: StatDivisi[];
   setActiveTeam: React.Dispatch<React.SetStateAction<TeamFilter>>;
   setPerformerDivisionFilter: React.Dispatch<React.SetStateAction<string>>;
   searchPerformer: string;
   setSearchPerformer: React.Dispatch<React.SetStateAction<string>>;
-  filteredPerformers: any[];
+  filteredPerformers: Performer[];
   setSelectedUser: React.Dispatch<React.SetStateAction<{ uid: string; name: string; } | null>>;
   loadingAnalytics: boolean;
 }

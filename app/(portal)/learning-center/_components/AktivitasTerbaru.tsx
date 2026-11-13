@@ -3,9 +3,10 @@
 import { fmtDate, ScoreBadge } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SectionHeader } from './RingkasanKuis';
+import type { PercobaanTerbaru } from './tipe-dasbor';
 
 export interface AktivitasTerbaruProps {
-  filteredRecent: any[];
+  filteredRecent: PercobaanTerbaru[];
   search: string;
 }
 
@@ -22,7 +23,7 @@ export function AktivitasTerbaru({
               {search ? 'Tidak ada hasil yang cocok' : 'Belum ada aktivitas quiz'}
             </div>
           )}
-          {filteredRecent.slice(0, 10).map((a: any, _ri: number) => {
+          {filteredRecent.slice(0, 10).map((a, _ri: number) => {
             const tq = a.total_questions ?? 0;
             const ts = a.time_taken_sec ?? Infinity;
             const isFast = tq >= 5 && ts < tq * 5;

@@ -1,10 +1,10 @@
-import { loadXLSX } from '@/lib/xlsx-loader';
+import { loadXLSX, type PustakaXlsx } from '@/lib/xlsx-loader';
 import { PiketRow, KegiatanEntry, bacaPicPiket } from './shared';
 import { labelKelompokPTS } from '@/lib/kelompok/inti';
 import { daftarPilihan, denganNilai, produkSpesifik } from '@/lib/daftar-pilihan';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
-  const runExport = (XLSX: any) => {
+  const runExport = (XLSX: PustakaXlsx) => {
     const exportDate = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
     const sorted = [...allRows].sort((a,b)=>a.day_date.localeCompare(b.day_date));
 
@@ -20,10 +20,12 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
     const altStyle = {...cellStyle,fill:{fgColor:{rgb:'FFF5F5'},patternType:'solid'}};
     const titleStyle = {font:{name:'Arial',bold:true,sz:16,color:{rgb:'991B1B'}},alignment:{horizontal:'left',vertical:'center'}};
     const subTitleStyle = {font:{name:'Arial',sz:10,color:{rgb:'6B7280'}},alignment:{horizontal:'left',vertical:'center'}};
-    const ctr = (v: any, s: any) => ({v,s,t:typeof v==='number'?'n':'s'});
-    const cell = (v:any,s?:any) => ({v,s:s||cellStyle,t:typeof v==='number'?'n':'s'});
-    const empty = (s?:any) => ({v:'',s:s||cellStyle,t:'s'});
-    const row0 = (n:number,s?:any) => Array(n).fill(null).map(()=>empty(s));
+    type Gaya = Record<string, unknown>;
+    type Sel = { v: unknown; s: Gaya; t: string };
+    const ctr = (v: unknown, s: Gaya): Sel => ({v,s,t:typeof v==='number'?'n':'s'});
+    const cell = (v: unknown,s?: Gaya): Sel => ({v,s:s||cellStyle,t:typeof v==='number'?'n':'s'});
+    const empty = (s?: Gaya): Sel => ({v:'',s:s||cellStyle,t:'s'});
+    const row0 = (n:number,s?: Gaya) => Array(n).fill(null).map(()=>empty(s));
 
     const kgColorMap:Record<string,{bg:string;fg:string}> = {
       'Demo Product'   :{bg:'DBEAFE',fg:'1E40AF'},
@@ -31,12 +33,12 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       'Maintenance'    :{bg:'FEF3C7',fg:'92400E'},
       'Shooting Markom':{bg:'D1FAE5',fg:'065F46'},
     };
-    const kgStyle=(jenis:string,base:any={})=>({
+    const kgStyle=(jenis:string,base: Gaya={})=>({
       ...base,...cellStyle,
       ...(kgColorMap[jenis]?{font:{name:'Arial',sz:10,bold:true,color:{rgb:kgColorMap[jenis].fg}},fill:{fgColor:{rgb:kgColorMap[jenis].bg},patternType:'solid'}}:{}),
     });
 
-    const picStyle=(team:string,base:any={})=>{
+    const picStyle=(team:string,base: Gaya={})=>{
       const colors:Record<string,{bg:string;fg:string}> = {'PTS IVP':{bg:'FEE2E2',fg:'991B1B'},'PTS UMP':{bg:'DBEAFE',fg:'1E3A5F'},'PTS MVI':{bg:'EDE9FE',fg:'6D28D9'}};
       const c=colors[team]||{bg:'F3F4F6',fg:'374151'};
       return{...base,...cellStyle,font:{name:'Arial',sz:9,bold:true,color:{rgb:c.fg}},fill:{fgColor:{rgb:c.bg},patternType:'solid'}};
@@ -76,7 +78,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const prodArrEx=Object.entries(prodMapEx).sort(([,a],[,b])=>b-a);
       const topProdukEx=prodArrEx[0]?.[0]||'-';
 
-      const data:any[][] = [
+      const data: Sel[][] = [
         [cell(`📊 PIKET SHOWROOM — DASHBOARD REPORT${periodLabel?' · '+periodLabel:''}`,titleStyle),...row0(COLS-1,titleStyle)],
         [cell(`Tanggal Export: ${exportDate}${periodLabel?' · Periode: '+periodLabel:''}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
@@ -174,7 +176,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       }
 
       const ws = XLSX.utils.aoa_to_sheet(data);
-      const merges:any[]=[
+      const merges: { s: { r: number; c: number }; e: { r: number; c: number } }[]=[
         {s:{r:0,c:0},e:{r:0,c:COLS-1}},
         {s:{r:1,c:0},e:{r:1,c:COLS-1}},
         {s:{r:3,c:0},e:{r:3,c:COLS-1}},
@@ -188,7 +190,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
     {
       const headers=['No.','Tanggal','Hari','PIC','Team PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Tamu Instansi','Nama Sales','Division Sales','Kebutuhan','Keterangan','Diedit Oleh'];
       const COLS=headers.length;
-      const data:any[][]=[
+      const data: Sel[][]=[
         [cell('📋 DATA JADWAL PIKET SHOWROOM',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'991B1B'}}}),...row0(COLS-1)],
         [cell(`Total: ${sorted.length} hari piket · ${kegiatanList.length} kegiatan · Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
@@ -238,7 +240,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const demoKg=kegiatanList.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi);
       const headers=['No.','Tanggal','Hari','PIC','Tamu Instansi','Nama Sales','Division','Produk','Kebutuhan'];
       const COLS=headers.length;
-      const data:any[][]=[
+      const data: Sel[][]=[
         [cell('🏢 DATA DEMO PRODUCT — PIKET SHOWROOM',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'1E40AF'}}}),...row0(COLS-1)],
         [cell(`Total Demo: ${demoKg.length} · Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
@@ -276,7 +278,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const lainKg=kegiatanList.filter(k=>k.jenis_kegiatan!=='Demo Product');
       const headers=['No.','Tanggal','Hari','PIC','Jenis Kegiatan','Jam Mulai','Jam Selesai','Produk','Keterangan'];
       const COLS=headers.length;
-      const data:any[][]=[
+      const data: Sel[][]=[
         [cell('🔧 KEGIATAN LAIN — RnD / MAINTENANCE / SHOOTING MARKOM',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'7C3AED'}}}),...row0(COLS-1)],
         [cell(`Total: ${lainKg.length} kegiatan · Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
@@ -328,7 +330,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       plRows.sort((a,b)=>a.piket.day_date.localeCompare(b.piket.day_date));
       const headers=['No.','Tanggal','Hari','PIC','Kegiatan','Jam Mulai','Jam Selesai','Nama Barang','Watt','Durasi (jam)','Estimasi Wh'];
       const COLS=headers.length;
-      const data:any[][]=[
+      const data: Sel[][]=[
         [cell('⚡ BEBAN DAYA TAMBAHAN — Produk di Luar List Default',{...titleStyle,font:{name:'Arial',bold:true,sz:14,color:{rgb:'B45309'}}}),...row0(COLS-1)],
         [cell(`Total: ${plRows.length} unit · Export: ${exportDate}`,subTitleStyle),...row0(COLS-1)],
         row0(COLS),
