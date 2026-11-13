@@ -1,6 +1,5 @@
 import { INCENTIVE_CATEGORIES } from './scheme-kategori-bawaan';
 import { SkemaInsentif } from './scheme-tipe';
-import { TARIF_BAWAAN, periksaTarif } from './scheme-tarif';
 
 export const SKEMA_BAWAAN: SkemaInsentif = {
   versi: 4,
@@ -40,7 +39,6 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
       tanpaSupport: { pic: 77, manager: 23 },
     },
   },
-  tarif: TARIF_BAWAAN,
 };
 
 export function persenInstaller(sk: SkemaInsentif, remote: boolean): number {
@@ -152,7 +150,6 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
       pesan: 'PTS Daerah dinyalakan tapi porsinya 0% — isi porsinya, atau matikan saklarnya.',
     });
   }
-  if (sk.tarif) for (const pesan of periksaTarif(sk.tarif)) masalah.push({ bidang: 'tarif', pesan });
   if (sk.jendelaSupportBulan < 0) masalah.push({ bidang: 'jendela', pesan: 'Jendela penilaian support tidak boleh negatif.' });
 
   const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));

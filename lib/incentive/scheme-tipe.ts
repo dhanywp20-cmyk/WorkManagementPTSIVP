@@ -1,5 +1,3 @@
-import type { TarifInsentif } from './scheme-tarif';
-
 
 
 export type PeranInti = 'pic' | 'support' | 'supervisor' | 'manager' | 'installer';
@@ -56,6 +54,4 @@ export interface SkemaInsentif {
     remote: { adaSupport: Record<string, number>; tanpaSupport: Record<string, number> };
     onsite: { adaSupport: Record<string, number>; tanpaSupport: Record<string, number> };
   };
-
-  tarif?: TarifInsentif;
 }
