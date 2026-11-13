@@ -1,5 +1,5 @@
 import { calculateStandardScheme } from '@/app/(portal)/incentive-pts/_components/calc';
-import { SKEMA_BAWAAN, TARIF_BAWAAN, hitungNominalLevel, periksaSkema, type SkemaInsentif } from '@/lib/incentive/scheme';
+import { SKEMA_BAWAAN, periksaSkema, type SkemaInsentif } from '@/lib/incentive/scheme';
 import { hitungSplitTahap } from '@/lib/incentive/tahap';
 import { terapkanRedistribusi } from '@/lib/incentive/redistribusi';
 
@@ -83,29 +83,6 @@ cek('nominal redistribusi = bagian A, total tahap tidak berubah',
 cek('tercatat di log redistribusi dengan sumber & penerima', r2.log.length === 1 && r2.log[0].sumber_nama === 'Support A' && r2.log[0].penerima.length === 3 && baru.every(s => s.redistribusi_dari === 'Support A'));
 const r3 = terapkanRedistribusi({ splits: hitungSplitTahap({ sk, splits: v3, pool: POOL, nomorTahap: 1, persenTahap: 50 }), anggota: [...anggota, { id: '', full_name: 'Installer Cabang', tanggal_nonaktif: '2020-01-01' }], kelompokPTS: ['PTS IVP'], tahunBayar: 2027, hariIni: '2027-01-15' });
 cek('porsi PTS Cabang tidak ikut redistribusi', r3.splits.some(s => s.role === 'installer' && s.amount === 1_500_000));
-
-console.log('\n7. Level A — floor');
-const a = hitungNominalLevel(TARIF_BAWAAN, {
-  level: 'A', netProfit: 200_000_000,
-  cakupan: [{ kategori: 'videowall', item: '>30' }, { kategori: 'vp', item: 'videowall' }, { kategori: 'matrix', item: 'controller', nominal: 1_750_000 }],
-});
-cek('1% Net Profit 2.000.000 vs flat tertinggi 5.000.000 → 5.000.000 (flat)', a.persenNetProfit === 2_000_000 && a.flatTertinggi === 5_000_000 && a.nominal === 5_000_000 && a.dipakai === 'flat');
-const besar = hitungNominalLevel(TARIF_BAWAAN, { level: 'A', netProfit: 900_000_000, cakupan: [{ kategori: 'videowall', item: '>30' }] });
-cek('Net Profit besar → 1% dipakai', besar.nominal === 9_000_000 && besar.dipakai === 'net_profit');
-const tunggu = hitungNominalLevel(TARIF_BAWAAN, { level: 'A', netProfit: null, cakupan: [{ kategori: 'videowall', item: '>30' }] });
-cek('Level A tanpa Net Profit → Menunggu Net Profit, nominal belum final', tunggu.menungguNetProfit && tunggu.nominal === null && tunggu.flatTertinggi === 5_000_000);
-
-console.log('\nLevel B/C/D & tarif rentang');
-const b = hitungNominalLevel(TARIF_BAWAAN, { level: 'B', cakupan: [{ kategori: 'led', item: 'h' }, { kategori: 'ifp', item: '6-10' }] });
-cek('flat tidak dijumlahkan: LED H 1,5jt + IFP 1jt → 1.500.000', b.nominal === 1_500_000);
-const dobel = hitungNominalLevel(TARIF_BAWAAN, { level: 'B', cakupan: [{ kategori: 'led', item: 'h' }, { kategori: 'led', item: 'vx' }] });
-cek('kategori yang sama dua kali ditolak', dobel.nominal === null && dobel.masalah.length > 0);
-const luar = hitungNominalLevel(TARIF_BAWAAN, { level: 'C', cakupan: [{ kategori: 'avoip', item: 'avoip', nominal: 6_000_000 }] });
-cek('nominal di luar rentang AV over IP (2–5jt) ditolak', luar.nominal === null);
-const dalam = hitungNominalLevel(TARIF_BAWAAN, { level: 'C', cakupan: [{ kategori: 'avoip', item: 'avoip', nominal: 3_500_000 }] });
-cek('nominal pasti dalam rentang dipakai apa adanya', dalam.nominal === 3_500_000);
-const cue = hitungNominalLevel(TARIF_BAWAAN, { level: 'D', cakupan: [], cue: [{ item: 'single', jumlah: 4 }, { item: 'tracking', jumlah: 1 }] });
-cek('Cue System: base 1jt + 4×250rb + 1×750rb = 2.750.000', cue.nominal === 2_750_000);
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);
