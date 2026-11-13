@@ -2,6 +2,8 @@ import { calculateStandardScheme } from '@/app/(portal)/incentive-pts/_component
 import { SKEMA_BAWAAN, periksaSkema, type SkemaInsentif } from '@/lib/incentive/scheme';
 import { hitungSplitTahap } from '@/lib/incentive/tahap';
 import { terapkanRedistribusi } from '@/lib/incentive/redistribusi';
+import { siapkanDataSummary } from '@/app/(portal)/incentive-pts/_components/exportPengajuan-data';
+import { readFileSync } from 'fs';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -83,6 +85,25 @@ cek('nominal redistribusi = bagian A, total tahap tidak berubah',
 cek('tercatat di log redistribusi dengan sumber & penerima', r2.log.length === 1 && r2.log[0].sumber_nama === 'Support A' && r2.log[0].penerima.length === 3 && baru.every(s => s.redistribusi_dari === 'Support A'));
 const r3 = terapkanRedistribusi({ splits: hitungSplitTahap({ sk, splits: v3, pool: POOL, nomorTahap: 1, persenTahap: 50 }), anggota: [...anggota, { id: '', full_name: 'Installer Cabang', tanggal_nonaktif: '2020-01-01' }], kelompokPTS: ['PTS IVP'], tahunBayar: 2027, hariIni: '2027-01-15' });
 cek('porsi PTS Cabang tidak ikut redistribusi', r3.splits.some(s => s.role === 'installer' && s.amount === 1_500_000));
+
+console.log('\nRekap Finance & batch');
+const proyek = { id: 'p1', project_name: 'Proyek X', incentive_value: POOL, mode_penyelesaian: 'onsite', bast_date: '2026-03-01', pic_id: 'u-pic', assign_name: 'PIC' } as unknown as Parameters<typeof siapkanDataSummary>[0]['projects'][number];
+const org = [
+  { id: 'u-pic', full_name: 'PIC', jabatan: 'Staff', atasan_id: 'u-sup' },
+  { id: 'u-sup', full_name: 'Supervisor', jabatan: 'Supervisor', atasan_id: 'u-mgr' },
+  { id: 'u-mgr', full_name: 'Manager', jabatan: 'Manager', atasan_id: null },
+  { id: 'u-a', full_name: 'Support A', jabatan: 'Staff', tanggal_nonaktif: '2027-06-30' },
+];
+const rekap = siapkanDataSummary({
+  projects: [proyek], supportsMap: new Map([['Proyek X', [{ user_id: 'u-a', user_name: 'Support A' }]]]), orgList: org,
+  managerUserId: 'u-mgr', managerName: 'Manager', sk, tahapUrut: sk.tranche, totalPersenTahap: 100,
+});
+const embA = rekap.perOrangTahun.get('Support A');
+cek('rekap: Support A hanya menerima tahap 2027 (jatuh tempo sebelum resign)', embA?.get(2027) === 425000 && !embA?.get(2028) && !embA?.get(2029));
+cek('rekap: tahap 2028 & 2029 milik A tampil sebagai baris "Redistribusi dari"',
+  rekap.redistribusiList.map(r => `${r.dari}|${r.proyek}|${r.tahap}|${r.tahun}|${r.jumlah}`).join() === 'Support A|Proyek X|2|2028|297500,Support A|Proyek X|3|2029|127500');
+const batch = readFileSync('app/(portal)/incentive-pts/_components/calc-batch.ts', 'utf8');
+cek('batch memakai terapkanRedistribusi & mencatat log incentive_redistribusi', /terapkanRedistribusi\(/.test(batch) && /from\('incentive_redistribusi'\)\.insert/.test(batch));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

@@ -81,7 +81,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,piket_ubah,bisa_ditugaskan').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,piket_ubah,bisa_ditugaskan,tanggal_nonaktif').order('full_name');
     if (error) {
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
       if (!err2 && fallback) {
@@ -196,6 +196,7 @@ export function AccountSettingsInline() {
       piket_akses: role === 'team' ? null : (editingUser.piket_akses === 'lingkup' ? 'lingkup' : null),
       piket_ubah: role === 'team' ? false : editingUser.piket_ubah === true,
       bisa_ditugaskan: editBisaDitugaskan,
+      tanggal_nonaktif: role === 'team' ? (editingUser.tanggal_nonaktif || null) : null,
       ...((editingUser.pimpinan === true) !== editPimpinanAwal ? { pimpinan: role === 'team' ? false : editingUser.pimpinan === true } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }

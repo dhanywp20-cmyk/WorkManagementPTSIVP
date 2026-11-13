@@ -14,6 +14,7 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; bg: str
   supervisor: { label: 'Supervisor', color: '#0891b2', bg: 'rgba(8,145,178,0.12)'   },
   manager:    { label: 'Manager',    color: '#059669', bg: 'rgba(5,150,105,0.12)'   },
   installer:  { label: 'PTS Daerah', color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
+  redistribusi: { label: 'Redistribusi', color: '#be185d', bg: 'rgba(190,24,93,0.12)' },
 };
 
 export const TRANCHE_STATUS: Record<string, { label: string; color: string; bg: string; icon: string }> = {

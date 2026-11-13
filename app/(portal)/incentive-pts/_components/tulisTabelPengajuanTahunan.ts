@@ -1,9 +1,10 @@
 'use client';
 
-import type { BarisInstaller } from './exportPengajuan-data';
+import type { BarisInstaller, BarisRedistribusi } from './exportPengajuan-data';
 import ExcelJS from 'exceljs';
 import { INSTALLER_FILL, KOL, KOL_REKAP, NAVY_HDR, RUPIAH_FMT, SUB_HDR, TOTAL_FILL, dataFont, fillWarna, perbesarKolom, putih, selGabung, sumCell, thinBorder } from './exportPengajuan-gaya';
 import { getColLetter } from './exportPengajuan';
+const REDISTRIBUSI_FILL = 'FCE7F3';
 
 export interface KonteksTulisTabelPengajuanTahunan {
   ws: ExcelJS.Worksheet;
@@ -18,11 +19,12 @@ export interface KonteksTulisTabelPengajuanTahunan {
   roleLabel: (r: string) => "PIC" | "Support" | "Supervisor" | "Manager";
   perOrangTahun: Map<string, Map<number, number>>;
   installerList: BarisInstaller[];
+  redistribusiList: BarisRedistribusi[];
 }
 
 export function tulisTabelPengajuanTahunan(k: KonteksTulisTabelPengajuanTahunan) {
   const { ws, KOL_TERAKHIR, KOL_TAHUN_AWAL, tahunUrut, kolTotal3, orangUrut, namaBelumFinal, urutPeran,
-    roleLabel, perOrangTahun, installerList } = k;
+    roleLabel, perOrangTahun, installerList, redistribusiList } = k;
   let { row } = k;
   const cJudul3 = ws.getCell(row, KOL.no);
   cJudul3.value = '3. Nilai Pengajuan Incentive per Tahun';
@@ -124,9 +126,32 @@ export function tulisTabelPengajuanTahunan(k: KonteksTulisTabelPengajuanTahunan)
     cTot.alignment = { horizontal: 'right', vertical: 'middle' };
     row += 1;
   });
+  redistribusiList.forEach(inst => {
+    const r = row;
+    selGabung(ws, r, KOL_REKAP.nama, `Redistribusi dari ${inst.dari} — ${inst.proyek} — Tahun ${inst.tahap}`,
+      { isi: REDISTRIBUSI_FILL });
+    selGabung(ws, r, KOL_REKAP.peran, 'Dibagi rata ke Tim PTS aktif', { isi: REDISTRIBUSI_FILL });
+
+    let kk = KOL_REKAP.peran[1] + 1; let kolAmt = -1;
+    for (const th of tahunUrut) {
+      const cPct = ws.getCell(r, kk); const cAmt = ws.getCell(r, kk + 1);
+      cPct.fill = fillWarna(REDISTRIBUSI_FILL); cAmt.fill = fillWarna(REDISTRIBUSI_FILL);
+      cPct.border = thinBorder(); cAmt.border = thinBorder();
+      cPct.numFmt = '0.0%'; cAmt.numFmt = RUPIAH_FMT;
+      cPct.alignment = { horizontal: 'center', vertical: 'middle' }; cAmt.alignment = { horizontal: 'right', vertical: 'middle' };
+      cPct.font = dataFont(9); cAmt.font = dataFont();
+      if (th === inst.tahun) { cPct.value = 1; cAmt.value = inst.jumlah; kolAmt = kk + 1; }
+      kk += 2;
+    }
+    const cTot = ws.getCell(r, kolTotal3);
+    cTot.value = kolAmt > 0 ? sumCell(`${getColLetter(kolAmt)}${r}`, inst.jumlah) : inst.jumlah;
+    cTot.numFmt = RUPIAH_FMT; cTot.font = { ...dataFont(), bold: true }; cTot.fill = fillWarna(REDISTRIBUSI_FILL); cTot.border = thinBorder();
+    cTot.alignment = { horizontal: 'right', vertical: 'middle' };
+    row += 1;
+  });
   const t3Akhir = row - 1;
 
-  if (orangUrut.length === 0 && installerList.length === 0) {
+  if (orangUrut.length === 0 && installerList.length === 0 && redistribusiList.length === 0) {
     selGabung(ws, row, [KOL_REKAP.nama[0], kolTotal3], '(Belum ada project dengan nominal & mode final)',
       { font: { ...dataFont(), italic: true, color: { argb: '999999' } } });
     row += 1;

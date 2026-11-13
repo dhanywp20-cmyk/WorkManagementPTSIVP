@@ -36,7 +36,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   let row = 2;
 
-  const { daftarProyek, namaBelumFinal, orangUrut, perOrangTahun, installerList, tahunUrut, sufiksTahun, urutPeran } = siapkanDataSummary({
+  const { daftarProyek, namaBelumFinal, orangUrut, perOrangTahun, installerList, redistribusiList, tahunUrut, sufiksTahun, urutPeran } = siapkanDataSummary({
     projects, supportsMap, orgList, managerUserId, managerName, sk, tahapUrut, totalPersenTahap,
   });
 
@@ -302,7 +302,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   const hasilTulisTabelPengajuanTahunan = tulisTabelPengajuanTahunan({
     ws, row, KOL_TERAKHIR, KOL_TAHUN_AWAL, tahunUrut, kolTotal3, orangUrut, namaBelumFinal,
-    urutPeran, roleLabel, perOrangTahun, installerList,
+    urutPeran, roleLabel, perOrangTahun, installerList, redistribusiList,
   });
   row = hasilTulisTabelPengajuanTahunan.row;
   row += 2;

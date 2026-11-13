@@ -203,6 +203,9 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
                           <span className="text-sm text-gray-700">{s.user_name || '—'}</span>
+                          {s.redistribusi_dari && (
+                            <span className="text-[11px] text-pink-700">dari {s.redistribusi_dari} — {detailProject.project_name} — Tahun {detailTranches.find(t => t.id === s.tranche_id)?.tranche_number ?? '-'}</span>
+                          )}
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-bold text-gray-800">{formatRupiah(s.amount || 0)}</span>

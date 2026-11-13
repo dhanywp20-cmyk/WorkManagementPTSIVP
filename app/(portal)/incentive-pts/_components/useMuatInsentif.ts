@@ -35,7 +35,7 @@ export function useMuatInsentif(k: MuatInsentifKonteks) {
     if (splitRes.data) setAllSplits(splitRes.data);
     if (lateRes.data) setLateTickets(lateRes.data);
     const [usersRes, ptsTeamRes, orgRes] = await Promise.all([
-      supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, access_level, jabatan').order('full_name'),
+      supabase.from('users').select('id, username, full_name, role, team_type, incentive_akses, allow_incentive_input, incentive_brand_scope, access_level, jabatan, tanggal_nonaktif').order('full_name'),
       supabase.from('pts_team_mappings').select('staff_user_id, supervisor_user_id'),
       supabase.from('users').select('id, atasan_id'),
     ]);
