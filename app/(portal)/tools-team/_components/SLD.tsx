@@ -1,6 +1,7 @@
 'use client';
+import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { SquareDashed, X, Type, Expand, FileBox, FileSpreadsheet, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import { MousePointer2, Spline, SquareDashed, X, Type, Expand, FileBox, FileSpreadsheet, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
@@ -32,6 +33,22 @@ const POPUP_KANAN = `absolute right-2 top-2 z-20 w-[350px] max-w-[90%] max-h-[ca
 const TAB_KIRI = 'absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-r-xl bg-blue-700 hover:bg-blue-800 text-white px-1.5 py-3 text-[12px] font-bold shadow-md [writing-mode:vertical-rl]';
 
 type Sheet = 1 | 2 | 3;
+
+const ALAT = [
+  ['pilih', MousePointer2, 'Pilih', 'Pilih, geser & atur objek (Esc)'],
+  ['garis', Spline, 'Garis', 'Gambar kabel manual: klik perangkat asal, titik belok, lalu perangkat tujuan'],
+  ['teks', Type, 'Teks', 'Tambah teks bebas (atau klik dua kali di diagram)'],
+  ['area', SquareDashed, 'Area', 'Kotak putus-putus berlabel untuk mengelompokkan: ruangan, Rack, Wall, Ceiling'],
+] as const;
+
+function Grup({ judul, children }: { judul: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={judul} className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50/70 px-1.5 pt-1 pb-1.5">
+      <span className="px-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">{judul}</span>
+      <div className="flex flex-wrap items-center gap-1">{children}</div>
+    </div>
+  );
+}
 
 function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
   const logo = a.logo ?? WATERMARK_BAWAAN;
@@ -182,48 +199,67 @@ export function SLD() {
   const tombolAktif = '!bg-blue-700 !text-white !border-blue-700';
   return (
     <div className={penuh ? 'fixed inset-0 z-[900] bg-slate-100 p-2 flex flex-col gap-2' : 'space-y-3'}>
-      <section className="rounded-2xl bg-white border border-slate-200 p-2.5 flex flex-wrap items-center gap-1.5">
-        <button type="button" className={kelasTombol} onClick={() => ganti('Mulai SLD baru?', () => { a.baru(); simpan.lepas(); })}><FilePlus2 size={15} /> Baru</button>
-        <BilahSimpan a={a} s={simpan} />
-        <input value={a.dok.blok.proyek} onChange={e => a.ubahBlok({ proyek: e.target.value })} placeholder="Nama proyek" aria-label="Nama proyek"
-          title="Nama proyek - tampil di Sheet 1, 2 & 3" className="h-9 w-56 rounded-xl border border-slate-300 px-3 text-[13px] font-semibold text-slate-800 placeholder:font-normal" />
-        <button type="button" className={kelasTombol} onClick={() => ganti('Buka contoh SLD Voice Kamar Pasien?', () => { a.contoh(); simpan.lepas(); })}><Sparkles size={15} /> Contoh</button>
-        <span className="w-px h-6 bg-slate-200 mx-0.5" aria-hidden="true" />
-        <button type="button" className={kelasTombol} onClick={a.riwayat.undo} disabled={!a.riwayat.bisaUndo} aria-label="Batal (Ctrl+Z)"><Undo2 size={15} /></button>
-        <button type="button" className={kelasTombol} onClick={a.riwayat.redo} disabled={!a.riwayat.bisaRedo} aria-label="Ulang (Ctrl+Y)"><Redo2 size={15} /></button>
-        <span className="w-px h-6 bg-slate-200 mx-0.5" aria-hidden="true" />
-        <div className="flex rounded-xl border border-slate-200 p-0.5" role="tablist" aria-label="Lembar">
-          {([1, 2, 3] as Sheet[]).map(s => (
-            <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)} disabled={s === 2 && tanpaKoneksi}
-              title={s === 2 && tanpaKoneksi ? 'Sheet 2 dimatikan untuk proyek ini' : undefined}
-              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 disabled:cursor-not-allowed ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-              {s === 1 ? 'Sheet 1 · Diagram' : s === 2 && tanpaKoneksi ? 'Sheet 2 · tidak dipakai' : `${s === 2 ? 'Sheet 2 · Koneksi & catatan' : 'Sheet 3 · BOQ'}${simpleMode ? ' (tidak diekspor)' : ''}`}
-            </button>
-          ))}
-        </div>
-        <label className={`${kelasTombol} cursor-pointer select-none`} title="Matikan bila proyek tidak butuh Sheet 2 (daftar koneksi, daftar perangkat, gambar & catatan). Tidak tampil, tidak dihitung & tidak ikut ekspor.">
-          <input type="checkbox" className="w-4 h-4 accent-blue-700" checked={!tanpaKoneksi} onChange={e => { a.aturSheet2(e.target.checked); if (!e.target.checked && sheet === 2) setSheet(1); }} />
-          Pakai Sheet 2
-        </label>
-        <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Ukuran kertas sheet 1">
-          {(['169', 'a3'] as Kertas[]).map(k => (
-            <button key={k} type="button" role="radio" aria-checked={(a.dok.kertas ?? 'a3') === k} onClick={() => a.aturKertas(k)}
-              title={k === 'a3' ? 'Sheet 1 kertas A3 landscape (template baku)' : 'Sheet 1 kanvas 16:9 (420 x 236 mm) - perangkat & teks diskalakan otomatis'}
-              className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${(a.dok.kertas ?? 'a3') === k ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-              {KERTAS[k].label}
-            </button>
-          ))}
-        </div>
-        <button type="button" className={kelasTombol} onClick={() => { setSheet(1); a.tambahTeks(); }} title="Tambah teks bebas (atau klik dua kali di diagram)"><Type size={15} /> Teks</button>
-        <button type="button" className={kelasTombol} onClick={() => { setSheet(1); a.tambahZona(); }} title="Kotak putus-putus berlabel: ruangan, Rack, Wall, Ceiling"><SquareDashed size={15} /> Area</button>
-        <div className="flex gap-1">
-          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} aria-label="Perkecil" disabled={sheet !== 1}>
+      <section aria-label="Toolbar SLD" className="rounded-2xl bg-white border border-slate-200 p-2 flex flex-wrap items-stretch gap-1.5">
+        <Grup judul="File">
+          <button type="button" className={kelasTombol} onClick={() => ganti('Mulai SLD baru?', () => { a.baru(); simpan.lepas(); })}><FilePlus2 size={15} /> Baru</button>
+          <BilahSimpan a={a} s={simpan} />
+          <input value={a.dok.blok.proyek} onChange={e => a.ubahBlok({ proyek: e.target.value })} placeholder="Nama proyek" aria-label="Nama proyek"
+            title="Nama proyek - tampil di Sheet 1, 2 & 3" className="h-9 w-56 rounded-xl border border-slate-300 px-3 text-[13px] font-semibold text-slate-800 placeholder:font-normal" />
+          <button type="button" className={kelasTombol} onClick={() => ganti('Buka contoh SLD Voice Kamar Pasien?', () => { a.contoh(); simpan.lepas(); })}><Sparkles size={15} /> Contoh</button>
+        </Grup>
+        <Grup judul="Edit">
+          <button type="button" className={kelasTombol} onClick={a.riwayat.undo} disabled={!a.riwayat.bisaUndo} aria-label="Batal (Ctrl+Z)" title="Batal (Ctrl+Z)"><Undo2 size={15} /></button>
+          <button type="button" className={kelasTombol} onClick={a.riwayat.redo} disabled={!a.riwayat.bisaRedo} aria-label="Ulang (Ctrl+Y)" title="Ulang (Ctrl+Y)"><Redo2 size={15} /></button>
+        </Grup>
+        <Grup judul="Alat gambar">
+          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Alat gambar">
+            {ALAT.map(([k, Ikon, l, t]) => {
+              const aktif = k === 'pilih' ? !a.gambarKabel : k === 'garis' && a.gambarKabel;
+              return (
+                <button key={k} type="button" role="radio" aria-checked={aktif} title={t} disabled={sheet !== 1 && k === 'pilih'}
+                  onClick={() => {
+                    setSheet(1);
+                    if (k === 'pilih') a.setGambarKabel(false);
+                    else if (k === 'garis') a.setGambarKabel(!a.gambarKabel);
+                    else { a.setGambarKabel(false); if (k === 'teks') a.tambahTeks(); else a.tambahZona(); }
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 ${aktif ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+                  <Ikon size={15} /> {l}
+                </button>
+              );
+            })}
+          </div>
+        </Grup>
+        <Grup judul="Lembar & kertas">
+          <div className="flex rounded-xl border border-slate-200 p-0.5" role="tablist" aria-label="Lembar">
+            {([1, 2, 3] as Sheet[]).map(s => (
+              <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)} disabled={s === 2 && tanpaKoneksi}
+                title={s === 2 && tanpaKoneksi ? 'Sheet 2 dimatikan untuk proyek ini' : undefined}
+                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 disabled:cursor-not-allowed ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+                {s === 1 ? 'Sheet 1 · Diagram' : s === 2 && tanpaKoneksi ? 'Sheet 2 · tidak dipakai' : `${s === 2 ? 'Sheet 2 · Koneksi & catatan' : 'Sheet 3 · BOQ'}${simpleMode ? ' (tidak diekspor)' : ''}`}
+              </button>
+            ))}
+          </div>
+          <label className={`${kelasTombol} cursor-pointer select-none`} title="Matikan bila proyek tidak butuh Sheet 2 (daftar koneksi, daftar perangkat, gambar & catatan). Tidak tampil, tidak dihitung & tidak ikut ekspor.">
+            <input type="checkbox" className="w-4 h-4 accent-blue-700" checked={!tanpaKoneksi} onChange={e => { a.aturSheet2(e.target.checked); if (!e.target.checked && sheet === 2) setSheet(1); }} />
+            Pakai Sheet 2
+          </label>
+          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Ukuran kertas sheet 1">
+            {(['169', 'a3'] as Kertas[]).map(k => (
+              <button key={k} type="button" role="radio" aria-checked={(a.dok.kertas ?? 'a3') === k} onClick={() => a.aturKertas(k)}
+                title={k === 'a3' ? 'Sheet 1 kertas A3 landscape (template baku)' : 'Sheet 1 kanvas 16:9 (420 x 236 mm) - perangkat & teks diskalakan otomatis'}
+                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${(a.dok.kertas ?? 'a3') === k ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+                {KERTAS[k].label}
+              </button>
+            ))}
+          </div>
+        </Grup>
+        <Grup judul="Tampilan">
+          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} aria-label="Perkecil" title="Perkecil" disabled={sheet !== 1}>
             <ZoomOut size={15} />
           </button>
-          <button type="button" className={kelasTombol} onClick={() => setZoom(1)} aria-label="Pas layar" disabled={sheet !== 1}><Maximize2 size={15} /></button>
-          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.min(4, z + 0.25))} aria-label="Perbesar" disabled={sheet !== 1}><ZoomIn size={15} /></button>
-        </div>
-        <div className="flex gap-1">
+          <button type="button" className={kelasTombol} onClick={() => setZoom(1)} aria-label="Pas layar" title="Pas layar" disabled={sheet !== 1}><Maximize2 size={15} /></button>
+          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.min(4, z + 0.25))} aria-label="Perbesar" title="Perbesar" disabled={sheet !== 1}><ZoomIn size={15} /></button>
           <button type="button" className={`${kelasTombol} ${kiri && sheet === 1 ? tombolAktif : ''}`} onClick={() => { setSheet(1); setKiri(v => !v); }} aria-pressed={kiri}
             title="Tampilkan / sembunyikan katalog perangkat"><PanelLeft size={15} /> Perangkat</button>
           <button type="button" className={`${kelasTombol} ${kanan ? tombolAktif : ''}`} onClick={() => { setSheet(1); if (kanan) tutupKanan(); else setPanelBuka(true); }}
@@ -231,8 +267,8 @@ export function SLD() {
           <button type="button" className={`${kelasTombol} ${penuh ? tombolAktif : ''}`} onClick={() => aturPenuh(!penuh)} aria-pressed={penuh}>
             {penuh ? <Minimize size={15} /> : <Expand size={15} />} {penuh ? 'Keluar' : 'Layar penuh'}
           </button>
-        </div>
-        <div className="flex flex-wrap gap-1.5 ml-auto">
+        </Grup>
+        <Grup judul="Ekspor">
           <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Isi ekspor">
             {([[false, 'Full Detail', 'PDF, Visio & PNG berisi Sheet 1 + Sheet 2 (koneksi, daftar perangkat, catatan) - untuk internal'],
               [true, 'Simple', 'Hanya Sheet 1 (diagram) - aman dibagikan ke klien']] as const).map(([v, l, t]) => (
@@ -254,9 +290,9 @@ export function SLD() {
               <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : simpleMode || tanpaKoneksi ? 'PNG' : `PNG ${s}`}
             </button>
           ))}
-        </div>
+        </Grup>
         {!penuh && (
-          <div className="w-full flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+          <div className="w-full flex flex-wrap items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-100">
             <PengaturanWatermark a={a} />
             <span className="text-[11.5px] text-slate-500">Foto, logo &amp; draf hanya tersimpan di browser ini - tidak diunggah ke server.</span>
           </div>
