@@ -4,7 +4,7 @@ import { kotakTeks } from './teks-bebas';
 import type { DokSLD, Kabel, Perangkat, TeksBebas, Titik, ZonaSLD } from './tipe';
 
 export interface Klip { perangkat: Perangkat[]; kabel: Kabel[]; teks: TeksBebas[]; zona: ZonaSLD[] }
-export type Rata = 'kiri' | 'tengahH' | 'kanan' | 'atas' | 'tengahV' | 'bawah';
+export type Rata = 'kiri' | 'tengahH' | 'kanan' | 'atas' | 'tengahV' | 'bawah' | 'sebarH' | 'sebarV';
 
 export const kotakDari = (a: Titik, b: Titik): Kotak => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) });
 const potong = (a: Kotak, b: Kotak) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -60,6 +60,49 @@ export function tempelKlip(d: DokSLD, k: Klip, geser = 8): { dok: DokSLD; ids: s
   };
 }
 
+export type Format =
+  | { jenis: 'p'; gaya: Pick<Perangkat, 'w' | 'h' | 'huruf' | 'labelDi' | 'lebarLabel'> }
+  | { jenis: 't'; gaya: Pick<TeksBebas, 'ukuran' | 'warna' | 'tebal' | 'lebar'> }
+  | { jenis: 'z'; gaya: Pick<ZonaSLD, 'warna' | 'huruf' | 'tebal'> }
+  | { jenis: 'k'; gaya: Pick<Kabel, 'jenis' | 'duaArah' | 'labelBalik' | 'huruf'> };
+
+export function formatDari(d: DokSLD, id: string): Format | null {
+  const p = d.perangkat.find(x => x.id === id);
+  if (p) return { jenis: 'p', gaya: { w: p.w, h: p.h, huruf: p.huruf, labelDi: p.labelDi, lebarLabel: p.lebarLabel } };
+  const t = d.teks.find(x => x.id === id);
+  if (t) return { jenis: 't', gaya: { ukuran: t.ukuran, warna: t.warna, tebal: t.tebal, lebar: t.lebar } };
+  const z = (d.zona ?? []).find(x => x.id === id);
+  if (z) return { jenis: 'z', gaya: { warna: z.warna, huruf: z.huruf, tebal: z.tebal } };
+  const c = d.kabel.find(x => x.id === id);
+  if (c) return { jenis: 'k', gaya: { jenis: c.jenis, duaArah: c.duaArah, labelBalik: c.labelBalik, huruf: c.huruf } };
+  return null;
+}
+
+export function terapkanFormat(d: DokSLD, f: Format, id: string): DokSLD {
+  if (f.jenis === 'p') return { ...d, perangkat: d.perangkat.map(p => (p.id === id ? { ...p, ...f.gaya } : p)) };
+  if (f.jenis === 't') return { ...d, teks: d.teks.map(t => (t.id === id ? { ...t, ...f.gaya } : t)) };
+  if (f.jenis === 'z') return { ...d, zona: (d.zona ?? []).map(z => (z.id === id ? { ...z, ...f.gaya } : z)) };
+  return { ...d, kabel: d.kabel.map(c => (c.id === id ? { ...c, ...f.gaya } : c)) };
+}
+
+export function urutkan(d: DokSLD, ids: string[], arah: 'depan' | 'belakang'): DokSLD {
+  const s = new Set(ids);
+  const atur = <T extends { id: string }>(xs: T[]) => {
+    const pilih = xs.filter(x => s.has(x.id)), sisa = xs.filter(x => !s.has(x.id));
+    return arah === 'depan' ? [...sisa, ...pilih] : [...pilih, ...sisa];
+  };
+  return { ...d, perangkat: atur(d.perangkat), teks: atur(d.teks), ...(d.zona ? { zona: atur(d.zona) } : {}) };
+}
+
+export function samakanUkuran(d: DokSLD, ids: string[], acuan: string | undefined, cara: 'w' | 'h' | 'wh'): DokSLD {
+  const ada = new Set(ids);
+  const rp = d.perangkat.find(p => p.id === acuan) ?? d.perangkat.find(p => ada.has(p.id));
+  const zs = d.zona ?? [], rz = zs.find(z => z.id === acuan) ?? zs.find(z => ada.has(z.id));
+  const ukur = <T extends { id: string; w: number; h: number }>(x: T, r?: T) => (!r || x.id === r.id || !ada.has(x.id) ? x
+    : { ...x, ...(cara !== 'h' ? { w: r.w } : {}), ...(cara !== 'w' ? { h: r.h } : {}) });
+  return { ...d, perangkat: d.perangkat.map(p => ukur(p, rp)), ...(d.zona ? { zona: zs.map(z => ukur(z, rz)) } : {}) };
+}
+
 export function hapusObjek(d: DokSLD, ids: string[]): DokSLD {
   const s = new Set(ids);
   let hasil: DokSLD = { ...d, teks: d.teks.filter(t => !s.has(t.id)), zona: (d.zona ?? []).filter(z => !s.has(z.id)), kabel: d.kabel.filter(c => !s.has(c.id)) };
@@ -73,6 +116,20 @@ export function ratakan(d: DokSLD, ids: string[], cara: Rata): DokSLD {
   const k = new Map(daftar.map(p => [p.id, kotakTampak(p)]));
   const ks = [...k.values()], minX = Math.min(...ks.map(b => b.x)), maxX = Math.max(...ks.map(b => b.x + b.w));
   const minY = Math.min(...ks.map(b => b.y)), maxY = Math.max(...ks.map(b => b.y + b.h));
+  if (cara === 'sebarH' || cara === 'sebarV') {
+    if (daftar.length < 3) return d;
+    const h = cara === 'sebarH', urut = [...daftar].sort((p, q) => (h ? k.get(p.id)!.x - k.get(q.id)!.x : k.get(p.id)!.y - k.get(q.id)!.y));
+    const total = urut.reduce((n, p) => n + (h ? k.get(p.id)!.w : k.get(p.id)!.h), 0);
+    const sela = ((h ? maxX - minX : maxY - minY) - total) / (urut.length - 1);
+    const geser = new Map<string, number>();
+    let pos = h ? minX : minY;
+    for (const p of urut) { const b = k.get(p.id)!; geser.set(p.id, pos - (h ? b.x : b.y)); pos += (h ? b.w : b.h) + sela; }
+    return { ...d, perangkat: d.perangkat.map(p => {
+      const g = geser.get(p.id);
+      if (g === undefined) return p;
+      return h ? { ...p, x: Math.round((p.x + g) * 2) / 2 } : { ...p, y: Math.round((p.y + g) * 2) / 2 };
+    }) };
+  }
   return { ...d, perangkat: d.perangkat.map(p => {
     const b = k.get(p.id);
     if (!b) return p;

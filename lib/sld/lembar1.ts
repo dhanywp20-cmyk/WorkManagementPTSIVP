@@ -10,20 +10,49 @@ import { type DokSLD, type GeoKabel, halamanDok, type Perangkat, type Titik } fr
 
 const PANJANG_PANAH = 2.2, LEBAR_PANAH = 1.8;
 
-export function jalurBulat(t: Titik[], r = SUDUT_GARIS): string {
+export const JARI_LOMPAT = 0.9;
+export type Lompat = (a: Titik, b: Titik) => number[];
+
+export function jalurBulat(t: Titik[], r = SUDUT_GARIS, lompat?: Lompat): string {
   if (t.length < 2) return '';
-  let d = `M${n(t[0].x)} ${n(t[0].y)}`;
+  let d = `M${n(t[0].x)} ${n(t[0].y)}`, pena = t[0];
+  const ke = (q: Titik, a: Titik, b: Titik) => {
+    if (lompat && Math.abs(a.y - b.y) < 1e-6 && Math.abs(q.x - pena.x) > 1e-6) {
+      const arah = Math.sign(q.x - pena.x), R = JARI_LOMPAT;
+      for (const x of lompat(a, b).sort((u, v) => (u - v) * arah)) {
+        if ((x - pena.x) * arah <= R || (q.x - x) * arah <= R) continue;
+        d += ` L${n(x - arah * R)} ${n(q.y)} A${R} ${R} 0 0 ${arah > 0 ? 1 : 0} ${n(x + arah * R)} ${n(q.y)}`;
+        pena = { x: x + arah * R, y: q.y };
+      }
+    }
+    d += ` L${n(q.x)} ${n(q.y)}`;
+    pena = q;
+  };
   for (let i = 1; i < t.length - 1; i++) {
     const a = t[i - 1], b = t[i], c = t[i + 1];
     const l1 = Math.hypot(b.x - a.x, b.y - a.y), l2 = Math.hypot(c.x - b.x, c.y - b.y);
     const rr = Math.min(r, l1 / 2, l2 / 2);
-    if (rr < 0.05) { d += ` L${n(b.x)} ${n(b.y)}`; continue; }
+    if (rr < 0.05) { ke(b, a, b); continue; }
     const p1 = { x: b.x - ((b.x - a.x) / l1) * rr, y: b.y - ((b.y - a.y) / l1) * rr };
     const p2 = { x: b.x + ((c.x - b.x) / l2) * rr, y: b.y + ((c.y - b.y) / l2) * rr };
-    d += ` L${n(p1.x)} ${n(p1.y)} Q${n(b.x)} ${n(b.y)} ${n(p2.x)} ${n(p2.y)}`;
+    ke(p1, a, b);
+    d += ` Q${n(b.x)} ${n(b.y)} ${n(p2.x)} ${n(p2.y)}`;
+    pena = p2;
   }
-  const z = t[t.length - 1];
-  return `${d} L${n(z.x)} ${n(z.y)}`;
+  ke(t[t.length - 1], t[t.length - 2], t[t.length - 1]);
+  return d;
+}
+
+export function petaLompat(geo: GeoKabel[]): (id: string) => Lompat {
+  const tegak: { id: string; x: number; y1: number; y2: number }[] = [];
+  for (const k of geo) for (const gr of k.garis) for (let i = 1; i < gr.titik.length; i++) {
+    const a = gr.titik[i - 1], b = gr.titik[i];
+    if (Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) > 1e-6) tegak.push({ id: k.id, x: a.x, y1: Math.min(a.y, b.y), y2: Math.max(a.y, b.y) });
+  }
+  return id => (a, b) => {
+    const x1 = Math.min(a.x, b.x), x2 = Math.max(a.x, b.x), m = JARI_LOMPAT * 1.5;
+    return tegak.filter(v => v.id !== id && v.x > x1 + m && v.x < x2 - m && a.y > v.y1 + 0.3 && a.y < v.y2 - 0.3).map(v => v.x);
+  };
 }
 
 function panah(t: Titik[], warna: string): { titik: Titik[]; svg: string } {
@@ -40,13 +69,14 @@ function panah(t: Titik[], warna: string): { titik: Titik[]; svg: string } {
 export function svgKabel(d: DokSLD, geo: GeoKabel[]): { garis: string; label: string } {
   const peta = new Map(d.kabel.map(c => [c.id, c]));
   const g: string[] = [], l: string[] = [];
+  const lompat = d.tanpaLompat ? null : petaLompat(geo);
   for (const k of geo) {
     const c = peta.get(k.id)!;
     const s = GAYA_KABEL[c.jenis];
     const dash = s.putus ? ` stroke-dasharray="${s.putus}"` : '';
     for (const gr of k.garis) {
       const ujung = c.duaArah ? { titik: gr.titik, svg: `<circle cx="${n(gr.titik[gr.titik.length - 1].x)}" cy="${n(gr.titik[gr.titik.length - 1].y)}" r="${TITIK_UJUNG}" fill="${s.warna}"/>` } : panah(gr.titik, s.warna);
-      g.push(`<path d="${jalurBulat(ujung.titik)}" fill="none" stroke="${s.warna}" stroke-width="${s.tebal}" stroke-linejoin="round"${dash}/>${ujung.svg}`);
+      g.push(`<path d="${jalurBulat(ujung.titik, SUDUT_GARIS, lompat?.(k.id))}" fill="none" stroke="${s.warna}" stroke-width="${s.tebal}" stroke-linejoin="round"${dash}/>${ujung.svg}`);
       if (gr.awal) g.push(`<circle cx="${n(gr.titik[0].x)}" cy="${n(gr.titik[0].y)}" r="${TITIK_UJUNG}" fill="${s.warna}"/>`);
     }
     const tl = LABEL_GARIS.tinggi * k.huruf;

@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { FolderOpen, History, Link2, Save, SaveAll, Search, Trash2 } from 'lucide-react';
+import { FilePlus2, FolderOpen, History, Link2, Save, SaveAll, Search, Sparkles, Trash2 } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Modal } from '@/components/shared/Modal';
 import { Centang, kelasKecil, kelasTombol } from './isian';
+import { GarisMenu, ItemMenu, kelasIkon, Menu } from './MenuBilah';
 import type { KeadaanSimpanSLD, SldTim } from './useSimpanSLD';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -58,7 +59,7 @@ function PilihRequest({ nilai, onUbah }: { nilai: { req: RequestPilihan; ruang: 
   );
 }
 
-export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
+export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: KeadaanSimpanSLD; onBaru: () => void; onContoh: () => void }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [nama, setNama] = useState('');
   const [pakaiTautan, setPakaiTautan] = useState(false);
@@ -94,25 +95,33 @@ export function BilahSimpan({ a, s }: { a: KeadaanSLD; s: KeadaanSimpanSLD }) {
     if (await s.tautkan(s.aktif.id, tautan.req.id, tautan.ruang, `${tautan.req.nama} · ${tautan.req.ruang[tautan.ruang]?.nama ?? ''}`)) setDialog(null);
   };
   const bukaDaftar = () => { setCari(''); setDialog('buka'); void s.muatDaftar(); };
-  const tombolUtama = `${kelasTombol} ${s.berubah ? '!border-amber-300 !bg-amber-50 !text-amber-900' : ''}`;
+  const status = s.aktif ? `${s.aktif.nama} · v${s.aktif.versi}${s.berubah ? ' · belum disimpan' : ' · tersimpan'}` : 'Draf (belum disimpan ke server)';
+  const titik = s.aktif ? (s.berubah ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-slate-400';
 
   return (
     <>
-      <div className="flex items-center gap-1">
-        <button type="button" className={tombolUtama} onClick={() => void simpan()} disabled={s.sibuk === 'simpan'} title="Simpan ke server tim (Ctrl+S)">
-          <Save size={15} /> {s.sibuk === 'simpan' ? 'Menyimpan...' : 'Simpan'}
+      <div className="flex items-center gap-0.5 min-w-0">
+        <Menu label="Menu file" teks="File" lebar="w-64">
+          <ItemMenu ikon={FilePlus2} label="SLD baru" onClick={onBaru} />
+          <ItemMenu ikon={FolderOpen} label="Buka SLD tim..." onClick={bukaDaftar} />
+          <GarisMenu />
+          <ItemMenu ikon={Save} label="Simpan" pintas="Ctrl+S" onClick={() => void simpan()} disabled={s.sibuk === 'simpan'} />
+          <ItemMenu ikon={SaveAll} label="Simpan sebagai..." pintas="Ctrl+Shift+S" onClick={bukaSebagai} />
+          {s.aktif && <ItemMenu ikon={History} label="Riwayat versi" onClick={() => { setDialog('riwayat'); void s.muatRiwayat(s.aktif!.id); }} />}
+          {s.aktif && <ItemMenu ikon={Link2} label="Tautkan ke Request Design" onClick={() => { setTautan(null); setDialog('tautkan'); }} />}
+          <GarisMenu />
+          <ItemMenu ikon={Sparkles} label="Buka contoh SLD" onClick={onContoh} />
+        </Menu>
+        <button type="button" className={`${kelasIkon} relative ${s.berubah ? '!bg-amber-50 !text-amber-900' : ''}`} onClick={() => void simpan()} disabled={s.sibuk === 'simpan'}
+          title={`Simpan ke server tim (Ctrl+S) · ${status}`}>
+          <Save size={16} /> {s.sibuk === 'simpan' ? 'Menyimpan...' : 'Simpan'}
+          <span aria-hidden="true" className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${titik}`} />
         </button>
-        <button type="button" className={kelasTombol} onClick={bukaSebagai} title="Simpan sebagai SLD baru (Ctrl+Shift+S)"><SaveAll size={15} /> Simpan sebagai</button>
-        <button type="button" className={kelasTombol} onClick={bukaDaftar}><FolderOpen size={15} /> Buka</button>
-        {s.aktif && <button type="button" className={kelasTombol} onClick={() => { setDialog('riwayat'); void s.muatRiwayat(s.aktif!.id); }} title="Riwayat versi" aria-label="Riwayat versi"><History size={15} /></button>}
-        {s.aktif && <button type="button" className={kelasTombol} onClick={() => { setTautan(null); setDialog('tautkan'); }} title="Tautkan ke Request Design (opsional)"><Link2 size={15} /></button>}
-        <span className={`hidden xl:inline text-[11.5px] font-semibold px-2 py-1 rounded-lg ${s.aktif ? (s.berubah ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800') : 'bg-slate-100 text-slate-600'}`}>
-          {s.aktif ? `${s.aktif.nama} · v${s.aktif.versi}${s.berubah ? ' · belum disimpan' : ' · tersimpan'}` : 'Draf (belum disimpan ke server)'}
-        </span>
+        <span className="hidden 2xl:inline max-w-[200px] truncate text-[11.5px] text-slate-500" title={status}>{status}</span>
         {s.versiServer && s.aktif && (
           <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
-            Ada v{s.versiServer.versi} dari {s.versiServer.oleh || 'tim'} di server
-            <button type="button" className="underline font-bold" onClick={() => { const id = s.aktif!.id; s.tutupVersiServer(); void s.buka(id); }}>Muat versi terbaru</button>
+            Ada v{s.versiServer.versi} dari {s.versiServer.oleh || 'tim'}
+            <button type="button" className="underline font-bold" onClick={() => { const id = s.aktif!.id; s.tutupVersiServer(); void s.buka(id); }}>Muat terbaru</button>
           </span>
         )}
       </div>
