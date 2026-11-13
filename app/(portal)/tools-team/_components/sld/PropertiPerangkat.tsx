@@ -1,7 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
 import { Copy, FlipHorizontal2, FlipVertical2, Image as IkonFoto, ImagePlus, Plug, RotateCcw, RotateCw, Ruler, Tag, Trash2, Type, Users } from 'lucide-react';
-import { sudutSah } from '@/lib/sld/geometri';
+import { kotakTampak, sudutSah } from '@/lib/sld/geometri';
 import { DAFTAR_IKON } from '@/lib/sld/ikon';
 import { FOTO_PRODUK } from '@/lib/sld/foto-produk';
 import { templatIkon } from '@/lib/sld/katalog';
@@ -14,7 +14,7 @@ import { PilihPosisiLabel } from './PanelPilihan';
 import { PilihModel } from './PilihModel';
 import { AmbilBrosur } from './AmbilBrosur';
 import { kompresGambar } from './gambar';
-import { Angka, Area, Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { Angka, Area, Isian, IsianLebarBungkus, kelasKecil, kelasTombol, Teks } from './isian';
 import { MiniIkon } from './PanelKatalog';
 import type { KeadaanSLD } from './useKeadaanSLD';
 import type { KatalogTim } from './useKatalogTim';
@@ -58,7 +58,7 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
           className="w-16 h-12 rounded-lg border border-slate-200 bg-white grid place-items-center overflow-hidden shrink-0 hover:border-blue-300">
           {p.gambar || p.foto ? <img src={p.gambar ?? p.foto} alt="" className="max-w-full max-h-full object-contain" /> : <MiniIkon ikon={p.ikon} className="w-14 h-9" />}
         </button>
-        <Teks label="#Nama di diagram" nilai={p.nama} onUbah={v => ubah({ nama: v })} className="flex-1" />
+        <Area label="#Nama di diagram (Enter = baris baru)" nilai={p.nama} onUbah={v => ubah({ nama: v })} baris={Math.min(4, p.nama.split('\n').length)} className="flex-1" />
         <div className="flex gap-1 self-end">
           <button type="button" className={`${kelasTombol} !px-2.5`} onClick={() => a.duplikat(p.id)} aria-label="Duplikat perangkat" title="Duplikat"><Copy size={15} /></button>
           <button type="button" className={`${kelasTombol} !px-2.5 text-rose-700`} onClick={() => a.hapus({ jenis: 'p', id: p.id })} aria-label="Hapus perangkat" title="Hapus"><Trash2 size={15} /></button>
@@ -150,9 +150,10 @@ export function PropertiPerangkat({ a, p, tim }: { a: KeadaanSLD; p: Perangkat; 
       </>)}
 
       {grup === 'teks' && (<>
-        <Teks label="*Peran (teks merah)" nilai={p.peran} onUbah={v => ubah({ peran: v })} placeholder="mis. Server Voice Command" />
+        <Area label="*Peran (teks merah, Enter = baris baru)" nilai={p.peran} onUbah={v => ubah({ peran: v })} baris={Math.min(4, p.peran.split('\n').length)} placeholder="mis. Server Voice Command" />
         <Area label="Keterangan (satu baris per poin)" nilai={p.ket} onUbah={v => ubah({ ket: v })} placeholder={'Spesifikasi singkat\nDaya: adaptor 12 V'} />
         <PilihPosisiLabel nilai={p.labelDi} onPilih={x => a.aturLabelDi([p.id], x)} />
+        <IsianLebarBungkus label="Lebar maks label (turun ke bawah)" nilai={p.lebarLabel} lebarGambar={Math.max(8, Math.round(kotakTampak(p).w))} onUbah={v => a.aturLebarLabel([p.id], v)} />
         <IsianHurufLabel label="Ukuran huruf label (baris #nama)" dasarMm={LABEL_PERANGKAT.nama.ukuran} faktor={p.huruf} bawaan={a.dok.huruf?.perangkat}
           onUbah={f => ubah({ huruf: f })} bantuan="Baris *peran dan keterangan ikut membesar / mengecil." />
       </>)}

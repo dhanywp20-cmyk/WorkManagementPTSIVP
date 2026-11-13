@@ -2,7 +2,7 @@ import { GAYA_KABEL, LABEL_GARIS, LABEL_PERANGKAT, SUDUT_GARIS, TITIK_UJUNG, WAR
 import { geometri, hurufPerangkat, kotakTampak, teksLabel } from './geometri';
 import { bingkaiPrim, bukaSvg, gambarPerangkat, type OpsiLembar, watermark } from './lembar-umum';
 import { type Prim, svgPrimitif } from './primitif';
-import { lebarTeks, n, potong, teks } from './teks';
+import { bungkus, lebarTeks, n, potong, teks } from './teks';
 import { jenisTerpakai } from './turunan';
 import { svgTeksBebas } from './teks-bebas';
 import { svgZona } from './zona';
@@ -63,12 +63,18 @@ export const jumlahLabel = (p: Pick<Perangkat, 'qty' | 'satuan'>) => {
   return SATUAN_BIJI.test((p.satuan ?? '').trim()) ? ` (${n}X)` : ` (${n} ${p.satuan.trim()})`;
 };
 
-export function barisLabel(p: Perangkat, f = 1): { isi: string; ukuran: number; warna: string; tebal: boolean }[] {
-  const L = LABEL_PERANGKAT;
+type BarisLabel = { isi: string; ukuran: number; warna: string; tebal: boolean };
+const pecahBaris = (s: string) => s.split('\n').map(x => x.trim()).filter(Boolean);
+
+export function barisLabel(p: Perangkat, f = 1): BarisLabel[] {
+  const L = LABEL_PERANGKAT, maks = p.lebarLabel;
+  const susun = (daftar: string[], g: Omit<BarisLabel, 'isi'>): BarisLabel[] =>
+    daftar.flatMap(s => (maks ? bungkus(s, maks, g.ukuran, g.tebal) : [s]).map(isi => ({ ...g, isi })));
+  const nama = pecahBaris(p.nama), peran = pecahBaris(p.peran);
   return [
-    ...(p.nama.trim() ? [{ isi: `#${p.nama.trim()}${jumlahLabel(p)}`, ukuran: L.nama.ukuran * f, warna: L.nama.warna, tebal: true }] : []),
-    ...(p.peran.trim() ? [{ isi: `*${p.peran.trim()}`, ukuran: L.peran.ukuran * f, warna: L.peran.warna, tebal: true }] : []),
-    ...p.ket.split('\n').filter(s => s.trim()).map(s => ({ isi: s.trim(), ukuran: L.ket.ukuran * f, warna: L.ket.warna, tebal: false })),
+    ...susun(nama.map((s, i) => `${i === 0 ? '#' : ''}${s}${i === nama.length - 1 ? jumlahLabel(p) : ''}`), { ukuran: L.nama.ukuran * f, warna: L.nama.warna, tebal: true }),
+    ...susun(peran.map((s, i) => `${i === 0 ? '*' : ''}${s}`), { ukuran: L.peran.ukuran * f, warna: L.peran.warna, tebal: true }),
+    ...susun(pecahBaris(p.ket), { ukuran: L.ket.ukuran * f, warna: L.ket.warna, tebal: false }),
   ];
 }
 

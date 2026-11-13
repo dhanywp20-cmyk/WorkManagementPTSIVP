@@ -8,14 +8,14 @@ import {
 import { rasioDinding } from '@/lib/sld/dinding';
 import { dokRuang, duplikatRuang, gabungRuang, hapusRuang, jumlahRuang, namaiRuang, semuaPerangkat, tambahRuang } from '@/lib/sld/ruang';
 import { rapikanLabel, terapkanQtyDiNama } from '@/lib/sld/rapikan';
-import { geometri, sudutSah } from '@/lib/sld/geometri';
+import { geometri, kotakTampak, sudutSah } from '@/lib/sld/geometri';
 import { cariTemplat } from '@/lib/sld/katalog';
 import { perangkatDariTim, segarkanFotoTim as segarkanFotoTimDok, type ItemTim } from '@/lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
 import { hapusObjek, type Klip, type Rata, ratakan, salinObjek, tempelKlip, geserObjek } from '@/lib/sld/pilih';
 import {
-  AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PosisiLabel, type TeksBebas, UKURAN_MIN, type ZonaSLD,
+  AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PosisiLabel, type TeksBebas, type Titik, UKURAN_MIN, type ZonaSLD,
 } from '@/lib/sld/tipe';
 import { useRiwayat } from '../bersama/riwayat';
 import {
@@ -172,9 +172,10 @@ export function useKeadaanSLD() {
     setPresetTerakhirState(k);
     try { localStorage.setItem(KUNCI_PRESET, k); } catch {  }
   }, []);
-  const hubungkan = useCallback((dari: string, ke: string) => {
+  const [gambarKabel, setGambarKabel] = useState(false);
+  const hubungkan = useCallback((dari: string, ke: string, jalur?: Titik[]) => {
     if (dari === ke) return;
-    const c = kabelBaru(dari, ke, isiPreset(presetKabel(presetTerakhir)));
+    const c = { ...kabelBaru(dari, ke, isiPreset(presetKabel(presetTerakhir))), ...(jalur?.length ? { jalur } : {}) };
     setDok(d => (d.kabel.length >= MAKS_KABEL ? d : { ...d, kabel: [...d.kabel, c] }));
     setPilih({ jenis: 'k', id: c.id });
     setKabelBaruId(c.id);
@@ -236,6 +237,8 @@ export function useKeadaanSLD() {
   }, [setDok]);
   const ratakanTerpilih = useCallback((cara: Rata) => setDok(d => ratakan(d, terpilihRef.current, cara)), [setDok]);
   const aturLabelDi = useCallback((ids: string[], posisi: PosisiLabel) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id) ? { ...p, labelDi: posisi === 'bawah' ? undefined : posisi } : p)) })), [setDok]);
+  const aturLebarLabel = useCallback((ids: string[], v: number | 'gambar' | undefined) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id)
+    ? { ...p, lebarLabel: v === 'gambar' ? Math.max(8, Math.round(kotakTampak(p).w)) : v } : p)) })), [setDok]);
   const aturModel = useCallback((ids: string[], model: string, kategori?: string) => setDok(d => ({ ...d, perangkat: d.perangkat.map(x => {
     if (!ids.includes(x.id)) return x;
     return { ...x, model, ...(kategori !== undefined ? { kategori } : {}) };
@@ -314,8 +317,8 @@ export function useKeadaanSLD() {
   return {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, duplikatRuangKe, qtyDariNama, rapikanSemuaLabel, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
-    aturLabelDi, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturSheet2, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
-    presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId,
+    aturLabelDi, aturLebarLabel, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturSheet2, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
+    presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, gambarKabel, setGambarKabel,
   };
 }
 

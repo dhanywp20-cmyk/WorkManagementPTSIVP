@@ -28,7 +28,7 @@ export function koridor(a: Kotak, s: Sisi, ke: Titik): Kotak {
 
 const unik = (v: number[]) => [...new Set(v.map(x => Math.round(x * 100) / 100))].sort((p, q) => p - q);
 
-function rapikan(t: Titik[]): Titik[] {
+export function rapikan(t: Titik[]): Titik[] {
   const h: Titik[] = [];
   for (const p of t) {
     if (h.length && Math.abs(h[h.length - 1].x - p.x) < E && Math.abs(h[h.length - 1].y - p.y) < E) continue;
