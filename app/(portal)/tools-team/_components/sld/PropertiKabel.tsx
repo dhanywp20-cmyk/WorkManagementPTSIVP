@@ -83,8 +83,12 @@ export function PropertiKabel({ a, c }: { a: KeadaanSLD; c: Kabel }) {
       <Teks label="Catatan" nilai={c.catatan} onUbah={v => ubah({ catatan: v })} />
       <Centang label="Label garis di sisi seberang" nilai={c.labelBalik} onUbah={v => ubah({ labelBalik: v })} />
       <IsianHurufLabel label="Ukuran huruf label kabel" dasarMm={LABEL_GARIS.ukuran} faktor={c.huruf} bawaan={a.dok.huruf?.kabel} onUbah={f => ubah({ huruf: f })} />
+      <p className="rounded-lg bg-slate-50 px-2.5 py-2 text-[11.5px] leading-snug text-slate-600">
+        Atur jalur di kanvas: seret <b>kotak di tengah ruas</b> untuk menggeser ruas, seret <b>titik bulat</b> untuk memindah belokan.
+        Klik 2x pada garis untuk menambah belokan, klik 2x titik untuk menghapusnya.
+      </p>
       <div className="flex flex-wrap gap-1.5 pt-1">
-        {c.tengah !== undefined && <button type="button" className={kelasTombol} onClick={() => ubah({ tengah: undefined })}><RotateCcw size={15} /> Jalur otomatis</button>}
+        {(c.tengah !== undefined || !!c.jalur?.length) && <button type="button" className={kelasTombol} onClick={() => ubah({ tengah: undefined, jalur: undefined })}><RotateCcw size={15} /> Jalur otomatis</button>}
         <button type="button" className={`${kelasTombol} text-rose-700`} onClick={() => a.hapus({ jenis: 'k', id: c.id })}><Trash2 size={15} /> Hapus kabel</button>
       </div>
     </div>

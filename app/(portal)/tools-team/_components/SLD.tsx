@@ -80,6 +80,7 @@ export function SLD() {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const x = aRef.current, p = x.pilih, ctrl = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+      if (x.gambarKabel) return;
       if (ctrl && k === 'c') return;
       if (ctrl && k === 'a') { e.preventDefault(); x.pilihBanyak([...x.dok.perangkat, ...x.dok.teks, ...(x.dok.zona ?? [])].map(o => o.id)); return; }
       if (ctrl && k === 'd') { e.preventDefault(); if (x.salin()) x.tempel(); return; }

@@ -1,6 +1,6 @@
 import { HURUF } from './gaya';
 import type { Prim } from './primitif';
-import { kotakTeks, WARNA_TEKS } from './teks-bebas';
+import { barisTeks, kotakTeks, WARNA_TEKS } from './teks-bebas';
 import { lebarTeks } from './teks';
 import type { TeksBebas, ZonaSLD } from './tipe';
 import { GAYA_ZONA, hurufZona, labelZona, tebalZona, WARNA_ZONA } from './zona';
@@ -43,7 +43,7 @@ export const pisahTeks = (s: string): [string, string] => { const i = s.indexOf(
 
 export function bentukTeksBebas(t: TeksBebas, id: number): string {
   const k = kotakTeks(t), w = k.w * 1.18 + 1.5;
-  const [a, b] = pisahTeks(teksRun([{ isi: t.isi, ukuran: t.ukuran, warna: WARNA_TEKS[t.warna], tebal: t.tebal }], 0, -1.25));
+  const [a, b] = pisahTeks(teksRun([{ isi: barisTeks(t).join('\n'), ukuran: t.ukuran, warna: WARNA_TEKS[t.warna], tebal: t.tebal }], 0, -1.25));
   return `<Shape ID='${id}' NameU='Teks' Type='Shape' LineStyle='3' FillStyle='3' TextStyle='3'>${pin(k.x + (k.w - w) / 2, k.y, w, k.h, (-(t.putar ?? 0) * Math.PI) / 180)}`
     + `${sel('LinePattern', 0)}${sel('FillPattern', 0)}${tanpaMargin}${sel('VerticalAlign', 0)}${a}${b}</Shape>`;
 }

@@ -1,3 +1,4 @@
+import { satuBaris } from './teks';
 import { URUTAN_JENIS } from './gaya';
 import { IKON_DINDING } from './dinding';
 import { FOTO_PRODUK } from './foto-produk';
@@ -10,7 +11,7 @@ export interface BarisPerangkat { no: string; kategori: string; model: string; q
 export interface KartuGambar { no: string; judul: string; sub: string; contoh: Perangkat }
 
 const namaUjung = (u: Ujung, peta: Map<string, Perangkat>) => {
-  const dasar = (u.nama || peta.get(u.p)?.nama || '').trim();
+  const dasar = satuBaris(u.nama || peta.get(u.p)?.nama || '');
   return [dasar, u.port.trim()].filter(Boolean).join(' · ');
 };
 
@@ -102,7 +103,7 @@ export function barisPerangkat(d: DokSLD): BarisPerangkat[] {
   });
 }
 
-export const judulKartu = (nama: string) => nama.replace(/\s+#\d+$/, '').trim();
+export const judulKartu = (nama: string) => satuBaris(nama).replace(/\s+#\d+$/, '').trim();
 
 export function kartuGambar(d: DokSLD): KartuGambar[] {
   return [...kelompokNo(d).entries()].map(([no, daftar]) => {

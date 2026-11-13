@@ -6,7 +6,7 @@ import { sudutSah } from './geometri';
 import { GAYA_ZONA, TEBAL_ZONA } from './zona';
 import {
   AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
-  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi, POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD,
+  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TITIK_JALUR, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi, POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Titik, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD, LEBAR_BUNGKUS,
 } from './tipe';
 
 let urut = 0;
@@ -49,6 +49,11 @@ export function kabelBaru(dari: string, ke: string, isi: Partial<Kabel> = {}): K
     media: 'Cat6', teksGaris: '', fungsi: '', catatan: '', labelBalik: false, ...isi,
   };
 }
+
+export const lebarBungkusSah = (v: unknown) => {
+  const x = Number(v);
+  return v != null && v !== '' && Number.isFinite(x) && x > 0 ? Math.round(Math.min(LEBAR_BUNGKUS.maks, Math.max(LEBAR_BUNGKUS.min, x)) * 2) / 2 : undefined;
+};
 
 const teks = (v: unknown, maks = 400) => (typeof v === 'string' ? v.slice(0, maks) : '');
 const angka = (v: unknown, min: number, maks: number, awal: number) => {
@@ -94,7 +99,18 @@ function bersihkanPerangkat(v: unknown, area: Area = AREA): Perangkat | null {
     balikV: p.balikV === true || undefined,
     huruf: hurufSah(p.huruf),
     labelDi: POSISI_LABEL.includes(p.labelDi as PosisiLabel) && p.labelDi !== 'bawah' ? (p.labelDi as PosisiLabel) : undefined,
+    lebarLabel: lebarBungkusSah(p.lebarLabel),
   };
+}
+
+export function bersihkanJalur(v: unknown): Titik[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const h: Titik[] = [];
+  for (const t of v.slice(0, MAKS_TITIK_JALUR)) {
+    const x = Number((t as Titik | null)?.x), y = Number((t as Titik | null)?.y);
+    if (Number.isFinite(x) && Number.isFinite(y)) h.push({ x: Math.round(Math.min(600, Math.max(-100, x)) * 100) / 100, y: Math.round(Math.min(600, Math.max(-100, y)) * 100) / 100 });
+  }
+  return h.length ? h : undefined;
 }
 
 function bersihkanKabel(v: unknown, id: Set<string>): Kabel | null {
@@ -107,6 +123,7 @@ function bersihkanKabel(v: unknown, id: Set<string>): Kabel | null {
     cabang: Array.isArray(c.cabang) ? c.cabang.slice(0, 8).map(bersihkanUjung).filter(u => id.has(u.p)) : [],
     media: teks(c.media, 120), teksGaris: teks(c.teksGaris, 80), fungsi: teks(c.fungsi, 300), catatan: teks(c.catatan, 300),
     labelBalik: c.labelBalik === true, tengah: Number.isFinite(tengah) ? tengah : undefined, huruf: hurufSah(c.huruf),
+    ...(bersihkanJalur(c.jalur) ? { jalur: bersihkanJalur(c.jalur) } : {}),
   };
 }
 
@@ -119,6 +136,7 @@ function bersihkanTeks(v: unknown, area: Area): TeksBebas | null {
     id: t.id.slice(0, 40), isi: teks(t.isi, 500) || 'Teks', ukuran: angka(t.ukuran, 1, 20, 3), tebal: t.tebal === true,
     x: angka(t.x, area.x - 10, area.x + area.w, area.x), y: angka(t.y, area.y - 5, area.y + area.h, area.y),
     warna: WARNA_TEKS.includes(t.warna as WarnaTeks) ? (t.warna as WarnaTeks) : 'hitam', putar: sudutSah(t.putar) || undefined,
+    lebar: lebarBungkusSah(t.lebar),
   };
 }
 
@@ -186,7 +204,7 @@ function skalaIsi<T extends Pick<DokSLD, 'perangkat' | 'kabel' | 'teks' | 'zona'
       const w = setengah(Math.max(UKURAN_MIN.w, p.w * k)), h = setengah(Math.max(UKURAN_MIN.h, p.h * k));
       return { ...p, x: setengah(p.x + (p.w - w) / 2), y: setengah(Y(p.y + p.h / 2) - h / 2), w, h };
     }),
-    kabel: r.kabel.map(c => ({ ...c, tengah: undefined })),
+    kabel: r.kabel.map(c => ({ ...c, tengah: undefined, ...(c.jalur ? { jalur: c.jalur.map(t => ({ x: t.x, y: setengah(Y(t.y)) })) } : {}) })),
     teks: r.teks.map(t => ({ ...t, y: setengah(Y(t.y)) })),
     ...(r.zona ? { zona: r.zona.map(z => ({ ...z, y: setengah(Y(z.y)), h: setengah(Math.max(8, z.h * k)) })) } : {}),
   };

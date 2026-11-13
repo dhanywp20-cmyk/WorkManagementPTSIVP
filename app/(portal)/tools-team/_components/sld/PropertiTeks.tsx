@@ -4,7 +4,7 @@ import { sudutSah } from '@/lib/sld/geometri';
 import { LABEL_WARNA_TEKS, WARNA_TEKS } from '@/lib/sld/teks-bebas';
 import type { TeksBebas, WarnaTeks } from '@/lib/sld/tipe';
 import { IsianPt } from './IsianHuruf';
-import { Angka, Area, Isian, kelasKecil, kelasTombol } from './isian';
+import { Angka, Area, Isian, IsianLebarBungkus, kelasKecil, kelasTombol } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 export function PropertiTeks({ a, t }: { a: KeadaanSLD; t: TeksBebas }) {
@@ -12,6 +12,7 @@ export function PropertiTeks({ a, t }: { a: KeadaanSLD; t: TeksBebas }) {
   return (
     <div className="space-y-3">
       <Area label="Teks (Enter untuk baris baru)" nilai={t.isi} onUbah={v => ubah({ isi: v.slice(0, 500) })} baris={4} placeholder="Tulis teks..." />
+      <IsianLebarBungkus nilai={t.lebar} onUbah={v => ubah({ lebar: typeof v === 'number' ? v : undefined })} />
       <IsianPt label="Ukuran huruf" mm={t.ukuran} onUbah={mm => ubah({ ukuran: Math.round(mm * 100) / 100 })} />
       <Isian label="Warna">
         <div className="flex flex-wrap gap-1.5">
