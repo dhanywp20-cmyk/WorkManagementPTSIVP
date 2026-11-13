@@ -2,6 +2,7 @@ import { SKEMA_BAWAAN, periksaSkema } from './scheme-aturan';
 import type { Json } from '@/types/database';
 import { aturKategoriBerlaku } from './scheme-kategori';
 import { SkemaInsentif } from './scheme-tipe';
+import { rapikanTarif } from './scheme-tarif';
 import { supabase } from '../supabase';
 
 function bacaManagerPic(raw: unknown): SkemaInsentif['managerSebagaiPic'] {
@@ -38,6 +39,7 @@ function rapikan(raw: unknown): SkemaInsentif {
     tranche: Array.isArray(r.tranche) && r.tranche.length ? r.tranche : SKEMA_BAWAAN.tranche,
     porsiRemote: r.porsiRemote ?? SKEMA_BAWAAN.porsiRemote,
     supervisorSebagaiPic: r.supervisorSebagaiPic ?? SKEMA_BAWAAN.supervisorSebagaiPic,
+    tarif: rapikanTarif(r.tarif),
   };
 }
 

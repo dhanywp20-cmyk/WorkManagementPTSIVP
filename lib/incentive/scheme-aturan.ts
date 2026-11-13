@@ -1,21 +1,22 @@
 import { INCENTIVE_CATEGORIES } from './scheme-kategori-bawaan';
 import { SkemaInsentif } from './scheme-tipe';
+import { TARIF_BAWAAN, periksaTarif } from './scheme-tarif';
 
 export const SKEMA_BAWAAN: SkemaInsentif = {
-  versi: 3,
+  versi: 4,
   kategoriProyek: [...INCENTIVE_CATEGORIES],
   porsi: [
-    { peran: 'pic',        label: 'PIC Proyek',                   persen: 65, bagiRata: true  },
-    { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 15, bagiRata: true  },
-    { peran: 'supervisor', label: 'Supervisor',                   persen: 10, bagiRata: true  },
-    { peran: 'manager',    label: 'Manager',                      persen: 10, bagiRata: false },
+    { peran: 'pic',        label: 'PIC Proyek',                   persen: 60, bagiRata: false },
+    { peran: 'support',    label: 'Tim Support (Troubleshooting)', persen: 17, bagiRata: true  },
+    { peran: 'supervisor', label: 'Supervisor',                   persen: 15, bagiRata: true  },
+    { peran: 'manager',    label: 'Manager',                      persen: 8,  bagiRata: false },
   ],
-  tanpaSupport: { pic: 80, supervisor: 10, manager: 10 },
+  tanpaSupport: { pic: 77, supervisor: 15, manager: 8 },
   jendelaSupportBulan: 12,
   hangusSupervisorKe: 'manager',
   managerSebagaiPic: { adaSupport: { pic: 100 }, tanpaSupport: { pic: 100 } },
   installerAktif: true,
-  installerRemotePersen: 15,
+  installerRemotePersen: 30,
   installerHanyaRemote: true,
   installerBayarDiMuka: true,
   tranche: [
@@ -24,21 +25,22 @@ export const SKEMA_BAWAAN: SkemaInsentif = {
     { nomor: 3, persen: 15, tahunKe: 3 },
   ],
   porsiRemote: {
-    aktif: false,
-    adaSupport:   { pic: 55.25, support: 12.75, supervisor: 8.5, manager: 8.5, installer: 15 },
-    tanpaSupport: { pic: 68,    supervisor: 8.5, manager: 8.5,   installer: 15 },
+    aktif: true,
+    adaSupport:   { pic: 32.9, installer: 30, support: 12.4, supervisor: 16.5, manager: 8.2 },
+    tanpaSupport: { pic: 45.3, installer: 30, supervisor: 16.5, manager: 8.2 },
   },
   supervisorSebagaiPic: {
-    aktif: false,
+    aktif: true,
     remote: {
-      tanpaSupport: { pic: 55, manager: 25, installer: 20 },
-      adaSupport:   { pic: 50, support: 15, manager: 15, installer: 20 },
+      adaSupport:   { pic: 32.9, installer: 30, support: 12.4, manager: 24.7 },
+      tanpaSupport: { pic: 45.3, installer: 30, manager: 24.7 },
     },
     onsite: {
-      tanpaSupport: { pic: 70, manager: 30 },
-      adaSupport:   { pic: 60, support: 15, manager: 25 },
+      adaSupport:   { pic: 60, support: 17, manager: 23 },
+      tanpaSupport: { pic: 77, manager: 23 },
     },
   },
+  tarif: TARIF_BAWAAN,
 };
 
 export function persenInstaller(sk: SkemaInsentif, remote: boolean): number {
@@ -150,6 +152,7 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
       pesan: 'PTS Daerah dinyalakan tapi porsinya 0% — isi porsinya, atau matikan saklarnya.',
     });
   }
+  if (sk.tarif) for (const pesan of periksaTarif(sk.tarif)) masalah.push({ bidang: 'tarif', pesan });
   if (sk.jendelaSupportBulan < 0) masalah.push({ bidang: 'jendela', pesan: 'Jendela penilaian support tidak boleh negatif.' });
 
   const totalTranche = bulat(sk.tranche.reduce((t, x) => t + (x.persen || 0), 0));
