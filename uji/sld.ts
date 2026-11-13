@@ -392,6 +392,11 @@ void (async () => {
   cek('hapus banyak: perangkat, kabelnya, teks & area hilang', hp.perangkat.length === 2 && hp.kabel.length === 0 && hp.teks.length === 0 && hp.zona!.length === 0);
   const rt = ratakan({ ...dp, perangkat: [pa, { ...pb, y: 70 }] }, ['pa', 'pb'], 'atas');
   cek('ratakan atas', Math.abs(kotakTampak(rt.perangkat[0]).y - kotakTampak(rt.perangkat[1]).y) < 0.5);
+  const tiga = { ...dp, perangkat: [{ ...pa, x: 20, y: 60 }, { ...pb, x: 60, y: 60 }, { ...pa, id: 'pc', x: 200, y: 60 }] };
+  const sbR = ratakan(tiga, ['pa', 'pb', 'pc'], 'sebarH').perangkat.map(kotakTampak);
+  const jr1 = sbR[1].x - (sbR[0].x + sbR[0].w), jr2 = sbR[2].x - (sbR[1].x + sbR[1].w);
+  cek('sebar merata horizontal: jarak antar perangkat sama, ujung tetap', Math.abs(jr1 - jr2) < 1 && sbR[0].x === kotakTampak(tiga.perangkat[0]).x, `${jr1} vs ${jr2}`);
+  cek('sebar perlu minimal 3 perangkat', ratakan(tiga, ['pa', 'pb'], 'sebarV') === tiga);
   const j = jepret({ x: 10, y: 51, w: 20, h: 10 }, [{ x: 100, y: 50, w: 30, h: 10 }]);
   cek('garis panduan: jepret sejajar dengan perangkat di samping', j.dy === -1 && j.garis.length === 1 && j.garis[0].y1 === 50);
   const lb = letakLabel({ ...pa, labelDi: 'kanan' }), lk = letakLabel({ ...pa, labelDi: 'kiri-atas' });

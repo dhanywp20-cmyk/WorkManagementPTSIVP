@@ -1,7 +1,10 @@
 'use client';
-import type React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MousePointer2, Spline, SquareDashed, X, Type, Expand, FileBox, FileSpreadsheet, FileDown, FilePlus2, Minimize, PanelLeft, PanelRight, Image as IkonGambar, Maximize2, Redo2, Sparkles, Undo2, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, BoxSelect, CopyPlus, Download, Expand, FileBox, FileDown, FileSpreadsheet, FlipHorizontal2, FlipVertical2,
+  Image as IkonGambar, LayoutGrid, Minimize, MousePointer2, PanelLeft, PanelRight, Redo2, RotateCw, Route, Settings2, Spline, SquareDashed, Trash2, Type, Undo2,
+  WandSparkles, X, ZoomIn, ZoomOut,
+} from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { isiLembar2 } from '@/lib/sld/lembar2';
@@ -12,11 +15,12 @@ import { LembarBoq } from './sld/LembarBoq';
 import { BilahRuang } from './sld/BilahRuang';
 import { semuaPerangkat } from '@/lib/sld/ruang';
 import { posisiAwal } from '@/lib/sld/pilih';
-import { PengaturanWatermark } from './sld/PengaturanWatermark';
+import { PengaturanWatermark, Sakelar } from './sld/PengaturanWatermark';
 import { BilahSimpan } from './sld/BilahSimpan';
 import { useSimpanSLD } from './sld/useSimpanSLD';
 import { gambarDariClipboard, kompresGambar } from './sld/gambar';
-import { kelasTombol } from './sld/isian';
+import { GarisMenu, ItemMenu, JudulMenu, kelasIkon, Menu, Pemisah, Segmen, TombolIkon } from './sld/MenuBilah';
+import { RATA } from './sld/PanelPilihan';
 import { KanvasSLD } from './sld/KanvasSLD';
 import { PanelKatalog } from './sld/PanelKatalog';
 import { PanelSamping } from './sld/PanelSamping';
@@ -41,14 +45,7 @@ const ALAT = [
   ['area', SquareDashed, 'Area', 'Kotak putus-putus berlabel untuk mengelompokkan: ruangan, Rack, Wall, Ceiling'],
 ] as const;
 
-function Grup({ judul, children }: { judul: string; children: React.ReactNode }) {
-  return (
-    <div role="group" aria-label={judul} className="flex flex-col gap-1 rounded-xl border border-slate-100 bg-slate-50/70 px-1.5 pt-1 pb-1.5">
-      <span className="px-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500">{judul}</span>
-      <div className="flex flex-wrap items-center gap-1">{children}</div>
-    </div>
-  );
-}
+const LEMBAR = [[1, 'Diagram'], [2, 'Koneksi'], [3, 'BOQ']] as const;
 
 function Sheet2({ a }: { a: ReturnType<typeof useKeadaanSLD> }) {
   const logo = a.logo ?? WATERMARK_BAWAAN;
@@ -196,107 +193,137 @@ export function SLD() {
 
   const kanan = sheet === 1 && (panelBuka || (!!a.pilih && ditutupUntuk !== a.pilih.id));
   const tutupKanan = () => { setPanelBuka(false); setDitutupUntuk(a.pilih?.id ?? null); };
-  const tombolAktif = '!bg-blue-700 !text-white !border-blue-700';
+  const idPer = new Set(a.dok.perangkat.map(p => p.id));
+  const nPer = a.terpilih.filter(id => idPer.has(id)).length;
+  const tunggal = a.terpilih.length <= 1 ? a.pilih : null;
+  const kanvas = sheet === 1;
+  const bisaPutar = kanvas && (tunggal?.jenis === 'p' || tunggal?.jenis === 't');
+  const bisaSalin = kanvas && a.terpilih.length > 0 && !(tunggal?.jenis === 'k');
+  const kabelPilih = tunggal?.jenis === 'k' ? a.dok.kabel.find(c => c.id === tunggal.id) : undefined;
+  const putar = (sudut: number) => {
+    if (!tunggal) return;
+    const t = tunggal.jenis === 't' ? a.dok.teks.find(q => q.id === tunggal.id) : undefined;
+    if (t) a.ubahTeks(t.id, { putar: sudutSah((t.putar ?? 0) + sudut) || undefined });
+    else if (tunggal.jenis === 'p') a.putarPerangkat(tunggal.id, sudut);
+  };
+  const hapusPilihan = () => { if (a.terpilih.length > 1) a.hapusTerpilih(); else if (a.pilih) a.hapus(a.pilih); };
+  const rapikanLabel = () => {
+    const n = a.rapikanSemuaLabel();
+    setPesan({ t: n ? `${n} label dipindah ke posisi kosong (bisa Ctrl+Z).` : 'Tidak ada posisi label yang lebih baik - geser perangkat sedikit.' });
+  };
+  const ekspor = (k: string, f: () => Promise<void>) => () => void jalankan(k, f);
   return (
     <div className={penuh ? 'fixed inset-0 z-[900] bg-slate-100 p-2 flex flex-col gap-2' : 'space-y-3'}>
-      <section aria-label="Toolbar SLD" className="rounded-2xl bg-white border border-slate-200 p-2 flex flex-wrap items-stretch gap-1.5">
-        <Grup judul="File">
-          <button type="button" className={kelasTombol} onClick={() => ganti('Mulai SLD baru?', () => { a.baru(); simpan.lepas(); })}><FilePlus2 size={15} /> Baru</button>
-          <BilahSimpan a={a} s={simpan} />
+      <section aria-label="Toolbar SLD" className="relative z-30 rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100">
+        <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1">
+          <BilahSimpan a={a} s={simpan} onBaru={() => ganti('Mulai SLD baru?', () => { a.baru(); simpan.lepas(); })}
+            onContoh={() => ganti('Buka contoh SLD Voice Kamar Pasien?', () => { a.contoh(); simpan.lepas(); })} />
           <input value={a.dok.blok.proyek} onChange={e => a.ubahBlok({ proyek: e.target.value })} placeholder="Nama proyek" aria-label="Nama proyek"
-            title="Nama proyek - tampil di Sheet 1, 2 & 3" className="h-9 w-56 rounded-xl border border-slate-300 px-3 text-[13px] font-semibold text-slate-800 placeholder:font-normal" />
-          <button type="button" className={kelasTombol} onClick={() => ganti('Buka contoh SLD Voice Kamar Pasien?', () => { a.contoh(); simpan.lepas(); })}><Sparkles size={15} /> Contoh</button>
-        </Grup>
-        <Grup judul="Edit">
-          <button type="button" className={kelasTombol} onClick={a.riwayat.undo} disabled={!a.riwayat.bisaUndo} aria-label="Batal (Ctrl+Z)" title="Batal (Ctrl+Z)"><Undo2 size={15} /></button>
-          <button type="button" className={kelasTombol} onClick={a.riwayat.redo} disabled={!a.riwayat.bisaRedo} aria-label="Ulang (Ctrl+Y)" title="Ulang (Ctrl+Y)"><Redo2 size={15} /></button>
-        </Grup>
-        <Grup judul="Alat gambar">
-          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Alat gambar">
+            title="Nama proyek - tampil di Sheet 1, 2 & 3"
+            className="h-8 w-48 rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden" />
+          <Pemisah />
+          <TombolIkon ikon={Undo2} label="Batal (Ctrl+Z)" onClick={a.riwayat.undo} disabled={!a.riwayat.bisaUndo} />
+          <TombolIkon ikon={Redo2} label="Ulang (Ctrl+Y)" onClick={a.riwayat.redo} disabled={!a.riwayat.bisaRedo} />
+          <Pemisah />
+          <div className="flex rounded-lg bg-slate-100 p-0.5" role="radiogroup" aria-label="Alat gambar">
             {ALAT.map(([k, Ikon, l, t]) => {
-              const aktif = k === 'pilih' ? !a.gambarKabel : k === 'garis' && a.gambarKabel;
+              const aktif = kanvas && (k === 'pilih' ? !a.gambarKabel : k === 'garis' && a.gambarKabel);
               return (
-                <button key={k} type="button" role="radio" aria-checked={aktif} title={t} disabled={sheet !== 1 && k === 'pilih'}
+                <button key={k} type="button" role="radio" aria-checked={aktif} title={t}
                   onClick={() => {
                     setSheet(1);
                     if (k === 'pilih') a.setGambarKabel(false);
                     else if (k === 'garis') a.setGambarKabel(!a.gambarKabel);
                     else { a.setGambarKabel(false); if (k === 'teks') a.tambahTeks(); else a.tambahZona(); }
                   }}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 ${aktif ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
+                  className={`inline-flex items-center gap-1.5 h-7 px-2 rounded-md text-[12.5px] font-bold transition-colors duration-150 ${
+                    aktif ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
                   <Ikon size={15} /> {l}
                 </button>
               );
             })}
           </div>
-        </Grup>
-        <Grup judul="Lembar & kertas">
-          <div className="flex rounded-xl border border-slate-200 p-0.5" role="tablist" aria-label="Lembar">
-            {([1, 2, 3] as Sheet[]).map(s => (
-              <button key={s} type="button" role="tab" aria-selected={sheet === s} onClick={() => setSheet(s)} disabled={s === 2 && tanpaKoneksi}
-                title={s === 2 && tanpaKoneksi ? 'Sheet 2 dimatikan untuk proyek ini' : undefined}
-                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 disabled:opacity-45 disabled:cursor-not-allowed ${sheet === s ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-                {s === 1 ? 'Sheet 1 · Diagram' : s === 2 && tanpaKoneksi ? 'Sheet 2 · tidak dipakai' : `${s === 2 ? 'Sheet 2 · Koneksi & catatan' : 'Sheet 3 · BOQ'}${simpleMode ? ' (tidak diekspor)' : ''}`}
-              </button>
-            ))}
-          </div>
-          <label className={`${kelasTombol} cursor-pointer select-none`} title="Matikan bila proyek tidak butuh Sheet 2 (daftar koneksi, daftar perangkat, gambar & catatan). Tidak tampil, tidak dihitung & tidak ikut ekspor.">
-            <input type="checkbox" className="w-4 h-4 accent-blue-700" checked={!tanpaKoneksi} onChange={e => { a.aturSheet2(e.target.checked); if (!e.target.checked && sheet === 2) setSheet(1); }} />
-            Pakai Sheet 2
-          </label>
-          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Ukuran kertas sheet 1">
-            {(['169', 'a3'] as Kertas[]).map(k => (
-              <button key={k} type="button" role="radio" aria-checked={(a.dok.kertas ?? 'a3') === k} onClick={() => a.aturKertas(k)}
-                title={k === 'a3' ? 'Sheet 1 kertas A3 landscape (template baku)' : 'Sheet 1 kanvas 16:9 (420 x 236 mm) - perangkat & teks diskalakan otomatis'}
-                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${(a.dok.kertas ?? 'a3') === k ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-                {KERTAS[k].label}
-              </button>
-            ))}
-          </div>
-        </Grup>
-        <Grup judul="Tampilan">
-          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} aria-label="Perkecil" title="Perkecil" disabled={sheet !== 1}>
-            <ZoomOut size={15} />
-          </button>
-          <button type="button" className={kelasTombol} onClick={() => setZoom(1)} aria-label="Pas layar" title="Pas layar" disabled={sheet !== 1}><Maximize2 size={15} /></button>
-          <button type="button" className={kelasTombol} onClick={() => setZoom(z => Math.min(4, z + 0.25))} aria-label="Perbesar" title="Perbesar" disabled={sheet !== 1}><ZoomIn size={15} /></button>
-          <button type="button" className={`${kelasTombol} ${kiri && sheet === 1 ? tombolAktif : ''}`} onClick={() => { setSheet(1); setKiri(v => !v); }} aria-pressed={kiri}
-            title="Tampilkan / sembunyikan katalog perangkat"><PanelLeft size={15} /> Perangkat</button>
-          <button type="button" className={`${kelasTombol} ${kanan ? tombolAktif : ''}`} onClick={() => { setSheet(1); if (kanan) tutupKanan(); else setPanelBuka(true); }}
-            aria-pressed={kanan} title="Tampilkan / sembunyikan panel properti"><PanelRight size={15} /> Properti</button>
-          <button type="button" className={`${kelasTombol} ${penuh ? tombolAktif : ''}`} onClick={() => aturPenuh(!penuh)} aria-pressed={penuh}>
-            {penuh ? <Minimize size={15} /> : <Expand size={15} />} {penuh ? 'Keluar' : 'Layar penuh'}
-          </button>
-        </Grup>
-        <Grup judul="Ekspor">
-          <div className="flex rounded-xl border border-slate-200 p-0.5" role="radiogroup" aria-label="Isi ekspor">
-            {([[false, 'Full Detail', 'PDF, Visio & PNG berisi Sheet 1 + Sheet 2 (koneksi, daftar perangkat, catatan) - untuk internal'],
-              [true, 'Simple', 'Hanya Sheet 1 (diagram) - aman dibagikan ke klien']] as const).map(([v, l, t]) => (
-              <button key={l} type="button" role="radio" aria-checked={simpleMode === v} title={t} onClick={() => setSimple(v)}
-                className={`px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors duration-150 ${simpleMode === v ? 'bg-slate-800 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>{l}</button>
-            ))}
-          </div>
-          <button type="button" className={`${kelasTombol} ${tombolAktif} hover:!bg-blue-800`} disabled={!!sibuk}
-            onClick={() => void jalankan('pdf', () => cetakPdf(a.proyek, opsi))}><FileDown size={15} /> {sibuk === 'pdf' ? 'Menyiapkan...' : 'PDF A3'}</button>
-          <button type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan('vsdx', () => unduhVsdx(a.proyek, opsi))}>
-            <FileBox size={15} /> {sibuk === 'vsdx' ? 'Membuat...' : 'Visio'}
-          </button>
-          <button type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan('xlsx', () => unduhExcel(a.proyek, opsi))}
-            title={simpleMode ? 'Excel: Sheet 1 (diagram)' : 'Excel: Sheet 1 diagram, Sheet 2 koneksi, Sheet 3 BOQ'}>
-            <FileSpreadsheet size={15} /> {sibuk === 'xlsx' ? 'Membuat...' : 'Excel'}
-          </button>
-          {(simpleMode || tanpaKoneksi ? [1] as const : [1, 2] as const).map(s => (
-            <button key={s} type="button" className={kelasTombol} disabled={!!sibuk} onClick={() => void jalankan(`png${s}`, () => unduhPng(a.dok, s, opsi))}>
-              <IkonGambar size={15} /> {sibuk === `png${s}` ? 'Membuat...' : simpleMode || tanpaKoneksi ? 'PNG' : `PNG ${s}`}
+          <Pemisah />
+          <TombolIkon ikon={CopyPlus} label="Duplikat (Ctrl+D)" onClick={() => { if (a.salin()) a.tempel(); }} disabled={!bisaSalin} />
+          <TombolIkon ikon={RotateCw} label="Putar 90° (R)" onClick={() => putar(90)} disabled={!bisaPutar} />
+          <TombolIkon ikon={Trash2} label="Hapus (Delete)" onClick={hapusPilihan} disabled={!kanvas || !a.terpilih.length} className="hover:!bg-rose-50 hover:!text-rose-700" />
+          <Menu label="Susun & rapikan" ikon={LayoutGrid} teks="Susun" lebar="w-64" disabled={!kanvas}>
+            <JudulMenu>Ratakan · pilih ≥ 2 perangkat</JudulMenu>
+            <div className="grid grid-cols-6 gap-0.5 px-1.5 pb-1">
+              {RATA.map(([k, Ikon, l]) => (
+                <button key={k} type="button" className={kelasIkon} onClick={() => a.ratakanTerpilih(k)} disabled={nPer < 2} aria-label={l} title={l}><Ikon size={16} /></button>
+              ))}
+            </div>
+            <JudulMenu>Sebar merata · pilih ≥ 3 perangkat</JudulMenu>
+            <ItemMenu ikon={AlignHorizontalDistributeCenter} label="Jarak horizontal sama" onClick={() => a.ratakanTerpilih('sebarH')} disabled={nPer < 3} tetapBuka />
+            <ItemMenu ikon={AlignVerticalDistributeCenter} label="Jarak vertikal sama" onClick={() => a.ratakanTerpilih('sebarV')} disabled={nPer < 3} tetapBuka />
+            <GarisMenu />
+            <ItemMenu ikon={FlipHorizontal2} label="Balik horizontal" pintas="H" onClick={() => tunggal && a.balikPerangkat(tunggal.id, 'h')} disabled={tunggal?.jenis !== 'p'} tetapBuka />
+            <ItemMenu ikon={FlipVertical2} label="Balik vertikal" pintas="V" onClick={() => tunggal && a.balikPerangkat(tunggal.id, 'v')} disabled={tunggal?.jenis !== 'p'} tetapBuka />
+            <ItemMenu ikon={Route} label="Jalur kabel otomatis" onClick={() => kabelPilih && a.ubahKabel(kabelPilih.id, { tengah: undefined, jalur: undefined })}
+              disabled={!kabelPilih || (kabelPilih.tengah === undefined && !kabelPilih.jalur?.length)} />
+            <GarisMenu />
+            <ItemMenu ikon={BoxSelect} label="Pilih semua" pintas="Ctrl+A" onClick={() => a.pilihBanyak([...a.dok.perangkat, ...a.dok.teks, ...(a.dok.zona ?? [])].map(o => o.id))} />
+            <ItemMenu ikon={WandSparkles} label="Rapikan semua label" onClick={rapikanLabel} disabled={!a.dok.perangkat.length} />
+          </Menu>
+          <div className="ml-auto flex items-center gap-0.5">
+            <TombolIkon ikon={ZoomOut} label="Perkecil" onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} disabled={!kanvas || zoom <= 1} />
+            <button type="button" className={`${kelasIkon} w-12 tabular-nums`} onClick={() => setZoom(1)} disabled={!kanvas} title="Pas layar" aria-label="Pas layar">
+              {Math.round(zoom * 100)}%
             </button>
-          ))}
-        </Grup>
-        {!penuh && (
-          <div className="w-full flex flex-wrap items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-100">
-            <PengaturanWatermark a={a} />
-            <span className="text-[11.5px] text-slate-500">Foto, logo &amp; draf hanya tersimpan di browser ini - tidak diunggah ke server.</span>
+            <TombolIkon ikon={ZoomIn} label="Perbesar" onClick={() => setZoom(z => Math.min(4, z + 0.25))} disabled={!kanvas || zoom >= 4} />
+            <Pemisah />
+            <TombolIkon ikon={PanelLeft} label="Katalog perangkat" aktif={kiri && kanvas} onClick={() => { setSheet(1); setKiri(v => !v); }} />
+            <TombolIkon ikon={PanelRight} label="Panel properti" aktif={kanan} onClick={() => { setSheet(1); if (kanan) tutupKanan(); else setPanelBuka(true); }} />
+            <TombolIkon ikon={penuh ? Minimize : Expand} label={penuh ? 'Keluar layar penuh' : 'Layar penuh'} aktif={penuh} onClick={() => aturPenuh(!penuh)} />
+            <Menu label="Pengaturan lembar & logo" ikon={Settings2} kanan lebar="w-72">
+              <JudulMenu>Kertas Sheet 1</JudulMenu>
+              <div className="px-2.5 pb-1.5">
+                <Segmen label="Ukuran kertas sheet 1" nilai={a.dok.kertas ?? 'a3'} onPilih={a.aturKertas}
+                  opsi={(['a3', '169'] as Kertas[]).map(k => [k, KERTAS[k].label, k === 'a3' ? 'A3 landscape (template baku)' : '420 x 236 mm - isi diskalakan otomatis'] as const)} />
+              </div>
+              <div className="px-2.5 py-1.5">
+                <Sakelar label="Pakai Sheet 2 (koneksi & catatan)" nilai={!tanpaKoneksi} judul="Matikan bila proyek tidak butuh daftar koneksi; tidak tampil & tidak ikut ekspor."
+                  onUbah={v => { a.aturSheet2(v); if (!v && sheet === 2) setSheet(1); }} />
+              </div>
+              <GarisMenu />
+              <JudulMenu>Logo &amp; watermark</JudulMenu>
+              <PengaturanWatermark a={a} />
+              <p className="px-2.5 pt-1 pb-1.5 text-[11px] text-slate-500">Foto, logo &amp; draf hanya tersimpan di browser ini.</p>
+            </Menu>
+            <Pemisah />
+            <Menu label="Ekspor" ikon={Download} teks={sibuk ? 'Membuat...' : 'Ekspor'} utama kanan lebar="w-64" disabled={!!sibuk}>
+              <JudulMenu>Isi ekspor</JudulMenu>
+              <div className="px-2.5 pb-1">
+                <Segmen label="Isi ekspor" nilai={simpleMode} onPilih={setSimple}
+                  opsi={[[false, 'Full Detail', 'Sheet 1 + Sheet 2 - untuk internal'], [true, 'Simple', 'Hanya Sheet 1 - aman untuk klien']] as const} />
+                <p className="pt-1 text-[11px] text-slate-500">{simpleMode ? 'Hanya diagram - aman dibagikan ke klien.' : 'Diagram + koneksi, perangkat & catatan - internal.'}</p>
+              </div>
+              <GarisMenu />
+              <ItemMenu ikon={FileDown} label="PDF A3" onClick={ekspor('pdf', () => cetakPdf(a.proyek, opsi))} />
+              <ItemMenu ikon={FileBox} label="Visio (.vsdx)" onClick={ekspor('vsdx', () => unduhVsdx(a.proyek, opsi))} />
+              <ItemMenu ikon={FileSpreadsheet} label={simpleMode ? 'Excel (diagram)' : 'Excel (diagram, koneksi, BOQ)'} onClick={ekspor('xlsx', () => unduhExcel(a.proyek, opsi))} />
+              {(simpleMode || tanpaKoneksi ? [1] as const : [1, 2] as const).map(n => (
+                <ItemMenu key={n} ikon={IkonGambar} label={`PNG Sheet ${n}`} onClick={ekspor(`png${n}`, () => unduhPng(a.dok, n, opsi))} />
+              ))}
+            </Menu>
           </div>
-        )}
+        </div>
+        <BilahRuang a={a} konfirmasi={setKonfirmasi} kanan={(
+          <div className="flex rounded-lg bg-slate-100 p-0.5" role="tablist" aria-label="Lembar">
+            {LEMBAR.map(([n, l]) => {
+              const mati = n === 2 && tanpaKoneksi;
+              return (
+                <button key={n} type="button" role="tab" aria-selected={sheet === n} onClick={() => setSheet(n)} disabled={mati}
+                  title={mati ? 'Sheet 2 dimatikan (Pengaturan)' : n > 1 && simpleMode ? 'Tidak ikut ekspor mode Simple' : undefined}
+                  className={`h-7 px-2.5 rounded-md text-[12px] font-bold transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
+                    sheet === n ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                  <span className="text-slate-400 font-semibold">Sheet {n}</span> {l}
+                </button>
+              );
+            })}
+          </div>
+        )} />
       </section>
       {[pesan, simpan.pesan].map((x, i) => x && (
         <p key={i} className={`rounded-lg px-3 py-2 text-[13px] ${x.galat ? 'bg-rose-50 text-rose-800 border border-rose-200' : 'bg-emerald-50 text-emerald-800'}`}>{x.t}</p>
@@ -306,7 +333,6 @@ export function SLD() {
           Draf tidak muat di penyimpanan peramban (foto terlalu banyak). Ekspor hasilnya agar tidak hilang.
         </p>
       )}
-      <BilahRuang a={a} konfirmasi={setKonfirmasi} />
       <div className={`relative overflow-hidden rounded-xl ${penuh ? 'flex-1 min-h-0' : ''}`}>
         {sheet === 1 ? <KanvasSLD a={a} zoom={zoom} penuh={penuh} simple={simpleMode} /> : sheet === 3 ? <LembarBoq a={a} /> : !tanpaKoneksi ? <Sheet2 a={a} /> : (
           <p className="rounded-xl border border-slate-200 bg-white p-6 text-[13px] text-slate-600">

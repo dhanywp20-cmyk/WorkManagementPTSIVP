@@ -28,7 +28,7 @@ export function PilihPosisiLabel({ nilai, onPilih }: { nilai?: PosisiLabel; onPi
   );
 }
 
-const RATA: [Rata, typeof AlignStartVertical, string][] = [
+export const RATA: [Rata, typeof AlignStartVertical, string][] = [
   ['kiri', AlignStartVertical, 'Rata kiri'], ['tengahH', AlignCenterVertical, 'Rata tengah (horizontal)'], ['kanan', AlignEndVertical, 'Rata kanan'],
   ['atas', AlignStartHorizontal, 'Rata atas'], ['tengahV', AlignCenterHorizontal, 'Rata tengah (vertikal)'], ['bawah', AlignEndHorizontal, 'Rata bawah'],
 ];
