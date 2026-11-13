@@ -121,7 +121,7 @@ function bersihkanKabel(v: unknown, id: Set<string>): Kabel | null {
   return {
     id: c.id.slice(0, 40), jenis: URUTAN_JENIS.includes(c.jenis as JenisKabel) ? (c.jenis as JenisKabel) : 'lain',
     daya: c.daya === true, duaArah: c.duaArah === true, dari: bersihkanUjung(c.dari), ke: bersihkanUjung(c.ke),
-    cabang: Array.isArray(c.cabang) ? c.cabang.slice(0, 8).map(bersihkanUjung).filter(u => id.has(u.p)) : [],
+    cabang: Array.isArray(c.cabang) ? c.cabang.slice(0, MAKS_PERANGKAT).map(bersihkanUjung).filter(u => id.has(u.p)) : [],
     media: teks(c.media, 120), teksGaris: teks(c.teksGaris, 80), fungsi: teks(c.fungsi, 300), catatan: teks(c.catatan, 300),
     labelBalik: c.labelBalik === true, tengah: Number.isFinite(tengah) ? tengah : undefined, huruf: hurufSah(c.huruf),
     ...(bersihkanJalur(c.jalur) ? { jalur: bersihkanJalur(c.jalur) } : {}),

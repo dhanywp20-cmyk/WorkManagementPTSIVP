@@ -4,7 +4,7 @@ import { FOTO_PRODUK, fotoSah } from '../lib/sld/foto-produk';
 import { bersihkanItemTim, fotoLokal, idFotoTim, perangkatDariTim, POLA_DATA_FOTO_TIM, segarkanFotoTim, urlFotoTim, type ItemTim } from '../lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '../lib/sld/preset-kabel';
 import { contohVoiceKamar } from '../lib/sld/contoh';
-import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelYatim, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas } from '../lib/sld/dok';
+import { bersihkanDok, dokBaru, hapusPerangkat, hurufSah, kabelYatim, kabelBaru, pasangFoto, perangkatBaru, petaFoto, tanpaFoto, teksBaru, ubahKertas, ujungBaru } from '../lib/sld/dok';
 import { GAYA_KABEL } from '../lib/sld/gaya';
 import { geometri, geserRuas, geserSudut, hapusSudut, jalurDari, kodeKabel, kotakTampak, pecahRuas, sisiOtomatis } from '../lib/sld/geometri';
 import { dinding, gridVideowall, rasioDinding, ukuranLed } from '../lib/sld/dinding';
@@ -417,6 +417,11 @@ void (async () => {
   cek('lompatan garis: busur kecil di persilangan', lp.includes(' A0.9 0.9 0 0 1 20.9 10') && jalurBulat([{ x: 0, y: 10 }, { x: 40, y: 10 }]) === 'M0 10 L40 10', lp);
   const dx = { ...dp, kabel: [{ ...kabelBaru('pa', 'pb'), id: 'h1' }, { ...kabelBaru('pa', 'pc'), id: 'v1' }] };
   cek('lompatan garis bisa dimatikan', !svgLembar1({ ...dx, tanpaLompat: true }).includes(' A0.9 0.9'));
+  const banyak = Array.from({ length: 14 }, (_, i) => ({ ...perangkatBaru('speaker', 30 + i * 25, 150), id: `cb${i}` }));
+  const kBanyak = { ...kabelBaru('cb0', 'cb1'), id: 'kcb', cabang: banyak.slice(2).map(x => ({ ...ujungBaru(), p: x.id })) };
+  const dCb = bersihkanDok({ ...dokBaru(), perangkat: banyak, kabel: [kBanyak] } as unknown as Record<string, unknown>)!;
+  cek('cabang kabel tanpa batas 8: 12 cabang tetap tersimpan & tergambar', dCb.kabel[0].cabang.length === 12 && geometri(dCb)[0].garis.length === 13,
+    `${dCb.kabel[0].cabang.length} / ${geometri(dCb)[0]?.garis.length}`);
   cek('sebar perlu minimal 3 perangkat', ratakan(tiga, ['pa', 'pb'], 'sebarV') === tiga);
   const j = jepret({ x: 10, y: 51, w: 20, h: 10 }, [{ x: 100, y: 50, w: 30, h: 10 }]);
   cek('garis panduan: jepret sejajar dengan perangkat di samping', j.dy === -1 && j.garis.length === 1 && j.garis[0].y1 === 50);

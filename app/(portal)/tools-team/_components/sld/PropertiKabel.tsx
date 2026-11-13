@@ -12,7 +12,6 @@ import { Area, Centang, Isian, kelasKecil, kelasTombol, Teks } from './isian';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 const SISI: { v: PilihSisi; l: string }[] = [{ v: 'auto', l: 'Otomatis' }, { v: 'kiri', l: 'Kiri' }, { v: 'kanan', l: 'Kanan' }, { v: 'atas', l: 'Atas' }, { v: 'bawah', l: 'Bawah' }];
-const MAKS_CABANG = 8;
 
 type Grup = 'kabel' | 'sambung' | 'label' | 'jalur';
 const GRUP: [Grup, string, typeof Cable][] = [['kabel', 'Kabel', Cable], ['sambung', 'Sambungan', Plug], ['label', 'Label', Type], ['jalur', 'Jalur', Route]];
@@ -120,12 +119,10 @@ export function PropertiKabel({ a, c }: { a: KeadaanSLD; c: Kabel }) {
               {judulUjung(k)}
             </button>
           ))}
-          {c.cabang.length < MAKS_CABANG && (
-            <button type="button" onClick={() => { ubah({ cabang: [...c.cabang, ujungBaru()] }); setUjung(ujung.length); }} title="Tambah cabang (bus / rantai)"
-              className="h-7 px-2 rounded-md border border-dashed border-slate-300 text-[12px] font-bold text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1">
-              <Plus size={13} /> Cabang
-            </button>
-          )}
+          <button type="button" onClick={() => { ubah({ cabang: [...c.cabang, ujungBaru()] }); setUjung(ujung.length); }} title="Tambah cabang (bus / rantai)"
+            className="h-7 px-2 rounded-md border border-dashed border-slate-300 text-[12px] font-bold text-slate-600 hover:bg-slate-50 inline-flex items-center gap-1">
+            <Plus size={13} /> Cabang
+          </button>
         </div>
         <IsianUjung key={`${c.id}-${iu}`} a={a} u={ujung[iu]} judul={judulUjung(iu)} onUbah={u => ubahUjung(iu, u)} idDaftar={`port-${c.id}-${iu}`} />
         {iu >= 2 && (
