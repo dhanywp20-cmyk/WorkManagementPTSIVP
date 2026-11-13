@@ -191,7 +191,7 @@ export function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId 
                                 className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-hidden focus:border-indigo-400" />
                               {ans?.essay_text?.trim() && (
                                 <button type="button" disabled={aiGradingIds.has(q.id)}
-                                  onClick={() => runAiGrading(selectedAttempt.id, q, ans.essay_text.trim())}
+                                  onClick={() => runAiGrading(selectedAttempt.id, q, (ans.essay_text ?? '').trim())}
                                   className="text-[11px] font-bold text-violet-600 hover:text-violet-800 disabled:opacity-40 transition-colors">
                                   <Ikon nama="🔄" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
                                 </button>

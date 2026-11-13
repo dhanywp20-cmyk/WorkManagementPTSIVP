@@ -12,8 +12,7 @@ import { AktivitasTerbaru } from './AktivitasTerbaru';
 import { StatistikDivisi } from './StatistikDivisi';
 import { StatistikSesiKuis } from './StatistikSesiKuis';
 import { PapanPerforma } from './PapanPerforma';
-import type { Tables } from '@/types/database';
-import type { PenggunaLC, PercobaanTerbaru, PercobaanPengguna, StatSesi, StatDivisi, Performer } from './tipe-dasbor';
+import { hitungStatSesi, type PenggunaLC, type PercobaanTerbaru, type PercobaanPengguna, type StatSesi, type StatDivisi, type Performer } from './tipe-dasbor';
 
 export function AdminDashboard({ user }: { user: User }) {
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
@@ -155,30 +154,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        const perSesi = new Map<string, Tables<'lc_quiz_attempts'>[]>();
-        for (const a of allAttRes.data ?? []) {
-          if (!a.quiz_session_id) continue;
-          const daftar = perSesi.get(a.quiz_session_id);
-          if (daftar) daftar.push(a); else perSesi.set(a.quiz_session_id, [a]);
-        }
-        const sStats = ss.map((s) => {
-          const sa = perSesi.get(s.id);
-          if (!sa?.length) return null;
-          const avg = sa.reduce((sum: number, a) => sum + (a.score ?? 0), 0) / sa.length;
-          const passed = sa.filter((a) => a.passed).length;
-          const durations = sa
-            .filter((a) => a.started_at && a.submitted_at)
-            .map((a) => (new Date(a.submitted_at ?? '').getTime() - new Date(a.started_at ?? '').getTime()) / 60000);
-          const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
-          return {
-            id: s.id, name: s.session_name, total: sa.length, avg, passed,
-            failed: sa.length - passed, avgMin,
-            scoreGood: sa.filter((a) => (a.score ?? 0) >= 80).length,
-            scoreMid: sa.filter((a) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
-            scoreLow: sa.filter((a) => (a.score ?? 0) < 60).length,
-          };
-        });
-        setSessionStats(sStats.filter((x): x is StatSesi => x !== null));
+        setSessionStats(hitungStatSesi(ss, allAttRes.data ?? []));
       }
       setLoadingAnalytics(false);
     };
