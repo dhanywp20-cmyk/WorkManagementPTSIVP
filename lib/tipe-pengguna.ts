@@ -20,7 +20,7 @@ export interface PenggunaPortal extends PenggunaDasar {
   piket_akses?: string | null;
   piket_ubah?: boolean | null;
   pimpinan?: boolean | null;
-  telegram_chat_id?: string | null;
+  telegram_terhubung?: boolean | null;
   bisa_ditugaskan?: boolean | null;
   pts_daerah?: string | null;
 }

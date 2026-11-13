@@ -7,7 +7,11 @@ const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   $
 const baca = (f: string) => readFileSync(f, 'utf8');
 
 console.log('\n1. Sesi praktis tidak habis');
-cek('cookie & baris sesi 400 hari (batas umur cookie Chrome)', SESSION_HOURS === 400 * 24);
+cek('cookie & baris sesi 30 hari sejak terakhir aktif', SESSION_HOURS === 30 * 24);
+{
+  const rute = readFileSync('app/api/auth/session/route.ts', 'utf8');
+  cek('sesi diperpanjang (sliding) saat /api/auth/session dipanggil', /update\(\{ expires_at/.test(rute) && /cookies\.set\('ivp_session'/.test(rute));
+}
 cek('jam sesi di peramban sama dengan cookie', SESSION_DURATION_MS === SESSION_HOURS * 3600 * 1000);
 cek('banner "Sesi akan berakhir / Perpanjang Sesi" dihapus', !existsSync('app/_components/SessionExpiryBanner.tsx')
   && !/SessionExpiryBanner/.test((baca('app/(portal)/_kerangka/KerangkaPortal.tsx') + baca('app/(portal)/_kerangka/useKerangkaPortal.ts'))));

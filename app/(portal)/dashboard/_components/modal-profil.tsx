@@ -90,7 +90,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Status</span>
-                    {userData.telegram_chat_id ? (
+                    {userData.telegram_terhubung ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Terhubung
                       </span>
@@ -105,7 +105,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                     )}
                   </div>
 
-                  {userData.telegram_chat_id ? (
+                  {userData.telegram_terhubung ? (
                     <>
                       <p className="text-[11px] text-slate-500 leading-relaxed">
                         Notifikasi assign & jadwal akan ikut masuk ke Telegram, berdampingan dengan WhatsApp.

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { bacaRahasia } from '@/lib/auth/rahasia-server';
 import { pastikanAdmin, pastikanMasuk } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { kirimTelegramKeNomorServer } from '@/lib/notifikasi/telegram-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
     return jawab(false, 'Token bot Telegram belum diisi. Isi di Admin Panel → Integrations.');
   }
 
-  let body: { chatId?: string; pesan?: string; aksi?: string };
+  let body: { chatId?: string; nomor?: string; pesan?: string; aksi?: string };
   try {
     body = await req.json();
   } catch {
@@ -128,8 +130,16 @@ export async function POST(req: NextRequest) {
   if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
   const chatId = (body.chatId ?? '').trim();
   const pesan = (body.pesan ?? '').trim().slice(0, 4000);
-  if (!chatId) return jawab(false, 'Chat ID belum diisi.');
   if (!pesan)  return jawab(false, 'Pesan kosong.');
+  if (body.nomor) {
+    const h = await kirimTelegramKeNomorServer(body.nomor, pesan);
+    return jawab(h.ok, h.alasan);
+  }
+  if (!chatId) return jawab(false, 'Chat ID belum diisi.');
+  const admin = ['admin', 'superadmin'].includes((jaga.user.role ?? '').toLowerCase());
+  if (!admin && chatId !== (await bacaPengaturan(true)).telegramChatId) {
+    return NextResponse.json({ ok: false, alasan: 'Chat ID ini tidak boleh dikirimi dari akun Anda.' }, { status: 403 });
+  }
 
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
