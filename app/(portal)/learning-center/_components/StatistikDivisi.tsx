@@ -2,9 +2,10 @@
 
 import { IkonTeks } from '@/components/shared/Ikon';
 import { SectionHeader } from './RingkasanKuis';
+import type { StatDivisi } from './tipe-dasbor';
 
 export interface StatistikDivisiProps {
-  divisionStats: any[];
+  divisionStats: StatDivisi[];
   nationalAvg: number | null;
 }
 

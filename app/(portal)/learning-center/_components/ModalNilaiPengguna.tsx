@@ -3,11 +3,12 @@
 import React from 'react';
 import { ModalPortal, DonutChart } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import type { PercobaanPengguna } from './tipe-dasbor';
 
 export function ModalNilaiPengguna({ selectedUser, setSelectedUser, userAttempts, loadingUser }: {
   selectedUser: { uid: string; name: string } | null;
   setSelectedUser: (v: null) => void;
-  userAttempts: any[];
+  userAttempts: PercobaanPengguna[];
   loadingUser: boolean;
 }) {
   if (!selectedUser) return null;

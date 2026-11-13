@@ -11,7 +11,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { User, MovementLog, COLORS, fmtDate } from './shared';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
-import { URL_XLSX } from '@/lib/xlsx-loader';
+import { loadXLSX, type PustakaXlsx } from '@/lib/xlsx-loader';
 
 export function useUnitMovement() {
   const daftarEvent = useDaftarPilihan('unit-event');
@@ -138,7 +138,7 @@ kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id';
   const hal = usePaginasi(filteredLogs);
 
   const exportToExcel = () => {
-    const runExport = (XLSX: any) => {
+    const runExport = (XLSX: PustakaXlsx) => {
       const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
       const garis = (rgb: string) => ({ style: 'thin', color: { rgb } });
       const garisHitam = { top: garis('000000'), bottom: garis('000000'), left: garis('000000'), right: garis('000000') };
@@ -171,14 +171,7 @@ kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id';
       XLSX.utils.book_append_sheet(wb, ws, '📦 Unit Movement');
       XLSX.writeFile(wb, `UnitMovement_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType: 'xlsx', type: 'binary', cellStyles: true });
     };
-    if ((window as any).XLSX) runExport((window as any).XLSX);
-    else {
-      const s = document.createElement('script');
-      s.src = URL_XLSX;
-      s.onload = () => runExport((window as any).XLSX);
-      s.onerror = () => notify('error', 'Gagal memuat library Excel.');
-      document.head.appendChild(s);
-    }
+    loadXLSX(runExport, () => notify('error', 'Gagal memuat library Excel.'));
   };
 
   const statusPieData = useMemo(()=>[

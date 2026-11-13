@@ -1,5 +1,5 @@
 import { Ticket, formatDateTime } from './shared';
-import { URL_XLSX } from '@/lib/xlsx-loader';
+import { loadXLSX, type PustakaXlsx } from '@/lib/xlsx-loader';
 
 export interface ArgEkspor {
   tickets: Ticket[];
@@ -14,7 +14,7 @@ export interface ArgEkspor {
 }
 
 export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify }: ArgEkspor): void {
-  const runExport = (XLSX: any) => {
+  const runExport = (XLSX: PustakaXlsx) => {
     const exportTickets = filteredTickets;
     const isServicesExport = currentUserTeamType === "Team Services";
     const border = { top: { style: "thin", color: { rgb: "D1D5DB" } }, bottom: { style: "thin", color: { rgb: "D1D5DB" } }, left: { style: "thin", color: { rgb: "D1D5DB" } }, right: { style: "thin", color: { rgb: "D1D5DB" } } };
@@ -150,12 +150,5 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
     const fileName = `Ticket_Report_${teamLabel}_${new Date().toISOString().split("T")[0]}.xlsx`;
     XLSX.writeFile(wb, fileName, { bookType: "xlsx", type: "binary", cellStyles: true });
   };
-  if ((window as any).XLSX) runExport((window as any).XLSX);
-  else {
-    const script = document.createElement("script");
-    script.src = URL_XLSX;
-    script.onload = () => runExport((window as any).XLSX);
-    script.onerror = () => notify("error", "Gagal memuat library Excel.");
-    document.head.appendChild(script);
-  }
+  loadXLSX(runExport, () => notify("error", "Gagal memuat library Excel."));
 }

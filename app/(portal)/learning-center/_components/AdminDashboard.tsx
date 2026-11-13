@@ -12,11 +12,13 @@ import { AktivitasTerbaru } from './AktivitasTerbaru';
 import { StatistikDivisi } from './StatistikDivisi';
 import { StatistikSesiKuis } from './StatistikSesiKuis';
 import { PapanPerforma } from './PapanPerforma';
+import type { Tables } from '@/types/database';
+import type { PenggunaLC, PercobaanTerbaru, PercobaanPengguna, StatSesi, StatDivisi, Performer } from './tipe-dasbor';
 
 export function AdminDashboard({ user }: { user: User }) {
   const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
   const [stats, setStats] = useState({ materials: 0, activeTeam: 0, sessions: 0, attempts: 0 });
-  const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
+  const [recentAttempts, setRecentAttempts] = useState<PercobaanTerbaru[]>([]);
   const [search, setSearch] = useState('');
 
   const [overviewStats, setOverviewStats] = useState({
@@ -26,20 +28,20 @@ export function AdminDashboard({ user }: { user: User }) {
     submitted: 0, abandoned: 0,
   });
 
-  const [sessionStats, setSessionStats] = useState<any[]>([]);
-  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [sessionStats, setSessionStats] = useState<StatSesi[]>([]);
+  const [topUsers, setTopUsers] = useState<Performer[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const [searchPerformer, setSearchPerformer] = useState('');
 
-  const [divisionStats, setDivisionStats] = useState<any[]>([]);
+  const [divisionStats, setDivisionStats] = useState<StatDivisi[]>([]);
   const [nationalAvg, setNationalAvg] = useState<number | null>(null);
   const [performerDivisionFilter, setPerformerDivisionFilter] = useState<string>('');
 
   const [selectedUser, setSelectedUser] = useState<{ uid: string; name: string } | null>(null);
-  const [userAttempts, setUserAttempts] = useState<any[]>([]);
+  const [userAttempts, setUserAttempts] = useState<PercobaanPengguna[]>([]);
   const [loadingUser, setLoadingUser] = useState(false);
   const [activeTeam, setActiveTeam] = useState<TeamFilter>('PTS');
-  const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
+  const [allTopUsers, setAllTopUsers] = useState<Performer[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -61,7 +63,7 @@ export function AdminDashboard({ user }: { user: User }) {
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
-      const userMap: Record<string, any> = {};
+      const userMap: Record<string, PenggunaLC> = {};
       (usersRes.data ?? []).forEach((u) => { userMap[u.id] = u; });
       setRecentAttempts((recentRes.data ?? []).map((a) => ({ ...a, users: (a.user_id ? userMap[a.user_id] : undefined) ?? null })));
 
@@ -153,19 +155,20 @@ export function AdminDashboard({ user }: { user: User }) {
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        const perSesi = new Map<string, any[]>();
-        for (const a of (allAttRes.data ?? []) as any[]) {
+        const perSesi = new Map<string, Tables<'lc_quiz_attempts'>[]>();
+        for (const a of allAttRes.data ?? []) {
+          if (!a.quiz_session_id) continue;
           const daftar = perSesi.get(a.quiz_session_id);
           if (daftar) daftar.push(a); else perSesi.set(a.quiz_session_id, [a]);
         }
         const sStats = ss.map((s) => {
           const sa = perSesi.get(s.id);
           if (!sa?.length) return null;
-          const avg = sa.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / sa.length;
+          const avg = sa.reduce((sum: number, a) => sum + (a.score ?? 0), 0) / sa.length;
           const passed = sa.filter((a) => a.passed).length;
           const durations = sa
             .filter((a) => a.started_at && a.submitted_at)
-            .map((a) => (new Date(a.submitted_at).getTime() - new Date(a.started_at).getTime()) / 60000);
+            .map((a) => (new Date(a.submitted_at ?? '').getTime() - new Date(a.started_at ?? '').getTime()) / 60000);
           const avgMin = durations.length ? durations.reduce((s: number, d: number) => s + d, 0) / durations.length : null;
           return {
             id: s.id, name: s.session_name, total: sa.length, avg, passed,
@@ -175,7 +178,7 @@ export function AdminDashboard({ user }: { user: User }) {
             scoreLow: sa.filter((a) => (a.score ?? 0) < 60).length,
           };
         });
-        setSessionStats(sStats.filter(Boolean));
+        setSessionStats(sStats.filter((x): x is StatSesi => x !== null));
       }
       setLoadingAnalytics(false);
     };
@@ -199,7 +202,7 @@ export function AdminDashboard({ user }: { user: User }) {
       .select('id, score, passed, total_correct, total_questions, time_taken_sec, submitted_at, tab_switches, lc_quiz_sessions(session_name, materi_name, passing_grade)')
       .eq('user_id', selectedUser.uid).eq('is_submitted', true)
       .order('submitted_at', { ascending: false })
-      .then(({ data }: { data: any[] | null }) => { setUserAttempts(data ?? []); setLoadingUser(false); });
+      .then(({ data }) => { setUserAttempts((data ?? []) as PercobaanPengguna[]); setLoadingUser(false); });
   }, [selectedUser]);
 
   const filteredRecent = recentAttempts.filter(a =>
