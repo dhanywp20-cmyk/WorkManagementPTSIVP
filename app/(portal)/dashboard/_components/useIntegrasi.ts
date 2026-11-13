@@ -87,18 +87,18 @@ export function useIntegrasi() {
 
   const muatTim = async () => {
     const { data } = await supabase.from('users')
-      .select('full_name, team_type, jabatan, phone_number, telegram_chat_id')
+      .select('full_name, team_type, jabatan, phone_number, telegram_terhubung')
       .eq('role', 'team')
       .order('full_name');
     setTim((data ?? []).map((u: {
       full_name: string; team_type: string | null; jabatan: string | null;
-      phone_number: string | null; telegram_chat_id: string | null;
+      phone_number: string | null; telegram_terhubung: boolean | null;
     }) => ({
       nama: u.full_name,
       tim: u.team_type ?? '-',
       jabatan: u.jabatan ?? 'Staff',
       wa: !!(u.phone_number ?? '').trim(),
-      tg: !!u.telegram_chat_id,
+      tg: !!u.telegram_terhubung,
     })));
   };
 

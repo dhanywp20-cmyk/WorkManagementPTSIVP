@@ -15,7 +15,7 @@ export interface MuatPenggunaKonteks {
 export function useMuatPengguna(k: MuatPenggunaKonteks) {
   const { setGuestUsers, setPtsCabangUsers, setTeamUsers } = k;
   const fetchTeamUsers = async () => {
-    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id, bisa_ditugaskan').order('full_name');
+    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, bisa_ditugaskan').order('full_name');
     if (data) setTeamUsers((data as TeamUser[]).filter((u: TeamUser) => bolehDitugaskanOleh(u, true) && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { issueDbToken } from '@/lib/auth/db-token';
 import { akunTertunda } from '@/lib/auth/akun-tertunda';
+import { SESSION_HOURS } from '@/lib/auth/masuk-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,5 +54,19 @@ export async function GET(request: NextRequest) {
   }
 
   const { data: pim } = await supabase.from('users').select('pimpinan').eq('id', user.id).maybeSingle();
-  return NextResponse.json({ user: { ...user, pimpinan: pim?.pimpinan === true }, db_token: issueDbToken(user) });
+  const response = NextResponse.json({ user: { ...user, pimpinan: pim?.pimpinan === true }, db_token: issueDbToken(user) });
+  const durasi = SESSION_HOURS * 3600 * 1000;
+  if (new Date(session.expires_at).getTime() - Date.now() < durasi - 24 * 3600 * 1000) {
+    await supabase.from('user_sessions')
+      .update({ expires_at: new Date(Date.now() + durasi).toISOString() })
+      .eq('token_hash', tokenHash);
+    response.cookies.set('ivp_session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_HOURS * 3600,
+      path: '/',
+    });
+  }
+  return response;
 }

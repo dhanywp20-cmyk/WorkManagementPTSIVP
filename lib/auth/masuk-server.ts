@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { issueDbToken } from '@/lib/auth/db-token';
 import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 
-export const SESSION_HOURS = 400 * 24;
+export const SESSION_HOURS = 30 * 24;
 export const BATAS_GAGAL_USER = 5;
 export const BATAS_GAGAL_IP = 30;
 const JENDELA_GAGAL_MS = 15 * 60 * 1000;
@@ -61,6 +61,8 @@ export async function selesaikanMasuk(supabase: SupabaseClient, user: UserMasuk,
   await catatPercobaan(supabase, user.username, ip, true);
 
   supabase.from('user_sessions').delete().lt('expires_at', new Date().toISOString()).then(() => {});
+  supabase.from('password_reset_otps').delete().lt('created_at', new Date(Date.now() - 864e5).toISOString()).then(() => {});
+  supabase.from('login_attempts').delete().lt('attempted_at', new Date(Date.now() - 90 * 864e5).toISOString()).then(() => {});
 
   const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
   await supabase.from('user_sessions').insert({

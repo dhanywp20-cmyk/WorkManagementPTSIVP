@@ -5138,6 +5138,7 @@ export type Database = {
           sales_division: string | null
           team_type: string | null
           telegram_chat_id: string | null
+          telegram_terhubung: boolean | null
           username: string
         }
         Insert: {
@@ -5166,6 +5167,7 @@ export type Database = {
           sales_division?: string | null
           team_type?: string | null
           telegram_chat_id?: string | null
+          telegram_terhubung?: never
           username: string
         }
         Update: {
@@ -5194,6 +5196,7 @@ export type Database = {
           sales_division?: string | null
           team_type?: string | null
           telegram_chat_id?: string | null
+          telegram_terhubung?: never
           username?: string
         }
         Relationships: [

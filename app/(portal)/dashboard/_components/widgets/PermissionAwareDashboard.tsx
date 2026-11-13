@@ -71,8 +71,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         const p = await bacaPengaturan();
         if (!p.aktif.telegram) return;
         const { data, error } = await supabase.from('users')
-          .select('telegram_chat_id').eq('id', currentUser.id).maybeSingle();
-        if (!batal && !error && data && !data.telegram_chat_id) setAjakTelegram(true);
+          .select('telegram_terhubung').eq('id', currentUser.id).maybeSingle();
+        if (!batal && !error && data && !data.telegram_terhubung) setAjakTelegram(true);
       } catch {  }
     })();
     return () => { batal = true; };

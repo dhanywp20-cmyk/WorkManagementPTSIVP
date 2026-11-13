@@ -14,7 +14,6 @@ export interface TeamUser {
   allowed_menus?: string[];
   jabatan?: string | null;
   access_level?: string;
-  telegram_chat_id?: string | null;
   bisa_ditugaskan?: boolean | null;
 }
 
