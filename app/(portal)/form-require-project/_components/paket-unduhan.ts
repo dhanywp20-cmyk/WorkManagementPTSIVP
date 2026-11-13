@@ -2,6 +2,8 @@ import { statusConfig, type ProjectRequest, type ProjectAttachment } from './sha
 import type { KategoriLampiran } from './shared';
 import { htmlSeksiDesain3D, byteGambarHD, type TautanDesain3D } from './desain-3d-request';
 import { berkasPaketSld, htmlSeksiSld, isiSeksiSld, type TautanSld } from './sld-request';
+import { berkasPaketScreen, htmlSeksiScreen, isiSeksiScreen } from './screen-connection-paket';
+import type { TautanScreen } from './screen-connection-request';
 
 export interface ArgPaket {
   selectedRequest: ProjectRequest;
@@ -10,6 +12,7 @@ export interface ArgPaket {
   notify: (tipe: 'success' | 'error' | 'info', pesan: string) => void;
   desain3d?: TautanDesain3D[];
   sld?: TautanSld[];
+  screen?: TautanScreen[];
 }
 
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -108,7 +111,7 @@ const buildZip = (files: { name: string; data: Uint8Array }[]): Blob => {
   return new Blob([result], { type: 'application/zip' });
 };
 
-export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel, notify, desain3d = [], sld = [] }: ArgPaket): Promise<void> {
+export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel, notify, desain3d = [], sld = [], screen = [] }: ArgPaket): Promise<void> {
   if (!selectedRequest) return;
     notify('info', 'Menyiapkan paket download...');
   try {
@@ -122,6 +125,7 @@ export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel,
     const asli = selectedRequest;
     const namaRuangSld = (i: number) => (i === 0 ? asli.room_name : asli.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`;
     const seksiSld = sld.length ? htmlSeksiSld(await isiSeksiSld(selectedRequest.id, sld, false), namaRuangSld) : '';
+    const isiScreen = screen.length ? await isiSeksiScreen(selectedRequest.id, screen) : [];
     const formHtml = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
 <title>Request Design Project — ${selectedRequest.project_name}</title>
@@ -206,6 +210,7 @@ ${(selectedRequest.kebutuhan||[]).includes('Signage') ? `
 </div>
 </div>
 ${seksiSld}
+${htmlSeksiScreen(isiScreen, namaRuangSld)}
 ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`)}
 <p style="font-size:10px;color:#94a3b8;text-align:center;margin-top:16px">Request Design Project — IndoVisual Pratama · ${new Date().toLocaleDateString('id-ID')}</p>
 </body></html>`;
@@ -246,6 +251,7 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
     }
 
     for (const b of await berkasPaketSld(selectedRequest.id, sld)) zipFiles.push({ name: `${folderName}/${b.name}`, data: b.data });
+    for (const b of berkasPaketScreen(isiScreen)) zipFiles.push({ name: `${folderName}/${b.name}`, data: b.data });
 
     const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);
     for (let i = 0; i < generalFiles.length; i++) {
