@@ -10,6 +10,7 @@ sk.porsi = [
   { peran: 'manager', label: 'Manager', persen: 8, bagiRata: false },
 ];
 sk.tanpaSupport = { pic: 55, supervisor: 30, manager: 15 };
+sk.supervisorSebagaiPic = { ...sk.supervisorSebagaiPic, aktif: false };
 
 const tampil = (judul: string, r: any[]) => {
   console.log('\n' + judul);

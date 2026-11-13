@@ -26,7 +26,7 @@ export async function muatTautanDesain3D(requestId: string): Promise<{ tautan: T
 export const tautanKeTools = (t: Pick<TautanDesain3D, 'desain_id' | 'versi'>) =>
   `/tools-team?alat=3d&desain=${encodeURIComponent(t.desain_id)}&versi=${t.versi}`;
 
-const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const angka = (n: number) => (Math.round(n * 100) / 100).toLocaleString('id-ID');
 export const ukuranRuang = (rs: Partial<RingkasanDesain> | undefined) =>
   (rs?.ruang ?? []).map(r => `${angka(r.p)} × ${angka(r.l)} × ${angka(r.t)} m`).join(' + ');

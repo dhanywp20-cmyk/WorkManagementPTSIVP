@@ -2,18 +2,21 @@ import { statusConfig, type ProjectRequest } from './shared';
 import { esc, escObjek } from '@/lib/lembar-cetak';
 import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
 import { htmlSeksiSld, isiSeksiSld, type TautanSld } from './sld-request';
+import { htmlSeksiScreen, isiSeksiScreen } from './screen-connection-paket';
+import type { TautanScreen } from './screen-connection-request';
 
 const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export async function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = [], sld: TautanSld[] = []): Promise<void> {
+export async function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = [], sld: TautanSld[] = [], screen: TautanScreen[] = []): Promise<void> {
   if (!asli) return;
   const selectedRequest = escObjek(asli);
   const w = window.open('', '_blank');
   if (!w) return;
-  if (sld.length) w.document.write('<p style="font-family:Arial;padding:24px">Menyiapkan dokumen...</p>');
+  if (sld.length || screen.length) w.document.write('<p style="font-family:Arial;padding:24px">Menyiapkan dokumen...</p>');
   const namaRuangSld = (i: number) => (i === 0 ? asli.room_name : asli.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`;
   const seksiSld = sld.length ? htmlSeksiSld(await isiSeksiSld(asli.id, sld, true), namaRuangSld) : '';
+  const seksiScreen = screen.length ? htmlSeksiScreen(await isiSeksiScreen(asli.id, screen), namaRuangSld) : '';
   ccLabel = esc(ccLabel);
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
@@ -169,6 +172,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #
 </div>
 
 ${seksiSld}
+${seksiScreen}
 ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`, window.location.origin)}
 
 <!-- FOOTER -->

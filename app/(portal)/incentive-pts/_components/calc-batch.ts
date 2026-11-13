@@ -1,6 +1,7 @@
 import { ambilPetaNominal } from '@/lib/incentive/nominal-api';
 import type { TablesInsert } from '@/types/database';
-import { SkemaInsentif, ambilSkema, bagikanTepat, labelSkema } from '@/lib/incentive/scheme';
+import { SkemaInsentif, ambilSkema, labelSkema } from '@/lib/incentive/scheme';
+import { hitungSplitTahap } from '@/lib/incentive/tahap';
 import { createNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from './calc-format';
@@ -101,46 +102,11 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     const pool = project.incentive_value || 0;
 
-    const barisInstaller = splits.find(s => s.role === 'installer');
-    const pctInstaller = barisInstaller?.percentage ?? 0;
-    const tahapPertama = sk.tranche.length ? Math.min(...sk.tranche.map(t => t.nomor)) : 1;
-    const installerDiMuka = pctInstaller > 0 && sk.installerBayarDiMuka;
-    const totalTahapTim = sk.tranche.reduce((n, t) => n + (t.persen || 0), 0) || 100;
-
-    const bagian = (tranche.percentage || 0) / totalTahapTim;
-
-    const timSaja = splits.filter(s => s.role !== 'installer');
-
-    const komponen: { split: SplitResult; ideal: number }[] = timSaja.map(s => ({
-      split: s,
-      ideal: pool * (s.percentage / 100) * bagian,
-    }));
-
-    if (pctInstaller > 0) {
-      const idealInstaller = installerDiMuka
-        ? (tranche.tranche_number === tahapPertama ? (pool * pctInstaller) / 100 : 0)
-        : pool * (pctInstaller / 100) * bagian;
-      if (idealInstaller > 0) {
-        komponen.push({
-          split: {
-            ...(barisInstaller ?? {
-              role: 'installer', user_id: '',
-              user_name: project.installer_name || 'PTS Daerah',
-              percentage: pctInstaller,
-            }),
-            amount: 0,
-          },
-          ideal: idealInstaller,
-        });
-      }
-    }
-
-    const tranchePool = Math.round(komponen.reduce((n, k) => n + k.ideal, 0));
-    const rupiahTahap = bagikanTepat(
-      tranchePool,
-      komponen.map(k => (tranchePool > 0 ? (k.ideal / tranchePool) * 100 : 0)),
-    );
-    const trancheSplits: SplitResult[] = komponen.map((k, i) => ({ ...k.split, amount: rupiahTahap[i] }));
+    const trancheSplits: SplitResult[] = hitungSplitTahap({
+      sk, splits, pool, nomorTahap: tranche.tranche_number, persenTahap: tranche.percentage || 0,
+      namaInstaller: project.installer_name,
+    });
+    const tranchePool = trancheSplits.reduce((n, x) => n + x.amount, 0);
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);
     if (!validation.valid) {
