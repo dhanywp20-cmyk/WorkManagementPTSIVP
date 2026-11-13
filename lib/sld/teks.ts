@@ -3,6 +3,8 @@ import { HURUF } from './gaya';
 export const esc = (v: unknown) =>
   String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+export const satuBaris = (s: string) => String(s ?? '').replace(/\s*\n\s*/g, ' ').trim();
+
 export const n = (v: number) => String(Math.round(v * 100) / 100);
 
 const SEMPIT = new Set([...'il.,:;|!\'`']);

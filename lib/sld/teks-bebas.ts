@@ -1,12 +1,13 @@
 import { WARNA } from './gaya';
-import { lebarTeks, n, teks } from './teks';
+import { bungkus, lebarTeks, n, teks } from './teks';
 import type { TeksBebas, WarnaTeks } from './tipe';
 
 export const WARNA_TEKS: Record<WarnaTeks, string> = { hitam: WARNA.tinta, merah: WARNA.merah, abu: WARNA.redup, biru: '#0969da' };
 export const LABEL_WARNA_TEKS: Record<WarnaTeks, string> = { hitam: 'Hitam', merah: 'Merah', abu: 'Abu-abu', biru: 'Biru' };
 export const SPASI_TEKS = 1.25;
 
-export const barisTeks = (t: Pick<TeksBebas, 'isi'>) => t.isi.split('\n').slice(0, 20);
+export const barisTeks = (t: Pick<TeksBebas, 'isi' | 'lebar' | 'ukuran' | 'tebal'>) =>
+  t.isi.split('\n').flatMap(s => (t.lebar ? bungkus(s, t.lebar, t.ukuran, t.tebal) : [s])).slice(0, 40);
 
 export function kotakTeks(t: TeksBebas) {
   const b = barisTeks(t);

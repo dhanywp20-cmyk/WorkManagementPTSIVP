@@ -18,9 +18,12 @@ export function idDalamKotak(d: DokSLD, m: Kotak): string[] {
   ];
 }
 
+const kunciJalur = (id: string, i: number) => `jalur:${id}:${i}`;
+
 export const posisiAwal = (d: DokSLD, ids: string[]) => {
   const s = new Set(ids), hasil = new Map<string, Titik>();
   for (const o of [...d.perangkat, ...d.teks, ...(d.zona ?? [])]) if (s.has(o.id)) hasil.set(o.id, { x: o.x, y: o.y });
+  for (const c of d.kabel) if (c.jalur && s.has(c.dari.p) && s.has(c.ke.p)) c.jalur.forEach((t, i) => hasil.set(kunciJalur(c.id, i), t));
   return hasil;
 };
 
@@ -29,7 +32,12 @@ export function geserObjek(d: DokSLD, awal: Map<string, Titik>, dx: number, dy: 
     const a = awal.get(o.id);
     return a ? { ...o, x: Math.round((a.x + dx) * 2) / 2, y: Math.round((a.y + dy) * 2) / 2 } : o;
   };
-  return { ...d, perangkat: d.perangkat.map(geser), teks: d.teks.map(geser), ...(d.zona ? { zona: d.zona.map(geser) } : {}) };
+  const kabel = d.kabel.some(c => c.jalur && awal.has(kunciJalur(c.id, 0)))
+    ? d.kabel.map(c => (c.jalur && awal.has(kunciJalur(c.id, 0))
+      ? { ...c, jalur: c.jalur.map((t, i) => { const a = awal.get(kunciJalur(c.id, i)); return a ? { x: Math.round((a.x + dx) * 100) / 100, y: Math.round((a.y + dy) * 100) / 100 } : t; }) }
+      : c))
+    : d.kabel;
+  return { ...d, perangkat: d.perangkat.map(geser), kabel, teks: d.teks.map(geser), ...(d.zona ? { zona: d.zona.map(geser) } : {}) };
 }
 
 export function salinObjek(d: DokSLD, ids: string[]): Klip {
@@ -43,7 +51,8 @@ export function tempelKlip(d: DokSLD, k: Klip, geser = 8): { dok: DokSLD; ids: s
   const pindah = <T extends { id: string; x: number; y: number }>(o: T, id: string): T => ({ ...o, id, x: o.x + geser, y: o.y + geser });
   const perangkat = k.perangkat.map(p => pindah(p, peta.get(p.id)!));
   const ganti = <U extends { p: string }>(u: U): U => ({ ...u, p: peta.get(u.p) ?? u.p });
-  const kabel = k.kabel.map(c => ({ ...c, id: idBaru('k'), dari: ganti(c.dari), ke: ganti(c.ke), cabang: c.cabang.map(ganti), tengah: undefined }));
+  const kabel = k.kabel.map(c => ({ ...c, id: idBaru('k'), dari: ganti(c.dari), ke: ganti(c.ke), cabang: c.cabang.map(ganti), tengah: undefined,
+    ...(c.jalur ? { jalur: c.jalur.map(t => ({ x: t.x + geser, y: t.y + geser })) } : {}) }));
   const teks = k.teks.map(t => pindah(t, idBaru('t'))), zona = k.zona.map(z => pindah(z, idBaru('z')));
   return {
     dok: { ...d, perangkat: [...d.perangkat, ...perangkat], kabel: [...d.kabel, ...kabel], teks: [...d.teks, ...teks], zona: [...(d.zona ?? []), ...zona] },

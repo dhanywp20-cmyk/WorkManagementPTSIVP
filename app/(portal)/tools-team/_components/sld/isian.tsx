@@ -45,11 +45,11 @@ export function Teks({ label, nilai, onUbah, className, placeholder, bantuan, da
   );
 }
 
-export function Area({ label, nilai, onUbah, baris = 3, placeholder, bantuan }: {
-  label: string; nilai: string; onUbah: (v: string) => void; baris?: number; placeholder?: string; bantuan?: string;
+export function Area({ label, nilai, onUbah, baris = 3, placeholder, bantuan, className }: {
+  label: string; nilai: string; onUbah: (v: string) => void; baris?: number; placeholder?: string; bantuan?: string; className?: string;
 }) {
   return (
-    <Isian label={label} bantuan={bantuan}>
+    <Isian label={label} bantuan={bantuan} className={className}>
       <textarea value={nilai} onChange={e => onUbah(e.target.value)} rows={baris} placeholder={placeholder} className={`${kelasKecil} resize-y`} />
     </Isian>
   );
@@ -61,5 +61,38 @@ export function Centang({ label, nilai, onUbah }: { label: string; nilai: boolea
       <input type="checkbox" checked={nilai} onChange={e => onUbah(e.target.checked)} className="w-4 h-4 accent-blue-700" />
       {label}
     </label>
+  );
+}
+
+export function IsianLebarBungkus({ label = 'Lebar maks teks (Enter otomatis ke bawah)', nilai, onUbah, lebarGambar, bantuan }: {
+  label?: string; nilai: number | undefined; onUbah: (v: number | 'gambar' | undefined) => void; lebarGambar?: number; bantuan?: string;
+}) {
+  const [teks, setTeks] = useState<string | null>(null);
+  const akhiri = () => {
+    if (teks === null) return;
+    const v = Number(teks.replace(',', '.'));
+    onUbah(teks.trim() === '' || !Number.isFinite(v) || v <= 0 ? undefined : Math.min(200, Math.max(8, v)));
+    setTeks(null);
+  };
+  const aktif = 'border-blue-500 bg-blue-50 text-blue-800';
+  return (
+    <Isian label={label} bantuan={bantuan ?? 'Baris yang lebih panjang dari batas ini otomatis turun ke baris berikutnya.'}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button type="button" onClick={() => onUbah(undefined)} aria-pressed={nilai === undefined}
+          className={`${kelasTombol} !px-2.5 !py-1.5 !text-[12px] ${nilai === undefined ? aktif : ''}`}>Bebas</button>
+        {lebarGambar !== undefined && (
+          <button type="button" onClick={() => onUbah('gambar')} aria-pressed={nilai !== undefined && Math.abs(nilai - lebarGambar) < 1}
+            className={`${kelasTombol} !px-2.5 !py-1.5 !text-[12px] ${nilai !== undefined && Math.abs(nilai - lebarGambar) < 1 ? aktif : ''}`}>Selebar gambar</button>
+        )}
+        {[30, 45, 60].map(v => (
+          <button key={v} type="button" onClick={() => onUbah(v)} aria-pressed={nilai === v}
+            className={`${kelasTombol} !px-2.5 !py-1.5 !text-[12px] ${nilai === v ? aktif : ''}`}>{v}</button>
+        ))}
+        <input type="number" inputMode="decimal" min={8} max={200} step={1} value={teks ?? (nilai === undefined ? '' : String(nilai))} placeholder="mm"
+          aria-label="Lebar maks teks dalam mm" className={`${kelasKecil} !w-20`}
+          onChange={e => setTeks(e.target.value)} onBlur={akhiri} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); akhiri(); } else if (e.key === 'Escape') setTeks(null); }} />
+        <span className="text-[12px] text-slate-500">mm</span>
+      </div>
+    </Isian>
   );
 }

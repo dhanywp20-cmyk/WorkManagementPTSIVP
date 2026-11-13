@@ -28,6 +28,7 @@ export interface Perangkat {
   balikV?: boolean;
   huruf?: number;
   labelDi?: PosisiLabel;
+  lebarLabel?: number;
 }
 
 export interface Ujung { p: string; nama: string; port: string; sisi: PilihSisi }
@@ -46,6 +47,7 @@ export interface Kabel {
   catatan: string;
   labelBalik: boolean;
   tengah?: number;
+  jalur?: Titik[];
   huruf?: number;
 }
 
@@ -72,7 +74,7 @@ export interface BlokJudul {
 export type Kertas = 'a3' | '169';
 export type WarnaTeks = 'hitam' | 'merah' | 'abu' | 'biru';
 
-export interface TeksBebas { id: string; x: number; y: number; isi: string; ukuran: number; warna: WarnaTeks; tebal: boolean; putar?: number }
+export interface TeksBebas { id: string; x: number; y: number; isi: string; ukuran: number; warna: WarnaTeks; tebal: boolean; putar?: number; lebar?: number }
 
 export type WarnaZona = 'abu' | 'biru' | 'merah' | 'hijau' | 'oranye';
 export interface ZonaSLD { id: string; x: number; y: number; w: number; h: number; label: string; warna: WarnaZona; huruf?: number; tebal?: number }
@@ -133,5 +135,7 @@ export const UKURAN_AWAL = { w: 46, h: 30 } as const;
 export const UKURAN_MIN = { w: 12, h: 8 } as const;
 export const MAKS_PERANGKAT = 60;
 export const MAKS_KABEL = 120;
+export const MAKS_TITIK_JALUR = 40;
+export const LEBAR_BUNGKUS = { min: 8, maks: 200 } as const;
 export const MAKS_CATATAN = 20;
 export const MAKS_BYTE_GAMBAR_SLD = 90_000;

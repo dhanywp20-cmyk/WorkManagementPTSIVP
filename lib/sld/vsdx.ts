@@ -3,7 +3,7 @@ import { geometri, hurufPerangkat, kotakTampak, rasioPerangkat, teksLabel } from
 import { barisLabel, letakLabel, primRangka1 } from './lembar1';
 import { halamanLembar2 } from './lembar2';
 import type { Prim } from './primitif';
-import { lebarTeks } from './teks';
+import { lebarTeks, satuBaris } from './teks';
 import { type DokSLD, halamanDok, HALAMAN, type Titik } from './tipe';
 import { aturTinggiHalaman, bentukPrim, bentukTeksBebas, bentukZona, f, geomKotak, INCI, pisahTeks, sel, teksRun, vy, xe } from './vsdx-bentuk';
 import { STYLE_DASAR } from './vsdx-gaya';
@@ -101,7 +101,7 @@ function lembar1(m: MasukanVsdx, media: Media): Halaman {
     const teks = baris.length ? pisahTeks(teksRun(baris.map((b, i) => ({ ...b, isi: i < baris.length - 1 ? `${b.isi}\n` : b.isi })), l.kanan ? 2 : 0, -1.1)) : ['', ''];
     const g = m.gambar.get(p.id);
     const rid = g ? h.rid(media.tambah(p.id, g)) : '';
-    h.bentuk.push(`<Shape ID='${id}' NameU='${xe(p.nama || 'Perangkat')}' Type='${g ? 'Foreign' : 'Shape'}' LineStyle='2' FillStyle='2' TextStyle='3'>`
+    h.bentuk.push(`<Shape ID='${id}' NameU='${xe(satuBaris(p.nama) || 'Perangkat')}' Type='${g ? 'Foreign' : 'Shape'}' LineStyle='2' FillStyle='2' TextStyle='3'>`
       + `${sel('PinX', INCI(k.x + k.w / 2))}${sel('PinY', vy(k.y + k.h / 2))}${sel('Width', INCI(k.w))}${sel('Height', INCI(k.h))}`
       + `${sel('LocPinX', INCI(k.w / 2), " F='Width*0.5'")}${sel('LocPinY', INCI(k.h / 2), " F='Height*0.5'")}${sel('Angle', 0)}`
       + (g ? `${sel('ImgWidth', INCI(k.w), " F='Width*1'")}${sel('ImgHeight', INCI(k.h), " F='Height*1'")}` : '')

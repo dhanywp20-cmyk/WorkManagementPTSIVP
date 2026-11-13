@@ -6,7 +6,7 @@ import type { Rata } from '@/lib/sld/pilih';
 import { GAYA_ZONA, LABEL_WARNA_ZONA, LABEL_ZONA_CEPAT, TEBAL_ZONA, tebalZona, WARNA_ZONA } from '@/lib/sld/zona';
 import { POSISI_LABEL, type PosisiLabel, type WarnaZona, type ZonaSLD } from '@/lib/sld/tipe';
 import { IsianHurufLabel } from './IsianHuruf';
-import { Angka, Isian, kelasKecil, kelasTombol, Teks } from './isian';
+import { Angka, Isian, IsianLebarBungkus, kelasKecil, kelasTombol, Teks } from './isian';
 import { PilihModel } from './PilihModel';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
@@ -56,6 +56,12 @@ export function PanelBanyak({ a }: { a: KeadaanSLD }) {
       )}
       {perangkat.length > 0 && <PilihModel a={a} ids={perangkat.map(x => x.id)} />}
       {perangkat.length > 0 && <PilihPosisiLabel nilai={label} onPilih={p => a.aturLabelDi(perangkat.map(x => x.id), p)} />}
+      {perangkat.length > 0 && (
+        <IsianLebarBungkus label="Lebar maks label (turun ke bawah)" lebarGambar={0}
+          nilai={perangkat.every(p => p.lebarLabel === perangkat[0].lebarLabel) ? perangkat[0].lebarLabel : undefined}
+          bantuan="Selebar gambar = tiap label dibungkus selebar gambar perangkatnya masing-masing."
+          onUbah={v => a.aturLebarLabel(perangkat.map(x => x.id), v)} />
+      )}
       <p className="text-[11.5px] text-slate-500">
         Seret salah satu item untuk memindahkan semuanya. Shift + klik menambah / mengurangi pilihan; seret kotak di area kosong untuk memilih banyak.
         Ctrl+C / Ctrl+V / Ctrl+D / Ctrl+A, Delete untuk hapus.
