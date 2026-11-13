@@ -6,7 +6,8 @@ import { sudutSah } from './geometri';
 import { GAYA_ZONA, TEBAL_ZONA } from './zona';
 import {
   AREA, areaDok, type BlokJudul, type CatatanPasang, type DokSLD, halamanDok, HURUF_MAKS, HURUF_MIN, type JenisKabel, type Kabel, type Kertas, KERTAS,
-  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TITIK_JALUR, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi, POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Titik, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD, LEBAR_BUNGKUS,
+  MAKS_BYTE_GAMBAR_SLD, MAKS_CATATAN, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TITIK_JALUR, MAKS_RUANG, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PilihSisi,
+  POSISI_LABEL, type PosisiLabel, type RuangSLD, type TeksBebas, type Titik, type Ujung, UKURAN_MIN, type WarnaTeks, type WarnaZona, type ZonaSLD, LEBAR_BUNGKUS,
 } from './tipe';
 
 let urut = 0;

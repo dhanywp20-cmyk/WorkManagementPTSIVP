@@ -327,7 +327,13 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
           <g>
             {asalGambar && (() => { const k = kotakTampak(asalGambar); return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill="none" stroke={HIJAU} strokeWidth={0.5} pointerEvents="none" />; })()}
             {keTujuan && (() => { const k = kotakTampak(keTujuan); return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill={BIRU} fillOpacity={0.06} stroke={BIRU} strokeWidth={0.5} pointerEvents="none" />; })()}
-            {!gambar.dari && kursor && (() => { const p = perangkatDi(kursor); if (!p) return null; const k = kotakTampak(p); return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill={HIJAU} fillOpacity={0.06} stroke={HIJAU} strokeWidth={0.4} strokeDasharray="1.2 0.8" pointerEvents="none" />; })()}
+            {!gambar.dari && kursor && (() => {
+              const p = perangkatDi(kursor);
+              if (!p) return null;
+              const k = kotakTampak(p);
+              return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill={HIJAU} fillOpacity={0.06} stroke={HIJAU} strokeWidth={0.4}
+                strokeDasharray="1.2 0.8" pointerEvents="none" />;
+            })()}
             {pratinjau && <path d={jalurBulat(pratinjau)} fill="none" stroke={BIRU} strokeWidth={0.55} strokeDasharray="1.5 1" pointerEvents="none" />}
             {gambar.titik.map((t, i) => <circle key={i} cx={t.x} cy={t.y} r={0.9} fill={BIRU} stroke="#fff" strokeWidth={0.3} pointerEvents="none" />)}
             <rect width={H.w} height={H.h} fill="transparent" style={{ cursor: 'crosshair', touchAction: 'none' }}
@@ -346,7 +352,8 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
             </p>
           )}
           <button type="button" onClick={() => setGambarKabel(!modeGambar)} aria-pressed={modeGambar}
-            className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold shadow-sm transition-colors duration-150 ${modeGambar ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+            className={`pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold shadow-sm transition-colors duration-150 ${
+              modeGambar ? 'border-blue-600 bg-blue-600 text-white hover:bg-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
             {modeGambar ? <><X size={14} /> Selesai gambar kabel</> : <><Spline size={14} /> Gambar kabel manual</>}
           </button>
         </div>
