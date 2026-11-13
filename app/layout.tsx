@@ -1,5 +1,6 @@
 import './globals.css';
 import './tema-gelap.css';
+import './tema-gelap-kaca.css';
 import type { Metadata, Viewport } from 'next';
 import { PwaBootstrap, PembaruanAndroid, PantauVersiWeb, PenjagaGalatTulis, PenjagaDialog, PelaporGalat } from '@/components/shared';
 import { PenyelarasTema, SKRIP_TEMA_AWAL } from '@/components/shared/Tema';
