@@ -24,16 +24,21 @@ export function TombolIkon({ ikon: Ikon, label, onClick, disabled, aktif, teks, 
   );
 }
 
-export function Menu({ label, ikon: Ikon, teks, children, kanan, utama, lebar = 'w-60', disabled }: {
+export function Menu({ label, ikon: Ikon, teks, children, kanan, utama, lebar = 'w-60', disabled, buka: bukaLuar, onBuka }: {
   label: string; ikon?: React.ElementType; teks?: string; children: React.ReactNode; kanan?: boolean; utama?: boolean; lebar?: string; disabled?: boolean;
+  buka?: boolean; onBuka?: (v: boolean) => void;
 }) {
-  const [buka, setBuka] = useState(false);
+  const [bukaDalam, setBukaDalam] = useState(false);
+  const buka = bukaLuar ?? bukaDalam;
+  const setBuka = (v: boolean | ((x: boolean) => boolean)) => { const n = typeof v === 'function' ? v(buka) : v; setBukaDalam(n); onBuka?.(n); };
+  const setBukaRef = useRef(setBuka);
+  useEffect(() => { setBukaRef.current = setBuka; });
   const akar = useRef<HTMLDivElement>(null);
   const id = useId();
   useEffect(() => {
     if (!buka) return;
-    const luar = (e: PointerEvent) => { if (!akar.current?.contains(e.target as Node)) setBuka(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setBuka(false); };
+    const luar = (e: PointerEvent) => { if (!akar.current?.contains(e.target as Node)) setBukaRef.current(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setBukaRef.current(false); };
     document.addEventListener('pointerdown', luar);
     document.addEventListener('keydown', esc);
     return () => { document.removeEventListener('pointerdown', luar); document.removeEventListener('keydown', esc); };

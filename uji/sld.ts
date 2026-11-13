@@ -13,7 +13,9 @@ import { KATALOG, tebakTemplat } from '../lib/sld/katalog';
 import { buatVsdx } from '../lib/sld/vsdx';
 import ExcelJS from 'exceljs';
 import { bagianBoq, barisBoq, CSS_BOQ, htmlBoq, infoBoq, judulBoq, KOLOM_BOQ, pisahMerek } from '../lib/sld/boq';
-import { geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, tempelKlip } from '../lib/sld/pilih';
+import { formatDari, geserObjek, hapusObjek, idDalamKotak, jepret, posisiAwal, ratakan, salinObjek, samakanUkuran, tempelKlip, terapkanFormat, urutkan } from '../lib/sld/pilih';
+import { cariObjek, gantiTeks } from '../lib/sld/cari';
+import { jalurBulat } from '../lib/sld/lembar1';
 import { barisLabel, letakLabel } from '../lib/sld/lembar1';
 import { barisTeks, kotakTeks } from '../lib/sld/teks-bebas';
 import { labelZona, svgZona } from '../lib/sld/zona';
@@ -396,6 +398,25 @@ void (async () => {
   const sbR = ratakan(tiga, ['pa', 'pb', 'pc'], 'sebarH').perangkat.map(kotakTampak);
   const jr1 = sbR[1].x - (sbR[0].x + sbR[0].w), jr2 = sbR[2].x - (sbR[1].x + sbR[1].w);
   cek('sebar merata horizontal: jarak antar perangkat sama, ujung tetap', Math.abs(jr1 - jr2) < 1 && sbR[0].x === kotakTampak(tiga.perangkat[0]).x, `${jr1} vs ${jr2}`);
+  const fA = formatDari({ ...dp, perangkat: [{ ...pa, w: 33, h: 21, labelDi: 'kanan', huruf: 1.4 }, pb, pc] }, 'pa')!;
+  const fB = terapkanFormat(dp, fA, 'pc').perangkat[2];
+  cek('kuas format: ukuran, huruf & posisi label disalin, nama & posisi tetap', fB.w === 33 && fB.h === 21 && fB.labelDi === 'kanan' && fB.huruf === 1.4
+    && fB.nama === pc.nama && fB.x === pc.x);
+  cek('kuas format hanya ke objek sejenis', terapkanFormat(dp, fA, 'tt').teks[0] === dp.teks[0] && formatDari(dp, 'tidak-ada') === null);
+  const fK = formatDari({ ...dp, kabel: [{ ...kab, jenis: 'hdmi', duaArah: true }] }, 'kab')!;
+  cek('kuas format kabel: jenis & arah disalin', terapkanFormat(dp, fK, 'kab').kabel[0].jenis === 'hdmi' && terapkanFormat(dp, fK, 'kab').kabel[0].duaArah);
+  const ur = urutkan(dp, ['pa'], 'depan');
+  cek('bawa ke depan: perangkat pindah ke urutan terakhir (digambar paling atas)', ur.perangkat[2].id === 'pa' && urutkan(ur, ['pa'], 'belakang').perangkat[0].id === 'pa');
+  const sm = samakanUkuran({ ...dp, perangkat: [{ ...pa, w: 40, h: 30 }, pb, pc] }, ['pa', 'pb'], 'pa', 'w').perangkat;
+  cek('samakan lebar mengikuti acuan, tinggi & yang tak terpilih tetap', sm[1].w === 40 && sm[1].h === pb.h && sm[2].w === pc.w);
+  cek('cari perangkat & kabel', cariObjek(dp, 'kab').length === 0 && cariObjek({ ...dp, kabel: [{ ...kab, media: 'Cat6 STP' }] }, 'stp')[0]?.jenis === 'k'
+    && cariObjek(dp, pa.nama.slice(0, 4).toLowerCase()).some(t => t.id === 'pa'));
+  const gt = gantiTeks({ ...dp, perangkat: [{ ...pa, nama: 'Speaker A' }, { ...pb, nama: 'speaker B' }, pc] }, 'Speaker', 'Ceiling speaker');
+  cek('ganti semua (tidak peka huruf besar)', gt.jumlah === 2 && gt.dok.perangkat[1].nama === 'Ceiling speaker B' && gantiTeks(dp, 'zzz', 'x').dok === dp);
+  const lp = jalurBulat([{ x: 0, y: 10 }, { x: 40, y: 10 }], 1, () => [20]);
+  cek('lompatan garis: busur kecil di persilangan', lp.includes(' A0.9 0.9 0 0 1 20.9 10') && jalurBulat([{ x: 0, y: 10 }, { x: 40, y: 10 }]) === 'M0 10 L40 10', lp);
+  const dx = { ...dp, kabel: [{ ...kabelBaru('pa', 'pb'), id: 'h1' }, { ...kabelBaru('pa', 'pc'), id: 'v1' }] };
+  cek('lompatan garis bisa dimatikan', !svgLembar1({ ...dx, tanpaLompat: true }).includes(' A0.9 0.9'));
   cek('sebar perlu minimal 3 perangkat', ratakan(tiga, ['pa', 'pb'], 'sebarV') === tiga);
   const j = jepret({ x: 10, y: 51, w: 20, h: 10 }, [{ x: 100, y: 50, w: 30, h: 10 }]);
   cek('garis panduan: jepret sejajar dengan perangkat di samping', j.dy === -1 && j.garis.length === 1 && j.garis[0].y1 === 50);

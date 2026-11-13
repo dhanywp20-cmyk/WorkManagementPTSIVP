@@ -192,6 +192,7 @@ export function bersihkanDok(v: unknown): DokSLD | null {
     ...(ruangLain.length ? { ruangLain } : {}),
     ...(huruf.perangkat || huruf.kabel ? { huruf } : {}),
     ...(d.tanpaKoneksi === true ? { tanpaKoneksi: true } : {}),
+    ...(d.tanpaLompat === true ? { tanpaLompat: true } : {}),
   };
 }
 

@@ -1,46 +1,22 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { X } from 'lucide-react';
 import {
-  geserRuas, geserSudut, hapusSudut, hurufPerangkat, jalurDari, type Kotak, kotakTampak, ortogonal, pecahRuas, ruasTegak, ruteManual, sisiKeTitik, sudutSah,
+  geserRuas, geserSudut, hapusSudut, hurufPerangkat, jalurDari, kotakTampak, ortogonal, pecahRuas, ruasTegak, ruteManual, sudutSah,
 } from '@/lib/sld/geometri';
-import { jalurBulat, isiLembar1, letakLabel } from '@/lib/sld/lembar1';
-import { idDalamKotak, jepret, kotakDari, type Panduan, posisiAwal } from '@/lib/sld/pilih';
+import { jalurBulat, isiLembar1 } from '@/lib/sld/lembar1';
+import { type Format, formatDari, idDalamKotak, jepret, kotakDari, type Panduan, posisiAwal } from '@/lib/sld/pilih';
 import { labelZona, tebalZona } from '@/lib/sld/zona';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
 import { kotakTeks } from '@/lib/sld/teks-bebas';
 import { halamanDok, MAKS_TITIK_JALUR, type Perangkat, type TeksBebas, type Titik, UKURAN_MIN } from '@/lib/sld/tipe';
 import { EditorKabelBaru } from './EditorKabelBaru';
+import { areaLabel, BIRU, GridKanvas, HIJAU, PetunjukAlat, type Seret, snap, tepiMenghadap, useSpasi, useZoomRoda } from './KanvasBantu';
 import { kompresGambar } from './gambar';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
-type Seret =
-  | { mode: 'grup'; mulai: Titik; awal: Map<string, Titik>; kotak?: Kotak; lain: Kotak[] }
-  | { mode: 'kotak'; dari: Titik; ke: Titik }
-  | { mode: 'ukurZona'; id: string; x0: number; y0: number }
-  | { mode: 'ukur'; id: string; x0: number; y0: number }
-  | { mode: 'sambung'; dari: string; titik: Titik }
-  | { mode: 'ruas'; id: string; awal: Titik[]; k: number; tegak: boolean }
-  | { mode: 'sudut'; id: string; awal: Titik[]; k: number }
-  | { mode: 'putar'; id: string; cx: number; cy: number }
-  ;
-
-const BIRU = '#2563eb';
-const HIJAU = '#059669';
-const snap = (v: number) => Math.round(v * 2) / 2;
-
-function tepiMenghadap(k: Kotak, ke: Titik, sebelum?: Titik) {
-  const s = sisiKeTitik(k, ke, sebelum);
-  return { s, t: s === 'kiri' ? { x: k.x, y: k.y + k.h / 2 } : s === 'kanan' ? { x: k.x + k.w, y: k.y + k.h / 2 } : s === 'atas' ? { x: k.x + k.w / 2, y: k.y } : { x: k.x + k.w / 2, y: k.y + k.h } };
-}
-
-export function areaLabel(p: Perangkat, f = 1) {
-  const l = letakLabel(p, f), lx = l.kanan ? l.x - l.w - 0.5 : l.x - 0.5;
-  const x = Math.min(p.x, lx), y = Math.min(p.y, l.atas), x2 = Math.max(p.x + p.w, lx + l.w + 1), y2 = Math.max(p.y + p.h, l.atas + l.h + 0.5);
-  return { x, y, w: x2 - x, h: y2 - y };
-}
-
-export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: KeadaanSLD; zoom: number; penuh?: boolean; simple?: boolean }) {
+export function KanvasSLD({ a, zoom, penuh = false, simple = false, onZoom, grid = false, jepret: pakaiJepret = true }: {
+  a: KeadaanSLD; zoom: number; penuh?: boolean; simple?: boolean; onZoom?: (f: (z: number) => number) => void; grid?: boolean; jepret?: boolean;
+}) {
   const wadahRef = useRef<HTMLDivElement>(null);
   const [ukuran, setUkuran] = useState({ w: 960, h: 540 });
   useEffect(() => {
@@ -50,10 +26,23 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  useZoomRoda(wadahRef, onZoom);
+  const spasi = useSpasi();
   const svgRef = useRef<SVGSVGElement>(null);
   const [seret, setSeret] = useState<Seret | null>(null);
   const [panduan, setPanduan] = useState<Panduan[]>([]);
-  const { dok, geo, pilih } = a;
+  const { dok, geo, pilih, alat, setAlat } = a;
+  const efektif = spasi ? 'geser' : alat;
+  const bisaEdit = efektif === 'pilih';
+  const kurObj = efektif === 'hapus' ? 'pointer' : efektif === 'format' ? 'copy' : 'move';
+  const [sumber, setSumber] = useState<Format | null>(null);
+  const [alatLalu, setAlatLalu] = useState(alat);
+  if (alatLalu !== alat) { setAlatLalu(alat); setSumber(alat === 'format' && pilih ? formatDari(dok, pilih.id) : null); }
+  const pakaiFormat = (id: string) => {
+    if (!sumber) { setSumber(formatDari(dok, id)); return; }
+    a.terapkanFormatKe(sumber, id);
+  };
+  const jenisId = (id: string) => (dok.perangkat.some(p => p.id === id) ? 'p' : dok.teks.some(t => t.id === id) ? 't' : 'z');
   const H = halamanDok(dok);
   const lebarPas = Math.max(320, Math.min(ukuran.w - 16, ((ukuran.h - 16) * H.w) / H.h));
   const area = (p: Perangkat) => areaLabel(p, hurufPerangkat(p, dok));
@@ -74,6 +63,9 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
 
   const mulaiObjek = (e: React.PointerEvent, id: string) => {
     e.stopPropagation();
+    if (efektif === 'hapus') { a.hapus({ jenis: jenisId(id), id }); return; }
+    if (efektif === 'format') { pakaiFormat(id); return; }
+    if (!bisaEdit) return;
     if (e.shiftKey || e.ctrlKey || e.metaKey) { a.togglePilih(id); return; }
     tangkap(e);
     const ikut = a.terpilih.includes(id), ids = ikut ? a.terpilih : [id];
@@ -83,16 +75,21 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
   };
   const gerak = (e: React.PointerEvent) => {
     if (!seret) return;
+    if (seret.mode === 'geser') {
+      const w = wadahRef.current;
+      if (w) { w.scrollLeft = seret.sl - (e.clientX - seret.x); w.scrollTop = seret.st - (e.clientY - seret.y); }
+      return;
+    }
     const t = titik(e);
     if (seret.mode === 'grup') {
       let dx = t.x - seret.mulai.x, dy = t.y - seret.mulai.y, garis: Panduan[] = [];
-      if (seret.kotak && !e.shiftKey) {
+      if (seret.kotak && !e.shiftKey && pakaiJepret) {
         const j = jepret({ ...seret.kotak, x: seret.kotak.x + dx, y: seret.kotak.y + dy }, seret.lain);
         dx += j.dx; dy += j.dy; garis = j.garis;
       }
       a.geserGrup(seret.awal, dx, dy); setPanduan(garis);
     }
-    else if (seret.mode === 'kotak') setSeret({ ...seret, ke: t });
+    else if (seret.mode === 'kotak' || seret.mode === 'zonaBaru') setSeret({ ...seret, ke: t });
     else if (seret.mode === 'ukurZona') a.ubahZona(seret.id, { w: Math.max(10, snap(t.x - seret.x0)), h: Math.max(8, snap(t.y - seret.y0)) });
     else if (seret.mode === 'ukur') a.ubahPerangkat(seret.id, { w: Math.max(UKURAN_MIN.w, snap(t.x - seret.x0)), h: Math.max(UKURAN_MIN.h, snap(t.y - seret.y0)) });
     else if (seret.mode === 'sambung') setSeret({ ...seret, titik: t });
@@ -119,6 +116,12 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
       if (m.w < 1 && m.h < 1) a.pilihBanyak([]);
       else a.pilihBanyak([...(e.shiftKey ? a.terpilih : []), ...idDalamKotak(dok, m)]);
     }
+    if (seret?.mode === 'zonaBaru') {
+      const m = kotakDari(seret.dari, titik(e));
+      if (m.w < 4 || m.h < 4) a.tambahZona({ x: snap(seret.dari.x), y: snap(seret.dari.y) });
+      else a.tambahZona({ x: snap(m.x), y: snap(m.y) }, undefined, { w: snap(m.w), h: snap(m.h) });
+      setAlat('pilih');
+    }
     if (seret?.mode === 'ruas' || seret?.mode === 'sudut') {
       const c = dok.kabel.find(k => k.id === seret.id);
       if (c?.jalur) a.ubahKabel(seret.id, { jalur: jalurDari([seret.awal[0], ...c.jalur, seret.awal[seret.awal.length - 1]]) });
@@ -128,24 +131,25 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
 
   const [gambar, setGambar] = useState<{ dari: string | null; titik: Titik[] }>({ dari: null, titik: [] });
   const [kursor, setKursor] = useState<Titik | null>(null);
-  const modeGambar = a.gambarKabel;
+  const modeGambar = alat === 'garis';
+  const gambarAktif = modeGambar && !spasi;
   const setGambarKabel = a.setGambarKabel;
   const [modeLalu, setModeLalu] = useState(modeGambar);
   if (modeLalu !== modeGambar) { setModeLalu(modeGambar); setGambar({ dari: null, titik: [] }); setKursor(null); }
   useEffect(() => {
-    if (!modeGambar) return;
+    if (alat === 'pilih') return;
     const tekan = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
-      if (e.key === 'Escape') { e.preventDefault(); setGambarKabel(false); }
-      else if (e.key === 'Backspace' || e.key === 'Delete') {
+      if (e.key === 'Escape') { e.preventDefault(); setAlat('pilih'); }
+      else if (modeGambar && (e.key === 'Backspace' || e.key === 'Delete')) {
         e.preventDefault();
         setGambar(g => (g.titik.length ? { ...g, titik: g.titik.slice(0, -1) } : { dari: null, titik: [] }));
       }
     };
     window.addEventListener('keydown', tekan);
     return () => window.removeEventListener('keydown', tekan);
-  }, [modeGambar, setGambarKabel]);
+  }, [alat, modeGambar, setAlat]);
   const asalGambar = gambar.dari ? dok.perangkat.find(p => p.id === gambar.dari) : undefined;
   const titikGambar = (t: Titik, bebas: boolean): Titik => {
     const s = { x: snap(t.x), y: snap(t.y) };
@@ -201,7 +205,7 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
   const zDipilih = pilih?.jenis === 'z' ? dok.zona?.find(z => z.id === pilih.id) : undefined;
   const putarTeks = (t: TeksBebas) => { const k = kotakTeks(t); return t.putar ? `rotate(${t.putar} ${k.x + k.w / 2} ${k.y + k.h / 2})` : undefined; };
   const asal = seret?.mode === 'sambung' ? dok.perangkat.find(p => p.id === seret.dari) : undefined;
-  const jalurDipilih = kDipilih && !modeGambar ? kDipilih.garis[0].titik : null;
+  const jalurDipilih = kDipilih && bisaEdit ? kDipilih.garis[0].titik : null;
   const simpanJalur = (id: string, baru: Titik[] | null) => { if (baru) a.ubahKabel(id, { tengah: undefined, jalur: jalurDari(baru) }); };
 
   return (
@@ -216,10 +220,16 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
         style={{ width: lebarPas * zoom, height: (lebarPas * zoom * H.h) / H.w, display: 'block', background: '#fff', userSelect: 'none', WebkitUserSelect: 'none', boxShadow: '0 1px 6px rgba(15,23,42,.18)' }}
         onPointerMove={gerak} onPointerUp={lepas} onPointerCancel={() => { setSeret(null); setPanduan([]); }} role="img" aria-label="Kanvas Single Line Diagram">
         <rect width={H.w} height={H.h} fill="#fff" onDoubleClick={e => a.tambahTeks(titik(e))}
-          onPointerDown={e => { tangkap(e); const t = titik(e); setSeret({ mode: 'kotak', dari: t, ke: t }); }} />
+          onPointerDown={e => { if (!bisaEdit) return; tangkap(e); const t = titik(e); setSeret({ mode: 'kotak', dari: t, ke: t }); }} />
+        {grid && <GridKanvas w={H.w} h={H.h} />}
         <g pointerEvents="none" dangerouslySetInnerHTML={{ __html: isi }} />
         {geo.map(g => (
-          <g key={g.id} style={{ cursor: 'pointer' }} onPointerDown={e => { e.stopPropagation(); a.setPilih({ jenis: 'k', id: g.id }); }}>
+          <g key={g.id} style={{ cursor: efektif === 'format' ? 'copy' : 'pointer' }} onPointerDown={e => {
+            e.stopPropagation();
+            if (efektif === 'hapus') a.hapus({ jenis: 'k', id: g.id });
+            else if (efektif === 'format') pakaiFormat(g.id);
+            else if (bisaEdit) a.setPilih({ jenis: 'k', id: g.id });
+          }}>
             {g.garis.map((gr, i) => <path key={i} d={jalurBulat(gr.titik)} fill="none" stroke="transparent" strokeWidth={3} />)}
             <rect x={g.label.x - g.lebarLabel / 2} y={g.label.y - 1.6} width={g.lebarLabel} height={3.2} fill="transparent" />
           </g>
@@ -227,7 +237,7 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
         {(dok.zona ?? []).map(z => {
           const l = labelZona(z);
           return (
-            <g key={z.id} style={{ cursor: 'move', touchAction: 'none' }} onPointerDown={e => mulaiObjek(e, z.id)}>
+            <g key={z.id} style={{ cursor: kurObj, touchAction: 'none' }} onPointerDown={e => mulaiObjek(e, z.id)}>
               <rect x={z.x} y={z.y} width={z.w} height={z.h} fill="none" stroke="transparent" strokeWidth={Math.max(2.4, tebalZona(z) + 1.6)} pointerEvents="stroke" />
               {l.w > 0 && <rect x={l.x} y={l.y} width={l.w} height={l.h} fill="transparent" />}
             </g>
@@ -235,11 +245,11 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
         })}
         {dok.perangkat.map(p => {
           const b = area(p);
-          return <rect key={p.id} x={b.x} y={b.y} width={b.w} height={b.h} fill="transparent" style={{ cursor: 'move', touchAction: 'none' }} onPointerDown={e => mulaiObjek(e, p.id)} />;
+          return <rect key={p.id} x={b.x} y={b.y} width={b.w} height={b.h} fill="transparent" style={{ cursor: kurObj, touchAction: 'none' }} onPointerDown={e => mulaiObjek(e, p.id)} />;
         })}
         {dok.teks.map(t => {
           const k = kotakTeks(t);
-          return <rect key={t.id} x={k.x} y={k.y} width={k.w} height={k.h} fill="transparent" transform={putarTeks(t)} style={{ cursor: 'move', touchAction: 'none' }}
+          return <rect key={t.id} x={k.x} y={k.y} width={k.w} height={k.h} fill="transparent" transform={putarTeks(t)} style={{ cursor: kurObj, touchAction: 'none' }}
             onPointerDown={e => mulaiObjek(e, t.id)} />;
         })}
         {tDipilih && (() => {
@@ -276,7 +286,7 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
             ))}
           </g>
         )}
-        {pDipilih && (() => {
+        {pDipilih && bisaEdit && (() => {
           const b = area(pDipilih);
           return (
             <g>
@@ -308,7 +318,7 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
           const b = p ? area(p) : t ? kotakTeks(t) : z;
           return b ? <rect key={id} x={b.x - 0.8} y={b.y - 0.8} width={b.w + 1.6} height={b.h + 1.6} fill="none" stroke={BIRU} strokeWidth={0.35} strokeDasharray="1.2 0.8" pointerEvents="none" /> : null;
         })}
-        {zDipilih && (
+        {zDipilih && bisaEdit && (
           <g>
             <rect x={zDipilih.x - 0.6} y={zDipilih.y - 0.6} width={zDipilih.w + 1.2} height={zDipilih.h + 1.2} fill="none" stroke={BIRU} strokeWidth={0.35} strokeDasharray="1.2 0.8" pointerEvents="none" />
             <rect x={zDipilih.x + zDipilih.w - 1.4} y={zDipilih.y + zDipilih.h - 1.4} width={2.8} height={2.8} fill="#fff" stroke={BIRU} strokeWidth={0.4}
@@ -324,7 +334,22 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
         {asal && seret?.mode === 'sambung' && (
           <line x1={asal.x + asal.w / 2} y1={asal.y + asal.h / 2} x2={seret.titik.x} y2={seret.titik.y} stroke={BIRU} strokeWidth={0.5} strokeDasharray="1.5 1" pointerEvents="none" />
         )}
-        {modeGambar && (
+        {seret?.mode === 'zonaBaru' && (() => {
+          const m = kotakDari(seret.dari, seret.ke);
+          return <rect x={m.x} y={m.y} width={m.w} height={m.h} rx={1.2} fill="none" stroke="#57606a" strokeWidth={0.45} strokeDasharray="2.2 1.4" pointerEvents="none" />;
+        })()}
+        {(efektif === 'geser' || efektif === 'teks' || efektif === 'area') && (
+          <rect width={H.w} height={H.h} fill="transparent"
+            style={{ cursor: efektif === 'geser' ? (seret?.mode === 'geser' ? 'grabbing' : 'grab') : efektif === 'teks' ? 'text' : 'crosshair', touchAction: 'none' }}
+            onPointerDown={e => {
+              e.stopPropagation(); tangkap(e);
+              if (efektif === 'geser') { const w = wadahRef.current; setSeret({ mode: 'geser', x: e.clientX, y: e.clientY, sl: w?.scrollLeft ?? 0, st: w?.scrollTop ?? 0 }); return; }
+              const q = titik(e), t = { x: snap(q.x), y: snap(q.y) };
+              if (efektif === 'teks') { a.tambahTeks(t); setAlat('pilih'); return; }
+              setSeret({ mode: 'zonaBaru', dari: t, ke: t });
+            }} />
+        )}
+        {gambarAktif && (
           <g>
             {asalGambar && (() => { const k = kotakTampak(asalGambar); return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill="none" stroke={HIJAU} strokeWidth={0.5} pointerEvents="none" />; })()}
             {keTujuan && (() => { const k = kotakTampak(keTujuan); return <rect x={k.x - 1} y={k.y - 1} width={k.w + 2} height={k.h + 2} fill={BIRU} fillOpacity={0.06} stroke={BIRU} strokeWidth={0.5} pointerEvents="none" />; })()}
@@ -344,15 +369,9 @@ export function KanvasSLD({ a, zoom, penuh = false, simple = false }: { a: Keada
       </svg>
       </div>
       </div>
-      {modeGambar && (
-        <div className="absolute left-2 bottom-2 z-10 flex items-start gap-1.5 max-w-[min(520px,calc(100%-16px))]">
-          <p role="status" className="rounded-lg border border-blue-200 bg-white/95 px-3 py-1.5 text-[12px] leading-snug text-slate-700 shadow-sm">
-            <b>Alat garis.</b> {!gambar.dari ? <>Klik perangkat <b>asal</b> kabel.</>
-              : <>Klik di kanvas untuk titik belok ({gambar.titik.length}), lalu klik perangkat <b>tujuan</b>. Shift = titik bebas. Backspace / klik kanan = batalkan titik. Esc = keluar.</>}
-          </p>
-          <button type="button" onClick={() => setGambarKabel(false)} aria-label="Keluar dari alat garis" title="Keluar (Esc)"
-            className="shrink-0 grid place-items-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"><X size={15} /></button>
-        </div>
+      {alat !== 'pilih' && (
+        <PetunjukAlat alat={alat} onTutup={() => setAlat('pilih')} sumber={!!sumber}
+          garis={modeGambar ? (!gambar.dari ? 'asal' : gambar.titik.length) : undefined} />
       )}
     </div>
   );
