@@ -5,7 +5,7 @@ import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Keterangan } from '@/components/shared/Keterangan';
 import { jumlahRuang, namaRuangKe } from '@/lib/sld/ruang';
 import { MAKS_RUANG } from '@/lib/sld/tipe';
-import { Pemisah, TombolIkon } from './MenuBilah';
+import { Pemisah, TombolIkon } from '../bersama/MenuBilah';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 export function BilahRuang({ a, konfirmasi, kanan }: { a: KeadaanSLD; konfirmasi: (s: ConfirmState) => void; kanan?: React.ReactNode }) {

@@ -3,7 +3,7 @@ import {
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, BoxSelect, BringToFront, FlipHorizontal2, FlipVertical2, LayoutGrid, Route, Scaling, SendToBack,
   StretchHorizontal, StretchVertical, WandSparkles,
 } from 'lucide-react';
-import { GarisMenu, ItemMenu, JudulMenu, kelasIkon, Menu } from './MenuBilah';
+import { GarisMenu, ItemMenu, JudulMenu, kelasIkon, Menu } from '../bersama/MenuBilah';
 import { RATA } from './PanelPilihan';
 import type { KeadaanSLD } from './useKeadaanSLD';
 

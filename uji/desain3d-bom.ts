@@ -104,7 +104,7 @@ const keadaan = readFileSync('app/(portal)/tools-team/_components/desain3d/useKe
 const aksiPilih = readFileSync('app/(portal)/tools-team/_components/desain3d/panel/AksiTerpilih.tsx', 'utf8');
 cek('memilih benda membuka panel atur, batal pilih menutupnya', /if \(!pilih\) \{ setPanel\(false\); return; \}/.test(keadaan) && /bukaAtur\.current\(\);\n?\r?\n?\s*\}, \[pilih\]\)/.test(keadaan));
 cek('menambah benda dari panel Tambah tidak menutup panel Tambah', /sisiLalu\.current === 'tambah' && !bendaLalu\.current\.some/.test(keadaan));
-cek('tombol atur tetap ada dan menyala saat panel terbuka', /aria-pressed=\{panel\}/.test(aksiPilih) && /kelas=\{panel \? 'bg-blue-700 text-white' : biasa\}/.test(aksiPilih));
+cek('tombol atur tetap ada dan menyala saat panel terbuka', /aria-pressed=\{panel\}/.test(aksiPilih) && /\$\{panel \? kelasIkonAktif : ''\}/.test(aksiPilih));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

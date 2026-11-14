@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Replace, Search } from 'lucide-react';
 import { cariObjek } from '@/lib/sld/cari';
 import { kelasKecil } from './isian';
-import { GarisMenu, JudulMenu, Menu } from './MenuBilah';
+import { GarisMenu, JudulMenu, Menu } from '../bersama/MenuBilah';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
 const LABEL_JENIS = { p: 'Perangkat', k: 'Kabel', t: 'Teks', z: 'Area' } as const;

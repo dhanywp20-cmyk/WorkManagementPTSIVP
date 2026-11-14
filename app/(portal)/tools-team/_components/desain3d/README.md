@@ -16,7 +16,7 @@ desain3d/
   simpan/    simpan & buka: server tim, laptop (.glb), produk tim, Objek saya (pribadi, ekspor/impor .json),
              template default kategori (Admin) + ingatan kanvas awal, tekstur lantai/dinding
   ekspor/    foto kanvas, PNG, lembar cetak A4
-  panel/     komponen React (bilah, panel samping, kartu hasil, modal)
+  panel/     komponen React: BilahAlat (toolbar 2 baris: berkas & tampilan / alat & aksi benda terpilih), panel samping, kartu hasil, modal
   useKeadaanDesain.ts   seluruh state + nilai turunan (satu sumber kebenaran)
 ```
 

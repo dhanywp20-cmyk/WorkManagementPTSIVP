@@ -12,7 +12,8 @@ _components/
   ChecklistBarang.tsx kerangka Checklist Barang         → cekbarang/ (impor Excel / PDF, PDF hasil + tanda tangan;
                      logika murni lib/checklist/barang.ts, diuji uji/checklist-barang.ts)
   bersama/           dipakai semua alat: ui.tsx (isian, kartu, nilai), cetak.ts (lembar A4 & PNG),
-                     riwayat.ts (undo / redo)
+                     riwayat.ts (undo / redo), MenuBilah.tsx (toolbar ringkas SLD & Desain 3D: tombol ikon,
+                     menu tarik-turun, segmen, sakelar)
 ```
 
 Rumus murni yang dipakai lintas modul (ukuran layar, lumen, bandwidth, SPL, hitung LED,
