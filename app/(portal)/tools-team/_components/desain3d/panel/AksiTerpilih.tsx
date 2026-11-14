@@ -49,7 +49,7 @@ export function AksiTerpilih({ a }: { a: AlatDesain }) {
     return () => window.removeEventListener('keydown', tekan);
   }, [terpilih, kunci, geserAktif, hanyaLihat, alatKanvas]);
 
-  if (!terpilih) return <span className="hidden md:inline px-2 text-[12px] text-slate-400">Klik benda untuk mengatur</span>;
+  if (!terpilih) return <span className="hidden md:inline px-2 text-[12px] text-slate-500">Klik benda untuk mengatur</span>;
   const ids = [terpilih.id, ...pilihLain];
   const banyak = pilihLain.length > 0;
   const ruangLain = (ruangDari(ruang, terpilih.x) + 1) % kotakRuang.length + 1;

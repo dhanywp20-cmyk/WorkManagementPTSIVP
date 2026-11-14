@@ -10,8 +10,8 @@ export const kelasIkonAktif = '!bg-blue-50 !text-blue-700';
 const TutupMenu = createContext<() => void>(() => {});
 export const useTutupMenu = () => useContext(TutupMenu);
 
-export function Pemisah() {
-  return <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-slate-200" />;
+export function Pemisah({ className = '' }: { className?: string }) {
+  return <span aria-hidden="true" className={`mx-1 h-5 w-px shrink-0 bg-slate-200 ${className}`} />;
 }
 
 function Lencana({ isi }: { isi?: number | string }) {

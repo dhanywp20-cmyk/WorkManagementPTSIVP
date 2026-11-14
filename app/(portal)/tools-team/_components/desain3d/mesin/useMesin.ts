@@ -247,7 +247,7 @@ export function useMesin(K: KeadaanDesain) {
       }
     })();
     return () => { hidup = false; bersihkan(); };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
@@ -281,6 +281,6 @@ export function useMesin(K: KeadaanDesain) {
       kanvas.removeEventListener('pointerleave', keluar);
       kanvas.style.cursor = '';
     };
-  }, [modeSeret, siap]);
+  }, [modeSeret, siap, mesin]);
 
 }

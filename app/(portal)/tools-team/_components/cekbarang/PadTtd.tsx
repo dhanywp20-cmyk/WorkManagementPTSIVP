@@ -70,7 +70,7 @@ export function PadTtd({ nilai, onUbah, label }: { nilai: string; onUbah: (v: st
         onPointerDown={e => { if (e.button > 0) return; e.currentTarget.setPointerCapture(e.pointerId); const p = titik(e); gores.current = p; garis(p, p); }}
         onPointerMove={e => { if (!gores.current) return; const p = titik(e); garis(gores.current, p); gores.current = p; }}
         onPointerUp={selesai} onPointerCancel={selesai} />
-      {!nilai && <span className="pointer-events-none absolute inset-0 grid place-items-center text-[12px] text-slate-400">Tanda tangan di sini (opsional)</span>}
+      {!nilai && <span className="pointer-events-none absolute inset-0 grid place-items-center text-[12px] text-slate-500">Tanda tangan di sini (opsional)</span>}
       {nilai && (
         <button type="button" onClick={() => { milikSendiri.current = ''; gambarNilai(''); onUbah(''); }}
           className="absolute top-1.5 right-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-white/90 border border-slate-200 text-slate-600 hover:text-rose-700">

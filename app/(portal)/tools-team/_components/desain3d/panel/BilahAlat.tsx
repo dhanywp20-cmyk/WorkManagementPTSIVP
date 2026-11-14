@@ -70,8 +70,8 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
             aktif={daftarKanvas} onClick={() => setDaftarKanvas(!daftarKanvas)} />
           <Pemisah />
           <Segmen label="Sudut pandang" nilai={tampilan} opsi={SUDUT} onPilih={v => a.kamera.pilihSudut(KAMERA[v])} />
-          <Pemisah />
-          <span tabIndex={0} className={`${kelasIkon} cursor-help`} aria-label={`Pintasan & kontrol: ${BANTUAN_KONTROL}`} title={BANTUAN_KONTROL}><Keyboard size={16} /></span>
+          <Pemisah className="max-sm:hidden" />
+          <span tabIndex={0} className={`${kelasIkon} cursor-help max-sm:!hidden`} aria-label={`Pintasan & kontrol: ${BANTUAN_KONTROL}`} title={BANTUAN_KONTROL}><Keyboard size={16} /></span>
           <TombolIkon ikon={layarPenuh ? Minimize2 : Maximize2} label={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} onClick={() => setLayarPenuh(v => !v)} />
           <span className="w-1" aria-hidden="true" />
           <MenuEkspor a={a} />
