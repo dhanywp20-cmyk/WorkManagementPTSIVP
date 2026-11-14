@@ -13,7 +13,8 @@ import { cariTemplat } from '@/lib/sld/katalog';
 import { perangkatDariTim, segarkanFotoTim as segarkanFotoTimDok, type ItemTim } from '@/lib/sld/katalog-tim';
 import { isiPreset, presetKabel } from '@/lib/sld/preset-kabel';
 import { periksaDok } from '@/lib/sld/turunan';
-import { hapusObjek, type Klip, type Rata, ratakan, salinObjek, tempelKlip, geserObjek } from '@/lib/sld/pilih';
+import { type Format, hapusObjek, type Klip, type Rata, ratakan, salinObjek, samakanUkuran, tempelKlip, geserObjek, terapkanFormat, urutkan } from '@/lib/sld/pilih';
+import { gantiTeks } from '@/lib/sld/cari';
 import {
   AREA, areaDok, type BlokJudul, type DokSLD, type IsiBoqItem, type Kabel, type Kertas, MAKS_KABEL, MAKS_PERANGKAT, MAKS_TEKS, MAKS_ZONA, type Perangkat, type PosisiLabel, type TeksBebas, type Titik, UKURAN_MIN, type ZonaSLD,
 } from '@/lib/sld/tipe';
@@ -27,6 +28,7 @@ const KUNCI = 'tools-team-sld-v1';
 const KUNCI_PRESET = 'tools-team-sld-kabel';
 const TEKS_DINDING = ['nama', 'model', 'ket', 'subGambar', 'ikon'];
 
+export type Alat = 'pilih' | 'geser' | 'garis' | 'teks' | 'area' | 'format' | 'hapus';
 export type Pilihan = { jenis: 'p' | 'k' | 't' | 'z'; id: string } | null;
 const KUNCI_KLIP = 'tools-team-sld-klip';
 
@@ -172,7 +174,10 @@ export function useKeadaanSLD() {
     setPresetTerakhirState(k);
     try { localStorage.setItem(KUNCI_PRESET, k); } catch {  }
   }, []);
-  const [gambarKabel, setGambarKabel] = useState(false);
+  const [alat, setAlat] = useState<Alat>('pilih');
+  const gambarKabel = alat === 'garis';
+  const setGambarKabel = useCallback((v: boolean) => setAlat(v ? 'garis' : 'pilih'), []);
+  const terapkanFormatKe = useCallback((f: Format, id: string) => setDok(d => terapkanFormat(d, f, id)), [setDok]);
   const hubungkan = useCallback((dari: string, ke: string, jalur?: Titik[]) => {
     if (dari === ke) return;
     const c = { ...kabelBaru(dari, ke, isiPreset(presetKabel(presetTerakhir))), ...(jalur?.length ? { jalur } : {}) };
@@ -197,6 +202,7 @@ export function useKeadaanSLD() {
 
   const terpilih = useMemo(() => (grup.utama === (pilih?.id ?? null) && grup.ids.length ? grup.ids : pilih ? [pilih.id] : []), [grup, pilih]);
   const terpilihRef = useRef(terpilih); terpilihRef.current = terpilih;
+  const pilihRef = useRef(pilih); pilihRef.current = pilih;
   const jenisDari = useCallback((id: string): Pilihan => {
     const d = dokRef.current;
     if (d.perangkat.some(p => p.id === id)) return { jenis: 'p', id };
@@ -236,6 +242,10 @@ export function useKeadaanSLD() {
     setDok(d => hapusObjek(d, ids)); setPilih(null); setGrup({ utama: null, ids: [] });
   }, [setDok]);
   const ratakanTerpilih = useCallback((cara: Rata) => setDok(d => ratakan(d, terpilihRef.current, cara)), [setDok]);
+  const urutkanTerpilih = useCallback((arah: 'depan' | 'belakang') => setDok(d => urutkan(d, terpilihRef.current, arah)), [setDok]);
+  const samakanUkuranTerpilih = useCallback((cara: 'w' | 'h' | 'wh') => setDok(d => samakanUkuran(d, terpilihRef.current, pilihRef.current?.id, cara)), [setDok]);
+  const gantiSemua = useCallback((cari: string, ganti: string) => { const h = gantiTeks(dokRef.current, cari, ganti); if (h.jumlah) setDok(h.dok); return h.jumlah; }, [setDok]);
+  const aturLompat = useCallback((aktif: boolean) => setProyek(p => ({ ...p, tanpaLompat: aktif ? undefined : true })), []);
   const aturLabelDi = useCallback((ids: string[], posisi: PosisiLabel) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id) ? { ...p, labelDi: posisi === 'bawah' ? undefined : posisi } : p)) })), [setDok]);
   const aturLebarLabel = useCallback((ids: string[], v: number | 'gambar' | undefined) => setDok(d => ({ ...d, perangkat: d.perangkat.map(p => (ids.includes(p.id)
     ? { ...p, lebarLabel: v === 'gambar' ? Math.max(8, Math.round(kotakTampak(p).w)) : v } : p)) })), [setDok]);
@@ -243,8 +253,8 @@ export function useKeadaanSLD() {
     if (!ids.includes(x.id)) return x;
     return { ...x, model, ...(kategori !== undefined ? { kategori } : {}) };
   }) })), [setDok]);
-  const tambahZona = useCallback((posisi?: { x: number; y: number }, label?: string) => {
-    const a = areaDok(dokRef.current), z = zonaBaru(posisi?.x ?? a.x + 20, posisi?.y ?? a.y + 15, label);
+  const tambahZona = useCallback((posisi?: { x: number; y: number }, label?: string, ukuran?: { w: number; h: number }) => {
+    const a = areaDok(dokRef.current), z = { ...zonaBaru(posisi?.x ?? a.x + 20, posisi?.y ?? a.y + 15, label), ...ukuran };
     setDok(d => ((d.zona?.length ?? 0) >= MAKS_ZONA ? d : { ...d, zona: [...(d.zona ?? []), z] }));
     setPilih({ jenis: 'z', id: z.id });
   }, [setDok]);
@@ -318,7 +328,7 @@ export function useKeadaanSLD() {
     dok, setDok, proyek, ruangAktif: aktif, pilihRuang, tambahRuangBaru, duplikatRuangKe, qtyDariNama, rapikanSemuaLabel, hapusRuangKe, namaiRuangKe, siap, pilih, setPilih, geo, temuan, riwayat, galatSimpan, galeri, tambahGaleri, hapusGaleri, pasangFotoKe, logo, setLogo, setWatermark,
     ubahBlok, ubahPerangkat, putarPerangkat, balikPerangkat, ubahKabel, tambahTeks, ubahTeks, duplikatTeks, terpilih, pilihBanyak, togglePilih, geserGrup, salin, tempel, hapusTerpilih, ratakanTerpilih,
     aturLabelDi, aturLebarLabel, aturModel, tambahZona, ubahZona, bersihkanKabelYatim, aturKertas, aturSheet2, aturHurufDok, ubahBoq, tambahPerangkat, tambahObjekTim, segarkanFotoTim, hapusSemuaFotoLokal, duplikat, hubungkan, kabelBebas, geserKabel, hapus, muat, baru, contoh,
-    presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, gambarKabel, setGambarKabel,
+    presetTerakhir, setPresetTerakhir, kabelBaruId, setKabelBaruId, gambarKabel, setGambarKabel, alat, setAlat, terapkanFormatKe, urutkanTerpilih, samakanUkuranTerpilih, gantiSemua, aturLompat,
   };
 }
 
