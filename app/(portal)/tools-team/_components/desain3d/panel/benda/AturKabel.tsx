@@ -2,7 +2,7 @@
 import { GOLONGAN_SINYAL, kabelOtomatis, MAKS_TARIKAN, type GolonganKabelSinyal, type Jenis, type KabelCustom } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
-const TANPA_KABEL: Jenis[] = ['kursi', 'tribun', 'panggung', 'bidang', 'objek', 'model', 'rak', 'teks'];
+export const TANPA_KABEL: Jenis[] = ['kursi', 'tribun', 'panggung', 'bidang', 'objek', 'model', 'rak', 'teks'];
 
 const hex = (w: number) => `#${w.toString(16).padStart(6, '0')}`;
 const ringkas = (d: KabelCustom[]) =>

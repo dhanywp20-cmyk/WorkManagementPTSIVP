@@ -136,7 +136,7 @@ console.log('\n8. Keterangan blending tidak mengganggu');
   cek('zona & angka cm tetap tampil; kartu, garis penunjuk & titiknya disembunyikan lewat .visible', !/if \(!detail\) return;/.test(ukur) && /objKartu\.visible = buka; penunjuk\.visible = buka; titikTengah\.visible = buka;/.test(ukur));
   cek('klik ⓘ di angka cm / klik kartu = buka / tutup satu area (bertahan saat digambar ulang)', /angka\.append\(cm, ikon\)/.test(ukur) && /pilihanKartu\.set\(kunci, buka\)/.test(ukur) && /for \(const el of \[angka, kartu\]\)/.test(ukur));
   cek('lembar cetak menulis angka tanpa ⓘ', /angka\.dataset\.teks = cm/.test(ukur));
-  cek('centang bernama "Keterangan blending"', /l: 'Keterangan blending'/.test(readFileSync(`${D3}/panel/KontrolKanvas.tsx`, 'utf8')));
+  cek('centang bernama "Keterangan blending"', /l: 'Keterangan blending'/.test(readFileSync(`${D3}/panel/MenuKanvas.tsx`, 'utf8')));
 }
 
 console.log('\n9. Rasio aspek proyektor (16:9 / 16:10 / 4:3 / 21:9)');

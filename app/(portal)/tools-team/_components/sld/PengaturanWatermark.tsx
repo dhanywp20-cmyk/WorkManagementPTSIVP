@@ -1,4 +1,5 @@
 'use client';
+import { Sakelar } from '../bersama/MenuBilah';
 import { useRef, useState } from 'react';
 import { ImageUp, RotateCcw } from 'lucide-react';
 import { WATERMARK_BAWAAN } from '@/lib/sld/lembar-umum';
@@ -34,17 +35,5 @@ export function PengaturanWatermark({ a }: { a: KeadaanSLD }) {
       <input ref={berkas} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={e => void ganti(e.target.files?.[0])} />
       {galat && <p role="alert" className="text-[12px] text-rose-700">{galat}</p>}
     </div>
-  );
-}
-
-export function Sakelar({ label, nilai, onUbah, judul }: { label: string; nilai: boolean; onUbah: (v: boolean) => void; judul?: string }) {
-  return (
-    <label className="flex items-center justify-between gap-3 cursor-pointer select-none text-[13px] font-medium text-slate-700" title={judul}>
-      {label}
-      <button type="button" role="switch" aria-checked={nilai} aria-label={label} onClick={() => onUbah(!nilai)}
-        className={`relative w-9 h-5 shrink-0 rounded-full transition-colors duration-200 ${nilai ? 'bg-blue-700' : 'bg-slate-300'}`}>
-        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${nilai ? 'translate-x-4' : ''}`} />
-      </button>
-    </label>
   );
 }

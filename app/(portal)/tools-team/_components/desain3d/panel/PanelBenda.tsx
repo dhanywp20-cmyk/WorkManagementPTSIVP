@@ -16,10 +16,14 @@ import { BagianUmum } from './benda/BagianUmum';
 import { SimpanObjekSaya } from './benda/SimpanObjekSaya';
 import { DariPustaka } from './benda/DariPustaka';
 import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
+import { Bagian, BilahTabAtur, PenyediaTab, type TabAtur, useTabAtur } from './benda/TabAtur';
+import { TANPA_KABEL } from './benda/AturKabel';
 
 export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto = false, onGambarObjek, semua, ruang }: PropsPanelBenda) {
   const c = useKonteksAtur({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto, onGambarObjek, semua, ruang });
   const { label, set } = c;
+  const tersedia: TabAtur[] = ['produk', 'posisi', ...(b.jenis === 'proyektor' ? ['lensa' as const] : []), 'tampilan', ...(TANPA_KABEL.includes(b.jenis) ? [] : ['kabel' as const])];
+  const t = useTabAtur(tersedia);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -29,7 +33,10 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           <Ikon nama="❌" ukuran={16} />
         </button>
       </div>
+      <div className="px-3 pt-2.5 pb-2 border-b border-slate-100"><BilahTabAtur {...t} /></div>
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <PenyediaTab tab={t.tab}>
+        <Bagian tab="produk">
         <label className="block">
           <span className={label}>Nama</span>
           <input value={b.nama} onChange={e => set({ nama: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
@@ -44,15 +51,17 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         <AturFurnitur c={c} />
         <AturKonferensi c={c} />
         <AturBidang c={c} />
-        <AturProyektor c={c} />
         <AturPerangkat c={c} />
         <AturTeks c={c} />
         {(b.jenis === 'model' || b.jenis === 'objek') && <AturObjek b={b} set={set} adaFoto={adaFoto} onGambarBaru={() => onGambarObjek?.()} />}
-        {ekstra}
-        <AturKabel c={c} />
+        </Bagian>
+        <AturProyektor c={c} />
+        <Bagian tab="lensa">{ekstra}</Bagian>
+        <Bagian tab="kabel"><AturKabel c={c} /></Bagian>
 
         <BagianUmum c={c} />
-        <SimpanObjekSaya c={c} />
+        <Bagian tab="produk"><SimpanObjekSaya c={c} /></Bagian>
+        </PenyediaTab>
       </div>
     </div>
   );

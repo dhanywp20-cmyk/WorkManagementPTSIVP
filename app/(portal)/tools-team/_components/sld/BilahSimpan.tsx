@@ -4,7 +4,7 @@ import { FilePlus2, FolderOpen, History, Link2, Save, SaveAll, Search, Sparkles,
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Modal } from '@/components/shared/Modal';
 import { Centang, kelasKecil, kelasTombol } from './isian';
-import { GarisMenu, ItemMenu, kelasIkon, Menu } from './MenuBilah';
+import { GarisMenu, ItemMenu, kelasIkon, Menu } from '../bersama/MenuBilah';
 import type { KeadaanSimpanSLD, SldTim } from './useSimpanSLD';
 import type { KeadaanSLD } from './useKeadaanSLD';
 
