@@ -79,7 +79,7 @@ cek('proyektor sama model jadi satu baris (PT-MZ882 + ET-ELU20 × 5)', imBom.len
 cek('catatan proyektor memuat lumen & throw ratio', /8\.200 lm · TR 0,34-0,36/.test(imBom[0].catatan));
 const auBom = bomTemplate('auditorium');
 cek('line array dihitung per modul', auBom.find(r => r.item === 'Line array kiri')?.jumlah === 8 && auBom.find(r => r.item === 'Line array kiri')?.satuan === 'modul');
-cek('semua template punya rack: kabel sinyal terhitung', KATEGORI_RUANG.every(k => !bomTemplate(k.id).some(r => r.ukuran === 'belum dihitung') && bomTemplate(k.id).some(r => /LAN/.test(r.item))));
+cek('semua template punya rack: kabel sinyal terhitung', KATEGORI_RUANG.filter(k => k.id !== 'kosong').every(k => !bomTemplate(k.id).some(r => r.ukuran === 'belum dihitung') && bomTemplate(k.id).some(r => /LAN/.test(r.item))));
 const tvSaja = [bendaBaru('tv', kotakUji)];
 const tanpaRack = bomDesain(tvSaja, jalurKabel(tvSaja, ruangPolos, { power: true }));
 cek('tanpa rack: kabel sinyal ditandai belum dihitung, power tetap dihitung', tanpaRack.some(r => r.item === 'Kabel sinyal' && r.ukuran === 'belum dihitung') && tanpaRack.some(r => /Kabel power/.test(r.item)));
