@@ -2,7 +2,7 @@ import { bagikanTepat } from './scheme-aturan';
 
 export interface AnggotaTim {
   id: string;
-  full_name: string | null;
+  full_name?: string | null;
   role?: string | null;
   team_type?: string | null;
   tanggal_nonaktif?: string | null;

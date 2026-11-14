@@ -12,6 +12,7 @@ const ALLOWED_FIELDS = new Set([
   'pimpinan',
   'bisa_ditugaskan',
   'pts_daerah',
+  'tanggal_nonaktif',
 ]);
 
 function pick(obj: Record<string, unknown>): Record<string, unknown> {

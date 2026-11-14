@@ -13,7 +13,7 @@ export interface DataExportInsentifSaya {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  pic: 'PIC', support: 'Support', supervisor: 'Supervisor', manager: 'Manager', installer: 'PTS Daerah',
+  pic: 'PIC', support: 'Support', supervisor: 'Supervisor', manager: 'Manager', installer: 'PTS Daerah', redistribusi: 'Redistribusi',
 };
 const STATUS_LABEL: Record<string, string> = {
   pending: 'Menunggu Proses', processed: 'Diproses', paid: 'Sudah Cair',
@@ -71,7 +71,9 @@ export async function exportInsentifSaya(data: DataExportInsentifSaya) {
     const r = ws.addRow({
       no: i + 1,
       project: b.project?.project_name ?? '—',
-      peran: ROLE_LABEL[b.split.role] ?? b.split.role,
+      peran: b.split.redistribusi_dari
+        ? `Redistribusi dari ${b.split.redistribusi_dari} — Tahun ${b.tranche?.tranche_number ?? '-'}`
+        : (ROLE_LABEL[b.split.role] ?? b.split.role),
       tahun: b.tranche?.payment_year ?? '—',
       status: b.tranche ? (STATUS_LABEL[b.tranche.status] ?? b.tranche.status) : '—',
       jumlah: b.split.amount,

@@ -59,6 +59,7 @@ export async function DELETE(request: NextRequest) {
     const { data: hapus, error } = await supabase
       .from('incentive_splits').delete().eq('project_id', projectId).select('id');
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    await supabase.from('incentive_redistribusi').delete().eq('project_id', projectId);
     return NextResponse.json({ dihapus: (hapus ?? []).length, dilewati: 0 });
   }
 
@@ -68,6 +69,7 @@ export async function DELETE(request: NextRequest) {
   const { data: hapus, error } = await supabase
     .from('incentive_splits').delete().in('tranche_id', sasaran).select('id');
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  await supabase.from('incentive_redistribusi').delete().in('tranche_id', sasaran);
 
   return NextResponse.json({ dihapus: (hapus ?? []).length, dilewati: paid, trancheIds: sasaran });
 }

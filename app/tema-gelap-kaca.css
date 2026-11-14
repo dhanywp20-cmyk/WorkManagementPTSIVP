@@ -1,45 +1,46 @@
 html.gelap {
-  --wm-hal: #0b0b0d;
-  --wm-kartu: #161618;
-  --wm-kartu-2: #1b1b1e;
-  --wm-isi: #222226;
-  --wm-garis: #262629;
-  --wm-garis-kuat: #34343a;
-  --wm-tinta: #f2f2f4;
-  --wm-tinta-2: #a8a8b2;
-  --wm-tinta-3: #74747e;
-  --wm-aksen: #8b5cf6;
-  --wm-aksen-2: #6d28d9;
-  --wm-aksen-lembut: rgba(139, 92, 246, .16);
+  --wm-hal: #0f0d0e;
+  --wm-kartu: #171415;
+  --wm-kartu-2: #1d191a;
+  --wm-isi: #252022;
+  --wm-garis: #2b2527;
+  --wm-garis-kuat: #382f32;
+  --wm-tinta: #f5eff1;
+  --wm-tinta-2: #b3a7ab;
+  --wm-tinta-3: #7d7175;
+  --wm-aksen: #f43f5e;
+  --wm-aksen-2: #e11d48;
+  --wm-aksen-rgb: 244, 63, 94;
+  --wm-aksen-lembut: rgba(var(--wm-aksen-rgb), .16);
   --wm-kilau: rgba(255, 255, 255, .06);
   --wm-kaca: linear-gradient(180deg, rgba(255, 255, 255, .065), rgba(255, 255, 255, .018));
-  --wm-latar: radial-gradient(1200px 600px at 10% -10%, rgba(124, 58, 237, .09), transparent 60%),
-    radial-gradient(900px 500px at 110% 0%, rgba(99, 102, 241, .05), transparent 60%), var(--wm-hal);
-  --merek-utama: #8b5cf6;
-  --merek-utama-2: #6d28d9;
-  --merek-utama-tembus: rgba(139, 92, 246, .14);
-  --color-slate-50: oklch(21% 0.004 286);
-  --color-slate-100: oklch(19.5% 0.004 286);
-  --color-slate-200: oklch(27% 0.004 286);
-  --color-slate-300: oklch(34% 0.004 286);
-  --color-slate-400: oklch(56% 0.004 286);
-  --color-slate-500: oklch(64% 0.004 286);
-  --color-slate-600: oklch(73% 0.004 286);
-  --color-slate-700: oklch(83% 0.004 286);
-  --color-slate-800: oklch(90% 0.004 286);
-  --color-slate-900: oklch(95% 0.004 286);
-  --color-slate-950: oklch(98% 0.004 286);
-  --color-gray-50: oklch(21% 0.004 286);
-  --color-gray-100: oklch(19.5% 0.004 286);
-  --color-gray-200: oklch(27% 0.004 286);
-  --color-gray-300: oklch(34% 0.004 286);
-  --color-gray-400: oklch(56% 0.004 286);
-  --color-gray-500: oklch(64% 0.004 286);
-  --color-gray-600: oklch(73% 0.004 286);
-  --color-gray-700: oklch(83% 0.004 286);
-  --color-gray-800: oklch(90% 0.004 286);
-  --color-gray-900: oklch(95% 0.004 286);
-  --color-gray-950: oklch(98% 0.004 286);
+  --wm-latar: radial-gradient(1100px 560px at 10% -10%, rgba(var(--wm-aksen-rgb), .085), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, rgba(251, 146, 60, .035), transparent 60%), var(--wm-hal);
+  --merek-utama: #f43f5e;
+  --merek-utama-2: #e11d48;
+  --merek-utama-tembus: rgba(var(--wm-aksen-rgb), .14);
+  --color-slate-50: oklch(21% 0.008 10);
+  --color-slate-100: oklch(19.5% 0.008 10);
+  --color-slate-200: oklch(27% 0.008 10);
+  --color-slate-300: oklch(34% 0.008 10);
+  --color-slate-400: oklch(56% 0.008 10);
+  --color-slate-500: oklch(64% 0.008 10);
+  --color-slate-600: oklch(73% 0.008 10);
+  --color-slate-700: oklch(83% 0.008 10);
+  --color-slate-800: oklch(90% 0.008 10);
+  --color-slate-900: oklch(95% 0.008 10);
+  --color-slate-950: oklch(98% 0.008 10);
+  --color-gray-50: oklch(21% 0.008 10);
+  --color-gray-100: oklch(19.5% 0.008 10);
+  --color-gray-200: oklch(27% 0.008 10);
+  --color-gray-300: oklch(34% 0.008 10);
+  --color-gray-400: oklch(56% 0.008 10);
+  --color-gray-500: oklch(64% 0.008 10);
+  --color-gray-600: oklch(73% 0.008 10);
+  --color-gray-700: oklch(83% 0.008 10);
+  --color-gray-800: oklch(90% 0.008 10);
+  --color-gray-900: oklch(95% 0.008 10);
+  --color-gray-950: oklch(98% 0.008 10);
 }
 
 html.gelap .bg-white { background-image: linear-gradient(180deg, rgba(255, 255, 255, .028), transparent 46%); }
@@ -49,19 +50,19 @@ html.gelap .kartu-miring {
 }
 
 html.gelap .tombol-utama {
-  background: linear-gradient(180deg, #9a6bff 0%, var(--wm-aksen) 42%, var(--wm-aksen-2) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wm-aksen) 78%, white) 0%, var(--wm-aksen) 42%, var(--wm-aksen-2) 100%);
   color: #fff;
   border: 0;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), inset 0 -1px 0 rgba(0, 0, 0, .28),
-    0 0 0 1px rgba(167, 139, 250, .45), 0 8px 22px -8px rgba(124, 58, 237, .8);
+    0 0 0 1px rgba(var(--wm-aksen-rgb), .5), 0 8px 22px -8px rgba(var(--wm-aksen-rgb), .55);
 }
 html.gelap .tombol-utama:hover:not(:disabled) {
   filter: brightness(1.08);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), inset 0 -1px 0 rgba(0, 0, 0, .28),
-    0 0 0 1px rgba(196, 181, 253, .6), 0 12px 28px -8px rgba(124, 58, 237, .95);
+    0 0 0 1px rgba(var(--wm-aksen-rgb), .65), 0 12px 28px -8px rgba(var(--wm-aksen-rgb), .7);
 }
 html.gelap .tombol-utama:active:not(:disabled) {
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35), 0 0 0 1px rgba(167, 139, 250, .45);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, .35), 0 0 0 1px rgba(var(--wm-aksen-rgb), .5);
 }
 
 html.gelap .tombol-kedua {
@@ -82,12 +83,12 @@ html.gelap :is(.isi-portal, .dasbor-3d) [role="tab"][aria-selected="true"] {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 0 0 1px rgba(255, 255, 255, .08), 0 6px 14px -8px rgba(0, 0, 0, .9) !important;
 }
 
-html.gelap .sidebar-3d { background: linear-gradient(180deg, #121214, #0d0d0f) !important; }
+html.gelap .sidebar-3d { background: linear-gradient(180deg, #141112, #0c0a0b) !important; }
 html.gelap .sidebar-3d [aria-current="page"] {
-  background: linear-gradient(180deg, rgba(154, 107, 255, .95), rgba(109, 40, 217, .95)) !important;
-  border-color: rgba(196, 181, 253, .45) !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--wm-aksen) 85%, white), var(--wm-aksen-2)) !important;
+  border-color: rgba(var(--wm-aksen-rgb), .5) !important;
   color: #fff !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 0 24px -4px rgba(139, 92, 246, .75) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 0 24px -4px rgba(var(--wm-aksen-rgb), .5) !important;
 }
 html.gelap .sidebar-3d [aria-current="page"] :is(span, div)[style*="background"] {
   background: rgba(255, 255, 255, .22) !important;
@@ -97,3 +98,10 @@ html.gelap .sidebar-3d [aria-current="page"] :is(span, div)[style*="background"]
 html.gelap :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea) {
   background-image: linear-gradient(180deg, rgba(255, 255, 255, .03), transparent);
 }
+
+html.gelap .bb-tab-geser { background: var(--wm-aksen); box-shadow: 0 0 16px -2px rgba(var(--wm-aksen-rgb), .55); }
+html.gelap :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea):focus-visible {
+  border-color: rgba(var(--wm-aksen-rgb), .55) !important;
+  box-shadow: 0 0 0 3px rgba(var(--wm-aksen-rgb), .18) !important;
+}
+html.gelap ::selection { background: rgba(var(--wm-aksen-rgb), .35); color: #fff; }

@@ -3,6 +3,7 @@ import {
   IncentiveProjectRow, calculateIncentiveSplits, findUpline, resolveUserId, OrgUser,
   type SkemaInsentif,
 } from './calc';
+import { nonaktifPada, tanggalJatuhTempo } from '@/lib/incentive/redistribusi';
 
 export type Peran = { user_id: string; user_name: string; role: string; percentage: number; amount: number };
 export type Proyek = {
@@ -12,6 +13,7 @@ export type Proyek = {
   bastYear: number | null;
 };
 export type BarisInstaller = { nama: string; lokasi: string; tahun: number; jumlah: number };
+export type BarisRedistribusi = { dari: string; proyek: string; tahap: number; tahun: number; jumlah: number };
 
 export function siapkanDataSummary({ projects, supportsMap, orgList, managerUserId, managerName, sk, tahapUrut, totalPersenTahap }: {
   projects: IncentiveProjectRow[];
@@ -52,7 +54,7 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
     };
   });
 
-  const akumulasi: { nama: string; peran: string; jumlah: number; bastYear: number }[] = [];
+  const akumulasi: { nama: string; peran: string; jumlah: number; bastYear: number; proyek: string }[] = [];
   const semuaNamaTim = new Map<string, Set<string>>();
   for (const pr of daftarProyek) {
     for (const s of [...pr.pic, ...pr.support, ...pr.supervisor, ...pr.manager]) {
@@ -60,7 +62,7 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
       const set = semuaNamaTim.get(nm) ?? new Set<string>();
       set.add(s.role);
       semuaNamaTim.set(nm, set);
-      if (!pr.isEstimate && pr.bastYear) akumulasi.push({ nama: nm, peran: s.role, jumlah: s.amount, bastYear: pr.bastYear });
+      if (!pr.isEstimate && pr.bastYear) akumulasi.push({ nama: nm, peran: s.role, jumlah: s.amount, bastYear: pr.bastYear, proyek: pr.p.project_name });
     }
   }
 
@@ -85,12 +87,20 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
 
   const perOrangTahun = new Map<string, Map<number, number>>();
   const tahunSet = new Set<number>();
-  for (const { nama, jumlah, bastYear } of akumulasi) {
+  const nonaktif = new Map(orgList.map(u => [(u.full_name ?? '').trim().toLowerCase(), u.tanggal_nonaktif ?? null]));
+  const redistribusiList: BarisRedistribusi[] = [];
+  for (const { nama, jumlah, bastYear, proyek } of akumulasi) {
     const ember = perOrangTahun.get(nama) ?? new Map<number, number>();
+    const tglNonaktif = nonaktif.get(nama.trim().toLowerCase());
     for (const t of tahapUrut) {
       const th = bastYear + t.tahunKe;
       tahunSet.add(th);
-      ember.set(th, (ember.get(th) ?? 0) + Math.round((jumlah * (t.persen || 0)) / totalPersenTahap));
+      const nilai = Math.round((jumlah * (t.persen || 0)) / totalPersenTahap);
+      if (nonaktifPada(tglNonaktif, tanggalJatuhTempo(th))) {
+        if (nilai > 0) redistribusiList.push({ dari: nama, proyek, tahap: t.nomor, tahun: th, jumlah: nilai });
+        continue;
+      }
+      ember.set(th, (ember.get(th) ?? 0) + nilai);
     }
     perOrangTahun.set(nama, ember);
   }
@@ -108,5 +118,5 @@ export function siapkanDataSummary({ projects, supportsMap, orgList, managerUser
     : tahunUrut.length === 1 ? ` Tahun ${tahunUrut[0]}`
     : ` Tahun ${tahunUrut[0]}–${tahunUrut[tahunUrut.length - 1]}`;
 
-  return { daftarProyek, akumulasi, namaBelumFinal, orangUrut, perOrangTahun, installerList, tahunUrut, sufiksTahun, urutPeran };
+  return { daftarProyek, akumulasi, namaBelumFinal, orangUrut, perOrangTahun, installerList, redistribusiList, tahunUrut, sufiksTahun, urutPeran };
 }

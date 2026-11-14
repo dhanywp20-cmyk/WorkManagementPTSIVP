@@ -2,7 +2,7 @@ import { PenerimaPeran, SkemaInsentif, hitungManagerSebagaiPic, hitungPembagian 
 import { supabase } from '@/lib/supabase';
 import { IncentiveProjectRow, SplitResult } from './calc-tipe';
 
-export interface OrgUser { id: string; full_name?: string | null; jabatan?: string | null; atasan_id?: string | null }
+export interface OrgUser { id: string; full_name?: string | null; jabatan?: string | null; atasan_id?: string | null; role?: string | null; team_type?: string | null; tanggal_nonaktif?: string | null }
 
 export function findUpline(startId: string, targetJabatan: string, users: OrgUser[]): OrgUser | null {
   let cur: OrgUser | undefined = users.find(u => u.id === startId);
@@ -16,7 +16,7 @@ export function findUpline(startId: string, targetJabatan: string, users: OrgUse
 }
 
 export async function fetchOrgUsers(): Promise<OrgUser[]> {
-  const { data } = await supabase.from('users').select('id, full_name, jabatan, atasan_id');
+  const { data } = await supabase.from('users').select('id, full_name, jabatan, atasan_id, role, team_type, tanggal_nonaktif');
   return (data || []) as OrgUser[];
 }
 

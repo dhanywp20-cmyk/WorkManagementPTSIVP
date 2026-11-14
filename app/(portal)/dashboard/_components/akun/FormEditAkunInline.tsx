@@ -143,6 +143,20 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
               Reminder Schedule, dan Request Design</strong>. Matikan untuk akun yang perannya
               menyetujui &amp; mengarahkan — ia tetap bisa approve, re-route, dan melihat semuanya.
             </p>
+            <label className="block text-xs font-bold mt-4 mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📅" />Tanggal Resign / Nonaktif</label>
+            <div className="flex gap-2 items-center">
+              <input type="date" value={editingUser.tanggal_nonaktif ?? ''}
+                onChange={e => setEditingUser({ ...editingUser, tanggal_nonaktif: e.target.value || null })}
+                className="px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+              {editingUser.tanggal_nonaktif && (
+                <button type="button" onClick={() => setEditingUser({ ...editingUser, tanggal_nonaktif: null })}
+                  className="tombol-kedua px-3 py-2 rounded-kontrol text-xs font-bold">Kosongkan</button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5">
+              Incentive PTS: tahap yang jatuh tempo <strong>sesudah</strong> tanggal ini tidak dibayar ke anggota ini,
+              tetapi dibagi rata ke seluruh Tim PTS aktif saat pencairan (tercatat sebagai redistribusi).
+            </p>
           </div>
         )}
         {editingUser.role !== 'team' && (

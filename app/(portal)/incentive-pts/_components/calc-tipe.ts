@@ -55,6 +55,7 @@ export interface IncentiveSplit {
   percentage: number;
   amount: number;
   source_ticket_id: string | null;
+  redistribusi_dari?: string | null;
   created_at: string;
 }
 
@@ -86,4 +87,5 @@ export interface SplitResult {
   user_name: string;
   percentage: number;
   amount: number;
+  redistribusi_dari?: string | null;
 }

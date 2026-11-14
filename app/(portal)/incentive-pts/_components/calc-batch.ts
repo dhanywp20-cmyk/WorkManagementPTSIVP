@@ -2,6 +2,8 @@ import { ambilPetaNominal } from '@/lib/incentive/nominal-api';
 import type { TablesInsert } from '@/types/database';
 import { SkemaInsentif, ambilSkema, labelSkema } from '@/lib/incentive/scheme';
 import { hitungSplitTahap } from '@/lib/incentive/tahap';
+import { terapkanRedistribusi } from '@/lib/incentive/redistribusi';
+import { namaKelompokPTS } from '@/lib/kelompok/inti';
 import { createNotification } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from './calc-format';
@@ -39,6 +41,7 @@ export async function insertSplits(
     percentage: s.percentage,
     amount: s.amount,
     source_ticket_id: sourceTicketId || null,
+    redistribusi_dari: s.redistribusi_dari ?? null,
   }));
   return supabase.from('incentive_splits').insert(rows);
 }
@@ -102,10 +105,16 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
 
     const pool = project.incentive_value || 0;
 
-    const trancheSplits: SplitResult[] = hitungSplitTahap({
-      sk, splits, pool, nomorTahap: tranche.tranche_number, persenTahap: tranche.percentage || 0,
-      namaInstaller: project.installer_name,
+    const redistribusi = terapkanRedistribusi({
+      splits: hitungSplitTahap({
+        sk, splits, pool, nomorTahap: tranche.tranche_number, persenTahap: tranche.percentage || 0,
+        namaInstaller: project.installer_name,
+      }),
+      anggota: orgUsers, kelompokPTS: namaKelompokPTS(),
+      tahunBayar: tranche.payment_year, hariIni: new Date().toISOString().slice(0, 10),
     });
+    for (const p of redistribusi.peringatan) errors.push(`Project "${project.project_name}" tahap ${tranche.tranche_number}: ${p}`);
+    const trancheSplits: SplitResult[] = redistribusi.splits;
     const tranchePool = trancheSplits.reduce((n, x) => n + x.amount, 0);
 
     const validation = validateSplitTotal(trancheSplits, tranchePool);
@@ -138,6 +147,15 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
         ? `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal insert splits (${splitErr.message}) DAN gagal mengembalikan status ke pending (${revertErr.message}). Tahapan ini tersangkut 'processed' tanpa splits - perlu diperbaiki manual.`
         : `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal insert splits (${splitErr.message}). Status dikembalikan ke pending, aman dicoba lagi.`);
       continue;
+    }
+
+    if (redistribusi.log.length) {
+      const { error: logErr } = await supabase.from('incentive_redistribusi').insert(redistribusi.log.map(l => ({
+        project_id: project.id, tranche_id: tranche.id, tahun: tranche.payment_year, tahap: tranche.tranche_number,
+        sumber_user_id: UUID_RE.test(l.sumber_user_id) ? l.sumber_user_id : null, sumber_nama: l.sumber_nama,
+        nominal: l.nominal, penerima: l.penerima, dibuat_oleh: managerUserName,
+      })));
+      if (logErr) errors.push(`Project "${project.project_name}" tahap ${tranche.tranche_number}: pembagian tersimpan, tapi log redistribusi gagal dicatat (${logErr.message}).`);
     }
 
     void Promise.all(trancheSplits

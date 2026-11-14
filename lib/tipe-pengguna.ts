@@ -22,5 +22,6 @@ export interface PenggunaPortal extends PenggunaDasar {
   pimpinan?: boolean | null;
   telegram_terhubung?: boolean | null;
   bisa_ditugaskan?: boolean | null;
+  tanggal_nonaktif?: string | null;
   pts_daerah?: string | null;
 }
