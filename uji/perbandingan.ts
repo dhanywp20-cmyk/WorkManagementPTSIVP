@@ -146,8 +146,8 @@ async function main() {
   cek('tidak menulis isi ke log', rute.every(s => !/console\.(log|info|warn|error)/.test(s)));
   cek('rute otomatis tidak menyimpan ke tabel', !/\.from\('tools_perbandingan'\)|\.insert\(/.test(rute[0]));
   const halaman = readFileSync('app/(portal)/tools-team/page.tsx', 'utf8');
-  cek('menu Tools Team lengkap & tiap alat punya cabang render', ['3d', 'led', 'av', 'banding', 'pustaka'].every(k => halaman.includes(`k: '${k}'`))
-    && ["aktif === 'led'", "aktif === 'av'", "aktif === 'pustaka'", "aktif === 'banding'"].every(t => halaman.includes(t)));
+  cek('menu Tools Team lengkap & tiap alat punya cabang render', ['3d', 'led', 'av', 'banding', 'pustaka'].every(k => new RegExp(`k: '${k}'[^\\n]*C: \\w+`).test(halaman))
+    && ["<a.C />", "a.k === 'led'"].every(t => halaman.includes(t)));
 
   console.log(`\n${lulus} lulus, ${gagal} gagal`);
   if (gagal) process.exit(1);

@@ -5,19 +5,18 @@ import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth/sesi';
 import { Ikon } from '@/components/shared/Ikon';
-import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
-import { KalkulatorAV } from './_components/KalkulatorAV';
-import { SLD } from './_components/SLD';
-import { Pustaka } from './_components/Pustaka';
-import { ProductComparison } from './_components/ProductComparison';
-import { ChecklistBarang } from './_components/ChecklistBarang';
+import type { SubLED } from './_components/KalkulatorLED';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
 
-const Desain3D = dynamic(() => import('./_components/Desain3D'), {
-  ssr: false,
-  loading: () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat Desain 3D...</div>,
-});
+const Memuat = () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat...</div>;
+const Desain3D = dynamic(() => import('./_components/Desain3D'), { ssr: false, loading: Memuat });
+const KalkulatorLED = dynamic(() => import('./_components/KalkulatorLED').then(m => m.KalkulatorLED), { loading: Memuat });
+const KalkulatorAV = dynamic(() => import('./_components/KalkulatorAV').then(m => m.KalkulatorAV), { loading: Memuat });
+const SLD = dynamic(() => import('./_components/SLD').then(m => m.SLD), { loading: Memuat });
+const Pustaka = dynamic(() => import('./_components/Pustaka').then(m => m.Pustaka), { loading: Memuat });
+const ProductComparison = dynamic(() => import('./_components/ProductComparison').then(m => m.ProductComparison), { loading: Memuat });
+const ChecklistBarang = dynamic(() => import('./_components/ChecklistBarang').then(m => m.ChecklistBarang), { loading: Memuat });
 
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
@@ -49,6 +48,8 @@ function ToolsKerjaInner() {
   }, []);
   useEffect(() => { if (siap) catatPemakaian('tools-team', aktif); }, [siap, aktif]);
 
+  const [dibuka, setDibuka] = useState<string[]>([aktif]);
+  if (!dibuka.includes(aktif)) setDibuka([...dibuka, aktif]);
   const pilih = (k: string) => {
     setAktif(k);
     try { const url = new URL(window.location.href); url.searchParams.set('alat', k); url.searchParams.delete('sub'); window.history.replaceState(null, '', url); } catch {  }
@@ -75,13 +76,11 @@ function ToolsKerjaInner() {
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
-          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} />
-            : aktif === 'av' ? <KalkulatorAV />
-            : aktif === 'sld' ? <SLD />
-            : aktif === 'pustaka' ? <Pustaka />
-            : aktif === 'banding' ? <ProductComparison />
-            : aktif === 'cekbarang' ? <ChecklistBarang />
-            : <Desain3D />}
+          {alat.filter(a => dibuka.includes(a.k)).map(a => (
+            <section key={a.k} hidden={a.k !== aktif} aria-label={a.judul}>
+              {a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}
+            </section>
+          ))}
         </main>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { PanelRuang } from './desain3d/panel/PanelRuang';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { useKeadaanDesain } from './desain3d/useKeadaanDesain';
+import { usePeringatanKeluar } from './bersama/penjagaKerja';
 import { useMesin } from './desain3d/mesin/useMesin';
 import { useKamera } from './desain3d/mesin/useKamera';
 import { useAdegan } from './desain3d/mesin/useAdegan';
@@ -33,6 +34,7 @@ import type { AlatDesain } from './desain3d/panel/alat';
 
 export default function Desain3D() {
   const K = useKeadaanDesain();
+  usePeringatanKeluar(K.adaPerubahan);
   useMesin(K);
   const kamera = useKamera(K);
   useAdegan(K);

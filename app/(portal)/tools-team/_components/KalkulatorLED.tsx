@@ -14,12 +14,14 @@ import { CatatanLED } from './led/panel/CatatanLED';
 import { useKeadaanLED } from './led/useKeadaanLED';
 import { useEksporLED } from './led/useEksporLED';
 import type { AlatLED } from './led/panel/alat';
+import { useDrafLokal } from './bersama/penjagaKerja';
 import type { SubLED } from './led/panel/BarSub';
 
 export type { SubLED };
 
 export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; onSub?: (sub: SubLED) => void }) {
   const K = useKeadaanLED({ subAwal, onSub });
+  useDrafLokal('wm_led_draf', K.isian, d => { K.terapkan(d); K.riwayat.mulaiBaru(d); });
   const E = useEksporLED(K);
   const a: AlatLED = { K, E };
 
