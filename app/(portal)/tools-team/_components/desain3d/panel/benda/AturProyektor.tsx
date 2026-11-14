@@ -6,6 +6,7 @@ import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
 import { PilihMerekLain } from '../../../pustaka/PilihMerekLain';
 import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
 import type { KonteksAtur } from './konteks';
+import { Bagian } from './TabAtur';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
   const { b, kosong, label, onGambar, onUbah, ruang, set, semua } = c;
@@ -16,6 +17,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
     <>
       {b.jenis === 'proyektor' && (
         <>
+          <Bagian tab="posisi">
           <Segmen label="Pemasangan" nilai={b.pasangProyektor ?? 'plafon'} onUbah={(v: PasangProyektor) => {
             const baru = bendaBaru('proyektor', kosong, { pasangProyektor: v });
             const namaBawaan = ['Proyektor', 'Proyektor plafon', 'Proyektor portabel'].includes(b.nama);
@@ -42,6 +44,8 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
             </div>
             <Catatan>Tilt negatif = menunduk; −90° = tegak lurus ke lantai (proyeksi lantai / immersive). Pan memutar proyektor ke kiri/kanan.</Catatan>
           </div>
+          </Bagian>
+          <Bagian tab="lensa">
           {(() => {
             const [zMin, zMax] = zoomLensa(b), tr = throwRatioDari(b), tetap = zMax - zMin < 0.005;
             const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
@@ -184,6 +188,8 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               Batas = kemampuan lens shift lensa dari datasheet (Panasonic: VS1 / VS2 / HS); 0 = tidak dibatasi.
             </Catatan>
           </div>
+          </Bagian>
+          <Bagian tab="tampilan">
           <div>
             <Pilih label="Konten yang diproyeksikan" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
               opsi={[
@@ -205,6 +211,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
             </div>
             <Catatan>Hanya untuk tampilan rancangan: tiap proyektor beda warna supaya bidang yang disinarinya mudah dibedakan (area tumpang tindih tampak bercampur).</Catatan>
           </div>
+          </Bagian>
         </>
       )}
     </>

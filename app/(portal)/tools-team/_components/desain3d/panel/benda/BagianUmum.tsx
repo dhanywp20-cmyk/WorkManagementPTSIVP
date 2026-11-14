@@ -3,6 +3,7 @@ import { Angka, Pilih, Catatan } from '../../../bersama/ui';
 import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
+import { Bagian } from './TabAtur';
 import { PosisiProyektor } from './PosisiProyektor';
 
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
@@ -23,7 +24,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
   return (
     <>
       {b.jenis !== 'model' && b.jenis !== 'teks' && (
-        <div>
+        <Bagian tab="tampilan"><div>
           <span className={label}>Warna{BAGIAN_WARNA[b.jenis] ? ` · ${BAGIAN_WARNA[b.jenis]}` : ''}</span>
           <div className="flex items-center gap-2">
             <input type="color" aria-label="Warna utama" value={warnaSah(b.warna) ?? WARNA_AWAL[b.jenis] ?? '#808080'}
@@ -35,9 +36,10 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
                 className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Warna bawaan</button>
             )}
           </div>
-        </div>
+        </div></Bagian>
       )}
 
+      <Bagian tab="posisi">
       {b.jenis !== 'teks' && (
       <div>
         <span className={label}>Ukuran produk</span>
@@ -75,7 +77,9 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         </div>
       </div>
       )}
+      </Bagian>
 
+      <Bagian tab="tampilan">
       {b.jenis !== 'teks' && <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
         <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiLabel} onChange={e => set({ sembunyiLabel: e.target.checked ? undefined : true })} />
         Tampilkan label produk benda ini
@@ -93,6 +97,8 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
           </label>
         </div>
       )}
+      </Bagian>
+      <Bagian tab="produk">
       {onSimpanProduk && b.jenis !== 'model' && b.jenis !== 'objek' && b.jenis !== 'teks' && (
         <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-2.5">
           {!formProduk ? (
@@ -126,6 +132,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
           )}
         </div>
       )}
+      </Bagian>
     </>
   );
 }
