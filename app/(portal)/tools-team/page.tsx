@@ -8,6 +8,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import type { SubLED } from './_components/KalkulatorLED';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
+import { PenjagaAlat } from './_components/bersama/PenjagaAlat';
 
 const Memuat = () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat...</div>;
 const Desain3D = dynamic(() => import('./_components/Desain3D'), { ssr: false, loading: Memuat });
@@ -78,7 +79,7 @@ function ToolsKerjaInner() {
         <main className="min-w-0">
           {alat.filter(a => dibuka.includes(a.k)).map(a => (
             <section key={a.k} hidden={a.k !== aktif} aria-label={a.judul}>
-              {a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}
+              <PenjagaAlat nama={a.judul}>{a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}</PenjagaAlat>
             </section>
           ))}
         </main>

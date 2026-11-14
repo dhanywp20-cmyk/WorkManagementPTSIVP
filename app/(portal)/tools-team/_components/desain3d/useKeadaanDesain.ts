@@ -114,7 +114,7 @@ export function useKeadaanDesain() {
   const riwayat = useRiwayat(potret, v => { ruangRef.current = v.ruang; setRuang(v.ruang); setBenda(v.benda); });
 
   const kunciKini = useMemo(() => ambilKunci(ruang, benda, namaDesain), [ruang, benda, namaDesain]);
-  const adaPerubahan = dasar !== null && kunciKini !== dasar;
+  const adaPerubahan = dasar !== null ? kunciKini !== dasar : riwayat.bisaUndo;
 
   const kotakRuang = useMemo(() => daftarRuang(ruang), [ruang]);
   const [objekGambar, setObjekGambar] = useState<{ ganti?: Benda } | null>(null);

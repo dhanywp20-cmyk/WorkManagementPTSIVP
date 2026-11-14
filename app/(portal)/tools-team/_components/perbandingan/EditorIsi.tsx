@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { type Bahasa, LABEL, type NilaiSpek, type StatusNilai } from '@/lib/perbandingan/inti';
 
 export type Sunting =
@@ -14,6 +14,13 @@ export function EditorIsi({ s, tutup }: { s: Sunting; tutup: () => void }) {
   const [teks, setTeks] = useState(s.jenis === 'teks' ? s.nilai : s.nilai.teks);
   const [status, setStatus] = useState<StatusNilai>(s.jenis === 'nilai' ? s.nilai.status : 'ada');
   const [unggul, setUnggul] = useState(s.jenis === 'nilai' && !!s.nilai.unggul);
+  const tutupRef = useRef(tutup);
+  useEffect(() => { tutupRef.current = tutup; });
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') tutupRef.current(); };
+    document.addEventListener('keydown', esc);
+    return () => document.removeEventListener('keydown', esc);
+  }, []);
   const isian = 'w-full rounded-lg border border-slate-200 px-3 py-2 text-base sm:text-sm';
   const simpan = () => {
     if (s.jenis === 'teks') s.simpan(teks.trim());
@@ -26,7 +33,7 @@ export function EditorIsi({ s, tutup }: { s: Sunting; tutup: () => void }) {
   };
   return (
     <div className="fixed inset-0 z-1000 grid place-items-center bg-slate-900/40 p-3" onClick={tutup}>
-      <div role="dialog" aria-label={s.judul} className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={s.judul} className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
         <p className="text-[14px] font-bold text-slate-900">{s.judul}{s.jenis === 'nilai' && <span className="font-semibold text-slate-500"> · {s.produk}</span>}</p>
         {s.jenis === 'nilai' && (
           <select value={status} onChange={e => setStatus(e.target.value as StatusNilai)} className={isian} aria-label="Status">

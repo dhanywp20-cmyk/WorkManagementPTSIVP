@@ -22,6 +22,7 @@ import { useObjekSaya } from './desain3d/simpan/useObjekSaya';
 import { InfoProyektor } from './desain3d/panel/InfoProyektor';
 
 import { BilahAlat } from './desain3d/panel/BilahAlat';
+import { BannerDraf } from './desain3d/simpan/DrafDesain';
 import { KontrolKanvas } from './desain3d/panel/KontrolKanvas';
 import { PanelTambah } from './desain3d/panel/PanelTambah';
 import { PanelKategori } from './desain3d/panel/PanelKategori';
@@ -34,7 +35,7 @@ import type { AlatDesain } from './desain3d/panel/alat';
 
 export default function Desain3D() {
   const K = useKeadaanDesain();
-  usePeringatanKeluar(K.adaPerubahan);
+  usePeringatanKeluar(K.adaPerubahan && !K.hanyaLihat);
   useMesin(K);
   const kamera = useKamera(K);
   useAdegan(K);
@@ -63,6 +64,7 @@ export default function Desain3D() {
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <div className={layarPenuh ? 'fixed inset-0 z-950 flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
         <BilahAlat a={a} />
+        <BannerDraf a={a} />
 
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
         <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden select-none ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>

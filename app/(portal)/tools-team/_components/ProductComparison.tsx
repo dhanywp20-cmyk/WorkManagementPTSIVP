@@ -9,6 +9,7 @@ import { DaftarPengajuan } from './perbandingan/DaftarPengajuan';
 import { useBuatPerbandingan } from './perbandingan/useBuatPerbandingan';
 import { type RingkasPengajuan, usePengajuan } from './perbandingan/usePengajuan';
 import { unduhPdf } from './perbandingan/unduhPdf';
+import { useDrafLokal } from './bersama/penjagaKerja';
 
 type Mode = { jenis: 'baru' } | { jenis: 'periksa'; r: RingkasPengajuan } | { jenis: 'lihat'; r: RingkasPengajuan };
 const tombol = 'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold disabled:opacity-50';
@@ -27,6 +28,9 @@ export function ProductComparison() {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [pesan, setPesan] = useState<{ t: string; galat?: boolean } | null>(null);
   const [kerja, setKerja] = useState<string | null>(null);
+  useDrafLokal<{ kartu: KartuBanding | null; bahasa: Bahasa } | undefined>('wm_banding_draf', mode.jenis === 'baru' ? { kartu, bahasa } : undefined, d => {
+    if (d?.kartu) { setKartu(d.kartu); setBahasa(d.bahasa); }
+  });
   const cek = kartu ? jumlahCek(kartu) : 0;
   const jalankan = async (id: string, f: () => Promise<void | string>) => {
     setKerja(id); setPesan(null);

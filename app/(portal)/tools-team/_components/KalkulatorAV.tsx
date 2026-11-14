@@ -10,6 +10,9 @@ import { KalkulatorSinyal } from './av/KalkulatorSinyal';
 import { Ikon } from '@/components/shared/Ikon';
 import { useState } from 'react';
 
+const KUNCI = 'wm_kalkulator_av_sub';
+const subAwal = () => { try { const v = localStorage.getItem(KUNCI); return SUB_AV.some(x => x.k === v) ? v! : 'layar'; } catch { return 'layar'; } };
+
 const SUB_AV = [
   { k: 'layar', judul: 'Ukuran Layar', ikon: '📐', C: KalkulatorLayar },
   { k: 'display', judul: 'Videowall & IFP', ikon: '🖥', C: KalkulatorDisplay },
@@ -22,8 +25,10 @@ const SUB_AV = [
 ] as const;
 
 export function KalkulatorAV() {
-  const [aktif, setAktif] = useState<string>('layar');
-  const C = SUB_AV.find(x => x.k === aktif)?.C ?? KalkulatorLayar;
+  const [aktif, setAktifState] = useState<string>(subAwal);
+  const [dibuka, setDibuka] = useState<string[]>([aktif]);
+  if (!dibuka.includes(aktif)) setDibuka([...dibuka, aktif]);
+  const setAktif = (k: string) => { setAktifState(k); try { localStorage.setItem(KUNCI, k); } catch { return; } };
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1 p-1 rounded-2xl bg-white border border-slate-200 w-fit max-w-full overflow-x-auto print:hidden" role="tablist" aria-label="Kalkulator AV">
@@ -37,7 +42,7 @@ export function KalkulatorAV() {
           );
         })}
       </div>
-      <C />
+      {SUB_AV.filter(x => dibuka.includes(x.k)).map(x => <section key={x.k} hidden={x.k !== aktif} aria-label={x.judul}><x.C /></section>)}
     </div>
   );
 }

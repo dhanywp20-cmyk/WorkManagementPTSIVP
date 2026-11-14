@@ -24,7 +24,7 @@ export function useDrafLokal<T>(kunci: string, nilai: T, pulihkan: (v: T) => voi
     siap.current = true;
   }, [kunci]);
   useEffect(() => {
-    if (!siap.current) return;
+    if (!siap.current || nilai === undefined) return;
     const t = setTimeout(() => { try { localStorage.setItem(kunci, JSON.stringify(nilai)); } catch { return; } }, jeda);
     return () => clearTimeout(t);
   }, [kunci, nilai, jeda]);
