@@ -6,8 +6,9 @@ import { isiRakTemplate } from './rak';
 import { daftarRuang } from './ruang';
 import type { Benda, Kotak, Ruang, Titik } from './tipe';
 
-export type KategoriRuang = 'meeting' | 'auditorium' | 'kelas' | 'control-room' | 'mapping-lengkung' | 'mapping-cembung' | 'mapping-objek' | 'immersive';
+export type KategoriRuang = 'kosong' | 'meeting' | 'auditorium' | 'kelas' | 'control-room' | 'mapping-lengkung' | 'mapping-cembung' | 'mapping-objek' | 'immersive';
 export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ikon: string }[] = [
+  { id: 'kosong', judul: 'Ruangan kosong', ket: 'Ruang 4 × 4 m, tinggi 3 m tanpa perangkat & furnitur - mulai dari nol', ikon: '🧱' },
   { id: 'meeting', judul: 'Ruangan Meeting', ket: 'Videowall, meja rapat, kamera, mic & speaker plafon', ikon: '🤝' },
   { id: 'auditorium', judul: 'Auditorium', ket: 'Panggung, LED videotron, line array, podium & tribun bertingkat', ikon: '🎭' },
   { id: 'control-room', judul: 'Control room', ket: 'Videowall 4 × 3 (grafik + CCTV), meja operator multi monitor, rack server, kredensa', ikon: '🖥️' },
@@ -33,6 +34,7 @@ function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, 
 }
 
 export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; benda: Benda[] } {
+  if (id === 'kosong') return { nama: 'Ruangan kosong', ruang: { p: 4, l: 4, t: 3, lantai: 'kayu', r2: null }, benda: [] };
   if (id === 'auditorium') {
     const ruang: Ruang = { p: 16, l: 20, t: 7, lantai: 'karpet', cahaya: 'redup', r2: null };
     const k = daftarRuang(ruang)[0];

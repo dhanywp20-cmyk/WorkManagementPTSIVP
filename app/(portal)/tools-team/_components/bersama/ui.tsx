@@ -23,7 +23,7 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
   return (
     <label className="block min-w-0">
       <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1" title={bantuan}>
-        {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-400 cursor-help" aria-hidden="true">ⓘ</span>}
+        {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-500 cursor-help" aria-hidden="true">ⓘ</span>}
       </span>
       <span className="relative block">
         <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}

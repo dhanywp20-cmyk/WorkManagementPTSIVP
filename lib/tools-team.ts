@@ -298,7 +298,7 @@ export function bacaDaftarProduk(v: unknown): ProdukTim[] {
 }
 
 export const ID_KATEGORI_RUANG = [
-  'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
+  'kosong', 'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
 ] as const;
 export const kategoriRuangSah = (x: unknown): x is (typeof ID_KATEGORI_RUANG)[number] =>
   typeof x === 'string' && (ID_KATEGORI_RUANG as readonly string[]).includes(x);

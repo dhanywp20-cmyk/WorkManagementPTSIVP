@@ -143,6 +143,7 @@ export function useMesin(K: KeadaanDesain) {
 
         const atur = () => {
           const w = wadah.clientWidth, h = wadah.clientHeight;
+          if (!w || !h) return;
           renderer.setSize(w, h, false); labelRenderer.setSize(w, h);
           kamera.aspect = w / Math.max(1, h); kamera.updateProjectionMatrix();
         };
@@ -197,6 +198,7 @@ export function useMesin(K: KeadaanDesain) {
         let tumpukTerakhir = 0;
         const putar = () => {
           if (!jalan) return;
+          if (!wadah.clientWidth) { requestAnimationFrame(putar); return; }
           const tb = mesin.current?.terbang;
           if (tb) {
             const k = Math.min(1, (performance.now() - tb.mulai) / tb.durasi);
@@ -245,7 +247,7 @@ export function useMesin(K: KeadaanDesain) {
       }
     })();
     return () => { hidup = false; bersihkan(); };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
@@ -279,6 +281,6 @@ export function useMesin(K: KeadaanDesain) {
       kanvas.removeEventListener('pointerleave', keluar);
       kanvas.style.cursor = '';
     };
-  }, [modeSeret, siap]);
+  }, [modeSeret, siap, mesin]);
 
 }

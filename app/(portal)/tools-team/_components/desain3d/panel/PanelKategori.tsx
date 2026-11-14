@@ -49,7 +49,7 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
                   )}
                 </span>
               </button>
-              {bolehAtur && (
+              {bolehAtur && k.id !== 'kosong' && (
                 <div className="flex flex-wrap gap-1.5 border-t border-slate-100 bg-slate-50/60 px-3 py-1.5">
                   <button type="button" onClick={() => jadikanDefault(k.id)} disabled={!!sibuk} title="Jadikan isi kanvas sekarang template default kategori ini untuk semua pengguna"
                     className="rounded-lg border border-blue-200 bg-white px-2 py-1 text-[11.5px] font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">

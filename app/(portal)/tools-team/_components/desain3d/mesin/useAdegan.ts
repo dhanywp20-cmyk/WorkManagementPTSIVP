@@ -17,6 +17,7 @@ import { faktorCahayaRuang } from '../inti';
 
 export function useAdegan(K: KeadaanDesain) {
   const { sinarNyata, sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { cahaya, luxManual } = ruang;
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     bangunRuangan(m.THREE, m.grupRuang, ruang, k => gambarTekstur.current.get(k));
@@ -80,7 +81,7 @@ export function useAdegan(K: KeadaanDesain) {
       m.gizmo.showX = modeGizmo === 'translate'; m.gizmo.showZ = modeGizmo === 'translate'; m.gizmo.showY = true;
     } else m.gizmo.detach();
     aturSnapGizmo(m, snap);
-  }, [pilih, modeGizmo, siap, tampilan, benda, snap]);
+  }, [pilih, modeGizmo, siap, tampilan, benda, snap, mesin]);
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
@@ -102,8 +103,8 @@ export function useAdegan(K: KeadaanDesain) {
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    aturCahayaRuang(m, { f: faktorCahayaRuang(ruang) });
-  }, [ruang.cahaya, ruang.luxManual, siap]);
+    aturCahayaRuang(m, { f: faktorCahayaRuang({ cahaya, luxManual }) });
+  }, [cahaya, luxManual, siap, mesin]);
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
@@ -117,5 +118,5 @@ export function useAdegan(K: KeadaanDesain) {
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     gambarBayangan(m, { bayangan, benda, kotakRuang, ruang, teksturBayang });
-  }, [benda, ruang, siap, bayangan, kotakRuang]);
+  }, [benda, ruang, siap, bayangan, kotakRuang, mesin, teksturBayang]);
 }

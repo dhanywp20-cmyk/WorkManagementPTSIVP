@@ -15,7 +15,7 @@ export function useProdukTim(K: KeadaanDesain) {
       else setGalatProduk(j?.alasan ?? 'Gagal memuat Produk saya.');
     } catch { setGalatProduk('Tidak terhubung ke server.'); }
   };
-  useEffect(() => { if (sisi === 'tambah' && !produkTim) void muatProduk(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sisi]);
+  useEffect(() => { if (sisi === 'tambah' && !produkTim) void muatProduk(); }, [sisi]); // eslint-disable-line react-hooks/exhaustive-deps
   const tambahProduk = (p: ProdukTimC) => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
     const atur = p.atur as Partial<Benda>;

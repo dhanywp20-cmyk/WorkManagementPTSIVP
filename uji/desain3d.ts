@@ -335,7 +335,7 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
   for (const kat of KATEGORI_RUANG) {
     const t = templateRuang(kat.id);
     const luar = t.benda.filter(b => !M3.daftarRuang(t.ruang).some(r => b.x >= r.x0 - 0.01 && b.x <= r.x0 + r.p + 0.01 && b.z >= -0.01 && b.z <= r.l + 0.01 && b.elev + b.h <= r.t + 0.05));
-    cek(`template ${kat.judul}: ${t.benda.length} benda, semua di dalam ruangan`, t.benda.length > 0 && luar.length === 0,
+    cek(`template ${kat.judul}: ${t.benda.length} benda, semua di dalam ruangan`, (kat.id === 'kosong' ? t.benda.length === 0 : t.benda.length > 0) && luar.length === 0,
       luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
   }
   const imm = templateRuang('immersive');
@@ -432,8 +432,10 @@ console.log('\nCahaya siang dari jendela');
 console.log('\nTemplate default kategori: lengkap & terkunci');
 {
   const semua = TP.KATEGORI_RUANG.map(k => k.id);
-  cek('8 kategori ruangan tersedia', semua.length === 8);
-  const tanpaIsi = semua.filter(id => !TP.templateRuang(id).benda.length);
+  cek('9 kategori ruangan tersedia (termasuk Ruangan kosong)', semua.length === 9);
+  const kosong = TP.templateRuang('kosong');
+  cek('Ruangan kosong: 4 × 4 m, tinggi 3 m, tanpa benda', kosong.ruang.p === 4 && kosong.ruang.l === 4 && kosong.ruang.t === 3 && !kosong.ruang.r2 && kosong.benda.length === 0);
+  const tanpaIsi = semua.filter(id => id !== 'kosong' && !TP.templateRuang(id).benda.length);
   cek('setiap kategori punya template berisi', tanpaIsi.length === 0, tanpaIsi.join(','));
   const sidik = (id: TP.KategoriRuang) => { const t = TP.templateRuang(id); return JSON.stringify({ r: t.ruang, b: t.benda.map(({ id: _i, ...x }) => x) }); };
   cek('template selalu sama tiap dipasang (deterministik)', semua.every(id => sidik(id) === sidik(id)));

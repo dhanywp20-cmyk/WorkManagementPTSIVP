@@ -134,10 +134,10 @@ export function useSimpanDesain(K: KeadaanDesain) {
       else { setDaftarTim([]); setStatusSimpan({ teks: j?.alasan ?? 'Daftar desain tim tidak bisa dimuat.', nada: 'galat' }); }
     } catch { setDaftarTim([]); setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); }
   };
-  useEffect(() => { if (modal === 'simpan') void muatDaftarTim(); }, [modal]);
+  useEffect(() => { if (modal === 'simpan') void muatDaftarTim(); }, [modal]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if ((sisi || panel) && window.innerWidth < 1024) asideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [sisi, panel]);
+  }, [sisi, panel, asideRef]);
 
   const pratinjau = (): { kecil: string | null; hd: string | null } => {
     const m = mesin.current; if (!m) return { kecil: null, hd: null };

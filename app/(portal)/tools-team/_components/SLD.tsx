@@ -208,7 +208,7 @@ export function SLD() {
             onContoh={() => ganti('Buka contoh SLD Voice Kamar Pasien?', () => { a.contoh(); simpan.lepas(); })} />
           <input value={a.dok.blok.proyek} onChange={e => a.ubahBlok({ proyek: e.target.value })} placeholder="Nama proyek" aria-label="Nama proyek"
             title="Nama proyek - tampil di Sheet 1, 2 & 3"
-            className="h-8 w-48 rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden" />
+            className="h-8 w-32 sm:w-48 rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden" />
           <Pemisah />
           <TombolIkon ikon={Undo2} label="Batal (Ctrl+Z)" onClick={a.riwayat.undo} disabled={!a.riwayat.bisaUndo} />
           <TombolIkon ikon={Redo2} label="Ulang (Ctrl+Y)" onClick={a.riwayat.redo} disabled={!a.riwayat.bisaRedo} />
@@ -236,7 +236,7 @@ export function SLD() {
           <TombolIkon ikon={RotateCw} label="Putar 90° (R)" onClick={() => putar(90)} disabled={!bisaPutar} />
           <TombolIkon ikon={Trash2} label="Hapus (Delete)" onClick={hapusPilihan} disabled={!kanvas || !a.terpilih.length} className="hover:!bg-rose-50 hover:!text-rose-700" />
           <MenuSusun a={a} kanvas={kanvas} onPesan={t => setPesan({ t })} />
-          <div className="ml-auto flex items-center gap-0.5">
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-0.5">
             <CariGanti a={a} buka={cariBuka} onBuka={setCariBuka} onPilih={() => { setSheet(1); setPanelBuka(true); }} />
             <Pemisah />
             <TombolIkon ikon={ZoomOut} label="Perkecil" onClick={() => setZoom(z => Math.max(1, Math.round((z - 0.25) * 4) / 4))} disabled={!kanvas || zoom <= 1} />
@@ -296,7 +296,7 @@ export function SLD() {
                   title={mati ? 'Sheet 2 dimatikan (Pengaturan)' : n > 1 && simpleMode ? 'Tidak ikut ekspor mode Simple' : undefined}
                   className={`h-7 px-2.5 rounded-md text-[12px] font-bold transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed ${
                     sheet === n ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-                  <span className="text-slate-400 font-semibold">Sheet {n}</span> {l}
+                  <span className="text-slate-600 font-semibold">Sheet {n}</span> {l}
                 </button>
               );
             })}

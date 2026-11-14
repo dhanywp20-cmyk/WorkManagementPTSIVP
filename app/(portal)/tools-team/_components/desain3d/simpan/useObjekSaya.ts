@@ -40,7 +40,7 @@ export function useObjekSaya(K: KeadaanDesain) {
       if (r.ok && j?.ok) { setDaftar(j.daftar as ObjekSayaC[]); setKuota(j.kuota as KuotaObjek); } else setGalat(j?.alasan ?? 'Objek saya tidak bisa dimuat.');
     } catch { setGalat('Tidak terhubung ke server.'); }
   };
-  useEffect(() => { if (sisi === 'tambah' && !daftar) void muat(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [sisi]);
+  useEffect(() => { if (sisi === 'tambah' && !daftar) void muat(); }, [sisi]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const glbDari = (kunci: string): Promise<string | null> => new Promise(ok => {
     const m = mesin.current, src = modelImpor.current.get(kunci);
