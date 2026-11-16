@@ -171,7 +171,9 @@ export const SENDING_CARD: Hardware[] = [
   { nama: 'DS-DT20C-01HI06NO', maksPx: 3_900_000, port: 6, senderBawaan: true, merek: 'Hikvision', ket: 'Hikvision; 1x HDMI 1.4; 6x RJ45' },
 ];
 
-export const NAMA_VP_LAMA: Readonly<Record<string, string>> = { VX400: 'VX400 Pro', VX600: 'VX600 Pro', VX1000: 'VX1000 Pro' };
+export const NAMA_VP_LAMA: Readonly<Record<string, string>> = {
+  VX400: 'VX400 Pro', VX600: 'VX600 Pro', VX1000: 'VX1000 Pro', H2: 'H2 (H_20xRJ45)', H5: 'H5 (H_20xRJ45)', H9: 'H9 (H_20xRJ45)',
+};
 
 export const VIDEO_PROCESSOR: Hardware[] = [
   { nama: 'VX400 Pro', maksPx: 2_600_000, port: 4, senderBawaan: true, ket: 'All-in-one; 4x LAN; lebar maks 10.240 px' },
@@ -180,9 +182,10 @@ export const VIDEO_PROCESSOR: Hardware[] = [
   { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; 16x LAN + 4x fiber; input 4K' },
   { nama: 'V1260', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: '2-in-1; 16x LAN + 4 fiber; data distributor, tidak ada di novastar.tech' },
   { nama: 'VX2000 Pro', maksPx: 13_000_000, port: 20, senderBawaan: true, ket: 'All-in-one; 20x LAN; lebar maks 16.384 px' },
-  { nama: 'H2', maksPx: 26_000_000, port: 40, senderBawaan: true, ket: 'Video wall splicer 2U; 2x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 4 slot kartu input' },
-  { nama: 'H5', maksPx: 39_000_000, port: 60, senderBawaan: true, ket: 'Video wall splicer 5U; 3x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 10 slot kartu input' },
-  { nama: 'H9', maksPx: 65_000_000, port: 100, senderBawaan: true, ket: 'Video wall splicer 9U; 5x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 15 slot kartu input' },
+  ...([['H2', 2, 4, '2U'], ['H5', 3, 10, '5U'], ['H9', 5, 15, '9U']] as const).flatMap(([m, kartu, slot, rak]) => ([[16, 10_400_000, ' + 2 fiber'], [20, 13_000_000, '']] as const).map(([lan, px, opt]): Hardware => ({
+    nama: `${m} (H_${lan}xRJ45)`, maksPx: kartu * px, port: kartu * lan, senderBawaan: true,
+    ket: `Video wall splicer ${rak}; ${kartu}x kartu H_${lan}xRJ45 (${px / 1e6} jt px, ${lan} LAN${opt} per kartu); ${slot} slot kartu input`,
+  }))),
 ];
 
 export interface Kapasitas {

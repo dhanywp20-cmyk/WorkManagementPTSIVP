@@ -1,7 +1,7 @@
 export type JenisKonektor =
   | 'rj45' | 'rj45-neutrik' | 'opt' | 'hdmi' | 'dvi' | 'dp' | 'bnc' | 'usb-a' | 'usb-b' | 'audio' | 'serial' | 'sensor' | 'lan' | 'ir' | 'ac';
 
-export interface Konektor { jenis: JenisKonektor; label: string; jumlah?: number; baris?: number }
+export interface Konektor { jenis: JenisKonektor; label: string; jumlah?: number; kartu?: number }
 export interface KelompokPanel { judul: 'Input' | 'Loop' | 'Output' | 'Kontrol' | 'Daya'; isi: Konektor[] }
 
 export interface PanelController {
@@ -20,14 +20,18 @@ const KONTROL_H: KelompokPanel = { judul: 'Kontrol', isi: [
   { jenis: 'bnc', label: 'GENLOCK IN' }, { jenis: 'bnc', label: 'GENLOCK LOOP' }, { jenis: 'lan', label: 'ETHERNET' }, { jenis: 'usb-a', label: 'USB', jumlah: 2 },
   { jenis: 'serial', label: 'COM IN' }, { jenis: 'serial', label: 'COM OUT' },
 ] };
-const panelSeriH = (model: 'H2' | 'H5' | 'H9', kartu: number, slotInput: number, berkas: string): PanelController => ({
-  model, merek: 'NovaStar', rak: model === 'H2' ? '2U' : model === 'H5' ? '5U' : '9U', sumber: `${SPEK}${berkas}`,
-  catatan: `Modular: ${slotInput} slot kartu input (pilih sesuai sumber) tidak digambar; output = ${kartu}x kartu H_20xRJ45 (20 LAN per kartu).`,
+const panelSeriH = (seri: 'H2' | 'H5' | 'H9', kartu: number, slotInput: number, lan: 16 | 20, berkas: string): PanelController => ({
+  model: `${seri} (H_${lan}xRJ45)`, merek: 'NovaStar', rak: seri === 'H2' ? '2U' : seri === 'H5' ? '5U' : '9U', sumber: `${SPEK}${berkas}`,
+  catatan: `Modular: ${slotInput} slot kartu input tidak digambar; output = ${kartu}x kartu H_${lan}xRJ45${lan === 16 ? ' (OPT 1/2 menyalin LAN 1–8 / 9–16)' : ''}.`,
   kelompok: [
-    { judul: 'Output', isi: Array.from({ length: kartu }, (_, i) => ({ ...lanOut(20), label: `Kartu ${i + 1} · Ethernet`, baris: 4 })) },
+    { judul: 'Output', isi: Array.from({ length: kartu }, (_, i): Konektor[] => [
+      { ...lanOut(lan), label: `Kartu ${i + 1} · Ethernet`, kartu: i + 1 },
+      ...(lan === 16 ? [{ jenis: 'opt' as const, label: 'OPT', jumlah: 2, kartu: i + 1 }] : []),
+    ]).flat() },
     KONTROL_H, AC,
   ],
 });
+const SPEK_H2 = '2023/02/H2-Video-Wall-Splicer-Specifications-V1.8.0.pdf', SPEK_H59 = '2020/10/H-Series-H5H9-Video-Wall-Splicers-Specifications-V1.2.0.pdf';
 
 export const PANEL_CONTROLLER: PanelController[] = [
   {
@@ -135,9 +139,9 @@ export const PANEL_CONTROLLER: PanelController[] = [
       AC,
     ],
   },
-  panelSeriH('H2', 2, 4, '2023/02/H2-Video-Wall-Splicer-Specifications-V1.8.0.pdf'),
-  panelSeriH('H5', 3, 10, '2020/10/H-Series-H5H9-Video-Wall-Splicers-Specifications-V1.2.0.pdf'),
-  panelSeriH('H9', 5, 15, '2020/10/H-Series-H5H9-Video-Wall-Splicers-Specifications-V1.2.0.pdf'),
+  ...([16, 20] as const).flatMap(lan => [
+    panelSeriH('H2', 2, 4, lan, SPEK_H2), panelSeriH('H5', 3, 10, lan, SPEK_H59), panelSeriH('H9', 5, 15, lan, SPEK_H59),
+  ]),
 ];
 
 export const panelUntuk = (nama: string | null | undefined): PanelController | null =>
@@ -150,6 +154,9 @@ export function panelUmum(nama: string, jumlahPort: number): PanelController {
     kelompok: [{ judul: 'Output', isi: [lanOut(Math.max(1, jumlahPort))] }, AC],
   };
 }
+
+export const lanPerKartu = (p: PanelController | null) =>
+  p?.kelompok.find(k => k.judul === 'Output')?.isi.find(k => k.kartu && (k.jenis === 'rj45' || k.jenis === 'rj45-neutrik'))?.jumlah ?? 0;
 
 export const jumlahLanPanel = (p: PanelController) =>
   p.kelompok.flatMap(k => k.judul === 'Output' ? k.isi : []).filter(k => k.jenis === 'rj45' || k.jenis === 'rj45-neutrik').reduce((a, k) => a + (k.jumlah ?? 1), 0);
@@ -190,31 +197,32 @@ function bentuk(j: JenisKonektor, x: number, y: number, tandai: TandaPort | null
 }
 
 export function svgPanelController(p: PanelController, judul: string, tandaLan: Map<number, TandaPort>): string {
-  const JARAK = 7, ATAS = 58, BARIS = 50;
+  const JARAK = 7, ATAS = 58, BARIS = 50, BARIS_KARTU = 74;
   const kisi: string[] = [];
-  let x = 18, nomorLan = 0, barisMaks = 1;
+  let x = 18, nomorLan = 0, tinggiIsi = 0;
   const barisLan = (n: number) => (n > 10 ? 2 : 1);
   for (const k of p.kelompok) {
-    const awal = x;
-    const isi: string[] = [];
+    const awal = x, modeKartu = k.isi.some(kon => kon.kartu);
+    const isi: string[] = [], xKartu: number[] = [];
     for (const kon of k.isi) {
       const n = kon.jumlah ?? 1, w = LEBAR[kon.jenis];
       const lan = k.judul === 'Output' && (kon.jenis === 'rj45' || kon.jenis === 'rj45-neutrik');
-      const baris = lan ? kon.baris ?? barisLan(n) : 1, perBaris = Math.ceil(n / baris);
-      barisMaks = Math.max(barisMaks, baris);
-      const teks = lan && baris > 1 ? `${kon.label} ${nomorLan + 1}–${nomorLan + n}` : `${kon.label}${n > 1 && !lan ? ` ×${n}` : ''}`;
+      const r = modeKartu ? (kon.kartu ?? 1) - 1 : 0, x0 = modeKartu ? xKartu[r] ?? awal : x, atas = ATAS + r * BARIS_KARTU;
+      const baris = lan && !modeKartu ? barisLan(n) : 1, perBaris = Math.ceil(n / baris);
+      tinggiIsi = Math.max(tinggiIsi, r * BARIS_KARTU + 34 + baris * BARIS + 6);
+      const teks = lan && modeKartu ? `${kon.label} 1–${n}` : lan && baris > 1 ? `${kon.label} ${nomorLan + 1}–${nomorLan + n}` : `${kon.label}${n > 1 && !lan ? ` ×${n}` : ''}`;
       const lebarKon = Math.max(perBaris * (w + JARAK) - JARAK, 0);
       const lebarBlok = Math.max(lebarKon, teks.length * 4.9 + 4);
-      const ax = x + (lebarBlok - lebarKon) / 2;
-      isi.push(`<text x="${x + lebarBlok / 2}" y="${ATAS + 18}" font-size="8" text-anchor="middle" fill="#e2e8f0" ${HURUF}>${esc(teks)}</text>`);
+      const ax = x0 + (lebarBlok - lebarKon) / 2;
+      isi.push(`<text x="${x0 + lebarBlok / 2}" y="${atas + 18}" font-size="8" text-anchor="middle" fill="#e2e8f0" ${HURUF}>${esc(teks)}</text>`);
       for (let i = 0; i < n; i++) {
         const b = Math.floor(i / perBaris), c = i % perBaris;
-        const cx = ax + c * (w + JARAK), cy = ATAS + 34 + b * BARIS;
+        const cx = ax + c * (w + JARAK), cy = atas + 34 + b * BARIS;
         const nomor = lan ? ++nomorLan : 0;
         const tanda = lan ? tandaLan.get(nomor) ?? null : null;
         isi.push(bentuk(kon.jenis, cx, cy, tanda));
         if (lan) {
-          isi.push(`<text x="${cx + w / 2}" y="${cy + (kon.jenis === 'rj45-neutrik' ? 36 : 32)}" font-size="8.5" text-anchor="middle" fill="#cbd5e1" ${HURUF}>${nomor}</text>`);
+          isi.push(`<text x="${cx + w / 2}" y="${cy + (kon.jenis === 'rj45-neutrik' ? 36 : 32)}" font-size="8.5" text-anchor="middle" fill="#cbd5e1" ${HURUF}>${modeKartu ? i + 1 : nomor}</text>`);
           if (tanda) {
             isi.push(`<text x="${cx + w / 2}" y="${cy - 3}" font-size="9" font-weight="800" text-anchor="middle" fill="${tanda.warna}" stroke="#334155" stroke-width="2.5" paint-order="stroke" ${HURUF}>${esc(tanda.label)}</text>`);
           }
@@ -222,14 +230,19 @@ export function svgPanelController(p: PanelController, judul: string, tandaLan: 
           isi.push(`<text x="${cx + w / 2}" y="${cy + 32}" font-size="8" text-anchor="middle" fill="#94a3b8" ${HURUF}>${i + 1}</text>`);
         }
       }
-      x += lebarBlok + 12;
+      if (modeKartu) xKartu[r] = x0 + lebarBlok + 12;
+      else x += lebarBlok + 12;
+    }
+    if (modeKartu) {
+      x = Math.max(x, ...xKartu);
+      isi.unshift(...xKartu.map((_, r) => `<rect x="${awal - 6}" y="${ATAS + r * BARIS_KARTU + 7}" width="${x - awal}" height="${BARIS_KARTU - 10}" rx="4" fill="#3b4a61" stroke="#64748b"/>`));
     }
     kisi.push(`<text x="${awal}" y="${ATAS - 6}" font-size="9" font-weight="800" fill="#475569" letter-spacing="0.6" ${HURUF}>${k.judul.toUpperCase()}</text>`);
     kisi.push(`<line x1="${awal}" y1="${ATAS - 2}" x2="${x - 12}" y2="${ATAS - 2}" stroke="#94a3b8" stroke-width="1"/>`);
     kisi.push(...isi);
     x += 12;
   }
-  const tinggiPanel = Math.max(p.rak.startsWith('1U') ? 84 : 110, 34 + barisMaks * BARIS + 6);
+  const tinggiPanel = Math.max(p.rak.startsWith('1U') ? 84 : 110, tinggiIsi);
   const W = Math.max(x + 8, 360), H = ATAS + tinggiPanel + (p.catatan ? 26 : 12);
   const kaki = [p.merek, p.rak, p.sumber ? 'skema dari spesifikasi resmi' : ''].filter(Boolean).join(' · ');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
