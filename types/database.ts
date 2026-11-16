@@ -1363,6 +1363,182 @@ export type Database = {
           },
         ]
       }
+      isu_grup: {
+        Row: {
+          client: string | null
+          created_at: string
+          dibuat_oleh_nama: string | null
+          id: string
+          kategori: string[]
+          keterangan: string
+          nama: string
+          proyek_ids: string[]
+          share_aktif: boolean
+          share_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          client?: string | null
+          created_at?: string
+          dibuat_oleh_nama?: string | null
+          id?: string
+          kategori?: string[]
+          keterangan?: string
+          nama: string
+          proyek_ids?: string[]
+          share_aktif?: boolean
+          share_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client?: string | null
+          created_at?: string
+          dibuat_oleh_nama?: string | null
+          id?: string
+          kategori?: string[]
+          keterangan?: string
+          nama?: string
+          proyek_ids?: string[]
+          share_aktif?: boolean
+          share_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      isu_log: {
+        Row: {
+          action: string
+          catatan_internal: string
+          created_at: string
+          daftar_id: string | null
+          deskripsi: string
+          dibuat_oleh_nama: string | null
+          diubah_oleh_nama: string | null
+          foto_thumb_url: string | null
+          foto_url: string | null
+          grup_id: string
+          id: string
+          judul: string
+          kategori: string
+          lokasi: string
+          nomor: number
+          pelapor: string
+          pic: string
+          prioritas: string
+          selesai_pada: string | null
+          solusi: string
+          status: string
+          tanggal: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          catatan_internal?: string
+          created_at?: string
+          daftar_id?: string | null
+          deskripsi?: string
+          dibuat_oleh_nama?: string | null
+          diubah_oleh_nama?: string | null
+          foto_thumb_url?: string | null
+          foto_url?: string | null
+          grup_id: string
+          id?: string
+          judul: string
+          kategori?: string
+          lokasi: string
+          nomor: number
+          pelapor?: string
+          pic?: string
+          prioritas?: string
+          selesai_pada?: string | null
+          solusi?: string
+          status?: string
+          tanggal?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          catatan_internal?: string
+          created_at?: string
+          daftar_id?: string | null
+          deskripsi?: string
+          dibuat_oleh_nama?: string | null
+          diubah_oleh_nama?: string | null
+          foto_thumb_url?: string | null
+          foto_url?: string | null
+          grup_id?: string
+          id?: string
+          judul?: string
+          kategori?: string
+          lokasi?: string
+          nomor?: number
+          pelapor?: string
+          pic?: string
+          prioritas?: string
+          selesai_pada?: string | null
+          solusi?: string
+          status?: string
+          tanggal?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isu_log_daftar_id_fkey"
+            columns: ["daftar_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_daftar"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isu_log_grup_id_fkey"
+            columns: ["grup_id"]
+            isOneToOne: false
+            referencedRelation: "isu_grup"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      isu_riwayat: {
+        Row: {
+          aksi: string
+          created_at: string
+          dari: string | null
+          id: string
+          isu_id: string
+          ke: string | null
+          keterangan: string
+          nama: string | null
+        }
+        Insert: {
+          aksi: string
+          created_at?: string
+          dari?: string | null
+          id?: string
+          isu_id: string
+          ke?: string | null
+          keterangan?: string
+          nama?: string | null
+        }
+        Update: {
+          aksi?: string
+          created_at?: string
+          dari?: string | null
+          id?: string
+          isu_id?: string
+          ke?: string | null
+          keterangan?: string
+          nama?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isu_riwayat_isu_id_fkey"
+            columns: ["isu_id"]
+            isOneToOne: false
+            referencedRelation: "isu_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kpi_global_settings: {
         Row: {
           id: number

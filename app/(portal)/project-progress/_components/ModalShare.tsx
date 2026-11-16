@@ -6,10 +6,11 @@ import { Copy, RefreshCw, ExternalLink } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { urlShareChecklist } from '@/lib/checklist/inti';
+import { urlShareIsu } from '@/lib/isu/inti';
 import { TEMA } from './tampilan';
 
 export interface TargetShare {
-  jenis: 'checklist' | 'proyek';
+  jenis: 'checklist' | 'proyek' | 'isu';
   judul: string;
   share_aktif: boolean;
   share_token?: string | null;
@@ -18,6 +19,7 @@ export interface TargetShare {
 function urlShare(t: TargetShare): string {
   if (!t.share_token) return '';
   if (t.jenis === 'checklist') return urlShareChecklist(t.share_token);
+  if (t.jenis === 'isu') return urlShareIsu(appBaseUrl(), t.share_token);
   return `${appBaseUrl()}/project-progress/share/${t.share_token}`;
 }
 
@@ -47,10 +49,12 @@ export function ModalShare({ target, onTutup, onUbah, beritahu }: {
 
   return (
     <Modal buka onTutup={() => { setYakinGanti(false); onTutup(); }} ukuran="md" ikon="🔗"
-      judul={bisaCentang ? 'Link checklist untuk tim' : 'Link proyek (hanya lihat)'}
+      judul={bisaCentang ? 'Link checklist untuk tim' : target.jenis === 'isu' ? 'Link Issue Log (hanya lihat)' : 'Link proyek (hanya lihat)'}
       keterangan={bisaCentang
         ? 'Siapa pun yang memegang link bisa mencentang dan menandai kendala tanpa login. Nama dan waktunya selalu tercatat.'
-        : 'Siapa pun yang memegang link bisa melihat seluruh checklist proyek ini tanpa login, tanpa bisa mengubah apa pun.'}
+        : target.jenis === 'isu'
+          ? 'Untuk pihak eksternal: bisa melihat ringkasan harian, status, action & solusi tanpa login. Catatan internal tidak ikut tampil dan tidak ada yang bisa diubah.'
+          : 'Siapa pun yang memegang link bisa melihat seluruh checklist proyek ini tanpa login, tanpa bisa mengubah apa pun.'}
       footer={<TombolModal onClick={onTutup}>Tutup</TombolModal>}>
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-3"

@@ -18,7 +18,9 @@ import { DetailChecklist } from './_components/DetailChecklist';
 import { ModalProyek, type IsianProyek } from './_components/FormProyek';
 import type { CalonAnggota } from './_components/PilihAnggota';
 import { panggil, pesanGalat } from './_components/api';
+import { IssueLog } from './_components/isu/IssueLog';
 
+type Halaman = 'proyek' | 'isu';
 type Saring = 'semua' | 'berjalan' | 'kendala' | 'terlambat' | 'saya' | 'selesai';
 
 function cocokSaringPie(p: ProyekRingkas, s: SaringRingkasan): boolean {
@@ -48,6 +50,10 @@ export default function ProjectProgressPage() {
   const [salesUsers, setSalesUsers] = useState<SalesPickerUser[]>([]);
   const [calonAnggota, setCalonAnggota] = useState<CalonAnggota[]>([]);
   const [toast, setToast] = useState<Notif | null>(null);
+  const [halaman, setHalaman] = useState<Halaman>(() => {
+    if (typeof window === 'undefined') return 'proyek';
+    return new URLSearchParams(window.location.search).get('tab') === 'isu' ? 'isu' : 'proyek';
+  });
   const perluMuat = useRef(false);
   const tandaiBerubah = useCallback(() => { perluMuat.current = true; }, []);
 
@@ -133,6 +139,16 @@ export default function ProjectProgressPage() {
     beritahu('success', 'Proyek dibuat. Tambahkan checklist untuk tiap lokasi.');
   };
 
+  const bolehIsu = !!user && (['admin', 'superadmin', 'team'].includes((user.role ?? '').toLowerCase()) || user.pimpinan === true);
+  const gantiHalaman = (k: Halaman) => {
+    setHalaman(k);
+    try {
+      const url = new URL(window.location.href);
+      if (k === 'isu') url.searchParams.set('tab', 'isu'); else url.searchParams.delete('tab');
+      window.history.replaceState(null, '', url);
+    } catch {}
+  };
+
   const saringKartu = (k: Saring) => () => setSaring(s => (s === k ? 'semua' : k));
 
   return (
@@ -140,7 +156,7 @@ export default function ProjectProgressPage() {
       <Toast notif={toast} />
       <PageHeader icon="📊" title="Project Progress"
         subtitle="Checklist pekerjaan per proyek & lokasi · tim mencentang langsung dari lapangan">
-        {admin && !proyekId && (
+        {admin && !proyekId && halaman === 'proyek' && (
           <button onClick={() => setBaruBuka(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-bold text-white" style={{ background: TEMA.warna }}>
             <Plus size={15} /> Proyek baru
@@ -149,6 +165,22 @@ export default function ProjectProgressPage() {
       </PageHeader>
 
       <main className="max-w-[1500px] mx-auto px-3 sm:px-6 py-5 space-y-4">
+        {bolehIsu && !proyekId && !checklistId && (
+          <div className="inline-flex p-0.5 rounded-lg" style={{ background: NETRAL.garis }} role="tablist" aria-label="Bagian">
+            {([['proyek', 'Proyek'], ['isu', 'Issue Log harian']] as [Halaman, string][]).map(([k, label]) => (
+              <button key={k} type="button" role="tab" aria-selected={halaman === k} onClick={() => gantiHalaman(k)}
+                className="px-3.5 py-1.5 rounded-md text-[13px] font-bold transition-colors"
+                style={halaman === k ? { background: NETRAL.permukaan, color: NETRAL.tinta, boxShadow: '0 1px 2px rgba(15,23,42,.08)' } : { color: NETRAL.tinta2 }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {bolehIsu && halaman === 'isu' && !proyekId && !checklistId && (
+          <IssueLog beritahu={beritahu} namaSaya={user?.full_name || user?.username || ''} />
+        )}
+
         {checklistId && (
           <DetailChecklist key={checklistId} id={checklistId} beritahu={beritahu} onBerubah={tandaiBerubah} calonAnggota={calonAnggota}
             namaSaya={user?.full_name || user?.username || ''}
@@ -163,7 +195,7 @@ export default function ProjectProgressPage() {
             onKembali={() => { setProyekId(null); if (perluMuat.current) muat(); }} onBukaChecklist={setChecklistId} />
         )}
 
-        {!checklistId && !proyekId && (
+        {!checklistId && !proyekId && (halaman === 'proyek' || !bolehIsu) && (
           <>
             <StatCardGrid cols={5} items={[
               { label: 'Berjalan', value: statistik.berjalan, accent: TEMA.warna, onClick: saringKartu('berjalan'), active: saring === 'berjalan' },
