@@ -6,6 +6,7 @@ import { getSession } from '@/lib/auth/sesi';
 import { type Pembulatan } from '@/lib/av/hitung';
 import { bersihkanBOM, bersihkanHarga, BOM_AWAL, type Lingkungan, type PengaturanBOM } from './data';
 import { NAMA_VP_LAMA } from '@/lib/av/hitung';
+import { bacaRefPakai, type RefPakai } from './refPakai';
 
 export function useIsianLED() {
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
@@ -43,14 +44,15 @@ export function useIsianLED() {
   const [dayaLED, setDayaLED] = useState<PengaturanDaya>(DAYA_AWAL);
   const [bom, setBom] = useState<PengaturanBOM>(BOM_AWAL);
   const [harga, setHarga] = useState<Record<string, number>>({});
+  const [refPakai, setRefPakai] = useState<RefPakai | null>(null);
 
   const isian = useMemo(() => ({
     modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga,
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai,
   }), [modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga]);
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai]);
   type Isian = typeof isian;
   const terapkan = (v: Partial<Isian>) => {
     const pasang = <K extends keyof Isian>(k: K, setel: (x: Isian[K]) => void) => { if (k in v) setel(v[k] as Isian[K]); };
@@ -64,6 +66,7 @@ export function useIsianLED() {
     pasang('faktorDaya', setFaktorDaya);
     setKoneksi(bersihkanKoneksi(v.koneksi));
     setDayaLED(bersihkanDaya(v.dayaLED)); setBom(bersihkanBOM(v.bom)); setHarga(bersihkanHarga(v.harga));
+    setRefPakai(bacaRefPakai(v.refPakai));
   };
   return { modeHw, setModeHw, bukaRef, setBukaRef, vpPilih, setVpPilih, kartuPilih, setKartuPilih, project, setProject, customer, setCustomer,
     tanggal, setTanggal, pembuat, setPembuat, mode, setMode, satuan, setSatuan, modulKode, setModulKode, lingkungan, setLingkungan, pitch, setPitch,
