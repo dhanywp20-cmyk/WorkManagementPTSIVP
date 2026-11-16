@@ -180,6 +180,9 @@ export const VIDEO_PROCESSOR: Hardware[] = [
   { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; 16x LAN + 4x fiber; input 4K' },
   { nama: 'V1260', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: '2-in-1; 16x LAN + 4 fiber; data distributor, tidak ada di novastar.tech' },
   { nama: 'VX2000 Pro', maksPx: 13_000_000, port: 20, senderBawaan: true, ket: 'All-in-one; 20x LAN; lebar maks 16.384 px' },
+  { nama: 'H2', maksPx: 26_000_000, port: 40, senderBawaan: true, ket: 'Video wall splicer 2U; 2x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 4 slot kartu input' },
+  { nama: 'H5', maksPx: 39_000_000, port: 60, senderBawaan: true, ket: 'Video wall splicer 5U; 3x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 10 slot kartu input' },
+  { nama: 'H9', maksPx: 65_000_000, port: 100, senderBawaan: true, ket: 'Video wall splicer 9U; 5x kartu H_20xRJ45 (13 jt px, 20 LAN per kartu); 15 slot kartu input' },
 ];
 
 export interface Kapasitas {

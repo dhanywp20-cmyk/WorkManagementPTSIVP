@@ -2,6 +2,7 @@
 import type React from 'react';
 import { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { usePasPopup } from './pasPopup';
 
 export const kelasIkon = 'inline-flex items-center justify-center gap-1.5 h-8 min-w-8 px-1.5 rounded-lg text-[12.5px] font-semibold text-slate-700 '
   + 'hover:bg-slate-100 hover:text-slate-900 transition-colors duration-150 disabled:opacity-35 disabled:hover:bg-transparent disabled:cursor-not-allowed';
@@ -40,6 +41,8 @@ export function Menu({ label, ikon: Ikon, teks, children, kanan, utama, lebar = 
   const setBukaRef = useRef(setBuka);
   useEffect(() => { setBukaRef.current = setBuka; });
   const akar = useRef<HTMLDivElement>(null);
+  const kotak = useRef<HTMLDivElement>(null);
+  usePasPopup(kotak, buka);
   const id = useId();
   useEffect(() => {
     if (!buka) return;
@@ -58,7 +61,7 @@ export function Menu({ label, ikon: Ikon, teks, children, kanan, utama, lebar = 
         {Ikon && <Ikon size={16} />}{teks && <span className={teksKelas}>{teks}</span>}<Lencana isi={lencana} /><ChevronDown size={13} className={`opacity-70 transition-transform duration-150 ${buka ? 'rotate-180' : ''}`} />
       </button>
       {(buka || tetapPasang) && (
-        <div id={id} role={peran} aria-label={label}
+        <div ref={kotak} id={id} role={peran} aria-label={label}
           className={`${buka ? '' : 'hidden'} absolute top-full mt-1.5 z-50 ${lebar} max-w-[calc(100vw-24px)] max-h-[min(75vh,600px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl ${kanan ? 'right-0' : 'left-0'}`}>
           <TutupMenu.Provider value={() => setBuka(false)}>{children}</TutupMenu.Provider>
         </div>

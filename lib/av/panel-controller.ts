@@ -1,13 +1,13 @@
 export type JenisKonektor =
   | 'rj45' | 'rj45-neutrik' | 'opt' | 'hdmi' | 'dvi' | 'dp' | 'bnc' | 'usb-a' | 'usb-b' | 'audio' | 'serial' | 'sensor' | 'lan' | 'ir' | 'ac';
 
-export interface Konektor { jenis: JenisKonektor; label: string; jumlah?: number }
+export interface Konektor { jenis: JenisKonektor; label: string; jumlah?: number; baris?: number }
 export interface KelompokPanel { judul: 'Input' | 'Loop' | 'Output' | 'Kontrol' | 'Daya'; isi: Konektor[] }
 
 export interface PanelController {
   model: string;
   merek: 'NovaStar' | 'Hikvision';
-  rak: '1U' | '1U ½' | '2U';
+  rak: '1U' | '1U ½' | '2U' | '5U' | '9U';
   kelompok: KelompokPanel[];
   sumber: string;
   catatan?: string;
@@ -16,6 +16,18 @@ export interface PanelController {
 const AC: KelompokPanel = { judul: 'Daya', isi: [{ jenis: 'ac', label: 'AC 100–240V' }] };
 const lanOut = (n: number, neutrik = false): Konektor => ({ jenis: neutrik ? 'rj45-neutrik' : 'rj45', label: 'Ethernet', jumlah: n });
 const SPEK = 'https://oss.novastar.tech/uploads/';
+const KONTROL_H: KelompokPanel = { judul: 'Kontrol', isi: [
+  { jenis: 'bnc', label: 'GENLOCK IN' }, { jenis: 'bnc', label: 'GENLOCK LOOP' }, { jenis: 'lan', label: 'ETHERNET' }, { jenis: 'usb-a', label: 'USB', jumlah: 2 },
+  { jenis: 'serial', label: 'COM IN' }, { jenis: 'serial', label: 'COM OUT' },
+] };
+const panelSeriH = (model: 'H2' | 'H5' | 'H9', kartu: number, slotInput: number, berkas: string): PanelController => ({
+  model, merek: 'NovaStar', rak: model === 'H2' ? '2U' : model === 'H5' ? '5U' : '9U', sumber: `${SPEK}${berkas}`,
+  catatan: `Modular: ${slotInput} slot kartu input (pilih sesuai sumber) tidak digambar; output = ${kartu}x kartu H_20xRJ45 (20 LAN per kartu).`,
+  kelompok: [
+    { judul: 'Output', isi: Array.from({ length: kartu }, (_, i) => ({ ...lanOut(20), label: `Kartu ${i + 1} · Ethernet`, baris: 4 })) },
+    KONTROL_H, AC,
+  ],
+});
 
 export const PANEL_CONTROLLER: PanelController[] = [
   {
@@ -123,6 +135,9 @@ export const PANEL_CONTROLLER: PanelController[] = [
       AC,
     ],
   },
+  panelSeriH('H2', 2, 4, '2023/02/H2-Video-Wall-Splicer-Specifications-V1.8.0.pdf'),
+  panelSeriH('H5', 3, 10, '2020/10/H-Series-H5H9-Video-Wall-Splicers-Specifications-V1.2.0.pdf'),
+  panelSeriH('H9', 5, 15, '2020/10/H-Series-H5H9-Video-Wall-Splicers-Specifications-V1.2.0.pdf'),
 ];
 
 export const panelUntuk = (nama: string | null | undefined): PanelController | null =>
@@ -185,9 +200,9 @@ export function svgPanelController(p: PanelController, judul: string, tandaLan: 
     for (const kon of k.isi) {
       const n = kon.jumlah ?? 1, w = LEBAR[kon.jenis];
       const lan = k.judul === 'Output' && (kon.jenis === 'rj45' || kon.jenis === 'rj45-neutrik');
-      const baris = lan ? barisLan(n) : 1, perBaris = Math.ceil(n / baris);
+      const baris = lan ? kon.baris ?? barisLan(n) : 1, perBaris = Math.ceil(n / baris);
       barisMaks = Math.max(barisMaks, baris);
-      const teks = lan && baris > 1 ? `${kon.label} 1–${n}` : `${kon.label}${n > 1 && !lan ? ` ×${n}` : ''}`;
+      const teks = lan && baris > 1 ? `${kon.label} ${nomorLan + 1}–${nomorLan + n}` : `${kon.label}${n > 1 && !lan ? ` ×${n}` : ''}`;
       const lebarKon = Math.max(perBaris * (w + JARAK) - JARAK, 0);
       const lebarBlok = Math.max(lebarKon, teks.length * 4.9 + 4);
       const ax = x + (lebarBlok - lebarKon) / 2;
@@ -214,7 +229,7 @@ export function svgPanelController(p: PanelController, judul: string, tandaLan: 
     kisi.push(...isi);
     x += 12;
   }
-  const tinggiPanel = Math.max(p.rak === '2U' ? 110 : 84, 34 + barisMaks * BARIS + 6);
+  const tinggiPanel = Math.max(p.rak.startsWith('1U') ? 84 : 110, 34 + barisMaks * BARIS + 6);
   const W = Math.max(x + 8, 360), H = ATAS + tinggiPanel + (p.catatan ? 26 : 12);
   const kaki = [p.merek, p.rak, p.sumber ? 'skema dari spesifikasi resmi' : ''].filter(Boolean).join(' · ');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
