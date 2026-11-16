@@ -7,6 +7,7 @@ const BOLEH = new Set([
   'checklist -> project-progress',
   'analytics-dashboard -> kpi-team',
   'dashboard -> analytics-dashboard',
+  'project-progress -> ticketing',
 ]);
 
 const modul = p => {
