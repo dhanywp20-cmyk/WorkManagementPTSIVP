@@ -28,6 +28,7 @@ import { PopupGeser } from './sld/PopupGeser';
 import { type Alat, useKeadaanSLD } from './sld/useKeadaanSLD';
 import { useKatalogTim } from './sld/useKatalogTim';
 import { DialogObjekTim } from './sld/KatalogTim';
+import { useLayarPenuhAlat } from './bersama/layarPenuh';
 
 const KUNCI_RINCI = 'tools-team-sld-rinci';
 const KUNCI_TAMPILAN = 'tools-team-sld-tampilan';
@@ -168,21 +169,10 @@ export function SLD() {
     const id = sp.get('sld');
     if (id && /^[0-9a-f-]{36}$/i.test(id)) void simpan.buka(id, Number(sp.get('versi')) || undefined);
   }, [a.siap, simpan]);
-  const [penuh, setPenuh] = useState(false);
+  const [penuh, aturPenuh] = useLayarPenuhAlat();
   const [kiri, setKiri] = useState(false);
   const [panelBuka, setPanelBuka] = useState(false);
   const [ditutupUntuk, setDitutupUntuk] = useState<string | null>(null);
-  const layarRef = useRef(false);
-  useEffect(() => {
-    const ubah = () => { if (!document.fullscreenElement && layarRef.current) { layarRef.current = false; setPenuh(false); } };
-    document.addEventListener('fullscreenchange', ubah);
-    return () => document.removeEventListener('fullscreenchange', ubah);
-  }, []);
-  const aturPenuh = (v: boolean) => {
-    setPenuh(v);
-    if (v) document.documentElement.requestFullscreen?.().then(() => { layarRef.current = true; }).catch(() => {});
-    else if (document.fullscreenElement) { layarRef.current = false; void document.exitFullscreen().catch(() => {}); }
-  };
 
   if (!a.siap) return <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat SLD...</div>;
 
@@ -246,7 +236,7 @@ export function SLD() {
             <TombolIkon ikon={ZoomIn} label="Perbesar" onClick={() => setZoom(z => Math.min(4, z + 0.25))} disabled={!kanvas || zoom >= 4} />
             <Pemisah />
             <TombolIkon ikon={PanelRight} label="Panel properti" aktif={kanan} onClick={() => { setSheet(1); if (kanan) tutupKanan(); else setPanelBuka(true); }} />
-            <TombolIkon ikon={penuh ? Minimize : Expand} label={penuh ? 'Keluar layar penuh' : 'Layar penuh'} aktif={penuh} onClick={() => aturPenuh(!penuh)} />
+            <TombolIkon ikon={penuh ? Minimize : Expand} label={penuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aktif={penuh} onClick={() => aturPenuh(!penuh)} />
             <Menu label="Pengaturan lembar & logo" ikon={Settings2} kanan lebar="w-72">
               <JudulMenu>Kertas Sheet 1</JudulMenu>
               <div className="px-2.5 pb-1.5">

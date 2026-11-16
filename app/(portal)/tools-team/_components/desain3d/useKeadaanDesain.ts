@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
 import { analisisDari, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, golonganDipakai, jalurKabel, type OpsiKelas, type Titik, type Ruang, ruangDari, tinggiAlasDi, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
+import { useLayarPenuhAlat } from '../bersama/layarPenuh';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth/sesi';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av/hitung';
@@ -42,7 +43,7 @@ export function useKeadaanDesain() {
   const [ruang, setRuang] = useState<Ruang>(() => (isiAwal ? { ...RUANG_AWAL, ...isiAwal.ruang } : RUANG_AWAL));
   const [benda, setBenda] = useState<Benda[]>(() => (isiAwal ? isiAwal.benda : contohAwal(RUANG_AWAL)));
   const { pilih, setPilih, pilihLain, setPilihLain, modeBanyak, setModeBanyak, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, setPilihan } = usePilihanBenda();
-  const [layarPenuh, setLayarPenuh] = useState(false);
+  const [layarPenuh, setLayarPenuh] = useLayarPenuhAlat();
   const [panel, setPanel] = useState(false);
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
   const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | null>(null);

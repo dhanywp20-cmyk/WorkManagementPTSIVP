@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 export function useLayarPenuh() {
   const [penuh, setPenuh] = useState(false);
@@ -22,4 +22,12 @@ export function useLayarPenuh() {
     return () => { window.removeEventListener('keydown', tekan); document.body.style.overflow = ''; };
   }, [penuh, atur]);
   return [penuh, atur] as const;
+}
+
+export const KonteksLayarPenuh = createContext<{ penuh: boolean; atur: (v: boolean) => void } | null>(null);
+
+export function useLayarPenuhAlat() {
+  const k = useContext(KonteksLayarPenuh);
+  const lokal = useLayarPenuh();
+  return k ? ([k.penuh, k.atur] as const) : lokal;
 }

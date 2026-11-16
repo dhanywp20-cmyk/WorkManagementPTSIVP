@@ -9,7 +9,7 @@ import type { SubLED } from './_components/KalkulatorLED';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
 import { PenjagaAlat } from './_components/bersama/PenjagaAlat';
-import { useLayarPenuh } from './_components/bersama/layarPenuh';
+import { KonteksLayarPenuh, useLayarPenuh } from './_components/bersama/layarPenuh';
 import { Expand, Minimize } from 'lucide-react';
 
 const Memuat = () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat...</div>;
@@ -79,12 +79,10 @@ function ToolsKerjaInner() {
             </button>
           );
         })}
-        {!PUNYA_LAYAR.has(aktif) && (
-          <button type="button" onClick={() => aturPenuh(true)} title="Layar penuh (Esc untuk keluar)" aria-label="Layar penuh"
-            className="grid place-items-center w-9 h-9 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all hover:scale-105">
-            <Expand size={16} aria-hidden="true" />
-          </button>
-        )}
+        <button type="button" onClick={() => aturPenuh(true)} title="Layar penuh (Esc untuk keluar)" aria-label="Layar penuh"
+          className="grid place-items-center w-9 h-9 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all hover:scale-105">
+          <Expand size={16} aria-hidden="true" />
+        </button>
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
@@ -103,7 +101,9 @@ function ToolsKerjaInner() {
                     </button>
                   </div>
                 )}
+                <KonteksLayarPenuh.Provider value={{ penuh: penuh && a.k === aktif, atur: aturPenuh }}>
                 <PenjagaAlat nama={a.judul}>{a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}</PenjagaAlat>
+              </KonteksLayarPenuh.Provider>
               </section>
             );
           })}
