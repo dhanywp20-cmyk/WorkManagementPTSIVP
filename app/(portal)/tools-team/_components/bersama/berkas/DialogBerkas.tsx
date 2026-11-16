@@ -57,7 +57,7 @@ function IsiDialog({ b, mode }: { b: Berkas; mode: 'buka' | 'sebagai' }) {
 
   return (
     <>
-      <Modal buka onTutup={tutup} ukuran="md" tutupDiLuar={mode === 'buka'}
+      <Modal buka onTutup={tutup} ukuran="penuh" tutupDiLuar={mode === 'buka'}
         judul={mode === 'buka' ? `Buka ${adapter.jenis}` : `Simpan ${adapter.jenis} sebagai`}
         ikon={mode === 'buka' ? <FolderOpen size={18} /> : <SaveAll size={18} />}
         keterangan={mode === 'buka' ? 'Berkas tersimpan di server tim. Berkas milik orang lain bisa dibuka; menyimpannya membuat salinan Anda.'
@@ -69,7 +69,7 @@ function IsiDialog({ b, mode }: { b: Berkas; mode: 'buka' | 'sebagai' }) {
           </>
         ) : undefined}>
         {mode === 'sebagai' && (
-          <label className="block mb-3">
+          <label className="block mb-3 max-w-xl">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nama berkas</span>
             <input value={nama} onChange={e => ubahNama(e.target.value)} autoFocus onKeyDown={e => { if (e.key === 'Enter') kirim(); }}
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
@@ -86,22 +86,25 @@ function IsiDialog({ b, mode }: { b: Berkas; mode: 'buka' | 'sebagai' }) {
         {daftar === null ? <p className="text-sm text-slate-500">Memuat…</p> : daftar.length === 0 ? (
           <p className="text-sm text-slate-500">{q ? 'Tidak ada yang cocok.' : 'Belum ada berkas tersimpan.'}</p>
         ) : (
-          <ul className="divide-y divide-slate-100 max-h-[50vh] overflow-y-auto">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[60vh] overflow-y-auto p-0.5">
             {daftar.map(d => {
               const dipilih = target?.id === d.id, bisa = mode === 'buka' || d.bolehUbah;
+              const kelas = dipilih ? 'border-rose-300 bg-rose-50' : aktif?.id === d.id ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50';
               return (
-                <li key={d.id} className={`flex items-center justify-between gap-2 py-2 px-1 rounded-lg ${dipilih ? 'bg-rose-50' : ''}`}>
+                <li key={d.id} className={`flex items-start gap-1 rounded-xl border p-2.5 ${kelas}`}>
                   <button type="button" disabled={b.sibuk || !bisa} title={bisa ? '' : `Milik ${d.oleh || 'anggota lain'} - tidak bisa diganti`}
                     onClick={() => (mode === 'buka' ? void b.buka(d.id) : (setTarget(dipilih ? null : d), setNama(dipilih ? nama : d.nama)))}
                     className="min-w-0 flex-1 text-left disabled:opacity-50">
-                    <span className="flex items-center gap-1 text-[13px] font-bold text-blue-700 truncate">
-                      {mode === 'sebagai' && d.bolehUbah && <Replace size={13} className={dipilih ? 'text-rose-600' : 'text-slate-400'} aria-hidden="true" />}
-                      <span className="truncate hover:underline">{d.nama}</span>
-                      {aktif?.id === d.id && <span className="shrink-0 text-[11px] text-emerald-700">· terbuka</span>}
-                      {dipilih && <span className="shrink-0 text-[11px] text-rose-700">· akan diganti</span>}
+                    <span className="flex items-start gap-1 text-[13px] font-bold text-blue-700">
+                      {mode === 'sebagai' && d.bolehUbah && <Replace size={13} className={`mt-0.5 shrink-0 ${dipilih ? 'text-rose-600' : 'text-slate-400'}`} aria-hidden="true" />}
+                      <span className="line-clamp-2 break-words hover:underline">{d.nama}</span>
                     </span>
+                    {(aktif?.id === d.id || dipilih) && (
+                      <span className={`block text-[11px] font-bold ${dipilih ? 'text-rose-700' : 'text-emerald-700'}`}>{dipilih ? 'akan diganti' : 'sedang terbuka'}</span>
+                    )}
                     {d.ket && <span className="block text-[11.5px] text-slate-600 truncate">{d.ket}</span>}
-                    <span className="block text-[11px] text-slate-500 truncate">{d.oleh || '—'} · {tgl(d.pada)}</span>
+                    <span className="mt-1 block text-[11px] text-slate-500 truncate">{d.oleh || '—'}</span>
+                    <span className="block text-[11px] text-slate-500">{tgl(d.pada)}</span>
                   </button>
                   {mode === 'buka' && d.bolehUbah && !b.hanyaLihat && (
                     <button type="button" aria-label={`Hapus ${d.nama}`} title="Hapus berkas" onClick={() => hapus(d)}

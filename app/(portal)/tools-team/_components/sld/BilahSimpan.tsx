@@ -135,7 +135,7 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
         )}
       </div>
 
-      <Modal buka={dialog === 'sebagai'} onTutup={() => setDialog(null)} judul="Simpan SLD sebagai" ikon={<SaveAll size={18} />}
+      <Modal buka={dialog === 'sebagai'} onTutup={() => setDialog(null)} judul="Simpan SLD sebagai" ikon={<SaveAll size={18} />} ukuran="penuh"
         keterangan="Disimpan di server tim (teks, posisi, kabel). Foto unggahan Anda tetap hanya di browser ini; foto produk bawaan ikut."
         footer={(
           <div className="flex justify-end gap-2 w-full">
@@ -145,20 +145,20 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
           </div>
         )}>
         <div className="space-y-3">
-          <label className="block">
+          <label className="block max-w-xl">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nama SLD</span>
             <input value={nama} onChange={e => { setNama(e.target.value.slice(0, 120)); if (ganti) setGanti(null); }} className={kelasKecil} autoFocus />
           </label>
           <div>
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Atau ganti SLD Anda yang ada</span>
-            <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
-              {s.sibuk === 'daftar' && <p className="p-2.5 text-[12.5px] text-slate-500">Memuat...</p>}
-              {s.sibuk !== 'daftar' && !s.daftar?.some(x => x.bolehUbah) && <p className="p-2.5 text-[12.5px] text-slate-500">Belum ada SLD milik Anda di server tim.</p>}
+            <div className="max-h-[45vh] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 p-0.5">
+              {s.sibuk === 'daftar' && <p className="col-span-full p-2.5 text-[12.5px] text-slate-500">Memuat...</p>}
+              {s.sibuk !== 'daftar' && !s.daftar?.some(x => x.bolehUbah) && <p className="col-span-full p-2.5 text-[12.5px] text-slate-500">Belum ada SLD milik Anda di server tim.</p>}
               {s.daftar?.filter(x => x.bolehUbah).map(x => {
                 const dipilih = ganti?.id === x.id;
                 return (
                   <button key={x.id} type="button" onClick={() => { setGanti(dipilih ? null : x); if (!dipilih) setNama(x.nama); }}
-                    className={`w-full flex items-center gap-2 px-2.5 py-2 text-left ${dipilih ? 'bg-rose-50' : 'hover:bg-slate-50'}`}>
+                    className={`w-full flex items-center gap-2 rounded-xl border px-2.5 py-2 text-left ${dipilih ? 'border-rose-300 bg-rose-50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
                     <Replace size={13} className={dipilih ? 'text-rose-600' : 'text-slate-400'} aria-hidden="true" />
                     <span className="flex-1 min-w-0 truncate text-[13px] font-semibold text-slate-800">{x.nama} <span className="text-[11px] font-bold text-blue-700">v{x.versi}</span></span>
                     {s.aktif?.id === x.id && <span className="text-[11px] text-emerald-700">terbuka</span>}

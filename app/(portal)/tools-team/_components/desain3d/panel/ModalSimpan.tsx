@@ -10,7 +10,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
   const { bukaTim, hapusTim, simpanKeLaptop, simpanServer, tulisSimpanan, unggahLokal } = a.simpan;
   return (
     <>
-      <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
+      <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="penuh" ikon={<Ikon nama="💾" ukuran={18} />}
         keterangan="Ctrl+S menyimpan perubahan, Ctrl+Shift+S membuka jendela ini, Ganti menimpa desain Anda yang lain. Ke server: bisa dibuka seluruh tim; gambar layar unggahan ikut (dikompres, maks 6). Ke laptop: semuanya ikut termasuk model .glb impor, tanpa storage server.">
         {benda.some(b => b.jenis === 'model') && (
           <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
@@ -18,7 +18,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
           </p>
         )}
         <button type="button" onClick={() => { simpanKeLaptop(); }}
-          className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
+          className="w-full sm:w-auto mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
           <HardDriveDownload size={20} className="text-emerald-700 shrink-0" />
           <span className="min-w-0">
             <span className="block text-[13px] font-bold text-emerald-900">Simpan ke laptop (.glb)</span>
@@ -26,7 +26,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
           </span>
         </button>
         <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Simpan ke server (tim)</p>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap max-w-3xl">
           <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} placeholder="Nama desain" aria-label="Nama desain"
             className="flex-1 min-w-[160px] rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
           <button type="button" disabled={sibukSimpan} onClick={() => void simpanServer(false)}
@@ -51,12 +51,12 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
         ) : daftarTim.length === 0 ? (
           <p className="mt-2 text-[12.5px] text-slate-500">Belum ada desain tersimpan di server.</p>
         ) : (
-          <ul className="mt-1 divide-y divide-slate-100">
+          <ul className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[50vh] overflow-y-auto p-0.5">
             {daftarTim.map(d => (
-              <li key={d.id} className="flex items-center justify-between gap-2 py-2 text-[13px]">
+              <li key={d.id} className={`flex items-start justify-between gap-1 rounded-xl border p-2.5 text-[13px] ${desainAktif?.id === d.id ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
                 <span className="min-w-0">
                   <button type="button" disabled={sibukSimpan} onClick={() => void bukaTim(d.id)}
-                    className="block text-blue-700 font-semibold hover:underline truncate text-left max-w-full">
+                    className="block text-blue-700 font-semibold hover:underline line-clamp-2 break-words text-left max-w-full">
                     {d.nama}{desainAktif?.id === d.id && <span className="ml-1.5 text-[11px] font-bold text-emerald-700">· terbuka</span>}
                   </button>
                   <span className="block text-[11.5px] text-slate-500 truncate">
@@ -83,9 +83,9 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
         {tersimpan.length > 0 && (
           <>
             <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Di perangkat ini (belum di server)</p>
-            <ul className="mt-1 divide-y divide-slate-100">
+            <ul className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[50vh] overflow-y-auto p-0.5">
               {tersimpan.map(t => (
-                <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
+                <li key={t.nama} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-2.5 text-[13px]">
                   <button type="button" onClick={() => { const rb = { ...RUANG_AWAL, ...t.ruang }; setRuang(rb); setBenda(t.benda); riwayat.mulaiBaru({ ruang: rb, benda: t.benda }); setNamaDesain(t.nama); setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'lokal', nama: t.nama }); setDasar(ambilKunci(rb, t.benda, t.nama)); setPilih(null); setModal(null); }}
                     className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
                   <span className="flex items-center gap-2 shrink-0 text-slate-600">

@@ -60,10 +60,10 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
   const tgl = (x: string) => new Date(x).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <Modal buka={buka} onTutup={onTutup} judul="Buka desain tersimpan" ukuran="lg" ikon={<Ikon nama="📁" ukuran={18} />}
+    <Modal buka={buka} onTutup={onTutup} judul="Buka desain tersimpan" ukuran="penuh" ikon={<Ikon nama="📁" ukuran={18} />}
       keterangan="Dari laptop, atau dari desain yang disimpan anggota tim di server (versi lama bisa dibuka dari riwayat).">
       <button type="button" onClick={onLaptop}
-        className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
+        className="w-full sm:w-auto mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
         <HardDriveUpload size={20} className="text-emerald-700 shrink-0" />
         <span className="min-w-0">
           <span className="block text-[13px] font-bold text-emerald-900">Buka dari laptop (.glb)</span>
@@ -72,12 +72,12 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
       </button>
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Desain tim di server</p>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama desain atau pembuat" aria-label="Cari desain"
-        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm mb-3" />
+        className="w-full max-w-xl rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm mb-3" />
       {galat && <p className="text-[12.5px] text-rose-700 mb-2">{galat}</p>}
       {daftar === null ? <p className="text-sm text-slate-500">Memuat...</p> : daftar.length === 0 ? (
         <p className="text-sm text-slate-500">{q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan. Simpan desain lewat tombol Simpan.'}</p>
       ) : (
-        <ul className="grid sm:grid-cols-2 gap-2">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 items-start max-h-[60vh] overflow-y-auto p-0.5">
           {daftar.map(d => (
             <li key={d.id} className={`rounded-xl border p-2 ${aktifId === d.id ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200'}`}>
               <div className="flex gap-2.5">
