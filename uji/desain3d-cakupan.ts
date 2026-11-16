@@ -57,10 +57,10 @@ for (const id of ['mapping-lengkung', 'mapping-cembung', 'simulator'] as const) 
 {
   const t = templateRuang('simulator'), proj = proyektorDi(t.benda), bidang = t.benda.find(b => b.jenis === 'bidang')!;
   const kokpit = t.benda.find(b => b.jenis === 'objek')!;
-  cek('simulator: layar cekung Ø 3 m (jari-jari 1,5 m), busur 225°', bidang.bentukBidang === 'lengkung' && bidang.jariBidang === 1.5 && bidang.busur === 225);
+  cek('simulator: layar cekung Ø 3 m (jari-jari 1,5 m), tinggi 3 m, busur 225°', bidang.bentukBidang === 'lengkung' && bidang.jariBidang === 1.5 && bidang.h === 3 && bidang.busur === 225);
   cek('simulator: kokpit 3 m, mata pilot (pusat lingkaran) di dalam kokpit', kokpit.d === 3 && Math.abs(kokpit.x - bidang.x) < 1e-9
     && Math.abs(bidang.z + 1.5 - bidang.d / 2 - kokpit.z) < kokpit.d / 2);
-  cek('simulator: 3 proyektor di atas kepala pilot (lensa >= 2 m)', proj.length === 3 && proj.every(p => p.elev >= 2));
+  cek('simulator: 6 proyektor (2 baris × 3) di atas kepala pilot (lensa >= 2 m)', proj.length === 6 && proj.every(p => p.elev >= 2));
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');
