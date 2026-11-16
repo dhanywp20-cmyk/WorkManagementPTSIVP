@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, galat } from '@/lib/checklist/server';
+import { NO_STORE, galat, tokenSah } from '@/lib/checklist/server';
 import { KOLOM_RIWAYAT, cariGrupShare, muatIsu, muatLokasi } from '@/lib/isu/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-/** Link hanya-lihat: tanpa catatan internal & token. `?riwayat=<isuId>` = jejak satu isu. */
 export async function GET(request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
-  const hasil = await cariGrupShare((token ?? '').trim());
+  const t = (token ?? '').trim();
+  if (!tokenSah(t)) return galat('Link tidak valid.', 404);
+  const hasil = await cariGrupShare(t);
   if (!hasil) return galat('Link tidak ditemukan atau sudah dinonaktifkan.', 404);
   const { db, grup } = hasil;
 

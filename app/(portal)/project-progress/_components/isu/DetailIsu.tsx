@@ -124,10 +124,8 @@ export function ModalDetailIsu({ isu, hak, muatRiwayat, versi, onTutup, onUpdate
         {(isu.foto_url || (hak.edit && onFoto)) && (
           <div className="flex items-end gap-3 flex-wrap">
             {isu.foto_url && (
-              <a href={isu.foto_url} target="_blank" rel="noopener noreferrer" className="block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={isu.foto_thumb_url ?? isu.foto_url} alt={`Foto isu #${isu.nomor}`} className="h-28 w-auto rounded-lg object-cover" style={{ border: `1px solid ${NETRAL.garis}` }} />
-              </a>
+              // eslint-disable-next-line @next/next/no-img-element
+              <a href={isu.foto_url} target="_blank" rel="noopener noreferrer" className="block"><img src={isu.foto_thumb_url ?? isu.foto_url} alt={`Foto isu #${isu.nomor}`} className="h-28 w-auto rounded-lg object-cover" style={{ border: `1px solid ${NETRAL.garis}` }} /></a>
             )}
             {hak.edit && onFoto && (
               <>

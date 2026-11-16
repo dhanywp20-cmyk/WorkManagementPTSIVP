@@ -1,4 +1,3 @@
-// Issue Log harian - tipe & hitungan yang dipakai bersama halaman internal dan link share.
 
 export type StatusIsu = 'open' | 'progress' | 'pending' | 'solved';
 export type PrioritasIsu = 'tinggi' | 'sedang' | 'rendah';
@@ -81,8 +80,6 @@ export interface HakIsu {
 }
 
 export const HAK_BACA: HakIsu = { edit: false, admin: false };
-
-/** Tanggal kalender WIB (YYYY-MM-DD) dari timestamp ISO. */
 export function tanggalWib(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
@@ -113,13 +110,9 @@ export function labelTanggalPendek(t: string): string {
   if (Number.isNaN(d.getTime())) return t;
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
-
-/** Tanggal isu dinyatakan Solved (WIB), atau null bila belum. */
 export function tanggalSelesai(i: Isu): string | null {
   return i.status === 'solved' && i.selesai_pada ? tanggalWib(i.selesai_pada) : null;
 }
-
-/** Masih terbuka di akhir hari `t`: sudah dilaporkan dan belum Solved hingga hari itu. */
 export function terbukaPada(i: Isu, t: string): boolean {
   if (i.tanggal > t) return false;
   const s = tanggalSelesai(i);
@@ -145,8 +138,6 @@ export interface RingkasanHarian {
   kota: BarisKota[];
   kotaTerdampak: number;
 }
-
-/** Peran isu di hari `t`: dilaporkan hari itu, diselesaikan hari itu, atau lanjutan dari hari sebelumnya. */
 export function peranPada(i: Isu, t: string): PeranHarian | null {
   if (tanggalSelesai(i) === t) return 'selesai';
   if (i.tanggal === t) return 'baru';
@@ -179,8 +170,6 @@ export function ringkasHarian(semua: Isu[], t: string): RingkasanHarian {
   const kota = [...peta.values()].sort((a, b) => b.terbuka - a.terbuka || b.baru - a.baru || a.lokasi.localeCompare(b.lokasi));
   return { tanggal: t, baru, selesai, terbuka, relevan, kota, kotaTerdampak: kota.filter(k => k.terbuka > 0).length };
 }
-
-/** Label status dilihat dari hari `t`: isu yang baru Solved setelah `t` diberi tanggal solved-nya. */
 export function labelStatusPada(i: Isu, t: string): string {
   const s = tanggalSelesai(i);
   if (s && s > t) return `Solved ${labelTanggalPendek(s)}`;
@@ -191,8 +180,6 @@ export function umurIsu(i: Isu, acuan: string): number {
   const akhir = tanggalSelesai(i) ?? acuan;
   return Math.max(0, selisihHari(i.tanggal, akhir));
 }
-
-/** Teks siap tempel ke WhatsApp. */
 export function teksRingkasan(namaGrup: string, r: RingkasanHarian): string {
   const baris: string[] = [
     `*Ringkasan Isu ${namaGrup}*`,

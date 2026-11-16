@@ -146,7 +146,7 @@ export default function ProjectProgressPage() {
       const url = new URL(window.location.href);
       if (k === 'isu') url.searchParams.set('tab', 'isu'); else url.searchParams.delete('tab');
       window.history.replaceState(null, '', url);
-    } catch { /* abaikan */ }
+    } catch {}
   };
 
   const saringKartu = (k: Saring) => () => setSaring(s => (s === k ? 'semua' : k));

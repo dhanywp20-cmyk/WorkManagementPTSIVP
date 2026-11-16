@@ -100,8 +100,6 @@ const LABEL_KOLOM: Partial<Record<keyof IsianIsu, string>> = {
   lokasi: 'lokasi', tanggal: 'tanggal', kategori: 'kategori', prioritas: 'prioritas', judul: 'judul', deskripsi: 'deskripsi',
   pelapor: 'pelapor', pic: 'PIC', solusi: 'solusi',
 };
-
-/** Validasi isian isu. `sebagian` = PATCH: hanya kolom yang dikirim yang diperiksa. */
 export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagian: boolean):
   { galat: string } | { isian: Partial<IsianIsu> } {
   const isian: Partial<IsianIsu> = {};
@@ -144,8 +142,6 @@ export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagi
   }
   return { isian };
 }
-
-/** Daftar kolom publik yang berubah, untuk dicatat di riwayat (catatan internal tidak disebut). */
 export function kolomBerubah(lama: Isu, baru: Partial<IsianIsu>): string[] {
   return (Object.keys(LABEL_KOLOM) as (keyof IsianIsu)[])
     .filter(k => k in baru && (baru[k] ?? '') !== ((lama as unknown as Record<string, unknown>)[k] ?? ''))

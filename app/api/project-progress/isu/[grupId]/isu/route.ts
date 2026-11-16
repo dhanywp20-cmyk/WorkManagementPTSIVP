@@ -18,11 +18,10 @@ export async function POST(request: NextRequest, ctx: { params: Promise<{ grupId
   const lokasi = await muatLokasi(s.db, grup.proyek_ids);
   const hasil = isianIsu(body, lokasi, false);
   if ('galat' in hasil) return galat(hasil.galat);
-  const isian = hasil.isian as IsianIsu; // sebagian=false: semua kolom terisi
+  const isian = hasil.isian as IsianIsu;
   if (isian.status === 'solved' && !isian.solusi) return galat('Isi solusi bila isu langsung ditandai Solved.');
   const selesai_pada = isian.status === 'solved' ? new Date().toISOString() : null;
 
-  // Nomor urut per grup; ulangi bila dua orang menyimpan bersamaan.
   for (let coba = 0; coba < 4; coba++) {
     const nomor = await nomorBerikut(s.db, grupId);
     const { data, error } = await s.db.from('isu_log').insert({

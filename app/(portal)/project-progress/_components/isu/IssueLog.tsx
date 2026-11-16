@@ -55,7 +55,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
       const r = await panggil<{ grup: IsuGrup[]; proyek: ProyekPilihan[]; hak: HakIsu }>('/api/project-progress/isu');
       setDaftarGrup(r.grup); setProyek(r.proyek); setHak(r.hak); setGalat('');
       let simpan: string | null = null;
-      try { simpan = localStorage.getItem(KUNCI_GRUP); } catch { /* abaikan */ }
+      try { simpan = localStorage.getItem(KUNCI_GRUP); } catch {}
       setGrupId(g => (g && r.grup.some(x => x.id === g) ? g : r.grup.find(x => x.id === simpan)?.id ?? r.grup[0]?.id ?? null));
       if (!r.grup.length) setMemuat(false);
     } catch (e) {
@@ -77,7 +77,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
   useEffect(() => { void muatGrupList(); }, [muatGrupList]);
   useEffect(() => {
     if (!grupId) return;
-    try { localStorage.setItem(KUNCI_GRUP, grupId); } catch { /* abaikan */ }
+    try { localStorage.setItem(KUNCI_GRUP, grupId); } catch {}
     void muatIsi(grupId);
   }, [grupId, muatIsi]);
 
