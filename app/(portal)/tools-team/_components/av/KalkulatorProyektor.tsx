@@ -1,4 +1,5 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Angka, Catatan, f, fTetap, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import {
   BATAS_B, bagianPanelRasio, type KatalogLain, type LensaLain, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, lensaPadaRasioLain, type ModelLain, type ModelTdc,
@@ -14,7 +15,6 @@ import { usePustaka } from '../pustaka/usePustaka';
 import { angkaDari, type EntriPustaka, teksDari } from '@/lib/pustaka';
 import { KONTRAS_ANSI, type KategoriKontras, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, type Pemasangan, rentangJarakLempar, rentangTinggiLensa, tinggiLensaTetap } from '@/lib/av/layar-proyektor';
 import { ukuranDariDiagonal } from '@/lib/av/hitung';
-import { useState } from 'react';
 
 const SUMBER = [
   { v: 'laser', l: 'Laser (susut ±20% sampai 20.000 jam)', susut: 20 },
@@ -31,30 +31,30 @@ const RASIO_DARI_RESOLUSI: Record<string, string> = { XGA: '4:3', FHD: '16:9', '
 const CATATAN = 'Kecerahan dari kategori kontras ANSI/INFOCOMM 3M-2011: kontras = (cahaya proyektor + cahaya ruang di layar) / cahaya ruang di layar - rumus kalkulator Panasonic. Gain layar tidak mengubah kontras (gambar & cahaya ruang sama-sama dipantulkan kain layar), hanya luminance (cd/m² = lux × gain / π). Lux = cahaya ruang yang JATUH DI LAYAR (ukur dengan lux meter menghadap ruangan), bukan di meja. Lumen spesifikasi sudah memperhitungkan susut cahaya sampai akhir umur sumber cahaya.';
 
 export function KalkulatorProyektor() {
-  const [modeUkuran, setModeUkuran] = useState<'diagonal' | 'lebar'>('diagonal');
-  const [diagonal, setDiagonal] = useState(120);
-  const [lebarIsi, setLebarIsi] = useState(3);
-  const [rasioK, setRasioK] = useState('16:10');
-  const [throwMin, setThrowMin] = useState(1.39);
-  const [throwMax, setThrowMax] = useState(2.09);
-  const [koreksi, setKoreksi] = useState(0);
-  const [koreksiTele, setKoreksiTele] = useState<number | null>(null);
-  const [offsetTetap, setOffsetTetap] = useState<number | null>(null);
-  const [kontrasAsli, setKontrasAsli] = useState(0);
-  const [lux, setLux] = useState(300);
-  const [gain, setGain] = useState(1);
-  const [kontras, setKontras] = useState<KategoriKontras>('dasar');
-  const [sumber, setSumber] = useState<(typeof SUMBER)[number]['v']>('laser');
-  const [bawah, setBawah] = useState(0.9);
-  const [shiftAtas, setShiftAtas] = useState(50);
-  const [shiftBawah, setShiftBawah] = useState(50);
-  const [shiftH, setShiftH] = useState(0);
-  const [pasang, setPasang] = useState<Pemasangan>('plafon');
-  const [resolusiModel, setResolusiModel] = useState<string | null>(null);
-  const [model, setModel] = useState<{ nama: string; lumen: number } | null>(null);
-  const [rasioPanel, setRasioPanel] = useState<RasioProyektor | null>(null);
-  const [panasonic, setPanasonic] = useState<{ m: ModelTdc; l: LensaTdc; versi: string } | null>(null);
-  const [lain, setLain] = useState<{ k: KatalogLain; m: ModelLain; l: LensaLain } | null>(null);
+  const [modeUkuran, setModeUkuran] = useIsi<'diagonal' | 'lebar'>('proyektor.modeUkuran', 'diagonal');
+  const [diagonal, setDiagonal] = useIsi('proyektor.diagonal', 120);
+  const [lebarIsi, setLebarIsi] = useIsi('proyektor.lebarIsi', 3);
+  const [rasioK, setRasioK] = useIsi('proyektor.rasioK', '16:10');
+  const [throwMin, setThrowMin] = useIsi('proyektor.throwMin', 1.39);
+  const [throwMax, setThrowMax] = useIsi('proyektor.throwMax', 2.09);
+  const [koreksi, setKoreksi] = useIsi('proyektor.koreksi', 0);
+  const [koreksiTele, setKoreksiTele] = useIsi<number | null>('proyektor.koreksiTele', null);
+  const [offsetTetap, setOffsetTetap] = useIsi<number | null>('proyektor.offsetTetap', null);
+  const [kontrasAsli, setKontrasAsli] = useIsi('proyektor.kontrasAsli', 0);
+  const [lux, setLux] = useIsi('proyektor.lux', 300);
+  const [gain, setGain] = useIsi('proyektor.gain', 1);
+  const [kontras, setKontras] = useIsi<KategoriKontras>('proyektor.kontras', 'dasar');
+  const [sumber, setSumber] = useIsi<(typeof SUMBER)[number]['v']>('proyektor.sumber', 'laser');
+  const [bawah, setBawah] = useIsi('proyektor.bawah', 0.9);
+  const [shiftAtas, setShiftAtas] = useIsi('proyektor.shiftAtas', 50);
+  const [shiftBawah, setShiftBawah] = useIsi('proyektor.shiftBawah', 50);
+  const [shiftH, setShiftH] = useIsi('proyektor.shiftH', 0);
+  const [pasang, setPasang] = useIsi<Pemasangan>('proyektor.pasang', 'plafon');
+  const [resolusiModel, setResolusiModel] = useIsi<string | null>('proyektor.resolusiModel', null);
+  const [model, setModel] = useIsi<{ nama: string; lumen: number } | null>('proyektor.model', null);
+  const [rasioPanel, setRasioPanel] = useIsi<RasioProyektor | null>('proyektor.rasioPanel', null);
+  const [panasonic, setPanasonic] = useIsi<{ m: ModelTdc; l: LensaTdc; versi: string } | null>('proyektor.panasonic', null);
+  const [lain, setLain] = useIsi<{ k: KatalogLain; m: ModelLain; l: LensaLain } | null>('proyektor.lain', null);
   const pakaiRumus = (ujung: 'min' | 'maks', tr: number, b: number) => {
     setPanasonic(null); setLain(null);
     if (ujung === 'min') { setThrowMin(tr); setKoreksi(b); } else { setThrowMax(tr); setKoreksiTele(b); }
@@ -199,7 +199,6 @@ export function KalkulatorProyektor() {
           <RumusLensaPabrikan onPakai={pakaiRumus} />
         </div>
       </Kartu>
-
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <Kartu judul="Satu proyektor · ukuran & kecerahan">

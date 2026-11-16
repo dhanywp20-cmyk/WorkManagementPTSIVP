@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { FilePlus2, FolderOpen, History, Link2, Save, SaveAll, Search, Sparkles, Trash2 } from 'lucide-react';
+import { FilePlus2, FolderOpen, History, Link2, Replace, Save, SaveAll, Search, Sparkles, Trash2 } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Modal } from '@/components/shared/Modal';
 import { Centang, kelasKecil, kelasTombol } from './isian';
@@ -66,16 +66,19 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
   const [tautan, setTautan] = useState<{ req: RequestPilihan; ruang: number } | null>(null);
   const [cari, setCari] = useState('');
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
+  const [ganti, setGanti] = useState<SldTim | null>(null);
   const sRef = useRef(s); sRef.current = s;
+  const akar = useRef<HTMLDivElement>(null);
 
   const bukaSebagai = () => {
     setNama(s.aktif ? `${s.aktif.nama} (salinan)` : [a.proyek.blok.proyek, a.proyek.blok.lokasi].filter(Boolean).join(' - ') || 'SLD baru');
-    setPakaiTautan(false); setTautan(null); setDialog('sebagai');
+    setPakaiTautan(false); setTautan(null); setGanti(null); setDialog('sebagai'); void s.muatDaftar();
   };
   const simpan = async () => { if (s.aktif?.bolehUbah) await s.simpan(); else bukaSebagai(); };
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 's') return;
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 's' || e.defaultPrevented) return;
+      if (!akar.current || akar.current.offsetParent === null || document.querySelector('[role="dialog"]')) return;
       e.preventDefault();
       if (e.shiftKey || !sRef.current.aktif?.bolehUbah) bukaSebagai(); else void sRef.current.simpan();
     };
@@ -83,8 +86,14 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
     return () => window.removeEventListener('keydown', tekan);
   });
 
-  const kirimSebagai = async () => {
-    const id = await s.simpanSebagai(nama);
+  const kirimSebagai = async (yakin = false) => {
+    if (ganti && !yakin) {
+      setKonfirmasi({ message: `Ganti SLD "${ganti.nama}"?`, confirmLabel: 'Ganti', danger: true,
+        description: `Isi SLD itu diganti dengan gambar yang sedang terbuka sebagai versi baru (v${ganti.versi + 1}); versi lamanya tetap ada di Riwayat versi.`,
+        onConfirm: () => { setKonfirmasi(null); void kirimSebagai(true); } });
+      return;
+    }
+    const id = await s.simpanSebagai(nama, ganti ?? undefined);
     if (!id) return;
     if (pakaiTautan && tautan) await s.tautkan(id, tautan.req.id, tautan.ruang, `${tautan.req.nama} · ${tautan.req.ruang[tautan.ruang]?.nama ?? ''}`);
     setDialog(null);
@@ -100,7 +109,7 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
 
   return (
     <>
-      <div className="flex items-center gap-0.5 min-w-0">
+      <div ref={akar} className="flex items-center gap-0.5 min-w-0">
         <Menu label="Menu file" teks="File" lebar="w-64">
           <ItemMenu ikon={FilePlus2} label="SLD baru" onClick={onBaru} />
           <ItemMenu ikon={FolderOpen} label="Buka SLD tim..." onClick={bukaDaftar} />
@@ -126,20 +135,39 @@ export function BilahSimpan({ a, s, onBaru, onContoh }: { a: KeadaanSLD; s: Kead
         )}
       </div>
 
-      <Modal buka={dialog === 'sebagai'} onTutup={() => setDialog(null)} judul="Simpan sebagai SLD baru" ikon={<SaveAll size={18} />}
+      <Modal buka={dialog === 'sebagai'} onTutup={() => setDialog(null)} judul="Simpan SLD sebagai" ikon={<SaveAll size={18} />}
         keterangan="Disimpan di server tim (teks, posisi, kabel). Foto unggahan Anda tetap hanya di browser ini; foto produk bawaan ikut."
         footer={(
           <div className="flex justify-end gap-2 w-full">
             <button type="button" className={kelasTombol} onClick={() => setDialog(null)}>Batal</button>
             <button type="button" className={`${kelasTombol} !bg-blue-700 !text-white !border-blue-700`} disabled={!nama.trim() || s.sibuk === 'simpan' || (pakaiTautan && !tautan)}
-              onClick={() => void kirimSebagai()}>{s.sibuk === 'simpan' ? 'Menyimpan...' : 'Simpan'}</button>
+              onClick={() => void kirimSebagai()}>{s.sibuk === 'simpan' ? 'Menyimpan...' : ganti ? `Ganti "${ganti.nama}"` : 'Simpan sebagai baru'}</button>
           </div>
         )}>
         <div className="space-y-3">
           <label className="block">
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Nama SLD</span>
-            <input value={nama} onChange={e => setNama(e.target.value.slice(0, 120))} className={kelasKecil} autoFocus />
+            <input value={nama} onChange={e => { setNama(e.target.value.slice(0, 120)); if (ganti) setGanti(null); }} className={kelasKecil} autoFocus />
           </label>
+          <div>
+            <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Atau ganti SLD Anda yang ada</span>
+            <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+              {s.sibuk === 'daftar' && <p className="p-2.5 text-[12.5px] text-slate-500">Memuat...</p>}
+              {s.sibuk !== 'daftar' && !s.daftar?.some(x => x.bolehUbah) && <p className="p-2.5 text-[12.5px] text-slate-500">Belum ada SLD milik Anda di server tim.</p>}
+              {s.daftar?.filter(x => x.bolehUbah).map(x => {
+                const dipilih = ganti?.id === x.id;
+                return (
+                  <button key={x.id} type="button" onClick={() => { setGanti(dipilih ? null : x); if (!dipilih) setNama(x.nama); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 text-left ${dipilih ? 'bg-rose-50' : 'hover:bg-slate-50'}`}>
+                    <Replace size={13} className={dipilih ? 'text-rose-600' : 'text-slate-400'} aria-hidden="true" />
+                    <span className="flex-1 min-w-0 truncate text-[13px] font-semibold text-slate-800">{x.nama} <span className="text-[11px] font-bold text-blue-700">v{x.versi}</span></span>
+                    {s.aktif?.id === x.id && <span className="text-[11px] text-emerald-700">terbuka</span>}
+                    {dipilih && <span className="text-[11px] text-rose-700">akan diganti</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <Centang label="Tautkan juga ke Request Design (opsional)" nilai={pakaiTautan} onUbah={setPakaiTautan} />
           {pakaiTautan && <PilihRequest nilai={tautan} onUbah={setTautan} />}
         </div>

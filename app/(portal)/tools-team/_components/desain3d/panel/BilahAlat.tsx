@@ -1,8 +1,9 @@
 'use client';
 import {
   BoxSelect, Eraser, FolderOpen, HardDriveDownload, HardDriveUpload, House, Keyboard, LayoutTemplate, ListTree, Maximize2, Minimize2, MousePointer2, Plus, Redo2,
-  Ruler, Save, Type, Undo2, X,
+  Ruler, Save, SaveAll, Type, Undo2, X,
 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { KATALOG } from '../inti';
 import { GarisMenu, ItemMenu, kelasIkon, Menu, Pemisah, Segmen, TombolIkon } from '../../bersama/MenuBilah';
 import { AksiTerpilih } from './AksiTerpilih';
@@ -38,22 +39,39 @@ function StatusUkur({ a, onSelesai }: { a: AlatDesain; onSelesai: () => void }) 
 export function BilahAlat({ a }: { a: AlatDesain }) {
   const { adaPerubahan, benda, bukaSisi, daftarKanvas, hanyaLihat, inputLaptop, layarPenuh, riwayat, setDaftarKanvas, setLayarPenuh, setModal, sisi, tampilan } = a.K;
   const alat = useAlatKanvas(a);
+  const akar = useRef<HTMLElement>(null);
+  const aRef = useRef(a);
+  useEffect(() => { aRef.current = a; });
+  useEffect(() => {
+    const tekan = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 's' || e.defaultPrevented) return;
+      if (!akar.current || akar.current.offsetParent === null || document.querySelector('[role="dialog"]')) return;
+      const x = aRef.current;
+      if (x.K.hanyaLihat) return;
+      e.preventDefault();
+      if (e.shiftKey) x.K.setModal('simpan'); else if (!x.K.sibukSimpan) void x.simpan.simpanCepat();
+    };
+    window.addEventListener('keydown', tekan);
+    return () => window.removeEventListener('keydown', tekan);
+  }, []);
   return (
-    <section aria-label="Toolbar Desain 3D" className="relative z-40 bg-white border-b border-slate-200 divide-y divide-slate-100">
+    <section ref={akar} aria-label="Toolbar Desain 3D" className="relative z-40 bg-white border-b border-slate-200 divide-y divide-slate-100">
       <div className="flex flex-wrap items-center gap-0.5 px-1.5 py-1">
         <Menu label="Menu file" teks="File" lebar="w-64">
           <ItemMenu ikon={FolderOpen} label="Buka desain..." onClick={() => setModal('buka')} />
           <ItemMenu ikon={HardDriveUpload} label="Buka dari laptop (.glb)" onClick={() => inputLaptop.current?.click()} />
           <GarisMenu />
-          {!hanyaLihat && <ItemMenu ikon={Save} label="Simpan & kelola desain..." onClick={() => setModal('simpan')} />}
+          {!hanyaLihat && <ItemMenu ikon={Save} label="Simpan" pintas="Ctrl+S" onClick={() => void a.simpan.simpanCepat()} />}
+          {!hanyaLihat && <ItemMenu ikon={SaveAll} label="Simpan sebagai / ganti..." pintas="Ctrl+Shift+S" onClick={() => setModal('simpan')} />}
           <ItemMenu ikon={HardDriveDownload} label="Simpan ke laptop (.glb)" onClick={() => void a.simpan.unduhGLB()} />
           <GarisMenu />
           <ItemMenu ikon={LayoutTemplate} label="Template kategori ruangan" onClick={() => bukaSisi('kategori')} />
         </Menu>
         {!hanyaLihat && (
-          <button type="button" onClick={() => setModal('simpan')} title={adaPerubahan ? 'Ada perubahan belum disimpan - simpan ke server tim' : 'Simpan ke server tim'}
+          <button type="button" onClick={() => void a.simpan.simpanCepat()} disabled={a.K.sibukSimpan}
+            title={`${a.K.desainAktif?.bolehUbah ? 'Simpan perubahan ke desain yang terbuka' : 'Simpan ke server tim'} (Ctrl+S)${adaPerubahan ? ' - ada perubahan belum disimpan' : ''}`}
             className={`${kelasIkon} ${adaPerubahan ? '!bg-amber-50 !text-amber-900' : ''}`}>
-            <Save size={16} /> Simpan
+            <Save size={16} /> {a.K.sibukSimpan ? 'Menyimpan...' : 'Simpan'}
             {adaPerubahan && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-label="belum disimpan" />}
           </button>
         )}

@@ -1,8 +1,9 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av/audio-jaringan';
-import { useState } from 'react';
+
 import { angkaDari, teksDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../pustaka/PilihPustaka';
 
@@ -18,7 +19,7 @@ const CATATAN = 'Watt = konsumsi maksimum perangkat dari datasheet. Batas daya d
   + 'Anggaran PoE switch memakai yang terbesar antara total + 20% dan reservasi daya per kelas port (15,4 / 30 / 60 / 90 W), karena switch memesan daya sesuai kelas.';
 
 export function KalkulatorPoE() {
-  const [daftar, setDaftar] = useState<PerangkatPoE[]>(AWAL);
+  const [daftar, setDaftar] = useIsi<PerangkatPoE[]>('poe.daftar', AWAL);
   const h = hitungPoE(daftar);
   const ubah = (i: number, x: Partial<PerangkatPoE>) => setDaftar(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const ringkas = () => [

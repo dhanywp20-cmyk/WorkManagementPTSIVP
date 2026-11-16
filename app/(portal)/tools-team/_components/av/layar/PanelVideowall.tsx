@@ -1,10 +1,10 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { PANEL_VIDEOWALL, type PanelVideowall as Panel, videowallUntuk } from '@/lib/av/layar-proyektor';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
-import { useState } from 'react';
 
 const CATATAN = 'Ukuran panel = area gambar 16:9 dari diagonalnya; celah bezel (bezel-to-bezel) ditambahkan di antara panel. Bezel tipis (≤ 1,8 mm) disarankan bila teks/spreadsheet melintasi sambungan. Daftar material & penawaran: menu Videowall & IFP.';
 
@@ -12,7 +12,7 @@ export function PanelVideowall({ lebarM, tinggiM }: { lebarM: number; tinggiM: n
   const { entri } = usePustaka('display');
   const dariPustaka: Panel[] = entri.filter(e => angkaDari(e, 'bezel') > 0).map(e => ({ nama: e.nama, diagonalInci: angkaDari(e, 'diagonal'), bezelMm: angkaDari(e, 'bezel') }));
   const daftar = dariPustaka.length ? dariPustaka : PANEL_VIDEOWALL;
-  const [i, setI] = useState(2);
+  const [i, setI] = useIsi('vw.i', 2);
   const panel = daftar[Math.min(i, daftar.length - 1)];
   const vw = videowallUntuk(lebarM, tinggiM, panel);
   const ringkas = () => `Videowall ${panel.nama}: ${vw.kolom} × ${vw.baris} (${vw.jumlah} panel), ${f(vw.lebarM)} × ${f(vw.tinggiM)} m (±${f(vw.diagonalInci, 0)}"), resolusi gabungan ${vw.resX} × ${vw.resY}.`;

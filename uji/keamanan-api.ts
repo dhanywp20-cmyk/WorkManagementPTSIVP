@@ -44,7 +44,7 @@ cek('lampiran Request Design: muatRequest memeriksa sesi lalu membaca request se
   const l = readFileSync('lib/request-desain/lampiran-server.ts', 'utf8');
   return l.includes('pastikanMasuk(req)') && l.includes("klienSebagaiUser(user).from('project_requests')");
 })());
-for (const r of ['desain', 'led', 'sld', 'sld/katalog', 'objek-saya', 'produk', 'referensi-led', 'template-kategori']) {
+for (const r of ['desain', 'led', 'sld', 'sld/katalog', 'objek-saya', 'produk', 'referensi-led', 'template-kategori', 'file']) {
   const isi = readFileSync(`app/api/tools-team/${r}/route.ts`, 'utf8');
   cek(`tools-team/${r}: wajib izin menu tools-team`, isi.includes("pastikanMenu(req, 'tools-team')") && !isi.includes('pastikanMasuk('));
 }

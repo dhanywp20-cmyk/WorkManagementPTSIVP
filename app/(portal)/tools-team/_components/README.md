@@ -32,7 +32,7 @@ led/
                       RuangKoneksi.tsx + PanelCara, PanelUkuranRC, PanelPort, KanvasKoneksi, TabelPort
   daya/               Power Connection: data.ts (murni), svg.ts, teks.ts, RuangDaya.tsx
   referensi/          referensi produk LED: useReferensiLED, EditorReferensiLED, TabelHardware
-  FileLED.tsx         buka / simpan hitungan ke server tim
+  adapterLED.ts       simpan / buka hitungan LED lewat bilah Berkas bersama
 ```
 
 ## sld/ — Single Line Diagram

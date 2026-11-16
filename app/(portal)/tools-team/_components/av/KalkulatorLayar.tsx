@@ -1,8 +1,9 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import { aksiLembar, type Baris, lembarAV } from './lembar';
 import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av/hitung';
-import { useState } from 'react';
+
 import { PanelPasang } from './layar/PanelPasang';
 import { PanelVideowall } from './layar/PanelVideowall';
 
@@ -18,11 +19,11 @@ export const RASIO: { v: string; l: string; w: number; h: number }[] = [
 ];
 
 export function KalkulatorLayar() {
-  const [mode, setMode] = useState<'dariJarak' | 'dariLayar'>('dariJarak');
-  const [jarak, setJarak] = useState(8);
-  const [diag, setDiag] = useState(86);
-  const [jenis, setJenis] = useState<JenisPandang>('umum');
-  const [rasioK, setRasioK] = useState('16:9');
+  const [mode, setMode] = useIsi<'dariJarak' | 'dariLayar'>('layar.mode', 'dariJarak');
+  const [jarak, setJarak] = useIsi('layar.jarak', 8);
+  const [diag, setDiag] = useIsi('layar.diag', 86);
+  const [jenis, setJenis] = useIsi<JenisPandang>('layar.jenis', 'umum');
+  const [rasioK, setRasioK] = useIsi('layar.rasioK', '16:9');
   const r = RASIO.find(x => x.v === rasioK)!;
   const dariJarak = layarDariJarak(jarak, jenis, r.w, r.h);
   const ukuran = ukuranDariDiagonal(diag, r.w, r.h);

@@ -1,8 +1,9 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { type RencanaBlending, rencanaBlending, saranSusunanBlending, teksRasio } from '@/lib/av/layar-proyektor';
-import { useState } from 'react';
+
 
 const RESOLUSI = [
   { v: 'wuxga', l: 'WUXGA 1920 × 1200', x: 1920, y: 1200 },
@@ -30,23 +31,20 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
   lensa: { trMin: number; trMaks: number; bWide: number; bTele: number };
   resolusiModel?: string | null;
 }) {
-  const [mode, setMode] = useState<'proyektor' | 'target'>('proyektor');
-  const [kolom, setKolom] = useState(2);
-  const [baris, setBaris] = useState(1);
-  const [lebarSatu, setLebarSatu] = useState(() => bulat(lebarSatuAwal, 3));
-  const [target, setTarget] = useState({ l: 8, t: 2.5 });
-  const [overlapH, setOverlapH] = useState(15);
-  const [overlapV, setOverlapV] = useState(15);
-  const [satuanOverlap, setSatuanOverlap] = useState<'persen' | 'cm'>('persen');
-  const [resK, setResK] = useState(() => (resolusiModel && DARI_PUSTAKA[resolusiModel]) || 'wuxga');
-  const [custom, setCustom] = useState({ x: 1920, y: 1200 });
-  const [resModelLalu, setResModelLalu] = useState(resolusiModel);
-  if (resolusiModel !== resModelLalu) {
-    setResModelLalu(resolusiModel);
-    const v = resolusiModel ? DARI_PUSTAKA[resolusiModel] : undefined;
-    if (v) setResK(v);
-  }
-  const preset = RESOLUSI.find(x => x.v === resK)!;
+  const [mode, setMode] = useIsi<'proyektor' | 'target'>('blending.mode', 'proyektor');
+  const [kolom, setKolom] = useIsi('blending.kolom', 2);
+  const [baris, setBaris] = useIsi('blending.baris', 1);
+  const [lebarSatu, setLebarSatu] = useIsi('blending.lebarSatu', () => bulat(lebarSatuAwal, 3));
+  const [target, setTarget] = useIsi('blending.target', { l: 8, t: 2.5 });
+  const [overlapH, setOverlapH] = useIsi('blending.overlapH', 15);
+  const [overlapV, setOverlapV] = useIsi('blending.overlapV', 15);
+  const [satuanOverlap, setSatuanOverlap] = useIsi<'persen' | 'cm'>('blending.satuanOverlap', 'persen');
+  const [resPilih, setResPilih] = useIsi<{ k: string; model: string | null } | null>('blending.resPilih', null);
+  const [custom, setCustom] = useIsi('blending.custom', { x: 1920, y: 1200 });
+  const dariModel = resolusiModel ? DARI_PUSTAKA[resolusiModel] : undefined;
+  const resK = resPilih && (resPilih.model === (resolusiModel ?? null) || !dariModel) ? resPilih.k : dariModel || 'wuxga';
+  const setResK = (k: string) => setResPilih({ k, model: resolusiModel ?? null });
+  const preset = RESOLUSI.find(x => x.v === resK) ?? RESOLUSI.find(x => x.v === 'wuxga')!;
   const res = resK === 'custom' ? custom : preset;
   const namaRes = resK === 'custom' ? `Custom ${px(custom.x, custom.y)}` : preset.l;
   const dalamCm = satuanOverlap === 'cm';

@@ -1,22 +1,22 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { speakerPlafon, splMaks, splPadaJarak } from '@/lib/av/hitung';
 import { dayaUntukSPL } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../../pustaka/PilihPustaka';
-import { useState } from 'react';
 
 export function AudioSpeaker() {
-  const [mode, setMode] = useState<'plafon' | 'spl'>('plafon');
-  const [p, setP] = useState(10); const [l, setL] = useState(8); const [t, setT] = useState(3);
-  const [telinga, setTelinga] = useState(1.2); const [sudut, setSudut] = useState(90);
-  const [rapat, setRapat] = useState<'rapat' | 'standar'>('rapat');
-  const [sens, setSens] = useState(90); const [daya, setDaya] = useState(60); const [jarak, setJarak] = useState(10);
+  const [mode, setMode] = useIsi<'plafon' | 'spl'>('speaker.mode', 'plafon');
+  const [p, setP] = useIsi('speaker.p', 10); const [l, setL] = useIsi('speaker.l', 8); const [t, setT] = useIsi('speaker.t', 3);
+  const [telinga, setTelinga] = useIsi('speaker.telinga', 1.2); const [sudut, setSudut] = useIsi('speaker.sudut', 90);
+  const [rapat, setRapat] = useIsi<'rapat' | 'standar'>('speaker.rapat', 'rapat');
+  const [sens, setSens] = useIsi('speaker.sens', 90); const [daya, setDaya] = useIsi('speaker.daya', 60); const [jarak, setJarak] = useIsi('speaker.jarak', 10);
   const sp = speakerPlafon(p, l, t, telinga, sudut, rapat === 'rapat');
   const maks = splMaks(sens, daya);
   const diJarak = splPadaJarak(maks, jarak);
-  const [target, setTarget] = useState(75); const [headroom, setHeadroom] = useState(10);
+  const [target, setTarget] = useIsi('speaker.target', 75); const [headroom, setHeadroom] = useIsi('speaker.headroom', 10);
   const dayaPerlu = dayaUntukSPL(target, sens, jarak, headroom);
   const ringkas = () => mode === 'plafon'
     ? `Ruang ${p}×${l} m, plafon ${t} m, speaker ${sudut}°: diameter cakupan ${f(sp.diameterM)} m, jarak antar speaker ±${f(sp.jarakM)} m, butuh ${sp.jumlah} speaker (${sp.kolom}×${sp.baris}).`

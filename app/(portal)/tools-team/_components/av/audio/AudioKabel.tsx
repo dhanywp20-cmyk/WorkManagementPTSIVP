@@ -1,8 +1,8 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { impedansiSpeaker, rugiKabel, saranKabel, type Susunan, UKURAN_KABEL_MM2 } from '@/lib/av/audio-jaringan';
-import { useState } from 'react';
 
 const SUSUNAN: { v: Susunan; l: string }[] = [
   { v: 'paralel', l: 'Paralel' }, { v: 'seri', l: 'Seri' }, { v: 'seri-paralel', l: 'Seri-paralel' },
@@ -10,13 +10,13 @@ const SUSUNAN: { v: Susunan; l: string }[] = [
 const CATATAN = 'Impedansi beban tidak boleh di bawah impedansi minimum amplifier per kanal (umumnya 4 Ω, beberapa 2 Ω). Rugi kabel dihitung pergi-pulang dengan tembaga 0,0175 Ω·mm²/m; batas umum 0,5 dB (±11% daya) supaya damping factor & bass tetap terjaga.';
 
 export function AudioKabel() {
-  const [jumlah, setJumlah] = useState(4);
-  const [ohm, setOhm] = useState(8);
-  const [susunan, setSusunan] = useState<Susunan>('paralel');
-  const [perCabang, setPerCabang] = useState(2);
-  const [minAmp, setMinAmp] = useState(4);
-  const [panjang, setPanjang] = useState(25);
-  const [luas, setLuas] = useState(1.5);
+  const [jumlah, setJumlah] = useIsi('kabel.jumlah', 4);
+  const [ohm, setOhm] = useIsi('kabel.ohm', 8);
+  const [susunan, setSusunan] = useIsi<Susunan>('kabel.susunan', 'paralel');
+  const [perCabang, setPerCabang] = useIsi('kabel.perCabang', 2);
+  const [minAmp, setMinAmp] = useIsi('kabel.minAmp', 4);
+  const [panjang, setPanjang] = useIsi('kabel.panjang', 25);
+  const [luas, setLuas] = useIsi('kabel.luas', 1.5);
   const z = impedansiSpeaker(jumlah, ohm, susunan, perCabang);
   const k = rugiKabel(panjang, luas, z);
   const saran = saranKabel(panjang, z);

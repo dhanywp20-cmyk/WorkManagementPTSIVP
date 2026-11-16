@@ -1,10 +1,10 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Segmen } from '../bersama/ui';
 import { AudioAkustik } from './audio/AudioAkustik';
 import { AudioKabel } from './audio/AudioKabel';
 import { AudioLine } from './audio/AudioLine';
 import { AudioSpeaker } from './audio/AudioSpeaker';
-import { useState } from 'react';
 
 const BAGIAN = [
   { v: 'speaker', l: 'Speaker & SPL', C: AudioSpeaker },
@@ -15,7 +15,7 @@ const BAGIAN = [
 type KodeBagian = (typeof BAGIAN)[number]['v'];
 
 export function KalkulatorAudio() {
-  const [bagian, setBagian] = useState<KodeBagian>('speaker');
+  const [bagian, setBagian] = useIsi<KodeBagian>('audio.bagian', 'speaker');
   const C = BAGIAN.find(b => b.v === bagian)!.C;
   return (
     <div className="space-y-3">

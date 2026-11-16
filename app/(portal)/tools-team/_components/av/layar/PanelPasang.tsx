@@ -1,16 +1,16 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { cekResolusi, jarakTerdekatNyamanM, sudutKeAtasDerajat } from '@/lib/av/layar-proyektor';
-import { useState } from 'react';
 
 const CATATAN = 'Tepi bawah gambar ±1,0-1,2 m supaya terlihat melewati kepala penonton di depan. Sudut ke tepi atas ≤ 30° dari mata penonton terdekat (nyaman untuk menonton lama). Resolusi "cukup" bila penonton terdekat duduk sejauh jarak piksel menyatu atau lebih (ketajaman mata ±1 menit busur).';
 
 export function PanelPasang({ lebarM, tinggiM }: { lebarM: number; tinggiM: number }) {
-  const [mata, setMata] = useState(1.2);
-  const [bawah, setBawah] = useState(1.0);
-  const [plafon, setPlafon] = useState(2.8);
-  const [terdekat, setTerdekat] = useState(2.5);
+  const [mata, setMata] = useIsi('pasang.mata', 1.2);
+  const [bawah, setBawah] = useIsi('pasang.bawah', 1.0);
+  const [plafon, setPlafon] = useIsi('pasang.plafon', 2.8);
+  const [terdekat, setTerdekat] = useIsi('pasang.terdekat', 2.5);
   const atas = bawah + tinggiM;
   const sisaPlafon = plafon - atas;
   const sudut = sudutKeAtasDerajat(terdekat, mata, bawah, tinggiM);

@@ -1,7 +1,10 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRiwayat } from '../bersama/riwayat';
-import type { FileAktifLED } from './FileLED';
+import { useBerkas } from '../bersama/berkas/useBerkas';
+import { f } from '../bersama/ui';
+import { adapterLED, type EkstraLED } from './adapterLED';
+import { svgPosterKoneksi } from './koneksi/svg';
 import { useReferensiLED } from './referensi/useReferensiLED';
 import { getSession } from '@/lib/auth/sesi';
 import { brandModul, cariModul, kunciModul } from '@/lib/av/hitung';
@@ -23,11 +26,28 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     kolomIn, setKolomIn, barisIn, setBarisIn, dayaUnit, setDayaUnit, beratUnit, setBeratUnit, faktorRata, setFaktorRata, refresh, setRefresh, bit,
     setBit, tegangan, setTegangan, faktorDaya, setFaktorDaya, koneksi, setKoneksi, dayaLED, setDayaLED, bom, setBom, harga, setHarga, isian, terapkan } = useIsianLED();
   const riwayat = useRiwayat(isian, v => terapkan(v));
-  const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
-  const [fileAktif, setFileAktif] = useState<FileAktifLED | null>(null);
 
   const { modul, brandAda, brandAktif, modulBrand, u, labelLED, px, namaUnit, luasUnit, dayaUnitEf, beratUnitEf, opsiBulat, kolom, baris, h, hw,
     vpSaja, vpM, vpAio, kartuM, teksHw, hwKoneksi, lewat4K, n, tKon, hDaya, ctrlBom, barisBom, nilaiPenawaran, adaHarga, selisihW, selisihH, dataKoneksi, dataDaya } = useTurunanLED(isian, refLED.data);
+
+  const ekstra = useRef<() => EkstraLED>(() => ({ ringkasan: { project: '', customer: '', kode: '', lebarM: 0, tinggiM: 0, resX: 0, resY: 0, jumlahCab: 0, screen: 1 }, svg: () => '' }));
+  useEffect(() => {
+    ekstra.current = () => ({
+      ringkasan: { project, customer, kode: labelLED.slice(0, 30), lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n },
+      svg: () => svgPosterKoneksi(dataKoneksi, koneksi, 'Screen Connection LED', [project || 'Tanpa nama project', customer].filter(Boolean).join(' — ')),
+    });
+  });
+  const adapter = useMemo(() => adapterLED(ekstra), []);
+  const berkas = useBerkas({
+    adapter, data: isian, hanyaLihat,
+    namaAwal: () => [project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}×${f(h.tinggiM)} m`,
+    terapkan: d => {
+      if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+      const v = d as Partial<typeof isian>;
+      terapkan(v); riwayat.mulaiBaru({ ...isian, ...v });
+      return true;
+    },
+  });
 
   const resetUnit = () => { setPxIn(null); setDayaUnit(null); setBeratUnit(null); };
   const pilihModul = (k: string) => {
@@ -46,7 +66,7 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     if (c && c.w) { setCabW(c.w); setCabH(c.h); }
   };
 
-  return { adaHarga, baris, barisBom, barisIn, beratUnit, beratUnitEf, bit, bom, brandAda, brandAktif, bukaRef, bulat, cabH, cabKey, cabW, ctrlBom, customer, daftarKartu, daftarModul, daftarVP, dataDaya, dataKoneksi, dayaLED, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, fileAktif, fileMode, h, hDaya, hanyaLihat, harga, hw, hwKoneksi, isian, kartuM, kartuPilih, kolom, kolomIn, koneksi, labelLED, lewat4K, lingkungan, luasUnit, mode, modeHw, modul, modulBrand, modulKode, n, namaUnit, nilaiPenawaran, opsiBulat, pembuat, pilihBrand, pilihCab, pilihModul, pindah, pitch, project, px, pxIn, refLED, refresh, resetUnit, riwayat, satuan, screen, selisihH, selisihW, setBarisIn, setBeratUnit, setBit, setBom, setBukaRef, setBulat, setCabH, setCabKey, setCabW, setCustomer, setDayaLED, setDayaUnit, setFaktorDaya, setFaktorRata, setFileAktif, setFileMode, setHarga, setKartuPilih, setKolomIn, setKoneksi, setLingkungan, setMode, setModeHw, setModulKode, setPembuat, setPitch, setProject, setPxIn, setRefresh, setSatuan, setScreen, setTampilan, setTanggal, setTargetH, setTargetW, setTegangan, setVpPilih, tKon, tampilan, tanggal, targetH, targetW, tegangan, teksHw, terapkan, u, vpAio, vpM, vpPilih, vpSaja };
+  return { adaHarga, baris, barisBom, barisIn, beratUnit, beratUnitEf, bit, berkas, bom, brandAda, brandAktif, bukaRef, bulat, cabH, cabKey, cabW, ctrlBom, customer, daftarKartu, daftarModul, daftarVP, dataDaya, dataKoneksi, dayaLED, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, h, hDaya, hanyaLihat, harga, hw, hwKoneksi, isian, kartuM, kartuPilih, kolom, kolomIn, koneksi, labelLED, lewat4K, lingkungan, luasUnit, mode, modeHw, modul, modulBrand, modulKode, n, namaUnit, nilaiPenawaran, opsiBulat, pembuat, pilihBrand, pilihCab, pilihModul, pindah, pitch, project, px, pxIn, refLED, refresh, resetUnit, riwayat, satuan, screen, selisihH, selisihW, setBarisIn, setBeratUnit, setBit, setBom, setBukaRef, setBulat, setCabH, setCabKey, setCabW, setCustomer, setDayaLED, setDayaUnit, setFaktorDaya, setFaktorRata, setHarga, setKartuPilih, setKolomIn, setKoneksi, setLingkungan, setMode, setModeHw, setModulKode, setPembuat, setPitch, setProject, setPxIn, setRefresh, setSatuan, setScreen, setTampilan, setTanggal, setTargetH, setTargetW, setTegangan, setVpPilih, tKon, tampilan, tanggal, targetH, targetW, tegangan, teksHw, terapkan, u, vpAio, vpM, vpPilih, vpSaja };
 }
 
 export type KeadaanLED = ReturnType<typeof useKeadaanLED>;

@@ -1,9 +1,10 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { type Beban, hitungDaya } from '@/lib/av/hitung';
 import { runtimeUPSMenit } from '@/lib/av/audio-jaringan';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 const BEBAN_AWAL: Beban[] = [
   { nama: 'Display / TV 86"', watt: 400, jumlah: 1 },
@@ -13,11 +14,11 @@ const BEBAN_AWAL: Beban[] = [
 ];
 
 export function KalkulatorDaya() {
-  const [beban, setBeban] = useState<Beban[]>(BEBAN_AWAL);
-  const [tegangan, setTegangan] = useState(220);
-  const [pf, setPf] = useState(0.9);
+  const [beban, setBeban] = useIsi<Beban[]>('daya.beban', BEBAN_AWAL);
+  const [tegangan, setTegangan] = useIsi('daya.tegangan', 220);
+  const [pf, setPf] = useIsi('daya.pf', 0.9);
   const h = useMemo(() => hitungDaya(beban, tegangan, pf), [beban, tegangan, pf]);
-  const [batV, setBatV] = useState(12); const [batAh, setBatAh] = useState(9); const [batN, setBatN] = useState(2);
+  const [batV, setBatV] = useIsi('daya.batV', 12); const [batAh, setBatAh] = useIsi('daya.batAh', 9); const [batN, setBatN] = useIsi('daya.batN', 2);
   const runtime = runtimeUPSMenit(h.totalW, batV, batAh, batN);
   const ubah = (i: number, x: Partial<Beban>) => setBeban(b => b.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const ringkas = () => [

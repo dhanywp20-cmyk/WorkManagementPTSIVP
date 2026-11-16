@@ -9,6 +9,7 @@ import { KalkulatorRak } from './av/KalkulatorRak';
 import { KalkulatorSinyal } from './av/KalkulatorSinyal';
 import { Ikon } from '@/components/shared/Ikon';
 import { useState } from 'react';
+import { RuangBerkas } from './bersama/berkas/isian';
 
 const KUNCI = 'wm_kalkulator_av_sub';
 const subAwal = () => { try { const v = localStorage.getItem(KUNCI); return SUB_AV.some(x => x.k === v) ? v! : 'layar'; } catch { return 'layar'; } };
@@ -42,7 +43,7 @@ export function KalkulatorAV() {
           );
         })}
       </div>
-      {SUB_AV.filter(x => dibuka.includes(x.k)).map(x => <section key={x.k} hidden={x.k !== aktif} aria-label={x.judul}><x.C /></section>)}
+      {SUB_AV.filter(x => dibuka.includes(x.k)).map(x => <section key={x.k} hidden={x.k !== aktif} aria-label={x.judul}><RuangBerkas alat={`av-${x.k}`} jenis={x.judul}><x.C /></RuangBerkas></section>)}
     </div>
   );
 }
