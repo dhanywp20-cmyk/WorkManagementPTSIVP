@@ -45,10 +45,10 @@ export function permukaanPersegi(nama: string, pusat: Titik, kanan: Titik, atas:
 }
 
 function permukaanBola(b: Benda, F: ReturnType<typeof kerangka>): Permukaan {
-  const { R, tb, a0, zP, yP, fiM } = bolaBidang(b);
+  const { R, tb, a0, zP, yP, fiA, fiB } = bolaBidang(b);
   const sampel: Sampel[] = [];
   for (let i = 0; i <= NS; i++) for (let j = 0; j <= NT; j++) {
-    const s = i / NS, t = j / NT, a = a0 + tb * (1 - s), fi = -fiM + 2 * fiM * t;
+    const s = i / NS, t = j / NT, a = a0 + tb * (1 - s), fi = -fiB + (fiA + fiB) * t;
     const arah: Titik = [Math.cos(fi) * Math.sin(a), Math.sin(fi), Math.cos(fi) * Math.cos(a)];
     sampel.push({ p: F.keDunia([R * arah[0], yP + R * arah[1], zP + R * arah[2]]), n: F.arahKeDunia([-arah[0], -arah[1], -arah[2]]), s, t });
   }
@@ -62,7 +62,8 @@ function permukaanBola(b: Benda, F: ReturnType<typeof kerangka>): Permukaan {
       const tt = (-B + Math.sqrt(disk)) / (2 * A);
       if (tt <= 0) return null;
       const x = o[0] + dd[0] * tt, y = o[1] + dd[1] * tt, z = o[2] + dd[2] * tt;
-      if (Math.abs(Math.asin(Math.max(-1, Math.min(1, y / R)))) > fiM + 1e-6) return null;
+      const fi = Math.asin(Math.max(-1, Math.min(1, y / R)));
+      if (fi > fiA + 1e-6 || fi < -fiB - 1e-6) return null;
       let a = Math.atan2(x, z) - a0;
       a = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
       return a <= tb + 1e-6 ? tt : null;

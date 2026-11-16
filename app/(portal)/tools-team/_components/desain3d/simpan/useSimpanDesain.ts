@@ -146,6 +146,7 @@ export function useSimpanDesain(K: KeadaanDesain) {
     try {
       m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
       m.renderer.setPixelRatio(Math.min(3, Math.max(2, rasioLama * 2)));
+      m.renderer.shadowMap.needsUpdate = true;
       m.renderer.render(m.scene, m.kamera);
       const src = m.renderer.domElement;
       const jadi = (lebar: number, maks: number, legenda = false) => {

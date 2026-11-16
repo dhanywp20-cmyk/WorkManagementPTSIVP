@@ -6,6 +6,7 @@ import { type DataBlend, gambarBlending } from './blending';
 import { gambarCahayaBenda, type SumberCahaya } from './cahayaBenda';
 import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks, geserKeTerlihat, kotakTerlihat } from './teksCahaya';
 import { bahanSinarUdara, CAHAYA_UDARA } from './sinarUdara';
+import { buatPenembak, type Penembak } from './penembak';
 import { aturLampuProyektor, batasProyektorNyata, kontenProyektor, type MasukanLampu } from './proyektorNyata';
 import type { Mesin } from './tipe';
 
@@ -35,8 +36,6 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   if (!(sinar || hitungBlend) || !daftarProj.length) return;
 
   m.scene.updateMatrixWorld(true);
-  const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
-  (ray.params as { Line?: { threshold: number } }).Line = { threshold: 0.0001 };
   const menyeret = m.gizmo.dragging, kasar = menyeret || !!m.kasarPaksa;
   const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
   const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
@@ -47,30 +46,27 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     return !!j && BIDANG_TEKS.has(j);
   })];
 
-  const matNormal = new Map<string, T.Matrix3>();
-  const matN = (o: T.Object3D) => {
-    let x = matNormal.get(o.uuid);
-    if (!x) { x = new THREE.Matrix3().getNormalMatrix(o.matrixWorld); matNormal.set(o.uuid, x); }
-    return x;
+  const idMesh = new Map<string, string | null>();
+  const idDari = (mesh: T.Object3D) => {
+    let id = idMesh.get(mesh.uuid);
+    if (id === undefined) {
+      let o: T.Object3D | null = mesh;
+      while (o && !o.userData.id) o = o.parent;
+      id = (o?.userData.id as string | undefined) ?? null; idMesh.set(mesh.uuid, id);
+    }
+    return id;
   };
-  const tembakRinci = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]): Kena | null => {
-    ray.set(O, arah);
-    const hit = ray.intersectObjects(sasaran, true).find(h => {
-      const o = h.object as T.Mesh;
-      if (!o.isMesh) return false;
-      const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
-      return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);
-    });
+  const tembakRinci = (O: T.Vector3, arah: T.Vector3, tembakan: Penembak): Kena | null => {
+    const hit = tembakan(O, arah);
     if (!hit) return null;
-    let o: T.Object3D | null = hit.object;
-    while (o && !o.userData.id) o = o.parent;
-    const nLokal = (hit as { normal?: T.Vector3 }).normal ?? hit.face?.normal;
-    const n = nLokal ? nLokal.clone().applyMatrix3(matN(hit.object)).normalize() : null;
+    const n = hit.normal;
     if (n && n.dot(arah) > 0) n.negate();
-    const p = n ? hit.point.clone().addScaledVector(n, ANGKAT) : hit.point.clone().addScaledVector(arah, -0.012);
-    return { p, id: (o?.userData.id as string | undefined) ?? null, n, kunci: hit.object.uuid, cos: n ? -n.dot(arah) : 1 };
+    const p = n ? hit.titik.clone().addScaledVector(n, ANGKAT) : hit.titik.clone().addScaledVector(arah, -0.012);
+    return { p, id: idDari(hit.mesh), n, kunci: hit.mesh.uuid, cos: n ? -n.dot(arah) : 1 };
   };
-  const tembak = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]) => tembakRinci(O, arah, sasaran)?.p ?? null;
+  const tembak = (O: T.Vector3, arah: T.Vector3, tembakan: Penembak) => tembakRinci(O, arah, tembakan)?.p ?? null;
+  let penembakTeks: Penembak | null = null;
+  const tembakTeks = () => (penembakTeks ??= buatPenembak(THREE, sasaranTeks));
   const diBenda = (id: string | null) => !!id && !BIDANG_PROYEKSI.has(jenisDari.get(id) ?? 'objek');
   const diBidang = (id: string | null) => !!id && BIDANG_PROYEKSI.has(jenisDari.get(id) ?? 'objek');
   const namaBenda = new Map(benda.map(b => [b.id, b.nama]));
@@ -91,6 +87,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const O = new THREE.Vector3(...lensaDari(p).O), ujung = new THREE.Vector3(...sn.asal);
     const sendiri = m.cache.get(p.id)?.obj;
     const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
+    const tembakIni = buatPenembak(THREE, sasaran);
     const r = (p.rot * Math.PI) / 180;
     const D = new THREE.Vector3(...arahProyektor(p)).normalize();
     const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
@@ -103,7 +100,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const tembakUV = (u: number, v: number) => {
       const k = Math.round(u * 1e7) * 1e8 + Math.round(v * 1e7);
       let h = ingat.get(k);
-      if (h === undefined) { h = tembakRinci(O, arahUV(u - 0.5, v - 0.5), sasaran); ingat.set(k, h); }
+      if (h === undefined) { h = tembakRinci(O, arahUV(u - 0.5, v - 0.5), tembakIni); ingat.set(k, h); }
       return h;
     };
     const kena: (T.Vector3 | null)[] = [], kenaId: (string | null)[] = [], rinci: (Kena | null)[] = [];
@@ -120,10 +117,12 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     };
     if (hitungBlend) {
       const L = lensaDari(p), NB = kasar ? 31 : 81, NV = kasar ? 21 : 49;
-      const keT = (v: T.Vector3 | null): Titik | null => (v ? [v.x, v.y, v.z] : null);
-      const sampel = (u: number, v: number) => keT(tembak(O, arah.set(...arahSinar(L, u, v)), sasaran));
+      const sampel = (u: number, v: number): Titik | null => {
+        const h = tembakRinci(O, arah.set(...arahSinar(L, u, v)), tembakIni);
+        return h && (!p.maskBidang || diBidang(h.id)) ? [h.p.x, h.p.y, h.p.z] : null;
+      };
       dataBlend.push({
-        p, L, O, sasaran, zona, zonaN, zonaMesh,
+        p, L, O, tembak: tembakIni, zona, zonaN, zonaMesh,
         baris: Array.from({ length: NB }, (_, i) => sampel(i / (NB - 1) - 0.5, 0)),
         kolom: Array.from({ length: NV }, (_, j) => sampel(0, j / (NV - 1) - 0.5)),
       });
@@ -140,7 +139,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const cosA = Math.max(0.2, r.dot(D)), cosT = n ? Math.abs(r.dot(n)) : 1;
       return Math.max(0.05, cosT) / (cosA ** 3 * d2);
     };
-    const pusatGambar = tembakRinci(O, arahUV(0, 0).clone(), sasaran);
+    const pusatGambar = tembakRinci(O, arahUV(0, 0).clone(), tembakIni);
     const terangAcuan = pusatGambar ? terang(pusatGambar.p, pusatGambar.n) : 1 / Math.max(0.25, sn.jarak ** 2);
     const faktor = (P: T.Vector3, n: T.Vector3 | null) => Math.min(1.4, Math.max(0.06, terang(P, n) / terangAcuan));
     const pos: number[] = [], uv: number[] = [], warnaTitik: number[] = [];
@@ -286,7 +285,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     let tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
     if (tulis) {
       const kt: (T.Vector3 | null)[] = [];
-      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) kt.push(tembak(O, arahUV(gu(i) - 0.5, gv(j) - 0.5), sasaranTeks));
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) kt.push(tembak(O, arahUV(gu(i) - 0.5, gv(j) - 0.5), tembakTeks()));
       const quadTeks = quadKe(teksPos, teksUv);
       for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
         const [A, B, C, Dd] = [kt[j * NX + i], kt[j * NX + i + 1], kt[(j + 1) * NX + i + 1], kt[(j + 1) * NX + i]];
@@ -302,7 +301,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       : { lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, diagonalInci: Math.hypot(jarakSumbu * w1, jarakSumbu * h1) / 0.0254, lux: null };
     const E0 = lumenGambarDari(p) / (w1 * h1);
     const luxDi = (u: number, v: number) => {
-      const r = arahUV(u, v).clone(), t = tembakRinci(O, r, sasaranTeks);
+      const r = arahUV(u, v).clone(), t = tembakRinci(O, r, tembakTeks());
       if (!t) return null;
       const d = t.p.distanceTo(O), cosA = Math.max(0.2, r.dot(D)), cosT = t.n ? Math.abs(r.dot(t.n)) : 1;
       return (E0 * cosT) / (cosA ** 3 * d * d);

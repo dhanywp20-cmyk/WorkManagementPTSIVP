@@ -304,6 +304,6 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
-    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
+    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.atasBola, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
     b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : '', b.tipePerangkat, b.pakaiDongle,
     b.teks, b.tinggiHuruf, b.hadapTeks, b.latarTeks, b.tanpaTiang].join('|');

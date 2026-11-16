@@ -1,11 +1,12 @@
 import type * as T from 'three';
 import { hitungBlending, keGambar, type Benda, type Blending, type Lensa, type Titik } from '../inti';
 import type { Mesin } from './tipe';
+import type { Penembak } from './penembak';
 import { gambarUkurBlending } from './ukurBlending';
 
 export interface DataBlend {
   p: Benda; L: Lensa; O: T.Vector3;
-   sasaran: T.Object3D[];
+   tembak: Penembak;
   zona: number[];
    zonaN: number[];
    zonaMesh: string[];
@@ -41,21 +42,14 @@ export function gambarBlending(
    gambar = true,
 ): Blending[] {
   const { THREE, grupBantu } = m;
-  const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
   const arah = new THREE.Vector3(), X = new THREE.Vector3();
 
   const terlihat = (i: number, t: Titik, abaikan?: string) => {
     const d = data[i];
     X.set(t[0], t[1], t[2]);
     const jarak = X.distanceTo(d.O);
-    ray.set(d.O, arah.copy(X).sub(d.O).normalize());
-    const hit = ray.intersectObjects(d.sasaran, true).find(h => {
-      const o = h.object as T.Mesh;
-      if (!o.isMesh || o.uuid === abaikan) return false;
-      const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
-      return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);
-    });
-    return !hit || hit.distance >= jarak - 0.05;
+    const hit = d.tembak(d.O, arah.copy(X).sub(d.O).normalize(), abaikan);
+    return !hit || hit.jarak >= jarak - 0.05;
   };
 
   const hasil = hitungBlending(data.map(d => ({ p: d.p, L: d.L, baris: d.baris, kolom: d.kolom })), terlihat);

@@ -70,7 +70,7 @@ export function terapkanUkuran(b: Benda): Benda {
     }
     case 'bidang': {
       const u = ukuranBidang(b);
-      return { ...b, w: u.w, d: u.d, ...(b.bentukBidang === 'bola' ? { h: Math.min(b.h, tinggiMaksBola(u.R)) } : {}) };
+      return { ...b, w: u.w, d: u.d, ...(b.bentukBidang === 'bola' ? { h: Math.min(b.h, tinggiMaksBola(u.R, sudutAtasBola(b))) } : {}) };
     }
     case 'teks': return terapkanUkuranTeks(b);
     default: return b;
@@ -92,11 +92,24 @@ export function mataPilot(b: Pick<Benda, 'x' | 'z' | 'elev' | 'rot' | 'w' | 'h' 
   return [b.x + z * Math.sin(r), b.elev + (PESAWAT_ACUAN.mataY / PESAWAT_ACUAN.h) * b.h, b.z + z * Math.cos(r)];
 }
 export const SUDUT_V_MAKS_BOLA = 75;
-export const tinggiMaksBola = (R: number) => Math.round(2 * R * Math.sin((SUDUT_V_MAKS_BOLA * Math.PI) / 180) * 1000) / 1000;
+export const SUDUT_ATAS_BOLA = { min: 10, maks: 90 };
+export const sudutAtasBola = (b: Pick<Benda, 'atasBola'>): number | null =>
+  typeof b.atasBola === 'number' && Number.isFinite(b.atasBola) ? Math.min(SUDUT_ATAS_BOLA.maks, Math.max(SUDUT_ATAS_BOLA.min, b.atasBola)) : null;
+const sinDerajat = (v: number) => Math.sin((v * Math.PI) / 180);
+export const tinggiMaksBola = (R: number, atas: number | null = null) =>
+  Math.round(R * (sinDerajat(atas ?? SUDUT_V_MAKS_BOLA) + sinDerajat(SUDUT_V_MAKS_BOLA)) * 1000) / 1000;
 export function bolaBidang(b: Benda) {
   const { R, busur, d } = ukuranBidang(b);
-  const h = Math.min(b.h, tinggiMaksBola(R));
-  return { R, busur, d, h, tb: (busur * Math.PI) / 180, a0: Math.PI - (busur * Math.PI) / 360, zP: R - d / 2, yP: h / 2, fiM: Math.asin(Math.min(1, h / (2 * R))) };
+  const atas = sudutAtasBola(b), h = Math.min(b.h, tinggiMaksBola(R, atas));
+  const fiA = atas === null ? Math.asin(Math.min(1, h / (2 * R))) : (atas * Math.PI) / 180;
+  const fiB = atas === null ? fiA : Math.asin(Math.min(1, h / R - Math.sin(fiA)));
+  return { R, busur, d, h, tb: (busur * Math.PI) / 180, a0: Math.PI - (busur * Math.PI) / 360, zP: R - d / 2, yP: R * Math.sin(fiB), fiA, fiB, fiM: Math.max(fiA, fiB) };
+}
+export function ubahAtasBola(b: Benda, atas: number | null): Partial<Benda> {
+  const lama = bolaBidang(b), a = atas === null ? undefined : Math.round(Math.min(SUDUT_ATAS_BOLA.maks, Math.max(SUDUT_ATAS_BOLA.min, atas)) * 10) / 10;
+  const h = Math.round(Math.min(tinggiMaksBola(lama.R, a ?? null), lama.R * ((a === undefined ? Math.sin(lama.fiB) : sinDerajat(a)) + Math.sin(lama.fiB))) * 1000) / 1000;
+  const baru = bolaBidang({ ...b, atasBola: a, h });
+  return { atasBola: a, h, elev: Math.round(Math.max(0, b.elev + lama.yP - baru.yP) * 1000) / 1000 };
 }
 export function ubahLebarBidang(b: Benda, lebar: number): Partial<Benda> {
   const bentuk = b.bentukBidang ?? 'datar';

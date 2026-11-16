@@ -1,6 +1,6 @@
 'use client';
 import { Angka, f, Segmen } from '../../../bersama/ui';
-import { type Benda, type BentukBidang, bolaBidang, kedalamanBidang, lengkungDari, terapkanUkuran, tinggiMaksBola, ubahLebarBidang, ukuranBidang } from '../../inti';
+import { type Benda, type BentukBidang, bolaBidang, kedalamanBidang, lengkungDari, SUDUT_ATAS_BOLA, sudutAtasBola, terapkanUkuran, tinggiMaksBola, ubahAtasBola, ubahLebarBidang, ukuranBidang } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturBidang({ c }: { c: KonteksAtur }) {
@@ -44,12 +44,25 @@ export function AturBidang({ c }: { c: KonteksAtur }) {
               </div>
             )}
             {bentuk === 'bola' && (() => {
-              const bl = bolaBidang(b), v = (bl.fiM * 180) / Math.PI;
+              const bl = bolaBidang(b), atas = sudutAtasBola(b), dA = (bl.fiA * 180) / Math.PI, dB = (bl.fiB * 180) / Math.PI;
               return (
-                <p className="text-[12px] text-slate-600">
-                  Pusat bola (mata pilot) di {f(b.elev + bl.yP)} m dari lantai. Sudut pandang {f(u.busur, 0)}° mendatar × {f(2 * v, 0)}° tegak (±{f(v, 0)}°).
-                  Tinggi layar maks {f(tinggiMaksBola(u.R))} m (±75°); ubah tinggi di bagian Ukuran untuk mengatur sudut tegak.
-                </p>
+                <>
+                  <div className="grid grid-cols-2 gap-2 items-end">
+                    <Angka label="Sudut atas" nilai={Math.round(dA * 10) / 10} satuan="°" step={5} bantuan="90° = menutup sampai puncak, tanpa celah"
+                      onUbah={v => v >= SUDUT_ATAS_BOLA.min && v <= SUDUT_ATAS_BOLA.maks && setUkuran(ubahAtasBola(b, v))} />
+                    {atas !== null ? (
+                      <button type="button" onClick={() => setUkuran(ubahAtasBola(b, null))}
+                        className="mb-0.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12px] font-semibold text-slate-700 hover:bg-slate-50">
+                        Atas = bawah (simetris)
+                      </button>
+                    ) : <span />}
+                  </div>
+                  <p className="text-[12px] text-slate-600">
+                    Pusat bola (mata pilot) di {f(b.elev + bl.yP)} m dari lantai. Sudut pandang {f(u.busur, 0)}° mendatar × {f(dA + dB, 0)}° tegak
+                    {atas === null ? ` (±${f(dA, 0)}°)` : ` (+${f(dA, 0)}° ke atas, −${f(dB, 0)}° ke bawah)`}{atas !== null && atas >= SUDUT_ATAS_BOLA.maks ? ' - bagian atas tertutup sampai puncak.' : '.'}
+                    {' '}Tinggi layar maks {f(tinggiMaksBola(u.R, atas))} m; ubah tinggi di bagian Ukuran untuk mengatur sudut bawah.
+                  </p>
+                </>
               );
             })()}
             <p className="text-[12px] text-slate-600">

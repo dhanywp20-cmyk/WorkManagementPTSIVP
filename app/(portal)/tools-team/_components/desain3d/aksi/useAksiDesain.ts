@@ -1,5 +1,5 @@
 'use client';
-import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PASANG, daftarRuang, idBaru, type ItemKatalog, KATEGORI_RUANG, type KategoriRuang, type Kotak, layarTerdekat, MAKS_RUANG, panjangDinding, pasangDari, proyektorKeLayar, pusatkanIsi, type Ruang, ruangDari, type RuangSambung, salinIsi, salinKeRuang, sambungan, sambunganKe, sesuaikanUkuranRuang, setRuangKelas, type SisiDinding, sisiLuar, type SumbuPusat, tempatTeksBebas, templateRuang, tinggiAlasDi } from '../inti';
+import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PASANG, daftarRuang, idBaru, type ItemKatalog, judulTemplate, KATEGORI_RUANG, type KategoriRuang, type Kotak, layarTerdekat, MAKS_RUANG, panjangDinding, pasangDari, proyektorKeLayar, pusatkanIsi, type Ruang, ruangDari, type RuangSambung, salinIsi, salinKeRuang, sambungan, sambunganKe, sesuaikanUkuranRuang, setRuangKelas, type SisiDinding, sisiLuar, type SumbuPusat, tempatTeksBebas, templateRuang, tinggiAlasDi } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { R2_AWAL, RUANG_AWAL } from '../useKeadaanDesain';
 import type { Sisi } from '../mesin/tipe';
@@ -10,18 +10,17 @@ export interface IsiTemplateKategori { nama: string; ruang: Ruang; benda: Benda[
 
 export function useAksiDesain(K: KeadaanDesain) {
   const { batas, benda, gambarLayar, gantiBenda, kotakRuang, mesin, opsiKelas, pasSetelahTemplate, ruang, ruangRef, setAsal, setBenda, setBukaKelas, setDasar, setDesainAktif, setFokusRuang, setKonfirmasi, setLihatVersi, setMenuPusat, setModal, setNamaDesain, setPanel, setPesan, setPilih, setRuang, setSisi, setTargetRuang, setVersiGambar, targetRuang, terpilih } = K;
-  const pasangKategori = (id: KategoriRuang, kustom?: IsiTemplateKategori | null) => {
-    const kat = KATEGORI_RUANG.find(k => k.id === id);
-    if (!benda.length) { pasangKategoriYa(id, kustom); return; }
+  const pasangKategori = (id: KategoriRuang, kustom?: IsiTemplateKategori | null, opsi = 0) => {
+    if (!benda.length) { pasangKategoriYa(id, kustom, opsi); return; }
     setKonfirmasi({
-      message: `Ganti isi kanvas dengan template "${kat?.judul}"?`, confirmLabel: 'Ganti isi',
+      message: `Ganti isi kanvas dengan template "${judulTemplate(id, opsi)}"?`, confirmLabel: 'Ganti isi',
       description: 'Isi kanvas sekarang diganti template ini. Bisa dikembalikan dengan Undo.',
-      onConfirm: () => pasangKategoriYa(id, kustom),
+      onConfirm: () => pasangKategoriYa(id, kustom, opsi),
     });
   };
-  const pasangKategoriYa = (id: KategoriRuang, kustom?: IsiTemplateKategori | null) => {
-    const kat = KATEGORI_RUANG.find(k => k.id === id);
-    const t = kustom ? { nama: kustom.nama, ruang: { ...RUANG_AWAL, ...kustom.ruang }, benda: kustom.benda } : templateRuang(id);
+  const pasangKategoriYa = (id: KategoriRuang, kustom?: IsiTemplateKategori | null, opsi = 0) => {
+    const kat = KATEGORI_RUANG.find(k => k.id === id), judul = judulTemplate(id, opsi);
+    const t = kustom ? { nama: kustom.nama, ruang: { ...RUANG_AWAL, ...kustom.ruang }, benda: kustom.benda } : templateRuang(id, opsi);
     const m = mesin.current;
     if (kustom?.layar && m) for (const [idL, url] of Object.entries(kustom.layar)) {
       muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
@@ -29,11 +28,11 @@ export function useAksiDesain(K: KeadaanDesain) {
     daftarkanTekstur(K, kustom?.tekstur);
     ruangRef.current = t.ruang;
     setRuang(t.ruang); setBenda(t.benda); setNamaDesain(`${t.nama} (salinan)`);
-    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kustom ? `${kat?.judul ?? t.nama} · default Admin` : kat?.judul ?? t.nama }); setDasar(null); setPilih(null); setFokusRuang('semua');
+    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kustom ? `${kat?.judul ?? t.nama} · default Admin` : judul }); setDasar(null); setPilih(null); setFokusRuang('semua');
     pasSetelahTemplate.current = true;
     setPesan(kustom ? `Template ${kat?.judul} (default dari Admin) dipasang - atur sesuai kebutuhan.` : id === 'mapping-objek'
       ? 'Template Mapping objek dipasang. Tambah → Objek dari luar: impor berkas 3D (SketchUp .dae/.obj/.stl, .glb, .fbx) atau buat dari gambar, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
-      : `Template ${kat?.judul} dipasang - atur sesuai kebutuhan.`);
+      : `Template ${judul} dipasang - atur sesuai kebutuhan.`);
   };
   const tambahSetKelas = () => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
