@@ -73,16 +73,16 @@ function ToolsKerjaInner() {
           const on = a.k === aktif;
           return (
             <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on} title={a.ket}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 ${on ? 'text-white hover:opacity-90' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 ${on ? 'text-white hover:opacity-90' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
               style={on ? { background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))', boxShadow: '0 4px 14px var(--merek-utama-tembus)' } : undefined}>
               <Ikon nama={a.ikon} ukuran={15} />{a.judul}
             </button>
           );
         })}
         {!PUNYA_LAYAR.has(aktif) && (
-          <button type="button" onClick={() => aturPenuh(true)} title="Tampilkan alat ini layar penuh (Esc untuk keluar)"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">
-            <Expand size={15} aria-hidden="true" />Layar penuh
+          <button type="button" onClick={() => aturPenuh(true)} title="Layar penuh (Esc untuk keluar)" aria-label="Layar penuh"
+            className="grid place-items-center w-9 h-9 rounded-xl bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all hover:scale-105">
+            <Expand size={16} aria-hidden="true" />
           </button>
         )}
       </PageHeader>
