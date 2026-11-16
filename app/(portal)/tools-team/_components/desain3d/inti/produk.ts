@@ -98,6 +98,23 @@ export function bolaBidang(b: Benda) {
   const h = Math.min(b.h, tinggiMaksBola(R));
   return { R, busur, d, h, tb: (busur * Math.PI) / 180, a0: Math.PI - (busur * Math.PI) / 360, zP: R - d / 2, yP: h / 2, fiM: Math.asin(Math.min(1, h / (2 * R))) };
 }
+export function ubahLebarBidang(b: Benda, lebar: number): Partial<Benda> {
+  const bentuk = b.bentukBidang ?? 'datar';
+  if (bentuk === 'datar') return { w: lebar };
+  const u = ukuranBidang(b);
+  if (bentuk !== 'bola' && u.busur < 180) return lengkungDari(lebar, Math.min(u.d, lebar / 2));
+  const R = Math.round(Math.max(0.2, Math.min(50, lebar / (2 * Math.sin(Math.min(Math.PI / 2, (u.busur * Math.PI) / 360))))) * 1000) / 1000;
+  if (bentuk !== 'bola') return { jariBidang: R };
+  const lama = bolaBidang(b), baru = bolaBidang({ ...b, jariBidang: R }), geser = lama.zP - baru.zP, r = (b.rot * Math.PI) / 180;
+  const bulat = (v: number) => Math.round(v * 1000) / 1000;
+  return { jariBidang: R, h: baru.h, x: bulat(b.x + geser * Math.sin(r)), z: bulat(b.z + geser * Math.cos(r)), elev: bulat(Math.max(0, b.elev + lama.yP - baru.yP)) };
+}
+export function kedalamanBidang(b: Benda, dalam: number): Partial<Benda> {
+  const u = ukuranBidang(b);
+  if (dalam <= u.w / 2 + 1e-9) return lengkungDari(u.w, dalam);
+  const R = u.w / 2, busur = (2 * Math.acos(Math.max(-1, 1 - dalam / R)) * 180) / Math.PI;
+  return { jariBidang: Math.round(R * 1000) / 1000, busur: Math.round(Math.min(360, busur) * 100) / 100 };
+}
 export function lengkungDari(lebar: number, kedalaman: number): { jariBidang: number; busur: number } {
   const c = Math.max(0.2, lebar), s = Math.max(0.01, Math.min(c / 2, kedalaman));
   const R = (c * c / 4 + s * s) / (2 * s);

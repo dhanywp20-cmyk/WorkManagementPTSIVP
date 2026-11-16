@@ -1,6 +1,6 @@
 'use client';
 import { Angka, f, Segmen } from '../../../bersama/ui';
-import { type Benda, type BentukBidang, bolaBidang, lengkungDari, terapkanUkuran, tinggiMaksBola, ukuranBidang } from '../../inti';
+import { type Benda, type BentukBidang, bolaBidang, kedalamanBidang, lengkungDari, terapkanUkuran, tinggiMaksBola, ubahLebarBidang, ukuranBidang } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturBidang({ c }: { c: KonteksAtur }) {
@@ -21,19 +21,20 @@ export function AturBidang({ c }: { c: KonteksAtur }) {
           if (namaBawaan) nb.nama = NAMA_BIDANG[v];
           onUbah(nb);
         };
-        const busurPenuh = bentuk !== 'datar' && u.busur >= 180;
         return (
           <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
             <Segmen label="Bentuk layar / bidang" nilai={bentuk} onUbah={gantiBentuk}
               opsi={[{ v: 'datar', l: 'Datar' }, { v: 'lengkung', l: 'Cekung' }, { v: 'bola', l: 'Bola' }, { v: 'cembung', l: 'Cembung' }]} />
             {bentuk === 'datar' ? (
               <Angka label="Lebar layar" nilai={u.w} satuan="m" step={0.1} onUbah={v => v >= 0.2 && v <= 60 && setUkuran({ w: v })} />
-            ) : !busurPenuh && (
+            ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Angka label="Lebar layar" nilai={u.w} satuan="m" step={0.1} bantuan="Lurus ujung ke ujung"
-                  onUbah={v => v >= 0.2 && v <= 60 && setUkuran(lengkungDari(v, Math.min(u.d, v / 2)))} />
-                <Angka label="Kedalaman lengkung" nilai={Math.round(u.d * 100)} satuan="cm" step={5} bantuan={bentuk === 'cembung' ? 'Tengah maju ke penonton' : 'Tengah masuk ke belakang'}
-                  onUbah={v => v >= 1 && v / 100 <= u.w / 2 && setUkuran(lengkungDari(u.w, v / 100))} />
+                <Angka label="Lebar layar" nilai={u.w} satuan="m" step={0.1} bantuan={bentuk === 'bola' ? 'Lurus ujung ke ujung; busur & pusat bola (mata pilot) tetap' : 'Lurus ujung ke ujung'}
+                  onUbah={v => v >= 0.2 && v <= 60 && setUkuran(ubahLebarBidang(b, v))} />
+                {u.busur < 360 && (
+                  <Angka label="Kedalaman lengkung" nilai={Math.round(u.d * 100)} satuan="cm" step={5} bantuan={bentuk === 'cembung' ? 'Tengah maju ke penonton' : 'Tengah masuk ke belakang'}
+                    onUbah={v => v >= 1 && setUkuran(kedalamanBidang(b, v / 100))} />
+                )}
               </div>
             )}
             {bentuk !== 'datar' && (

@@ -5,6 +5,7 @@ import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
 import { gambarCahayaBenda, type SumberCahaya } from './cahayaBenda';
 import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks, geserKeTerlihat, kotakTerlihat } from './teksCahaya';
+import { bahanSinarUdara, CAHAYA_UDARA } from './sinarUdara';
 import { aturLampuProyektor, batasProyektorNyata, kontenProyektor, type MasukanLampu } from './proyektorNyata';
 import type { Mesin } from './tipe';
 
@@ -229,36 +230,28 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
     }
     if (!sinar) return;
-    const ci = (NX - 1) / 2, cj = (NY - 1) / 2;
-    const titikTepi = (i: number, j: number): Kena | null => {
-      if (!mask) return rinci[j * NX + i];
-      for (let n = 0; n <= 24; n++) {
-        const ii = Math.round(i + ((ci - i) * n) / 24), jj = Math.round(j + ((cj - j) * n) / 24), t = rinci[jj * NX + ii];
-        if (t && diBidang(t.id)) return t;
-      }
-      return null;
+    const ujiMask = mask ? maskDari().uji.map(f => f([O.x, O.y, O.z])) : [];
+    const dalamMask = (u: number, v: number) => { const d = arahUV(u - 0.5, v - 0.5); return ujiMask.some(f => f(d.x, d.y, d.z)); };
+    const LANGKAH_TEPI = 32, BAGI_TEPI = 12;
+    const titikTepi = (u: number, v: number): Kena | null => {
+      if (!mask || dalamMask(u, v)) return tembakUV(u, v);
+      const di = (s: number): [number, number] => [u + (0.5 - u) * s, v + (0.5 - v) * s];
+      let luar = 0, dalam = -1;
+      for (let n = 1; n <= LANGKAH_TEPI && dalam < 0; n++) { const s = n / LANGKAH_TEPI; if (dalamMask(...di(s))) dalam = s; else luar = s; }
+      if (dalam < 0) return null;
+      for (let n = 0; n < BAGI_TEPI; n++) { const s = (luar + dalam) / 2; if (dalamMask(...di(s))) dalam = s; else luar = s; }
+      return tembakUV(...di(dalam));
     };
+    const K_TEPI = mask ? (kasar ? 3 : 2) : 1, nU = (NX - 1) * K_TEPI, nV = (NY - 1) * K_TEPI;
     const tepi: (Kena | null)[] = [];
-    for (let i = 0; i < NX; i++) tepi.push(titikTepi(i, 0));
-    for (let j = 1; j < NY; j++) tepi.push(titikTepi(NX - 1, j));
-    for (let i = NX - 2; i >= 0; i--) tepi.push(titikTepi(i, NY - 1));
-    for (let j = NY - 2; j > 0; j--) tepi.push(titikTepi(0, j));
+    for (let i = 0; i < nU; i++) tepi.push(titikTepi(i / nU, 0));
+    for (let j = 0; j < nV; j++) tepi.push(titikTepi(1, j / nV));
+    for (let i = nU; i > 0; i--) tepi.push(titikTepi(i / nU, 1));
+    for (let j = nV; j > 0; j--) tepi.push(titikTepi(0, j / nV));
     const warnaTepi = p.warnaSinar ? warna.clone().offsetHSL(0, 0.1, -0.18) : new THREE.Color().setHSL(ronaProyektor(idx), 0.9, 0.55);
     const lebarGaris = Math.min(0.03, Math.max(0.01, sn.jarak * w1 * 0.003));
     const keLensa = (P: T.Vector3) => O.clone().sub(P).normalize();
     const pita: number[] = [], kerucut: number[] = [], alfa: number[] = [];
-    if (nyata) {
-      const pojokG = [titikTepi(0, 0), titikTepi(NX - 1, 0), titikTepi(NX - 1, NY - 1), titikTepi(0, NY - 1)].filter((x): x is Kena => !!x);
-      for (const q of pojokG) {
-        const r = q.p.clone().sub(ujung).normalize();
-        const s1 = new THREE.Vector3().crossVectors(r, Math.abs(r.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(lebarGaris / 2);
-        const s2 = new THREE.Vector3().crossVectors(r, s1).normalize().multiplyScalar(lebarGaris / 2);
-        for (const s of [s1, s2]) {
-          kerucut.push(ujung.x, ujung.y, ujung.z, q.p.x - s.x, q.p.y - s.y, q.p.z - s.z, q.p.x + s.x, q.p.y + s.y, q.p.z + s.z);
-          for (let k = 0; k < 3; k++) alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.55);
-        }
-      }
-    }
     for (let i = 0; i < tepi.length; i++) {
       const A = tepi[i], B = tepi[(i + 1) % tepi.length];
       if (!A || !B) continue;
@@ -269,7 +262,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         for (const v of [a0, b0, b1, a0, b1, a1]) pita.push(v.x, v.y, v.z);
       }
       kerucut.push(ujung.x, ujung.y, ujung.z, A.p.x, A.p.y, A.p.z, B.p.x, B.p.y, B.p.z);
-      alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.45 * redam, warna.r, warna.g, warna.b, 0.08 * redam, warna.r, warna.g, warna.b, 0.08 * redam);
+      if (nyata) {
+        const [cr, cg, cb] = CAHAYA_UDARA.warna, ujungA = CAHAYA_UDARA.layar * redam;
+        alfa.push(cr, cg, cb, CAHAYA_UDARA.lensa * redam, cr, cg, cb, ujungA, cr, cg, cb, ujungA);
+      } else alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.45 * redam, warna.r, warna.g, warna.b, 0.08 * redam, warna.r, warna.g, warna.b, 0.08 * redam);
     }
     if (pita.length) {
       const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pita, 3));
@@ -278,8 +274,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     }
     if (kerucut.length) {
       const g3 = new THREE.BufferGeometry();
-      g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute('color', new THREE.Float32BufferAttribute(alfa, 4));
-      const kerucutSinar = new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
+      g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute(nyata ? 'warnaSinar' : 'color', new THREE.Float32BufferAttribute(alfa, 4));
+      if (nyata) g3.computeVertexNormals();
+      const kerucutSinar = new THREE.Mesh(g3, nyata ? bahanSinarUdara(THREE) : new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
       kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
     }
     const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
