@@ -9,6 +9,8 @@ import type { SubLED } from './_components/KalkulatorLED';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
 import { PenjagaAlat } from './_components/bersama/PenjagaAlat';
+import { useLayarPenuh } from './_components/bersama/layarPenuh';
+import { Expand, Minimize } from 'lucide-react';
 
 const Memuat = () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat...</div>;
 const Desain3D = dynamic(() => import('./_components/Desain3D'), { ssr: false, loading: Memuat });
@@ -28,6 +30,7 @@ const ALAT = [
   { k: 'cekbarang', judul: 'Checklist Barang', ket: 'Impor daftar barang dari Excel / PDF, centang hasil cek, unduh PDF bertanda tangan', ikon: '📋', C: ChecklistBarang },
   { k: 'pustaka', judul: 'Pustaka', ket: 'Katalog produk, data acuan & artikel panduan tim - diisi Admin, dipakai kalkulator', ikon: '📚', C: Pustaka },
 ] as const;
+const PUNYA_LAYAR = new Set(['3d', 'sld']);
 
 function ToolsKerjaInner() {
   const sp = useSearchParams();
@@ -49,10 +52,12 @@ function ToolsKerjaInner() {
   }, []);
   useEffect(() => { if (siap) catatPemakaian('tools-team', aktif); }, [siap, aktif]);
 
+  const [penuh, aturPenuh] = useLayarPenuh();
   const [dibuka, setDibuka] = useState<string[]>([aktif]);
   if (!dibuka.includes(aktif)) setDibuka([...dibuka, aktif]);
   const pilih = (k: string) => {
     setAktif(k);
+    aturPenuh(false);
     try { const url = new URL(window.location.href); url.searchParams.set('alat', k); url.searchParams.delete('sub'); window.history.replaceState(null, '', url); } catch {  }
   };
   const pilihSub = (sub: SubLED) => {
@@ -74,14 +79,34 @@ function ToolsKerjaInner() {
             </button>
           );
         })}
+        {!PUNYA_LAYAR.has(aktif) && (
+          <button type="button" onClick={() => aturPenuh(true)} title="Tampilkan alat ini layar penuh (Esc untuk keluar)"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">
+            <Expand size={15} aria-hidden="true" />Layar penuh
+          </button>
+        )}
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
-          {alat.filter(a => dibuka.includes(a.k)).map(a => (
-            <section key={a.k} hidden={a.k !== aktif} aria-label={a.judul}>
-              <PenjagaAlat nama={a.judul}>{a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}</PenjagaAlat>
-            </section>
-          ))}
+          {alat.filter(a => dibuka.includes(a.k)).map(a => {
+            const layar = penuh && a.k === aktif && !PUNYA_LAYAR.has(a.k);
+            return (
+              <section key={a.k} hidden={a.k !== aktif} aria-label={a.judul}
+                className={layar ? 'fixed inset-0 z-[900] overflow-auto bg-slate-100 px-2 sm:px-4 pb-4 print:static print:overflow-visible print:p-0' : undefined}>
+                {layar && (
+                  <div className="sticky top-0 z-40 -mx-2 sm:-mx-4 mb-3 flex items-center gap-2 border-b border-slate-200 bg-white/95 px-3 py-2 backdrop-blur print:hidden">
+                    <Ikon nama={a.ikon} ukuran={15} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{a.judul}</span>
+                    <button type="button" onClick={() => aturPenuh(false)} title="Keluar layar penuh (Esc)"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">
+                      <Minimize size={14} aria-hidden="true" />Keluar layar penuh
+                    </button>
+                  </div>
+                )}
+                <PenjagaAlat nama={a.judul}>{a.k === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <a.C />}</PenjagaAlat>
+              </section>
+            );
+          })}
         </main>
       </div>
     </div>

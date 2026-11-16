@@ -191,7 +191,7 @@ function Tip({ teks, label, className, bungkus, onKlik, children }: {
         onClick={e => { e.preventDefault(); if (onKlik === 'alih' && posisi) tutup(); else buka(); }}>{children}</button>
       {posisi && createPortal(
         <span role="tooltip" style={{ position: 'fixed', ...posisi }}
-          className="pointer-events-none z-[100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl normal-case tracking-normal font-normal">
+          className="pointer-events-none z-[3100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl normal-case tracking-normal font-normal">
           {teks}
         </span>,
         document.body,
