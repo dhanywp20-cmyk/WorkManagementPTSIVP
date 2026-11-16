@@ -1,5 +1,5 @@
 import { keGambar, lensaDari, arahSinar, type Lensa } from './blending';
-import { ukuranBidang } from './produk';
+import { bolaBidang, ukuranBidang } from './produk';
 import { gantiRasioProyektor, pasangKeLayar, RASIO_PROYEKTOR, rasioGambarProyektor } from './proyektor';
 import type { Benda, Kotak, RasioProyektor, Ruang, Titik } from './tipe';
 
@@ -44,12 +44,39 @@ export function permukaanPersegi(nama: string, pusat: Titik, kanan: Titik, atas:
   };
 }
 
+function permukaanBola(b: Benda, F: ReturnType<typeof kerangka>): Permukaan {
+  const { R, tb, a0, zP, yP, fiM } = bolaBidang(b);
+  const sampel: Sampel[] = [];
+  for (let i = 0; i <= NS; i++) for (let j = 0; j <= NT; j++) {
+    const s = i / NS, t = j / NT, a = a0 + tb * (1 - s), fi = -fiM + 2 * fiM * t;
+    const arah: Titik = [Math.cos(fi) * Math.sin(a), Math.sin(fi), Math.cos(fi) * Math.cos(a)];
+    sampel.push({ p: F.keDunia([R * arah[0], yP + R * arah[1], zP + R * arah[2]]), n: F.arahKeDunia([-arah[0], -arah[1], -arah[2]]), s, t });
+  }
+  return {
+    nama: b.nama, sampel,
+    kena(Ow, dw) {
+      const O = F.keLokal(Ow), dd = F.arahKeLokal(dw);
+      const o: Titik = [O[0], O[1] - yP, O[2] - zP];
+      const A = dot(dd, dd), B = 2 * dot(o, dd), C = dot(o, o) - R * R, disk = B * B - 4 * A * C;
+      if (A < 1e-9 || disk < 0) return null;
+      const tt = (-B + Math.sqrt(disk)) / (2 * A);
+      if (tt <= 0) return null;
+      const x = o[0] + dd[0] * tt, y = o[1] + dd[1] * tt, z = o[2] + dd[2] * tt;
+      if (Math.abs(Math.asin(Math.max(-1, Math.min(1, y / R)))) > fiM + 1e-6) return null;
+      let a = Math.atan2(x, z) - a0;
+      a = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      return a <= tb + 1e-6 ? tt : null;
+    },
+  };
+}
+
 export function permukaanBenda(b: Benda): Permukaan {
   const F = kerangka(b);
   if (b.jenis === 'layar' || (b.jenis === 'bidang' && (b.bentukBidang ?? 'datar') === 'datar')) {
     const w = b.jenis === 'layar' ? b.w : ukuranBidang(b).w, muka = b.jenis === 'layar' ? b.d / 2 : 0.02;
     return permukaanPersegi(b.nama, F.keDunia([0, b.h / 2, muka]), F.arahKeDunia([1, 0, 0]), [0, 1, 0], F.arahKeDunia([0, 0, 1]), w, b.h);
   }
+  if (b.bentukBidang === 'bola') return permukaanBola(b, F);
   const { R, busur, d } = ukuranBidang(b);
   const cembung = b.bentukBidang === 'cembung', zP = cembung ? d / 2 - R : R - d / 2;
   const tb = (busur * Math.PI) / 180, a0 = cembung ? -tb / 2 : Math.PI - tb / 2;

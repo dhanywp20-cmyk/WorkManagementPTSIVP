@@ -213,7 +213,7 @@ export function bangunProyektor({ THREE, g, b, W }: Konteks) {
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
       g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, kaki, 16), karet).translateX(sx * (b.w / 2 - 0.045)).translateY(kaki / 2).translateZ(sz * (b.d / 2 - 0.04)));
     }
-  } else {
+  } else if (!b.tanpaTiang) {
     const besi = mat(THREE, 0x25282e, { metalness: 0.75, roughness: 0.35 });
     const hub = new THREE.Vector3(0, b.h + 0.022, 0);
     g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.016, 24), besi).translateY(b.h + 0.016));
@@ -229,7 +229,7 @@ export function bangunProyektor({ THREE, g, b, W }: Konteks) {
   badan.position.set(0, -ey, -ez); pivot.add(badan);
   pivot.rotation.x = -(tiltDari(b) * Math.PI) / 180;
   utama.add(pivot);
-  if (!meja) {
+  if (!meja && !b.tanpaTiang) {
     const g = utama;
     const besi = mat(THREE, 0x25282e, { metalness: 0.75, roughness: 0.35 });
     g.add(new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), besi).translateY(b.h + 0.04));

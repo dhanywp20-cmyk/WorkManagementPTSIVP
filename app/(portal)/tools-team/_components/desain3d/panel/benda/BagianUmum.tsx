@@ -1,5 +1,6 @@
 'use client';
-import { Angka, Pilih, Catatan } from '../../../bersama/ui';
+import { useState } from 'react';
+import { Angka, Pilih, Catatan, f } from '../../../bersama/ui';
 import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
@@ -21,6 +22,15 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
   const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk, setUkuran } = c;
   const setLebarTinggi = b.jenis === 'led' ? setUkuran : set;
   const proyektor = b.jenis === 'proyektor';
+  const [tahanPlafon, setTahanPlafon] = useState<{ id: string; teks: string } | null>(null);
+  const ubahElev = (v: number) => {
+    if (v < 0) return;
+    const maks = Math.max(0, plafon - b.h);
+    set({ elev: Math.min(maks, v) });
+    setTahanPlafon(v > maks + 0.005
+      ? { id: b.id, teks: `Dari lantai ditahan ${f(maks)} m: tinggi ${f(b.h)} m + ${f(v)} m melewati plafon ${f(plafon)} m. Naikkan Plafon di panel Ruang dulu (minimal ${f(b.h + v)} m).` }
+      : null);
+  };
   return (
     <>
       {b.jenis !== 'model' && b.jenis !== 'teks' && (
@@ -73,8 +83,9 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
           <Angka label="X" nilai={b.x} satuan="m" onUbah={v => set({ x: Math.min(batas.x, Math.max(0, v)) })} />
           <Angka label="Z" nilai={b.z} satuan="m" onUbah={v => set({ z: Math.min(batas.z, Math.max(0, v)) })} />
           <Angka label="Putar" nilai={b.rot} satuan="°" onUbah={v => set({ rot: ((v % 360) + 360) % 360 })} />
-          <Angka label="Dari lantai" nilai={Math.round(b.elev * 100) / 100} satuan="m" onUbah={v => v >= 0 && set({ elev: Math.min(Math.max(0, plafon - b.h), v) })} />
+          <Angka label="Dari lantai" nilai={Math.round(b.elev * 100) / 100} satuan="m" onUbah={ubahElev} />
         </div>
+        {tahanPlafon?.id === b.id && <p className="mt-1.5 text-[12px] font-semibold text-amber-700">{tahanPlafon.teks}</p>}
       </div>
       )}
       </Bagian>

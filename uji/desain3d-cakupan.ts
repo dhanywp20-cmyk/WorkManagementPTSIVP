@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, lengkapiDariKatalog, perluDataResmi, type KatalogTdc, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
-  templateRuang, type Benda, type Ruang,
+  templateRuang, type Benda, type Ruang, bolaBidang, mataPilot,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -22,9 +22,9 @@ console.log('\n1. Alat ukur');
 
 console.log('\n2. Template kategori');
 const kategoriProyektor = KATEGORI_RUANG.filter(k => proyektorDi(templateRuang(k.id).benda).length);
-cek('template yang memakai proyektor: mapping cekung, cembung, objek, immersive',
-  kategoriProyektor.map(k => k.id).sort().join() === ['immersive', 'mapping-cembung', 'mapping-lengkung', 'mapping-objek'].join());
-for (const id of ['mapping-lengkung', 'mapping-cembung'] as const) {
+cek('template yang memakai proyektor: mapping cekung, cembung, objek, immersive, simulator',
+  kategoriProyektor.map(k => k.id).sort().join() === ['immersive', 'mapping-cembung', 'mapping-lengkung', 'mapping-objek', 'simulator'].join());
+for (const id of ['mapping-lengkung', 'mapping-cembung', 'simulator'] as const) {
   const t = templateRuang(id), proj = proyektorDi(t.benda), bidang = t.benda.find(b => b.jenis === 'bidang')!;
   const c = cakupanProyektor(proj, permukaanBenda(bidang));
   cek(`${id}: layar tertutup >= 99% (${pr(c.tertutup)})`, c.tertutup >= 0.99, c.celah.join('/'));
@@ -53,6 +53,16 @@ for (const id of ['mapping-lengkung', 'mapping-cembung'] as const) {
   }
   const lantai = proj.filter(p => (p.tilt ?? 0) === -90);
   cek('immersive: lantai 6 × 6 m cukup SATU ET-ELU20 tegak ke bawah', lantai.length === 1 && cakupanProyektor(lantai, permukaanRuang(k, 'lantai')).tertutup >= 0.99);
+}
+{
+  const t = templateRuang('simulator'), proj = proyektorDi(t.benda), bidang = t.benda.find(b => b.jenis === 'bidang')!;
+  const pesawat = t.benda.find(b => b.jenis === 'objek')!, bl = bolaBidang(bidang), mata = mataPilot(pesawat);
+  cek('simulator: layar cekung bola Ø 5 m (jari-jari 2,5 m), busur 225° × tegak 50° (±25°)', bidang.bentukBidang === 'bola' && bidang.jariBidang === 2.5 && bidang.busur === 225
+    && Math.abs((bl.fiM * 180) / Math.PI - 25) < 0.05);
+  cek('simulator: pesawat 3 m, mata pilot tepat di pusat bola (± 1 cm)', pesawat.bentukObjek === 'pesawat' && pesawat.d === 3
+    && Math.hypot(mata[0] - bidang.x, mata[1] - (bidang.elev + bl.yP), mata[2] - (bidang.z + bl.zP)) < 0.01);
+  cek('simulator: 3 proyektor melayang di luar bola (di bukaan belakang, >= 40 cm di luar layar) & di bawah plafon',
+    proj.length === 3 && proj.every(p => p.tanpaTiang && Math.hypot(p.x - mata[0], p.z - mata[2]) >= bl.R + 0.4 && p.elev >= 2 && p.elev + p.h <= t.ruang.t));
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');
@@ -111,8 +121,9 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
   cek('zona blending dipotong halus: bingkai lawan + sudut datang kedua lensa (COS_MIN)',
     /cos\(A\.O\) - COS_MIN, cos\(B\.O\) - COS_MIN/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/blending.ts', 'utf8')));
   cek('Mask ke bidang: hanya cahaya di layar / bidang yang digambar', /const bolehId = \(id: string \| null\) => !diBenda\(id\) && \(!mask \|\| diBidang\(id\)\)/.test(sinar));
-  cek('semua template: sinar nyata tanpa Mask (cahaya lewat tepi layar tetap jatuh ke dinding / lantai)',
-    KATEGORI_RUANG.every(k => proyektorDi(templateRuang(k.id).benda).every(p => !p.maskBidang)));
+  cek('semua template kecuali simulator: sinar nyata tanpa Mask (cahaya lewat tepi layar tetap jatuh ke dinding / lantai)',
+    KATEGORI_RUANG.filter(k => k.id !== 'simulator').every(k => proyektorDi(templateRuang(k.id).benda).every(p => !p.maskBidang)));
+  cek('simulator 225°: semua proyektor Mask (warping & masking software simulator)', proyektorDi(templateRuang('simulator').benda).every(p => p.maskBidang));
   cek('terang cahaya per titik mengikuti jarak² & sudut datang (bukan warna rata di semua permukaan)',
     /return Math\.max\(0\.05, cosT\) \/ \(cosA \*\* 3 \* d2\);/.test(sinar) && /vertexColors: true, opacity: bg\.opasitas/.test(sinar) && /q\.map\(x => faktor\(x\.p, x\.n\)\)/.test(sinar));
   const mesin = readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/useMesin.ts', 'utf8');

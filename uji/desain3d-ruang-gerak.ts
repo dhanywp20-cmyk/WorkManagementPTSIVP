@@ -21,6 +21,12 @@ cek('benda di atas meja (beda tinggi) -> aman', !kode([b({ id: 'm', jenis: 'meja
 cek('kursi di bawah meja -> wajar', !kode([b({ id: 'm', jenis: 'meja', bentukMeja: 'kelas', w: 1.2, d: 0.5 }), b({ id: 'k', jenis: 'kursi', z: 3.3, w: 0.5, d: 0.5 })]).includes('tumpang'));
 cek('kotak diputar 45° di sudut kotak lain (AABB bersentuhan, bentuk tidak) -> aman',
   !kode([b({ id: 'a', jenis: 'objek' }), b({ id: 'c', jenis: 'objek', x: 4.15, z: 4.15, rot: 45 })]).includes('tumpang'));
+const cekung = (x: Partial<Benda> = {}) => b({ id: 'l', jenis: 'bidang', bentukBidang: 'lengkung', jariBidang: 1, busur: 225, w: 2, d: 1.383, h: 2, elev: 0.3, x: 3, z: 1.6, ...x });
+cek('kokpit di dalam layar cekung 225° (tapak kotak layar) -> aman', !kode([cekung(), b({ id: 'k', jenis: 'objek', x: 3, z: 2.9, w: 1, d: 3, h: 1.1 })]).includes('tumpang'));
+cek('kokpit menembus busur layar cekung -> tumpang', kode([cekung(), b({ id: 'k', jenis: 'objek', x: 3, z: 2.4, w: 1, d: 3, h: 1.1 })]).includes('tumpang'));
+cek('benda di bukaan belakang layar 225° -> aman, menyentuh ujung busur -> tumpang',
+  !kode([cekung(), b({ id: 'k', jenis: 'objek', x: 3, z: 3, w: 1.6, d: 0.4 })]).includes('tumpang') && kode([cekung(), b({ id: 'k', jenis: 'objek', x: 3, z: 2.3, w: 2, d: 0.4 })]).includes('tumpang'));
+cek('layar cekung diputar 90°: benda di dalam tetap aman', !kode([cekung({ rot: 90, x: 2.5, z: 3 }), b({ id: 'k', jenis: 'objek', x: 2.5, z: 3, w: 0.6, d: 0.6 })]).includes('tumpang'));
 
 console.log('\n3. Dinding & plafon');
 cek('keluar dinding kanan', cekRuangGerak([b({ id: 'a', jenis: 'objek', x: 5.8 })], ruang).some(c => c.kode === 'keluar' && c.pesan.includes('kanan')));

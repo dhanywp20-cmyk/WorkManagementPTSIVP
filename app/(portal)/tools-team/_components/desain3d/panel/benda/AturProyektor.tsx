@@ -18,11 +18,16 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
       {b.jenis === 'proyektor' && (
         <>
           <Bagian tab="posisi">
-          <Segmen label="Pemasangan" nilai={b.pasangProyektor ?? 'plafon'} onUbah={(v: PasangProyektor) => {
-            const baru = bendaBaru('proyektor', kosong, { pasangProyektor: v });
+          <Segmen label="Pemasangan" nilai={b.pasangProyektor === 'meja' ? 'meja' : b.tanpaTiang ? 'melayang' : 'plafon'} onUbah={(v: PasangProyektor | 'melayang') => {
+            const pasang: PasangProyektor = v === 'meja' ? 'meja' : 'plafon', tanpaTiang = v === 'melayang' || undefined;
+            if (pasang === (b.pasangProyektor ?? 'plafon')) { onUbah({ ...b, tanpaTiang }); return; }
+            const baru = bendaBaru('proyektor', kosong, { pasangProyektor: pasang });
             const namaBawaan = ['Proyektor', 'Proyektor plafon', 'Proyektor portabel'].includes(b.nama);
-            onUbah({ ...b, pasangProyektor: v, w: baru.w, h: baru.h, d: baru.d, elev: baru.elev, nama: namaBawaan ? baru.nama : b.nama });
-          }} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Portabel di meja' }]} />
+            onUbah({ ...b, pasangProyektor: pasang, tanpaTiang, w: baru.w, h: baru.h, d: baru.d, elev: baru.elev, nama: namaBawaan ? baru.nama : b.nama });
+          }} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'melayang', l: 'Melayang' }, { v: 'meja', l: 'Portabel meja' }]} />
+          {b.pasangProyektor !== 'meja' && (
+            <Catatan>Melayang = proyektor tanpa tiang & pelat plafon (dipasang ke rangka layar / truss), supaya tampilan tidak terhalang tiang. Bawaan di template immersive, mapping & simulator.</Catatan>
+          )}
           <div>
             <span className={label}>Pan & tilt</span>
             <div className="grid grid-cols-2 gap-2">

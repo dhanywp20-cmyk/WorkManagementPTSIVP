@@ -229,7 +229,7 @@ export interface ProdukTim {
 
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'hollow', 'standfloor'],
-  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
+  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung', 'bola'], finish: ['walnut', 'oak', 'putih'],
   tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop', 'putih'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
@@ -257,6 +257,7 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (typeof a.nama === 'string' && a.nama.trim()) hasil.nama = a.nama.trim().slice(0, 80);
   if (typeof a.naik === 'boolean') hasil.naik = a.naik;
   if (typeof a.gantung === 'boolean') hasil.gantung = a.gantung;
+  if (typeof a.tanpaTiang === 'boolean') hasil.tanpaTiang = a.tanpaTiang;
   if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
   const isiRak = bersihkanIsiRak(a.isiRak);
   if (isiRak) hasil.isiRak = isiRak;
@@ -298,7 +299,7 @@ export function bacaDaftarProduk(v: unknown): ProdukTim[] {
 }
 
 export const ID_KATEGORI_RUANG = [
-  'kosong', 'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
+  'kosong', 'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive', 'simulator',
 ] as const;
 export const kategoriRuangSah = (x: unknown): x is (typeof ID_KATEGORI_RUANG)[number] =>
   typeof x === 'string' && (ID_KATEGORI_RUANG as readonly string[]).includes(x);

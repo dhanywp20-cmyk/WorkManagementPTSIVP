@@ -345,7 +345,7 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
     const l = keDunia(b, lensaProyektor(b));
     return dekat(b.throwRatio ?? 0, 0.33827, 1e-6) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 2.05, 0.002) && dekat((2.05 + 0.029388) / 0.33827, 6.147, 0.001);
   }));
-  for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'] as const) {
+  for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'simulator'] as const) {
     const t = templateRuang(id);
     cek(`${id}: dinding abu-abu & cahaya ruangan gelap`, t.ruang.warnaDinding === '#9ca3af' && t.ruang.cahaya === 'gelap');
   }
@@ -432,7 +432,7 @@ console.log('\nCahaya siang dari jendela');
 console.log('\nTemplate default kategori: lengkap & terkunci');
 {
   const semua = TP.KATEGORI_RUANG.map(k => k.id);
-  cek('9 kategori ruangan tersedia (termasuk Ruangan kosong)', semua.length === 9);
+  cek('10 kategori ruangan tersedia (termasuk Ruangan kosong & Simulator pesawat)', semua.length === 10);
   const kosong = TP.templateRuang('kosong');
   cek('Ruangan kosong: 4 × 4 m, tinggi 3 m, tanpa benda', kosong.ruang.p === 4 && kosong.ruang.l === 4 && kosong.ruang.t === 3 && !kosong.ruang.r2 && kosong.benda.length === 0);
   const tanpaIsi = semua.filter(id => id !== 'kosong' && !TP.templateRuang(id).benda.length);

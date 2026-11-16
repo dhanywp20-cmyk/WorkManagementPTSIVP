@@ -1,5 +1,6 @@
 import { BATAS_LUBER, luberLayar, teksLuber } from './cakupanProyektor';
 import { sudutTapak, type P2 } from './denah';
+import { ukuranBidang } from './produk';
 import { sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sambunganKe, sisiLuar } from './ruang';
 import type { Benda, Kotak, Ruang, SisiDinding } from './tipe';
@@ -25,6 +26,24 @@ function poligonTumpang(a: P2[], b: P2[], celah = TOLERANSI): boolean {
   }
   return true;
 }
+const TEBAL_BIDANG = 0.1;
+function tapakPadat(b: Benda): P2[][] {
+  if (b.jenis !== 'bidang' || (b.bentukBidang ?? 'datar') === 'datar') return [sudutTapak(b)];
+  const { R, busur, d } = ukuranBidang(b), cembung = b.bentukBidang === 'cembung';
+  const zP = cembung ? d / 2 - R : R - d / 2, tb = (busur * Math.PI) / 180, a0 = cembung ? -tb / 2 : Math.PI - tb / 2;
+  const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
+  const n = Math.min(180, Math.max(4, Math.ceil(busur / 5), Math.ceil((R * tb) / 0.5)));
+  const titik = (a: number, jari: number): P2 => {
+    const x = jari * Math.sin(a), z = zP + jari * Math.cos(a);
+    return [b.x + x * c + z * s, b.z - x * s + z * c];
+  };
+  const dalam = R - TEBAL_BIDANG / 2, luar = R + TEBAL_BIDANG / 2;
+  return Array.from({ length: n }, (_, i) => {
+    const a1 = a0 + (tb * i) / n, a2 = a0 + (tb * (i + 1)) / n;
+    return [titik(a1, dalam), titik(a2, dalam), titik(a2, luar), titik(a1, luar)];
+  });
+}
+const tapakTumpang = (a: P2[][], b: P2[][]) => a.some(x => b.some(y => poligonTumpang(x, y)));
 const persegi = (x0: number, z0: number, x1: number, z1: number): P2[] => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
 const tumpangTinggi = (a: Benda, b: Benda) => Math.min(a.elev + a.h, b.elev + b.h) - Math.max(a.elev, b.elev) > TOLERANSI;
 
@@ -52,7 +71,7 @@ function areaPintu(ruang: Ruang): { nama: string; area: P2[]; tinggi: number }[]
 export function cekRuangGerak(benda: Benda[], ruang: Ruang): CatatanRuangGerak[] {
   const hasil: CatatanRuangGerak[] = [];
   const kotak = daftarRuang(ruang);
-  const isi = benda.filter(padat).map(b => ({ b, s: sudutTapak(b) }));
+  const isi = benda.filter(padat).map(b => ({ b, s: tapakPadat(b) }));
 
   for (const b of benda) {
     if (b.jenis === 'teks') continue;
@@ -70,12 +89,12 @@ export function cekRuangGerak(benda: Benda[], ruang: Ruang): CatatanRuangGerak[]
   };
   for (let x = 0; x < isi.length; x++) for (let y = x + 1; y < isi.length; y++) {
     const a = isi[x], c = isi[y];
-    if (wajar(a.b, c.b) || !tumpangTinggi(a.b, c.b) || !poligonTumpang(a.s, c.s)) continue;
+    if (wajar(a.b, c.b) || !tumpangTinggi(a.b, c.b) || !tapakTumpang(a.s, c.s)) continue;
     hasil.push({ kode: 'tumpang', id: c.b.id, pesan: `${c.b.nama} bertumpuk dengan ${a.b.nama}` });
   }
 
   for (const p of areaPintu(ruang)) {
-    const halang = isi.filter(({ b, s }) => b.elev < p.tinggi && poligonTumpang(s, p.area));
+    const halang = isi.filter(({ b, s }) => b.elev < p.tinggi && tapakTumpang(s, [p.area]));
     if (halang.length) hasil.push({ kode: 'pintu', id: halang[0].b.id, pesan: `${p.nama} terhalang ${halang.map(h => h.b.nama).slice(0, 3).join(', ')}` });
   }
 
@@ -92,7 +111,7 @@ export function cekRuangGerak(benda: Benda[], ruang: Ruang): CatatanRuangGerak[]
     const area = sudutTapak({ x: b.x + maju[0] * (b.d / 2 + SERVIS_RAK_MIN / 2), z: b.z + maju[1] * (b.d / 2 + SERVIS_RAK_MIN / 2), w: b.w, d: SERVIS_RAK_MIN, rot: b.rot });
     const k = kotak[ruangDari(ruang, b.x)];
     const diLuar = area.some(([x, z]) => x < k.x0 - TOLERANSI || x > k.x0 + k.p + TOLERANSI || z < -TOLERANSI || z > k.l + TOLERANSI);
-    const halang = isi.filter(o => o.b.id !== b.id && o.b.jenis !== 'kursi' && o.b.elev < 1.8 && poligonTumpang(o.s, area));
+    const halang = isi.filter(o => o.b.id !== b.id && o.b.jenis !== 'kursi' && o.b.elev < 1.8 && tapakTumpang(o.s, [area]));
     if (diLuar || halang.length) hasil.push({ kode: 'rak', id: b.id, pesan: `Depan ${b.nama} kurang ${cm(SERVIS_RAK_MIN)} untuk servis${halang.length ? ` (terhalang ${halang[0].b.nama})` : ' (dinding)'}` });
   }
   for (const p of benda) {

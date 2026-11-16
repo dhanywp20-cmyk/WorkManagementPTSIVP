@@ -1,6 +1,24 @@
 import type * as T from 'three';
-import { type Benda, ukuranBidang } from '../inti';
+import { type Benda, bolaBidang, ukuranBidang } from '../inti';
 import { batang, type Konteks, kotak, mat } from './dasar';
+import { bangunPesawat } from './pesawat';
+
+function layarBola(THREE: typeof T, g: T.Group, b: Benda, warna: number, lis: T.Material) {
+  const { R, busur, tb, a0, zP, yP, fiM } = bolaBidang(b);
+  const segA = Math.max(32, Math.round(busur / 2)), segF = Math.max(12, Math.round((fiM * 180) / Math.PI / 2));
+  const geo = new THREE.SphereGeometry(R, segA, segF, a0 + Math.PI / 2, tb, Math.PI / 2 - fiM, 2 * fiM);
+  geo.translate(0, yP, zP);
+  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide })));
+  const titik = (a: number, fi: number) => new THREE.Vector3(R * Math.cos(fi) * Math.sin(a), yP + R * Math.sin(fi), zP + R * Math.cos(fi) * Math.cos(a));
+  const garis = (p: T.Vector3[]) => g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), Math.max(12, p.length * 2), 0.02, 6, false), lis));
+  const n = Math.max(12, Math.round(busur / 4)), m = Math.max(6, Math.round(segF / 2));
+  for (const fi of [-fiM, fiM]) garis(Array.from({ length: n + 1 }, (_, i) => titik(a0 + (tb * i) / n, fi)));
+  if (busur < 360) for (const a of [a0, a0 + tb]) garis(Array.from({ length: m + 1 }, (_, j) => titik(a, -fiM + (2 * fiM * j) / m)));
+  for (const f of busur < 360 ? [0.08, 0.5, 0.92] : [0, 0.25, 0.5, 0.75]) {
+    const a = a0 + tb * f;
+    g.add(batang(THREE, 0.05, 0.05, lis, (R + 0.06) * Math.sin(a), zP + (R + 0.06) * Math.cos(a), 'kaki', yP));
+  }
+}
 
 function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   const lis = mat(THREE, 0x1f2227, { metalness: 0.4, roughness: 0.5 });
@@ -14,6 +32,7 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
     for (const x of [-w * 0.35, w * 0.35]) g.add(batang(THREE, 0.05, 0.05, lis, x, -0.05, 'kaki', b.h * 0.5));
     return;
   }
+  if (b.bentukBidang === 'bola') { layarBola(THREE, g, b, warna, lis); return; }
   const { R, busur, d } = ukuranBidang(b);
   const t = (busur * Math.PI) / 180, cembung = b.bentukBidang === 'cembung';
   const mulai = cembung ? -t / 2 : Math.PI - t / 2, zPusat = cembung ? d / 2 - R : R - d / 2;
@@ -58,6 +77,7 @@ function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto
       pasang(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1)).rotateY(Math.PI / 4).scale(w, h, d).translate(0, h / 2, 0);
       return;
     }
+    case 'pesawat': bangunPesawat(THREE, g, b, warna); return;
     case 'prisma': {
       const segi = new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0, 1)]);
       pasang(new THREE.ExtrudeGeometry(segi, { depth: 1, bevelEnabled: false })).translate(0, 0, -0.5).scale(w, h, d);
