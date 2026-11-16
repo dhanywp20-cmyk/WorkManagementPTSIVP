@@ -1,5 +1,6 @@
 'use client';
 import type { AlatDesain } from './alat';
+import { TipTombol } from '../../bersama/ui';
 
 export const BANTUAN_KONTROL = [
   'Klik benda = pilih · Shift / Ctrl + klik = pilih banyak',
@@ -27,7 +28,7 @@ export function IdentitasBerkas({ a }: { a: AlatDesain }) {
     <div className="flex items-center gap-1 min-w-0 ml-0.5" role="group" aria-label="Berkas yang sedang dibuka">
       <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Nama desain" aria-label="Nama desain" title="Nama desain - klik untuk mengganti"
         className="h-8 w-28 sm:w-44 xl:w-52 rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden truncate" />
-      <span title={rinci.judul} aria-label={rinci.judul} className={`inline-flex items-center h-6 px-2 rounded-full border text-[11.5px] font-semibold cursor-help ${kelas}`}>{rinci.isi}</span>
+      <TipTombol teks={rinci.judul} label={`Status berkas: ${rinci.judul}`} className={`inline-flex items-center h-6 px-2 rounded-full border text-[11.5px] font-semibold cursor-help ${kelas}`}>{rinci.isi}</TipTombol>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Ikon } from '@/components/shared/Ikon';
 import type { Lembar } from '@/lib/lembar-cetak';
 import { SimpanKeProyek } from './SimpanKeProyek';
+import { usePasPopup } from './pasPopup';
 
 export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
@@ -22,8 +23,8 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
   }, [nilai]);
   return (
     <label className="block min-w-0">
-      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1" title={bantuan}>
-        {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-500 cursor-help" aria-hidden="true">ⓘ</span>}
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+        {label}{bantuan && <TipBantuan teks={bantuan} label={label} />}
       </span>
       <span className="relative block">
         <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}
@@ -113,6 +114,8 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   const [simpanBuka, setSimpanBuka] = useState(false);
   const [png, setPng] = useState<'siap' | 'proses' | 'gagal'>('siap');
   const akar = useRef<HTMLDivElement>(null);
+  const kotak = useRef<HTMLDivElement>(null);
+  usePasPopup(kotak, buka);
   useEffect(() => {
     if (!buka) return;
     const luar = (e: MouseEvent) => { if (!akar.current?.contains(e.target as Node)) setBuka(false); };
@@ -141,7 +144,7 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
         <span aria-hidden="true" className={`text-[9px] transition-transform ${buka ? 'rotate-180' : ''}`}>▼</span>
       </button>
       {buka && (
-        <div role="menu" className="absolute right-0 top-full mt-1 z-50 w-52 rounded-xl border border-slate-200 bg-white p-1 shadow-dropdown">
+        <div ref={kotak} role="menu" className="absolute right-0 top-full mt-1 z-50 w-52 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-dropdown">
           <button type="button" role="menuitem" onClick={salin} className={KELAS_MENU_EKSPOR}><Ikon nama="📋" ukuran={15} /> Salin hasil</button>
           {onCetak && <button type="button" role="menuitem" onClick={() => { setBuka(false); onCetak(); }} className={KELAS_MENU_EKSPOR}><Ikon nama="🖨" ukuran={15} /> Cetak</button>}
           {onPng && (
@@ -161,7 +164,9 @@ export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   );
 }
 
-export function Catatan({ children }: { children: React.ReactNode }) {
+function Tip({ teks, label, className, bungkus, onKlik, children }: {
+  teks: React.ReactNode; label: string; className: string; bungkus: string; onKlik: 'buka' | 'alih'; children: React.ReactNode;
+}) {
   const tombol = useRef<HTMLButtonElement>(null);
   const [posisi, setPosisi] = useState<React.CSSProperties | null>(null);
   const buka = () => {
@@ -174,21 +179,41 @@ export function Catatan({ children }: { children: React.ReactNode }) {
   const tutup = () => setPosisi(null);
   useEffect(() => {
     if (!posisi) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setPosisi(null); };
     window.addEventListener('scroll', tutup, true);
     window.addEventListener('resize', tutup);
-    return () => { window.removeEventListener('scroll', tutup, true); window.removeEventListener('resize', tutup); };
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('scroll', tutup, true); window.removeEventListener('resize', tutup); window.removeEventListener('keydown', esc); };
   }, [posisi]);
   return (
-    <span className="relative inline-flex align-middle mt-2 print:hidden" onMouseEnter={buka} onMouseLeave={tutup}>
-      <button ref={tombol} type="button" aria-label="Keterangan" aria-expanded={!!posisi} onFocus={buka} onBlur={tutup} onClick={buka}
-        className="w-5 h-5 grid place-items-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:border-slate-400">i</button>
+    <span className={bungkus} onMouseEnter={buka} onMouseLeave={tutup}>
+      <button ref={tombol} type="button" aria-label={label} aria-expanded={!!posisi} onFocus={e => { if (e.currentTarget.matches(':focus-visible')) buka(); }} onBlur={tutup} className={className}
+        onClick={e => { e.preventDefault(); if (onKlik === 'alih' && posisi) tutup(); else buka(); }}>{children}</button>
       {posisi && createPortal(
         <span role="tooltip" style={{ position: 'fixed', ...posisi }}
-          className="pointer-events-none z-[100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
-          {children}
+          className="pointer-events-none z-[100] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl normal-case tracking-normal font-normal">
+          {teks}
         </span>,
         document.body,
       )}
     </span>
+  );
+}
+
+export function Catatan({ children }: { children: React.ReactNode }) {
+  return (
+    <Tip teks={children} label="Keterangan" onKlik="buka" bungkus="relative inline-flex align-middle mt-2 print:hidden"
+      className="w-5 h-5 grid place-items-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:border-slate-400">i</Tip>
+  );
+}
+
+export function TipTombol({ teks, label, className, children }: { teks: string; label: string; className: string; children: React.ReactNode }) {
+  return <Tip teks={teks} label={label} onKlik="alih" bungkus="inline-flex" className={className}>{children}</Tip>;
+}
+
+export function TipBantuan({ teks, label }: { teks: string; label: string }) {
+  return (
+    <Tip teks={teks} label={`Penjelasan ${label}`} onKlik="alih" bungkus="inline-flex align-middle print:hidden"
+      className="ml-1 -my-1 inline-grid h-5 w-5 place-items-center rounded-full normal-case font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800">ⓘ</Tip>
   );
 }

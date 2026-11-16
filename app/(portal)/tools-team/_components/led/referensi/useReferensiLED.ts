@@ -5,6 +5,14 @@ import { useEffect, useState } from 'react';
 const KUNCI = 'wm_led_referensi';
 
 const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR, brand: BRAND_LED };
+const VP_SUSULAN = new Set(['H2', 'H5', 'H9']);
+
+const lengkapi = (r: RefLED | null): RefLED | null => {
+  if (!r) return r;
+  const ada = new Set(r.vp.map(h => h.nama.trim().toLowerCase()));
+  const kurang = VIDEO_PROCESSOR.filter(h => VP_SUSULAN.has(h.nama) && !ada.has(h.nama.toLowerCase()));
+  return kurang.length && r.vp.length + kurang.length <= 200 ? { ...r, vp: [...r.vp, ...kurang] } : r;
+};
 
 export function useReferensiLED() {
   const [lokal, setLokal] = useState<RefLED | null>(null);
@@ -27,7 +35,7 @@ export function useReferensiLED() {
     return () => { hidup = false; };
   }, []);
 
-  const data = lokal ?? tim ?? BAWAAN;
+  const data = lengkapi(lokal) ?? lengkapi(tim) ?? BAWAAN;
   const sumber: 'lokal' | 'tim' | 'bawaan' = lokal ? 'lokal' : tim ? 'tim' : 'bawaan';
   const tulisLokal = (r: RefLED | null) => {
     setLokal(r);

@@ -33,5 +33,13 @@ console.log('\n3. Gambar menandai port yang dipakai');
   cek('panel umum 16 port', jumlahLanPanel(u) === 16 && !!u.catatan);
 }
 
+console.log('\n4. Seri H (H2/H5/H9) modular');
+for (const [m, kartu] of [['H2', 2], ['H5', 3], ['H9', 5]] as const) {
+  const p = panelUntuk(m)!;
+  const svg = svgPanelController(p, m, new Map());
+  cek(`${m}: ${kartu} kartu x 20 LAN`, jumlahLanPanel(p) === kartu * 20 && p.sumber.endsWith('.pdf'));
+  cek(`${m}: nomor port berlanjut antar kartu`, svg.includes(`>${kartu * 20}</text>`) && svg.includes('Kartu 2 · Ethernet 21–40'));
+}
+
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);
