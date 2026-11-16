@@ -234,7 +234,7 @@ export function AnalyticsPlatform({
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
               <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 focus:bg-white w-44"
-                placeholder="User / Target / Aksi..." value={auditSearch}
+                placeholder="User / Target / Aksi / Catatan..." value={auditSearch}
                 onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
               <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
                 value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
@@ -285,9 +285,10 @@ export function AnalyticsPlatform({
                               <span className="text-xs font-semibold text-gray-800">{a.user_name || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="text-[11px] font-black px-2 py-0.5 rounded-sm whitespace-nowrap"
+                              <span className="inline-block max-w-[140px] truncate align-middle text-[11px] font-black px-2 py-0.5 rounded-sm whitespace-nowrap"
+                                title={a.action}
                                 style={{background:as.bg,color:as.color,border:`1px solid ${as.border}`}}>
-                                {a.action}
+                                {a.action || '—'}
                               </span>
                             </td>
                             <td className="px-4 py-2.5">
@@ -308,8 +309,8 @@ export function AnalyticsPlatform({
                                   </div>
                                 : <span className="text-[11px] text-gray-400">—</span>}
                             </td>
-                            <td className="px-4 py-2.5 max-w-[160px]">
-                              <span className="text-[11px] text-gray-500 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
+                            <td className="px-4 py-2.5 min-w-[200px] max-w-[320px]">
+                              <span className="text-[11px] text-gray-500 line-clamp-2 wrap-break-word" title={a.notes ?? ''}>{a.notes || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
                               <span className="text-[11px] px-1.5 py-0.5 rounded-sm whitespace-nowrap"
