@@ -4,7 +4,6 @@ import { JUDUL_SISI, ModalBukaDesain } from './desain3d/panel/ModalBuka';
 import { ModalObjekGambar } from './desain3d/panel/ModalObjekGambar';
 import { PanelBenda } from './desain3d/panel/PanelBenda';
 import { PanelBanyak } from './desain3d/panel/PanelBanyak';
-import { useEffect } from 'react';
 import { PanelRuang } from './desain3d/panel/PanelRuang';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
@@ -45,20 +44,12 @@ export default function Desain3D() {
   const simpan = useSimpanDesain(K);
   const template = useTemplateKategori(K, aksi, simpan);
   const objekSaya = useObjekSaya(K);
-  const { layarPenuh, setLayarPenuh, pilihLain, asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
+  const { layarPenuh, pilihLain, asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
   const { hapusRuangTerakhir, pasangSambungan, salinIsiRuang, tambahBukaan, tambahRuang, ubahBukaan, ubahSambungan, ubahUkuran, unggahGambar } = aksi;
   const { simpanProduk } = produk;
   const { bukaDariLaptop, bukaTim } = simpan;
 
   const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template, objekSaya };
-  useEffect(() => {
-    if (!layarPenuh) return;
-    const tekan = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('[role=dialog]')) setLayarPenuh(false); };
-    const lama = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', tekan);
-    return () => { window.removeEventListener('keydown', tekan); document.body.style.overflow = lama; };
-  }, [layarPenuh, setLayarPenuh]);
   return (
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />

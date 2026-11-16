@@ -1,6 +1,6 @@
 'use client';
 import {
-  BoxSelect, Eraser, FolderOpen, HardDriveDownload, HardDriveUpload, House, Keyboard, LayoutTemplate, ListTree, Maximize2, Minimize2, MousePointer2, Plus, Redo2,
+  BoxSelect, Eraser, FolderOpen, HardDriveDownload, HardDriveUpload, House, Keyboard, LayoutTemplate, ListTree, Expand, Minimize, MousePointer2, Plus, Redo2,
   Ruler, Save, SaveAll, Type, Undo2, X,
 } from 'lucide-react';
 import { useEffect, useRef } from 'react';
@@ -90,7 +90,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
           <Segmen label="Sudut pandang" nilai={tampilan} opsi={SUDUT} onPilih={v => a.kamera.pilihSudut(KAMERA[v])} />
           <Pemisah className="max-sm:hidden" />
           <span tabIndex={0} className={`${kelasIkon} cursor-help max-sm:!hidden`} aria-label={`Pintasan & kontrol: ${BANTUAN_KONTROL}`} title={BANTUAN_KONTROL}><Keyboard size={16} /></span>
-          <TombolIkon ikon={layarPenuh ? Minimize2 : Maximize2} label={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} onClick={() => setLayarPenuh(v => !v)} />
+          <TombolIkon ikon={layarPenuh ? Minimize : Expand} label={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aktif={layarPenuh} onClick={() => setLayarPenuh(!layarPenuh)} />
           <span className="w-1" aria-hidden="true" />
           <MenuEkspor a={a} />
         </div>
