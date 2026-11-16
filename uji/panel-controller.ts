@@ -1,5 +1,5 @@
 import { SENDING_CARD, VIDEO_PROCESSOR } from '../lib/av/hitung-led';
-import { jumlahLanPanel, panelUmum, panelUntuk, PANEL_CONTROLLER, svgPanelController, type TandaPort } from '../lib/av/panel-controller';
+import { jumlahLanPanel, lanPerKartu, panelUmum, panelUntuk, PANEL_CONTROLLER, svgPanelController, type TandaPort } from '../lib/av/panel-controller';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, ok: boolean, c = '') => {
@@ -33,12 +33,17 @@ console.log('\n3. Gambar menandai port yang dipakai');
   cek('panel umum 16 port', jumlahLanPanel(u) === 16 && !!u.catatan);
 }
 
-console.log('\n4. Seri H (H2/H5/H9) modular');
-for (const [m, kartu] of [['H2', 2], ['H5', 3], ['H9', 5]] as const) {
-  const p = panelUntuk(m)!;
-  const svg = svgPanelController(p, m, new Map());
-  cek(`${m}: ${kartu} kartu x 20 LAN`, jumlahLanPanel(p) === kartu * 20 && p.sumber.endsWith('.pdf'));
-  cek(`${m}: nomor port berlanjut antar kartu`, svg.includes(`>${kartu * 20}</text>`) && svg.includes('Kartu 2 · Ethernet 21–40'));
+console.log('\n4. Seri H (H2/H5/H9) modular, kartu 16 & 20 LAN, 1 kartu = 1 baris');
+for (const [seri, kartu] of [['H2', 2], ['H5', 3], ['H9', 5]] as const) {
+  for (const lan of [16, 20]) {
+    const m = `${seri} (H_${lan}xRJ45)`, p = panelUntuk(m)!;
+    const tanda = new Map<number, TandaPort>([[1, { warna: '#2563eb', label: 'PA' }], [lan, { warna: '#16a34a', label: 'PB' }], [lan + 1, { warna: '#dc2626', label: 'PC' }]]);
+    const svg = svgPanelController(p, m, tanda);
+    cek(`${m}: ${kartu} kartu x ${lan} LAN`, !!p && jumlahLanPanel(p) === kartu * lan && lanPerKartu(p) === lan && p.sumber.endsWith('.pdf'));
+    cek(`${m}: nomor port tiap kartu mulai dari 1`, svg.includes(`Kartu 2 · Ethernet 1–${lan}`) && !svg.includes(`>${lan + 1}</text>`));
+    const y = (l: string) => Number(svg.match(new RegExp(`y="([\\d.]+)"[^>]*>${l}</text>`))?.[1]);
+    cek(`${m}: port satu kartu sebaris, kartu berikutnya di bawah`, y('PA') === y('PB') && y('PC') > y('PB'));
+  }
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

@@ -1,4 +1,5 @@
 import { type HasilKoneksi, hitungKoneksi, NAMA_RC_LAMA, RECEIVING_CARD, type SelRC, type SudutMulai, unitPerRC } from '@/lib/av/hitung';
+import { jumlahLanPanel, lanPerKartu, panelUntuk } from '@/lib/av/panel-controller';
 
 const rcTersimpan = (nama: unknown) => { const n = NAMA_RC_LAMA[nama as string] ?? nama; return RECEIVING_CARD.some(r => r.nama === n) ? (n as string) : null; };
 
@@ -92,10 +93,12 @@ export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
   const portTerpakai = terisi.length;
   const controller = !terisi.length ? 0 : ppk > 0 ? Math.ceil(terisi[terisi.length - 1].port / ppk) : 1;
   const cadangan = s.cadangan;
+  const resmi = panelUntuk(d.namaHw);
+  const lanKartu = resmi && jumlahLanPanel(resmi) === ppkPenuh ? lanPerKartu(resmi) : 0;
   const rcLewat = rc ? lebar.some(w => w > rc.w) || tinggi.some(h => h > rc.h) : false;
   return {
     K, B, lebar, tinggi, custom, rcKol, rcBaris, otoKol: oto.kol, otoBaris: oto.baris, ppk, ppkPenuh, pxPort, kosong, hasil, arah: s.arah, portTerpakai, controller,
-    rc, rcLewat, cadangan,
+    rc, rcLewat, cadangan, lanKartu,
     portCadangan: cadangan === 'tidak' ? 0 : portTerpakai, controllerCadangan: cadangan === 'controller' ? controller : 0,
     resX: lebar.reduce((a, b) => a + b, 0), resY: tinggi.reduce((a, b) => a + b, 0),
   };
@@ -105,12 +108,16 @@ export type Susunan = ReturnType<typeof susunKoneksi>;
 
 export const rantaiDari = (h: HasilKoneksi): SelRC[][] => h.port.map(p => h.sel.filter(x => x.port === p.port).map(x => [x.c, x.r] as SelRC));
 
+const sebutPort = (t: Susunan, lokal: number) =>
+  t.lanKartu > 0 ? `kartu ${Math.ceil(lokal / t.lanKartu)} · port ${((lokal - 1) % t.lanKartu) + 1}` : `port ${lokal}`;
+const awalBesar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export const namaPort = (t: Susunan, port: number) =>
-  t.ppk > 0 && t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · port ${((port - 1) % t.ppk) + 1}` : `Port ${port}`;
+  t.ppk > 0 && t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · ${sebutPort(t, ((port - 1) % t.ppk) + 1)}` : awalBesar(sebutPort(t, port));
 
 export const namaCadangan = (t: Susunan, port: number) => {
-  if (t.cadangan === 'controller') return `${t.controller > 1 && t.ppk > 0 ? `Controller cadangan ${Math.ceil(port / t.ppk)}` : 'Controller cadangan'} · port ${t.ppk > 0 ? ((port - 1) % t.ppk) + 1 : port}`;
+  if (t.cadangan === 'controller') return `${t.controller > 1 && t.ppk > 0 ? `Controller cadangan ${Math.ceil(port / t.ppk)}` : 'Controller cadangan'} · ${sebutPort(t, t.ppk > 0 ? ((port - 1) % t.ppk) + 1 : port)}`;
   if (t.ppk <= 0) return `Port cadangan ${port}`;
   const lokal = ((port - 1) % t.ppk) + 1 + t.ppk;
-  return t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · port ${lokal}` : `Port ${lokal}`;
+  return t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · ${sebutPort(t, lokal)}` : awalBesar(sebutPort(t, lokal));
 };

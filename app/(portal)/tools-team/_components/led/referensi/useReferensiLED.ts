@@ -5,13 +5,16 @@ import { useEffect, useState } from 'react';
 const KUNCI = 'wm_led_referensi';
 
 const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR, brand: BRAND_LED };
-const VP_SUSULAN = new Set(['H2', 'H5', 'H9']);
+const VP_SUSULAN = VIDEO_PROCESSOR.filter(h => /^H[259] \(H_/.test(h.nama));
+const VP_USANG = new Set(['h2', 'h5', 'h9']);
 
 const lengkapi = (r: RefLED | null): RefLED | null => {
   if (!r) return r;
-  const ada = new Set(r.vp.map(h => h.nama.trim().toLowerCase()));
-  const kurang = VIDEO_PROCESSOR.filter(h => VP_SUSULAN.has(h.nama) && !ada.has(h.nama.toLowerCase()));
-  return kurang.length && r.vp.length + kurang.length <= 200 ? { ...r, vp: [...r.vp, ...kurang] } : r;
+  const vp = r.vp.filter(h => !VP_USANG.has(h.nama.trim().toLowerCase()));
+  const ada = new Set(vp.map(h => h.nama.trim().toLowerCase()));
+  const kurang = VP_SUSULAN.filter(h => !ada.has(h.nama.toLowerCase()));
+  if (!kurang.length && vp.length === r.vp.length) return r;
+  return { ...r, vp: [...vp, ...kurang].slice(0, 200) };
 };
 
 export function useReferensiLED() {
