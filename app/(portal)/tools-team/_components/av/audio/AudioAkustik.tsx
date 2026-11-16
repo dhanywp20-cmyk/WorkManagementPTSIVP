@@ -1,10 +1,10 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
-import { useState } from 'react';
 
 interface Tambahan { material: string; luas: number }
 const namaMat = (m: string) => m;
@@ -16,13 +16,13 @@ export function AudioAkustik() {
   const koef = (m: string) => bahan.find(b => b.l === m)?.a ?? MATERIAL_AKUSTIK.find(x => x.l === m)?.a ?? 0.05;
   const OPSI_MAT = bahan.map(b => ({ v: b.l, l: `${b.l} (α ${b.a})` }));
   const aPanel = bahan.find(b => /panel akustik/i.test(b.l))?.a ?? 0.9;
-  const [p, setP] = useState(8); const [l, setL] = useState(6); const [t, setT] = useState(3);
-  const [lantai, setLantai] = useState('Keramik / granit');
-  const [plafon, setPlafon] = useState('Gipsum');
-  const [dinding, setDinding] = useState('Beton / bata plester');
-  const [tambahan, setTambahan] = useState<Tambahan[]>([{ material: 'Kaca', luas: 12 }]);
-  const [orang, setOrang] = useState(10);
-  const [jenis, setJenis] = useState('meeting');
+  const [p, setP] = useIsi('akustik.p', 8); const [l, setL] = useIsi('akustik.l', 6); const [t, setT] = useIsi('akustik.t', 3);
+  const [lantai, setLantai] = useIsi('akustik.lantai', 'Keramik / granit');
+  const [plafon, setPlafon] = useIsi('akustik.plafon', 'Gipsum');
+  const [dinding, setDinding] = useIsi('akustik.dinding', 'Beton / bata plester');
+  const [tambahan, setTambahan] = useIsi<Tambahan[]>('akustik.tambahan', [{ material: 'Kaca', luas: 12 }]);
+  const [orang, setOrang] = useIsi('akustik.orang', 10);
+  const [jenis, setJenis] = useIsi('akustik.jenis', 'meeting');
   const luasLantai = p * l, luasDinding = 2 * (p + l) * t;
   const luasTambahan = tambahan.reduce((n, x) => n + Math.max(0, x.luas), 0);
   const dindingSisa = Math.max(0, luasDinding - luasTambahan);

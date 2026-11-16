@@ -38,12 +38,12 @@ export function useSimpanSLD(a: KeadaanSLD) {
   const [versiServer, setVersiServer] = useState<{ versi: number; oleh: string } | null>(null);
   const berubah = useMemo(() => (aktif ? kunciDok(a.proyek) !== aktif.kunci : semuaPerangkat(a.proyek).length > 0), [a.proyek, aktif]);
 
-  const kirim = useCallback(async (nama: string, timpa: boolean): Promise<string | null> => {
+  const kirim = useCallback(async (nama: string, sasaran: { id: string; versi: number } | null): Promise<string | null> => {
     setSibuk('simpan'); setPesan(null);
     try {
       const r = await fetch(API, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: timpa ? aktif?.id : undefined, versi: timpa ? aktif?.versi : undefined, nama, data: a.proyek }),
+        body: JSON.stringify({ id: sasaran?.id, versi: sasaran?.versi, nama, data: a.proyek }),
       }).catch(() => null);
       const j = await jsonDari(r);
       if (!r?.ok || !j?.ok) { setPesan({ t: j?.alasan ?? 'SLD gagal disimpan. Periksa koneksi.', galat: true }); return null; }
@@ -51,9 +51,9 @@ export function useSimpanSLD(a: KeadaanSLD) {
       setPesan({ t: `Tersimpan di server tim: ${nama} v${j.sld.versi}. Foto unggahan tetap hanya di browser ini.` });
       return j.sld.id as string;
     } finally { setSibuk(''); }
-  }, [a.proyek, aktif, setAktif]);
+  }, [a.proyek, setAktif]);
 
-  const simpan = useCallback(async () => (aktif?.bolehUbah ? kirim(aktif.nama, true) : null), [aktif, kirim]);
+  const simpan = useCallback(async () => (aktif?.bolehUbah ? kirim(aktif.nama, aktif) : null), [aktif, kirim]);
   const tautkan = useCallback(async (sldId: string, requestId: string, roomIdx: number, namaRequest: string) => {
     const r = await fetch(`/api/form-require-project/${encodeURIComponent(requestId)}/sld`, {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sld_id: sldId, room_idx: roomIdx }),
@@ -63,7 +63,7 @@ export function useSimpanSLD(a: KeadaanSLD) {
     setPesan({ t: `SLD ditautkan ke Request Design: ${namaRequest}.` });
     return true;
   }, []);
-  const simpanSebagai = useCallback((nama: string) => kirim(nama.trim(), false), [kirim]);
+  const simpanSebagai = useCallback((nama: string, ganti?: SldTim) => kirim(nama.trim(), ganti?.bolehUbah ? ganti : null), [kirim]);
 
   const muatDaftar = useCallback(async (q = '', hal = 0) => {
     setSibuk('daftar');

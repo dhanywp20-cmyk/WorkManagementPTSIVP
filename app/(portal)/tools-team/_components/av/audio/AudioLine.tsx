@@ -1,8 +1,9 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { amplifierLine, rugiKabel, saranKabel } from '@/lib/av/audio-jaringan';
-import { useState } from 'react';
+
 import { tapPertama } from '@/lib/pustaka';
 import { PilihPustaka } from '../../pustaka/PilihPustaka';
 
@@ -11,10 +12,10 @@ const AWAL: Tap[] = [{ nama: 'Speaker plafon', watt: 6, jumlah: 12 }, { nama: 'S
 const CATATAN = 'Line tegangan konstan: daya amplifier ≥ total tap + 25% (jangan membebani amplifier sampai 100%). Impedansi line = V² / total tap - tidak boleh di bawah impedansi minimum keluaran amplifier. Rugi kabel line dihitung ke impedansi line tersebut; batas umum ±1 dB (±20% daya).';
 
 export function AudioLine() {
-  const [tap, setTap] = useState<Tap[]>(AWAL);
-  const [v, setV] = useState<'100' | '70'>('100');
-  const [panjang, setPanjang] = useState(80);
-  const [luas, setLuas] = useState(1.5);
+  const [tap, setTap] = useIsi<Tap[]>('line.tap', AWAL);
+  const [v, setV] = useIsi<'100' | '70'>('line.v', '100');
+  const [panjang, setPanjang] = useIsi('line.panjang', 80);
+  const [luas, setLuas] = useIsi('line.luas', 1.5);
   const tegangan = Number(v);
   const h = amplifierLine(tap, tegangan);
   const kabel = rugiKabel(panjang, luas, h.bebanOhm);

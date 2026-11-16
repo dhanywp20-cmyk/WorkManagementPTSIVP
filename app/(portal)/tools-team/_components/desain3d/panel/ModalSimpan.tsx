@@ -6,12 +6,12 @@ import { HardDriveDownload } from 'lucide-react';
 import type { AlatDesain } from './alat';
 
 export function ModalSimpan({ a }: { a: AlatDesain }) {
-  const { benda, daftarTim, desainAktif, modal, namaDesain, riwayat, setAsal, setBenda, setDasar, setDesainAktif, setLihatVersi, setModal, setNamaDesain, setPilih, setRuang, sibukSimpan, statusSimpan, tersimpan } = a.K;
+  const { benda, daftarTim, desainAktif, hanyaLihat, modal, namaDesain, riwayat, setAsal, setBenda, setDasar, setDesainAktif, setKonfirmasi, setLihatVersi, setModal, setNamaDesain, setPilih, setRuang, sibukSimpan, statusSimpan, tersimpan } = a.K;
   const { bukaTim, hapusTim, simpanKeLaptop, simpanServer, tulisSimpanan, unggahLokal } = a.simpan;
   return (
     <>
       <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
-        keterangan="Ke server: bisa dibuka seluruh tim; gambar layar unggahan ikut (dikompres, maks 6). Ke laptop: semuanya ikut termasuk model .glb impor, tanpa storage server.">
+        keterangan="Ctrl+S menyimpan perubahan, Ctrl+Shift+S membuka jendela ini, Ganti menimpa desain Anda yang lain. Ke server: bisa dibuka seluruh tim; gambar layar unggahan ikut (dikompres, maks 6). Ke laptop: semuanya ikut termasuk model .glb impor, tanpa storage server.">
         {benda.some(b => b.jenis === 'model') && (
           <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
             Desain ini memuat <b>model 3D impor (.glb)</b>. Model tidak dikirim ke server (ukurannya besar &amp; menghabiskan kuota) - di server akan tampil sebagai kotak. Simpan juga ke laptop supaya modelnya tidak hilang.
@@ -64,6 +64,13 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
                     {' · '}{new Date(d.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </span>
+                {d.bolehUbah && !hanyaLihat && desainAktif?.id !== d.id && (
+                  <button type="button" disabled={sibukSimpan} title={`Ganti isi "${d.nama}" dengan desain yang sedang terbuka`}
+                    onClick={() => setKonfirmasi({ message: `Ganti desain "${d.nama}"?`, confirmLabel: 'Ganti', danger: true,
+                      description: `Isinya diganti dengan desain yang sedang terbuka sebagai v${(d.versi ?? 1) + 1}; versi lama tetap di riwayat. Desain yang terbuka ikut pindah ke "${d.nama}".`,
+                      onConfirm: () => { setKonfirmasi(null); void simpanServer(false, undefined, { id: d.id, versi: d.versi ?? 1, nama: d.nama }); } })}
+                    className="shrink-0 text-[12px] font-bold text-rose-700 px-2 py-1 rounded-md border border-rose-200 hover:bg-rose-50 disabled:opacity-50">Ganti</button>
+                )}
                 {d.bolehUbah && (
                   <button type="button" aria-label={`Hapus ${d.nama}`} onClick={() => void hapusTim(d)}
                     className="w-7 h-7 shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>

@@ -4687,6 +4687,53 @@ export type Database = {
           },
         ]
       }
+      tools_file: {
+        Row: {
+          alat: string
+          created_at: string
+          data: Json
+          dibuat_oleh: string | null
+          dibuat_oleh_nama: string
+          diubah_oleh_nama: string
+          id: string
+          nama: string
+          ringkasan: string
+          updated_at: string
+        }
+        Insert: {
+          alat: string
+          created_at?: string
+          data: Json
+          dibuat_oleh?: string | null
+          dibuat_oleh_nama?: string
+          diubah_oleh_nama?: string
+          id?: string
+          nama: string
+          ringkasan?: string
+          updated_at?: string
+        }
+        Update: {
+          alat?: string
+          created_at?: string
+          data?: Json
+          dibuat_oleh?: string | null
+          dibuat_oleh_nama?: string
+          diubah_oleh_nama?: string
+          id?: string
+          nama?: string
+          ringkasan?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tools_file_dibuat_oleh_fkey"
+            columns: ["dibuat_oleh"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tools_objek_saya: {
         Row: {
           atur: Json

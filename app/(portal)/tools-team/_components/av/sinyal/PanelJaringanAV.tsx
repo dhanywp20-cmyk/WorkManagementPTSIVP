@@ -1,10 +1,10 @@
 'use client';
+import { useIsi } from '../../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { ALIRAN_IP, danteMbps, saranLink } from '@/lib/av/audio-jaringan';
 import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
-import { useState } from 'react';
 
 interface Aliran { jenis: string; jumlah: number }
 const CATATAN = 'Bitrate per aliran adalah angka tipikal pabrikan (bisa berbeda per encoder & pengaturan kualitas). Dante dihitung 48 kHz dengan wadah 32-bit + ±10% overhead. Sisakan ≥ 30% kapasitas link; pakai switch managed dengan IGMP snooping (multicast) & QoS untuk Dante.';
@@ -13,8 +13,8 @@ export function PanelJaringanAV() {
   const { entri } = usePustaka('aliran-ip');
   const jenisAliran = entri.length ? entri.map(e => ({ l: e.nama, mbps: angkaDari(e, 'mbps') })) : ALIRAN_IP.map(a => ({ l: a.l, mbps: a.mbps }));
   const mbpsDari = (n: string) => jenisAliran.find(a => a.l === n)?.mbps ?? ALIRAN_IP.find(a => a.l === n)?.mbps ?? 0;
-  const [aliran, setAliran] = useState<Aliran[]>([{ jenis: 'NDI|HX 1080p60', jumlah: 4 }, { jenis: 'H.264 1080p (encoder / streaming)', jumlah: 2 }]);
-  const [dante, setDante] = useState(32);
+  const [aliran, setAliran] = useIsi<Aliran[]>('jaringan.aliran', [{ jenis: 'NDI|HX 1080p60', jumlah: 4 }, { jenis: 'H.264 1080p (encoder / streaming)', jumlah: 2 }]);
+  const [dante, setDante] = useIsi('jaringan.dante', 32);
   const ubah = (i: number, x: Partial<Aliran>) => setAliran(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const baris = aliran.map(a => ({ ...a, label: a.jenis, mbps: mbpsDari(a.jenis) * Math.max(0, a.jumlah) }));
   const videoMbps = baris.reduce((n, b) => n + b.mbps, 0);

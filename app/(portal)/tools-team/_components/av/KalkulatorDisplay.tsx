@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useIsi } from '../bersama/berkas/isian';
+
 import { Angka, Catatan, f, Kartu, kelasInput, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import { bukaCetak, diagramSusunan, type Info, type Lembar, namaBerkas, unduhLembarPNG } from '../bersama/cetak';
 import { isiLembarBom, TabelBom, teksBarisBom } from '../bersama/TabelBom';
@@ -36,32 +37,32 @@ function Centang({ label, nilai, onUbah }: { label: string; nilai: boolean; onUb
 }
 
 export function KalkulatorDisplay() {
-  const [jenis, setJenis] = useState<'videowall' | 'ifp'>('videowall');
-  const [project, setProject] = useState('');
-  const [customer, setCustomer] = useState('');
-  const [ppn, setPpn] = useState(11);
-  const [hargaVW, setHargaVW] = useState<Record<string, number>>({});
-  const [hargaIFP, setHargaIFP] = useState<Record<string, number>>({});
+  const [jenis, setJenis] = useIsi<'videowall' | 'ifp'>('display.jenis', 'videowall');
+  const [project, setProject] = useIsi('display.project', '');
+  const [customer, setCustomer] = useIsi('display.customer', '');
+  const [ppn, setPpn] = useIsi('display.ppn', 11);
+  const [hargaVW, setHargaVW] = useIsi<Record<string, number>>('display.hargaVW', {});
+  const [hargaIFP, setHargaIFP] = useIsi<Record<string, number>>('display.hargaIFP', {});
 
   const { entri } = usePustaka('display');
   const panelPustaka = entri.filter(e => angkaDari(e, 'bezel') > 0).map(e => ({
     nama: [teksDari(e, 'merek'), e.nama].filter(Boolean).join(' '), diagonalInci: angkaDari(e, 'diagonal'), bezelMm: angkaDari(e, 'bezel'), watt: angkaDari(e, 'watt', WATT_PANEL_BAWAAN),
   }));
   const daftarPanel = panelPustaka.length ? panelPustaka : PANEL_VIDEOWALL.map(p => ({ ...p, watt: WATT_PANEL_BAWAAN }));
-  const [iPanel, setIPanel] = useState(2);
+  const [iPanel, setIPanel] = useIsi('display.iPanel', 2);
   const panel = daftarPanel[Math.min(iPanel, daftarPanel.length - 1)];
-  const [modeVW, setModeVW] = useState<'ukuran' | 'susunan'>('ukuran');
-  const [targetW, setTargetW] = useState(3.6);
-  const [targetH, setTargetH] = useState(2);
-  const [kolomIn, setKolomIn] = useState(3);
-  const [barisIn, setBarisIn] = useState(3);
-  const [screen, setScreen] = useState(1);
-  const [pasang, setPasang] = useState<PasangVideowall>('pop-out');
-  const [sinyal, setSinyal] = useState<SinyalVideowall>('controller');
-  const [input, setInput] = useState(2);
-  const [panjangSinyal, setPanjangSinyal] = useState(10);
-  const [player, setPlayer] = useState(1);
-  const [spare, setSpare] = useState(0);
+  const [modeVW, setModeVW] = useIsi<'ukuran' | 'susunan'>('display.modeVW', 'ukuran');
+  const [targetW, setTargetW] = useIsi('display.targetW', 3.6);
+  const [targetH, setTargetH] = useIsi('display.targetH', 2);
+  const [kolomIn, setKolomIn] = useIsi('display.kolomIn', 3);
+  const [barisIn, setBarisIn] = useIsi('display.barisIn', 3);
+  const [screen, setScreen] = useIsi('display.screen', 1);
+  const [pasang, setPasang] = useIsi<PasangVideowall>('display.pasang', 'pop-out');
+  const [sinyal, setSinyal] = useIsi<SinyalVideowall>('display.sinyal', 'controller');
+  const [input, setInput] = useIsi('display.input', 2);
+  const [panjangSinyal, setPanjangSinyal] = useIsi('display.panjangSinyal', 10);
+  const [player, setPlayer] = useIsi('display.player', 1);
+  const [spare, setSpare] = useIsi('display.spare', 0);
   const dariUkuran = videowallUntuk(targetW, targetH, panel);
   const kolom = modeVW === 'ukuran' ? dariUkuran.kolom : kolomIn, baris = modeVW === 'ukuran' ? dariUkuran.baris : barisIn;
   const satuPanel = ukuranDariDiagonal(panel.diagonalInci, 16, 9), bz = panel.bezelMm / 1000;
@@ -73,19 +74,19 @@ export function KalkulatorDisplay() {
     nama: [teksDari(e, 'merek'), e.nama].filter(Boolean).join(' '), diagonal: angkaDari(e, 'diagonal'), watt: angkaDari(e, 'watt', 0),
   }));
   const daftarIFP = ifpPustaka.length ? ifpPustaka : IFP_BAWAAN.map(x => ({ nama: `${x.diagonal}"`, diagonal: x.diagonal, watt: x.watt }));
-  const [jarak, setJarak] = useState(6);
-  const [jenisPandang, setJenisPandang] = useState<JenisPandang>('analitis');
+  const [jarak, setJarak] = useIsi('display.jarak', 6);
+  const [jenisPandang, setJenisPandang] = useIsi<JenisPandang>('display.jenisPandang', 'analitis');
   const saran = saranIFP(jarak, jenisPandang, daftarIFP.map(x => x.diagonal));
-  const [iIFP, setIIFP] = useState<number | null>(null);
+  const [iIFP, setIIFP] = useIsi<number | null>('display.iIFP', null);
   const iSaran = saran.saran === null ? daftarIFP.length - 1 : daftarIFP.findIndex(x => x.diagonal === saran.saran);
   const ifp = daftarIFP[Math.min(iIFP ?? iSaran, daftarIFP.length - 1)];
-  const [ruang, setRuang] = useState(1);
-  const [pasangIFP, setPasangIFP] = useState<'dinding' | 'troli'>('dinding');
-  const [ops, setOps] = useState(true);
-  const [kamera, setKamera] = useState(true);
-  const [mic, setMic] = useState(true);
-  const [dongle, setDongle] = useState(1);
-  const [panjangMeja, setPanjangMeja] = useState(4);
+  const [ruang, setRuang] = useIsi('display.ruang', 1);
+  const [pasangIFP, setPasangIFP] = useIsi<'dinding' | 'troli'>('display.pasangIFP', 'dinding');
+  const [ops, setOps] = useIsi('display.ops', true);
+  const [kamera, setKamera] = useIsi('display.kamera', true);
+  const [mic, setMic] = useIsi('display.mic', true);
+  const [dongle, setDongle] = useIsi('display.dongle', 1);
+  const [panjangMeja, setPanjangMeja] = useIsi('display.panjangMeja', 4);
   const mIFP: MasukanIFP = { namaUnit: ifp.nama, diagonal: ifp.diagonal, ruang, pasang: pasangIFP, ops, kamera, mic, dongle, panjangMeja,
     wattUnit: ifp.watt || (IFP_BAWAAN.find(x => x.diagonal >= ifp.diagonal)?.watt ?? 600) };
   const bomI = bomIFP(mIFP), dI = dayaIFP(mIFP);

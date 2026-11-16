@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ConfirmDialog, type ConfirmState, ModalTolak, TombolSetujui, TombolTolak } from '@/components/shared';
 import { Bot, CheckCheck, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { type Bahasa, jumlahCek, type KartuBanding, loloskanSemua } from '@/lib/perbandingan/inti';
@@ -10,8 +10,24 @@ import { useBuatPerbandingan } from './perbandingan/useBuatPerbandingan';
 import { type RingkasPengajuan, usePengajuan } from './perbandingan/usePengajuan';
 import { unduhPdf } from './perbandingan/unduhPdf';
 import { useDrafLokal } from './bersama/penjagaKerja';
+import { getSession } from '@/lib/auth/sesi';
+import { isPimpinan } from '@/lib/pimpinan';
+import { adapterTim } from './bersama/berkas/tipe';
+import { useBerkas } from './bersama/berkas/useBerkas';
+import { BilahFile } from './bersama/berkas/BilahFile';
+import { DialogBerkas } from './bersama/berkas/DialogBerkas';
 
 type Mode = { jenis: 'baru' } | { jenis: 'periksa'; r: RingkasPengajuan } | { jenis: 'lihat'; r: RingkasPengajuan };
+type IsiBanding = { kartu: KartuBanding | null; bahasa: Bahasa };
+const adapterBanding = adapterTim('banding', 'comparison', x => {
+  const k = (x as IsiBanding).kartu;
+  return k ? [k.judul, k.produk.map(p => p.nama).join(' vs ')].filter(Boolean).join(' · ') : 'Belum disusun';
+});
+const sahBanding = (x: unknown): x is IsiBanding => {
+  const d = x as IsiBanding | null;
+  return !!d && typeof d === 'object' && (d.bahasa === 'en' || d.bahasa === 'id')
+    && (d.kartu === null || (typeof d.kartu === 'object' && Array.isArray(d.kartu.produk) && Array.isArray(d.kartu.bagian)));
+};
 const tombol = 'inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold disabled:opacity-50';
 
 export function ProductComparison() {
@@ -31,6 +47,13 @@ export function ProductComparison() {
   useDrafLokal<{ kartu: KartuBanding | null; bahasa: Bahasa } | undefined>('wm_banding_draf', mode.jenis === 'baru' ? { kartu, bahasa } : undefined, d => {
     if (d?.kartu) { setKartu(d.kartu); setBahasa(d.bahasa); }
   });
+  const [hanyaLihat] = useState(() => isPimpinan(getSession()));
+  const isiBerkas = useMemo(() => ({ kartu, bahasa }), [kartu, bahasa]);
+  const berkas = useBerkas({
+    adapter: adapterBanding, data: isiBerkas, hanyaLihat, namaAwal: () => kartu?.judul.trim() || 'Comparison',
+    kosongkan: () => { setKartu(null); setPesan(null); },
+    terapkan: x => { if (!sahBanding(x)) return false; setKartu(x.kartu); setBahasa(x.bahasa); setMode({ jenis: 'baru' }); setTab('buat'); return true; },
+  });
   const cek = kartu ? jumlahCek(kartu) : 0;
   const jalankan = async (id: string, f: () => Promise<void | string>) => {
     setKerja(id); setPesan(null);
@@ -41,7 +64,7 @@ export function ProductComparison() {
     return [h.dicek ? `${h.dicek} nilai perlu dicek (kuning).` : 'Semua nilai bersumber dari brosur.', h.terpangkas.length ? `Teks ${h.terpangkas.join(', ')} terlalu panjang - sebagian dipangkas.` : ''].filter(Boolean).join(' ');
   };
   const bukaPengajuan = (r: RingkasPengajuan) => jalankan(r.id, async () => {
-    setKartu(await p.ambil(r.id)); setCatatan('');
+    setKartu(await p.ambil(r.id)); setCatatan(''); berkas.pakaiFile(null);
     setMode(p.peran?.verifikator && r.status === 'menunggu' ? { jenis: 'periksa', r } : { jenis: 'lihat', r }); setTab('buat');
   });
 
@@ -67,6 +90,12 @@ export function ProductComparison() {
           : <p className="text-[13px] text-slate-500">{p.galat ?? 'Memuat…'}</p>
       ) : (
         <>
+          {mode.jenis === 'baru' && (
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white border border-slate-200 px-3 py-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Berkas</span>
+              <BilahFile b={berkas} />
+            </div>
+          )}
           {mode.jenis === 'baru' && !kartu && (
             <section className="rounded-2xl bg-white border border-slate-200 p-4 space-y-3">
               <UnggahBrosur daftar={b.brosur} unggulan={b.unggulan} kunci={b.sibuk} tambah={f => { const t = b.tambah(f); if (t) setPesan({ t, galat: true }); }}
@@ -115,7 +144,7 @@ export function ProductComparison() {
                     title="Terima semua nilai bertanda cek sekaligus (berisi teks = disebut brosur, kosong = tidak dipublikasikan)"
                     className={`${tombol} text-amber-900 border border-amber-300 bg-amber-50 hover:bg-amber-100`}><CheckCheck size={15} /> Loloskan semua</button>
                 )}
-                {mode.jenis === 'baru' && <button type="button" onClick={() => { setKartu(null); setPesan(null); }} className={`${tombol} text-slate-600 hover:bg-slate-100`}>Ulangi</button>}
+                {mode.jenis === 'baru' && <button type="button" onClick={() => berkas.baru?.()} className={`${tombol} text-slate-600 hover:bg-slate-100`}>Ulangi</button>}
                 {mode.jenis !== 'baru' && <button type="button" onClick={() => { setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); }} className={`${tombol} text-slate-600 hover:bg-slate-100`}>Kembali</button>}
                 <div className="ml-auto flex flex-wrap items-center gap-2">
                   {mode.jenis === 'baru' && p.peran?.langsung && (
@@ -151,6 +180,7 @@ export function ProductComparison() {
       )}
       {pesan && <p role="status" className={`text-[13px] font-semibold ${pesan.galat ? 'text-rose-700' : 'text-emerald-700'}`}>{pesan.t}</p>}
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
+      <DialogBerkas b={berkas} />
     </div>
   );
 }

@@ -1,17 +1,18 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { ANTARMUKA, bandwidthGbps, type Chroma, kebutuhanAntarmuka } from '@/lib/av/hitung';
-import { useState } from 'react';
+
 import { PanelJaringanAV } from './sinyal/PanelJaringanAV';
 
 const RESOLUSI = [[1280, 720], [1920, 1080], [2560, 1440], [3840, 2160], [4096, 2160], [7680, 4320]];
 
 export function KalkulatorSinyal() {
-  const [res, setRes] = useState('3840x2160');
-  const [hz, setHz] = useState(60);
-  const [bit, setBit] = useState(8);
-  const [chroma, setChroma] = useState<Chroma>('4:4:4');
+  const [res, setRes] = useIsi('sinyal.res', '3840x2160');
+  const [hz, setHz] = useIsi('sinyal.hz', 60);
+  const [bit, setBit] = useIsi('sinyal.bit', 8);
+  const [chroma, setChroma] = useIsi<Chroma>('sinyal.chroma', '4:4:4');
   const [lebar, tinggi] = res.split('x').map(Number);
   const b = bandwidthGbps(lebar, tinggi, hz, bit, chroma);
   const antarmuka = ANTARMUKA.map(a => { const butuh = kebutuhanAntarmuka(a.jenis, lebar, tinggi, hz, bit, chroma); return { ...a, butuh, ok: a.gbps >= butuh }; });

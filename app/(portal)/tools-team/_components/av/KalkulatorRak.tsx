@@ -1,8 +1,9 @@
 'use client';
+import { useIsi } from '../bersama/berkas/isian';
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { hitungRak, type ItemRak } from '@/lib/av/audio-jaringan';
-import { useState } from 'react';
+
 import { angkaDari } from '@/lib/pustaka';
 import { PilihPustaka } from '../pustaka/PilihPustaka';
 
@@ -16,9 +17,9 @@ const AWAL: ItemRak[] = [
 const CATATAN = 'Ventilasi: 1U kosong (blank vent panel) di atas tiap perangkat panas (≥ 150 W). Cadangan 25% untuk penambahan perangkat & manajemen kabel. Periksa kapasitas beban rak & lantai, dan sediakan PDU dengan jumlah outlet yang cukup.';
 
 export function KalkulatorRak() {
-  const [item, setItem] = useState<ItemRak[]>(AWAL);
-  const [cadangan, setCadangan] = useState(25);
-  const [ventilasi, setVentilasi] = useState(true);
+  const [item, setItem] = useIsi<ItemRak[]>('rak.item', AWAL);
+  const [cadangan, setCadangan] = useIsi('rak.cadangan', 25);
+  const [ventilasi, setVentilasi] = useIsi('rak.ventilasi', true);
   const h = hitungRak(item, cadangan, ventilasi);
   const ubah = (i: number, x: Partial<ItemRak>) => setItem(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const ringkas = () => [

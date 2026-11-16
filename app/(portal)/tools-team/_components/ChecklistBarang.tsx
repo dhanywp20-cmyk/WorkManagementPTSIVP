@@ -11,6 +11,11 @@ import { BarisBarang, GRID_CEK } from './cekbarang/BarisBarang';
 import { PadTtd } from './cekbarang/PadTtd';
 import { FormTambah } from './cekbarang/FormTambah';
 import { imporBerkas, unduhPdfChecklist, unduhTemplate } from './cekbarang/berkas';
+import { isPimpinan } from '@/lib/pimpinan';
+import { adapterTim } from './bersama/berkas/tipe';
+import { useBerkas } from './bersama/berkas/useBerkas';
+import { BilahFile } from './bersama/berkas/BilahFile';
+import { DialogBerkas } from './bersama/berkas/DialogBerkas';
 
 const KUNCI = 'tools-team-checklist-barang-v1';
 const TERIMA = '.xlsx,.xls,.csv,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv';
@@ -25,6 +30,11 @@ function muatDraf(): DokChecklist | null {
 
 type Saring = 'semua' | 'belum' | 'ok' | 'tidak';
 interface Impor { nama: string; items: ItemBarang[]; buang: Set<string> }
+
+const adapterCek = adapterTim('cekbarang', 'checklist barang', x => {
+  const d = x as DokChecklist;
+  return [d.project, d.nomor, `${d.items.length} barang`].filter(Boolean).join(' · ');
+});
 
 const kelasTombol = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-60';
 
@@ -53,6 +63,11 @@ export function ChecklistBarang() {
   const [seret, setSeret] = useState(false);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const inputBerkas = useRef<HTMLInputElement>(null);
+  const [hanyaLihat] = useState(() => isPimpinan(getSession()));
+  const berkas = useBerkas({
+    adapter: adapterCek, data: d, hanyaLihat, namaAwal: () => d.judul.trim() || `Checklist ${d.tanggal}`,
+    terapkan: x => { const v = bacaDraf(x); if (!v) return false; setD(v); setImpor(null); setUbah(false); return true; },
+  });
 
   const r = useMemo(() => ringkas(d.items), [d.items]);
   const nomor = useMemo(() => {
@@ -125,7 +140,7 @@ export function ChecklistBarang() {
     message: 'Mulai checklist baru?', description: 'Daftar, hasil cek & tanda tangan saat ini dihapus dari perangkat ini.', danger: true, confirmLabel: 'Mulai baru',
     onConfirm: () => {
       setD(x => ({ ...dokBaru(hariIni()), penanda: x.penanda.map(p => ({ ...p, ttd: '' })) }));
-      setImpor(null); setUbah(false); setCari(''); setSaring('semua'); setPesan(null);
+      setImpor(null); setUbah(false); setCari(''); setSaring('semua'); setPesan(null); berkas.pakaiFile(null);
     },
   });
 
@@ -135,6 +150,11 @@ export function ChecklistBarang() {
   return (
     <div className="space-y-4 pb-24">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white border border-slate-200 px-3 py-2 print:hidden">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Berkas</span>
+        <BilahFile b={berkas} />
+      </div>
+      <DialogBerkas b={berkas} />
       <Kartu judul="Dokumen">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <Isian label="Judul" className="lg:col-span-2"><input value={d.judul} onChange={e => ubahDok({ judul: e.target.value })} placeholder="Checklist Barang" className={kelasInput} /></Isian>

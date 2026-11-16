@@ -165,9 +165,9 @@ export function useSimpanDesain(K: KeadaanDesain) {
     }
   };
 
-  const simpanServer = async (baru: boolean, sumber?: { nama: string; ruang: Ruang; benda: Benda[] }) => {
-    const nama = (sumber?.nama ?? namaDesain).trim() || 'Tanpa nama';
-    const timpa = !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
+  const simpanServer = async (baru: boolean, sumber?: { nama: string; ruang: Ruang; benda: Benda[] }, ganti?: { id: string; versi: number; nama: string }) => {
+    const nama = ((ganti && !sumber ? ganti.nama : undefined) ?? sumber?.nama ?? namaDesain).trim() || 'Tanpa nama';
+    const timpa = ganti && !sumber ? ganti.id : !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
     setSibukSimpan(true); setStatusSimpan(null);
     try {
       const layar = sumber ? {} : gambarLayarServer(benda);
@@ -175,7 +175,7 @@ export function useSimpanDesain(K: KeadaanDesain) {
       const r = await fetch(API_DESAIN, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: timpa, versi: timpa ? desainAktif?.versi : undefined, nama,
+          id: timpa, versi: ganti && !sumber ? ganti.versi : timpa ? desainAktif?.versi : undefined, nama,
           data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda, new Set(Object.keys(layar))), ...(Object.keys(layar).length ? { layar } : {}), ...(Object.keys(tekstur).length ? { tekstur } : {}) },
           ...(sumber ? {} : (({ kecil, hd }) => ({ gambar: kecil ?? undefined, gambar_hd: hd ?? undefined }))(pratinjau())),
         }),
@@ -185,16 +185,24 @@ export function useSimpanDesain(K: KeadaanDesain) {
       if (!sumber) {
         setDesainAktif({ id: j.desain.id, bolehUbah: true, versi: j.desain.versi });
         setLihatVersi(null);
-        setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruang, benda, namaDesain));
+        if (ganti) setNamaDesain(nama);
+        setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruang, benda, ganti ? nama : namaDesain));
         const salinan = !timpa && !!desainAktif && !baru;
         setStatusSimpan({
-          teks: timpa ? `Perubahan tersimpan sebagai v${j.desain.versi}.` : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda (v1).' : 'Tersimpan di server (v1).',
+          teks: ganti && ganti.id !== desainAktif?.id ? `"${nama}" diganti dengan desain ini (v${j.desain.versi}); versi lamanya tetap di riwayat.`
+            : timpa ? `Perubahan tersimpan sebagai v${j.desain.versi}.` : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda (v1).' : 'Tersimpan di server (v1).',
           nada: 'ok',
         });
       }
       void muatDaftarTim();
       return true;
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); return false; } finally { setSibukSimpan(false); }
+  };
+
+  const simpanCepat = async () => {
+    if (!desainAktif?.bolehUbah) { setModal('simpan'); return; }
+    if (await simpanServer(false)) setPesan(`Tersimpan ke server tim: ${namaDesain.trim() || 'Tanpa nama'}`);
+    else setModal('simpan');
   };
 
   const bukaTim = async (id: string, versi?: number) => {
@@ -252,5 +260,5 @@ export function useSimpanDesain(K: KeadaanDesain) {
     }
   };
 
-  return { API_DESAIN, bendaBersih, bukaDariLaptop, bukaTim, gambarKeDataUrl, gambarLayarServer, hapusTim, hapusTimYa, muatDaftarTim, pratinjau, simpanKeLaptop, simpanServer, tulisSimpanan, unduhGLB, unggahLokal };
+  return { API_DESAIN, bendaBersih, bukaDariLaptop, bukaTim, gambarKeDataUrl, gambarLayarServer, hapusTim, hapusTimYa, muatDaftarTim, pratinjau, simpanCepat, simpanKeLaptop, simpanServer, tulisSimpanan, unduhGLB, unggahLokal };
 }
