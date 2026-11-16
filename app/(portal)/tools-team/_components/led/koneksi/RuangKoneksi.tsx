@@ -57,8 +57,8 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: PropsRuangKoneksi) {
           <p className="text-[12.5px] text-slate-700">Satu {s.arah === 'horizontal' ? 'baris' : 'kolom'} melebihi kapasitas port, jadi layar dibagi <b>{zona} zona</b> yang dikabel terpisah. Pilih &quot;Isi penuh&quot; untuk menghemat port.</p>
         )}
         <KanvasKoneksi a={a} />
-        <TabelPort a={a} />
         <PanelController a={a} />
+        <TabelPort a={a} />
         <Catatan>Label sel = port-urutan receiving card, angka kecil = ukuran receiving card (px); P1, P2, … = titik masuk kabel LAN{s.cadangan !== 'tidak' ? '; B1, B2, … = kabel cadangan dari ujung rantai' : ''}. Samakan dengan NovaLCT (Screen Configuration → Screen Connection) saat instalasi.</Catatan>
       </div>
     </div>

@@ -5,16 +5,18 @@ import { type DataKoneksi, kodePort, kunci, namaCadangan, namaPort, type Pengatu
 import { teksCadangan, teksCara } from './teks';
 
 export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; interaktif?: boolean; portAktif?: number } = {}): string {
-  const skala = Math.min(860 / Math.max(1, t.resX), 430 / Math.max(1, t.resY));
+  const rx = Math.max(1, t.resX), ry = Math.max(1, t.resY);
+  const selW = Math.max(1, ...t.lebar), selH = Math.max(1, ...t.tinggi);
+  const skala = o.interaktif
+    ? Math.min(Math.max(Math.min(1100 / rx, 620 / ry), 88 / selW, 60 / selH), 7000 / rx, 4500 / ry)
+    : Math.min(860 / rx, 430 / ry);
   const W = t.resX * skala, H = t.resY * skala;
   const ox = 52, oy = o.judul ? 52 : 30;
   const xs = [ox], ys = [oy];
   t.lebar.forEach(w => xs.push(xs[xs.length - 1] + w * skala));
   t.tinggi.forEach(h => ys.push(ys[ys.length - 1] + h * skala));
   const pusat = (c: number, r: number) => [(xs[c] + xs[c + 1]) / 2, (ys[r] + ys[r + 1]) / 2];
-  let selMin = Infinity;
-  for (let i = 0; i < t.K; i++) selMin = Math.min(selMin, xs[i + 1] - xs[i]);
-  for (let i = 0; i < t.B; i++) selMin = Math.min(selMin, ys[i + 1] - ys[i]);
+  const selMin = Math.min(selW, selH) * skala;
   const banyak = t.K * t.B > 2500;
   const fs = Math.min(12, selMin * 0.24);
   const n = (v: number) => Math.round(v * 10) / 10;
@@ -81,7 +83,8 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
     const lbl: string[] = [];
     for (const s of t.hasil.sel) {
       const [x, y] = pusat(s.c, s.r);
-      if (!(s.urut === 1 && diSel.has(s.port))) lbl.push(`<text x="${n(x)}" y="${n(y - fs * 0.55)}">${kodePort(t, s.port).slice(1)}-${s.urut}</text>`);
+      const u = Math.min(fs, (xs[s.c + 1] - xs[s.c]) * 0.2, (ys[s.r + 1] - ys[s.r]) * 0.42);
+      if (u >= 4.5 && !(s.urut === 1 && diSel.has(s.port))) lbl.push(`<text x="${n(x)}" y="${n(y - u * 0.55)}"${u < fs ? ` font-size="${n(u)}"` : ''}>${kodePort(t, s.port).slice(1)}-${s.urut}</text>`);
     }
     atas.push(`<g font-size="${n(fs)}" font-weight="700" text-anchor="middle" fill="#0f172a" font-family="Segoe UI,Arial" paint-order="stroke" stroke="#ffffff" stroke-width="2.4">${lbl.join('')}</g>`);
     const kecil = Math.max(6, fs * 0.78), ukur: string[] = [];
@@ -143,7 +146,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
   if (o.judul) atas.push(`<text x="${ox}" y="20" font-size="13" font-weight="700" fill="#0f172a" font-family="Segoe UI,Arial">${esc(o.judul)}</text>`);
   out.push(`<g pointer-events="none">${atas.join('')}</g>`);
   const lebar = n(W + ox + 52), tinggi = n(H + oy + 48);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${tinggi}" viewBox="0 0 ${lebar} ${tinggi}" style="max-width:100%;height:auto;touch-action:${o.interaktif ? 'none' : 'auto'}">${out.join('')}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${tinggi}" viewBox="0 0 ${lebar} ${tinggi}" style="${o.interaktif ? 'display:block;touch-action:none' : 'max-width:100%;height:auto;touch-action:auto'}">${out.join('')}</svg>`;
 }
 
 export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: string, sub: string): string {

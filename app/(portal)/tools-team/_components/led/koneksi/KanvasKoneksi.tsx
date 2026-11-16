@@ -22,8 +22,8 @@ export function KanvasKoneksi({ a }: { a: AlatRuangKoneksi }) {
             <button type="button" onClick={unduhSVG} title="Unduh diagram sebagai SVG (vektor, bisa diedit di Illustrator / Inkscape)" className={kelasTombol}><Download size={14} /> SVG</button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-        <div className="p-2 [&>svg]:mx-auto [&>svg]:block select-none" role="img" style={{ minWidth: Math.min(1100, t.K * 48 + 110) }}
+        <div className="overflow-auto max-h-[80vh]">
+        <div className="p-2 w-max min-w-full [&>svg]:mx-auto [&>svg]:block select-none" role="img"
           aria-label={`Diagram koneksi ${t.portTerpakai} port untuk ${k.sel.length} receiving card`}
           onPointerDown={e => {
             if (!alatEf) return;
