@@ -14,7 +14,9 @@ const sudutDalam = (x: number, z: number, a0: number, tb: number) => {
   return a <= tb + SEL;
 };
 
-export function ujiKenaBidang(b: Benda): UjiBidang {
+export type KenaArah = (dx: number, dy: number, dz: number) => number;
+
+export function kenaBidang(b: Benda): (O: Titik) => KenaArah {
   const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
   const bentuk = b.jenis === 'layar' ? 'datar' : b.bentukBidang ?? 'datar';
   return O => {
@@ -24,28 +26,25 @@ export function ujiKenaBidang(b: Benda): UjiBidang {
       const w = b.jenis === 'layar' ? b.w : ukuranBidang(b).w, muka = b.jenis === 'layar' ? b.d / 2 : 0.02;
       return (dx, dy, dz) => {
         const lz = dx * s + dz * c;
-        if (Math.abs(lz) < 1e-9) return false;
+        if (Math.abs(lz) < 1e-9) return 0;
         const t = (muka - oz) / lz;
-        if (t <= 0) return false;
+        if (t <= 0) return 0;
         const x = ox + (dx * c - dz * s) * t, y = oy + dy * t;
-        return Math.abs(x) <= w / 2 + SEL && y >= -SEL && y <= b.h + SEL;
+        if (Math.abs(x) > w / 2 + SEL || y < -SEL || y > b.h + SEL) return 0;
+        return lz < 0 ? t : -t;
       };
     }
     if (bentuk === 'bola') {
-      const { R, tb, a0, zP, yP, fiM } = bolaBidang(b), sinM = Math.sin(fiM);
+      const { R, tb, a0, zP, yP, fiM } = bolaBidang(b), batasY = R * Math.sin(fiM) + SEL;
       const px = ox, py = oy - yP, pz = oz - zP, C = px * px + py * py + pz * pz - R * R;
       return (dx, dy, dz) => {
         const lx = dx * c - dz * s, lz = dx * s + dz * c;
         const A = lx * lx + dy * dy + lz * lz, B = 2 * (px * lx + py * dy + pz * lz), disk = B * B - 4 * A * C;
-        if (A < 1e-12 || disk < 0) return false;
-        const akar = Math.sqrt(disk);
-        for (const t of [(-B - akar) / (2 * A), (-B + akar) / (2 * A)]) {
-          if (t <= 0) continue;
-          const y = py + dy * t;
-          if (Math.abs(y) > R * sinM + SEL) continue;
-          if (sudutDalam(px + lx * t, pz + lz * t, a0, tb)) return true;
-        }
-        return false;
+        if (A < 1e-12 || disk < 0) return 0;
+        const akar = Math.sqrt(disk), t1 = (-B - akar) / (2 * A), t2 = (-B + akar) / (2 * A);
+        if (t1 > 0 && Math.abs(py + dy * t1) <= batasY && sudutDalam(px + lx * t1, pz + lz * t1, a0, tb)) return -t1;
+        if (t2 > 0 && Math.abs(py + dy * t2) <= batasY && sudutDalam(px + lx * t2, pz + lz * t2, a0, tb)) return t2;
+        return 0;
       };
     }
     const { R, busur, d } = ukuranBidang(b);
@@ -55,17 +54,19 @@ export function ujiKenaBidang(b: Benda): UjiBidang {
     return (dx, dy, dz) => {
       const lx = dx * c - dz * s, lz = dx * s + dz * c;
       const A = lx * lx + lz * lz, B = 2 * (px * lx + pz * lz), disk = B * B - 4 * A * C;
-      if (A < 1e-12 || disk < 0) return false;
-      const akar = Math.sqrt(disk);
-      for (const t of [(-B - akar) / (2 * A), (-B + akar) / (2 * A)]) {
-        if (t <= 0) continue;
-        const y = oy + dy * t;
-        if (y < -SEL || y > b.h + SEL) continue;
-        if (sudutDalam(px + lx * t, pz + lz * t, a0, tb)) return true;
-      }
-      return false;
+      if (A < 1e-12 || disk < 0) return 0;
+      const akar = Math.sqrt(disk), t1 = (-B - akar) / (2 * A), t2 = (-B + akar) / (2 * A);
+      const sah = (t: number) => { const y = oy + dy * t; return t > 0 && y >= -SEL && y <= b.h + SEL && sudutDalam(px + lx * t, pz + lz * t, a0, tb); };
+      if (sah(t1)) return cembung ? t1 : -t1;
+      if (sah(t2)) return cembung ? -t2 : t2;
+      return 0;
     };
   };
+}
+
+export function ujiKenaBidang(b: Benda): UjiBidang {
+  const kena = kenaBidang(b);
+  return O => { const f = kena(O); return (dx, dy, dz) => f(dx, dy, dz) !== 0; };
 }
 
 export function kunciBidangMask(benda: Benda[]): string {

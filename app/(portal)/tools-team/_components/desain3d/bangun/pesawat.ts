@@ -1,10 +1,7 @@
 import type * as T from 'three';
-import { type Benda, PESAWAT_ACUAN } from '../inti';
+import { type Benda, PESAWAT_ACUAN, PROFIL_BADAN_PESAWAT } from '../inti';
 import { mat } from './dasar';
 
-const PROFIL_BADAN: [number, number][] = [
-  [0.02, -1.38], [0.2, -1.32], [0.34, -1.2], [0.45, -1.0], [0.52, -0.68], [0.55, -0.3], [0.54, 0.2], [0.48, 0.6], [0.36, 1.0], [0.22, 1.3], [0.08, 1.47], [0.01, 1.5],
-];
 const SUMBU_Y = 0.8;
 
 function papan(THREE: typeof T, titik: [number, number][], tebal: number, m: T.Material) {
@@ -27,7 +24,7 @@ export function bangunPesawat(THREE: typeof T, g: T.Group, b: Benda, warna: numb
   const alas = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 2.2), gelap);
   alas.position.set(0, 0.125, 0.1); akar.add(alas);
 
-  const lathe = new THREE.LatheGeometry(PROFIL_BADAN.map(([r, z]) => new THREE.Vector2(r, z)), 40);
+  const lathe = new THREE.LatheGeometry(PROFIL_BADAN_PESAWAT.map(([r, z]) => new THREE.Vector2(r, z)), 40);
   lathe.rotateX(Math.PI / 2); lathe.translate(0, SUMBU_Y, 0);
   akar.add(new THREE.Mesh(lathe, badan));
 
@@ -35,7 +32,7 @@ export function bangunPesawat(THREE: typeof T, g: T.Group, b: Benda, warna: numb
   kanopi.scale.set(0.84, 0.86, 1.25); kanopi.position.set(0, SUMBU_Y + 0.42, -0.25);
   kanopi.userData.tanpaBayangan = true; akar.add(kanopi);
   const rangka = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.018, 6, 24, Math.PI), gelap);
-  rangka.position.set(0, SUMBU_Y + 0.42, -0.25); akar.add(rangka);
+  rangka.position.set(0, SUMBU_Y + 0.42, -0.25); rangka.userData.tanpaBayangan = true; akar.add(rangka);
 
   for (const sisi of [-1, 1]) {
     const sayap = papan(THREE, [[0, -0.05], [0.9, 0.12], [0.9, 0.42], [0, 0.55]], 0.06, badan);

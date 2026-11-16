@@ -61,7 +61,8 @@ for (const id of ['mapping-lengkung', 'mapping-cembung', 'simulator'] as const) 
     && Math.abs((bl.fiM * 180) / Math.PI - 25) < 0.05);
   cek('simulator: pesawat 3 m, mata pilot tepat di pusat bola (± 1 cm)', pesawat.bentukObjek === 'pesawat' && pesawat.d === 3
     && Math.hypot(mata[0] - bidang.x, mata[1] - (bidang.elev + bl.yP), mata[2] - (bidang.z + bl.zP)) < 0.01);
-  cek('simulator: 4 proyektor di atas kepala pilot (lensa >= 2 m) & di bawah plafon', proj.length === 4 && proj.every(p => p.elev >= 2 && p.elev + p.h <= t.ruang.t));
+  cek('simulator: 3 proyektor melayang di luar bola (di bukaan belakang, >= 40 cm di luar layar) & di bawah plafon',
+    proj.length === 3 && proj.every(p => p.tanpaTiang && Math.hypot(p.x - mata[0], p.z - mata[2]) >= bl.R + 0.4 && p.elev >= 2 && p.elev + p.h <= t.ruang.t));
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');

@@ -75,6 +75,7 @@ export interface Benda {
    gainLayar?: number;
   gridKolom?: number; warnaGrid?: string;
   maskBidang?: boolean;
+  tanpaTiang?: boolean;
    pasang?: Pasang;
    rakU?: number;
    isiRak?: PerangkatRak[];

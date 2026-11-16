@@ -78,8 +78,11 @@ export function bomDesain(benda: Benda[], kabel: JalurKabel[]): BarisBom[] {
       const p = pasangDari(b);
       tambah(aksesori, `pasang|${p}`, () => ({ kategori: 'Aksesori pemasangan', item: LABEL_PASANG[p], ukuran: '', jumlah: 1, satuan: 'set', catatan: 'Untuk display', pasang: false }), b.jenis === 'videowall' ? Math.max(1, b.kol ?? 2) * Math.max(1, b.bar ?? 2) : 1);
     }
-    if (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja') {
+    if (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja' && !b.tanpaTiang) {
       tambah(aksesori, 'bracket-proyektor', () => ({ kategori: 'Aksesori pemasangan', item: 'Bracket plafon proyektor', ukuran: '', jumlah: 1, satuan: 'set', catatan: 'Sesuaikan panjang drop dengan tinggi plafon', pasang: false }));
+    }
+    if (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja' && b.tanpaTiang) {
+      tambah(aksesori, 'bracket-proyektor-rangka', () => ({ kategori: 'Aksesori pemasangan', item: 'Bracket proyektor ke rangka / truss', ukuran: '', jumlah: 1, satuan: 'set', catatan: 'Proyektor melayang (tanpa tiang plafon) di desain; sesuaikan dengan rangka layar / truss', pasang: false }));
     }
   }
 

@@ -139,7 +139,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
           rataKanan: [3, 5, 6],
-          isi: proyektor.map(({ p, sn }) => [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
+          isi: proyektor.map(({ p, sn }) => [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `${p.tanpaTiang ? 'Melayang / rangka' : 'Plafon'} (${fm(p.elev)} m dari lantai)`,
             sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,

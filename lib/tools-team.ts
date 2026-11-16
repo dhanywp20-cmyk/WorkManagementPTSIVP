@@ -257,6 +257,7 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (typeof a.nama === 'string' && a.nama.trim()) hasil.nama = a.nama.trim().slice(0, 80);
   if (typeof a.naik === 'boolean') hasil.naik = a.naik;
   if (typeof a.gantung === 'boolean') hasil.gantung = a.gantung;
+  if (typeof a.tanpaTiang === 'boolean') hasil.tanpaTiang = a.tanpaTiang;
   if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
   const isiRak = bersihkanIsiRak(a.isiRak);
   if (isiRak) hasil.isiRak = isiRak;
