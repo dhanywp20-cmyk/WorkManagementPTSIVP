@@ -62,7 +62,7 @@ export default function Desain3D() {
   return (
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
-      <div className={layarPenuh ? 'fixed inset-0 z-950 flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
+      <div className={layarPenuh ? 'fixed top-0 right-0 bottom-0 left-0 z-950 flex flex-col bg-white' :'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
         <BilahAlat a={a} />
         <BannerDraf a={a} />
 

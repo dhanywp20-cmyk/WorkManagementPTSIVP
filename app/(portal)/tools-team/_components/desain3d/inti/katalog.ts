@@ -98,6 +98,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'bidang-datar', label: 'Layar mapping datar', ket: 'Bidang screen datar, lebar & tinggi bebas', jenis: 'bidang', atur: { bentukBidang: 'datar' } },
       { kunci: 'bidang-lengkung', label: 'Layar mapping cekung', ket: 'Screen melengkung ke dalam (curve), lebar & kedalaman lengkung bebas', jenis: 'bidang', atur: { bentukBidang: 'lengkung' } },
       { kunci: 'bidang-cembung', label: 'Layar mapping cembung', ket: 'Screen melengkung keluar ke arah penonton', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 60, jariBidang: 5 } },
+      { kunci: 'bidang-bola', label: 'Layar cekung bola (simulator)', ket: 'Dome: melengkung ke samping & atas-bawah, pusat bola = mata pilot', jenis: 'bidang', atur: { bentukBidang: 'bola' } },
       { kunci: 'pilar', label: 'Pilar mapping 360°', ket: 'Silinder untuk mapping keliling', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 360, jariBidang: 0.8 } },
     ],
   },
@@ -110,12 +111,13 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'objek-kerucut', label: 'Kerucut', ket: 'Puncak tugu, tumpeng', jenis: 'objek', atur: { bentukObjek: 'kerucut' } },
       { kunci: 'objek-piramida', label: 'Piramida', ket: 'Alas persegi, 4 sisi miring', jenis: 'objek', atur: { bentukObjek: 'piramida' } },
       { kunci: 'objek-prisma', label: 'Prisma segitiga', ket: 'Atap pelana, bidang miring', jenis: 'objek', atur: { bentukObjek: 'prisma' } },
+      { kunci: 'objek-pesawat', label: 'Pesawat / kokpit simulator', ket: 'Badan pesawat latih 3 m + kanopi, sayap pendek & ekor (hidung ke depan)', jenis: 'objek', atur: { bentukObjek: 'pesawat', warna: '#f8fafc' } },
     ],
   },
 ];
 const UKURAN_OBJEK: Record<BentukObjek, [number, number, number]> = {
   kotak: [1.2, 1.2, 1.2], silinder: [0.8, 1.8, 0.8], bola: [1.2, 1.2, 1.2], kubah: [1.6, 0.8, 1.6], kerucut: [1, 1.5, 1],
-  piramida: [1.4, 1.2, 1.4], prisma: [1.6, 0.8, 1.2], gambar: [1, 2, 0.3],
+  piramida: [1.4, 1.2, 1.4], prisma: [1.6, 0.8, 1.2], pesawat: [1.8, 1.75, 3], gambar: [1, 2, 0.3],
 };
 export function tinggiAlasDi(benda: Benda[], x: number, z: number, kecuali?: string): number {
   let tinggi = 0;
@@ -225,6 +227,10 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       const bentuk = atur.bentukBidang ?? 'lengkung';
       if (bentuk === 'datar') {
         const b = terapkanUkuran({ ...dasar, nama: 'Layar mapping datar', w: 5, h: 2.8, d: 0.06, elev: 0.3, bentukBidang: 'datar', ...atur } as Benda);
+        return { ...b, z: atur.z ?? b.d / 2 + 0.2 };
+      }
+      if (bentuk === 'bola') {
+        const b = terapkanUkuran({ ...dasar, nama: 'Layar cekung bola', w: 0, h: 1.9, d: 0, elev: 0.45, bentukBidang: 'bola', jariBidang: 2.5, busur: 180, ...atur } as Benda);
         return { ...b, z: atur.z ?? b.d / 2 + 0.2 };
       }
       const lengkung = bentuk === 'lengkung';

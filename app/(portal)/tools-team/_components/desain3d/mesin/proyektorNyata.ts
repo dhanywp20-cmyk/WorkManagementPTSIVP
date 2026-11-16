@@ -1,7 +1,7 @@
 import type * as T from 'three';
 import { teksturKonten } from '../bangun/konten';
 import { teksturPolaUji } from '../bangun/tekstur';
-import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenGambarDari, rasioGambarProyektor } from '../inti';
+import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenGambarDari, petaMaskBidang, rasioGambarProyektor, type UjiBidang } from '../inti';
 import type { Mesin } from './tipe';
 
 const cacheKonten = new Map<string, CanvasImageSource>();
@@ -110,7 +110,8 @@ const TAMBAHAN_MAKS = 1.2;
 export function gulungTerang(q: number): number {
   return q <= 0 ? 0 : TAMBAHAN_MAKS * (1 - Math.exp(-q / TAMBAHAN_MAKS));
 }
-const LEBAR_PETA = 768;
+const LEBAR_PETA = 768, LEBAR_MASK = 384, LEBAR_MASK_KASAR = 192;
+const tinggiPeta = (L: Lensa) => Math.max(64, Math.round((LEBAR_PETA * L.h1) / L.w1));
 
 export interface MasukanLampu {
   p: Benda; L: Lensa;
@@ -119,7 +120,7 @@ export interface MasukanLampu {
    normal: T.Vector3 | null;
    konten: CanvasImageSource | null; kunciKonten: string;
    blend: { kiri: number; kanan: number; atas: number; bawah: number };
-   maskUv: number[] | null;
+   mask: { uji: UjiBidang[]; kunci: string } | null;
    mati?: boolean;
 }
 
@@ -140,7 +141,10 @@ export function batasProyektorNyata(m: Mesin): number {
   return Math.max(0, m.renderer.capabilities.maxTextures - berat - 3);
 }
 
-interface Lampu { light: T.SpotLight; kanvas: HTMLCanvasElement; tex: T.CanvasTexture; kunci: string }
+interface Lampu {
+  light: T.SpotLight; kanvas: HTMLCanvasElement; tex: T.CanvasTexture;
+  dasar: HTMLCanvasElement; kanvasMask: HTMLCanvasElement; kunciIsi: string; kunciBlend: string; kunciMask: string; lebarMask: number;
+}
 const simpanan = new WeakMap<object, Map<string, Lampu>>();
 
 export const NORMAL_BIAS_SPOT = 'shadowWorldPosition.xyz += shadowWorldNormal * spotLightShadows[ i ].shadowNormalBias;';
@@ -161,26 +165,14 @@ export function pasangPatchProyektor(THREE: typeof T) {
 const keLinear = new Float32Array(256).map((_, i) => { const s = i / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
 const keSrgb = (l: number) => Math.round(255 * (l <= 0.0031308 ? l * 12.92 : 1.055 * l ** (1 / 2.4) - 0.055));
 
-function gambarPeta(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
-  const W = LEBAR_PETA, H = Math.max(64, Math.round((W * L.h1) / L.w1));
+const keSrgbTabel = Uint8ClampedArray.from({ length: 4096 }, (_, i) => keSrgb(i / 4095));
+
+function gambarDasar(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
+  const W = LEBAR_PETA, H = tinggiPeta(L);
   kv.width = W; kv.height = H;
   const g = kv.getContext('2d', { willReadFrequently: true })!;
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
   if (m.konten) { try { g.drawImage(m.konten, 0, 0, W, H); } catch {  } }
-  let mask: Uint8ClampedArray | null = null;
-  if (m.maskUv) {
-    const mk = document.createElement('canvas'); mk.width = W; mk.height = H;
-    const gm = mk.getContext('2d')!;
-    gm.fillStyle = '#fff'; gm.strokeStyle = '#fff'; gm.lineWidth = 1.5; gm.beginPath();
-    for (let i = 0; i + 5 < m.maskUv.length; i += 6) {
-      gm.moveTo(m.maskUv[i] * W, (1 - m.maskUv[i + 1]) * H);
-      gm.lineTo(m.maskUv[i + 2] * W, (1 - m.maskUv[i + 3]) * H);
-      gm.lineTo(m.maskUv[i + 4] * W, (1 - m.maskUv[i + 5]) * H);
-      gm.closePath();
-    }
-    gm.fill(); gm.stroke();
-    mask = gm.getImageData(0, 0, W, H).data;
-  }
   const data = g.getImageData(0, 0, W, H), d = data.data;
   const profil = (u: number, v: number) => {
     const tx = (u - 0.5 + L.gH) * L.w1, ty = (v - 0.5 + L.gV) * L.h1;
@@ -191,18 +183,44 @@ function gambarPeta(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
   const { kiri, kanan, atas, bawah } = m.blend;
   const ramp = (t: number, q: number) => (q > 0.001 ? Math.min(1, Math.max(0, t / q)) : 1);
   for (let y = 0; y < H; y++) {
-    const v = 1 - (y + 0.5) / H;
+    const v = 1 - (y + 0.5) / H, rv = ramp(v, bawah) * ramp(1 - v, atas);
     for (let x = 0; x < W; x++) {
       const u = (x + 0.5) / W, i = (y * W + x) * 4;
-      const k = (profil(u, v) / maks) * ramp(u, kiri) * ramp(1 - u, kanan) * ramp(v, bawah) * ramp(1 - v, atas) * (mask ? mask[i] / 255 : 1);
-      d[i] = keSrgb(keLinear[d[i]] * k); d[i + 1] = keSrgb(keLinear[d[i + 1]] * k); d[i + 2] = keSrgb(keLinear[d[i + 2]] * k); d[i + 3] = 255;
+      const k = Math.min(1, (profil(u, v) / maks) * ramp(u, kiri) * ramp(1 - u, kanan) * rv) * 4095;
+      d[i] = keSrgbTabel[(keLinear[d[i]] * k + 0.5) | 0]; d[i + 1] = keSrgbTabel[(keLinear[d[i + 1]] * k + 0.5) | 0];
+      d[i + 2] = keSrgbTabel[(keLinear[d[i + 2]] * k + 0.5) | 0]; d[i + 3] = 255;
     }
   }
   g.putImageData(data, 0, 0);
   return maks;
 }
 
-export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
+function gambarMask(kv: HTMLCanvasElement, L: Lensa, uji: UjiBidang[], lebar: number) {
+  const tinggi = Math.max(16, Math.round((lebar * tinggiPeta(L)) / LEBAR_PETA));
+  const peta = petaMaskBidang(L, uji, lebar, tinggi);
+  kv.width = lebar; kv.height = tinggi;
+  const g = kv.getContext('2d')!, img = g.createImageData(lebar, tinggi), d = img.data;
+  for (let i = 0; i < peta.length; i++) { const v = peta[i] ? 255 : 0; d[i * 4] = v; d[i * 4 + 1] = v; d[i * 4 + 2] = v; d[i * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+}
+
+function susunPeta(l: Lampu, adaMask: boolean) {
+  const { kanvas, dasar, kanvasMask, tex } = l;
+  if (kanvas.width !== dasar.width || kanvas.height !== dasar.height) {
+    kanvas.width = dasar.width; kanvas.height = dasar.height;
+    tex.dispose();
+  }
+  const g = kanvas.getContext('2d')!;
+  g.globalCompositeOperation = 'copy'; g.drawImage(dasar, 0, 0);
+  if (adaMask) {
+    g.globalCompositeOperation = 'multiply'; g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(kanvasMask, 0, 0, kanvas.width, kanvas.height);
+  }
+  g.globalCompositeOperation = 'source-over';
+  tex.needsUpdate = true;
+}
+
+export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = false) {
   const { THREE, scene } = m;
   let peta = simpanan.get(m);
   if (!peta) { peta = new Map(); simpanan.set(m, peta); }
@@ -223,7 +241,7 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
       const tex = new THREE.CanvasTexture(kanvas); tex.colorSpace = THREE.SRGBColorSpace;
       const light = new THREE.SpotLight(0xffffff, 1, 0, 0.5, 0, 2);
       light.map = tex; scene.add(light, light.target);
-      lampu = { light, kanvas, tex, kunci: '' };
+      lampu = { light, kanvas, tex, dasar: document.createElement('canvas'), kanvasMask: document.createElement('canvas'), kunciIsi: '', kunciBlend: '', kunciMask: '', lebarMask: 0 };
       peta!.set(p.id, lampu);
     }
     const { light } = lampu;
@@ -250,15 +268,20 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
     light.castShadow = i < denganBayangan;
     light.shadow.bias = -0.0003; light.shadow.normalBias = 0.015; light.shadow.radius = 2;
 
-    let hashMask = 0;
-    if (x.maskUv) for (const v of x.maskUv) hashMask = (hashMask * 31 + Math.round(v * 2000)) | 0;
-    const kunci = JSON.stringify([x.kunciKonten, L.w1, L.h1, L.gH, L.gV, x.blend, x.maskUv ? x.maskUv.length : -1, hashMask]);
-    let pengali = (light.userData.pengali as number) || 1;
-    if (kunci !== lampu.kunci) {
-      pengali = gambarPeta(lampu.kanvas, L, x);
+    const kunciIsi = JSON.stringify([x.kunciKonten, L.w1, L.h1, L.gH, L.gV]), kunciBlend = JSON.stringify(x.blend);
+    let pengali = (light.userData.pengali as number) || 1, ubah = false;
+    if (kunciIsi !== lampu.kunciIsi || (!kasar && kunciBlend !== lampu.kunciBlend)) {
+      pengali = gambarDasar(lampu.dasar, L, x);
       light.userData.pengali = pengali;
-      lampu.tex.needsUpdate = true; lampu.kunci = kunci;
+      lampu.kunciIsi = kunciIsi; lampu.kunciBlend = kunciBlend; ubah = true;
     }
+    const kunciMask = x.mask ? JSON.stringify([x.mask.kunci, L]) : '';
+    if (kunciMask !== lampu.kunciMask || (x.mask && !kasar && lampu.lebarMask < LEBAR_MASK)) {
+      const lebar = kasar ? LEBAR_MASK_KASAR : LEBAR_MASK;
+      if (x.mask) gambarMask(lampu.kanvasMask, L, x.mask.uji, lebar);
+      lampu.kunciMask = kunciMask; lampu.lebarMask = x.mask ? lebar : 0; ubah = true;
+    }
+    if (ubah) susunPeta(lampu, !!x.mask);
     const n = x.normal ?? new THREE.Vector3(-L.D[0], -L.D[1], -L.D[2]);
     ukur.push({ light, cd: x.mati ? 0 : (lumenGambarDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar });
   });

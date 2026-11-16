@@ -13,11 +13,12 @@ export type Jenis =
   | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek' | 'perangkat' | 'teks';
 export type HadapTeks = 'berdiri' | 'lantai' | 'kamera';
 export type TipePerangkat = 'pc' | 'laptop' | 'dongle' | 'hp' | 'tablet';
-export type BentukObjek = 'kotak' | 'silinder' | 'bola' | 'kubah' | 'kerucut' | 'piramida' | 'prisma' | 'gambar';
+export type BentukObjek = 'kotak' | 'silinder' | 'bola' | 'kubah' | 'kerucut' | 'piramida' | 'prisma' | 'pesawat' | 'gambar';
 export const LABEL_BENTUK_OBJEK: Record<BentukObjek, string> = {
   kotak: 'Kotak / balok', silinder: 'Silinder', bola: 'Bola', kubah: 'Kubah (setengah bola)', kerucut: 'Kerucut',
-  piramida: 'Piramida', prisma: 'Prisma segitiga (atap)', gambar: 'Siluet dari gambar',
+  piramida: 'Piramida', prisma: 'Prisma segitiga (atap)', pesawat: 'Pesawat / kokpit simulator', gambar: 'Siluet dari gambar',
 };
+export type BentukBidang = 'datar' | 'lengkung' | 'cembung' | 'bola';
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop' | 'putih';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
@@ -56,7 +57,7 @@ export interface Benda {
    tampilJangkauan?: boolean;
    trMin?: number; trMax?: number;
    baris?: number; kursiBaris?: number; tinggiAnak?: number;
-  bentukBidang?: 'datar' | 'lengkung' | 'cembung'; jariBidang?: number; busur?: number;
+  bentukBidang?: BentukBidang; jariBidang?: number; busur?: number;
    offsetLensa?: number;
    geserLensaH?: number;
    warnaSinar?: string;

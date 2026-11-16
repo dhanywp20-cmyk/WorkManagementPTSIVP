@@ -1,5 +1,5 @@
 import { f, fTetap } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, hasilPanasonic, keGambar, kontrasProyektor, koreksiJarakDari, lensaDari, type Lensa, lumenGambarDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, hasilPanasonic, keGambar, kontrasProyektor, koreksiJarakDari, kunciBidangMask, lensaDari, type Lensa, lumenGambarDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, ujiKenaBidang, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
@@ -78,6 +78,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     return id ? namaBenda.get(id) ?? null : null;
   };
 
+  let maskBidang: MasukanLampu['mask'] = null;
+  const maskDari = () => (maskBidang ??= { uji: benda.filter(b => BIDANG_PROYEKSI.has(b.jenis)).map(ujiKenaBidang), kunci: kunciBidangMask(benda) });
   const dataBlend: DataBlend[] = [];
   const sumberCahaya: SumberCahaya[] = [];
   const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null; normal: T.Vector3 | null }[] = [];
@@ -164,7 +166,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
       return (c * Math.acos(Math.min(1, d))) / 8 > ANGKAT * 0.5;
     };
-    const LANGKAH_BAGI = 4;
+    const LANGKAH_BAGI = 4, langkahBagi = kasar ? 2 : LANGKAH_BAGI;
     const tepiHalus = (s4: (Kena | null)[], uvS: number[][], jarak: number, S: number) => {
       const sudah: Kena[] = [];
       for (const rep of s4) {
@@ -183,7 +185,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
           const [ia, ib] = dalam[k] ? [k, k2] : [k2, k];
           const di = (t: number) => [uvS[ia][0] + (uvS[ib][0] - uvS[ia][0]) * t, uvS[ia][1] + (uvS[ib][1] - uvS[ia][1]) * t];
           let lo = 0, hi = 1, kenaLo = s4[ia]!;
-          for (let n = 0; n < LANGKAH_BAGI; n++) {
+          for (let n = 0; n < langkahBagi; n++) {
             const t = (lo + hi) / 2, [u, v] = di(t), h = tembakUV(u, v);
             if (anggota(h)) { lo = t; kenaLo = h; } else hi = t;
           }
@@ -212,7 +214,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const jarak = ada.reduce((s, x) => s + x.p.distanceTo(O), 0) / ada.length;
       const satu = satuSel(q);
       if (satu && (kasar || !melengkung(q))) { isi(q, batasSel(jarak, Math.min(...q.map(x => x.cos))), gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
-      if (kasar) continue;
+      if (kasar) { tepiHalus(q, [[gu(i), gv(j)], [gu(i + 1), gv(j)], [gu(i + 1), gv(j + 1)], [gu(i), gv(j + 1)]], jarak, 1); continue; }
       const S = satu ? S_LENGKUNG : S_TEPI;
       const sub: (Kena | null)[] = [];
       for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) {
@@ -348,7 +350,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const kt = kontenProyektor(THREE, bg.p, gridSinar, bg.lebar, bg.tinggi, gambarLayar.current);
       const kp = kontrasProyektor(bg.p, benda, ruang, 15);
       lampu.push({ p: bg.p, L: bg.L, normal: bg.normal, luxAmbien: kp.cahaya.total, luxGambar: kp.luxGambar,
-        konten: kt.sumber, kunciKonten: kt.kunci, mati: kt.mati, blend: { kiri, kanan, atas, bawah }, maskUv: bg.p.maskBidang ? bg.uv : null });
+        konten: kt.sumber, kunciKonten: kt.kunci, mati: kt.mati, blend: { kiri, kanan, atas, bawah }, mask: bg.p.maskBidang ? maskDari() : null });
     }
     if (!bg.pos.length) continue;
     if (!nyata) {
@@ -382,5 +384,5 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       gambarTeksCahaya(m, bg.teks.pos, bg.teks.uv, terlihat);
     }
   }
-  if (nyata) aturLampuProyektor(m, lampu);
+  if (nyata) aturLampuProyektor(m, lampu, kasar);
 }

@@ -70,7 +70,7 @@ export function terapkanUkuran(b: Benda): Benda {
     }
     case 'bidang': {
       const u = ukuranBidang(b);
-      return { ...b, w: u.w, d: u.d };
+      return { ...b, w: u.w, d: u.d, ...(b.bentukBidang === 'bola' ? { h: Math.min(b.h, tinggiMaksBola(u.R)) } : {}) };
     }
     case 'teks': return terapkanUkuranTeks(b);
     default: return b;
@@ -85,6 +85,18 @@ export function ukuranBidang(b: Benda) {
   const w = busur >= 180 ? 2 * R : 2 * R * Math.sin(t / 2);
   const d = R * (1 - Math.cos(t / 2));
   return { R, busur, w: Math.round(Math.max(0.05, w) * 1000) / 1000, d: Math.round(Math.max(0.05, d) * 1000) / 1000 };
+}
+export const PESAWAT_ACUAN = { w: 1.8, h: 1.75, d: 3, mataY: 1.38, mataZ: -0.25 };
+export function mataPilot(b: Pick<Benda, 'x' | 'z' | 'elev' | 'rot' | 'w' | 'h' | 'd'>): [number, number, number] {
+  const z = (PESAWAT_ACUAN.mataZ / PESAWAT_ACUAN.d) * b.d, r = (b.rot * Math.PI) / 180;
+  return [b.x + z * Math.sin(r), b.elev + (PESAWAT_ACUAN.mataY / PESAWAT_ACUAN.h) * b.h, b.z + z * Math.cos(r)];
+}
+export const SUDUT_V_MAKS_BOLA = 75;
+export const tinggiMaksBola = (R: number) => Math.round(2 * R * Math.sin((SUDUT_V_MAKS_BOLA * Math.PI) / 180) * 1000) / 1000;
+export function bolaBidang(b: Benda) {
+  const { R, busur, d } = ukuranBidang(b);
+  const h = Math.min(b.h, tinggiMaksBola(R));
+  return { R, busur, d, h, tb: (busur * Math.PI) / 180, a0: Math.PI - (busur * Math.PI) / 360, zP: R - d / 2, yP: h / 2, fiM: Math.asin(Math.min(1, h / (2 * R))) };
 }
 export function lengkungDari(lebar: number, kedalaman: number): { jariBidang: number; busur: number } {
   const c = Math.max(0.2, lebar), s = Math.max(0.01, Math.min(c / 2, kedalaman));

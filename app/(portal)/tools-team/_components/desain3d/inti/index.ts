@@ -28,4 +28,5 @@ export * from './presisi';
 export * from './tata';
 export * from './gridProyektor';
 export * from './cakupanProyektor';
+export * from './maskProyektor';
 export * from './bom';

@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, lengkapiDariKatalog, perluDataResmi, type KatalogTdc, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
-  templateRuang, type Benda, type Ruang,
+  templateRuang, type Benda, type Ruang, bolaBidang, mataPilot,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -56,11 +56,12 @@ for (const id of ['mapping-lengkung', 'mapping-cembung', 'simulator'] as const) 
 }
 {
   const t = templateRuang('simulator'), proj = proyektorDi(t.benda), bidang = t.benda.find(b => b.jenis === 'bidang')!;
-  const kokpit = t.benda.find(b => b.jenis === 'objek')!;
-  cek('simulator: layar cekung Ø 3 m (jari-jari 1,5 m), tinggi 3 m, busur 225°', bidang.bentukBidang === 'lengkung' && bidang.jariBidang === 1.5 && bidang.h === 3 && bidang.busur === 225);
-  cek('simulator: kokpit 3 m, mata pilot (pusat lingkaran) di dalam kokpit', kokpit.d === 3 && Math.abs(kokpit.x - bidang.x) < 1e-9
-    && Math.abs(bidang.z + 1.5 - bidang.d / 2 - kokpit.z) < kokpit.d / 2);
-  cek('simulator: 6 proyektor (2 baris × 3) di atas kepala pilot (lensa >= 2 m)', proj.length === 6 && proj.every(p => p.elev >= 2));
+  const pesawat = t.benda.find(b => b.jenis === 'objek')!, bl = bolaBidang(bidang), mata = mataPilot(pesawat);
+  cek('simulator: layar cekung bola Ø 5 m (jari-jari 2,5 m), busur 225° × tegak 50° (±25°)', bidang.bentukBidang === 'bola' && bidang.jariBidang === 2.5 && bidang.busur === 225
+    && Math.abs((bl.fiM * 180) / Math.PI - 25) < 0.05);
+  cek('simulator: pesawat 3 m, mata pilot tepat di pusat bola (± 1 cm)', pesawat.bentukObjek === 'pesawat' && pesawat.d === 3
+    && Math.hypot(mata[0] - bidang.x, mata[1] - (bidang.elev + bl.yP), mata[2] - (bidang.z + bl.zP)) < 0.01);
+  cek('simulator: 4 proyektor di atas kepala pilot (lensa >= 2 m) & di bawah plafon', proj.length === 4 && proj.every(p => p.elev >= 2 && p.elev + p.h <= t.ruang.t));
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');
