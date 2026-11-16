@@ -246,7 +246,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const keLensa = (P: T.Vector3) => O.clone().sub(P).normalize();
     const pita: number[] = [], kerucut: number[] = [], alfa: number[] = [];
     if (nyata) {
-      const pojokG = [rinci[0], rinci[NX - 1], rinci[NX * NY - 1], rinci[(NY - 1) * NX]].filter((x): x is Kena => !!x);
+      const pojokG = [titikTepi(0, 0), titikTepi(NX - 1, 0), titikTepi(NX - 1, NY - 1), titikTepi(0, NY - 1)].filter((x): x is Kena => !!x);
       for (const q of pojokG) {
         const r = q.p.clone().sub(ujung).normalize();
         const s1 = new THREE.Vector3().crossVectors(r, Math.abs(r.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(lebarGaris / 2);

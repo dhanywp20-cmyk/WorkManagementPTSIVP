@@ -143,10 +143,19 @@ export function batasProyektorNyata(m: Mesin): number {
 interface Lampu { light: T.SpotLight; kanvas: HTMLCanvasElement; tex: T.CanvasTexture; kunci: string }
 const simpanan = new WeakMap<object, Map<string, Lampu>>();
 
+export const NORMAL_BIAS_SPOT = 'shadowWorldPosition.xyz += shadowWorldNormal * spotLightShadows[ i ].shadowNormalBias;';
+export const NORMAL_BIAS_SPOT_KE_LAMPU = `{
+			vec4 pusatLampu = inverse( spotLightMatrix[ i ] ) * vec4( 0.0, 0.0, 1.0, 0.0 );
+			vec3 keLampu = pusatLampu.xyz / pusatLampu.w - worldPosition.xyz;
+			shadowWorldPosition.xyz += shadowWorldNormal * ( dot( shadowWorldNormal, keLampu ) < 0.0 ? - 1.0 : 1.0 ) * spotLightShadows[ i ].shadowNormalBias;
+		}`;
+export const biasKeArahLampu = (chunk: string) => chunk.replace(NORMAL_BIAS_SPOT, NORMAL_BIAS_SPOT_KE_LAMPU);
+
 export function pasangPatchProyektor(THREE: typeof T) {
   const c = THREE.ShaderChunk as unknown as Record<string, string>;
   const lama = 'directLight.color = inSpotLightMap ? directLight.color * spotColor.rgb : directLight.color;';
   if (c.lights_fragment_begin.includes(lama)) c.lights_fragment_begin = c.lights_fragment_begin.replace(lama, 'directLight.color = inSpotLightMap ? directLight.color * spotColor.rgb : vec3( 0.0 );');
+  c.shadowmap_vertex = biasKeArahLampu(c.shadowmap_vertex);
 }
 
 const keLinear = new Float32Array(256).map((_, i) => { const s = i / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
