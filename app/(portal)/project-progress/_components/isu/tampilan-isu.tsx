@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import { formatWaktu } from '@/lib/checklist/inti';
 import {
-  PRIORITAS_ISU, STATUS_ISU, geserTanggal, hariIni, labelHari, labelStatusPada, labelTanggalPendek, peranPada, tanggalSelesai, umurIsu,
+  PRIORITAS_ISU, STATUS_ISU, dariTiket, geserTanggal, kodeIsu, hariIni, labelHari, labelStatusPada, labelTanggalPendek, peranPada, tanggalSelesai, umurIsu,
   type BarisKota, type Isu, type PrioritasIsu, type RiwayatIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
@@ -23,6 +23,13 @@ export function KepingPrioritas({ p }: { p: PrioritasIsu }) {
   if (p === 'sedang') return null;
   const x = PRIORITAS_ISU[p];
   return <span className="text-[10.5px] font-bold uppercase tracking-wide" style={{ color: x.warna }}>{p === 'tinggi' ? '▲ ' : ''}{x.label}</span>;
+}
+
+export function KodeIsu({ isu }: { isu: Isu }) {
+  if (dariTiket(isu)) {
+    return <span className="px-1.5 py-0.5 rounded-sm text-[10.5px] font-bold whitespace-nowrap" style={{ background: '#fef2f2', color: '#b91c1c' }} title="Otomatis dari Ticket Troubleshooting">🎫 Tiket</span>;
+  }
+  return <span className="text-[11.5px] font-bold" style={{ ...fontAngka, color: TEMA.samar }}>{kodeIsu(isu)}</span>;
 }
 
 const PERAN = {
@@ -81,7 +88,7 @@ export function TabelKota({ kota, tanggal, onBuka }: { kota: BarisKota[]; tangga
                 <button type="button" onClick={() => onBuka(i)} className="w-full text-left rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors"
                   style={{ border: `1px solid ${NETRAL.garis}` }}>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11.5px] font-bold" style={{ ...fontAngka, color: TEMA.samar }}>#{i.nomor}</span>
+                    <KodeIsu isu={i} />
                     <span className="text-[13px] font-semibold" style={{ color: NETRAL.tinta }}>{i.judul}</span>
                     <KepingStatus status={peranPada(i, tanggal) === 'selesai' ? 'solved' : i.status} label={labelStatusPada(i, tanggal)} />
                     <KepingPeran isu={i} tanggal={tanggal} />
@@ -111,7 +118,7 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
         className="w-full text-left flex flex-col md:flex-row md:items-start gap-1.5 md:gap-4 px-3 sm:px-4 py-3 hover:bg-slate-50/70 transition-colors">
         <div className="md:w-[150px] shrink-0">
           <p className="text-[12.5px] font-bold truncate" style={{ color: NETRAL.tinta }}>{isu.lokasi}</p>
-          <p className="text-[11px] font-semibold" style={{ ...fontAngka, color: TEMA.samar }}>#{isu.nomor} · {labelTanggalPendek(isu.tanggal)}</p>
+          <p className="text-[11px] font-semibold flex items-center gap-1" style={{ ...fontAngka, color: TEMA.samar }}><KodeIsu isu={isu} /> · {labelTanggalPendek(isu.tanggal)}</p>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">

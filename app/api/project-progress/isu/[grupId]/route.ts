@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NO_STORE, ambilAkun, galat, tokenBaru } from '@/lib/checklist/server';
-import { hakIsu, isianGrup, muatGrup, muatIsu, muatLokasi } from '@/lib/isu/server';
+import { hakIsu, isianGrup, muatGrup, muatLokasi, muatSemuaIsu } from '@/lib/isu/server';
 import type { TablesUpdate } from '@/types/database';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ grupId:
   const grup = await muatGrup(s.db, grupId);
   if (!grup) return galat('Grup tidak ditemukan.', 404);
   try {
-    const [lokasi, isu] = await Promise.all([muatLokasi(s.db, grup.proyek_ids), muatIsu(s.db, grupId, false)]);
+    const [lokasi, isu] = await Promise.all([muatLokasi(s.db, grup.proyek_ids), muatSemuaIsu(s.db, grup, false)]);
     return NextResponse.json({
       grup: hak.admin ? grup : { ...grup, share_token: null }, lokasi, isu,
       hak: { edit: hak.edit, admin: hak.admin },

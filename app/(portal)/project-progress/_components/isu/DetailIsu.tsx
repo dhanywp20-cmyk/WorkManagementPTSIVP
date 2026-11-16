@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Pencil, Trash2 } from 'lucide-react';
+import { Camera, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { formatWaktu } from '@/lib/checklist/inti';
 import {
-  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, hariIni, labelHari, tanggalSelesai, umurIsu,
+  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, dariTiket, hariIni, kodeIsu, labelHari, tanggalSelesai, umurIsu,
   type HakIsu, type Isu, type RiwayatIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA } from '../tampilan';
@@ -27,11 +27,12 @@ function Baris({ label, isi }: { label: string; isi: React.ReactNode }) {
 
 export interface UpdateCepat { status: StatusIsu; action?: string; solusi?: string }
 
-export function ModalDetailIsu({ isu, hak, muatRiwayat, versi, onTutup, onUpdate, onUbah, onHapus, onFoto }: {
+export function ModalDetailIsu({ isu, hak: hakAsli, muatRiwayat, versi, urlTiket, onTutup, onUpdate, onUbah, onHapus, onFoto }: {
   isu: Isu | null;
   hak: HakIsu;
   muatRiwayat: (id: string) => Promise<RiwayatIsu[]>;
   versi?: string;
+  urlTiket?: (id: string) => string;
   onTutup: () => void;
   onUpdate?: (u: UpdateCepat) => Promise<void>;
   onUbah?: () => void;
@@ -54,15 +55,19 @@ export function ModalDetailIsu({ isu, hak, muatRiwayat, versi, onTutup, onUpdate
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const riwayatTiket = isu?.riwayat;
   useEffect(() => {
     if (!id) return;
+    if (riwayatTiket) { setRiwayat(riwayatTiket); return; }
     let hidup = true;
     setRiwayat(null);
     muatRiwayat(id).then(r => { if (hidup) setRiwayat(r); }).catch(() => { if (hidup) setRiwayat([]); });
     return () => { hidup = false; };
-  }, [id, versi, muatRiwayat]);
+  }, [id, versi, muatRiwayat, riwayatTiket]);
 
   if (!isu) return null;
+  const tiket = dariTiket(isu);
+  const hak: HakIsu = tiket ? { edit: false, admin: false } : hakAsli;
   const selesai = tanggalSelesai(isu);
   const umur = umurIsu(isu, hariIni());
   const berubah = status !== isu.status || !!action.trim() || (status === 'solved' && solusi.trim() !== isu.solusi);
@@ -84,7 +89,7 @@ export function ModalDetailIsu({ isu, hak, muatRiwayat, versi, onTutup, onUpdate
 
   return (
     <Modal buka onTutup={() => !sibuk && onTutup()} ukuran="lg" ikon="🛠️"
-      judul={<span>#{isu.nomor} · {isu.judul}</span>}
+      judul={<span>{tiket ? '🎫' : kodeIsu(isu)} · {isu.judul}</span>}
       keterangan={`${isu.lokasi} · dilaporkan ${labelHari(isu.tanggal)}`}
       footer={<>
         {hak.admin && onHapus && (yakinHapus
@@ -107,6 +112,17 @@ export function ModalDetailIsu({ isu, hak, muatRiwayat, versi, onTutup, onUpdate
             </button>
           )}
         </div>
+
+        {tiket && (
+          <div className="flex items-center gap-2 flex-wrap rounded-lg px-3 py-2 text-[12.5px]" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b' }}>
+            <span className="flex-1 min-w-0">Otomatis dari <b>Ticket Troubleshooting</b>. Status, action, dan solusi mengikuti tiket.</span>
+            {urlTiket && isu.tiket_id && (
+              <a href={urlTiket(isu.tiket_id)} className="inline-flex items-center gap-1 font-bold whitespace-nowrap" style={{ color: '#b91c1c' }}>
+                <ExternalLink size={13} /> Buka ticket
+              </a>
+            )}
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2"><Baris label="Deskripsi" isi={isu.deskripsi} /></div>

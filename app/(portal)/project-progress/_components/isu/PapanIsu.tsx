@@ -6,7 +6,7 @@ import { StatCardGrid, TombolEkspor } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 import {
-  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, hariIni, labelHari, ringkasHarian, tanggalSelesai, teksRingkasan, umurIsu,
+  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, hariIni, kodeIsu, labelHari, ringkasHarian, tanggalSelesai, teksRingkasan, umurIsu,
   type Isu, type LokasiIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
@@ -49,13 +49,15 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     return [...s];
   }, [lokasi, isu]);
 
+  const daftarKategori = useMemo(() => [...new Set([...kategori, ...isu.map(i => i.kategori)])], [kategori, isu]);
+
   const tersaring = useMemo(() => {
     const q = cari.trim().toLowerCase();
     return isu
       .filter(i => status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
       .filter(i => !kota || i.lokasi === kota)
       .filter(i => !kat || i.kategori === kat)
-      .filter(i => !q || [i.judul, i.deskripsi, i.action, i.solusi, i.pic, i.lokasi, `#${i.nomor}`].some(v => (v ?? '').toLowerCase().includes(q)));
+      .filter(i => !q || [i.judul, i.deskripsi, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)));
   }, [isu, status, kota, kat, cari]);
 
   const salin = async () => {
@@ -70,7 +72,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     filter: [['Status', status === 'aktif' ? 'Belum solved' : status === 'semua' ? '' : STATUS_ISU[status].label], ['Lokasi', kota], ['Kategori', kat], ['Cari', cari]],
     baris: tersaring,
     kolom: [
-      { judul: 'No', ambil: i => i.nomor, angka: true },
+      { judul: 'No', ambil: i => kodeIsu(i) },
       { judul: 'Tanggal', ambil: i => i.tanggal },
       { judul: 'Lokasi', ambil: i => i.lokasi },
       { judul: 'Kategori', ambil: i => i.kategori },
@@ -156,7 +158,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
               </select>
               <select value={kat} onChange={e => setKat(e.target.value)} aria-label="Saring kategori" className={pilih} style={gayaPilih}>
                 <option value="">Semua kategori</option>
-                {kategori.map(k => <option key={k} value={k}>{k}</option>)}
+                {daftarKategori.map(k => <option key={k} value={k}>{k}</option>)}
               </select>
               <div className="ml-auto"><TombolEkspor data={ekspor} jumlah={tersaring.length} /></div>
             </div>

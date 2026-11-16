@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NO_STORE, galat, tokenSah } from '@/lib/checklist/server';
-import { KOLOM_RIWAYAT, cariGrupShare, muatIsu, muatLokasi } from '@/lib/isu/server';
+import { KOLOM_RIWAYAT, cariGrupShare, muatLokasi, muatSemuaIsu } from '@/lib/isu/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ token: 
   }
 
   try {
-    const [lokasi, isu] = await Promise.all([muatLokasi(db, grup.proyek_ids), muatIsu(db, grup.id, true)]);
+    const [lokasi, isu] = await Promise.all([muatLokasi(db, grup.proyek_ids), muatSemuaIsu(db, grup, true)]);
     return NextResponse.json({ grup, lokasi, isu }, { headers: NO_STORE });
   } catch (e) {
     return galat(e instanceof Error ? e.message : 'Gagal memuat isu.', 500);

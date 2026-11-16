@@ -210,7 +210,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
           onBuka={i => setBukaId(i.id)} beritahu={beritahu} aksiAtas={aksiAtas} />
       )}
 
-      <ModalDetailIsu isu={dibuka} hak={hak} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at}
+      <ModalDetailIsu isu={dibuka} hak={hak} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at} urlTiket={id => `/ticketing?open=${id}`}
         onTutup={() => setBukaId(null)}
         onUpdate={u => updateCepat(dibuka!.id, u)}
         onUbah={() => { setForm({ awal: dibuka }); setBukaId(null); }}

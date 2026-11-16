@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
-import { geserTanggal, labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
-import { isianIsu, kolomBerubah } from '../lib/isu/server';
+import { geserTanggal, kodeIsu, labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
+import { isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -65,8 +65,19 @@ const srv = readFileSync('lib/isu/server.ts', 'utf8');
 const publik = /const KOLOM_ISU_PUBLIK = '([^']+)'/.exec(srv)?.[1] ?? '';
 cek('kolom publik tanpa catatan_internal', !!publik && !publik.includes('catatan_internal'));
 const share = readFileSync('app/api/project-progress/share/isu/[token]/route.ts', 'utf8');
-cek('route share memuat isu mode publik', share.includes('muatIsu(db, grup.id, true)'));
+cek('route share memuat isu mode publik', share.includes('muatSemuaIsu(db, grup, true)'));
 cek('kolom grup publik tanpa share_token', !/KOLOM_GRUP_PUBLIK = '[^']*share_token/.test(srv));
+
+console.log('\n6. Tiket otomatis jadi isu');
+cek('nama tiket = nama lokasi tanpa nama klien', normalNama('BPKP MEdan', ['bpkp']) === normalNama('bpkp medan', ['bpkp']));
+cek('lokasi tanpa awalan klien tetap cocok', normalNama('Kalimantan Barat', ['bpkp']) === normalNama('BPKP Kalimantan Barat', ['bpkp']));
+cek('tanda baca diabaikan', normalNama('BPKP Maluku - Ambon', ['bpkp']) === 'maluku ambon');
+cek('lokasi lain tidak cocok', normalNama('BPKP Yogyakarta', ['bpkp']) !== normalNama('BPKP Jawa Tengah', ['bpkp']));
+cek('Solved -> solved', statusTiket('Solved', true) === 'solved');
+cek('Pending tanpa aktivitas -> open', statusTiket('Pending', false) === 'open');
+cek('Pending dengan aktivitas -> progress', statusTiket('Pending', true) === 'progress');
+cek('Call -> progress', statusTiket('Call', false) === 'progress');
+cek('kode isu tiket', kodeIsu(isu({ sumber: 'tiket' })) === 'Tiket' && kodeIsu(isu({ nomor: 7 })) === '#7');
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

@@ -61,6 +61,9 @@ export interface Isu {
   diubah_oleh_nama: string | null;
   created_at: string;
   updated_at: string;
+  sumber?: 'manual' | 'tiket';
+  tiket_id?: string | null;
+  riwayat?: RiwayatIsu[];
 }
 
 export interface RiwayatIsu {
@@ -148,7 +151,7 @@ export function peranPada(i: Isu, t: string): PeranHarian | null {
 function urutIsu(a: Isu, b: Isu): number {
   const bobotStatus = (s: StatusIsu) => URUTAN_STATUS.indexOf(s);
   const bobotPrio = (p: PrioritasIsu) => ['tinggi', 'sedang', 'rendah'].indexOf(p);
-  return bobotStatus(a.status) - bobotStatus(b.status) || bobotPrio(a.prioritas) - bobotPrio(b.prioritas) || b.nomor - a.nomor;
+  return bobotStatus(a.status) - bobotStatus(b.status) || bobotPrio(a.prioritas) - bobotPrio(b.prioritas) || b.tanggal.localeCompare(a.tanggal) || b.nomor - a.nomor;
 }
 
 export function ringkasHarian(semua: Isu[], t: string): RingkasanHarian {
@@ -196,7 +199,7 @@ export function teksRingkasan(namaGrup: string, r: RingkasanHarian): string {
       const peran = peranPada(i, r.tanggal);
       const tanda = peran === 'baru' ? ' (baru)' : peran === 'lanjutan' ? ` (hari ke-${umurIsu(i, r.tanggal) + 1})` : '';
       const st = labelStatusPada(i, r.tanggal);
-      let teks = `• #${i.nomor} [${st}] ${i.judul}${tanda}`;
+      let teks = `• ${kodeIsu(i)} [${st}] ${i.judul}${tanda}`;
       const tindak = peran === 'selesai' && i.solusi ? `Solusi: ${i.solusi}` : i.action ? `Action: ${i.action}` : '';
       if (tindak) teks += ` - ${tindak}`;
       if (i.pic) teks += ` (PIC ${i.pic})`;
@@ -204,6 +207,14 @@ export function teksRingkasan(namaGrup: string, r: RingkasanHarian): string {
     }
   }
   return baris.join('\n');
+}
+
+export function kodeIsu(i: Isu): string {
+  return i.sumber === 'tiket' ? 'Tiket' : `#${i.nomor}`;
+}
+
+export function dariTiket(i: Isu): boolean {
+  return i.sumber === 'tiket';
 }
 
 export function urlShareIsu(base: string, token: string): string {

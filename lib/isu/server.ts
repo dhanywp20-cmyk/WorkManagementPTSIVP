@@ -2,7 +2,7 @@ import { getAdminClient } from '../supabase-admin';
 import { akunAdmin, akunBacaSemua, akunLihatSemua, tokenSah, type Akun, type Db } from '../checklist/server';
 import {
   KATEGORI_BAWAAN, STATUS_ISU, PRIORITAS_ISU, tanggalWib,
-  type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type StatusIsu,
+  type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type RiwayatIsu, type StatusIsu,
 } from './inti';
 
 export const KOLOM_GRUP = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_token,updated_at';
@@ -160,4 +160,115 @@ export async function catatRiwayat(db: Db, baris: { isu_id: string; aksi: string
 
 export async function sentuhGrup(db: Db, grupId: string) {
   await db.from('isu_grup').update({ updated_at: new Date().toISOString() }).eq('id', grupId);
+}
+
+interface BarisTiket {
+  id: string; project_name: string | null; issue_case: string | null; description: string | null; assign_name: string | null;
+  status: string | null; date: string | null; created_at: string; updated_at: string | null; created_by: string | null;
+  sales_name: string | null; product: string | null; priority: string | null; photo_url: string | null;
+  reminder_id: string | null; is_deleted: boolean | null;
+}
+interface BarisAktivitas { id: string; ticket_id: string; handler_name: string | null; action_taken: string | null; new_status: string | null; created_at: string }
+
+const KOLOM_TIKET = 'id,project_name,issue_case,description,assign_name,status,date,created_at,updated_at,created_by,sales_name,product,priority,photo_url,reminder_id,is_deleted';
+
+export function normalNama(s: string, buang: string[]): string {
+  const kata = s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
+  return kata.filter(k => !buang.includes(k)).join(' ');
+}
+
+function utc(t: string): string {
+  return /[zZ]|[+-]\d{2}:?\d{2}$/.test(t) ? t : `${t}Z`;
+}
+
+function prioritasTiket(p: string | null): PrioritasIsu {
+  const x = (p ?? '').toLowerCase();
+  if (/high|urgent|tinggi|critical/.test(x)) return 'tinggi';
+  if (/low|rendah/.test(x)) return 'rendah';
+  return 'sedang';
+}
+
+export function statusTiket(status: string | null, adaAktivitas: boolean): StatusIsu {
+  const s = (status ?? '').toLowerCase();
+  if (s === 'solved') return 'solved';
+  if (s === 'pending' && !adaAktivitas) return 'open';
+  if (/waiting|menunggu/.test(s)) return 'pending';
+  return 'progress';
+}
+
+export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
+  if (!grup.proyek_ids.length) return [];
+  const { data: daftar, error } = await db.from('checklist_daftar').select('id,judul,source_reminder_id').in('proyek_id', grup.proyek_ids);
+  if (error) throw new Error(error.message);
+  const lokasi = (daftar ?? []) as { id: string; judul: string; source_reminder_id: string | null }[];
+  if (!lokasi.length) return [];
+
+  const buang = normalNama(grup.client ?? '', []).split(' ').filter(Boolean);
+  const perNama = new Map(lokasi.map(l => [normalNama(l.judul, buang), l]));
+  const perReminder = new Map(lokasi.filter(l => l.source_reminder_id).map(l => [l.source_reminder_id as string, l]));
+
+  const klien = (grup.client ?? '').trim().replace(/[%,()]/g, '');
+  const [byNama, byReminder] = await Promise.all([
+    klien
+      ? db.from('tickets').select(KOLOM_TIKET).ilike('project_name', `%${klien}%`).limit(2000)
+      : db.from('tickets').select(KOLOM_TIKET).in('project_name', lokasi.map(l => l.judul)).limit(2000),
+    perReminder.size
+      ? db.from('tickets').select(KOLOM_TIKET).in('reminder_id', [...perReminder.keys()]).limit(2000)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (byNama.error) throw new Error(byNama.error.message);
+  const semua = new Map<string, BarisTiket>();
+  for (const t of [...((byNama.data ?? []) as BarisTiket[]), ...((byReminder.data ?? []) as BarisTiket[])]) semua.set(t.id, t);
+
+  const cocok: { t: BarisTiket; l: (typeof lokasi)[number] }[] = [];
+  for (const t of semua.values()) {
+    if (t.is_deleted) continue;
+    const l = (t.reminder_id && perReminder.get(t.reminder_id)) || perNama.get(normalNama(t.project_name ?? '', buang));
+    if (l) cocok.push({ t, l });
+  }
+  if (!cocok.length) return [];
+
+  const aktivitas = new Map<string, BarisAktivitas[]>();
+  const ids = cocok.map(c => c.t.id);
+  for (let i = 0; i < ids.length; i += 150) {
+    const { data: akt } = await db.from('activity_logs').select('id,ticket_id,handler_name,action_taken,new_status,created_at')
+      .in('ticket_id', ids.slice(i, i + 150)).order('created_at');
+    for (const a of (akt ?? []) as BarisAktivitas[]) aktivitas.set(a.ticket_id, [...(aktivitas.get(a.ticket_id) ?? []), a]);
+  }
+
+  return cocok.map(({ t, l }) => {
+    const akt = aktivitas.get(t.id) ?? [];
+    const status = statusTiket(t.status, akt.length > 0);
+    const terakhir = [...akt].reverse().find(a => (a.action_taken ?? '').trim());
+    const selesaiAkt = [...akt].reverse().find(a => (a.new_status ?? '').toLowerCase() === 'solved');
+    const dibuat = utc(t.created_at);
+    const selesai_pada = status === 'solved' ? (selesaiAkt?.created_at ?? (t.updated_at ? utc(t.updated_at) : dibuat)) : null;
+    const riwayat: RiwayatIsu[] = [
+      { id: `${t.id}-buat`, isu_id: t.id, aksi: 'dibuat', dari: null, ke: 'open', keterangan: 'Ticket Troubleshooting dibuat', nama: t.created_by, created_at: dibuat },
+      ...akt.map(a => {
+        const ke = a.new_status ? statusTiket(a.new_status, true) : null;
+        return {
+          id: a.id, isu_id: t.id, aksi: ke ? 'status' : 'action', dari: null, ke,
+          keterangan: (a.action_taken ?? '').trim(), nama: a.handler_name, created_at: a.created_at,
+        };
+      }),
+    ];
+    return {
+      id: t.id, grup_id: grup.id, nomor: 0, daftar_id: l.id, lokasi: l.judul.trim(),
+      tanggal: t.date ?? tanggalWib(dibuat), kategori: 'Ticket', prioritas: prioritasTiket(t.priority),
+      judul: (t.issue_case ?? '').trim() || 'Ticket Troubleshooting', deskripsi: (t.description ?? '').trim(),
+      pelapor: t.sales_name ?? '', pic: t.assign_name ?? '', status,
+      action: status === 'solved' ? '' : (terakhir?.action_taken ?? '').trim(),
+      solusi: status === 'solved' ? ((selesaiAkt?.action_taken || terakhir?.action_taken) ?? '').trim() : '',
+      foto_url: t.photo_url, foto_thumb_url: t.photo_url, selesai_pada,
+      dibuat_oleh_nama: t.created_by, diubah_oleh_nama: terakhir?.handler_name ?? null,
+      created_at: dibuat, updated_at: t.updated_at ? utc(t.updated_at) : dibuat,
+      sumber: 'tiket' as const, tiket_id: t.id, riwayat,
+    };
+  });
+}
+
+export async function muatSemuaIsu(db: Db, grup: IsuGrup, publik: boolean): Promise<Isu[]> {
+  const [manual, tiket] = await Promise.all([muatIsu(db, grup.id, publik), muatIsuTiket(db, grup)]);
+  return [...manual.map(i => ({ ...i, sumber: 'manual' as const })), ...tiket];
 }
