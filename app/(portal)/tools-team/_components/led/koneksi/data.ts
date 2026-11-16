@@ -108,6 +108,12 @@ export type Susunan = ReturnType<typeof susunKoneksi>;
 
 export const rantaiDari = (h: HasilKoneksi): SelRC[][] => h.port.map(p => h.sel.filter(x => x.port === p.port).map(x => [x.c, x.r] as SelRC));
 
+export const kodePort = (t: Pick<Susunan, 'ppk' | 'controller' | 'lanKartu'>, port: number) => {
+  if (!(t.lanKartu > 0)) return `P${port}`;
+  const ppk = t.ppk > 0 ? t.ppk : port, lokal = ((port - 1) % ppk) + 1;
+  return `P${t.controller > 1 ? `${Math.ceil(port / ppk)}/` : ''}${Math.ceil(lokal / t.lanKartu)}:${((lokal - 1) % t.lanKartu) + 1}`;
+};
+
 const sebutPort = (t: Susunan, lokal: number) =>
   t.lanKartu > 0 ? `kartu ${Math.ceil(lokal / t.lanKartu)} · port ${((lokal - 1) % t.lanKartu) + 1}` : `port ${lokal}`;
 const awalBesar = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);

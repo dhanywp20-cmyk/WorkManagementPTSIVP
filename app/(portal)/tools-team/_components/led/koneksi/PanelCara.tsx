@@ -1,12 +1,18 @@
 'use client';
 import { f, Segmen, Catatan } from '../../bersama/ui';
-import { SUDUT, warnaPort } from './data';
+import { kodePort, SUDUT, warnaPort } from './data';
 import { IkonPola, kelasJudul, kelasTombol } from './komponen';
 import { Cable, Eraser, Plus, Trash2, Wand2 } from 'lucide-react';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
 
+const labelKartu = (g: string) => { const [c, k] = g.slice(1).split('/'); return k ? `C${c} · Kartu ${k}` : `Kartu ${c}`; };
+
 export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
-  const { alatEf, gantiManual, keManual, nPortManual, pAktif, portAktif, s, setAlat, setPortAktif, ubah } = a;
+  const { alatEf, gantiManual, keManual, nPortManual, pAktif, portAktif, s, setAlat, setPortAktif, t, ubah } = a;
+  const kunciKartu = (p: number) => kodePort(t, p).split(':')[0];
+  const daftar = (s.manual ?? []).map((rt, i) => ({ rt, p: i + 1, g: kunciKartu(i + 1) }));
+  const grup = t.lanKartu > 0 ? [...new Set(daftar.map(x => x.g))] : [];
+  const grupAktif = grup.includes(kunciKartu(portAktif)) ? kunciKartu(portAktif) : grup[0];
   return (
     <>
       <section className="rounded-2xl bg-white border border-slate-200 p-3 space-y-3">
@@ -44,14 +50,27 @@ export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
                 <span className={kelasJudul}>Port aktif</span>
                 <button type="button" className={kelasTombol} onClick={() => { gantiManual(m => [...m, []]); setPortAktif(nPortManual + 1); }}><Plus size={13} /> Port</button>
               </div>
+              {grup.length > 0 && (
+                <div role="tablist" aria-label="Kartu output" className="flex flex-wrap gap-1 mt-1.5 p-1 rounded-xl bg-slate-100">
+                  {grup.map(g => {
+                    const isi = daftar.filter(x => x.g === g), on = g === grupAktif;
+                    return (
+                      <button key={g} type="button" role="tab" aria-selected={on} onClick={() => setPortAktif(isi[0].p)}
+                        className={`flex-1 min-w-[64px] px-2 py-1 rounded-lg text-[12px] font-semibold ${on ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
+                        {labelKartu(g)} <span className="font-normal text-slate-500">{isi.length}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {(s.manual ?? []).map((rt, i) => {
-                  const on = portAktif === i + 1;
+                {daftar.filter(x => !grup.length || x.g === grupAktif).map(({ rt, p: i1 }) => {
+                  const i = i1 - 1, on = portAktif === i1;
                   return (
                     <button key={i} type="button" onClick={() => setPortAktif(i + 1)} aria-pressed={on}
                       className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold border ${on ? 'text-white border-transparent' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                       style={on ? { background: warnaPort(i + 1) } : undefined}>
-                      {!on && <span className="w-2 h-2 rounded-xs" style={{ background: warnaPort(i + 1) }} />}P{i + 1}<span className={`font-semibold ${on ? 'text-white/85' : 'text-slate-500'}`}>{rt.length}</span>
+                      {!on && <span className="w-2 h-2 rounded-xs" style={{ background: warnaPort(i + 1) }} />}{kodePort(t, i + 1)}<span className={`font-semibold ${on ? 'text-white/85' : 'text-slate-500'}`}>{rt.length}</span>
                     </button>
                   );
                 })}
@@ -59,7 +78,7 @@ export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
               </div>
               {pAktif && (
                 <p className="text-[11.5px] text-slate-600 mt-1.5">
-                  P{portAktif}: {pAktif.jumlah} RC · {pAktif.px.toLocaleString('id-ID')} px · <b className={pAktif.beban > s.beban ? 'text-rose-700' : 'text-slate-800'}>{f(pAktif.beban, 0)}%</b>
+                  {kodePort(t, portAktif)}: {pAktif.jumlah} RC · {pAktif.px.toLocaleString('id-ID')} px · <b className={pAktif.beban > s.beban ? 'text-rose-700' : 'text-slate-800'}>{f(pAktif.beban, 0)}%</b>
                 </p>
               )}
             </div>
