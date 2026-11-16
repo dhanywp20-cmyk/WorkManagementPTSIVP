@@ -114,8 +114,6 @@ export function useAnalyticsPlatform(k: AnalyticsPlatformKonteks) {
         source:      'audit_trail' as const,
       }));
 
-      // action_taken berisi teks bebas tindakan teknisi (bisa panjang atau ''),
-      // jadi ditaruh di Catatan; kolom Aksi memakai status tiket yang pendek.
       const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => {
         const status = String(r.new_status ?? '').trim();
         const catatan = [r.action_taken, r.notes]
