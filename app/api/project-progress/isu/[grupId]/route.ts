@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ grupId:
     const [lokasi, isu] = await Promise.all([muatLokasi(s.db, grup.proyek_ids), muatSemuaIsu(s.db, grup, false)]);
     return NextResponse.json({
       grup: hak.edit ? grup : { ...grup, share_token: null }, lokasi, isu,
-      hak: { edit: hak.edit, admin: hak.admin },
+      hak: { edit: hak.edit, admin: hak.admin, kelola: hak.kelola },
     }, { headers: NO_STORE });
   } catch (e) {
     return galat(e instanceof Error ? e.message : 'Gagal memuat isu.', 500);
@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ grupI
   } else if (body.aksi === 'tokenBaru') {
     ubah = { share_token: tokenBaru() };
   } else {
+    if (!hak.kelola) return galat('Hanya admin atau Manager PTS yang bisa mengubah nama & proyek grup.', 403);
     const hasil = isianGrup(body);
     if ('galat' in hasil) return galat(hasil.galat);
     ubah = hasil.isian;

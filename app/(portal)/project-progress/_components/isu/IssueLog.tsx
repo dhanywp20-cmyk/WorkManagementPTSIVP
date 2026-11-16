@@ -156,10 +156,10 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
       <div className="rounded-xl px-4 py-12 text-center space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>Belum ada grup Issue Log</p>
         <p className="text-[13px] max-w-md mx-auto" style={{ color: NETRAL.tinta2 }}>
-          {hak.edit ? 'Buat grup (mis. "BPKP 33 Kota") dan pilih proyek-proyeknya. Semua lokasi proyek itu langsung bisa dipakai untuk mencatat isu harian.'
-            : 'Belum ada grup Issue Log.'}
+          {hak.kelola ? 'Buat grup (mis. "BPKP 33 Kota") dan pilih proyek-proyeknya. Semua lokasi proyek itu langsung bisa dipakai untuk mencatat isu harian.'
+            : 'Belum ada grup Issue Log. Grup dibuat oleh admin atau Manager PTS.'}
         </p>
-        {hak.edit && (
+        {hak.kelola && (
           <button type="button" onClick={() => setModalGrup({ awal: null })} className={`${tombol} text-white`} style={{ background: TEMA.warna }}>
             <Plus size={15} /> Buat grup
           </button>
@@ -171,20 +171,9 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
 
   const aksiAtas = (
     <>
-      {daftarGrup.length > 1 && (
-        <select value={grupId ?? ''} onChange={e => setGrupId(e.target.value)} aria-label="Pilih grup"
-          className="rounded-lg px-2.5 py-2 text-[12.5px] font-bold" style={tombolGaris}>
-          {daftarGrup.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
-        </select>
-      )}
       {hak.edit && grup && (
         <button type="button" onClick={() => setShareBuka(true)} className={tombol} style={tombolGaris}>
           <Link2 size={14} style={{ color: grup.share_aktif ? TEMA.selesai : undefined }} /> Share View Only
-        </button>
-      )}
-      {hak.edit && grup && (
-        <button type="button" onClick={() => setModalGrup({ awal: null })} className={tombol} style={tombolGaris}>
-          <Plus size={14} /> Grup baru
         </button>
       )}
       {hak.edit && grup && (
@@ -197,6 +186,26 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
 
   return (
     <div className="space-y-4">
+      <nav className="flex items-center gap-1.5 overflow-x-auto pb-0.5" aria-label="Grup Issue Log">
+        <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: TEMA.samar }}>Grup</span>
+        {daftarGrup.map(g => {
+          const aktif = g.id === grupId;
+          return (
+            <button key={g.id} type="button" onClick={() => setGrupId(g.id)} aria-current={aktif ? 'page' : undefined}
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors"
+              style={aktif ? { background: TEMA.warna, color: '#fff', border: `1px solid ${TEMA.warna}` } : tombolGaris}>
+              {g.nama}
+              <span className="text-[11px] font-semibold" style={{ opacity: 0.75 }}>{g.proyek_ids.length} proyek</span>
+            </button>
+          );
+        })}
+        {hak.kelola && (
+          <button type="button" onClick={() => setModalGrup({ awal: null })} className={`${tombol} shrink-0`} style={{ ...tombolGaris, borderStyle: 'dashed' }}>
+            <Plus size={14} /> Grup baru
+          </button>
+        )}
+      </nav>
+
       {grup && (
         <div className="rounded-xl px-3 sm:px-4 py-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
           <div className="flex items-start gap-2 flex-wrap">
@@ -206,7 +215,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
                 {[grup.client, `${lokasi.length} lokasi dari ${grup.proyek_ids.length} proyek`, grup.share_aktif ? 'Link eksternal aktif' : null].filter(Boolean).join(' · ')}
               </p>
             </div>
-            {hak.edit && (
+            {hak.kelola && (
               <button type="button" onClick={() => setModalGrup({ awal: grup })} className={`${tombol} ml-auto`} style={tombolGaris}>
                 <Settings2 size={14} /> Ubah nama & proyek
               </button>

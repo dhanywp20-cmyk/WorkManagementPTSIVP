@@ -11,8 +11,12 @@ const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,pri
 export const KOLOM_ISU = `${KOLOM_ISU_PUBLIK},catatan_internal`;
 export const KOLOM_RIWAYAT = 'id,isu_id,aksi,dari,ke,keterangan,nama,created_at';
 
+export function akunManager(a: Akun): boolean {
+  return a.role.toLowerCase() === 'team' && (a.jabatan ?? '').trim().toLowerCase() === 'manager';
+}
+
 export function hakIsu(a: Akun): HakIsu & { lihat: boolean } {
-  return { lihat: akunBacaSemua(a), edit: akunLihatSemua(a), admin: akunAdmin(a) };
+  return { lihat: akunBacaSemua(a), edit: akunLihatSemua(a), admin: akunAdmin(a), kelola: akunAdmin(a) || akunManager(a) };
 }
 
 async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<T[]> {

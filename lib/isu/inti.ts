@@ -97,9 +97,10 @@ export interface RiwayatIsu {
 export interface HakIsu {
   edit: boolean;
   admin: boolean;
+  kelola?: boolean;
 }
 
-export const HAK_BACA: HakIsu = { edit: false, admin: false };
+export const HAK_BACA: HakIsu = { edit: false, admin: false, kelola: false };
 export function tanggalWib(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });

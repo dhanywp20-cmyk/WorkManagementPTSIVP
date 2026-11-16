@@ -12,11 +12,11 @@ import {
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
 import { BarisIsu, KepalaDaftarIsu, NavTanggal, TabelKota } from './tampilan-isu';
-import { KomposisiStatus, LegendaBatang, PanelBatang } from './GrafikIsu';
+import { StatistikIsu, petaWarna } from './GrafikIsu';
 
 type Tampilan = 'harian' | 'semua';
 type SaringStatus = 'aktif' | 'semua' | StatusIsu;
-type Dimensi = 'status' | 'kota' | 'kat' | 'produk';
+type Dimensi = 'status' | 'kota' | 'kat' | 'produk' | 'pic';
 const PERIODE: [string, string][] = [['', 'Semua tanggal'], ['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['90', '90 hari terakhir']];
 
 const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` };
@@ -39,6 +39,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
   const [kat, setKat] = useState('');
   const [cari, setCari] = useState('');
   const [produk, setProduk] = useState('');
+  const [pic, setPic] = useState('');
   const [periode, setPeriode] = useState('');
   const [grafik, setGrafik] = useState(true);
 
@@ -68,23 +69,29 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
       .filter(i => kecuali === 'status' || status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
       .filter(i => kecuali === 'kota' || !kota || i.lokasi === kota)
       .filter(i => kecuali === 'kat' || !kat || i.kategori === kat)
-      .filter(i => kecuali === 'produk' || !produk || pecahProduk(i.produk).some(p => kunciTeks(p) === produk));
-  }, [isu, status, kota, kat, produk, cari, periode, hari]);
+      .filter(i => kecuali === 'produk' || !produk || pecahProduk(i.produk).some(p => kunciTeks(p) === produk))
+      .filter(i => kecuali === 'pic' || !pic || kunciTeks(i.pic ?? '') === pic);
+  }, [isu, status, kota, kat, produk, pic, cari, periode, hari]);
 
   const tersaring = useMemo(() => saring().sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.created_at.localeCompare(a.created_at)), [saring]);
   const grafikKat = useMemo(() => hitungPer(saring('kat'), i => [i.kategori]), [saring]);
   const grafikProduk = useMemo(() => hitungPer(saring('produk'), i => pecahProduk(i.produk)), [saring]);
-  const grafikKota = useMemo(() => hitungPer(saring('kota'), i => [i.lokasi]), [saring]);
-  const tanpaProduk = useMemo(() => saring('produk').filter(i => !pecahProduk(i.produk).length).length, [saring]);
+  const grafikPic = useMemo(() => hitungPer(saring('pic'), i => [i.pic]), [saring]);
   const statusTersaring = useMemo(() => {
     const m: Record<StatusIsu, number> = { open: 0, progress: 0, pending: 0, solved: 0 };
-    for (const i of saring()) m[i.status] += 1;
+    for (const i of saring('status')) m[i.status] += 1;
     return m;
   }, [saring]);
-  const daftarProduk = useMemo(() => hitungPer(isu, i => pecahProduk(i.produk)).sort((a, b) => a.label.localeCompare(b.label)), [isu]);
+  const semuaKat = useMemo(() => hitungPer(isu, i => [i.kategori]), [isu]);
+  const semuaPic = useMemo(() => hitungPer(isu, i => [i.pic]), [isu]);
+  const semuaProduk = useMemo(() => hitungPer(isu, i => pecahProduk(i.produk)), [isu]);
+  const warna = useMemo(() => ({ kat: petaWarna(semuaKat), pic: petaWarna(semuaPic), produk: petaWarna(semuaProduk) }), [semuaKat, semuaPic, semuaProduk]);
+  const daftarProduk = useMemo(() => [...semuaProduk].sort((a, b) => a.label.localeCompare(b.label)), [semuaProduk]);
+  const daftarPic = useMemo(() => [...semuaPic].sort((a, b) => a.label.localeCompare(b.label)), [semuaPic]);
   const labelProduk = daftarProduk.find(p => p.kunci === produk)?.label ?? '';
-  const adaSaring = status !== 'semua' || !!kota || !!kat || !!produk || !!cari || !!periode;
-  const hapusSaring = () => { setStatus('semua'); setKota(''); setKat(''); setProduk(''); setCari(''); setPeriode(''); };
+  const labelPic = daftarPic.find(p => p.kunci === pic)?.label ?? '';
+  const adaSaring = status !== 'semua' || !!kota || !!kat || !!produk || !!pic || !!cari || !!periode;
+  const hapusSaring = () => { setStatus('semua'); setKota(''); setKat(''); setProduk(''); setPic(''); setCari(''); setPeriode(''); };
 
   const salin = async () => {
     try { await navigator.clipboard.writeText(teksRingkasan(namaGrup, r)); beritahu('success', 'Ringkasan disalin. Tempel ke grup WhatsApp.'); }
@@ -97,7 +104,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     warna: [TEMA.warna, '#ffffff'],
     filter: [
       ['Status', status === 'aktif' ? 'Belum solved' : status === 'semua' ? '' : STATUS_ISU[status].label], ['Lokasi', kota], ['Kategori', kat],
-      ['Produk', labelProduk], ['Periode', PERIODE.find(p => p[0] && p[0] === periode)?.[1] ?? ''], ['Cari', cari],
+      ['Produk', labelProduk], ['Team Handler', labelPic], ['Periode', PERIODE.find(p => p[0] && p[0] === periode)?.[1] ?? ''], ['Cari', cari],
     ],
     baris: tersaring,
     kolom: [
@@ -163,6 +170,13 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
         </>
       )}
 
+      {tampilan === 'semua' && grafik && (
+        <StatistikIsu status={statusTersaring} statusAktif={status} onStatus={st => setStatus(st || 'semua')}
+          kategori={{ data: grafikKat, warna: warna.kat, aktif: kat ? kunciTeks(kat) : '', onPilih: k => setKat(grafikKat.find(x => x.kunci === k)?.label ?? '') }}
+          handler={{ data: grafikPic, warna: warna.pic, aktif: pic, onPilih: setPic }}
+          produk={{ data: grafikProduk, warna: warna.produk, aktif: produk, onPilih: setProduk }} />
+      )}
+
       {tampilan === 'semua' && (
         <section className="rounded-xl overflow-hidden" style={kartu}>
           <div className="px-3 sm:px-4 py-3 space-y-2.5">
@@ -194,6 +208,10 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
                 <option value="">Semua produk</option>
                 {daftarProduk.map(p => <option key={p.kunci} value={p.kunci}>{p.label}</option>)}
               </select>
+              <select value={pic} onChange={e => setPic(e.target.value)} aria-label="Saring team handler" className={`${pilih} max-w-[200px]`} style={gayaPilih}>
+                <option value="">Semua handler</option>
+                {daftarPic.map(p => <option key={p.kunci} value={p.kunci}>{p.label}</option>)}
+              </select>
               <select value={periode} onChange={e => setPeriode(e.target.value)} aria-label="Saring periode" className={pilih} style={gayaPilih}>
                 {PERIODE.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
               </select>
@@ -210,25 +228,6 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
             </div>
           </div>
         </section>
-      )}
-
-      {tampilan === 'semua' && grafik && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-[14px] font-bold" style={{ color: NETRAL.tinta }}>Ringkasan grafik</h2>
-            <span className="text-[11.5px]" style={{ color: TEMA.samar }}>Klik batang untuk menyaring daftar di bawah</span>
-            <div className="ml-auto"><LegendaBatang /></div>
-          </div>
-          <KomposisiStatus jumlah={statusTersaring} />
-          <div className="grid gap-3 lg:grid-cols-3">
-            <PanelBatang judul="Jenis kendala terbanyak" keterangan="Jumlah isu per kategori kendala" data={grafikKat} aktif={kat ? kunciTeks(kat) : ''}
-              onPilih={k => setKat(grafikKat.find(b => b.kunci === k)?.label ?? '')} />
-            <PanelBatang judul="Produk paling sering bermasalah" keterangan="Jumlah isu yang menyebut produk / brand" data={grafikProduk} aktif={produk}
-              onPilih={setProduk} catatan={tanpaProduk ? `${tanpaProduk} isu belum diisi produknya.` : undefined} />
-            <PanelBatang judul="Lokasi dengan isu terbanyak" keterangan="Jumlah isu per lokasi" data={grafikKota} aktif={kota ? kunciTeks(kota) : ''}
-              onPilih={k => setKota(grafikKota.find(b => b.kunci === k)?.label ?? '')} />
-          </div>
-        </div>
       )}
 
       {tampilan === 'semua' && (

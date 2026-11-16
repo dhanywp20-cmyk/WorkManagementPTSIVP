@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
-import { isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
+import { hakIsu, isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -98,12 +98,19 @@ cek('produk terbanyak di atas, hitung terbuka', g[0]?.label === 'Fonestar' && g[
 cek('satu isu dihitung sekali per produk', g.find(b => b.kunci === 'lg')?.total === 2);
 cek('kategori dihitung per isu', hitungPer(data, i => [i.kategori])[0]?.total === data.length);
 
-console.log('\n8. Tim (role team) bisa atur grup');
+console.log('\n8. Atur grup: admin & Manager PTS');
+const akun = (role: string, jabatan = '') => ({ id: 'x', nama: 'x', role, jabatan });
+cek('Manager role team boleh atur grup', hakIsu(akun('team', 'Manager')).kelola === true);
+cek('admin boleh atur grup', hakIsu(akun('admin')).kelola === true);
+cek('team biasa tidak boleh atur grup, tetap bisa catat isu', hakIsu(akun('team', 'Engineer')).kelola === false && hakIsu(akun('team', 'Engineer')).edit === true);
+cek('guest berjabatan Manager tidak boleh', hakIsu(akun('guest', 'Manager')).kelola === false);
+cek('General Manager tamu tidak boleh', hakIsu(akun('team', 'General Manager')).kelola === false);
 const rGrup = readFileSync('app/api/project-progress/isu/route.ts', 'utf8');
 const rGrupId = readFileSync('app/api/project-progress/isu/[grupId]/route.ts', 'utf8');
-cek('buat grup cukup hak edit', /hakIsu\(s\.akun\)\.edit\)/.test(rGrup) && !/\.admin\)/.test(rGrup));
-cek('daftar proyek dikirim ke hak edit', rGrup.includes('if (hak.edit) {'));
-cek('ubah nama & proyek grup cukup hak edit', rGrupId.includes('if (!hak.edit) return galat') && !/!hak\.admin\)/.test(rGrupId));
+cek('buat grup dijaga hak kelola', rGrup.includes('hakIsu(s.akun).kelola)'));
+cek('daftar proyek hanya untuk hak kelola', rGrup.includes('if (hak.kelola) {'));
+cek('ubah nama & proyek grup dijaga hak kelola', rGrupId.includes('if (!hak.kelola) return galat'));
+cek('jabatan akun dibaca dari users', readFileSync('lib/checklist/server.ts', 'utf8').includes(".select('pimpinan,jabatan')"));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);
