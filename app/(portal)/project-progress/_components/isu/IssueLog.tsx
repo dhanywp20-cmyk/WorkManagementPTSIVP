@@ -10,6 +10,7 @@ import { TEMA } from '../tampilan';
 import { panggil, pesanGalat } from '../api';
 import { ModalShare } from '../ModalShare';
 import { PapanIsu } from './PapanIsu';
+import { PilihGrup } from './PilihGrup';
 import { ModalDetailIsu, type UpdateCepat } from './DetailIsu';
 import { ModalFormIsu, type IsianFormIsu } from './FormIsu';
 import { ModalGrup, type IsianGrup, type ProyekPilihan } from './ModalGrup';
@@ -186,32 +187,12 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
 
   return (
     <div className="space-y-4">
-      <nav className="flex items-center gap-1.5 overflow-x-auto pb-0.5" aria-label="Grup Issue Log">
-        <span className="shrink-0 text-[11px] font-bold uppercase tracking-wider mr-1" style={{ color: TEMA.samar }}>Grup</span>
-        {daftarGrup.map(g => {
-          const aktif = g.id === grupId;
-          return (
-            <button key={g.id} type="button" onClick={() => setGrupId(g.id)} aria-current={aktif ? 'page' : undefined}
-              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-bold transition-colors"
-              style={aktif ? { background: TEMA.warna, color: '#fff', border: `1px solid ${TEMA.warna}` } : tombolGaris}>
-              {g.nama}
-              <span className="text-[11px] font-semibold" style={{ opacity: 0.75 }}>{g.proyek_ids.length} proyek</span>
-            </button>
-          );
-        })}
-        {hak.kelola && (
-          <button type="button" onClick={() => setModalGrup({ awal: null })} className={`${tombol} shrink-0`} style={{ ...tombolGaris, borderStyle: 'dashed' }}>
-            <Plus size={14} /> Grup baru
-          </button>
-        )}
-      </nav>
-
       {grup && (
         <div className="rounded-xl px-3 sm:px-4 py-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
           <div className="flex items-start gap-2 flex-wrap">
             <div className="min-w-0">
-              <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>{grup.nama}</p>
-              <p className="text-[12px]" style={{ color: TEMA.samar }}>
+              <PilihGrup daftar={daftarGrup} terpilih={grup} onPilih={setGrupId} onBaru={hak.kelola ? () => setModalGrup({ awal: null }) : undefined} />
+              <p className="text-[12px]" style={{ color: NETRAL.tinta2 }}>
                 {[grup.client, `${lokasi.length} lokasi dari ${grup.proyek_ids.length} proyek`, grup.share_aktif ? 'Link eksternal aktif' : null].filter(Boolean).join(' · ')}
               </p>
             </div>

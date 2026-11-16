@@ -1,5 +1,7 @@
 'use client';
 
+import { FooterPlatform } from '@/components/shared';
+
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist/inti';
 import { NETRAL } from '@/lib/desain';
@@ -71,13 +73,13 @@ export default function ProyekSharePage() {
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--latar-halaman)' }}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[15.5px] font-bold leading-tight truncate" style={{ color: NETRAL.tinta }}>{data?.proyek.nama ?? 'Project Progress'}</h1>
             <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
-              {data?.proyek.client ? `${data.proyek.client} · ` : ''}Tampilan hanya-baca
+              {data?.proyek.client ? `${data.proyek.client} · ` : ''}Tampilan hanya-baca{data ? ` · Diperbarui ${formatWaktu(data.proyek.updated_at)}` : ''}
             </p>
           </div>
           <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 shrink-0"
@@ -87,7 +89,7 @@ export default function ProyekSharePage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-3">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-3">
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat progres proyek…</p>}
 
         {!memuat && galat && (
@@ -160,13 +162,10 @@ export default function ProyekSharePage() {
                 bagian={perDaftar.get(lokasiBuka.id)?.bagian ?? []} items={perDaftar.get(lokasiBuka.id)?.items ?? []}
                 onPilih={setBuka} onTutup={() => setBuka(null)} />
             )}
-
-            <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
-              Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.
-            </p>
           </>
         )}
       </main>
+      <FooterPlatform />
     </div>
   );
 }
