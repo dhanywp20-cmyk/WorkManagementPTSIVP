@@ -28,7 +28,7 @@ for (const [kunci, l] of Object.entries(LENSA_MZ882)) {
 cek('zoom di luar rentang dijepit ke lensa (ELU20 TR 0,25 -> 0,33827)', lensaMZ882(LENSA_MZ882.ELU20, 0.25).throwRatio === 0.33827);
 
 console.log('\n2. Proyektor template: zoom & lens shift di dalam kemampuan lensa');
-for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive'] as const) {
+for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive', 'simulator'] as const) {
   const p = templateRuang(id).benda.filter(b => b.jenis === 'proyektor');
   const lensa = new Set(p.map(q => `${q.trMin}-${q.trMax}`));
   const nyata = p.every(q => Object.values(LENSA_MZ882).some(l => l.trMin === q.trMin && l.trMax === q.trMax && l.koreksiJarak === q.koreksiJarak));

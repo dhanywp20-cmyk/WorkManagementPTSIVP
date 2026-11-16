@@ -6,7 +6,7 @@ import { isiRakTemplate } from './rak';
 import { daftarRuang } from './ruang';
 import type { Benda, Kotak, Ruang, Titik } from './tipe';
 
-export type KategoriRuang = 'kosong' | 'meeting' | 'auditorium' | 'kelas' | 'control-room' | 'mapping-lengkung' | 'mapping-cembung' | 'mapping-objek' | 'immersive';
+export type KategoriRuang = 'kosong' | 'meeting' | 'auditorium' | 'kelas' | 'control-room' | 'mapping-lengkung' | 'mapping-cembung' | 'mapping-objek' | 'immersive' | 'simulator';
 export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ikon: string }[] = [
   { id: 'kosong', judul: 'Ruangan kosong', ket: 'Ruang 4 × 4 m, tinggi 3 m tanpa perangkat & furnitur - mulai dari nol', ikon: '🧱' },
   { id: 'meeting', judul: 'Ruangan Meeting', ket: 'Videowall, meja rapat, kamera, mic & speaker plafon', ikon: '🤝' },
@@ -17,6 +17,7 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending, media server di rack; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
   { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20, rack di ruang teknis (bisa ditambah)', ikon: '🌐' },
+  { id: 'simulator', judul: 'Simulator pesawat 225°', ket: 'Layar cekung 225° Ø 3 m mengelilingi kokpit 3 m + 3 × PT-MZ882 + ET-ELW22 di atas kepala pilot (warping & mask), media server di rack', ikon: '✈️' },
 ];
 
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
@@ -107,6 +108,22 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
       return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], LENSA_MZ882.ELW20, 1.39, `Proyektor ${i + 1}`);
     });
     return { nama: 'Mapping objek', ruang, benda: [alas, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
+  }
+  if (id === 'simulator') {
+    const ruang: Ruang = { p: 5, l: 6, t: 3, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
+    const k = daftarRuang(ruang)[0];
+    const R = 1.5, cx = 2.5, ELW = LENSA_MZ882.ELW22;
+    const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'lengkung', jariBidang: R, busur: 225 }), nama: 'Layar simulator 225° Ø 3 m', x: cx, h: 2, elev: 0.3 };
+    bidang.z = bidang.d / 2 + 0.6;
+    const pusatZ = bidang.z + R - bidang.d / 2;
+    const kokpit = { ...bendaBaru('objek', k, { bentukObjek: 'kotak', nama: 'Kokpit simulator 3 m' }), x: cx, z: pusatZ + 0.5, w: 1, h: 1.1, d: 3, warna: '#e5e7eb' };
+    const proj = [-72.75, 0, 72.75].map((deg, i) => {
+      const a = (deg * Math.PI) / 180;
+      const p = proyektorKe(k, [cx - 0.75 * Math.sin(a), 2.45 + (i % 2) * 0.25, pusatZ + 0.75 * Math.cos(a)], [cx + R * Math.sin(a), 1.4, pusatZ - R * Math.cos(a)], ELW, ELW.trMin,
+        `PT-MZ882 + ET-ELW22 ${i + 1} (layar ${['kiri', 'tengah', 'kanan'][i]})`);
+      return { ...p, maskBidang: true };
+    });
+    return { nama: 'Simulator pesawat 225°', ruang, benda: [bidang, kokpit, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
   }
   if (id === 'immersive') {
     const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: { aktif: true, p: 2.5, l: 6, t: 3.5, lantai: 'polos', pintu: false, sekat: 'tembok' } };
