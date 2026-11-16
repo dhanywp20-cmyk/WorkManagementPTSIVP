@@ -45,6 +45,7 @@ export interface Isu {
   lokasi: string;
   tanggal: string;
   kategori: string;
+  produk: string;
   prioritas: PrioritasIsu;
   judul: string;
   deskripsi: string;
@@ -229,6 +230,54 @@ export function teksRingkasan(namaGrup: string, r: RingkasanHarian): string {
     }
   }
   return baris.join('\n');
+}
+
+const POLA_KATEGORI: [string, RegExp][] = [
+  ['Video Conference', /\b(camera|kamera|vc|zoom|teams|webcam|ptz|codec|video ?conf)/],
+  ['Audio', /\b(mic|microphone|mikrofon|speaker|audio|suara|sound|noise|amplifier|amp|dsp|fonestar|delegate|conference system)/],
+  ['Display', /\b(tv|display|layar|monitor|backlight|led|lcd|videowall|video wall|proyektor|projector|blank|bdl|panel)/],
+  ['Kontrol', /\b(matrix|hdmi|switcher|control|kontrol|touch|tablet|ipad|crestron|extron|scaler|presentation|dongle|miracast|clickshare)/],
+  ['Jaringan', /\b(network|jaringan|lan|wifi|offline|ip|switch|router|internet|koneksi|connect)/],
+  ['Listrik', /\b(listrik|power|daya|ups|stop ?kontak|mati total|adaptor|adapter)/],
+];
+
+export function tebakKategori(teks: string): string {
+  const t = teks.toLowerCase();
+  return POLA_KATEGORI.find(([, re]) => re.test(t))?.[0] ?? 'Lainnya';
+}
+
+export interface BatangIsu {
+  kunci: string;
+  label: string;
+  total: number;
+  terbuka: number;
+}
+
+export function kunciTeks(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function pecahProduk(s: string | null | undefined): string[] {
+  const hasil = new Map<string, string>();
+  for (const bagian of (s ?? '').split(/\s*(?:,|;|&|\+|\/|\bdan\b)\s*/i)) {
+    const t = bagian.trim();
+    if (t && !hasil.has(kunciTeks(t))) hasil.set(kunciTeks(t), t);
+  }
+  return [...hasil.values()];
+}
+
+export function hitungPer(isu: Isu[], ambil: (i: Isu) => string[]): BatangIsu[] {
+  const m = new Map<string, BatangIsu>();
+  for (const i of isu) {
+    for (const label of new Set(ambil(i).map(x => x.trim()).filter(Boolean))) {
+      const k = kunciTeks(label);
+      const b = m.get(k) ?? { kunci: k, label, total: 0, terbuka: 0 };
+      b.total += 1;
+      if (i.status !== 'solved') b.terbuka += 1;
+      m.set(k, b);
+    }
+  }
+  return [...m.values()].sort((a, b) => b.total - a.total || b.terbuka - a.terbuka || a.label.localeCompare(b.label));
 }
 
 export function kodeIsu(i: Isu): string {

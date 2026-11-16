@@ -1,19 +1,23 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
-import { Copy, Search } from 'lucide-react';
+import { BarChart3, Copy, Search } from 'lucide-react';
 import { StatCardGrid, TombolEkspor } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 import {
-  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, hariIni, kodeIsu, labelHari, ringkasHarian, tanggalSelesai, teksRingkasan, umurIsu,
+  PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, geserTanggal, hariIni, hitungPer, kodeIsu, kunciTeks, labelHari, pecahProduk, ringkasHarian, tanggalSelesai,
+  teksRingkasan, umurIsu,
   type Isu, type LokasiIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
 import { BarisIsu, KepalaDaftarIsu, NavTanggal, TabelKota } from './tampilan-isu';
+import { KomposisiStatus, LegendaBatang, PanelBatang } from './GrafikIsu';
 
 type Tampilan = 'harian' | 'semua';
 type SaringStatus = 'aktif' | 'semua' | StatusIsu;
+type Dimensi = 'status' | 'kota' | 'kat' | 'produk';
+const PERIODE: [string, string][] = [['', 'Semua tanggal'], ['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['90', '90 hari terakhir']];
 
 const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` };
 const pilih = 'rounded-lg px-2.5 py-2 text-[12.5px] font-semibold';
@@ -34,6 +38,9 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
   const [kota, setKota] = useState('');
   const [kat, setKat] = useState('');
   const [cari, setCari] = useState('');
+  const [produk, setProduk] = useState('');
+  const [periode, setPeriode] = useState('');
+  const [grafik, setGrafik] = useState(true);
 
   const r = useMemo(() => ringkasHarian(isu, tanggal), [isu, tanggal]);
   const hari = hariIni();
@@ -51,15 +58,33 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
 
   const daftarKategori = useMemo(() => [...new Set([...kategori, ...isu.map(i => i.kategori)])], [kategori, isu]);
 
-  const tersaring = useMemo(() => {
+  const saring = useMemo(() => {
     const q = cari.trim().toLowerCase();
-    return isu
-      .filter(i => status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
-      .filter(i => !kota || i.lokasi === kota)
-      .filter(i => !kat || i.kategori === kat)
-      .filter(i => !q || [i.judul, i.deskripsi, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)))
-      .sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.created_at.localeCompare(a.created_at));
-  }, [isu, status, kota, kat, cari]);
+    const mulai = periode ? geserTanggal(hari, 1 - Number(periode)) : '';
+    const dasar = isu
+      .filter(i => !mulai || i.tanggal >= mulai)
+      .filter(i => !q || [i.judul, i.deskripsi, i.produk, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)));
+    return (kecuali?: Dimensi) => dasar
+      .filter(i => kecuali === 'status' || status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
+      .filter(i => kecuali === 'kota' || !kota || i.lokasi === kota)
+      .filter(i => kecuali === 'kat' || !kat || i.kategori === kat)
+      .filter(i => kecuali === 'produk' || !produk || pecahProduk(i.produk).some(p => kunciTeks(p) === produk));
+  }, [isu, status, kota, kat, produk, cari, periode, hari]);
+
+  const tersaring = useMemo(() => saring().sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.created_at.localeCompare(a.created_at)), [saring]);
+  const grafikKat = useMemo(() => hitungPer(saring('kat'), i => [i.kategori]), [saring]);
+  const grafikProduk = useMemo(() => hitungPer(saring('produk'), i => pecahProduk(i.produk)), [saring]);
+  const grafikKota = useMemo(() => hitungPer(saring('kota'), i => [i.lokasi]), [saring]);
+  const tanpaProduk = useMemo(() => saring('produk').filter(i => !pecahProduk(i.produk).length).length, [saring]);
+  const statusTersaring = useMemo(() => {
+    const m: Record<StatusIsu, number> = { open: 0, progress: 0, pending: 0, solved: 0 };
+    for (const i of saring()) m[i.status] += 1;
+    return m;
+  }, [saring]);
+  const daftarProduk = useMemo(() => hitungPer(isu, i => pecahProduk(i.produk)).sort((a, b) => a.label.localeCompare(b.label)), [isu]);
+  const labelProduk = daftarProduk.find(p => p.kunci === produk)?.label ?? '';
+  const adaSaring = status !== 'semua' || !!kota || !!kat || !!produk || !!cari || !!periode;
+  const hapusSaring = () => { setStatus('semua'); setKota(''); setKat(''); setProduk(''); setCari(''); setPeriode(''); };
 
   const salin = async () => {
     try { await navigator.clipboard.writeText(teksRingkasan(namaGrup, r)); beritahu('success', 'Ringkasan disalin. Tempel ke grup WhatsApp.'); }
@@ -70,13 +95,17 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     judul: `Issue Log ${namaGrup}`,
     menu: 'Project Progress · Issue Log',
     warna: [TEMA.warna, '#ffffff'],
-    filter: [['Status', status === 'aktif' ? 'Belum solved' : status === 'semua' ? '' : STATUS_ISU[status].label], ['Lokasi', kota], ['Kategori', kat], ['Cari', cari]],
+    filter: [
+      ['Status', status === 'aktif' ? 'Belum solved' : status === 'semua' ? '' : STATUS_ISU[status].label], ['Lokasi', kota], ['Kategori', kat],
+      ['Produk', labelProduk], ['Periode', PERIODE.find(p => p[0] && p[0] === periode)?.[1] ?? ''], ['Cari', cari],
+    ],
     baris: tersaring,
     kolom: [
       { judul: 'No', ambil: i => kodeIsu(i) },
       { judul: 'Tanggal', ambil: i => i.tanggal },
       { judul: 'Lokasi', ambil: i => i.lokasi },
       { judul: 'Kategori', ambil: i => i.kategori },
+      { judul: 'Produk', ambil: i => i.produk },
       { judul: 'Prioritas', ambil: i => PRIORITAS_ISU[i.prioritas].label },
       { judul: 'Isu', ambil: i => i.judul },
       { judul: 'Deskripsi', ambil: i => i.deskripsi },
@@ -136,7 +165,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
 
       {tampilan === 'semua' && (
         <section className="rounded-xl overflow-hidden" style={kartu}>
-          <div className="px-3 sm:px-4 py-3 space-y-2.5" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>
+          <div className="px-3 sm:px-4 py-3 space-y-2.5">
             <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Saring status">
               {([['semua', 'Semua', isu.length], ['aktif', 'Belum solved', isu.length - jumlahStatus.solved], ...URUTAN_STATUS.map(s => [s, STATUS_ISU[s].label, jumlahStatus[s]])] as [SaringStatus, string, number][])
                 .map(([k, label, n]) => (
@@ -161,9 +190,49 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
                 <option value="">Semua kategori</option>
                 {daftarKategori.map(k => <option key={k} value={k}>{k}</option>)}
               </select>
-              <div className="ml-auto"><TombolEkspor data={ekspor} jumlah={tersaring.length} /></div>
+              <select value={produk} onChange={e => setProduk(e.target.value)} aria-label="Saring produk" className={`${pilih} max-w-[200px]`} style={gayaPilih}>
+                <option value="">Semua produk</option>
+                {daftarProduk.map(p => <option key={p.kunci} value={p.kunci}>{p.label}</option>)}
+              </select>
+              <select value={periode} onChange={e => setPeriode(e.target.value)} aria-label="Saring periode" className={pilih} style={gayaPilih}>
+                {PERIODE.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+              </select>
+              {adaSaring && (
+                <button type="button" onClick={hapusSaring} className="text-[12px] font-bold px-2 py-1.5 rounded-lg" style={{ color: TEMA.warna }}>Hapus saringan</button>
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                <button type="button" onClick={() => setGrafik(g => !g)} aria-pressed={grafik}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-[12.5px] font-bold" style={gayaPilih}>
+                  <BarChart3 size={14} /> {grafik ? 'Sembunyikan grafik' : 'Tampilkan grafik'}
+                </button>
+                <TombolEkspor data={ekspor} jumlah={tersaring.length} />
+              </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {tampilan === 'semua' && grafik && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-[14px] font-bold" style={{ color: NETRAL.tinta }}>Ringkasan grafik</h2>
+            <span className="text-[11.5px]" style={{ color: TEMA.samar }}>Klik batang untuk menyaring daftar di bawah</span>
+            <div className="ml-auto"><LegendaBatang /></div>
+          </div>
+          <KomposisiStatus jumlah={statusTersaring} />
+          <div className="grid gap-3 lg:grid-cols-3">
+            <PanelBatang judul="Jenis kendala terbanyak" keterangan="Jumlah isu per kategori kendala" data={grafikKat} aktif={kat ? kunciTeks(kat) : ''}
+              onPilih={k => setKat(grafikKat.find(b => b.kunci === k)?.label ?? '')} />
+            <PanelBatang judul="Produk paling sering bermasalah" keterangan="Jumlah isu yang menyebut produk / brand" data={grafikProduk} aktif={produk}
+              onPilih={setProduk} catatan={tanpaProduk ? `${tanpaProduk} isu belum diisi produknya.` : undefined} />
+            <PanelBatang judul="Lokasi dengan isu terbanyak" keterangan="Jumlah isu per lokasi" data={grafikKota} aktif={kota ? kunciTeks(kota) : ''}
+              onPilih={k => setKota(grafikKota.find(b => b.kunci === k)?.label ?? '')} />
+          </div>
+        </div>
+      )}
+
+      {tampilan === 'semua' && (
+        <section className="rounded-xl overflow-hidden" style={kartu}>
           {tersaring.length === 0
             ? <p className="px-4 py-10 text-center text-[13px]" style={{ color: TEMA.samar }}>{isu.length ? 'Tidak ada isu yang cocok.' : 'Belum ada isu tercatat.'}</p>
             : <><KepalaDaftarIsu /><ul className="divide-y" style={{ borderColor: NETRAL.garis }}>{tersaring.map(i => <BarisIsu key={i.id} isu={i} acuan={hari} onBuka={() => onBuka(i)} />)}</ul></>}

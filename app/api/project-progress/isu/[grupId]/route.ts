@@ -37,9 +37,6 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ grupI
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return galat('Permintaan tidak terbaca.'); }
-  const aksiShare = body.aksi === 'share' || body.aksi === 'tokenBaru';
-  if (!aksiShare && !hak.admin) return galat('Hanya admin yang bisa mengubah grup.', 403);
-
   let ubah: TablesUpdate<'isu_grup'>;
   if (body.aksi === 'share') {
     ubah = { share_aktif: body.aktif === true };

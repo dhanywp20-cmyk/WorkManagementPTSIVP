@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link2, Plus, Settings2 } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import { compressImage } from '@/lib/image-compress';
 import { kirimFormTahan } from '@/lib/unggah-tahan';
-import type { HakIsu, Isu, IsuGrup, LokasiIsu, RiwayatIsu } from '@/lib/isu/inti';
+import { pecahProduk, type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type RiwayatIsu } from '@/lib/isu/inti';
 import { TEMA } from '../tampilan';
 import { panggil, pesanGalat } from '../api';
 import { ModalShare } from '../ModalShare';
@@ -135,6 +135,12 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
   };
 
   const dibuka = isu.find(i => i.id === bukaId) ?? null;
+  const proyekGrup = useMemo(() => {
+    const nama = grup?.proyek_ids.map(id => proyek.find(p => p.id === id)?.nama).filter((n): n is string => !!n) ?? [];
+    for (const l of lokasi) if (!nama.includes(l.proyek)) nama.push(l.proyek);
+    return nama.map(n => ({ nama: n, lokasi: lokasi.filter(l => l.proyek === n).length }));
+  }, [grup, proyek, lokasi]);
+  const saranProduk = useMemo(() => [...new Set(isu.flatMap(i => pecahProduk(i.produk)))].sort((a, b) => a.localeCompare(b)), [isu]);
 
   if (!memuat && galat && !grup) {
     return (
@@ -150,10 +156,10 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
       <div className="rounded-xl px-4 py-12 text-center space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>Belum ada grup Issue Log</p>
         <p className="text-[13px] max-w-md mx-auto" style={{ color: NETRAL.tinta2 }}>
-          {hak.admin ? 'Buat grup (mis. "BPKP 33 Kota") dan pilih proyek-proyeknya. Semua lokasi proyek itu langsung bisa dipakai untuk mencatat isu harian.'
-            : 'Admin belum membuat grup Issue Log.'}
+          {hak.edit ? 'Buat grup (mis. "BPKP 33 Kota") dan pilih proyek-proyeknya. Semua lokasi proyek itu langsung bisa dipakai untuk mencatat isu harian.'
+            : 'Belum ada grup Issue Log.'}
         </p>
-        {hak.admin && (
+        {hak.edit && (
           <button type="button" onClick={() => setModalGrup({ awal: null })} className={`${tombol} text-white`} style={{ background: TEMA.warna }}>
             <Plus size={15} /> Buat grup
           </button>
@@ -176,15 +182,10 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
           <Link2 size={14} style={{ color: grup.share_aktif ? TEMA.selesai : undefined }} /> Share View Only
         </button>
       )}
-      {hak.admin && grup && (
-        <>
-          <button type="button" onClick={() => setModalGrup({ awal: grup })} className={tombol} style={tombolGaris} aria-label="Atur grup">
-            <Settings2 size={14} /> Atur
-          </button>
-          <button type="button" onClick={() => setModalGrup({ awal: null })} className={tombol} style={tombolGaris}>
-            <Plus size={14} /> Grup
-          </button>
-        </>
+      {hak.edit && grup && (
+        <button type="button" onClick={() => setModalGrup({ awal: null })} className={tombol} style={tombolGaris}>
+          <Plus size={14} /> Grup baru
+        </button>
       )}
       {hak.edit && grup && (
         <button type="button" onClick={() => setForm({ awal: null })} className={`${tombol} text-white`} style={{ background: TEMA.warna }}>
@@ -198,11 +199,28 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
     <div className="space-y-4">
       {grup && (
         <div className="rounded-xl px-3 sm:px-4 py-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
-          <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>{grup.nama}</p>
-          <p className="text-[12px]" style={{ color: TEMA.samar }}>
-            {[grup.client, `${lokasi.length} lokasi dari ${grup.proyek_ids.length} proyek`, grup.share_aktif ? 'Link eksternal aktif' : null].filter(Boolean).join(' · ')}
-          </p>
+          <div className="flex items-start gap-2 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>{grup.nama}</p>
+              <p className="text-[12px]" style={{ color: TEMA.samar }}>
+                {[grup.client, `${lokasi.length} lokasi dari ${grup.proyek_ids.length} proyek`, grup.share_aktif ? 'Link eksternal aktif' : null].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+            {hak.edit && (
+              <button type="button" onClick={() => setModalGrup({ awal: grup })} className={`${tombol} ml-auto`} style={tombolGaris}>
+                <Settings2 size={14} /> Ubah nama & proyek
+              </button>
+            )}
+          </div>
           {grup.keterangan && <p className="text-[12.5px] mt-1" style={{ color: NETRAL.tinta2 }}>{grup.keterangan}</p>}
+          <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Proyek dalam grup">
+            {proyekGrup.map(p => (
+              <span key={p.nama} className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[12px] font-semibold"
+                style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>
+                {p.nama} <span style={{ color: TEMA.samar }}>{p.lokasi} lokasi</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -220,7 +238,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
         onFoto={async f => { ganti(await kirimFotoIsu(dibuka!.id, f)); beritahu('success', 'Foto tersimpan.'); }} />
 
       {grup && (
-        <ModalFormIsu buka={!!form} awal={form?.awal ?? null} lokasi={lokasi} kategori={grup.kategori} namaSaya={namaSaya}
+        <ModalFormIsu buka={!!form} awal={form?.awal ?? null} lokasi={lokasi} kategori={grup.kategori} saranProduk={saranProduk} namaSaya={namaSaya}
           onTutup={() => setForm(null)} onSimpan={simpanIsu} />
       )}
       <ModalGrup buka={!!modalGrup} awal={modalGrup?.awal ?? null} proyek={proyek} onTutup={() => setModalGrup(null)} onSimpan={simpanGrup} />

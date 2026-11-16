@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const grup = ((data ?? []) as IsuGrup[]).map(g => (hak.edit ? g : { ...g, share_token: null }));
 
   let proyek: { id: string; nama: string; client: string | null; status: string }[] = [];
-  if (hak.admin) {
+  if (hak.edit) {
     const { data: p } = await s.db.from('checklist_proyek').select('id,nama,client,status').order('created_at', { ascending: false });
     proyek = (p ?? []) as typeof proyek;
   }
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
-  if (!hakIsu(s.akun).admin) return galat('Hanya admin yang bisa membuat grup Issue Log.', 403);
+  if (!hakIsu(s.akun).edit) return galat('Anda tidak punya akses membuat grup Issue Log.', 403);
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return galat('Permintaan tidak terbaca.'); }

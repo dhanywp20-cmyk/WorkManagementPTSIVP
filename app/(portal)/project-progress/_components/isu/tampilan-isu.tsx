@@ -142,7 +142,7 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
             <KepingPrioritas p={isu.prioritas} />
           </div>
           <p className="text-[11.5px] mt-0.5" style={{ color: TEMA.samar }}>
-            {[isu.kategori, isu.pic ? `PIC ${isu.pic}` : null, isu.pelapor ? `Lapor: ${isu.pelapor}` : null].filter(Boolean).join(' · ')}
+            {[isu.kategori, isu.produk || null, isu.pic ? `PIC ${isu.pic}` : null, isu.pelapor ? `Lapor: ${isu.pelapor}` : null].filter(Boolean).join(' · ')}
           </p>
           {(isu.action || isu.solusi) && (
             <p className="text-[12px] mt-1 line-clamp-2" style={{ color: NETRAL.tinta2 }}>

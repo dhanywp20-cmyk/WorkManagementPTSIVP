@@ -48,7 +48,7 @@ export function isuKeTicket(i: Isu, riwayat: RiwayatIsu[]): Ticket {
     sales_name: i.pelapor,
     issue_case: i.judul,
     description: [i.deskripsi, i.solusi ? `Solusi: ${i.solusi}` : ''].filter(Boolean).join('\n\n'),
-    product: i.kategori,
+    product: i.produk || i.kategori,
     assign_name: i.pic,
     status: STATUS_ISU[i.status].label,
     date: i.tanggal,

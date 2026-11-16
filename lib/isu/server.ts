@@ -1,13 +1,13 @@
 import { getAdminClient } from '../supabase-admin';
 import { akunAdmin, akunBacaSemua, akunLihatSemua, tokenSah, type Akun, type Db } from '../checklist/server';
 import {
-  KATEGORI_BAWAAN, STATUS_ISU, PRIORITAS_ISU, tanggalWib,
+  KATEGORI_BAWAAN, STATUS_ISU, PRIORITAS_ISU, tanggalWib, tebakKategori,
   type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type RiwayatIsu, type StatusIsu, type TiketIsu,
 } from './inti';
 
 export const KOLOM_GRUP = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_token,updated_at';
 const KOLOM_GRUP_PUBLIK = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,updated_at';
-const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,prioritas,judul,deskripsi,pelapor,pic,status,action,solusi,foto_url,foto_thumb_url,selesai_pada,dibuat_oleh_nama,diubah_oleh_nama,created_at,updated_at';
+const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,prioritas,judul,deskripsi,produk,pelapor,pic,status,action,solusi,foto_url,foto_thumb_url,selesai_pada,dibuat_oleh_nama,diubah_oleh_nama,created_at,updated_at';
 export const KOLOM_ISU = `${KOLOM_ISU_PUBLIK},catatan_internal`;
 export const KOLOM_RIWAYAT = 'id,isu_id,aksi,dari,ke,keterangan,nama,created_at';
 
@@ -85,6 +85,7 @@ export interface IsianIsu {
   lokasi: string;
   tanggal: string;
   kategori: string;
+  produk: string;
   prioritas: PrioritasIsu;
   judul: string;
   deskripsi: string;
@@ -97,7 +98,7 @@ export interface IsianIsu {
 }
 
 const LABEL_KOLOM: Partial<Record<keyof IsianIsu, string>> = {
-  lokasi: 'lokasi', tanggal: 'tanggal', kategori: 'kategori', prioritas: 'prioritas', judul: 'judul', deskripsi: 'deskripsi',
+  lokasi: 'lokasi', tanggal: 'tanggal', kategori: 'kategori', produk: 'produk', prioritas: 'prioritas', judul: 'judul', deskripsi: 'deskripsi',
   pelapor: 'pelapor', pic: 'PIC', solusi: 'solusi',
 };
 export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagian: boolean):
@@ -127,6 +128,7 @@ export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagi
     isian.judul = j;
   }
   if (ada('kategori')) isian.kategori = teks(b.kategori, 40) || 'Lainnya';
+  if (ada('produk')) isian.produk = teks(b.produk, 120);
   if (ada('prioritas')) {
     const p = String(b.prioritas ?? 'sedang') as PrioritasIsu;
     if (!(p in PRIORITAS_ISU)) return { galat: 'Prioritas tidak dikenal.' };
@@ -277,7 +279,8 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Prom
     ];
     return {
       id: t.id, grup_id: grup.id, nomor: 0, daftar_id: l.id, lokasi: l.judul.trim(),
-      tanggal: t.date ?? tanggalWib(dibuat), kategori: 'Ticket', prioritas: prioritasTiket(t.priority),
+      tanggal: t.date ?? tanggalWib(dibuat), kategori: tebakKategori([t.issue_case, t.product, t.description].join(' ')),
+      produk: (t.product ?? '').trim(), prioritas: prioritasTiket(t.priority),
       judul: (t.issue_case ?? '').trim() || 'Ticket Troubleshooting', deskripsi: (t.description ?? '').trim(),
       pelapor: t.sales_name ?? '', pic: t.assign_name ?? '', status,
       action: status === 'solved' ? '' : (terakhir?.action_taken ?? '').trim(),

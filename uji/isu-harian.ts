@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { geserTanggal, kodeIsu, labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
+import { geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
 import { isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
 
 let lulus = 0, gagal = 0;
@@ -9,7 +9,7 @@ function cek(nama: string, syarat: boolean) {
 
 const dasar: Isu = {
   id: '', grup_id: 'g', nomor: 0, daftar_id: null, lokasi: '', tanggal: '', kategori: 'Audio', prioritas: 'sedang',
-  judul: '', deskripsi: '', pelapor: '', pic: '', status: 'open', action: '', solusi: '', catatan_internal: 'rahasia',
+  judul: '', produk: '', deskripsi: '', pelapor: '', pic: '', status: 'open', action: '', solusi: '', catatan_internal: 'rahasia',
   foto_url: null, foto_thumb_url: null, selesai_pada: null, dibuat_oleh_nama: null, diubah_oleh_nama: null, created_at: '', updated_at: '',
 };
 const isu = (x: Partial<Isu>): Isu => ({ ...dasar, ...x });
@@ -83,6 +83,27 @@ cek('detail tiket memakai komponen Troubleshooting', /if \(isu\.tiket\) return <
   && readFileSync('app/(portal)/project-progress/_components/isu/DetailTiket.tsx', 'utf8').includes('<IsiDetailTicket'));
 cek('PDF memakai cetakTicket yang sama', detailIsu.includes('cetakTicket(isuKeTicket('));
 cek('kode isu tiket', kodeIsu(isu({ sumber: 'tiket' })) === 'Tiket' && kodeIsu(isu({ nomor: 7 })) === '#7');
+
+console.log('\n7. Grafik kendala & produk');
+cek('produk tiket dipecah per brand', pecahProduk('Philips, Wyrestorm, Cue System').join('|') === 'Philips|Wyrestorm|Cue System');
+cek('pemisah & / dan / + dikenali', pecahProduk('Cue Versatile & Philips 10BDL3351T').length === 2 && pecahProduk('LG dan Samsung').length === 2);
+cek('produk kosong = tanpa batang', pecahProduk('').length === 0 && pecahProduk(null).length === 0);
+cek('nama produk beda huruf besar dianggap sama', pecahProduk('LG, lg').length === 1);
+const g = hitungPer([
+  isu({ kategori: 'Audio', produk: 'Fonestar, LG', status: 'open' }),
+  isu({ kategori: 'Audio', produk: 'fonestar', status: 'solved' }),
+  isu({ kategori: 'Display', produk: 'LG', status: 'solved' }),
+], i => pecahProduk(i.produk));
+cek('produk terbanyak di atas, hitung terbuka', g[0]?.label === 'Fonestar' && g[0].total === 2 && g[0].terbuka === 1);
+cek('satu isu dihitung sekali per produk', g.find(b => b.kunci === 'lg')?.total === 2);
+cek('kategori dihitung per isu', hitungPer(data, i => [i.kategori])[0]?.total === data.length);
+
+console.log('\n8. Tim (role team) bisa atur grup');
+const rGrup = readFileSync('app/api/project-progress/isu/route.ts', 'utf8');
+const rGrupId = readFileSync('app/api/project-progress/isu/[grupId]/route.ts', 'utf8');
+cek('buat grup cukup hak edit', /hakIsu\(s\.akun\)\.edit\)/.test(rGrup) && !/\.admin\)/.test(rGrup));
+cek('daftar proyek dikirim ke hak edit', rGrup.includes('if (hak.edit) {'));
+cek('ubah nama & proyek grup cukup hak edit', rGrupId.includes('if (!hak.edit) return galat') && !/!hak\.admin\)/.test(rGrupId));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);
