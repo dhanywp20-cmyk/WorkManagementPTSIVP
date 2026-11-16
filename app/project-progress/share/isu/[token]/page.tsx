@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Eye, Lock, RefreshCw } from 'lucide-react';
-import { Toast, type Notif } from '@/components/shared';
+import { FooterPlatform, Toast, type Notif } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { formatWaktu } from '@/lib/checklist/inti';
 import { HAK_BACA, type Isu, type IsuGrup, type LokasiIsu, type RiwayatIsu } from '@/lib/isu/inti';
@@ -47,7 +47,7 @@ export default function IssueLogSharePage() {
   const dibuka = data?.isu.find(i => i.id === bukaId) ?? null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--latar-halaman)' }}>
       <Toast notif={toast} />
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -56,7 +56,7 @@ export default function IssueLogSharePage() {
               {data ? `Issue Log · ${data.grup.nama}` : 'Issue Log'}
             </h1>
             <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
-              {data?.grup.client ? `${data.grup.client} · ` : ''}Tampilan hanya-baca
+              {data?.grup.client ? `${data.grup.client} · ` : ''}Tampilan hanya-baca{data ? ` · Diperbarui ${formatWaktu(data.grup.updated_at)}` : ''}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -74,7 +74,7 @@ export default function IssueLogSharePage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-4">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-4">
         {memuat && !data && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat Issue Log…</p>}
 
         {!memuat && galat && (
@@ -95,12 +95,10 @@ export default function IssueLogSharePage() {
             <PapanIsu namaGrup={data.grup.nama} isu={data.isu} lokasi={data.lokasi} kategori={data.grup.kategori}
               onBuka={i => setBukaId(i.id)} beritahu={beritahu} />
             <ModalDetailIsu isu={dibuka} hak={HAK_BACA} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at} onTutup={() => setBukaId(null)} />
-            <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
-              Work Management PTS IVP · Diperbarui {formatWaktu(data.grup.updated_at)} · Halaman ini hanya menampilkan data.
-            </p>
           </>
         )}
       </main>
+      <FooterPlatform />
     </div>
   );
 }
