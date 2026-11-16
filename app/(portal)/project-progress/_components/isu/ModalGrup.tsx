@@ -58,7 +58,7 @@ export function ModalGrup({ buka, awal, proyek, onTutup, onSimpan }: {
 
   return (
     <Modal buka={buka} onTutup={() => !sibuk && onTutup()} ukuran="lg" tutupDiLuar={false} ikon="🗂️"
-      judul={awal ? 'Atur grup Issue Log' : 'Grup Issue Log baru'}
+      judul={awal ? 'Ubah nama & proyek grup' : 'Grup Issue Log baru'}
       keterangan="Satu grup menggabungkan beberapa proyek. Semua lokasi checklist dari proyek terpilih menjadi pilihan lokasi isu."
       footer={<>
         <TombolModal onClick={onTutup} disabled={sibuk}>Batal</TombolModal>
@@ -73,7 +73,19 @@ export function ModalGrup({ buka, awal, proyek, onTutup, onSimpan }: {
         <label className="block sm:col-span-2"><Label t="Keterangan (tampil di link eksternal)" />
           <textarea value={keterangan} rows={2} maxLength={1000} onChange={e => setKeterangan(e.target.value)} className={isian} style={gayaIsian} /></label>
         <div className="sm:col-span-2">
-          <Label t={`Proyek sumber lokasi · ${dipilih.length} dipilih`} />
+          <Label t={`Proyek dalam grup ini · ${dipilih.length} dipilih`} />
+          {dipilih.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {dipilih.map(id => (
+                <span key={id} className="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 rounded-full text-[12px] font-semibold"
+                  style={{ background: TEMA.tint, color: TEMA.warnaTua, border: `1px solid ${TEMA.garisTint}` }}>
+                  {proyek.find(p => p.id === id)?.nama ?? 'Proyek'}
+                  <button type="button" onClick={() => setDipilih(d => d.filter(x => x !== id))} aria-label="Keluarkan proyek dari grup"
+                    className="w-5 h-5 rounded-full text-[13px] leading-none hover:bg-white">×</button>
+                </span>
+              ))}
+            </div>
+          )}
           <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari proyek…" aria-label="Cari proyek" className={isian} style={gayaIsian} />
           <ul className="mt-2 max-h-56 overflow-y-auto rounded-xl divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>
             {tampil.map(p => {

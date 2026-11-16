@@ -45,6 +45,7 @@ export interface Isu {
   lokasi: string;
   tanggal: string;
   kategori: string;
+  produk: string;
   prioritas: PrioritasIsu;
   judul: string;
   deskripsi: string;
@@ -64,6 +65,22 @@ export interface Isu {
   sumber?: 'manual' | 'tiket';
   tiket_id?: string | null;
   riwayat?: RiwayatIsu[];
+  tiket?: TiketIsu;
+}
+
+export interface AktivitasTiket {
+  id: string; ticket_id: string; handler_name: string | null; handler_username: string | null; action_taken: string | null;
+  notes: string | null; file_url: string | null; file_name: string | null; photo_url: string | null; photo_name: string | null;
+  new_status: string | null; team_type: string | null; assigned_to_services: boolean | null; created_at: string;
+}
+
+export interface TiketIsu {
+  id: string; project_name: string | null; issue_case: string | null; description: string | null; assign_name: string | null;
+  status: string | null; date: string | null; created_at: string; created_by: string | null; sales_name: string | null;
+  product: string | null; priority: string | null; photo_url: string | null; reminder_id: string | null; address: string | null;
+  customer_phone: string | null; sn_unit: string | null; current_team: string | null; services_status: string | null;
+  sales_division: string | null; photo_name: string | null; rejection_reason: string | null; routing_status: string | null;
+  brand: string | null; activity_logs: AktivitasTiket[];
 }
 
 export interface RiwayatIsu {
@@ -80,9 +97,10 @@ export interface RiwayatIsu {
 export interface HakIsu {
   edit: boolean;
   admin: boolean;
+  kelola?: boolean;
 }
 
-export const HAK_BACA: HakIsu = { edit: false, admin: false };
+export const HAK_BACA: HakIsu = { edit: false, admin: false, kelola: false };
 export function tanggalWib(iso: string | Date): string {
   const d = typeof iso === 'string' ? new Date(iso) : iso;
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
@@ -213,6 +231,54 @@ export function teksRingkasan(namaGrup: string, r: RingkasanHarian): string {
     }
   }
   return baris.join('\n');
+}
+
+const POLA_KATEGORI: [string, RegExp][] = [
+  ['Video Conference', /\b(camera|kamera|vc|zoom|teams|webcam|ptz|codec|video ?conf)/],
+  ['Audio', /\b(mic|microphone|mikrofon|speaker|audio|suara|sound|noise|amplifier|amp|dsp|fonestar|delegate|conference system)/],
+  ['Display', /\b(tv|display|layar|monitor|backlight|led|lcd|videowall|video wall|proyektor|projector|blank|bdl|panel)/],
+  ['Kontrol', /\b(matrix|hdmi|switcher|control|kontrol|touch|tablet|ipad|crestron|extron|scaler|presentation|dongle|miracast|clickshare)/],
+  ['Jaringan', /\b(network|jaringan|lan|wifi|offline|ip|switch|router|internet|koneksi|connect)/],
+  ['Listrik', /\b(listrik|power|daya|ups|stop ?kontak|mati total|adaptor|adapter)/],
+];
+
+export function tebakKategori(teks: string): string {
+  const t = teks.toLowerCase();
+  return POLA_KATEGORI.find(([, re]) => re.test(t))?.[0] ?? 'Lainnya';
+}
+
+export interface BatangIsu {
+  kunci: string;
+  label: string;
+  total: number;
+  terbuka: number;
+}
+
+export function kunciTeks(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function pecahProduk(s: string | null | undefined): string[] {
+  const hasil = new Map<string, string>();
+  for (const bagian of (s ?? '').split(/\s*(?:,|;|&|\+|\/|\bdan\b)\s*/i)) {
+    const t = bagian.trim();
+    if (t && !hasil.has(kunciTeks(t))) hasil.set(kunciTeks(t), t);
+  }
+  return [...hasil.values()];
+}
+
+export function hitungPer(isu: Isu[], ambil: (i: Isu) => string[]): BatangIsu[] {
+  const m = new Map<string, BatangIsu>();
+  for (const i of isu) {
+    for (const label of new Set(ambil(i).map(x => x.trim()).filter(Boolean))) {
+      const k = kunciTeks(label);
+      const b = m.get(k) ?? { kunci: k, label, total: 0, terbuka: 0 };
+      b.total += 1;
+      if (i.status !== 'solved') b.terbuka += 1;
+      m.set(k, b);
+    }
+  }
+  return [...m.values()].sort((a, b) => b.total - a.total || b.terbuka - a.terbuka || a.label.localeCompare(b.label));
 }
 
 export function kodeIsu(i: Isu): string {

@@ -24,6 +24,7 @@ export interface Akun {
   nama: string;
   role: string;
   pimpinan?: boolean;
+  jabatan?: string;
 }
 
 export function akunAdmin(a: Akun): boolean {
@@ -48,9 +49,10 @@ export async function ambilAkun(request: NextRequest):
   const s = await getSessionUser(request);
   if (!s) return { galat: galat('Sesi tidak valid. Login ulang.', 401) };
   const db = getAdminClient();
-  const { data: pim } = await db.from('users').select('pimpinan').eq('id', s.id).maybeSingle();
+  const { data: pim } = await db.from('users').select('pimpinan,jabatan').eq('id', s.id).maybeSingle();
+  const u = pim as { pimpinan?: boolean; jabatan?: string | null } | null;
   return {
-    akun: { id: s.id, nama: (s.full_name || s.username || '').trim(), role: s.role ?? '', pimpinan: (pim as { pimpinan?: boolean } | null)?.pimpinan === true },
+    akun: { id: s.id, nama: (s.full_name || s.username || '').trim(), role: s.role ?? '', pimpinan: u?.pimpinan === true, jabatan: u?.jabatan ?? '' },
     db,
   };
 }

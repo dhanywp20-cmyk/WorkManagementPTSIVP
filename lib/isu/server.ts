@@ -1,18 +1,22 @@
 import { getAdminClient } from '../supabase-admin';
 import { akunAdmin, akunBacaSemua, akunLihatSemua, tokenSah, type Akun, type Db } from '../checklist/server';
 import {
-  KATEGORI_BAWAAN, STATUS_ISU, PRIORITAS_ISU, tanggalWib,
-  type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type RiwayatIsu, type StatusIsu,
+  KATEGORI_BAWAAN, STATUS_ISU, PRIORITAS_ISU, tanggalWib, tebakKategori,
+  type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type RiwayatIsu, type StatusIsu, type TiketIsu,
 } from './inti';
 
 export const KOLOM_GRUP = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_token,updated_at';
 const KOLOM_GRUP_PUBLIK = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,updated_at';
-const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,prioritas,judul,deskripsi,pelapor,pic,status,action,solusi,foto_url,foto_thumb_url,selesai_pada,dibuat_oleh_nama,diubah_oleh_nama,created_at,updated_at';
+const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,prioritas,judul,deskripsi,produk,pelapor,pic,status,action,solusi,foto_url,foto_thumb_url,selesai_pada,dibuat_oleh_nama,diubah_oleh_nama,created_at,updated_at';
 export const KOLOM_ISU = `${KOLOM_ISU_PUBLIK},catatan_internal`;
 export const KOLOM_RIWAYAT = 'id,isu_id,aksi,dari,ke,keterangan,nama,created_at';
 
+export function akunManager(a: Akun): boolean {
+  return a.role.toLowerCase() === 'team' && (a.jabatan ?? '').trim().toLowerCase() === 'manager';
+}
+
 export function hakIsu(a: Akun): HakIsu & { lihat: boolean } {
-  return { lihat: akunBacaSemua(a), edit: akunLihatSemua(a), admin: akunAdmin(a) };
+  return { lihat: akunBacaSemua(a), edit: akunLihatSemua(a), admin: akunAdmin(a), kelola: akunAdmin(a) || akunManager(a) };
 }
 
 async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<T[]> {
@@ -85,6 +89,7 @@ export interface IsianIsu {
   lokasi: string;
   tanggal: string;
   kategori: string;
+  produk: string;
   prioritas: PrioritasIsu;
   judul: string;
   deskripsi: string;
@@ -97,7 +102,7 @@ export interface IsianIsu {
 }
 
 const LABEL_KOLOM: Partial<Record<keyof IsianIsu, string>> = {
-  lokasi: 'lokasi', tanggal: 'tanggal', kategori: 'kategori', prioritas: 'prioritas', judul: 'judul', deskripsi: 'deskripsi',
+  lokasi: 'lokasi', tanggal: 'tanggal', kategori: 'kategori', produk: 'produk', prioritas: 'prioritas', judul: 'judul', deskripsi: 'deskripsi',
   pelapor: 'pelapor', pic: 'PIC', solusi: 'solusi',
 };
 export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagian: boolean):
@@ -127,6 +132,7 @@ export function isianIsu(b: Record<string, unknown>, lokasi: LokasiIsu[], sebagi
     isian.judul = j;
   }
   if (ada('kategori')) isian.kategori = teks(b.kategori, 40) || 'Lainnya';
+  if (ada('produk')) isian.produk = teks(b.produk, 120);
   if (ada('prioritas')) {
     const p = String(b.prioritas ?? 'sedang') as PrioritasIsu;
     if (!(p in PRIORITAS_ISU)) return { galat: 'Prioritas tidak dikenal.' };
@@ -166,11 +172,22 @@ interface BarisTiket {
   id: string; project_name: string | null; issue_case: string | null; description: string | null; assign_name: string | null;
   status: string | null; date: string | null; created_at: string; updated_at: string | null; created_by: string | null;
   sales_name: string | null; product: string | null; priority: string | null; photo_url: string | null;
-  reminder_id: string | null; is_deleted: boolean | null;
+  reminder_id: string | null; is_deleted: boolean | null; address: string | null; customer_phone: string | null;
+  sn_unit: string | null; current_team: string | null; services_status: string | null; sales_division: string | null;
+  photo_name: string | null; rejection_reason: string | null; routing_status: string | null; brand: string | null;
 }
-interface BarisAktivitas { id: string; ticket_id: string; handler_name: string | null; action_taken: string | null; new_status: string | null; created_at: string }
+interface BarisAktivitas {
+  id: string; ticket_id: string; handler_name: string | null; handler_username: string | null; action_taken: string | null;
+  notes: string | null; file_url: string | null; file_name: string | null; photo_url: string | null; photo_name: string | null;
+  new_status: string | null; team_type: string | null; assigned_to_services: boolean | null; created_at: string;
+}
 
-const KOLOM_TIKET = 'id,project_name,issue_case,description,assign_name,status,date,created_at,updated_at,created_by,sales_name,product,priority,photo_url,reminder_id,is_deleted';
+const KOLOM_TIKET = [
+  'id,project_name,issue_case,description,assign_name,status,date,created_at,updated_at,created_by,sales_name,product,priority',
+  'photo_url,reminder_id,is_deleted,address,customer_phone,sn_unit,current_team,services_status,sales_division,photo_name',
+  'rejection_reason,routing_status,brand',
+].join(',');
+const KOLOM_AKTIVITAS = 'id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at';
 
 export function normalNama(s: string, buang: string[]): string {
   const kata = s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
@@ -196,7 +213,18 @@ export function statusTiket(status: string | null, adaAktivitas: boolean): Statu
   return 'progress';
 }
 
-export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
+function dataTiket(t: BarisTiket, akt: BarisAktivitas[], publik: boolean): TiketIsu {
+  const { is_deleted: _hapus, updated_at: _ubah, ...sisa } = t;
+  void _hapus; void _ubah;
+  return {
+    ...sisa,
+    customer_phone: publik ? null : t.customer_phone,
+    created_by: publik ? null : t.created_by,
+    activity_logs: akt.map(a => ({ ...a, handler_username: publik ? null : a.handler_username })),
+  };
+}
+
+export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Promise<Isu[]> {
   if (!grup.proyek_ids.length) return [];
   const { data: daftar, error } = await db.from('checklist_daftar').select('id,judul,source_reminder_id').in('proyek_id', grup.proyek_ids);
   if (error) throw new Error(error.message);
@@ -218,7 +246,7 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
   ]);
   if (byNama.error) throw new Error(byNama.error.message);
   const semua = new Map<string, BarisTiket>();
-  for (const t of [...((byNama.data ?? []) as BarisTiket[]), ...((byReminder.data ?? []) as BarisTiket[])]) semua.set(t.id, t);
+  for (const t of [...((byNama.data ?? []) as unknown as BarisTiket[]), ...((byReminder.data ?? []) as unknown as BarisTiket[])]) semua.set(t.id, t);
 
   const cocok: { t: BarisTiket; l: (typeof lokasi)[number] }[] = [];
   for (const t of semua.values()) {
@@ -231,7 +259,7 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
   const aktivitas = new Map<string, BarisAktivitas[]>();
   const ids = cocok.map(c => c.t.id);
   for (let i = 0; i < ids.length; i += 150) {
-    const { data: akt } = await db.from('activity_logs').select('id,ticket_id,handler_name,action_taken,new_status,created_at')
+    const { data: akt } = await db.from('activity_logs').select(KOLOM_AKTIVITAS)
       .in('ticket_id', ids.slice(i, i + 150)).order('created_at');
     for (const a of (akt ?? []) as BarisAktivitas[]) aktivitas.set(a.ticket_id, [...(aktivitas.get(a.ticket_id) ?? []), a]);
   }
@@ -255,7 +283,8 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
     ];
     return {
       id: t.id, grup_id: grup.id, nomor: 0, daftar_id: l.id, lokasi: l.judul.trim(),
-      tanggal: t.date ?? tanggalWib(dibuat), kategori: 'Ticket', prioritas: prioritasTiket(t.priority),
+      tanggal: t.date ?? tanggalWib(dibuat), kategori: tebakKategori([t.issue_case, t.product, t.description].join(' ')),
+      produk: (t.product ?? '').trim(), prioritas: prioritasTiket(t.priority),
       judul: (t.issue_case ?? '').trim() || 'Ticket Troubleshooting', deskripsi: (t.description ?? '').trim(),
       pelapor: t.sales_name ?? '', pic: t.assign_name ?? '', status,
       action: status === 'solved' ? '' : (terakhir?.action_taken ?? '').trim(),
@@ -263,12 +292,12 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup): Promise<Isu[]> {
       foto_url: t.photo_url, foto_thumb_url: t.photo_url, selesai_pada,
       dibuat_oleh_nama: t.created_by, diubah_oleh_nama: terakhir?.handler_name ?? null,
       created_at: dibuat, updated_at: t.updated_at ? utc(t.updated_at) : dibuat,
-      sumber: 'tiket' as const, tiket_id: t.id, riwayat,
+      sumber: 'tiket' as const, tiket_id: t.id, riwayat, tiket: dataTiket(t, akt, publik),
     };
   });
 }
 
 export async function muatSemuaIsu(db: Db, grup: IsuGrup, publik: boolean): Promise<Isu[]> {
-  const [manual, tiket] = await Promise.all([muatIsu(db, grup.id, publik), muatIsuTiket(db, grup)]);
+  const [manual, tiket] = await Promise.all([muatIsu(db, grup.id, publik), muatIsuTiket(db, grup, publik)]);
   return [...manual.map(i => ({ ...i, sumber: 'manual' as const })), ...tiket];
 }

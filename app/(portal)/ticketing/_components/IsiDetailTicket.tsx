@@ -19,11 +19,12 @@ export interface IsiDetailTicketProps {
   getDeadline: (t: Ticket) => Date | null;
   users: User[];
   getWarrantyInfo: (projectName: string) => { isIn: boolean; diffDays: number; wy: number; bastStr: string; expiryStr: string; } | null;
+  tanpaSolusiSerupa?: boolean;
 }
 
 export function IsiDetailTicket({
   selectedTicket, currentUser, setSupAssignTicket, setSupAssignTo, canManageTickets, bukaAdminEdit, getDeadline, users,
-  getWarrantyInfo,
+  getWarrantyInfo, tanpaSolusiSerupa = false,
 }: IsiDetailTicketProps) {
   return (
     <div className="overflow-y-auto flex-1 min-h-0">
@@ -128,7 +129,7 @@ export function IsiDetailTicket({
         </div>
       </div>
     
-      {selectedTicket.status !== "Solved" && selectedTicket.status !== "Rejected" && (
+      {!tanpaSolusiSerupa && selectedTicket.status !== "Solved" && selectedTicket.status !== "Rejected" && (
         <SolusiSerupa ticketId={selectedTicket.id}
           teks={[selectedTicket.issue_case, selectedTicket.product, selectedTicket.description].filter(Boolean).join(' ')} />
       )}

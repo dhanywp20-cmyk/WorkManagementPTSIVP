@@ -1425,6 +1425,7 @@ export type Database = {
           pelapor: string
           pic: string
           prioritas: string
+          produk: string
           selesai_pada: string | null
           solusi: string
           status: string
@@ -1450,6 +1451,7 @@ export type Database = {
           pelapor?: string
           pic?: string
           prioritas?: string
+          produk?: string
           selesai_pada?: string | null
           solusi?: string
           status?: string
@@ -1475,6 +1477,7 @@ export type Database = {
           pelapor?: string
           pic?: string
           prioritas?: string
+          produk?: string
           selesai_pada?: string | null
           solusi?: string
           status?: string

@@ -18,6 +18,7 @@ export interface IsianFormIsu {
   lokasi: string;
   tanggal: string;
   kategori: string;
+  produk: string;
   prioritas: PrioritasIsu;
   judul: string;
   deskripsi: string;
@@ -29,17 +30,18 @@ export interface IsianFormIsu {
   catatan_internal: string;
 }
 
-export function ModalFormIsu({ buka, awal, lokasi, kategori, namaSaya, onTutup, onSimpan }: {
+export function ModalFormIsu({ buka, awal, lokasi, kategori, saranProduk = [], namaSaya, onTutup, onSimpan }: {
   buka: boolean;
   awal: Isu | null;
   lokasi: LokasiIsu[];
   kategori: string[];
+  saranProduk?: string[];
   namaSaya: string;
   onTutup: () => void;
   onSimpan: (f: IsianFormIsu, foto: File | null) => Promise<void>;
 }) {
   const kosong = (): IsianFormIsu => ({
-    daftar_id: '', lokasi: '', tanggal: hariIni(), kategori: kategori[0] ?? 'Lainnya', prioritas: 'sedang', judul: '', deskripsi: '',
+    daftar_id: '', lokasi: '', tanggal: hariIni(), kategori: kategori[0] ?? 'Lainnya', produk: '', prioritas: 'sedang', judul: '', deskripsi: '',
     pelapor: '', pic: namaSaya, status: 'open', action: '', solusi: '', catatan_internal: '',
   });
   const [f, setF] = useState<IsianFormIsu>(kosong);
@@ -53,7 +55,7 @@ export function ModalFormIsu({ buka, awal, lokasi, kategori, namaSaya, onTutup, 
     setGalat(''); setFoto(null);
     if (awal) {
       setF({
-        daftar_id: awal.daftar_id ?? '', lokasi: awal.lokasi, tanggal: awal.tanggal, kategori: awal.kategori, prioritas: awal.prioritas,
+        daftar_id: awal.daftar_id ?? '', lokasi: awal.lokasi, tanggal: awal.tanggal, kategori: awal.kategori, produk: awal.produk ?? '', prioritas: awal.prioritas,
         judul: awal.judul, deskripsi: awal.deskripsi, pelapor: awal.pelapor, pic: awal.pic, status: awal.status, action: awal.action,
         solusi: awal.solusi, catatan_internal: awal.catatan_internal ?? '',
       });
@@ -114,6 +116,10 @@ export function ModalFormIsu({ buka, awal, lokasi, kategori, namaSaya, onTutup, 
           <select value={f.kategori} onChange={e => set('kategori', e.target.value)} className={isian} style={gayaIsian}>
             {daftarKategori.map(k => <option key={k} value={k}>{k}</option>)}
           </select></label>
+        <label className="block sm:col-span-2"><Label t="Produk / Brand" />
+          <input value={f.produk} maxLength={120} placeholder="mis. Fonestar FCS-4200, Samsung QM75C" list="pp-isu-produk"
+            onChange={e => set('produk', e.target.value)} className={isian} style={gayaIsian} />
+          <datalist id="pp-isu-produk">{saranProduk.map(p => <option key={p} value={p} />)}</datalist></label>
         <label className="block"><Label t="Prioritas" />
           <select value={f.prioritas} onChange={e => set('prioritas', e.target.value as PrioritasIsu)} className={isian} style={gayaIsian}>
             {(Object.keys(PRIORITAS_ISU) as PrioritasIsu[]).map(p => <option key={p} value={p}>{PRIORITAS_ISU[p].label}</option>)}

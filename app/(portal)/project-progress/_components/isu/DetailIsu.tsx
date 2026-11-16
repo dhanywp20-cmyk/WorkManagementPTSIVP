@@ -11,6 +11,9 @@ import {
 } from '@/lib/isu/inti';
 import { TEMA } from '../tampilan';
 import { KepingPrioritas, KepingStatus, TimelineRiwayat } from './tampilan-isu';
+import { ModalDetailTiket } from './DetailTiket';
+import { isuKeTicket } from './tiket-isu';
+import { cetakTicket } from '@/app/(portal)/ticketing/_components/cetak-ticket';
 
 const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-hidden focus:ring-2';
 const gayaIsian = { border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan };
@@ -66,6 +69,7 @@ export function ModalDetailIsu({ isu, hak: hakAsli, muatRiwayat, versi, urlTiket
   }, [id, versi, muatRiwayat, riwayatTiket]);
 
   if (!isu) return null;
+  if (isu.tiket) return <ModalDetailTiket tiket={isu.tiket} urlTiket={urlTiket} onTutup={onTutup} />;
   const tiket = dariTiket(isu);
   const hak: HakIsu = tiket ? { edit: false, admin: false } : hakAsli;
   const selesai = tanggalSelesai(isu);
@@ -95,6 +99,7 @@ export function ModalDetailIsu({ isu, hak: hakAsli, muatRiwayat, versi, urlTiket
         {hak.admin && onHapus && (yakinHapus
           ? <TombolModal jenis="bahaya" disabled={!!sibuk} onClick={() => void jalankan('hapus', onHapus)}>{sibuk === 'hapus' ? 'Menghapus…' : 'Ya, hapus isu'}</TombolModal>
           : <button type="button" onClick={() => setYakinHapus(true)} className="mr-auto inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: TEMA.bahaya }}><Trash2 size={13} /> Hapus</button>)}
+        <TombolModal onClick={() => void cetakTicket(isuKeTicket(isu, riwayat ?? []))} disabled={!riwayat}>📄 PDF</TombolModal>
         <TombolModal onClick={onTutup} disabled={!!sibuk}>Tutup</TombolModal>
       </>}>
       <div className="space-y-4">
