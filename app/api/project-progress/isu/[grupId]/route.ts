@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, ctx: { params: Promise<{ grupId:
   try {
     const [lokasi, isu] = await Promise.all([muatLokasi(s.db, grup.proyek_ids), muatSemuaIsu(s.db, grup, false)]);
     return NextResponse.json({
-      grup: hak.admin ? grup : { ...grup, share_token: null }, lokasi, isu,
+      grup: hak.edit ? grup : { ...grup, share_token: null }, lokasi, isu,
       hak: { edit: hak.edit, admin: hak.admin },
     }, { headers: NO_STORE });
   } catch (e) {
@@ -30,12 +30,15 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ grupI
   const { grupId } = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
-  if (!hakIsu(s.akun).admin) return galat('Hanya admin yang bisa mengubah grup.', 403);
+  const hak = hakIsu(s.akun);
+  if (!hak.edit) return galat('Anda tidak punya akses mengubah grup.', 403);
   const grup = await muatGrup(s.db, grupId);
   if (!grup) return galat('Grup tidak ditemukan.', 404);
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return galat('Permintaan tidak terbaca.'); }
+  const aksiShare = body.aksi === 'share' || body.aksi === 'tokenBaru';
+  if (!aksiShare && !hak.admin) return galat('Hanya admin yang bisa mengubah grup.', 403);
 
   let ubah: TablesUpdate<'isu_grup'>;
   if (body.aksi === 'share') {

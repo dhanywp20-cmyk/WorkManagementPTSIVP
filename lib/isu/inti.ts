@@ -108,6 +108,12 @@ export function labelHari(t: string): string {
   return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
+export function labelTanggalLengkap(t: string): string {
+  const d = new Date(`${t}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return t;
+  return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
 export function labelTanggalPendek(t: string): string {
   const d = new Date(`${t}T12:00:00Z`);
   if (Number.isNaN(d.getTime())) return t;

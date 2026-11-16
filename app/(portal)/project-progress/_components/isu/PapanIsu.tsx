@@ -10,7 +10,7 @@ import {
   type Isu, type LokasiIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
-import { BarisIsu, NavTanggal, TabelKota } from './tampilan-isu';
+import { BarisIsu, KepalaDaftarIsu, NavTanggal, TabelKota } from './tampilan-isu';
 
 type Tampilan = 'harian' | 'semua';
 type SaringStatus = 'aktif' | 'semua' | StatusIsu;
@@ -29,8 +29,8 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
   aksiAtas?: ReactNode;
 }) {
   const [tanggal, setTanggal] = useState(hariIni);
-  const [tampilan, setTampilan] = useState<Tampilan>('harian');
-  const [status, setStatus] = useState<SaringStatus>('aktif');
+  const [tampilan, setTampilan] = useState<Tampilan>('semua');
+  const [status, setStatus] = useState<SaringStatus>('semua');
   const [kota, setKota] = useState('');
   const [kat, setKat] = useState('');
   const [cari, setCari] = useState('');
@@ -57,7 +57,8 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
       .filter(i => status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
       .filter(i => !kota || i.lokasi === kota)
       .filter(i => !kat || i.kategori === kat)
-      .filter(i => !q || [i.judul, i.deskripsi, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)));
+      .filter(i => !q || [i.judul, i.deskripsi, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)))
+      .sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.created_at.localeCompare(a.created_at));
   }, [isu, status, kota, kat, cari]);
 
   const salin = async () => {
@@ -101,8 +102,8 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="inline-flex p-0.5 rounded-lg" style={{ background: NETRAL.garis }} role="group" aria-label="Tampilan">
-          {tab('harian', 'Ringkasan harian')}
           {tab('semua', `Semua isu (${isu.length})`)}
+          {tab('harian', 'Ringkasan harian')}
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">{aksiAtas}</div>
       </div>
@@ -137,7 +138,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
         <section className="rounded-xl overflow-hidden" style={kartu}>
           <div className="px-3 sm:px-4 py-3 space-y-2.5" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>
             <div className="flex gap-1.5 flex-wrap" role="group" aria-label="Saring status">
-              {([['aktif', 'Belum solved', isu.length - jumlahStatus.solved], ...URUTAN_STATUS.map(s => [s, STATUS_ISU[s].label, jumlahStatus[s]]), ['semua', 'Semua', isu.length]] as [SaringStatus, string, number][])
+              {([['semua', 'Semua', isu.length], ['aktif', 'Belum solved', isu.length - jumlahStatus.solved], ...URUTAN_STATUS.map(s => [s, STATUS_ISU[s].label, jumlahStatus[s]])] as [SaringStatus, string, number][])
                 .map(([k, label, n]) => (
                   <button key={k} type="button" onClick={() => setStatus(k)} aria-pressed={status === k}
                     className="px-2.5 py-1 rounded-full text-[12px] font-bold"
@@ -165,7 +166,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
           </div>
           {tersaring.length === 0
             ? <p className="px-4 py-10 text-center text-[13px]" style={{ color: TEMA.samar }}>{isu.length ? 'Tidak ada isu yang cocok.' : 'Belum ada isu tercatat.'}</p>
-            : <ul className="divide-y" style={{ borderColor: NETRAL.garis }}>{tersaring.map(i => <BarisIsu key={i.id} isu={i} acuan={hari} onBuka={() => onBuka(i)} />)}</ul>}
+            : <><KepalaDaftarIsu /><ul className="divide-y" style={{ borderColor: NETRAL.garis }}>{tersaring.map(i => <BarisIsu key={i.id} isu={i} acuan={hari} onBuka={() => onBuka(i)} />)}</ul></>}
         </section>
       )}
     </div>

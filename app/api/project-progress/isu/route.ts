@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await s.db.from('isu_grup').select(KOLOM_GRUP).order('created_at');
   if (error) return galat(error.message, 500);
-  const grup = ((data ?? []) as IsuGrup[]).map(g => (hak.admin ? g : { ...g, share_token: null }));
+  const grup = ((data ?? []) as IsuGrup[]).map(g => (hak.edit ? g : { ...g, share_token: null }));
 
   let proyek: { id: string; nama: string; client: string | null; status: string }[] = [];
   if (hak.admin) {

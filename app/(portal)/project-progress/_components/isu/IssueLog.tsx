@@ -171,11 +171,13 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
           {daftarGrup.map(g => <option key={g.id} value={g.id}>{g.nama}</option>)}
         </select>
       )}
+      {hak.edit && grup && (
+        <button type="button" onClick={() => setShareBuka(true)} className={tombol} style={tombolGaris}>
+          <Link2 size={14} style={{ color: grup.share_aktif ? TEMA.selesai : undefined }} /> Share View Only
+        </button>
+      )}
       {hak.admin && grup && (
         <>
-          <button type="button" onClick={() => setShareBuka(true)} className={tombol} style={tombolGaris}>
-            <Link2 size={14} style={{ color: grup.share_aktif ? TEMA.selesai : undefined }} /> Link eksternal
-          </button>
           <button type="button" onClick={() => setModalGrup({ awal: grup })} className={tombol} style={tombolGaris} aria-label="Atur grup">
             <Settings2 size={14} /> Atur
           </button>

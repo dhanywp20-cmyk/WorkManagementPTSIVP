@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import { formatWaktu } from '@/lib/checklist/inti';
 import {
-  PRIORITAS_ISU, STATUS_ISU, dariTiket, geserTanggal, kodeIsu, hariIni, labelHari, labelStatusPada, labelTanggalPendek, peranPada, tanggalSelesai, umurIsu,
+  PRIORITAS_ISU, STATUS_ISU, dariTiket, geserTanggal, kodeIsu, hariIni, labelHari, labelStatusPada, labelTanggalLengkap, labelTanggalPendek, peranPada, tanggalSelesai, umurIsu,
   type BarisKota, type Isu, type PrioritasIsu, type RiwayatIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
@@ -109,6 +109,18 @@ export function TabelKota({ kota, tanggal, onBuka }: { kota: BarisKota[]; tangga
   );
 }
 
+export function KepalaDaftarIsu() {
+  const sel = 'text-[11px] font-bold uppercase tracking-wide';
+  return (
+    <div className="hidden md:flex gap-4 px-4 py-2" style={{ background: NETRAL.permukaanRedam, borderBottom: `1px solid ${NETRAL.garis}`, color: TEMA.samar }}>
+      <span className={`${sel} w-[120px] shrink-0`}>Tanggal</span>
+      <span className={`${sel} w-[160px] shrink-0`}>Lokasi</span>
+      <span className={`${sel} flex-1`}>Isu · Action / Solusi</span>
+      <span className={`${sel} w-[160px] shrink-0 text-right`}>Status</span>
+    </div>
+  );
+}
+
 export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBuka: () => void }) {
   const selesai = tanggalSelesai(isu);
   const umur = umurIsu(isu, acuan);
@@ -116,9 +128,12 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
     <li>
       <button type="button" onClick={onBuka}
         className="w-full text-left flex flex-col md:flex-row md:items-start gap-1.5 md:gap-4 px-3 sm:px-4 py-3 hover:bg-slate-50/70 transition-colors">
-        <div className="md:w-[150px] shrink-0">
-          <p className="text-[12.5px] font-bold truncate" style={{ color: NETRAL.tinta }}>{isu.lokasi}</p>
-          <p className="text-[11px] font-semibold flex items-center gap-1" style={{ ...fontAngka, color: TEMA.samar }}><KodeIsu isu={isu} /> · {labelTanggalPendek(isu.tanggal)}</p>
+        <div className="md:w-[120px] shrink-0 flex md:flex-col gap-x-2 gap-y-1 items-center md:items-start flex-wrap">
+          <p className="text-[12.5px] font-bold whitespace-nowrap" style={{ ...fontAngka, color: NETRAL.tinta }}>{labelTanggalLengkap(isu.tanggal)}</p>
+          <KodeIsu isu={isu} />
+        </div>
+        <div className="md:w-[160px] shrink-0">
+          <p className="text-[12.5px] font-bold truncate" style={{ color: NETRAL.tinta2 }}>{isu.lokasi}</p>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -135,7 +150,7 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
             </p>
           )}
         </div>
-        <div className="md:w-[150px] shrink-0 flex md:flex-col md:items-end gap-1.5 flex-wrap">
+        <div className="md:w-[160px] shrink-0 flex md:flex-col md:items-end gap-1.5 flex-wrap">
           <KepingStatus status={isu.status} />
           <span className="text-[11px] font-semibold" style={{ ...fontAngka, color: umur >= 3 && !selesai ? TEMA.bahaya : TEMA.samar }}>
             {selesai ? `Solved ${labelTanggalPendek(selesai)} · ${umur} hari` : umur === 0 ? 'Dilaporkan hari ini' : `Terbuka ${umur} hari`}
