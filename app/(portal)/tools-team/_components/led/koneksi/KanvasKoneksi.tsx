@@ -1,5 +1,5 @@
 'use client';
-import { warnaPort } from './data';
+import { kodePort, warnaPort } from './data';
 import { kelasTombol } from './komponen';
 import { Download, Image as IkonGambar } from 'lucide-react';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
@@ -11,7 +11,7 @@ export function KanvasKoneksi({ a }: { a: AlatRuangKoneksi }) {
       <div className="rounded-2xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
           <span className="text-[12px] text-slate-600">
-            {alatEf === 'kabel' ? <>Mode kabel · port aktif <b style={{ color: warnaPort(portAktif) }}>P{portAktif}</b></>
+            {alatEf === 'kabel' ? <>Mode kabel · port aktif <b style={{ color: warnaPort(portAktif) }}>{kodePort(t, portAktif)}</b></>
               : alatEf === 'kosong' ? 'Mode kosongkan sel - klik sel untuk mengosongkan / mengisi'
                 : 'Template cepat - pilih "Manual" untuk menyambung sendiri'}
           </span>

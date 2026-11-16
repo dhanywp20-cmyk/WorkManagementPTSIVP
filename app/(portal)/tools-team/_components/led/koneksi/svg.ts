@@ -1,7 +1,7 @@
 import { gambarPanelKoneksi } from './panel';
 import { esc } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
-import { type DataKoneksi, kunci, namaCadangan, namaPort, type PengaturanKoneksi, type Susunan, susunKoneksi, warnaPort } from './data';
+import { type DataKoneksi, kodePort, kunci, namaCadangan, namaPort, type PengaturanKoneksi, type Susunan, susunKoneksi, warnaPort } from './data';
 import { teksCadangan, teksCara } from './teks';
 
 export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; interaktif?: boolean; portAktif?: number } = {}): string {
@@ -81,7 +81,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
     const lbl: string[] = [];
     for (const s of t.hasil.sel) {
       const [x, y] = pusat(s.c, s.r);
-      if (!(s.urut === 1 && diSel.has(s.port))) lbl.push(`<text x="${n(x)}" y="${n(y - fs * 0.55)}">${s.port}-${s.urut}</text>`);
+      if (!(s.urut === 1 && diSel.has(s.port))) lbl.push(`<text x="${n(x)}" y="${n(y - fs * 0.55)}">${kodePort(t, s.port).slice(1)}-${s.urut}</text>`);
     }
     atas.push(`<g font-size="${n(fs)}" font-weight="700" text-anchor="middle" fill="#0f172a" font-family="Segoe UI,Arial" paint-order="stroke" stroke="#ffffff" stroke-width="2.4">${lbl.join('')}</g>`);
     const kecil = Math.max(6, fs * 0.78), ukur: string[] = [];
@@ -98,7 +98,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
     const [cx, cy] = pusat(m.c, m.r);
     const r = Math.max(3, Math.min(7, selMin * 0.16));
     atas.push(`<circle cx="${n(cx)}" cy="${n(cy + (adaLabel ? r * 0.9 : 0))}" r="${n(r)}" fill="${warna}" stroke="#fff" stroke-width="1.2"/>`);
-    const teks = `P${p.port}`;
+    const teks = kodePort(t, p.port);
     if (!sisi) {
       const fb = Math.max(6, Math.min(10, fs + 1)), bw = 5 + teks.length * fb * 0.62, bh = fb + 4;
       const by = adaLabel ? cy - fs * 0.55 - fb * 0.85 : cy - bh / 2;
@@ -122,7 +122,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
       const warna = warnaPort(port);
       const [cx, cy] = pusat(m.c, m.r);
       const jarak = [{ sisi: 'kiri', v: m.c }, { sisi: 'kanan', v: t.K - 1 - m.c }, { sisi: 'atas', v: m.r }, { sisi: 'bawah', v: t.B - 1 - m.r }].sort((a, b) => a.v - b.v);
-      const teks = `B${port}`, lw = 8 + teks.length * 6.4, lh = 15;
+      const teks = `B${kodePort(t, port).slice(1)}`, lw = 8 + teks.length * 6.4, lh = 15;
       const tag = (x: number, y: number) => {
         atas.push(`<rect x="${n(x)}" y="${n(y)}" width="${n(lw)}" height="${lh}" rx="4" fill="#fff" stroke="${warna}" stroke-width="1.4" stroke-dasharray="3 2"/>`);
         atas.push(`<text x="${n(x + lw / 2)}" y="${n(y + 11)}" font-size="10" font-weight="700" text-anchor="middle" fill="${warna}" font-family="Segoe UI,Arial">${teks}</text>`);
@@ -169,7 +169,8 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
   const huruf = 'font-family="Segoe UI,Arial"';
   const legenda = port.map((p, i) => {
     const x = 20 + Math.floor(i / barisLegenda) * lebarKolom, y = yLegenda + 30 + (i % barisLegenda) * tinggiBaris;
-    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}${t.cadangan !== 'tidak' && p.jumlah ? ` · B${p.port} → ${namaCadangan(t, p.port)}` : ''}`;
+    const cad = t.cadangan !== 'tidak' && p.jumlah ? ` · B${kodePort(t, p.port).slice(1)} → ${namaCadangan(t, p.port)}` : '';
+    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}${cad}`;
     return `<rect x="${x}" y="${y - 10}" width="11" height="11" rx="2" fill="${warnaPort(p.port)}"/><text x="${x + 17}" y="${y}" font-size="11.5" fill="${p.beban > s.beban ? '#b91c1c' : '#1e293b'}" ${huruf}>${esc(teks)}</text>`;
   }).join('');
   const ringkas = `${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)} · ${teksCara(s)}`;

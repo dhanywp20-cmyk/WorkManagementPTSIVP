@@ -1,5 +1,5 @@
 import { jumlahLanPanel, panelUmum, panelUntuk, svgPanelController, type PanelController, type TandaPort } from '@/lib/av/panel-controller';
-import { type DataKoneksi, type Susunan, warnaPort } from './data';
+import { type DataKoneksi, kodePort, type Susunan, warnaPort } from './data';
 
 export const MAKS_PANEL = 4;
 
@@ -22,8 +22,8 @@ export function gambarPanelKoneksi(d: DataKoneksi, t: Susunan): { gambar: Gambar
     const lokal = t.ppk > 0 ? ((p.port - 1) % t.ppk) + 1 : p.port;
     const peta = per[ke];
     if (!peta) continue;
-    peta.set(lokal, { warna: warnaPort(p.port), label: `P${p.port}` });
-    if (t.cadangan === 'loop' && t.ppk > 0) peta.set(lokal + t.ppk, { warna: warnaPort(p.port), label: `B${p.port}`, cadangan: true });
+    peta.set(lokal, { warna: warnaPort(p.port), label: kodePort(t, p.port) });
+    if (t.cadangan === 'loop' && t.ppk > 0) peta.set(lokal + t.ppk, { warna: warnaPort(p.port), label: `B${kodePort(t, p.port).slice(1)}`, cadangan: true });
   }
   const nama = panel.model;
   const daftar: GambarPanel[] = per.map((tanda, i) => ({
