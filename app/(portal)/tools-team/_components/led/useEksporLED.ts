@@ -85,7 +85,7 @@ export function useEksporLED(K: KeadaanLED) {
           kanan: hwBaris.length ? hwBaris : [satu('Hardware', '—')] },
       ],
       catatan: 'Angka daya, berat, dan kapasitas port adalah nilai umum industri. Verifikasi dengan datasheet produk dan NovaLCT sebelum penawaran resmi.',
-      tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+      tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa', nama: 'DWP' }],
     };
   };
   const cetak = () => bukaCetak(lembarLED());
@@ -128,7 +128,7 @@ export function useEksporLED(K: KeadaanLED) {
       ...seksiCetakDaya(dataDaya, dayaLED),
     ],
     catatan: 'Rencana sirkuit dari AV Solution Tools (daya maksimum putih penuh). Ukuran kabel, grounding, dan panel diverifikasi instalatir listrik sebelum instalasi.',
-    tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+    tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa', nama: 'DWP' }],
   });
   const teksDaya = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
@@ -155,7 +155,7 @@ export function useEksporLED(K: KeadaanLED) {
       ...seksiCetakKoneksi(dataKoneksi, koneksi),
     ],
     catatan: 'Diagram dari AV Solution Tools. Samakan dengan konfigurasi NovaLCT (Screen Configuration → Screen Connection) dan datasheet receiving card sebelum instalasi.',
-    tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+    tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa', nama: 'DWP' }],
   });
   const cetakKoneksi = () => bukaCetak(lembarKoneksi());
   const pngKoneksi = () => unduhLembarPNG(lembarKoneksi(), namaBerkas('Screen Connection', labelLED, project, customer));

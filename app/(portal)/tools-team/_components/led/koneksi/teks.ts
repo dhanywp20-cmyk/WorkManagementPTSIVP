@@ -1,8 +1,9 @@
 import { esc, type Seksi } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
-import { type DataKoneksi, namaCadangan, namaPort, type PengaturanKoneksi, SUDUT, type Susunan, susunKoneksi } from './data';
+import { type DataKoneksi, type PengaturanKoneksi, SUDUT, type Susunan, susunKoneksi } from './data';
 import { gambarPanelKoneksi } from './panel';
 import { svgKoneksi } from './svg';
+import { ringkasPort, teksRentang } from './ringkasPort';
 import type { SudutMulai } from '@/lib/av/hitung';
 
 export const teksCadangan = (t: Susunan) => (t.cadangan === 'loop' ? ` · loop cadangan +${t.portCadangan} kabel`
@@ -19,7 +20,7 @@ export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
     `Screen connection: ${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K}×${t.B}${t.kosong.size ? `, ${t.kosong.size} sel kosong` : ''}), resolusi ${t.resX}×${t.resY} px`,
     `${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)} · kapasitas ${f(t.pxPort / 1000, 0)} rb px/port, batas ${s.beban}%`,
     `Kabel: ${teksCara(s)}`,
-    ...k.port.map(p => `- ${namaPort(t, p.port)}: ${p.jumlah} RC, ${p.px.toLocaleString('id-ID')} px (${f(p.beban, 0)}%)${p.mulai ? `, masuk kolom ${p.mulai.c + 1} baris ${p.mulai.r + 1}` : ''}${t.cadangan !== 'tidak' && p.jumlah ? `, cadangan ke ${namaCadangan(t, p.port)}` : ''}`),
+    ...ringkasPort(t).map(b => `- ${b.unit} · ${teksRentang(b)}: ${b.jumlah} RC/port, ${b.px.toLocaleString('id-ID')} px/port (${f(b.beban, 0)}%)`),
     k.tanpaPort.length ? `Belum tersambung: ${k.tanpaPort.length} receiving card` : '',
   ].filter(Boolean).join('\n');
 }
@@ -35,10 +36,12 @@ export function seksiCetakKoneksi(d: DataKoneksi, s: PengaturanKoneksi): Seksi[]
   return [
     { judul: 'Screen connection (urutan kabel data)', jenis: 'html',
       html: `<div class="diagram">${svgKoneksi(d, t)}<p style="margin:6px 0 0;font-size:11px;color:#475569">${esc(ket)}</p>${peringatan}</div>` },
-    { judul: 'Pembagian port LAN', jenis: 'tabel', kepala: ['Port', 'Receiving card', 'Pixel', 'Beban', 'Masuk di', ...(t.cadangan !== 'tidak' ? ['Kabel cadangan (B)'] : [])], rataKanan: [1, 2, 3],
-      isi: k.port.map(p => [namaPort(t, p.port), String(p.jumlah), p.px.toLocaleString('id-ID'), `${f(p.beban, 0)}%`, p.mulai ? `kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : '—',
-        ...(t.cadangan !== 'tidak' ? [p.jumlah ? namaCadangan(t, p.port) : '—'] : [])]) },
     ...(gambar.length ? [{ judul: 'Sending box / video controller · port yang dipakai', jenis: 'html' as const,
       html: `<div class="diagram" style="page-break-inside:avoid">${panel}<p style="margin:6px 0 0;font-size:11px;color:#475569">Port LAN berwarna = terpakai, label P1, P2, … sama dengan diagram. Abu-abu = kosong.</p></div>` }] : []),
+    { judul: 'Pembagian port LAN (ringkas)', jenis: 'tabel', kepala: ['Kartu / controller', 'Port', 'RC per port', 'Pixel per port', 'Beban'], rataKanan: [2, 3, 4],
+      isi: [
+        ...ringkasPort(t).map(b => [b.unit, teksRentang(b), String(b.jumlah), b.px.toLocaleString('id-ID'), `${f(b.beban, 0)}%`]),
+        ['Total', `${t.portTerpakai} port`, `${k.sel.length} RC`, k.port.reduce((a, p) => a + p.px, 0).toLocaleString('id-ID'), `maks ${f(Math.max(0, ...k.port.map(p => p.beban)), 0)}%`],
+      ] },
   ];
 }
