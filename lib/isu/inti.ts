@@ -64,6 +64,22 @@ export interface Isu {
   sumber?: 'manual' | 'tiket';
   tiket_id?: string | null;
   riwayat?: RiwayatIsu[];
+  tiket?: TiketIsu;
+}
+
+export interface AktivitasTiket {
+  id: string; ticket_id: string; handler_name: string | null; handler_username: string | null; action_taken: string | null;
+  notes: string | null; file_url: string | null; file_name: string | null; photo_url: string | null; photo_name: string | null;
+  new_status: string | null; team_type: string | null; assigned_to_services: boolean | null; created_at: string;
+}
+
+export interface TiketIsu {
+  id: string; project_name: string | null; issue_case: string | null; description: string | null; assign_name: string | null;
+  status: string | null; date: string | null; created_at: string; created_by: string | null; sales_name: string | null;
+  product: string | null; priority: string | null; photo_url: string | null; reminder_id: string | null; address: string | null;
+  customer_phone: string | null; sn_unit: string | null; current_team: string | null; services_status: string | null;
+  sales_division: string | null; photo_name: string | null; rejection_reason: string | null; routing_status: string | null;
+  brand: string | null; activity_logs: AktivitasTiket[];
 }
 
 export interface RiwayatIsu {

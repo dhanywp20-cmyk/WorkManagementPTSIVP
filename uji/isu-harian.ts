@@ -77,6 +77,11 @@ cek('Solved -> solved', statusTiket('Solved', true) === 'solved');
 cek('Pending tanpa aktivitas -> open', statusTiket('Pending', false) === 'open');
 cek('Pending dengan aktivitas -> progress', statusTiket('Pending', true) === 'progress');
 cek('Call -> progress', statusTiket('Call', false) === 'progress');
+cek('link publik tanpa nomor HP customer & username', /customer_phone: publik \? null/.test(srv) && /created_by: publik \? null/.test(srv) && /handler_username: publik \? null/.test(srv));
+const detailIsu = readFileSync('app/(portal)/project-progress/_components/isu/DetailIsu.tsx', 'utf8');
+cek('detail tiket memakai komponen Troubleshooting', /if \(isu\.tiket\) return <ModalDetailTiket/.test(detailIsu)
+  && readFileSync('app/(portal)/project-progress/_components/isu/DetailTiket.tsx', 'utf8').includes('<IsiDetailTicket'));
+cek('PDF memakai cetakTicket yang sama', detailIsu.includes('cetakTicket(isuKeTicket('));
 cek('kode isu tiket', kodeIsu(isu({ sumber: 'tiket' })) === 'Tiket' && kodeIsu(isu({ nomor: 7 })) === '#7');
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

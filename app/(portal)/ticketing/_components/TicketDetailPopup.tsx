@@ -1,5 +1,5 @@
 'use client';
-import type { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModalPortal } from '@/components/shared';
 import { cetakTicket } from './cetak-ticket';
@@ -18,6 +18,30 @@ export type NewActivityForm = {
   onsite_schedule_hour: string; onsite_schedule_minute: string;
   extend_days: string;
 };
+
+export function KepalaDetailTicket({ ticket, onTutup, children }: { ticket: Ticket; onTutup: () => void; children?: ReactNode }) {
+  const r = ringkasPenanganan(ticket);
+  return (
+    <div className="px-5 py-4 pr-12 shrink-0 relative border-b border-slate-100">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-slate-600">
+        <span><IkonTeks nama="🎫" />Tim: {r.teamHandler}</span>
+        <span>Status: {r.statusLengkap}</span>
+        {ticket.services_status && <span>Services: {ticket.services_status}</span>}
+      </div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
+      <h2 className="text-lg font-bold text-slate-800 leading-tight">{ticket.project_name}</h2>
+      {ticket.address && (
+        <>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Lokasi</p>
+          <p className="text-slate-600 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {ticket.address}</p>
+        </>
+      )}
+      {children}
+      <button aria-label="Tutup" onClick={onTutup}
+        className="absolute top-3 right-3 w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-sm">✕</button>
+    </div>
+  );
+}
 
 export function TicketDetailPopup({
   selectedTicket, currentUser, currentUserTeamType, canManageTickets, users,
@@ -71,29 +95,14 @@ export function TicketDetailPopup({
 
           <div className={`bg-white rounded-kartu shadow-modal overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
             style={{ maxHeight: "94vh" }}>
-            <div className="px-5 py-4 pr-12 shrink-0 relative border-b border-slate-100">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-slate-600">
-                <span><IkonTeks nama="🎫" />Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
-                <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
-                {selectedTicket.services_status && <span>Services: {selectedTicket.services_status}</span>}
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
-              <h2 className="text-lg font-bold text-slate-800 leading-tight">{selectedTicket.project_name}</h2>
-              {selectedTicket.address && (
-                <>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Lokasi</p>
-                  <p className="text-slate-600 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {selectedTicket.address}</p>
-                </>
-              )}
+            <KepalaDetailTicket ticket={selectedTicket} onTutup={() => { onClose(); setShowUpdateForm(false); }}>
               {selectedTicket.status === "Onsite" && (
                 <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
                   className="tombol-kedua mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-kontrol text-[11px] font-bold">
                   <IkonTeks nama="🗓" />Lihat Jadwal Reminder
                 </button>
               )}
-              <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
-                className="absolute top-3 right-3 w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-sm">✕</button>
-            </div>
+            </KepalaDetailTicket>
 
             <IsiDetailTicket
               selectedTicket={selectedTicket} currentUser={currentUser} setSupAssignTicket={setSupAssignTicket} setSupAssignTo={setSupAssignTo} canManageTickets={canManageTickets} bukaAdminEdit={bukaAdminEdit}
