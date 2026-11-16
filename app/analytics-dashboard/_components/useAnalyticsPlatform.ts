@@ -114,18 +114,23 @@ export function useAnalyticsPlatform(k: AnalyticsPlatformKonteks) {
         source:      'audit_trail' as const,
       }));
 
-      const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => ({
-        id:          r.id,
-        user_name:   r.handler_name ?? '—',
-        action:      r.action_taken ?? r.new_status ?? '—',
-        module:      'ticket',
-        target_name: r.ticket_id ? `Tiket #${String(r.ticket_id).slice(0,8)}` : null,
-        old_value:   null,
-        new_value:   r.new_status ?? null,
-        notes:       r.notes ?? null,
-        created_at:  r.created_at,
-        source:      'activity_logs' as const,
-      }));
+      const fromActivity: AuditRow[] = ((actRes.data ?? []) as any[]).map(r => {
+        const status = String(r.new_status ?? '').trim();
+        const catatan = [r.action_taken, r.notes]
+          .map(v => String(v ?? '').trim()).filter(Boolean).join(' · ');
+        return {
+          id:          r.id,
+          user_name:   r.handler_name || '—',
+          action:      status || 'update',
+          module:      'ticket',
+          target_name: r.ticket_id ? `Tiket #${String(r.ticket_id).slice(0,8)}` : null,
+          old_value:   null,
+          new_value:   null,
+          notes:       catatan || null,
+          created_at:  r.created_at,
+          source:      'activity_logs' as const,
+        };
+      });
 
       const merged = [...fromAudit, ...fromActivity]
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -194,7 +199,8 @@ export function useAnalyticsPlatform(k: AnalyticsPlatformKonteks) {
     return (a.user_name ?? '').toLowerCase().includes(q)
       || (a.target_name ?? '').toLowerCase().includes(q)
       || (a.module ?? '').toLowerCase().includes(q)
-      || (a.action ?? '').toLowerCase().includes(q);
+      || (a.action ?? '').toLowerCase().includes(q)
+      || (a.notes ?? '').toLowerCase().includes(q);
   });
   const auditPaged      = auditFiltered.slice(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE);
   const auditTotalPages = Math.ceil(auditFiltered.length / AUDIT_PAGE_SIZE);
