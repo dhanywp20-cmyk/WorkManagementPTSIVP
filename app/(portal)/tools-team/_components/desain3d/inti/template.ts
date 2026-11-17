@@ -7,8 +7,7 @@ import { daftarRuang } from './ruang';
 import type { Benda, Kotak, Ruang, Titik } from './tipe';
 
 export type KategoriRuang = 'kosong' | 'meeting' | 'auditorium' | 'kelas' | 'control-room' | 'mapping-lengkung' | 'mapping-cembung' | 'mapping-objek' | 'immersive' | 'simulator';
-export interface OpsiKategori { judul: string; ket: string }
-export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ikon: string; opsi?: OpsiKategori[] }[] = [
+export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ikon: string }[] = [
   { id: 'kosong', judul: 'Ruangan kosong', ket: 'Ruang 4 × 4 m, tinggi 3 m tanpa perangkat & furnitur - mulai dari nol', ikon: '🧱' },
   { id: 'meeting', judul: 'Ruangan Meeting', ket: 'Videowall, meja rapat, kamera, mic & speaker plafon', ikon: '🤝' },
   { id: 'auditorium', judul: 'Auditorium', ket: 'Panggung, LED videotron, line array, podium & tribun bertingkat', ikon: '🎭' },
@@ -18,11 +17,7 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending, media server di rack; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
   { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20, rack di ruang teknis (bisa ditambah)', ikon: '🌐' },
-  { id: 'simulator', judul: 'Simulator pesawat 225°', ket: 'Layar cekung bola 225°, pusat bola = mata pilot di pesawat 3 m, PT-MZ882 melayang tanpa bayangan (warping & mask), media server di rack', ikon: '✈️',
-    opsi: [
-      { judul: 'Opsi 1 · Ø 5 m, 225° × 50°', ket: 'Pita bola setinggi 2,1 m · 3 × PT-MZ882 + ET-ELW20 di luar layar (bukaan belakang)' },
-      { judul: 'Opsi 2 · lebar 4 m × tinggi 3 m, atas tertutup', ket: 'Bola Ø 4 m menutup sampai puncak (setengah bola, tanpa celah) · 5 × PT-MZ882 + ET-ELW22 di belakang pilot' },
-    ] },
+  { id: 'simulator', judul: 'Simulator pesawat 225°', ket: 'Layar cekung bola 225° × 50° Ø 5 m, pusat bola = mata pilot di pesawat 3 m + 3 × PT-MZ882 + ET-ELW20 melayang di luar layar (bukaan belakang, tanpa bayangan; warping & mask), media server di rack', ikon: '✈️' },
 ];
 
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
@@ -38,11 +33,6 @@ function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, 
   p = arahkanKe(p, target);
   return { ...p, x: Math.round(p.x * 1000) / 1000, z: Math.round(p.z * 1000) / 1000, elev: Math.round(p.elev * 1000) / 1000 };
 }
-
-export const judulTemplate = (id: KategoriRuang, opsi = 0) => {
-  const k = KATEGORI_RUANG.find(x => x.id === id);
-  return k?.opsi?.length ? `${k.judul} · Opsi ${Math.min(k.opsi.length, opsi + 1)}` : k?.judul ?? id;
-};
 
 export function templateRuang(id: KategoriRuang, opsi = 0): { nama: string; ruang: Ruang; benda: Benda[] } {
   const t = id === 'simulator' && opsi === 1 ? simulatorOpsi2() : templateDasar(id);
