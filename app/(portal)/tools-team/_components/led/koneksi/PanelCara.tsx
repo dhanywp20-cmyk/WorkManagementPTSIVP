@@ -102,7 +102,7 @@ export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
             <div className="grid grid-cols-2 gap-1.5">
               <button type="button" className={kelasTombol} disabled={!pAktif?.jumlah} onClick={() => gantiManual(m => m.map((rt, i) => (i === portAktif - 1 ? [] : rt)))}><Eraser size={13} /> Putus port ini</button>
               <button type="button" className={kelasTombol} disabled={!nPortManual} onClick={() => { gantiManual(m => m.filter((_, i) => i !== portAktif - 1)); setPortAktif(p => Math.max(1, p - 1)); }}><Trash2 size={13} /> Hapus port</button>
-              <button type="button" className={kelasTombol} onClick={() => gantiManual(m => m.map(() => []))}><Cable size={13} /> Putus semua</button>
+              <button type="button" className={kelasTombol} onClick={() => { gantiManual(() => [[]]); setPortAktif(1); }}><Cable size={13} /> Putus semua</button>
               <button type="button" className={kelasTombol} onClick={() => keManual(true)}><Wand2 size={13} /> Dari template</button>
             </div>
           </>

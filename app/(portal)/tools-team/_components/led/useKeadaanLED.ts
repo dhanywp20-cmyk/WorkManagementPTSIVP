@@ -29,6 +29,7 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     setBit, tegangan, setTegangan, faktorDaya, setFaktorDaya, koneksi, setKoneksi, dayaLED, setDayaLED, bom, setBom, harga, setHarga,
     namaLayar, setNamaLayar, layarLain, setLayarLain, pisahKartu, setPisahKartu, isian, terapkan } = useIsianLED();
   const riwayat = useRiwayat(isian, v => terapkan(v));
+  const [isianAwal] = useState(isian);
   const refData = useMemo(() => gabungRef(refLED.data, isian.refPakai), [refLED.data, isian.refPakai]);
   const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refData;
   const refHilang = [
@@ -58,6 +59,10 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
       const v = d as Partial<typeof isian>;
       terapkan(v); riwayat.mulaiBaru({ ...isian, ...v });
       return true;
+    },
+    kosongkan: () => {
+      const v = { ...isianAwal, pembuat, tanggal: new Date().toISOString().slice(0, 10) };
+      terapkan(v); riwayat.mulaiBaru(v);
     },
   });
 

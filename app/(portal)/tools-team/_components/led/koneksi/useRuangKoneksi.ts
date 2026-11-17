@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { namaBerkas, unduhSvgPNG, unduhUrl } from '../../bersama/cetak';
-import { type PengaturanKoneksi, rantaiDari, susunKoneksi } from './data';
+import { type PengaturanKoneksi, rantaiDari, rapikanManual, susunKoneksi } from './data';
 import { KUNCI_VP, type LayarKoneksi, susunMulti } from './multi';
 import { svgKoneksiMulti, svgPosterKoneksiMulti } from './svg';
 import type { SelRC } from '@/lib/av/hitung';
@@ -37,7 +37,11 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
   const nUnit = d.satuan === 'modul' ? 'modul' : 'cabinet';
   const nPortManual = (s.manual ?? []).length;
   useEffect(() => { if (s.mode === 'manual' && portAktif > Math.max(1, nPortManual)) setPortAktif(Math.max(1, nPortManual)); }, [s.mode, nPortManual, portAktif]);
-  const pilihLayar = (i: number) => { if (i === aktif) return; setAktifIn(i); setPortAktif(1); setAlat(null); };
+  const pilihLayar = (i: number) => {
+    if (i === aktif) return;
+    if (s.manual && rapikanManual(s.manual).length !== s.manual.length) onUbahLayar(aktif, { ...s, manual: rapikanManual(s.manual) });
+    setAktifIn(i); setPortAktif(1); setAlat(null);
+  };
 
   const sRef = useRef(s); sRef.current = s;
   const seret = useRef(false);
@@ -83,7 +87,7 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
   };
 
   const keManual = (dariTemplate: boolean) => {
-    const rantai = dariTemplate || !s.manual ? rantaiDari(susunKoneksi(d, { ...s, mode: 'template' }).hasil) : s.manual;
+    const rantai = dariTemplate || !s.manual ? rantaiDari(susunKoneksi(d, { ...s, mode: 'template' }).hasil) : rapikanManual(s.manual);
     onUbah({ ...s, mode: 'manual', manual: rantai });
     setPortAktif(1); setAlat('kabel');
   };

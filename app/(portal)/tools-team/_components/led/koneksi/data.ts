@@ -42,7 +42,7 @@ export function bersihkanKoneksi(x: unknown): PengaturanKoneksi {
     rcKol: bulat(o.rcKol, 1, 1000), rcBaris: bulat(o.rcBaris, 1, 1000), ppk: bulat(o.ppk, 0, 256),
     lebarKol: lebarKol && tinggiBaris ? lebarKol : null, tinggiBaris: lebarKol && tinggiBaris ? tinggiBaris : null,
     kosong: daftarSel(o.kosong, 4096),
-    manual: Array.isArray(o.manual) ? o.manual.slice(0, 256).map(r => daftarSel(r, 4096)) : null,
+    manual: Array.isArray(o.manual) ? rapikanManual(o.manual.slice(0, 256).map(r => daftarSel(r, 4096))) : null,
     pxPort: bulat(o.pxPort, 1000, 20_000_000),
     rcModel: rcTersimpan(o.rcModel),
     cadangan: pilih(o.cadangan, ['tidak', 'loop', 'controller'] as const, A.cadangan),
@@ -105,6 +105,12 @@ export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
 }
 
 export type Susunan = ReturnType<typeof susunKoneksi>;
+
+export function rapikanManual(m: SelRC[][], sisa = 1): SelRC[][] {
+  let n = m.length;
+  while (n > sisa && !m[n - 1].length) n--;
+  return m.slice(0, Math.max(n, Math.min(sisa, m.length)));
+}
 
 export const rantaiDari = (h: HasilKoneksi): SelRC[][] => h.port.map(p => h.sel.filter(x => x.port === p.port).map(x => [x.c, x.r] as SelRC));
 

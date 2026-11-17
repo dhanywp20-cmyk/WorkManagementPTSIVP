@@ -1,4 +1,4 @@
-import { KONEKSI_AWAL, type DataKoneksi, kodePort } from '../app/(portal)/tools-team/_components/led/koneksi/data';
+import { bersihkanKoneksi, KONEKSI_AWAL, type DataKoneksi, kodePort, rapikanManual } from '../app/(portal)/tools-team/_components/led/koneksi/data';
 import { susunMulti, teksRentangPort } from '../app/(portal)/tools-team/_components/led/koneksi/multi';
 import { svgKoneksiMulti, svgPosterKoneksiMulti } from '../app/(portal)/tools-team/_components/led/koneksi/svg';
 import { ringkasanKoneksiMulti } from '../app/(portal)/tools-team/_components/led/koneksi/teks';
@@ -101,6 +101,15 @@ console.log('\n5. Modul berbeda per screen');
   cek('baris BOM per jenis modul', b.find(x => x.kunci === 'unit')?.qty === 40 && b.find(x => x.kunci === 'unit-2')?.item === 'Cabinet LED P3.91' && b.find(x => x.kunci === 'unit-2')?.qty === 8);
   cek('cadangan per jenis modul', !!b.find(x => x.kunci === 'unit-cadangan-2'));
   cek('tanpa PSU bila semua cabinet', !b.some(x => x.kunci === 'psu'));
+}
+
+console.log('\n6. Port manual kosong tidak menumpuk');
+{
+  const kosong20 = Array.from({ length: 20 }, () => []);
+  cek('port kosong di belakang dibuang, sisa 1', rapikanManual(kosong20).length === 1);
+  cek('port terisi & celah di tengah tetap', JSON.stringify(rapikanManual([[[0, 0]], [], [[1, 0]], [], []])) === JSON.stringify([[[0, 0]], [], [[1, 0]]]));
+  cek('daftar kosong tetap kosong', rapikanManual([]).length === 0);
+  cek('berkas lama dengan 20 port kosong dibersihkan', bersihkanKoneksi({ mode: 'manual', manual: kosong20 }).manual?.length === 1);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
