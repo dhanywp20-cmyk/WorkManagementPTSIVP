@@ -1,6 +1,6 @@
 'use client';
 import { Ikon } from '@/components/shared/Ikon';
-import { judulTemplate, KATEGORI_RUANG } from '../inti';
+import { KATEGORI_RUANG } from '../inti';
 import type { AlatDesain } from './alat';
 
 const tanggal = (iso: string) => {
@@ -49,20 +49,6 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
                   )}
                 </span>
               </button>
-              {k.opsi && (
-                <div className="grid gap-1.5 border-t border-slate-100 px-3 py-2" role="group" aria-label={`Pilihan template ${k.judul}`}>
-                  {k.opsi.map((o, i) => {
-                    const dipakai = asal.jenis === 'template' && asal.nama === judulTemplate(k.id, i);
-                    return (
-                      <button key={o.judul} type="button" onClick={() => void pilihKategori(k.id, i)} disabled={memuat} aria-pressed={dipakai}
-                        className={`rounded-lg border px-2.5 py-1.5 text-left transition-colors disabled:opacity-60 ${dipakai ? 'border-blue-400 bg-white ring-1 ring-blue-300' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'}`}>
-                        <span className="block text-[12px] font-bold text-slate-800">{o.judul}</span>
-                        <span className="block mt-0.5 text-[11.5px] leading-snug text-slate-500">{o.ket}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
               {bolehAtur && k.id !== 'kosong' && (
                 <div className="flex flex-wrap gap-1.5 border-t border-slate-100 bg-slate-50/60 px-3 py-1.5">
                   <button type="button" onClick={() => jadikanDefault(k.id)} disabled={!!sibuk} title="Jadikan isi kanvas sekarang template default kategori ini untuk semua pengguna"

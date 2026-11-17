@@ -123,7 +123,7 @@ interface Calon { mesh: T.Mesh; kotak: T.Box3; analitik: PermukaanAnalitik | nul
 
 const tembus = (o: T.Mesh) => {
   const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
-  return !!mt?.transparent && (mt.opacity ?? 1) < 0.6;
+  return !!o.userData.tanpaBayangan || (!!mt?.transparent && (mt.opacity ?? 1) < 0.6);
 };
 
 export type Penembak = (O: T.Vector3, arah: T.Vector3, kecuali?: string) => Tembakan | null;

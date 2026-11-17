@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, cekRuangGerak, hasilPadaJarak, isiDariKatalog, lengkapiDariKatalog, perluDataResmi, type KatalogTdc, type ModelTdc, daftarRuang, KATEGORI_RUANG, luberLayar, masukkanKeLayar, permukaanBenda, sinarProyektor, permukaanPersegi, permukaanRuang, proyektorKeLayar,
-  templateRuang, type Benda, type Ruang, bolaBidang, mataPilot,
+  templateRuang, type Benda, type Ruang, bolaBidang, mataPilot, lensaDari,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -57,12 +57,12 @@ for (const id of ['mapping-lengkung', 'mapping-cembung', 'simulator'] as const) 
 {
   const t = templateRuang('simulator'), proj = proyektorDi(t.benda), bidang = t.benda.find(b => b.jenis === 'bidang')!;
   const pesawat = t.benda.find(b => b.jenis === 'objek')!, bl = bolaBidang(bidang), mata = mataPilot(pesawat);
-  cek('simulator: layar cekung bola Ø 5 m (jari-jari 2,5 m), busur 225° × tegak 50° (±25°)', bidang.bentukBidang === 'bola' && bidang.jariBidang === 2.5 && bidang.busur === 225
-    && Math.abs((bl.fiM * 180) / Math.PI - 25) < 0.05);
+  cek('simulator (contoh Opsi 3): layar cekung bola Ø 4 m (jari-jari 2 m), busur 225°, tinggi 3 m, atas tertutup sampai puncak', bidang.bentukBidang === 'bola' && bidang.jariBidang === 2 && bidang.busur === 225
+    && bidang.h === 3 && bidang.atasBola === 90);
   cek('simulator: pesawat 3 m, mata pilot tepat di pusat bola (± 1 cm)', pesawat.bentukObjek === 'pesawat' && pesawat.d === 3
     && Math.hypot(mata[0] - bidang.x, mata[1] - (bidang.elev + bl.yP), mata[2] - (bidang.z + bl.zP)) < 0.01);
-  cek('simulator: 3 proyektor melayang di luar bola (di bukaan belakang, >= 40 cm di luar layar) & di bawah plafon',
-    proj.length === 3 && proj.every(p => p.tanpaTiang && Math.hypot(p.x - mata[0], p.z - mata[2]) >= bl.R + 0.4 && p.elev >= 2 && p.elev + p.h <= t.ruang.t));
+  cek('simulator: 4 proyektor melayang di luar bola (lensa >= 10 cm di luar layar) & di bawah plafon',
+    proj.length === 4 && proj.every(p => { const O = lensaDari(p).O; return p.tanpaTiang && Math.hypot(O[0] - mata[0], O[1] - mata[1], O[2] - mata[2]) >= bl.R + 0.1 && p.elev + p.h <= t.ruang.t; }));
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');
@@ -113,6 +113,16 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
     /const satuSel = \(q: \(Kena \| null\)\[\]\): q is Kena\[\] => q\.every\(x => !!x && x\.id === q\[0\]!\.id && sePermukaan\(q\[0\]!, x\)\)/.test(sinar)
     && /else tepiHalus\(s4,/.test(sinar));
   cek('tepi bayangan & tepi layar dicari dengan bagi dua sinar (tidak bertangga selebar sub-sel)', /if \(anggota\(h\)\) \{ lo = t; kenaLo = h; \} else hi = t;/.test(sinar));
+  cek('bagi dua adaptif sampai ± 2 mm di permukaan: sinar miring di tepi layar tetap rapat ke bingkai',
+    /TEPAT = 0\.002/.test(sinar) && /if \(n >= langkahBagi && \(\(hi - lo\) \* sudut \* kenaLo\.p\.distanceTo\(O\)\) \/ Math\.max\(0\.1, kenaLo\.cos\) < TEPAT\) break;/.test(sinar));
+  cek('sudut layar (dua tepi bertemu di satu sub-sel) ikut terisi: titik tepi tambahan di antara dua titik potong',
+    /for \(const f of \[0\.25, 0\.5, 0\.75\]\)/.test(sinar) && /poli\.splice\(ie \+ 1, 0, \.\.\.baru\);/.test(sinar));
+  cek('sel datar di sebelah sel tepi ikut dipecah halus (ujung sudut layar yang menyembul ke sel lantai tidak hilang)', /if \(satu && !lengkung && \(kasar \|\| !dekatTepi\(i, j\)\)\)/.test(sinar));
+  const D3 = 'app/(portal)/tools-team/_components/desain3d/';
+  cek('lis / bingkai layar tidak menghalangi sinar: tanpa bayangan & dilewati penembak sinar',
+    /const garisTepi = \(m: T\.Mesh\) => \{ m\.userData\.tanpaBayangan = true; return m; \};/.test(readFileSync(`${D3}bangun/mapping.ts`, 'utf8'))
+    && /return !!o\.userData\.tanpaBayangan \|\|/.test(readFileSync(`${D3}mesin/penembak.ts`, 'utf8'))
+    && /isMesh && !o\.userData\.tanpaBayangan\) \{ o\.castShadow = true;/.test(readFileSync(`${D3}bangun/index.ts`, 'utf8')));
   cek('pojok ruangan (lantai-dinding) bukan "satu permukaan": dibedakan per mesh & normal', /if \(a\.kunci === b\.kunci\) return d > 0\.7;/.test(sinar));
   cek('bidang gambar diangkat tegak lurus permukaan (tidak tenggelam di layar lengkung yang disinari miring)',
     /hit\.titik\.clone\(\)\.addScaledVector\(n, ANGKAT\)/.test(sinar) && /melengkung\(q\)/.test(sinar));

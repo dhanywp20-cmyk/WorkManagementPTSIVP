@@ -22,11 +22,11 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       if (!pilih || c.meleset[i] < pilih.c.meleset[pilih.i]) pilih = { s, c, i };
     }
     if (!pilih) return null;
-    const { s, c, i } = pilih, baik = c.tertutup >= 0.99 && c.meleset[i] <= 0.05;
-    const pr = (n: number) => `${f(n * 100, 0)}%`;
+    const { s, c, i } = pilih, baik = c.tertutup >= 0.99 && !c.celah.length && c.meleset[i] <= 0.05;
+    const pr = (n: number) => `${f(n * 100, n > 0.99 && n < 1 ? 1 : 0)}%`;
     return (
       <p className={`text-[12px] font-semibold leading-relaxed ${baik ? 'text-emerald-700' : 'text-amber-700'}`}>
-        Sinar sebenarnya: {s.nama} tertutup {pr(c.tertutup)}{c.celah.length && c.tertutup < 0.99 ? ` (celah ${c.celah.join(', ')})` : ''}, cahaya proyektor ini meleset {pr(c.meleset[i])}
+        Sinar sebenarnya: {s.nama} tertutup {pr(c.tertutup)}{c.celah.length ? ` (celah ${c.celah.join(', ')})` : ''}, cahaya proyektor ini meleset {pr(c.meleset[i])}
         {c.tumpang > 0.01 ? `, area blending ${pr(c.tumpang)}` : ''}.
         {Math.abs(tiltDari(p)) > 1 && layar ? ' Gambar trapesium karena menunduk - Posisikan otomatis memasang proyektor lurus.' : ''}
         {c.meleset[i] > 0.05 && !layar ? ' Cahaya di luar bidang perlu di-mask di media server.' : ''}

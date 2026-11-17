@@ -4,6 +4,8 @@ import { batang, type Konteks, kotak, mat } from './dasar';
 import { bangunPesawat } from './pesawat';
 import type { PermukaanAnalitik } from '../mesin/penembak';
 
+const garisTepi = (m: T.Mesh) => { m.userData.tanpaBayangan = true; return m; };
+
 function layarBola(THREE: typeof T, g: T.Group, b: Benda, warna: number, lis: T.Material) {
   const { R, busur, tb, a0, zP, yP, fiA, fiB } = bolaBidang(b);
   const segA = Math.max(32, Math.round(busur / 2)), segF = Math.max(12, Math.round(((fiA + fiB) * 180) / Math.PI / 4));
@@ -13,7 +15,7 @@ function layarBola(THREE: typeof T, g: T.Group, b: Benda, warna: number, lis: T.
   muka.userData.analitik = { jenis: 'bola', R, cy: yP, cz: zP, a0, tb, fiA, fiB } satisfies PermukaanAnalitik;
   g.add(muka);
   const titik = (a: number, fi: number) => new THREE.Vector3(R * Math.cos(fi) * Math.sin(a), yP + R * Math.sin(fi), zP + R * Math.cos(fi) * Math.cos(a));
-  const garis = (p: T.Vector3[]) => g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), Math.max(12, p.length * 2), 0.02, 6, false), lis));
+  const garis = (p: T.Vector3[]) => g.add(garisTepi(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), Math.max(12, p.length * 2), 0.02, 6, false), lis)));
   const n = Math.max(12, Math.round(busur / 4)), m = Math.max(6, Math.round(segF / 2));
   for (const fi of fiA < Math.PI / 2 - 0.01 ? [-fiB, fiA] : [-fiB]) garis(Array.from({ length: n + 1 }, (_, i) => titik(a0 + (tb * i) / n, fi)));
   if (busur < 360) for (const a of [a0, a0 + tb]) garis(Array.from({ length: m + 1 }, (_, j) => titik(a, -fiB + ((fiA + fiB) * j) / m)));
@@ -30,7 +32,7 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
     muka.position.set(0, b.h / 2, 0.02); muka.userData.analitik = { jenis: 'datar', w, h: b.h } satisfies PermukaanAnalitik; g.add(muka);
     const r = 0.02;
     for (const [x, y, lw, lh] of [[0, 0, w, r], [0, b.h, w, r], [-w / 2, b.h / 2, r, b.h], [w / 2, b.h / 2, r, b.h]] as const) {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(lw + r, lh + r, 0.04), lis); m.position.set(x, y, 0); g.add(m);
+      const m = garisTepi(new THREE.Mesh(new THREE.BoxGeometry(lw + r, lh + r, 0.04), lis)); m.position.set(x, y, 0); g.add(m);
     }
     for (const x of [-w * 0.35, w * 0.35]) g.add(batang(THREE, 0.05, 0.05, lis, x, -0.05, 'kaki', b.h * 0.5));
     return;
@@ -50,7 +52,7 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
     for (let i = 0; i <= n; i++) { const a = mulai + (t * i) / n; p.push(new THREE.Vector3(R * Math.sin(a), y, zPusat + R * Math.cos(a))); }
     return p;
   };
-  for (const y of [0, b.h]) g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(busurTitik(y), busur >= 360), Math.max(16, Math.round(busur / 3)), 0.02, 6, busur >= 360), lis));
+  for (const y of [0, b.h]) g.add(garisTepi(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(busurTitik(y), busur >= 360), Math.max(16, Math.round(busur / 3)), 0.02, 6, busur >= 360), lis)));
   if (busur >= 360) {
     const tutup = new THREE.Mesh(new THREE.CircleGeometry(R, 48), new THREE.MeshStandardMaterial({ color: warna, roughness: 0.9 }));
     tutup.rotation.x = -Math.PI / 2; tutup.position.set(0, b.h, zPusat); g.add(tutup);

@@ -19,7 +19,7 @@ const pusatBola = (b: Benda) => {
 console.log('\n1. Lebar layar simulator bola 225° bisa diubah');
 const t = templateRuang('simulator');
 const bola = t.benda.find(b => b.jenis === 'bidang')!, mata = mataPilot(t.benda.find(b => b.bentukObjek === 'pesawat')!);
-cek(`template simulator tetap layar bola 225° Ø ${bola.w} m`, bola.bentukBidang === 'bola' && bola.busur === 225 && dekat(bola.w, 5));
+cek(`template simulator (contoh Opsi 3) layar bola 225° Ø ${bola.w} m, atas tertutup`, bola.bentukBidang === 'bola' && bola.busur === 225 && dekat(bola.w, 4) && bola.atasBola === 90);
 for (const w of [3.5, 4, 6]) {
   const b = lebarJadi(bola, w), c = pusatBola(b);
   cek(`lebar ${w} m -> Ø ${b.w} m, jari-jari ${b.jariBidang} m, busur tetap ${b.busur}°, pusat bola tetap di mata pilot (geser ${(Math.hypot(c[0] - mata[0], c[1] - mata[1], c[2] - mata[2]) * 100).toFixed(1)} cm)`,
@@ -27,8 +27,11 @@ for (const w of [3.5, 4, 6]) {
 }
 const diputar = { ...bola, rot: 90, x: 3, z: 3.5 } as Benda, pd = pusatBola(diputar), pd2 = pusatBola(lebarJadi(diputar, 3.5));
 cek('layar bola diputar 90°: pusat tetap saat lebar diubah', Math.hypot(pd[0] - pd2[0], pd[1] - pd2[1], pd[2] - pd2[2]) < 0.01);
-const kecil = lebarJadi(bola, 2);
-cek(`bola dikecilkan Ø 2 m: tinggi dijepit ${kecil.h} m (maks ±75°) & pusat tetap di tinggi mata`, kecil.h <= 2 * Math.sin((75 * Math.PI) / 180) + 1e-3 && dekat(pusatBola(kecil)[1], mata[1], 0.01));
+const sin75 = Math.sin((75 * Math.PI) / 180), kecil = lebarJadi(bola, 2);
+cek(`bola atas tertutup dikecilkan Ø 2 m: tetap tertutup, bawah dijepit -75° (tinggi ${kecil.h} m) & pusat tetap di tinggi mata`,
+  kecil.atasBola === 90 && kecil.h <= 1 + sin75 + 1e-3 && dekat(pusatBola(kecil)[1], mata[1], 0.01));
+const pita = terapkanUkuran({ ...bola, atasBola: undefined, h: 2.1 } as Benda), pitaKecil = lebarJadi(pita, 2);
+cek(`bola pita (atas terbuka) dikecilkan Ø 2 m: tinggi dijepit ${pitaKecil.h} m (maks ±75°) & pusat tetap`, pitaKecil.h <= 2 * sin75 + 1e-3 && dekat(pusatBola(pitaKecil)[1], pusatBola(pita)[1], 0.01));
 
 console.log('\n2. Bentuk lain');
 const cekung = terapkanUkuran({ ...bendaBaru('bidang', k, { bentukBidang: 'lengkung', jariBidang: 4, busur: 90 }), id: 'c' } as Benda);
