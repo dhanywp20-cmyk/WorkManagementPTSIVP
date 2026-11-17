@@ -32,7 +32,8 @@ scene.traverse(o => { if ((o as THREE.Mesh).isMesh && o.userData.analitik) anali
 cek('layar bola, cekung & datar ditandai permukaan analitik', analitik.length === 3);
 const calon: THREE.Mesh[] = [];
 const kaca = (m: THREE.Mesh) => { const mt = m.material as THREE.Material; return mt.transparent && mt.opacity < 0.6; };
-scene.traverseVisible(o => { if ((o as THREE.Mesh).isMesh && !kaca(o as THREE.Mesh)) calon.push(o as THREE.Mesh); });
+const lis: THREE.Mesh[] = [];
+scene.traverseVisible(o => { if ((o as THREE.Mesh).isMesh && o.userData.tanpaBayangan) lis.push(o as THREE.Mesh); else if ((o as THREE.Mesh).isMesh && !kaca(o as THREE.Mesh)) calon.push(o as THREE.Mesh); });
 const tembak = buatPenembak(THREE, akar);
 const rc = new THREE.Raycaster(); rc.near = 0.03; rc.far = 80;
 let seed = 11;
@@ -58,7 +59,10 @@ sinar.forEach((_, i) => {
 selisihAnalitik = selisihAnalitik.sort((x, y) => x - y);
 const median = selisihAnalitik[Math.floor(selisihAnalitik.length / 2)] ?? 0;
 cek(`benda pertama yang kena sama untuk ${((samaMesh / sinar.length) * 100).toFixed(2)}% dari ${sinar.length} sinar (${kena} kena benda)`, samaMesh / sinar.length >= 0.995 && kena > 1000);
-cek(`jarak ke segitiga (pesawat, lis, kaki) identik (selisih maks ${selisihSegitiga.toExponential(1)} m)`, selisihSegitiga < 1e-9);
+cek(`jarak ke segitiga (pesawat, kaki) identik (selisih maks ${selisihSegitiga.toExponential(1)} m)`, selisihSegitiga < 1e-9);
+const semua = [...calon, ...lis], kenaLis = sinar.filter(([O, d]) => { rc.set(O, d); const h = rc.intersectObjects(semua, false)[0]; return !!h && lis.includes(h.object as THREE.Mesh); });
+cek(`lis / bingkai tepi layar (${lis.length} mesh) dilewati sinar: tidak memotong gambar di tepi layar (${kenaLis.length} sinar lewat lis)`,
+  lis.length >= 3 && kenaLis.length > 0 && kenaLis.every(([O, d]) => !lis.includes(tembak(O, d)?.mesh as THREE.Mesh)));
 cek(`jarak ke layar analitik = jarak ke mesh bersegi (median ${(median * 1000).toFixed(2)} mm, ${selisihAnalitik.length} sinar)`, selisihAnalitik.length > 300 && median < 0.002);
 cek(`lebih cepat dari raycaster three.js (${msP.toFixed(0)} ms vs ${msRc.toFixed(0)} ms)`, msP * 2 < msRc);
 const bl = bolaBidang(bola), r = (bola.rot * Math.PI) / 180;

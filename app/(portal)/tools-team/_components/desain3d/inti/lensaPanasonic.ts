@@ -23,11 +23,16 @@ export const LENSA_MZ882 = {
     shiftAtas: 67, shiftBawah: 67, shiftHorizontal: 35, poligonShift: SEGI8_67 },
 } satisfies Record<string, LensaPanasonic>;
 
-const BADAN_MZ882 = { lumen: 8200, rasioProyektor: '16:10', resolusiProyektor: 'WUXGA', kontrasAsli: 3000000 } as const;
+export const LENSA_VMZ7ST: LensaPanasonic = { nama: 'Panasonic PT-VMZ7ST + Supplied lens',
+  koef: { '16:10': [0.827888, 1.041638, 0.0663, 0.0682], '16:9': [0.827897, 1.041647, 0.0663, 0.0682], '4:3': [0.993455, 1.25, 0.0663, 0.0682], '21:9': [0.827898, 1.041677, 0.0663, 0.0682] }, trMin: 0.82789, trMax: 1.04164, koreksiJarak: 0.0663, koreksiJarakTele: 0.0682,
+  shiftAtas: 50, shiftBawah: 25, shiftHorizontal: 35, poligonShift: '-0.5,1; 0.5,1; 0.7,0.5; 0.7,-0.5; -0.7,-0.5; -0.7,0.5' };
 
-export function lensaMZ882(l: LensaPanasonic, tr: number): Partial<Benda> {
+const BADAN_MZ882 = { lumen: 8200, rasioProyektor: '16:10', resolusiProyektor: 'WUXGA', kontrasAsli: 3000000 } as const;
+export const BADAN_VMZ7ST = { lumen: 7000, rasioProyektor: '16:10', resolusiProyektor: 'WUXGA', kontrasAsli: 5000000 } as const;
+
+export function lensaMZ882(l: LensaPanasonic, tr: number, badan: Partial<Benda> = BADAN_MZ882): Partial<Benda> {
   return {
-    ...BADAN_MZ882, trMin: l.trMin, trMax: l.trMax, throwRatio: Math.min(l.trMax, Math.max(l.trMin, tr)),
+    ...badan, trMin: l.trMin, trMax: l.trMax, throwRatio: Math.min(l.trMax, Math.max(l.trMin, tr)),
     koreksiJarak: l.koreksiJarak, koreksiJarakTele: l.koreksiJarakTele,
     shiftAtasMaks: l.shiftAtas / 100, shiftBawahMaks: l.shiftBawah / 100, shiftHMaks: l.shiftHorizontal / 100,
     poligonShift: bacaPoligonShift(l.poligonShift), offsetTetap: undefined, koefRasio: l.koef, sumberLensa: undefined, modelProduk: l.nama.replace(/\s*\(.*\)$/, '').replace('lensa standar ', ''),

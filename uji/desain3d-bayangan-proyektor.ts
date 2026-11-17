@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
   arahkanKe, bayanganProyektor, type Benda, bendaBaru, bomDesain, cakupanProyektor, cekRuangGerak, daftarRuang, dalamPesawatAcuan, KATEGORI_RUANG, mataPilot, permukaanBenda,
-  type Ruang, tandaBentuk, templateRuang, bolaBidang,
+  type Ruang, tandaBentuk, templateRuang, bolaBidang, celahTepi, lensaDari, arahSinar,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -67,6 +67,10 @@ for (const h of bayanganProyektor(t2.benda, { mata: mata2 })) {
 }
 const c2 = cakupanProyektor(proj2, P2);
 cek(`5 proyektor menutup 100% layar sampai puncak tanpa celah (${persen(c2.tertutup)}), blending ${persen(c2.tumpang)}`, c2.tertutup === 1 && !c2.celah.length && c2.tumpang >= 0.1 && c2.tumpang <= 0.35);
+cek('sepanjang tepi tiap gambar (di luar bingkai) selalu disambung gambar lain: tidak ada retak tipis antar proyektor', celahTepi(proj2.map(lensaDari), P2).length === 0);
+const retak = proj2.map((p, i) => (i === 3 ? { ...p, rot: p.rot + 1.5 } : p)), cRetak = cakupanProyektor(retak, P2);
+cek(`kalkulator menangkap retak tipis yang lolos dari sampel grid (proyektor 4 diputar 1,5° -> ${persen(cRetak.tertutup)}, celah ${cRetak.celah.join(', ')})`,
+  celahTepi(retak.map(lensaDari), P2).length > 0 && cRetak.tertutup < 1 && cRetak.celah.includes('tengah'));
 const masalah2 = cekRuangGerak(t2.benda, t2.ruang).filter(x => x.kode === 'tumpang' || x.kode === 'keluar');
 cek(`proyektor Opsi 2 tidak bertumpuk dengan layar / pesawat & di dalam ruangan${masalah2.length ? ` (${masalah2.map(x => x.pesan).join('; ')})` : ''}`, !masalah2.length);
 const panelKat = readFileSync('app/(portal)/tools-team/_components/desain3d/panel/PanelKategori.tsx', 'utf8');
@@ -74,6 +78,40 @@ const tplKat = readFileSync('app/(portal)/tools-team/_components/desain3d/simpan
 const aksiD = readFileSync('app/(portal)/tools-team/_components/desain3d/aksi/useAksiDesain.ts', 'utf8');
 cek('panel kategori: kartu simulator tanpa tombol Opsi 1 / Opsi 2 (keduanya desain tim di server), klik kartu memasang template bawaan / default Admin',
   !/opsi/i.test(panelKat) && /pilihKategori\(k\.id\)/.test(panelKat) && /const info = daftar\[id\];/.test(tplKat) && /: templateRuang\(id\);/.test(aksiD));
+
+console.log('\n3c. Opsi 3 & Opsi 4: 4 proyektor di bibir layar, di luar bola (tanpa lensa UST)');
+for (const [opsi, model, cocok] of [[2, 'PT-MZ882 + ET-ELW22', /ELW22/], [3, 'PT-VMZ7ST', /VMZ7ST/]] as const) {
+  const tx = templateRuang('simulator', opsi), bx = tx.benda.find(b => b.jenis === 'bidang')!, ox = mataPilot(tx.benda.find(b => b.bentukObjek === 'pesawat')!), bl = bolaBidang(bx);
+  const px = tx.benda.filter(b => b.jenis === 'proyektor'), Px = permukaanBenda(bx), Lx = px.map(lensaDari), C = [bx.x, bx.elev + bl.yP, bx.z + bl.zP], R = bx.jariBidang!;
+  const bibir = [-1, 1].flatMap(s => Array.from({ length: 61 }, (_, q) => {
+    const a = (s * 112.5 * Math.PI) / 180, e = ((-30 + 2 * q) * Math.PI) / 180;
+    return [C[0] + R * Math.cos(e) * Math.sin(a), C[1] + R * Math.sin(e), C[2] - R * Math.cos(e) * Math.cos(a)];
+  }));
+  const keBibir = Lx.map(l => Math.min(...bibir.map(t => Math.hypot(l.O[0] - t[0], l.O[1] - t[1], l.O[2] - t[2]))));
+  const keLuar = Lx.map(l => Math.hypot(l.O[0] - C[0], l.O[1] - C[1], l.O[2] - C[2]) - R);
+  cek(`${tx.nama}: 4 × ${model}, Mask & melayang; lensa ${Math.min(...keLuar).toFixed(2)}-${Math.max(...keLuar).toFixed(2)} m di luar bola, ≤ ${Math.max(...keBibir).toFixed(2)} m dari bibir bukaan`,
+    px.length === 4 && px.every(p => cocok.test(p.nama) && cocok.test(p.modelProduk ?? '') && p.maskBidang && p.tanpaTiang && p.elev + p.h < tx.ruang.t)
+    && keLuar.every(d => d >= 0.1) && keBibir.every(d => d <= 0.7) && px.every(p => (p.throwRatio ?? 0) > 0.8));
+  const tengah = bx.x, sasaran = Lx.map(l => { const r = arahSinar(l, 0, 0), t = Px.kena(l.O, r) ?? 0; return [l.O[0] + r[0] * t, l.O[1] + r[1] * t]; });
+  const putar = (a: number) => { const m = ((a % 360) + 360) % 360; return Math.min(m, 360 - m); };
+  const cermin = (i: number, j: number) => Math.abs(Lx[i].O[0] + Lx[j].O[0] - 2 * tengah) < 0.003 && Math.abs(Lx[i].O[1] - Lx[j].O[1]) < 0.003 && Math.abs(Lx[i].O[2] - Lx[j].O[2]) < 0.003
+    && Math.abs((px[i].tilt ?? 0) - (px[j].tilt ?? 0)) < 0.05 && putar(px[i].rot + px[j].rot) < 0.05
+    && Math.abs(sasaran[i][0] + sasaran[j][0] - 2 * tengah) < 0.005 && Math.abs(sasaran[i][1] - sasaran[j][1]) < 0.005;
+  cek('  sinar tersusun cermin kiri-kanan (P1 ↔ P2 bawah, P3 ↔ P4 atas: lensa, pan / tilt & tengah gambar), menyilang ke sisi seberang',
+    cermin(0, 1) && cermin(2, 3) && px[0].x < tengah && px[2].x < tengah
+    && Lx.every((l, i) => Math.sign(l.O[0] - tengah) === -Math.sign(sasaran[i][0] - tengah)) && sasaran[0][1] < sasaran[2][1] && sasaran[1][1] < sasaran[3][1]);
+  const cx = cakupanProyektor(px, Px);
+  cek(`  menutup ${persen(cx.tertutup)} layar sampai puncak, blending ${persen(cx.tumpang)}, tanpa retak antar gambar`,
+    cx.tertutup === 1 && !cx.celah.length && cx.tumpang >= 0.1 && cx.tumpang <= 0.35 && celahTepi(Lx, Px).length === 0);
+  const bx2 = bayanganProyektor(tx.benda, { mata: ox }), antar = bx2.map(h => h.terhalang.filter(x => px.some(p => p.nama === x.nama)).reduce((s, x) => s + x.porsi, 0));
+  cek(`  tanpa bayangan proyektor lain / punggung layar / pesawat; gambar sampai di layar ${bx2.map(h => persen(h.keLayar)).join(', ')}`,
+    antar.every(a => a === 0) && bx2.every(h => h.balikLayar === 0 && h.terlihatPilot === 0 && h.keLayar > 0.9));
+  cek('  tidak bertumpuk dengan layar / pesawat & di dalam ruangan', !cekRuangGerak(tx.benda, tx.ruang).some(x => x.kode === 'tumpang' || x.kode === 'keluar'));
+}
+const vmz = templateRuang('simulator', 3).benda.find(b => b.jenis === 'proyektor')!;
+cek('PT-VMZ7ST: 7.000 lm, WUXGA 16:10, kontras 5.000.000:1, TR 0,83-1,04, shift V +50/-25 % & H ±35 %',
+  vmz.lumen === 7000 && vmz.resolusiProyektor === 'WUXGA' && vmz.rasioProyektor === '16:10' && vmz.kontrasAsli === 5000000 && vmz.trMin === 0.82789 && vmz.trMax === 1.04164
+  && vmz.shiftAtasMaks === 0.5 && vmz.shiftBawahMaks === 0.25 && vmz.shiftHMaks === 0.35);
 
 console.log('\n4. Opsi "Melayang (tanpa tiang)"');
 const semuaTemplate = KATEGORI_RUANG.flatMap(x => templateRuang(x.id).benda.filter(b => b.jenis === 'proyektor'));

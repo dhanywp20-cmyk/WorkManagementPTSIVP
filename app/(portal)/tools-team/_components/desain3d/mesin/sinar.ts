@@ -166,7 +166,18 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
       return (c * Math.acos(Math.min(1, d))) / 8 > ANGKAT * 0.5;
     };
-    const LANGKAH_BAGI = 4, langkahBagi = kasar ? 2 : LANGKAH_BAGI;
+    const LANGKAH_BAGI = 4, langkahBagi = kasar ? 2 : LANGKAH_BAGI, BAGI_MAKS = kasar ? 2 : 10, TEPAT = 0.002;
+    type Titik2 = { k: Kena; u: number; v: number; x?: 1 | 2 };
+    const bagiDua = (a: number[], b: number[], kenaA: Kena, anggota: (x: Kena | null) => x is Kena): Titik2 => {
+      let lo = 0, hi = 1, kenaLo = kenaA;
+      const sudut = Math.hypot(b[0] - a[0], b[1] - a[1]) * w1;
+      for (let n = 0; n < BAGI_MAKS; n++) {
+        if (n >= langkahBagi && ((hi - lo) * sudut * kenaLo.p.distanceTo(O)) / Math.max(0.1, kenaLo.cos) < TEPAT) break;
+        const t = (lo + hi) / 2, h = tembakUV(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t);
+        if (anggota(h)) { lo = t; kenaLo = h; } else hi = t;
+      }
+      return { k: kenaLo, u: a[0] + (b[0] - a[0]) * lo, v: a[1] + (b[1] - a[1]) * lo };
+    };
     const tepiHalus = (s4: (Kena | null)[], uvS: number[][], jarak: number, S: number) => {
       const sudah: Kena[] = [];
       for (const rep of s4) {
@@ -177,20 +188,25 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         const anggota = (x: Kena | null): x is Kena => !!x && x.id === rep.id && sePermukaan(rep, x);
         const dalam = s4.map(anggota);
         if (dalam[0] === dalam[2] && dalam[1] === dalam[3] && dalam[0] !== dalam[1]) continue;
-        const poli: { k: Kena; u: number; v: number }[] = [];
+        const poli: Titik2[] = [];
         for (let k = 0; k < 4; k++) {
           const k2 = (k + 1) % 4;
           if (dalam[k]) poli.push({ k: s4[k]!, u: uvS[k][0], v: uvS[k][1] });
           if (dalam[k] === dalam[k2]) continue;
           const [ia, ib] = dalam[k] ? [k, k2] : [k2, k];
-          const di = (t: number) => [uvS[ia][0] + (uvS[ib][0] - uvS[ia][0]) * t, uvS[ia][1] + (uvS[ib][1] - uvS[ia][1]) * t];
-          let lo = 0, hi = 1, kenaLo = s4[ia]!;
-          for (let n = 0; n < langkahBagi; n++) {
-            const t = (lo + hi) / 2, [u, v] = di(t), h = tembakUV(u, v);
-            if (anggota(h)) { lo = t; kenaLo = h; } else hi = t;
+          poli.push({ ...bagiDua(uvS[ia], uvS[ib], s4[ia]!, anggota), x: dalam[k] ? 1 : 2 });
+        }
+        const ie = poli.findIndex((p, s) => p.x === 1 && poli[(s + 1) % poli.length].x === 2);
+        if (!kasar && ie >= 0) {
+          const di = uvS.filter((_, k) => dalam[k]), A = [0, 1].map(s => di.reduce((t, x) => t + x[s], 0) / di.length);
+          const ke = (s: number, d: number) => (Math.abs(d) < 1e-12 ? Infinity : ((d > 0 ? Math.max(uvS[0][s], uvS[2][s]) : Math.min(uvS[0][s], uvS[2][s])) - A[s]) / d);
+          const E1 = poli[ie], E2 = poli[(ie + 1) % poli.length], baru: Titik2[] = [];
+          for (const f of [0.25, 0.5, 0.75]) {
+            const M = [E1.u + (E2.u - E1.u) * f, E1.v + (E2.v - E1.v) * f], d = [M[0] - A[0], M[1] - A[1]], t = Math.min(ke(0, d[0]), ke(1, d[1]));
+            const B = [A[0] + d[0] * t, A[1] + d[1] * t], T = [M[0] + (B[0] - M[0]) * 0.1, M[1] + (B[1] - M[1]) * 0.1], hT = t > 1 && t < 1e6 ? tembakUV(T[0], T[1]) : null;
+            if (anggota(hT)) baru.push(bagiDua(T, B, hT, anggota));
           }
-          const [u, v] = di(lo);
-          poli.push({ k: kenaLo, u, v });
+          poli.splice(ie + 1, 0, ...baru);
         }
         if (poli.length < 3) continue;
         const batas = batasSel(jarak, Math.min(...poli.map(x => x.k.cos)), S);
@@ -205,21 +221,19 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         }
       }
     };
-    const gu = (i: number) => i / (NX - 1), gv = (j: number) => j / (NY - 1);
-    const S_LENGKUNG = 8, S_TEPI = 4;
+    const gu = (i: number) => i / (NX - 1), gv = (j: number) => j / (NY - 1), S_LENGKUNG = 8, S_TEPI = 4, KX = NX - 1;
+    const selQ = (i: number, j: number) => [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => rinci[b * NX + a]);
+    const campur = Array.from({ length: (NY - 1) * KX }, (_, s) => !satuSel(selQ(s % KX, Math.floor(s / KX))));
+    const dekatTepi = (i: number, j: number) => [-1, 0, 1].some(b => [-1, 0, 1].some(a => i + a >= 0 && i + a < KX && j + b >= 0 && j + b < NY - 1 && campur[(j + b) * KX + i + a]));
     for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
-      const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => rinci[b * NX + a]);
-      const ada = q.filter((x): x is Kena => !!x);
+      const q = selQ(i, j), ada = q.filter((x): x is Kena => !!x);
       if (!ada.length) continue;
       const jarak = ada.reduce((s, x) => s + x.p.distanceTo(O), 0) / ada.length;
-      const satu = satuSel(q);
-      if (satu && (kasar || !melengkung(q))) { isi(q, batasSel(jarak, Math.min(...q.map(x => x.cos))), gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
+      const satu = satuSel(q), lengkung = satu && !kasar && melengkung(q);
+      if (satu && !lengkung && (kasar || !dekatTepi(i, j))) { isi(q, batasSel(jarak, Math.min(...q.map(x => x.cos))), gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
       if (kasar) { tepiHalus(q, [[gu(i), gv(j)], [gu(i + 1), gv(j)], [gu(i + 1), gv(j + 1)], [gu(i), gv(j + 1)]], jarak, 1); continue; }
-      const S = satu ? S_LENGKUNG : S_TEPI;
-      const sub: (Kena | null)[] = [];
-      for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) {
-        sub.push(tembakUV(gu(i + a / S), gv(j + b / S)));
-      }
+      const S = lengkung ? S_LENGKUNG : S_TEPI, sub: (Kena | null)[] = [];
+      for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) sub.push(tembakUV(gu(i + a / S), gv(j + b / S)));
       const t = (a: number, b: number) => sub[b * (S + 1) + a];
       for (let b = 0; b < S; b++) for (let a = 0; a < S; a++) {
         const s4 = [t(a, b), t(a + 1, b), t(a + 1, b + 1), t(a, b + 1)];

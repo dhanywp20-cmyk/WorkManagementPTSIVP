@@ -1,5 +1,5 @@
 import { bendaBaru, contohAwal, setRuangKelas } from './katalog';
-import { LENSA_MZ882, type LensaPanasonic, lensaMZ882 } from './lensaPanasonic';
+import { BADAN_VMZ7ST, LENSA_MZ882, LENSA_VMZ7ST, type LensaPanasonic, lensaMZ882 } from './lensaPanasonic';
 import { bolaBidang, lengkungDari, PESAWAT_ACUAN, terapkanUkuran } from './produk';
 import { arahkanKe, keDunia, lensaProyektor } from './proyektor';
 import { isiRakTemplate } from './rak';
@@ -22,9 +22,9 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
 
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
 
-function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, tr: number, nama: string): Benda {
+function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, tr: number, nama: string, badan?: Partial<Benda>): Benda {
   const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' });
-  let p: Benda = { ...p0, ...lensaMZ882(ln, tr), x: lensa[0], z: lensa[2], elev: lensa[1] - p0.h / 2, offsetLensa: 0, nama };
+  let p: Benda = { ...p0, ...lensaMZ882(ln, tr, badan), x: lensa[0], z: lensa[2], elev: lensa[1] - p0.h / 2, offsetLensa: 0, nama };
   for (let i = 0; i < 4; i++) {
     p = arahkanKe(p, target);
     const l = keDunia(p, lensaProyektor(p));
@@ -34,17 +34,46 @@ function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, 
   return { ...p, x: Math.round(p.x * 1000) / 1000, z: Math.round(p.z * 1000) / 1000, elev: Math.round(p.elev * 1000) / 1000 };
 }
 
+/** Cermin sinar proyektor `kiri` terhadap bidang x = cx: pan dicerminkan, tilt sama, lalu badan `baru` digeser sampai lensanya
+ *  tepat di cermin lensa kiri. Lensa tidak di tengah badan, jadi badannya tidak simetris, tetapi gambarnya simetris persis. */
+function cerminProyektor(kiri: Benda, baru: Benda, cx: number): Benda {
+  const l = keDunia(kiri, lensaProyektor(kiri));
+  const p: Benda = { ...baru, rot: Math.round(((360 - kiri.rot) % 360) * 10) / 10, tilt: kiri.tilt, x: 2 * cx - kiri.x, z: kiri.z, elev: kiri.elev };
+  const m = keDunia(p, lensaProyektor(p));
+  return { ...p, x: r3(p.x + 2 * cx - l[0] - m[0]), z: r3(p.z + l[2] - m[2]), elev: r3(p.elev + l[1] - m[1]) };
+}
+
 export function templateRuang(id: KategoriRuang, opsi = 0): { nama: string; ruang: Ruang; benda: Benda[] } {
-  const t = id === 'simulator' && opsi === 1 ? simulatorOpsi2() : templateDasar(id);
+  const bola = id === 'simulator' ? SIMULATOR_BOLA[opsi - 1] : undefined;
+  const t = bola ? simulatorBola(bola) : templateDasar(id);
   return { ...t, benda: t.benda.map(b => (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja' ? { ...b, tanpaTiang: true } : b)) };
 }
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 
-function simulatorOpsi2(): { nama: string; ruang: Ruang; benda: Benda[] } {
+/** Lensa (dx, y, dz dari pusat bola) → arah tembak (azimut, elevasi di bola), lalu nama letak. */
+type Baris = [number, number, number, number, number, string];
+type SimulatorBola = { opsi: string; model: string; lensa: LensaPanasonic; badan?: Partial<Benda>; susunan: Baris[]; cermin?: true };
+/** Proyektor di bibir kiri + cerminnya di bibir kanan (dipakai bersama `cermin: true`); sinar menyilang ke sisi seberang. */
+const silang = (kiri: Baris[]): Baris[] => kiri.flatMap(([dx, y, dz, az, el, ke]): Baris[] =>
+  [[dx, y, dz, az, el, `bibir kiri → kanan ${ke}`], [-dx, y, dz, -az, el, `bibir kanan → kiri ${ke}`]]);
+const SIMULATOR_BOLA: SimulatorBola[] = [
+  { opsi: 'Opsi 2', model: 'PT-MZ882 + ET-ELW22', lensa: LENSA_MZ882.ELW22, susunan: [
+    [0.017, 2.443, 1.475, -94.294, -8.375, 'layar kiri'], [0, 2.295, 0.734, 0.5, -2.814, 'layar tengah'], [-0.017, 1.95, 1.455, 94.794, -8.375, 'layar kanan'],
+    [0.526, 3.171, 1.349, -62.373, 40.217, 'atas kiri'], [-0.526, 3.171, 1.349, 62.373, 40.217, 'atas kanan'],
+  ] },
+  { opsi: 'Opsi 3', model: 'PT-MZ882 + ET-ELW22', lensa: LENSA_MZ882.ELW22, susunan: silang([
+    [-1.586, 2.203, 1.303, 64.353, -7.418, 'bawah'], [-1.02, 2.941, 0.985, 74.249, 71.747, 'atas'],
+  ]), cermin: true },
+  { opsi: 'Opsi 4', model: 'PT-VMZ7ST', lensa: LENSA_VMZ7ST, badan: BADAN_VMZ7ST, susunan: silang([
+    [-1.737, 2.239, 1.286, 62.664, -1.976, 'bawah'], [-1.015, 2.915, 1.001, 90.047, 79.848, 'atas'],
+  ]), cermin: true },
+];
+
+function simulatorBola(s: SimulatorBola): { nama: string; ruang: Ruang; benda: Benda[] } {
   const ruang: Ruang = { p: 7, l: 7, t: 4, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
   const k = daftarRuang(ruang)[0];
-  const R = 2, cx = 3.5, mata = PESAWAT_ACUAN.mataY, ELW = LENSA_MZ882.ELW22, tr = ELW.trMin;
+  const R = 2, cx = 3.5, mata = PESAWAT_ACUAN.mataY;
   const b0 = terapkanUkuran({ ...bendaBaru('bidang', k, { bentukBidang: 'bola', jariBidang: R, busur: 225 }), atasBola: 90, h: 3, x: cx });
   const bidang: Benda = { ...b0, nama: 'Layar simulator bola 225° 4 × 3 m (atas tertutup)', elev: r3(mata - bolaBidang(b0).yP), z: r3(b0.d / 2 + 0.6) };
   const pusatZ = bidang.z + bolaBidang(bidang).zP;
@@ -53,12 +82,10 @@ function simulatorOpsi2(): { nama: string; ruang: Ruang; benda: Benda[] } {
     const a = (az * Math.PI) / 180, e = (el * Math.PI) / 180;
     return [cx + R * Math.cos(e) * Math.sin(a), mata + R * Math.sin(e), pusatZ - R * Math.cos(e) * Math.cos(a)];
   };
-  const SUSUNAN: [number, number, number, number, number, string][] = [
-    [0.017, 2.423, 1.455, -94.794, -8.375, 'layar kiri'], [0, 2.275, 0.714, 0, -2.314, 'layar tengah'], [-0.017, 1.95, 1.455, 94.794, -8.375, 'layar kanan'],
-    [0.506, 3.151, 1.329, -62.873, 40.217, 'atas kiri'], [-0.506, 3.151, 1.329, 62.873, 40.217, 'atas kanan'],
-  ];
-  const proj = SUSUNAN.map(([dx, y, dz, az, el, letak], i) => ({ ...proyektorKe(k, [cx + dx, y, pusatZ + dz], titik(az, el), ELW, tr, `PT-MZ882 + ET-ELW22 ${i + 1} (${letak})`), maskBidang: true }));
-  return { nama: 'Simulator pesawat 225° · Opsi 2', ruang, benda: [bidang, pesawat, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
+  const proj: Benda[] = s.susunan.map(([dx, y, dz, az, el, letak], i) =>
+    ({ ...proyektorKe(k, [cx + dx, y, pusatZ + dz], titik(az, el), s.lensa, s.lensa.trMin, `${s.model} ${i + 1} (${letak})`, s.badan), maskBidang: true }));
+  if (s.cermin) for (let i = 1; i < proj.length; i += 2) proj[i] = cerminProyektor(proj[i - 1], proj[i], cx);
+  return { nama: `Simulator pesawat 225° · ${s.opsi}`, ruang, benda: [bidang, pesawat, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
 }
 
 function templateDasar(id: KategoriRuang): { nama: string; ruang: Ruang; benda: Benda[] } {

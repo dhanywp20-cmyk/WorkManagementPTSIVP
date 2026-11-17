@@ -113,6 +113,16 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
     /const satuSel = \(q: \(Kena \| null\)\[\]\): q is Kena\[\] => q\.every\(x => !!x && x\.id === q\[0\]!\.id && sePermukaan\(q\[0\]!, x\)\)/.test(sinar)
     && /else tepiHalus\(s4,/.test(sinar));
   cek('tepi bayangan & tepi layar dicari dengan bagi dua sinar (tidak bertangga selebar sub-sel)', /if \(anggota\(h\)\) \{ lo = t; kenaLo = h; \} else hi = t;/.test(sinar));
+  cek('bagi dua adaptif sampai ± 2 mm di permukaan: sinar miring di tepi layar tetap rapat ke bingkai',
+    /TEPAT = 0\.002/.test(sinar) && /if \(n >= langkahBagi && \(\(hi - lo\) \* sudut \* kenaLo\.p\.distanceTo\(O\)\) \/ Math\.max\(0\.1, kenaLo\.cos\) < TEPAT\) break;/.test(sinar));
+  cek('sudut layar (dua tepi bertemu di satu sub-sel) ikut terisi: titik tepi tambahan di antara dua titik potong',
+    /for \(const f of \[0\.25, 0\.5, 0\.75\]\)/.test(sinar) && /poli\.splice\(ie \+ 1, 0, \.\.\.baru\);/.test(sinar));
+  cek('sel datar di sebelah sel tepi ikut dipecah halus (ujung sudut layar yang menyembul ke sel lantai tidak hilang)', /if \(satu && !lengkung && \(kasar \|\| !dekatTepi\(i, j\)\)\)/.test(sinar));
+  const D3 = 'app/(portal)/tools-team/_components/desain3d/';
+  cek('lis / bingkai layar tidak menghalangi sinar: tanpa bayangan & dilewati penembak sinar',
+    /const garisTepi = \(m: T\.Mesh\) => \{ m\.userData\.tanpaBayangan = true; return m; \};/.test(readFileSync(`${D3}bangun/mapping.ts`, 'utf8'))
+    && /return !!o\.userData\.tanpaBayangan \|\|/.test(readFileSync(`${D3}mesin/penembak.ts`, 'utf8'))
+    && /isMesh && !o\.userData\.tanpaBayangan\) \{ o\.castShadow = true;/.test(readFileSync(`${D3}bangun/index.ts`, 'utf8')));
   cek('pojok ruangan (lantai-dinding) bukan "satu permukaan": dibedakan per mesh & normal', /if \(a\.kunci === b\.kunci\) return d > 0\.7;/.test(sinar));
   cek('bidang gambar diangkat tegak lurus permukaan (tidak tenggelam di layar lengkung yang disinari miring)',
     /hit\.titik\.clone\(\)\.addScaledVector\(n, ANGKAT\)/.test(sinar) && /melengkung\(q\)/.test(sinar));

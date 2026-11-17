@@ -167,6 +167,31 @@ function disinari(L: Lensa, X: Sampel): boolean {
   return !!k && Math.abs(k.u) <= 0.5 + TOLERANSI_TEPI && Math.abs(k.v) <= 0.5 + TOLERANSI_TEPI && dot(kurang(X.p, L.O), X.n) < 0;
 }
 
+const LANGKAH_TEPI = 160, LUAR_TEPI = 0.002;
+
+function menyinari(L: Lensa, X: Titik, P: Permukaan): boolean {
+  const k = keGambar(L, X);
+  if (!k || Math.abs(k.u) > 0.5 || Math.abs(k.v) > 0.5) return false;
+  const w = kurang(X, L.O), jarak = Math.hypot(w[0], w[1], w[2]), t = P.kena(L.O, [w[0] / jarak, w[1] / jarak, w[2] / jarak]);
+  return t !== null && Math.abs(t - jarak) < 1e-3;
+}
+
+export function celahTepi(lensa: Lensa[], P: Permukaan): Titik[] {
+  const hasil: Titik[] = [];
+  lensa.forEach((L, i) => {
+    for (let k = 0; k <= LANGKAH_TEPI; k++) {
+      const a = k / LANGKAH_TEPI - 0.5, b = 0.5 + LUAR_TEPI;
+      for (const [u, v] of [[a, b], [a, -b], [b, a], [-b, a]]) {
+        const d = arahSinar(L, u, v), t = P.kena(L.O, d);
+        if (t === null) continue;
+        const X: Titik = [L.O[0] + d[0] * t, L.O[1] + d[1] * t, L.O[2] + d[2] * t];
+        if (!lensa.some((M, j) => j !== i && menyinari(M, X, P))) hasil.push(X);
+      }
+    }
+  });
+  return hasil;
+}
+
 export function cakupanProyektor(proyektor: Benda[], P: Permukaan): Cakupan {
   const lensa = proyektor.map(lensaDari);
   let tutup = 0, tumpang = 0;
@@ -183,11 +208,18 @@ export function cakupanProyektor(proyektor: Benda[], P: Permukaan): Cakupan {
     return luar / total;
   });
   const celah = new Set<Cakupan['celah'][number]>();
-  for (const X of kosong) {
+  const tandai = (X: Pick<Sampel, 's' | 't'>) => {
     if (X.t >= 0.9) celah.add('atas'); else if (X.t <= 0.1) celah.add('bawah');
     if (X.s <= 0.1) celah.add('kiri'); else if (X.s >= 0.9) celah.add('kanan');
     if (X.t > 0.1 && X.t < 0.9 && X.s > 0.1 && X.s < 0.9) celah.add('tengah');
+  };
+  kosong.forEach(tandai);
+  const retak = lensa.length > 1 && P.sampel.length ? celahTepi(lensa, P) : [];
+  for (const X of retak.filter((_, i) => i % Math.ceil(retak.length / 40) === 0)) {
+    let dekat = P.sampel[0], jarak = Infinity;
+    for (const S of P.sampel) { const w = kurang(S.p, X), d = dot(w, w); if (d < jarak) { jarak = d; dekat = S; } }
+    tandai(dekat);
   }
-  const N = P.sampel.length;
-  return { nama: P.nama, tertutup: tutup / N, tumpang: tumpang / N, meleset, celah: [...celah] };
+  const N = P.sampel.length, tertutup = tutup / N;
+  return { nama: P.nama, tertutup: retak.length && tertutup >= 1 ? (N - 1) / N : tertutup, tumpang: tumpang / N, meleset, celah: [...celah] };
 }
