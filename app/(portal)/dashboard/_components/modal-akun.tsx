@@ -334,9 +334,9 @@ export function AccountSettingsInline() {
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-left">
                       {['Nama', 'Username', 'Role', 'Divisi', 'No. Telepon'].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
+                        <th key={h} className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 whitespace-nowrap">{h}</th>
                       ))}
-                      <th className="md:sticky md:right-0 bg-slate-50 px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
+                      <th className="md:sticky md:right-0 bg-slate-50 md:shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.18)] px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest text-slate-500 text-right whitespace-nowrap">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -351,12 +351,15 @@ export function AccountSettingsInline() {
                       const rowBg = idx % 2 === 0 ? 'white' : '#fafafa';
                       return (
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
-                          <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
-                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /><LencanaKunci sampai={kunciSampai(user.username)} /></td>
-                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role ?? '')}</span></td>
-                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
-                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
-                          <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
+                          <td className="px-3 py-2.5 font-semibold text-slate-800 min-w-32">{user.full_name}</td>
+                          <td className="px-3 py-2.5 text-slate-600">
+                            <div className="max-w-44 truncate" title={user.username}><Username value={user.username} /></div>
+                            <LencanaKunci sampai={kunciSampai(user.username)} />
+                          </td>
+                          <td className="px-3 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role ?? '')}</span></td>
+                          <td className="px-3 py-2.5 text-slate-600 min-w-24">{divisi}</td>
+                          <td className="px-3 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
+                          <td className="md:sticky md:right-0 md:shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.18)] px-3 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
                                 let d = '', p = '';
