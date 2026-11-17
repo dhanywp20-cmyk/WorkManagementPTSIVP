@@ -180,6 +180,12 @@ export function AccountSettingsInline() {
     if (!editingUser) return;
     const isCabangEdit2 = editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang === true;
     if (isCabangEdit2 && !editPtsDaerah.trim()) { notify('error', 'Alamat Daerah wajib diisi untuk PTS Cabang!'); return; }
+    const passwordBaru = (editingUser.password ?? '').trim();
+    if (passwordBaru) {
+      if (passwordBaru.length < 8) { notify('error', 'Password minimal 8 karakter.'); return; }
+      if (!/[A-Z]/.test(passwordBaru)) { notify('error', 'Password harus mengandung minimal 1 huruf kapital.'); return; }
+      if (!/[0-9]/.test(passwordBaru)) { notify('error', 'Password harus mengandung minimal 1 angka.'); return; }
+    }
     setSaving(true);
     let role = editingUser.role;
     let team_type: string | null = editingUser.team_type ?? null;
@@ -205,6 +211,17 @@ export function AccountSettingsInline() {
     if (role === 'team' && editAccessLevel !== aksesLama) {
       const { error: eAkses } = await adminSetAccessLevel(editingUser.id, editAccessLevel);
       if (eAkses) { setSaving(false); notify('error', 'Data tersimpan, tapi akses gagal diubah: ' + eAkses.message); return; }
+    }
+
+    if (passwordBaru) {
+      const resPw = await fetch('/api/auth/change-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: editingUser.id, newPassword: passwordBaru }),
+      });
+      if (!resPw.ok) {
+        const j = await resPw.json().catch(() => ({}));
+        setSaving(false); notify('error', 'Data tersimpan, tapi password gagal diubah: ' + (j.error || resPw.status)); return;
+      }
     }
 
     const sebar = await propagateUserRename(editingUser, editOrig);
