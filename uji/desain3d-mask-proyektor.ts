@@ -65,7 +65,7 @@ for (const p of proj) {
   const L = lensaDari(p), t0 = performance.now(), m = petaMaskBidang(L, uji, 384, 216);
   ms += performance.now() - t0;
   const acuan = maskAcuan(L, layar, 96, 54), kecil = petaMaskBidang(L, uji, 96, 54);
-  cek(`${p.nama}: ${(isi(m) * 100).toFixed(0)}% gambar di layar, cocok acuan (beda ${(beda(kecil, acuan) * 100).toFixed(2)}%)`, isi(m) > 0.6 && beda(kecil, acuan) < 0.003);
+  cek(`${p.nama}: ${(isi(m) * 100).toFixed(0)}% gambar di layar (sisanya lewat puncak / bukaan belakang di-Mask), cocok acuan (beda ${(beda(kecil, acuan) * 100).toFixed(2)}%)`, isi(m) > 0.5 && beda(kecil, acuan) < 0.003);
 }
 cek(`Mask 384×216 untuk ${proj.length} proyektor cepat (${ms.toFixed(0)} ms < 400 ms)`, ms < 400);
 

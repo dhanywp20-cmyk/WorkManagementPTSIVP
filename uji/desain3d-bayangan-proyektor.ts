@@ -30,7 +30,7 @@ const bawah = proyektor('C', 4, 3.5, 0.6, { tilt: 0 });
 const pakaiTiang = hasil([A, bawah]).terhalang[0]?.porsi ?? 0, melayang = hasil([A, { ...bawah, tanpaTiang: true }]).terhalang[0]?.porsi ?? 0;
 cek(`tiang plafon proyektor lain memotong sinar -> bayangan (${persen(pakaiTiang)}); melayang tanpa tiang -> ${persen(melayang)}`, pakaiTiang > 0 && melayang < pakaiTiang);
 
-console.log('\n3. Template simulator: proyektor di luar bola, tanpa bayangan');
+console.log('\n3. Kartu Kategori simulator = contoh Opsi 3: proyektor di luar bola, tanpa bayangan');
 const t = templateRuang('simulator');
 const bidang = t.benda.find(b => b.jenis === 'bidang')!, pesawat = t.benda.find(b => b.bentukObjek === 'pesawat')!, mata = mataPilot(pesawat);
 const proj = t.benda.filter(b => b.jenis === 'proyektor');
@@ -39,19 +39,21 @@ for (const h of bay) {
   const antar = h.terhalang.filter(x => proj.some(p => p.nama === x.nama)).reduce((s, x) => s + x.porsi, 0);
   const olehPesawat = h.terhalang.find(x => x.nama === pesawat.nama)?.porsi ?? 0;
   cek(`${h.nama}: ${persen(h.keLayar)} gambar sampai di layar; bayangan proyektor lain ${persen(antar)}, punggung layar ${persen(h.balikLayar)}, bayangan pesawat ${persen(olehPesawat)} (terlihat pilot ${persen(h.terlihatPilot)})`,
-    antar === 0 && h.balikLayar === 0 && h.terlihatPilot === 0 && h.keLayar > 0.94);
+    antar === 0 && h.balikLayar === 0 && h.terlihatPilot === 0 && h.keLayar > 0.9);
 }
+const pose = (x: typeof t) => JSON.stringify(x.benda.filter(b => b.jenis === 'proyektor').map(b => [b.nama, b.x, b.z, b.elev, b.rot, b.tilt, b.throwRatio]));
+cek('proyektor kartu Kategori = Opsi 3 persis (posisi, arah, throw ratio)', pose(t) === pose(templateRuang('simulator', 2)) && /Opsi 3/.test(t.nama));
 const c = cakupanProyektor(proj, permukaanBenda(bidang));
-cek(`3 proyektor menutup layar bola ${persen(c.tertutup)} dengan blending ${persen(c.tumpang)}`, proj.length === 3 && c.tertutup >= 0.99 && c.tumpang >= 0.08 && c.tumpang <= 0.3);
+cek(`4 proyektor menutup layar bola ${persen(c.tertutup)} dengan blending ${persen(c.tumpang)}`, proj.length === 4 && c.tertutup >= 0.99 && c.tumpang >= 0.1 && c.tumpang <= 0.35);
 const masalah = cekRuangGerak(t.benda, t.ruang).filter(x => x.kode === 'tumpang' || x.kode === 'keluar');
 cek(`proyektor tidak bertumpuk dengan layar / pesawat & di dalam ruangan${masalah.length ? ` (${masalah.map(x => x.pesan).join('; ')})` : ''}`,
   !masalah.length && proj.every(p => p.x > 0.3 && p.x < t.ruang.p - 0.3 && p.z < t.ruang.l - 0.3 && p.elev + p.h < t.ruang.t));
 
 console.log('\n3b. Desain tim "Simulator Pesawat 225° · Opsi 2": layar 4 × 3 m, atas tertutup');
 const kat = KATEGORI_RUANG.find(x => x.id === 'simulator')!;
-cek('kategori "Simulator pesawat 225°" tetap satu & tanpa sub-opsi; kartunya memasang Opsi 1 (bola Ø 5 m 225° × 50°, 3 proyektor ELW20)',
-  KATEGORI_RUANG.length === 10 && KATEGORI_RUANG.filter(x => /simulator/i.test(x.judul)).length === 1 && !('opsi' in kat) && /ELW20/.test(kat.ket)
-  && t.benda.find(b => b.jenis === 'bidang')!.jariBidang === 2.5 && proj.length === 3 && proj.every(p => /ELW20/.test(p.nama)));
+cek('kategori "Simulator pesawat 225°" tetap satu & tanpa sub-opsi; kartunya memasang contoh Opsi 3 (bola Ø 4 m 225° atas tertutup, 4 × ET-ELW22 simetris)',
+  KATEGORI_RUANG.length === 10 && KATEGORI_RUANG.filter(x => /simulator/i.test(x.judul)).length === 1 && !('opsi' in kat) && /ELW22/.test(kat.ket) && /simetris/.test(kat.ket) && !/ELW20/.test(kat.ket)
+  && t.benda.find(b => b.jenis === 'bidang')!.jariBidang === 2 && proj.length === 4 && proj.every(p => /ELW22/.test(p.nama)));
 const t2 = templateRuang('simulator', 1);
 const bidang2 = t2.benda.find(b => b.jenis === 'bidang')!, pesawat2 = t2.benda.find(b => b.bentukObjek === 'pesawat')!, mata2 = mataPilot(pesawat2), bl2 = bolaBidang(bidang2);
 const proj2 = t2.benda.filter(b => b.jenis === 'proyektor'), P2 = permukaanBenda(bidang2);

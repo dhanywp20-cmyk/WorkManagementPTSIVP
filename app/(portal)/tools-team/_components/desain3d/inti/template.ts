@@ -17,7 +17,7 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending, media server di rack; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
   { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20, rack di ruang teknis (bisa ditambah)', ikon: '🌐' },
-  { id: 'simulator', judul: 'Simulator pesawat 225°', ket: 'Layar cekung bola 225° × 50° Ø 5 m, pusat bola = mata pilot di pesawat 3 m + 3 × PT-MZ882 + ET-ELW20 melayang di luar layar (bukaan belakang, tanpa bayangan; warping & mask), media server di rack', ikon: '✈️' },
+  { id: 'simulator', judul: 'Simulator pesawat 225°', ket: 'Layar bola 225° Ø 4 m × tinggi 3 m (atas tertutup), pusat bola = mata pilot di pesawat 3 m + 4 × PT-MZ882 + ET-ELW22 melayang di bibir layar, simetris & menyilang (tanpa bayangan; warping & mask), media server di rack', ikon: '✈️' },
 ];
 
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
@@ -43,8 +43,9 @@ function cerminProyektor(kiri: Benda, baru: Benda, cx: number): Benda {
   return { ...p, x: r3(p.x + 2 * cx - l[0] - m[0]), z: r3(p.z + l[2] - m[2]), elev: r3(p.elev + l[1] - m[1]) };
 }
 
+/** Simulator: `opsi` 0 = contoh bawaan kartu Kategori (Opsi 3), 1-3 = Opsi 2-4. Opsi 1 (bola Ø 5 m + 3 × ET-ELW20) hanya ada sebagai desain tim di server. */
 export function templateRuang(id: KategoriRuang, opsi = 0): { nama: string; ruang: Ruang; benda: Benda[] } {
-  const bola = id === 'simulator' ? SIMULATOR_BOLA[opsi - 1] : undefined;
+  const bola = id === 'simulator' ? SIMULATOR_BOLA[opsi - 1] ?? SIMULATOR_BOLA[1] : undefined;
   const t = bola ? simulatorBola(bola) : templateDasar(id);
   return { ...t, benda: t.benda.map(b => (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja' ? { ...b, tanpaTiang: true } : b)) };
 }
@@ -162,25 +163,6 @@ function templateDasar(id: KategoriRuang): { nama: string; ruang: Ruang; benda: 
       return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], LENSA_MZ882.ELW20, 1.39, `Proyektor ${i + 1}`);
     });
     return { nama: 'Mapping objek', ruang, benda: [alas, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
-  }
-  if (id === 'simulator') {
-    const ruang: Ruang = { p: 7, l: 7, t: 3, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'gelap', r2: null };
-    const k = daftarRuang(ruang)[0];
-    const R = 2.5, cx = 3.5, mata = PESAWAT_ACUAN.mataY, h = Math.round(2 * R * Math.sin((25 * Math.PI) / 180) * 1000) / 1000;
-    const ELW = LENSA_MZ882.ELW20, tr = ELW.trMin + (ELW.trMax - ELW.trMin) * 0.6;
-    const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'bola', jariBidang: R, busur: 225 }), nama: 'Layar simulator bola 225° × 50° Ø 5 m', x: cx, h, elev: Math.round((mata - h / 2) * 1000) / 1000 };
-    bidang.z = Math.round((bidang.d / 2 + 0.6) * 1000) / 1000;
-    const pusatZ = bidang.z + R - bidang.d / 2;
-    const pesawat: Benda = { ...bendaBaru('objek', k, { bentukObjek: 'pesawat', nama: 'Pesawat simulator 3 m', warna: '#f8fafc' }), x: cx, z: Math.round((pusatZ - PESAWAT_ACUAN.mataZ) * 1000) / 1000, elev: 0 };
-    const JARI_PROYEKTOR = 3.05, TINGGI_LENSA = 2.7, e = (-3 * Math.PI) / 180;
-    const proj = [-72, 0, 72].map((deg, i) => {
-      const a = (deg * Math.PI) / 180, th = Math.PI + 0.8 * a;
-      const p = proyektorKe(k, [cx + JARI_PROYEKTOR * Math.sin(th), TINGGI_LENSA, pusatZ - JARI_PROYEKTOR * Math.cos(th)],
-        [cx + R * Math.cos(e) * Math.sin(a), mata + R * Math.sin(e), pusatZ - R * Math.cos(e) * Math.cos(a)], ELW, tr,
-        `PT-MZ882 + ET-ELW20 ${i + 1} (layar ${['kiri', 'tengah', 'kanan'][i]})`);
-      return { ...p, maskBidang: true };
-    });
-    return { nama: 'Simulator pesawat 225°', ruang, benda: [bidang, pesawat, ...proj, bendaBaru('rak', k, { rakU: 12, tipeRak: 'tertutup', ...isiRakTemplate('mapping') })] };
   }
   if (id === 'immersive') {
     const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: { aktif: true, p: 2.5, l: 6, t: 3.5, lantai: 'polos', pintu: false, sekat: 'tembok' } };
