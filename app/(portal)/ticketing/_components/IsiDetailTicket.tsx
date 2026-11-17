@@ -7,6 +7,7 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
+import { SeksiIssueTiket } from './SeksiIssueTiket';
 import { jejakProgres } from '@/lib/alur-status-ticket';
 
 export interface IsiDetailTicketProps {
@@ -129,6 +130,8 @@ export function IsiDetailTicket({
         </div>
       </div>
     
+      <SeksiIssueTiket ticket={selectedTicket} currentUser={currentUser} />
+
       {!tanpaSolusiSerupa && selectedTicket.status !== "Solved" && selectedTicket.status !== "Rejected" && (
         <SolusiSerupa ticketId={selectedTicket.id}
           teks={[selectedTicket.issue_case, selectedTicket.product, selectedTicket.description].filter(Boolean).join(' ')} />

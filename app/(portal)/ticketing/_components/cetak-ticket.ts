@@ -1,7 +1,45 @@
 import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
 import { escObjek, urlAman } from '@/lib/lembar-cetak';
+import { supabase } from '@/lib/supabase';
+import type { IssueTiket, LogIssueTiket } from './issue-tambahan';
+
+async function htmlIssueTambahan(ticketId: string): Promise<string> {
+  const [ri, rl] = await Promise.all([
+    supabase.from('ticket_issues').select('*').eq('ticket_id', ticketId).order('nomor'),
+    supabase.from('ticket_issue_logs').select('*').eq('ticket_id', ticketId).order('created_at'),
+  ]);
+  if (ri.error || !ri.data?.length) return '';
+  const issues = escObjek(ri.data as IssueTiket[]);
+  const logs = escObjek((rl.data ?? []) as LogIssueTiket[]);
+  const kartu = issues.map(i => {
+    const riwayat = logs.filter(l => l.issue_id === i.id).map(l => `
+      <div style="padding:6px 0;border-top:1px dashed #e2e8f0;font-size:11px">
+        <b>${formatDateTime(l.created_at)}</b> · ${l.handler_name || '-'} ·
+        <b>${l.dari_status && l.dari_status !== l.new_status ? `${l.dari_status} → ${l.new_status}` : l.new_status}</b>
+        ${l.action_taken ? `<div style="color:#1d4ed8;font-weight:700;margin-top:2px">🔧 ${l.action_taken}</div>` : ''}
+        ${l.notes ? `<div style="color:#1e293b;white-space:pre-line;margin-top:2px">${l.notes}</div>` : ''}
+        ${l.photo_url ? `<div style="margin-top:4px"><img src="${urlAman(l.photo_url)}" style="max-height:80px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ''}
+      </div>`).join('');
+    const info = [i.product && `Produk: ${i.product}`, i.sn_unit && `SN: ${i.sn_unit}`].filter(Boolean).join(' · ');
+    return `<div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;gap:8px">
+        <div style="font-size:12px;font-weight:700">#${i.nomor} — ${i.issue_case}</div>
+        <div style="font-size:11px;font-weight:700;color:${i.status === 'Solved' ? '#059669' : '#d97706'}">${i.status}</div>
+      </div>
+      ${info ? `<div style="font-size:11px;color:#64748b;margin-top:2px">${info}</div>` : ''}
+      ${i.description ? `<div style="font-size:11px;color:#475569;margin-top:2px;white-space:pre-line">${i.description}</div>` : ''}
+      ${riwayat}
+    </div>`;
+  }).join('');
+  return `<div class="section">
+  <div class="section-title">🧩 Issue Tambahan (Issue #1 = Issue Case di atas)</div>
+  ${kartu}
+</div>`;
+}
 
 export async function cetakTicket(asli: Ticket): Promise<void> {
+  const win = window.open("", "_blank");
+  const issueTambahan = await htmlIssueTambahan(asli.id).catch(() => '');
   const ticket = escObjek(asli);
   const printDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -142,6 +180,8 @@ table.log { width: 100%; border-collapse: collapse; }
   </div>
 </div>
 
+${issueTambahan}
+
 <!-- ACTIVITY LOG -->
 <div class="section log-section">
   <div class="section-title">📋 Activity Log — Riwayat Penanganan</div>
@@ -184,6 +224,5 @@ ${ticket.photo_url ? `
 
 </div></body></html>`;
 
-  const win = window.open("", "_blank");
   if (win) { win.document.write(printContent); win.document.close(); setTimeout(() => win.print(), 300); }
 }
