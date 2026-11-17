@@ -2,8 +2,8 @@ import { KONEKSI_AWAL, type DataKoneksi, kodePort } from '../app/(portal)/tools-
 import { susunMulti, teksRentangPort } from '../app/(portal)/tools-team/_components/led/koneksi/multi';
 import { svgKoneksiMulti, svgPosterKoneksiMulti } from '../app/(portal)/tools-team/_components/led/koneksi/svg';
 import { ringkasanKoneksiMulti } from '../app/(portal)/tools-team/_components/led/koneksi/teks';
-import { bersihkanLayar, layarBaru, susunanLayar } from '../app/(portal)/tools-team/_components/led/layar';
-import { bomLED } from '../lib/av/hitung';
+import { bersihkanLayar, bersihkanSpek, dayaUmum, layarBaru, susunanLayar, unitLED } from '../app/(portal)/tools-team/_components/led/layar';
+import { bomLED, MODUL_LED } from '../lib/av/hitung';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -75,6 +75,32 @@ console.log('\n4. Data screen tambahan & BOM');
   cek('rangka dijumlah per screen', dua.find(b => b.kunci === 'rangka')!.qty >= satu * 2 - 1);
   cek('controller tidak dikali jumlah screen', dua.find(b => b.kunci === 'ctrl-0')!.qty === 1);
   cek('ket unit menyebut 2 screen', dua.find(b => b.kunci === 'unit')!.ket === '2 screen');
+}
+
+console.log('\n5. Modul berbeda per screen');
+{
+  const cab = unitLED({ satuan: 'cabinet', modulKode: '', pitch: 3.91, cabW: 500, cabH: 1000 }, MODUL_LED);
+  cek('cabinet P3.91 500×1000', cab.u.pitch === 3.91 && cab.u.w === 500 && cab.u.h === 1000 && cab.namaUnit === 'cabinet' && cab.labelLED === 'P3.91');
+  cek('piksel per cabinet dari pitch', cab.u.pxX === 128 && cab.u.pxY === 256, `${cab.u.pxX}x${cab.u.pxY}`);
+  const m = MODUL_LED[0];
+  const ref = unitLED({ satuan: 'modul', modulKode: 'tidak-ada', pitch: 1, cabW: 1, cabH: 1 }, MODUL_LED.slice(1), m);
+  cek('modul hilang dari referensi memakai snapshot berkas', ref.u.kode === m.kode && ref.u.w === m.w);
+  cek('daya umum per unit', dayaUmum('indoor', 0.25) > 0);
+  const sp = bersihkanSpek({ satuan: 'cabinet', pitch: 3.91, cabKey: 'aneh', cabW: 500, cabH: 1000, lingkungan: 'outdoor', ref: { kode: 'x' } });
+  cek('bersihkan spek', !!sp && sp.cabKey === '500x500' && sp.lingkungan === 'outdoor' && sp.ref === null);
+  cek('screen tanpa spek = sama dengan Screen 1', layarBaru(3).modul === null && bersihkanLayar([{ nama: 'A' }])[0].modul === null);
+  const d2: DataKoneksi = { ...dasar(4, 2, 10, 'VX1000 Pro'), wUnit: 500, hUnit: 1000, pxX: 128, pxY: 256 };
+  const mm = susunMulti([{ nama: 'P2.5', d: dasar(8, 5, 10, 'VX1000 Pro'), s: KONEKSI_AWAL }, { nama: 'P3.91', d: d2, s: KONEKSI_AWAL }], true);
+  cek('resolusi screen 2 dari pitch-nya sendiri', mm.per[1].t.resX === 512 && mm.per[1].t.resY === 512, `${mm.per[1].t.resX}x${mm.per[1].t.resY}`);
+  const umum = { satuan: 'cabinet' as const, namaLED: 'P2.5', unit: 48, screen: 1, cadanganUnit: 3, receivingCard: 48, namaRC: '', cadanganRC: 0, controller: [],
+    controllerCadangan: false, dayaMaksW: 9000, psuW: 200, port: 4, portCadangan: 0, panjangLAN: 10, sirkuit: 2, mcb: 16, panjangPower: 15, lebarM: 4, tinggiM: 3, baris: 6 };
+  const b = bomLED({ ...umum, jenisUnit: [
+    { namaLED: 'P2.5', satuan: 'cabinet', unit: 40, dayaMaksW: 6000, ket: 'Screen 1' },
+    { namaLED: 'P3.91', satuan: 'cabinet', unit: 8, dayaMaksW: 3000, ket: 'Screen 2' },
+  ] });
+  cek('baris BOM per jenis modul', b.find(x => x.kunci === 'unit')?.qty === 40 && b.find(x => x.kunci === 'unit-2')?.item === 'Cabinet LED P3.91' && b.find(x => x.kunci === 'unit-2')?.qty === 8);
+  cek('cadangan per jenis modul', !!b.find(x => x.kunci === 'unit-cadangan-2'));
+  cek('tanpa PSU bila semua cabinet', !b.some(x => x.kunci === 'psu'));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

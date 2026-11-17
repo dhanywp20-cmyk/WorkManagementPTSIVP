@@ -12,6 +12,7 @@ export interface MasukanBOM {
    sirkuit: number; mcb: number; panjangPower: number;
    lebarM: number; tinggiM: number; baris: number;
   layar?: { lebarM: number; tinggiM: number; baris: number }[];
+  jenisUnit?: { namaLED: string; satuan: 'modul' | 'cabinet'; unit: number; dayaMaksW: number; ket: string }[];
 }
 
 export interface BarisBOM { kunci: string; item: string; qty: number; satuan: string; ket: string }
@@ -22,29 +23,41 @@ export function bomLED(m: MasukanBOM): BarisBOM[] {
   const n = Math.max(1, m.screen);
   const modul = m.satuan === 'modul';
   const nmUnit = modul ? 'Modul' : 'Cabinet';
-  const psu = modul ? Math.ceil(m.dayaMaksW / Math.max(1, m.psuW * 0.8)) : 0;
+  const jenis = m.jenisUnit?.length ? m.jenisUnit : null;
+  const psuDari = (w: number) => Math.ceil(w / Math.max(1, m.psuW * 0.8));
+  const psu = jenis ? jenis.filter(j => j.satuan === 'modul').reduce((a, j) => a + psuDari(j.dayaMaksW), 0) : modul ? psuDari(m.dayaMaksW) : 0;
+  const adaPsu = jenis ? psu > 0 : modul;
+  const jumperPower = jenis ? psu + jenis.filter(j => j.satuan === 'cabinet').reduce((a, j) => a + j.unit, 0) : modul ? psu : m.unit;
   const tiang = modul ? 0.6 : 1;
   const rangkaSatu = (l: { lebarM: number; tinggiM: number; baris: number }) => ((l.baris + 1) * l.lebarM + (Math.ceil(l.lebarM / tiang) + 1) * l.tinggiM) * 1.1;
   const rangkaM = m.layar?.length ? m.layar.reduce((a, l) => a + rangkaSatu(l), 0) : rangkaSatu(m) * n;
   const nLayar = m.layar?.length ?? n;
   const nLAN = m.port + m.portCadangan;
   const b: BarisBOM[] = [
-    { kunci: 'unit', item: `${nmUnit} LED ${m.namaLED}`.trim(), qty: m.unit, satuan: 'pcs', ket: nLayar > 1 ? `${nLayar} screen` : '' },
-    { kunci: 'unit-cadangan', item: `${nmUnit} cadangan (spare)`, qty: cadangan(m.unit, m.cadanganUnit), satuan: 'pcs', ket: `${m.cadanganUnit}% dari ${m.unit}` },
+    ...(jenis ? jenis.flatMap((j, i) => {
+      const akhir = i ? `-${i + 1}` : '', nm = j.satuan === 'modul' ? 'Modul' : 'Cabinet';
+      return [
+        { kunci: `unit${akhir}`, item: `${nm} LED ${j.namaLED}`.trim(), qty: j.unit, satuan: 'pcs', ket: j.ket },
+        { kunci: `unit-cadangan${akhir}`, item: `${nm} cadangan (spare) ${j.namaLED}`.trim(), qty: cadangan(j.unit, m.cadanganUnit), satuan: 'pcs', ket: `${m.cadanganUnit}% dari ${j.unit}` },
+      ];
+    }) : [
+      { kunci: 'unit', item: `${nmUnit} LED ${m.namaLED}`.trim(), qty: m.unit, satuan: 'pcs', ket: nLayar > 1 ? `${nLayar} screen` : '' },
+      { kunci: 'unit-cadangan', item: `${nmUnit} cadangan (spare)`, qty: cadangan(m.unit, m.cadanganUnit), satuan: 'pcs', ket: `${m.cadanganUnit}% dari ${m.unit}` },
+    ]),
     { kunci: 'rc', item: `Receiving card ${m.namaRC}`.trim(), qty: m.receivingCard, satuan: 'pcs', ket: '' },
     { kunci: 'rc-cadangan', item: 'Receiving card cadangan', qty: cadangan(m.receivingCard, m.cadanganRC), satuan: 'pcs', ket: `${m.cadanganRC}%` },
     ...m.controller.filter(c => c.qty > 0).map((c, i) => ({
       kunci: `ctrl-${i}`, item: c.nama, qty: c.qty * n * (m.controllerCadangan ? 2 : 1), satuan: 'unit',
       ket: m.controllerCadangan ? 'termasuk controller cadangan (hot backup)' : n > 1 ? `${c.qty} / screen` : '',
     })),
-    ...(modul ? [
+    ...(adaPsu ? [
       { kunci: 'psu', item: `Power supply LED 5 V ${m.psuW} W`, qty: psu, satuan: 'pcs', ket: 'beban 80%' },
       { kunci: 'psu-cadangan', item: 'Power supply cadangan', qty: cadangan(psu, m.cadanganRC), satuan: 'pcs', ket: `${m.cadanganRC}%` },
     ] : []),
     { kunci: 'lan-jumper', item: 'Kabel LAN jumper antar receiving card', qty: Math.max(0, m.receivingCard - m.port), satuan: 'pcs', ket: 'pendek, CAT6' },
     { kunci: 'lan-utama', item: 'Kabel LAN controller ke layar', qty: nLAN, satuan: 'pcs',
       ket: `@ ${m.panjangLAN} m = ${Math.round(nLAN * m.panjangLAN)} m${m.portCadangan ? `, termasuk ${m.portCadangan} kabel cadangan` : ''}` },
-    { kunci: 'power-jumper', item: modul ? 'Kabel power AC antar power supply' : 'Kabel power jumper antar cabinet', qty: modul ? psu : m.unit, satuan: 'pcs', ket: '' },
+    { kunci: 'power-jumper', item: jenis ? 'Kabel power antar power supply / cabinet' : modul ? 'Kabel power AC antar power supply' : 'Kabel power jumper antar cabinet', qty: jumperPower, satuan: 'pcs', ket: '' },
     { kunci: 'power-utama', item: 'Kabel power sirkuit ke panel', qty: m.sirkuit, satuan: 'jalur', ket: `@ ${m.panjangPower} m = ${Math.round(m.sirkuit * m.panjangPower)} m` },
     { kunci: 'mcb', item: `MCB ${m.mcb} A per sirkuit`, qty: m.sirkuit, satuan: 'pcs', ket: '' },
     { kunci: 'rangka', item: 'Rangka besi hollow 40×40', qty: Math.ceil(rangkaM / 6), satuan: 'batang 6 m', ket: `±${Math.round(rangkaM)} m (estimasi)` },

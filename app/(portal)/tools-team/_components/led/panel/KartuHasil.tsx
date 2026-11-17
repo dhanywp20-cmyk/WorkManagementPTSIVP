@@ -3,7 +3,7 @@ import { f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import type { AlatLED } from './alat';
 
 export function KartuHasil({ a }: { a: AlatLED }) {
-  const { baris, customer, h, hTotal, kolom, layarTurunan, lewat4K, mode, multi, n, namaLayar, namaUnit, pembuat, project, selisihH, selisihW, tanggal, tegangan } = a.K;
+  const { baris, customer, h, hTotal, kolom, labelLED, layarTurunan, modulCampur, lewat4K, mode, multi, n, namaLayar, namaUnit, pembuat, project, selisihH, selisihW, tanggal, tegangan } = a.K;
   const { cetak, pngLED, ringkasan } = a.E;
   const skala = Math.min(320 / h.lebarM, 220 / h.tinggiM);
   const wPx = h.lebarM * skala, hPx = h.tinggiM * skala;
@@ -65,13 +65,13 @@ export function KartuHasil({ a }: { a: AlatLED }) {
             <div className="overflow-x-auto mb-3">
               <table className="w-full text-[12.5px]">
                 <thead className="text-slate-600"><tr>
-                  <th className="text-left font-bold py-1 pr-2">Screen</th><th className="text-right font-bold py-1 px-2">Susunan</th>
+                  <th className="text-left font-bold py-1 pr-2">Screen</th>{modulCampur && <th className="text-left font-bold py-1 px-2">LED</th>}<th className="text-right font-bold py-1 px-2">Susunan</th>
                   <th className="text-right font-bold py-1 px-2">Ukuran (m)</th><th className="text-right font-bold py-1 px-2">Resolusi</th><th className="text-right font-bold py-1 pl-2">Port</th>
                 </tr></thead>
                 <tbody className="tabular-nums">
-                  {[{ nama: namaLayar || 'Screen 1', kolom, baris, h }, ...layarTurunan.map(x => ({ nama: x.l.nama, kolom: x.kolom, baris: x.baris, h: x.h }))].map((x, i) => (
+                  {[{ nama: namaLayar || 'Screen 1', lbl: labelLED, kolom, baris, h }, ...layarTurunan.map(x => ({ nama: x.l.nama, lbl: x.labelLED, kolom: x.kolom, baris: x.baris, h: x.h }))].map((x, i) => (
                     <tr key={i} className="border-t border-slate-100">
-                      <td className="py-1 pr-2 font-semibold text-slate-800">{x.nama}</td><td className="text-right py-1 px-2">{x.kolom}×{x.baris}</td>
+                      <td className="py-1 pr-2 font-semibold text-slate-800">{x.nama}</td>{modulCampur && <td className="py-1 px-2 whitespace-nowrap">{x.lbl}</td>}<td className="text-right py-1 px-2">{x.kolom}×{x.baris}</td>
                       <td className="text-right py-1 px-2">{f(x.h.lebarM)}×{f(x.h.tinggiM)}</td><td className="text-right py-1 px-2">{x.h.resX}×{x.h.resY}</td><td className="text-right py-1 pl-2">{x.h.portLAN}</td>
                     </tr>
                   ))}
@@ -79,7 +79,7 @@ export function KartuHasil({ a }: { a: AlatLED }) {
               </table>
             </div>
             <div className="kisi-nilai">
-              <Nilai label={`Total ${namaUnit}`} nilai={hTotal.jumlahCab} />
+              <Nilai label={`Total ${modulCampur ? 'unit' : namaUnit}`} nilai={hTotal.jumlahCab} />
               <Nilai label="Total piksel" nilai={f(hTotal.totalPx / 1e6, 2)} satuan="MP" ket={`${hTotal.portLAN} port LAN`} />
               <Nilai label="Total luas" nilai={f(hTotal.luasM2)} satuan="m²" />
               <Nilai label="Total daya maks" nilai={f(hTotal.dayaMaksW / 1000)} satuan="kW" ket={`rata-rata ${f(hTotal.dayaRataW / 1000)} kW`} />

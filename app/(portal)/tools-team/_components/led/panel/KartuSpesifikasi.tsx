@@ -10,7 +10,7 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
   const awalan = multi ? `${namaLayar || 'Screen 1'} · ` : '';
   return (
     <>
-      <Kartu judul="Spesifikasi" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
+      <Kartu judul={multi ? `Spesifikasi · ${namaLayar || 'Screen 1'}` : 'Spesifikasi'} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
         <div className="space-y-3">
           <Segmen label="Satuan" nilai={satuan} onUbah={v => { setSatuan(v); resetUnit(); }}
             opsi={[{ v: 'modul', l: 'Referensi brand' }, { v: 'cabinet', l: 'Cabinet bebas' }]} />

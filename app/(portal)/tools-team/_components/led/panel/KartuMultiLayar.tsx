@@ -4,6 +4,7 @@ import { Copy, Monitor, Plus, Trash2 } from 'lucide-react';
 import { BULAT } from '../data';
 import { MAKS_LAYAR } from '../layar';
 import type { AlatLED } from './alat';
+import { ModulLayar } from './ModulLayar';
 
 const kelasTombol = 'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40';
 
@@ -29,7 +30,7 @@ function Pratinjau({ layar }: { layar: { nama: string; lebarM: number; tinggiM: 
 }
 
 export function KartuMultiLayar({ a }: { a: AlatLED }) {
-  const { baris, h, hTotal, hapusLayar, kolom, layarLain, layarTurunan, multi, namaLayar, namaUnit, setNamaLayar, tambahLayar, ubahLayar, u } = a.K;
+  const { baris, h, hTotal, hapusLayar, kolom, labelLED, layarLain, layarTurunan, modulCampur, multi, namaLayar, namaUnit, setNamaLayar, tambahLayar, ubahLayar } = a.K;
   const jumlah = layarLain.length + 1;
   const penuh = jumlah >= MAKS_LAYAR;
   return (
@@ -49,9 +50,9 @@ export function KartuMultiLayar({ a }: { a: AlatLED }) {
               <input aria-label="Nama screen 1" value={namaLayar} maxLength={40} onChange={e => setNamaLayar(e.target.value)} className={`${kelasInput} !py-1 font-bold`} />
               <button type="button" className={kelasTombol} title="Duplikat screen ini" disabled={penuh} onClick={() => tambahLayar(0)}><Copy size={13} /></button>
             </div>
-            <p className="text-[11.5px] text-slate-600 tabular-nums">{kolom}×{baris} {namaUnit} · {f(h.lebarM)}×{f(h.tinggiM)} m · {h.resX}×{h.resY} px · {h.portLAN} port · ukuran diatur di Spesifikasi</p>
+            <p className="text-[11.5px] text-slate-600 tabular-nums"><b className="text-slate-800">{labelLED}</b> · {kolom}×{baris} {namaUnit} · {f(h.lebarM)}×{f(h.tinggiM)} m · {h.resX}×{h.resY} px · {h.portLAN} port · modul & ukuran diatur di Spesifikasi</p>
           </div>
-          {layarTurunan.map(({ l, kolom: k, baris: b, h: hl, selisih }, j) => {
+          {layarTurunan.map(({ l, kolom: k, baris: b, h: hl, selisih, labelLED: lbl, namaUnit: nu }, j) => {
             const i = j + 1;
             return (
               <div key={l.id} className="rounded-xl border border-slate-200 p-2.5 space-y-2">
@@ -61,7 +62,8 @@ export function KartuMultiLayar({ a }: { a: AlatLED }) {
                   <button type="button" className={kelasTombol} title="Duplikat screen ini" disabled={penuh} onClick={() => tambahLayar(i)}><Copy size={13} /></button>
                   <button type="button" className={`${kelasTombol} hover:!bg-rose-50 hover:text-rose-700`} title="Hapus screen ini" onClick={() => hapusLayar(i)}><Trash2 size={13} /></button>
                 </div>
-                <Segmen nilai={l.mode} onUbah={v => ubahLayar(i, { mode: v })} opsi={[{ v: 'ukuran', l: 'Ukuran target' }, { v: 'jumlah', l: `Jumlah ${namaUnit}` }]} />
+                <ModulLayar a={a} label="Modul LED" spek={l.modul} onUbah={modul => ubahLayar(i, { modul })} />
+                <Segmen label="Hitung dari" nilai={l.mode} onUbah={v => ubahLayar(i, { mode: v })} opsi={[{ v: 'ukuran', l: 'Ukuran target' }, { v: 'jumlah', l: `Jumlah ${nu}` }]} />
                 {l.mode === 'ukuran' ? (
                   <div className="grid grid-cols-3 gap-2">
                     <Angka label="Lebar" nilai={l.targetW} onUbah={v => v > 0 && ubahLayar(i, { targetW: v })} satuan="m" />
@@ -75,14 +77,14 @@ export function KartuMultiLayar({ a }: { a: AlatLED }) {
                   </div>
                 )}
                 <p className="text-[11.5px] text-slate-600 tabular-nums">
-                  {k}×{b} {namaUnit} · {f(hl.lebarM)}×{f(hl.tinggiM)} m · {hl.resX}×{hl.resY} px · {hl.portLAN} port
+                  <b className="text-slate-800">{lbl}</b> · {k}×{b} {nu} · {f(hl.lebarM)}×{f(hl.tinggiM)} m · {hl.resX}×{hl.resY} px · {hl.portLAN} port
                   {(Math.abs(selisih.w) > 0.001 || Math.abs(selisih.h) > 0.001) && <span className="text-amber-700"> · selisih {selisih.w >= 0 ? '+' : ''}{f(selisih.w * 100, 0)} / {selisih.h >= 0 ? '+' : ''}{f(selisih.h * 100, 0)} cm</span>}
                 </p>
               </div>
             );
           })}
           <p className="text-[12px] text-slate-700">
-            Total <b>{jumlah} screen</b> · {hTotal.jumlahCab} {namaUnit} · {f(hTotal.totalPx / 1e6, 2)} MP · {hTotal.portLAN} port LAN · modul {u.kode} sama untuk semua screen.
+            Total <b>{jumlah} screen</b> · {hTotal.jumlahCab} {modulCampur ? 'unit' : namaUnit} · {f(hTotal.totalPx / 1e6, 2)} MP · {hTotal.portLAN} port LAN{modulCampur ? ' · modul berbeda per screen' : ` · semua ${labelLED}`}.
           </p>
         </div>
       )}

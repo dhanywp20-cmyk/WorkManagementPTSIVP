@@ -10,19 +10,22 @@ import type { KeadaanLED } from './useKeadaanLED';
 
 export function useEksporLED(K: KeadaanLED) {
   const { adaHarga, baris, barisBom, beratUnitEf, bit, bom, customer, dataDaya, dayaLED, dayaUnitEf, faktorDaya, faktorRata, h, hDaya, harga, hw, kolom, koneksi, labelLED, lewat4K, lingkungan, mode, modeHw, n, namaUnit, nilaiPenawaran, pembuat, project, px, refresh, satuan, selisihH, selisihW, tKon, tanggal, tegangan, teksHw, u,
-    hTotal, layarDaya, layarKoneksi, layarTurunan, multi, namaLayar, pisahKartu, sirkuitTotal } = K;
-  const daftarLayar = [{ nama: namaLayar || 'Screen 1', kolom, baris, h }, ...layarTurunan.map(x => ({ nama: x.l.nama, kolom: x.kolom, baris: x.baris, h: x.h }))];
-  const teksLayar = (x: (typeof daftarLayar)[number]) => `${x.nama}: ${x.kolom} × ${x.baris} ${namaUnit} · ${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m · ${x.h.resX} × ${x.h.resY} px · ${x.h.portLAN} port`;
+    hTotal, layarDaya, layarKoneksi, layarTurunan, modulCampur, multi, namaLayar, pisahKartu, sirkuitTotal } = K;
+  const daftarLayar = [{ nama: namaLayar || 'Screen 1', lbl: labelLED, nu: namaUnit, kolom, baris, h },
+    ...layarTurunan.map(x => ({ nama: x.l.nama, lbl: x.labelLED, nu: x.namaUnit, kolom: x.kolom, baris: x.baris, h: x.h }))];
+  const ledMulti = modulCampur ? daftarLayar.map(x => x.lbl).filter((v, i, arr) => arr.indexOf(v) === i).join(' + ') : labelLED;
+  const unitMulti = modulCampur ? 'unit' : namaUnit;
+  const teksLayar = (x: (typeof daftarLayar)[number]) => `${x.nama}${modulCampur ? ` (${x.lbl})` : ''}: ${x.kolom} × ${x.baris} ${x.nu} · ${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m · ${x.h.resX} × ${x.h.resY} px · ${x.h.portLAN} port`;
   const perHw = multi ? ` untuk ${hTotal.screen} screen` : '/screen';
   const ringkasan = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
-    `*LED Videotron ${labelLED} ${lingkungan}*${n > 1 ? ` · ${n} screen identik` : ''}`,
+    `*LED Videotron ${multi ? ledMulti : labelLED} ${lingkungan}*${n > 1 ? ` · ${n} screen identik` : ''}`,
     `${namaUnit[0].toUpperCase()}${namaUnit.slice(1)} ${u.w}×${u.h} mm (${px.x}×${px.y} px): ${kolom} × ${baris} = ${h.jumlahCab} ${namaUnit}/screen${n > 1 ? `, total ${h.jumlahCab * n}` : ''}`,
     `Ukuran: ${f(h.lebarM)} × ${f(h.tinggiM)} m (${f(h.luasM2)} m², diagonal ${f(h.diagonalInci, 0)}")${n > 1 ? `, total ${f(h.luasM2 * n)} m²` : ''}`,
     `Resolusi: ${h.resX} × ${h.resY} px (${f(h.totalPx / 1e6, 2)} MP), rasio ${h.rasioTerdekat}`,
     `Jarak pandang: min ${f(h.jarakMinM, 1)} m, ideal ±${f(h.jarakIdealM, 1)} m`,
     ...(multi ? [`*${hTotal.screen} screen · 1 video processor*`, ...daftarLayar.map(x => `- ${teksLayar(x)}`),
-      `Total: ${hTotal.jumlahCab} ${namaUnit}, ${f(hTotal.luasM2)} m², ${f(hTotal.totalPx / 1e6, 2)} MP, ${hTotal.portLAN} port LAN, daya maks ${f(hTotal.dayaMaksW / 1000)} kW, berat ±${f(hTotal.beratKg, 0)} kg`,
+      `Total: ${hTotal.jumlahCab} ${unitMulti}, ${f(hTotal.luasM2)} m², ${f(hTotal.totalPx / 1e6, 2)} MP, ${hTotal.portLAN} port LAN, daya maks ${f(hTotal.dayaMaksW / 1000)} kW, berat ±${f(hTotal.beratKg, 0)} kg`,
       `Detail ${daftarLayar[0].nama}:`] : []),
     `Daya/screen: maks ${f(h.dayaMaksW / 1000)} kW, rata-rata ${f(h.dayaRataW / 1000)} kW; arus maks ${f(h.arusMaksA, 1)} A @${tegangan}V PF ${f(faktorDaya)}, MCB ${h.mcbSaranA} A`,
     `Panas ±${f(h.panasBTU, 0)} BTU/jam; berat ±${f(h.beratKg, 0)} kg/screen`,
@@ -62,13 +65,13 @@ export function useEksporLED(K: KeadaanLED) {
             satu('Selisih dari target', mode === 'ukuran' ? `${selisihW >= 0 ? '+' : ''}${f(selisihW * 100, 0)} cm lebar, ${selisihH >= 0 ? '+' : ''}${f(selisihH * 100, 0)} cm tinggi` : 'Dihitung dari jumlah'),
           ] },
         ...(multi ? [{ judul: `Daftar screen · ${hTotal.screen} screen, 1 video processor`, jenis: 'tabel' as const,
-          kepala: ['Screen', 'Susunan', 'Ukuran', 'Resolusi', `Jumlah ${namaUnit}`, 'Port LAN', 'Daya maks'], rataKanan: [4, 5, 6],
+          kepala: ['Screen', 'LED', 'Susunan', 'Ukuran', 'Resolusi', `Jumlah ${unitMulti}`, 'Port LAN', 'Daya maks'], rataKanan: [5, 6, 7],
           isi: [
-            ...daftarLayar.map(x => [x.nama, `${x.kolom} × ${x.baris}`, `${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m`, `${x.h.resX} × ${x.h.resY} px`, String(x.h.jumlahCab), String(x.h.portLAN), `${f(x.h.dayaMaksW / 1000)} kW`]),
-            ['Total', '', `${f(hTotal.luasM2)} m²`, `${f(hTotal.totalPx / 1e6, 2)} MP`, String(hTotal.jumlahCab), String(hTotal.portLAN), `${f(hTotal.dayaMaksW / 1000)} kW`],
+            ...daftarLayar.map(x => [x.nama, x.lbl, `${x.kolom} × ${x.baris} ${x.nu}`, `${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m`, `${x.h.resX} × ${x.h.resY} px`, String(x.h.jumlahCab), String(x.h.portLAN), `${f(x.h.dayaMaksW / 1000)} kW`]),
+            ['Total', '', '', `${f(hTotal.luasM2)} m²`, `${f(hTotal.totalPx / 1e6, 2)} MP`, String(hTotal.jumlahCab), String(hTotal.portLAN), `${f(hTotal.dayaMaksW / 1000)} kW`],
           ] }] : []),
         { judul: 'Susunan layar', jenis: 'html', html: multi
-          ? daftarLayar.map(x => `<p style="margin:8px 0 2px;font-size:11px;font-weight:700;color:#1e293b">${esc(x.nama)}</p>${diagramSusunan(x.kolom, x.baris, x.h.lebarM, x.h.tinggiM, namaUnit)}`).join('')
+          ? daftarLayar.map(x => `<p style="margin:8px 0 2px;font-size:11px;font-weight:700;color:#1e293b">${esc(x.nama)}</p>${diagramSusunan(x.kolom, x.baris, x.h.lebarM, x.h.tinggiM, x.nu)}`).join('')
           : diagramSusunan(kolom, baris, h.lebarM, h.tinggiM, namaUnit) },
         { judul: multi ? `Hasil ${daftarLayar[0].nama}` : n > 1 ? 'Hasil per screen' : 'Hasil', jenis: 'info',
           kiri: [
@@ -113,7 +116,7 @@ export function useEksporLED(K: KeadaanLED) {
     seksi: [
       { judul: 'Layar', jenis: 'info',
         kiri: multi
-          ? [{ label: 'LED', nilai: `${labelLED} · ${hTotal.screen} screen · ${hTotal.jumlahCab} ${namaUnit}` }, { label: 'Screen', nilai: daftarLayar.map(x => `${x.nama} ${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m`).join(' · '), sorot: true }]
+          ? [{ label: 'LED', nilai: `${ledMulti} · ${hTotal.screen} screen · ${hTotal.jumlahCab} ${unitMulti}` }, { label: 'Screen', nilai: daftarLayar.map(x => `${x.nama}${modulCampur ? ` ${x.lbl}` : ''} ${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m`).join(' · '), sorot: true }]
           : [{ label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit}${n > 1 ? ` · ${n} screen` : ''}` }, { label: 'Ukuran', nilai: `${f(h.lebarM)} × ${f(h.tinggiM)} m · ${h.resX} × ${h.resY} px`, sorot: true }],
         kanan: [{ label: 'Customer', nilai: customer || '—' }, { label: 'Project', nilai: project || '—' }] },
       { judul: adaHarga ? 'Rincian penawaran' : 'Daftar material', jenis: 'tabel', ...isiLembarBom(barisBom, harga, bom.ppn, nilaiPenawaran) },
@@ -123,7 +126,7 @@ export function useEksporLED(K: KeadaanLED) {
   });
   const teksBom = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
-    `*${adaHarga ? 'Penawaran' : 'Daftar material'} LED ${labelLED}* · ${multi ? daftarLayar.map(x => `${x.nama} ${f(x.h.lebarM)}×${f(x.h.tinggiM)} m`).join(', ') : `${f(h.lebarM)}×${f(h.tinggiM)} m${n > 1 ? ` · ${n} screen` : ''}`}`,
+    `*${adaHarga ? 'Penawaran' : 'Daftar material'} LED ${multi ? ledMulti : labelLED}* · ${multi ? daftarLayar.map(x => `${x.nama} ${f(x.h.lebarM)}×${f(x.h.tinggiM)} m`).join(', ') : `${f(h.lebarM)}×${f(h.tinggiM)} m${n > 1 ? ` · ${n} screen` : ''}`}`,
     ...barisBom.map((b, i) => `${i + 1}. ${b.item}: ${b.qty} ${b.satuan}${harga[b.kunci] ? ` × ${rupiah(harga[b.kunci])} = ${rupiah(harga[b.kunci] * b.qty)}` : ''}${b.ket ? ` (${b.ket})` : ''}`),
     adaHarga && `Subtotal ${rupiah(nilaiPenawaran.subtotal)} · PPN ${bom.ppn}% ${rupiah(nilaiPenawaran.ppn)} · *Total ${rupiah(nilaiPenawaran.total)}*`,
   ].filter(Boolean).join('\n');
@@ -135,7 +138,7 @@ export function useEksporLED(K: KeadaanLED) {
     seksi: [
       { judul: 'Layar & listrik', jenis: 'info',
         kiri: [
-          { label: 'LED', nilai: multi ? `${labelLED} · ${daftarLayar.map(x => `${x.nama} ${x.kolom} × ${x.baris}`).join(' · ')}` : `${labelLED} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
+          { label: 'LED', nilai: multi ? `${ledMulti} · ${daftarLayar.map(x => `${x.nama}${modulCampur ? ` ${x.lbl}` : ''} ${x.kolom} × ${x.baris}`).join(' · ')}` : `${labelLED} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
           { label: `Daya maks per ${namaUnit}`, nilai: `${f(dayaUnitEf, 1)} W · total ${f(hTotal.dayaMaksW / 1000)} kW`, sorot: true },
         ],
         kanan: [
@@ -150,7 +153,7 @@ export function useEksporLED(K: KeadaanLED) {
   const teksDaya = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
     ...(multi
-      ? [`*Power Connection LED ${labelLED}* · ${layarDaya.length} screen · total ${sirkuitTotal} sirkuit`, ...layarDaya.map(x => `*${x.nama}* (${x.d.kolom}×${x.d.baris} ${namaUnit})\n${ringkasanDaya(x.d, dayaLED)}`)]
+      ? [`*Power Connection LED ${ledMulti}* · ${layarDaya.length} screen · total ${sirkuitTotal} sirkuit`, ...layarDaya.map(x => `*${x.nama}* (${x.d.kolom}×${x.d.baris} ${x.d.satuan})\n${ringkasanDaya(x.d, dayaLED)}`)]
       : [`*Power Connection LED ${labelLED}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`, ringkasanDaya(dataDaya, dayaLED)]),
   ].filter(Boolean).join('\n');
   const t = tKon;
@@ -163,8 +166,8 @@ export function useEksporLED(K: KeadaanLED) {
         kiri: [
           { label: 'Project', nilai: [project, customer].filter(Boolean).join(' — ') || '—' },
           ...(multi
-            ? [{ label: 'LED', nilai: `${labelLED} · ${hTotal.screen} screen, 1 video processor` },
-              { label: 'Screen', nilai: daftarLayar.map(x => `${x.nama} ${x.kolom}×${x.baris} (${x.h.resX}×${x.h.resY} px)`).join(' · '), sorot: true }]
+            ? [{ label: 'LED', nilai: `${ledMulti} · ${hTotal.screen} screen, 1 video processor` },
+              { label: 'Screen', nilai: daftarLayar.map(x => `${x.nama}${modulCampur ? ` ${x.lbl}` : ''} ${x.kolom}×${x.baris} (${x.h.resX}×${x.h.resY} px)`).join(' · '), sorot: true }]
             : [{ label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
               { label: 'Resolusi', nilai: `${t.resX} × ${t.resY} px`, sorot: true }]),
         ],
@@ -182,7 +185,7 @@ export function useEksporLED(K: KeadaanLED) {
   const pngKoneksi = () => unduhLembarPNG(lembarKoneksi(), namaBerkas('Screen Connection', labelLED, project, customer));
   const teksKoneksi = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
-    multi ? `*Screen Connection LED ${labelLED}* · ${hTotal.screen} screen, 1 video processor`
+    multi ? `*Screen Connection LED ${ledMulti}* · ${hTotal.screen} screen, 1 video processor`
       : `*Screen Connection LED ${labelLED}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
     ringkasanKoneksiMulti(layarKoneksi, pisahKartu),
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
