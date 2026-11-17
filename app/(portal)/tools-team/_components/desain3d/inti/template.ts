@@ -34,8 +34,6 @@ function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, 
   return { ...p, x: Math.round(p.x * 1000) / 1000, z: Math.round(p.z * 1000) / 1000, elev: Math.round(p.elev * 1000) / 1000 };
 }
 
-/** Cermin sinar proyektor `kiri` terhadap bidang x = cx: pan dicerminkan, tilt sama, lalu badan `baru` digeser sampai lensanya
- *  tepat di cermin lensa kiri. Lensa tidak di tengah badan, jadi badannya tidak simetris, tetapi gambarnya simetris persis. */
 function cerminProyektor(kiri: Benda, baru: Benda, cx: number): Benda {
   const l = keDunia(kiri, lensaProyektor(kiri));
   const p: Benda = { ...baru, rot: Math.round(((360 - kiri.rot) % 360) * 10) / 10, tilt: kiri.tilt, x: 2 * cx - kiri.x, z: kiri.z, elev: kiri.elev };
@@ -43,7 +41,6 @@ function cerminProyektor(kiri: Benda, baru: Benda, cx: number): Benda {
   return { ...p, x: r3(p.x + 2 * cx - l[0] - m[0]), z: r3(p.z + l[2] - m[2]), elev: r3(p.elev + l[1] - m[1]) };
 }
 
-/** Simulator: `opsi` 0 = contoh bawaan kartu Kategori (Opsi 3), 1-3 = Opsi 2-4. Opsi 1 (bola Ø 5 m + 3 × ET-ELW20) hanya ada sebagai desain tim di server. */
 export function templateRuang(id: KategoriRuang, opsi = 0): { nama: string; ruang: Ruang; benda: Benda[] } {
   const bola = id === 'simulator' ? SIMULATOR_BOLA[opsi - 1] ?? SIMULATOR_BOLA[1] : undefined;
   const t = bola ? simulatorBola(bola) : templateDasar(id);
@@ -52,10 +49,8 @@ export function templateRuang(id: KategoriRuang, opsi = 0): { nama: string; ruan
 
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 
-/** Lensa (dx, y, dz dari pusat bola) → arah tembak (azimut, elevasi di bola), lalu nama letak. */
 type Baris = [number, number, number, number, number, string];
 type SimulatorBola = { opsi: string; model: string; lensa: LensaPanasonic; badan?: Partial<Benda>; susunan: Baris[]; cermin?: true };
-/** Proyektor di bibir kiri + cerminnya di bibir kanan (dipakai bersama `cermin: true`); sinar menyilang ke sisi seberang. */
 const silang = (kiri: Baris[]): Baris[] => kiri.flatMap(([dx, y, dz, az, el, ke]): Baris[] =>
   [[dx, y, dz, az, el, `bibir kiri → kanan ${ke}`], [-dx, y, dz, -az, el, `bibir kanan → kiri ${ke}`]]);
 const SIMULATOR_BOLA: SimulatorBola[] = [
