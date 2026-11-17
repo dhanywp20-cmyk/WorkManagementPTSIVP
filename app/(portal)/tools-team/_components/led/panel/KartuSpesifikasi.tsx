@@ -1,4 +1,6 @@
 'use client';
+import { useState } from 'react';
+import { EditorLayar, KepalaLayar, RingkasanMulti, TabLayar } from './KartuMultiLayar';
 import { Angka, Catatan, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
 import { kunciModul, pitchNyata } from '@/lib/av/hitung';
 import { CABINET, PITCH } from '../data';
@@ -6,12 +8,17 @@ import { TombolRef } from './komponen';
 import type { AlatLED } from './alat';
 
 export function KartuSpesifikasi({ a }: { a: AlatLED }) {
-  const { barisIn, beratUnit, beratUnitEf, bit, brandAda, brandAktif, bulat, cabH, cabKey, cabW, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, kolomIn, lingkungan, mode, modul, modulBrand, namaUnit, opsiBulat, pilihBrand, pilihCab, pilihModul, pitch, px, pxIn, refLED, refresh, resetUnit, satuan, screen, setBarisIn, setBeratUnit, setBit, setBukaRef, setBulat, setCabH, setCabW, setDayaUnit, setFaktorDaya, setFaktorRata, setKolomIn, setLingkungan, setMode, setPitch, setPxIn, setRefresh, setSatuan, setScreen, setTargetH, setTargetW, setTegangan, targetH, targetW, tegangan, u, multi, namaLayar } = a.K;
-  const awalan = multi ? `${namaLayar || 'Screen 1'} · ` : '';
+  const { barisIn, beratUnit, beratUnitEf, bit, brandAda, brandAktif, bulat, cabH, cabKey, cabW, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, kolomIn, lingkungan, mode, modul, modulBrand, namaUnit, opsiBulat, pilihBrand, pilihCab, pilihModul, pitch, px, pxIn, refLED, refresh, resetUnit, satuan, screen, setBarisIn, setBeratUnit, setBit, setBukaRef, setBulat, setCabH, setCabW, setDayaUnit, setFaktorDaya, setFaktorRata, setKolomIn, setLingkungan, setMode, setPitch, setPxIn, setRefresh, setSatuan, setScreen, setTargetH, setTargetW, setTegangan, targetH, targetW, tegangan, u, multi } = a.K;
+
+  const [pilih, setPilih] = useState(0);
+  const aktif = Math.min(pilih, a.K.layarLain.length);
   return (
     <>
-      <Kartu judul={multi ? `Spesifikasi · ${namaLayar || 'Screen 1'}` : 'Spesifikasi'} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
+      <Kartu judul="Spesifikasi" samping={<TabLayar a={a} aktif={aktif} onPilih={setPilih} />} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
         <div className="space-y-3">
+          {multi && <RingkasanMulti a={a} aktif={aktif} onPilih={setPilih} />}
+          {multi && <KepalaLayar a={a} i={aktif} onPilih={setPilih} />}
+          {aktif > 0 ? <EditorLayar a={a} i={aktif} /> : (<>
           <Segmen label="Satuan" nilai={satuan} onUbah={v => { setSatuan(v); resetUnit(); }}
             opsi={[{ v: 'modul', l: 'Referensi brand' }, { v: 'cabinet', l: 'Cabinet bebas' }]} />
           {satuan === 'modul' ? (
@@ -50,7 +57,7 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
           <Segmen label="Lingkungan" nilai={lingkungan} onUbah={v => { setLingkungan(v); setDayaUnit(null); setBeratUnit(null); }}
             opsi={[{ v: 'indoor', l: 'Indoor' }, { v: 'semi-outdoor', l: 'Semi' }, { v: 'outdoor', l: 'Outdoor' }]} />
 
-          <Segmen label={`${awalan}Hitung dari`} nilai={mode} onUbah={setMode}
+          <Segmen label="Hitung dari" nilai={mode} onUbah={setMode}
             opsi={[{ v: 'ukuran', l: 'Ukuran target' }, { v: 'jumlah', l: `Jumlah ${namaUnit}` }]} />
           {mode === 'ukuran' ? (
             <>
@@ -98,6 +105,7 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
                 className="mt-2 text-[12px] font-semibold text-blue-700 hover:underline">Kembalikan ke nilai umum</button>
             )}
           </details>
+          </>)}
         </div>
       </Kartu>
     </>

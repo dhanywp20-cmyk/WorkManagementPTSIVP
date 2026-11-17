@@ -73,11 +73,16 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
   );
 }
 
-export function Kartu({ judul, children, aksi }: { judul: string; children: React.ReactNode; aksi?: React.ReactNode }) {
+export function Kartu({ judul, children, aksi, samping }: { judul: string; children: React.ReactNode; aksi?: React.ReactNode; samping?: React.ReactNode }) {
   return (
     <section className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">{judul}</h2>
+        {samping ? (
+          <div className="flex flex-wrap items-center gap-2 min-w-0">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">{judul}</h2>
+            {samping}
+          </div>
+        ) : <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">{judul}</h2>}
         {aksi && <div className="max-w-full">{aksi}</div>}
       </div>
       {children}

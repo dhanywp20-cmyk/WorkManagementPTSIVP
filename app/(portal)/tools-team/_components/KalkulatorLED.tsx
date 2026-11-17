@@ -7,7 +7,6 @@ import { TampilanBanding } from './led/banding/TampilanBanding';
 import { TampilanKonten } from './led/konten/TampilanKonten';
 import { KartuProject } from './led/panel/KartuProject';
 import { KartuSpesifikasi } from './led/panel/KartuSpesifikasi';
-import { KartuMultiLayar } from './led/panel/KartuMultiLayar';
 import { KartuHasil } from './led/panel/KartuHasil';
 import { KartuHardware } from './led/panel/KartuHardware';
 import { KartuBom } from './led/panel/KartuBom';
@@ -38,7 +37,6 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
         <div className="space-y-4 min-w-0">
           <KartuProject a={a} />
           <KartuSpesifikasi a={a} />
-          <KartuMultiLayar a={a} />
         </div>
         <div className="space-y-4 min-w-0">
           <KartuHasil a={a} />
