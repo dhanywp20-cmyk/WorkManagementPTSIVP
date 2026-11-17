@@ -13,7 +13,6 @@ export function useEksporLED(K: KeadaanLED) {
     hTotal, layarDaya, layarKoneksi, layarTurunan, multi, namaLayar, pisahKartu, sirkuitTotal } = K;
   const daftarLayar = [{ nama: namaLayar || 'Screen 1', kolom, baris, h }, ...layarTurunan.map(x => ({ nama: x.l.nama, kolom: x.kolom, baris: x.baris, h: x.h }))];
   const teksLayar = (x: (typeof daftarLayar)[number]) => `${x.nama}: ${x.kolom} × ${x.baris} ${namaUnit} · ${f(x.h.lebarM)} × ${f(x.h.tinggiM)} m · ${x.h.resX} × ${x.h.resY} px · ${x.h.portLAN} port`;
-  /** Satuan hardware: per screen (satu ukuran) atau satu set untuk semua screen. */
   const perHw = multi ? ` untuk ${hTotal.screen} screen` : '/screen';
   const ringkasan = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,

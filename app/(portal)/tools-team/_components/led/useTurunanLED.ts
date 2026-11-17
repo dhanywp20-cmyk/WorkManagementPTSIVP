@@ -37,7 +37,6 @@ export function useTurunanLED(isian: IsianLED, data: DataRefLED) {
     pitch: u.pitch, cabLebar: u.w, cabTinggi: u.h, kolom, baris, pxX: px.x, pxY: px.y, dayaMaksCab: dayaUnitEf,
     faktorRata: faktorRata / 100, beratCab: beratUnitEf, refresh, bit, tegangan, faktorDaya,
   }), [u.pitch, u.w, u.h, kolom, baris, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan, faktorDaya]);
-  /** Screen 2, 3, … : modul sama, ukuran sendiri. */
   const layarTurunan = useMemo(() => layarLain.map(l => {
     const { kolom: k, baris: b } = susunanLayar(l, u.w, u.h);
     const hl = hitungLED({
@@ -48,7 +47,6 @@ export function useTurunanLED(isian: IsianLED, data: DataRefLED) {
     return { l, kolom: k, baris: b, h: hl, selisih };
   }), [layarLain, u.pitch, u.w, u.h, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan, faktorDaya]);
   const multi = layarTurunan.length > 0;
-  /** Total semua screen - dasar pemilihan SATU video processor. */
   const hTotal = useMemo(() => {
     const semua = [h, ...layarTurunan.map(x => x.h)];
     const jml = (fn: (x: typeof h) => number) => semua.reduce((a, x) => a + fn(x), 0);
@@ -76,7 +74,6 @@ export function useTurunanLED(isian: IsianLED, data: DataRefLED) {
     kolom, baris, wUnit: u.w, hUnit: u.h, satuan: namaUnit, wattUnit: dayaUnitEf, tegangan, faktorDaya,
   }), [kolom, baris, u.w, u.h, namaUnit, dayaUnitEf, tegangan, faktorDaya]);
   const lewat4K = h.resX > 3840 || h.resY > 2160;
-  /** "Jumlah screen identik" hanya untuk satu ukuran; multi-screen memakai daftar screen. */
   const n = multi ? 1 : Math.max(1, screen);
 
   const layarKoneksi: LayarKoneksi[] = useMemo(() => [
@@ -84,7 +81,6 @@ export function useTurunanLED(isian: IsianLED, data: DataRefLED) {
     ...layarTurunan.map(x => ({ nama: x.l.nama, s: x.l.koneksi, d: { ...dataKoneksi, kolom: x.kolom, baris: x.baris, portIdeal: x.h.portLAN } })),
   ], [namaLayar, dataKoneksi, koneksi, layarTurunan]);
   const mKon = useMemo(() => susunMulti(layarKoneksi, pisahKartu), [layarKoneksi, pisahKartu]);
-  /** Gabungan semua screen (sama dengan susunan Screen 1 bila hanya satu screen). */
   const tKon = mKon.gabung;
   const layarDaya: { nama: string; d: DataDaya }[] = useMemo(() => [
     { nama: namaLayar || 'Screen 1', d: dataDaya },

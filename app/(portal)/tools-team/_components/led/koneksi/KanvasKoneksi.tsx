@@ -8,7 +8,6 @@ import type { AlatRuangKoneksi } from './useRuangKoneksi';
 const ZOOM_MIN = 0.1, ZOOM_MAKS = 4;
 const batasZoom = (z: number) => Math.min(ZOOM_MAKS, Math.max(ZOOM_MIN, Math.round(z * 100) / 100));
 
-/** Zoom kanvas: ubah width/height SVG (viewBox tetap) sehingga klik / seret sel tetap tepat. */
 function useZoomKanvas(svg: string) {
   const [zoom, setZoom] = useState(1);
   const wadah = useRef<HTMLDivElement>(null);
@@ -19,7 +18,6 @@ function useZoomKanvas(svg: string) {
   }, [svg]);
   const svgZoom = useMemo(() => (!ukuran || zoom === 1 ? svg
     : svg.replace(/\swidth="[\d.]+"\s+height="[\d.]+"/, ` width="${Math.round(ukuran.w * zoom)}" height="${Math.round(ukuran.h * zoom)}"`)), [svg, ukuran, zoom]);
-  /** Ganti zoom dengan titik (koordinat layar) yang tetap di tempat; tanpa titik = tengah kanvas. */
   const aturZoom = (z: number, titik?: { x: number; y: number }) => {
     const el = wadah.current, baru = batasZoom(z);
     if (el) {
@@ -41,7 +39,6 @@ function useZoomKanvas(svg: string) {
   useEffect(() => {
     const el = wadah.current;
     if (!el) return;
-    /** Ctrl / ⌘ + roda mouse (atau pinch touchpad) = zoom di posisi kursor. */
     const roda = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();

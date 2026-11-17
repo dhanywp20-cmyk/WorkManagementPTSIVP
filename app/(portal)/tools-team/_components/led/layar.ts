@@ -1,10 +1,6 @@
 import { cabinetUntukUkuran, type Pembulatan } from '@/lib/av/hitung';
 import { bersihkanKoneksi, KONEKSI_AWAL, type PengaturanKoneksi } from './koneksi/data';
 
-/**
- * Screen tambahan dalam satu project LED: modul / cabinet sama dengan Screen 1, ukuran berbeda,
- * semuanya digerakkan SATU video processor (port LAN bersambung antar screen).
- */
 export interface LayarTambahan {
   id: string;
   nama: string;
@@ -37,6 +33,5 @@ export function bersihkanLayar(x: unknown): LayarTambahan[] {
   }));
 }
 
-/** Kolom × baris unit dari isian satu screen (sama seperti Screen 1 di kalkulator). */
 export const susunanLayar = (l: Pick<LayarTambahan, 'mode' | 'targetW' | 'targetH' | 'bulat' | 'kolomIn' | 'barisIn'>, wUnit: number, hUnit: number) =>
   l.mode === 'ukuran' ? cabinetUntukUkuran(l.targetW, l.targetH, wUnit, hUnit, l.bulat) : { kolom: l.kolomIn, baris: l.barisIn };

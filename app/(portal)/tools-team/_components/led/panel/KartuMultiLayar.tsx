@@ -7,7 +7,6 @@ import type { AlatLED } from './alat';
 
 const kelasTombol = 'inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40';
 
-/** Pratinjau semua screen berdampingan dengan skala sama (ukuran relatif benar). */
 function Pratinjau({ layar }: { layar: { nama: string; lebarM: number; tinggiM: number }[] }) {
   const jarak = 16;
   const totalW = Math.max(0.1, layar.reduce((a, l) => a + l.lebarM, 0));

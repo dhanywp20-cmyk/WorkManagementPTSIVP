@@ -7,7 +7,6 @@ import { svgKoneksiMulti, svgPosterKoneksiMulti } from './svg';
 import type { SelRC } from '@/lib/av/hitung';
 
 export interface PropsRuangKoneksi {
-  /** Screen 1 dulu; semua screen memakai satu video processor. */
   layar: LayarKoneksi[];
   onUbah: (i: number, s: PengaturanKoneksi) => void;
   pisahKartu: boolean; onPisahKartu: (v: boolean) => void;
@@ -27,7 +26,6 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
   const [alat, setAlat] = useState<'kabel' | 'kosong' | null>(null);
   const alatEf = s.mode === 'manual' ? (alat ?? 'kabel') : alat;
   const svg = useMemo(() => svgKoneksiMulti(m, { interaktif: true, aktif, portAktif: s.mode === 'manual' ? off + portAktif : undefined }), [m, aktif, s.mode, off, portAktif]);
-  /** Kunci milik video processor selalu disimpan di Screen 1. */
   const onUbah = (baru: PengaturanKoneksi) => {
     if (aktif > 0 && KUNCI_VP.some(x => baru[x] !== s[x])) {
       const s0 = layar[0].s;
@@ -75,7 +73,6 @@ export function useRuangKoneksi(p: PropsRuangKoneksi) {
     mm[ai].push([c, r]);
     terapkan({ ...sk, manual: mm });
   };
-  /** [layar, kolom, baris] dari sel yang disentuh. */
   const selDari = (el: Element | null): [number, number, number] | null => {
     const node = el?.closest('[data-sel]');
     const v = node?.getAttribute('data-sel');

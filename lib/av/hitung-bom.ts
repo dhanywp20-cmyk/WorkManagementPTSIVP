@@ -11,7 +11,6 @@ export interface MasukanBOM {
    port: number; portCadangan: number; panjangLAN: number;
    sirkuit: number; mcb: number; panjangPower: number;
    lebarM: number; tinggiM: number; baris: number;
-  /** Beberapa screen berbeda ukuran (satu video processor): rangka dijumlah per screen, `screen` diisi 1. */
   layar?: { lebarM: number; tinggiM: number; baris: number }[];
 }
 

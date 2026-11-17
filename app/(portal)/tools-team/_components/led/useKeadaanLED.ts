@@ -78,7 +78,6 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     if (c && c.w) { setCabW(c.w); setCabH(c.h); }
   };
 
-  /* Multi-screen: Screen 1 = isian utama, screen berikutnya di layarLain (indeks i-1). */
   const tambahLayar = (dari?: number) => setLayarLain(daftar => {
     if (daftar.length + 1 >= MAKS_LAYAR) return daftar;
     const urut = daftar.length + 2;

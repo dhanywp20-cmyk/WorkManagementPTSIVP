@@ -1,31 +1,20 @@
 import { type DataKoneksi, kodePort, type PengaturanKoneksi, type Susunan, susunKoneksi } from './data';
 
-/**
- * Beberapa screen pada SATU video processor (mis. NovaStar seri H): tiap screen punya susunan
- * receiving card & pola kabel sendiri, tetapi nomor port LAN bersambung (Screen 2 mulai setelah
- * port terakhir Screen 1) dan jumlah controller dihitung dari total port.
- */
 export interface LayarKoneksi { nama: string; d: DataKoneksi; s: PengaturanKoneksi }
 
-/** Pengaturan milik video processor - selalu diambil dari Screen 1 agar semua screen seragam. */
 export const KUNCI_VP = ['ppk', 'cadangan', 'pxPort', 'beban'] as const satisfies readonly (keyof PengaturanKoneksi)[];
 const ambilVP = (s: PengaturanKoneksi) => ({ ppk: s.ppk, cadangan: s.cadangan, pxPort: s.pxPort, beban: s.beban });
 
 export interface BagianLayar {
   i: number; nama: string; d: DataKoneksi;
-  /** Pengaturan efektif (kunci VP dari Screen 1). */
   s: PengaturanKoneksi;
-  /** Susunan dengan nomor port global (sudah digeser `off`) & jumlah controller total. */
   t: Susunan;
-  /** Port global = port lokal + off. */
   off: number;
-  /** Rentang port global yang dipakai screen ini (null bila belum ada kabel). */
   rentang: [number, number] | null;
 }
 
 export interface SusunanMulti {
   per: BagianLayar[];
-  /** Gabungan semua screen untuk panel controller, tabel & total (sel tidak bermakna per posisi). */
   gabung: Susunan;
   multi: boolean;
   pemilik: (port: number) => number;
@@ -95,6 +84,5 @@ export function susunMulti(daftar: LayarKoneksi[], pisahKartu: boolean): Susunan
   return { per, gabung, multi: true, pemilik };
 }
 
-/** "P1–P4" / "P2:1–P2:6" untuk judul screen di diagram & tabel. */
 export const teksRentangPort = (b: BagianLayar) => (!b.rentang ? 'belum ada kabel'
   : b.rentang[0] === b.rentang[1] ? kodePort(b.t, b.rentang[0]) : `${kodePort(b.t, b.rentang[0])}–${kodePort(b.t, b.rentang[1])}`);

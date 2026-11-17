@@ -7,9 +7,7 @@ import { type LayarKoneksi, type SusunanMulti, susunMulti, teksRentangPort } fro
 
 export interface OpsiSvgKoneksi {
   judul?: string; interaktif?: boolean; portAktif?: number;
-  /** Skala px layar → px gambar; diisi agar beberapa screen tergambar dengan skala yang sama. */
   skala?: number;
-  /** Indeks screen (data-layar) untuk kanvas multi-screen. */
   layar?: number;
 }
 
@@ -160,10 +158,6 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
 
 const ukurSvg = (x: string, a: 'width' | 'height') => Number(new RegExp(`\\s${a}="([\\d.]+)"`).exec(x)?.[1] ?? 0);
 
-/**
- * Semua screen berdampingan dalam satu gambar dengan skala yang sama (ukuran relatif benar),
- * nomor port global (bersambung pada satu video processor). Satu screen = svgKoneksi biasa.
- */
 export function svgKoneksiMulti(m: SusunanMulti, o: { interaktif?: boolean; aktif?: number; portAktif?: number } = {}): string {
   if (!m.multi) return svgKoneksi(m.per[0].d, m.per[0].t, { interaktif: o.interaktif, portAktif: o.portAktif });
   const rx = Math.max(1, m.per.reduce((a, b) => a + b.t.resX, 0)), ry = Math.max(1, ...m.per.map(b => b.t.resY));
