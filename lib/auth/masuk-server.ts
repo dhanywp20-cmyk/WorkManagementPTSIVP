@@ -34,6 +34,32 @@ export async function sedangTerkunci(supabase: SupabaseClient, username: string,
   return (byUser.count ?? 0) >= BATAS_GAGAL_USER || (byIp.count ?? 0) >= BATAS_GAGAL_IP;
 }
 
+export async function daftarKunciUser(supabase: SupabaseClient): Promise<Record<string, string>> {
+  const windowStart = new Date(Date.now() - JENDELA_GAGAL_MS).toISOString();
+  const { data } = await supabase.from('login_attempts').select('username, attempted_at')
+    .eq('success', false).gte('attempted_at', windowStart).order('attempted_at', { ascending: true });
+  const per = new Map<string, string[]>();
+  for (const r of (data ?? []) as { username: string | null; attempted_at: string }[]) {
+    const k = (r.username ?? '').trim().toLowerCase();
+    if (k) per.set(k, [...(per.get(k) ?? []), r.attempted_at]);
+  }
+  const hasil: Record<string, string> = {};
+  for (const [k, w] of per) {
+    if (w.length >= BATAS_GAGAL_USER) {
+      hasil[k] = new Date(new Date(w[w.length - BATAS_GAGAL_USER]).getTime() + JENDELA_GAGAL_MS).toISOString();
+    }
+  }
+  return hasil;
+}
+
+export async function bukaKunciUser(supabase: SupabaseClient, username: string): Promise<string | null> {
+  const target = username.trim().toLowerCase();
+  if (!target) return 'Username wajib.';
+  const pola = target.replace(/[\\%_]/g, c => '\\' + c);
+  const { error: eHapus } = await supabase.from('login_attempts').delete().eq('success', false).ilike('username', pola);
+  return eHapus ? eHapus.message : null;
+}
+
 export const PESAN_TERKUNCI = 'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.';
 
 export async function catatPercobaan(supabase: SupabaseClient, username: string, ip: string, success: boolean) {
