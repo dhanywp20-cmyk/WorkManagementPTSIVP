@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Angka, Pilih, Catatan, f } from '../../../bersama/ui';
-import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
+import { type Benda, DISPLAY, kedalamanBidang, type KontenLayar, ubahLebarBidang, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
 import { Bagian } from './TabAtur';
@@ -20,7 +20,8 @@ const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
 
 export function BagianUmum({ c }: { c: KonteksAtur }) {
   const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk, setUkuran } = c;
-  const setLebarTinggi = b.jenis === 'led' ? setUkuran : set;
+  const bidangLengkung = b.jenis === 'bidang' && (b.bentukBidang ?? 'datar') !== 'datar';
+  const setLebarTinggi = (x: Partial<Benda>) => (b.jenis === 'led' || b.jenis === 'bidang' ? setUkuran(b.jenis === 'bidang' && x.w !== undefined ? ubahLebarBidang(b, x.w) : x) : set(x));
   const proyektor = b.jenis === 'proyektor';
   const [tahanPlafon, setTahanPlafon] = useState<{ id: string; teks: string } | null>(null);
   const ubahElev = (v: number) => {
@@ -58,8 +59,8 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
             onUbah={v => v >= 5 && v <= 30000 && setLebarTinggi(bundar ? { w: v / 1000, d: v / 1000 } : { w: v / 1000 })} />
           <Angka label="Tinggi (mm)" nilai={mm(b.h)} step={1} onUbah={v => v >= 2 && v <= 15000 && setLebarTinggi({ h: v / 1000 })} />
           {!bundar && (
-            <Angka label={b.jenis === 'meja' ? 'Panjang (mm)' : 'Tebal (mm)'} nilai={mm(b.d)} step={1}
-              onUbah={v => v >= 2 && v <= 30000 && set({ d: v / 1000 })} />
+            <Angka label={b.jenis === 'meja' ? 'Panjang (mm)' : bidangLengkung ? 'Kedalaman (mm)' : 'Tebal (mm)'} nilai={mm(b.d)} step={1}
+              onUbah={v => v >= 2 && v <= 30000 && (bidangLengkung ? setUkuran(kedalamanBidang(b, v / 1000)) : set({ d: v / 1000 }))} />
           )}
         </div>
         {bawaan && bedaBawaan && (

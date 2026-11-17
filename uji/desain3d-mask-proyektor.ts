@@ -73,6 +73,8 @@ console.log('\n4. Mesin sinar nyata');
 const dir = 'app/(portal)/tools-team/_components/desain3d/mesin/';
 const sinar = readFileSync(`${dir}sinar.ts`, 'utf8'), nyata = readFileSync(`${dir}proyektorNyata.ts`, 'utf8');
 cek('saat diseret (kasar) sel di tepi layar tetap dipecah halus, tidak dibuang (gambar tidak menyusut)', !/if \(kasar\) continue;/.test(sinar) && /if \(kasar\) \{ tepiHalus\(q,/.test(sinar));
+cek('garis tepi sinar Mask mengikuti bibir layar (dicari kontinu ke arah tengah + bisection), bukan dibulatkan ke sel grid -> tidak bergerigi',
+  /const dalamMask = \(u: number, v: number\)/.test(sinar) && /BAGI_TEPI/.test(sinar) && /K_TEPI = mask \?/.test(sinar) && !/Math\.round\(i \+ \(\(ci - i\)/.test(sinar));
 cek('Mask sinar nyata dari bentuk layar (analitik), bukan dari segitiga grid sinar', /mask: bg\.p\.maskBidang \? maskDari\(\) : null/.test(sinar) && !/maskUv/.test(nyata) && /petaMaskBidang\(L, uji, lebar, tinggi\)/.test(nyata));
 cek('gambar dasar (konten × profil × blending) tidak digambar ulang tiap frame saat diseret', /kunciIsi !== lampu\.kunciIsi \|\| \(!kasar && kunciBlend !== lampu\.kunciBlend\)/.test(nyata));
 cek('ukuran peta berubah (rasio proyektor) -> tekstur dibuat ulang (texStorage three.js tidak bisa diubah ukurannya)', /kanvas\.width = dasar\.width; kanvas\.height = dasar\.height;\s*tex\.dispose\(\);/.test(nyata));

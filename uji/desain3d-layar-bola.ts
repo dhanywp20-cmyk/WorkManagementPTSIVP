@@ -1,6 +1,6 @@
 import {
   type Benda, bendaBaru, bolaBidang, cekRuangGerak, daftarRuang, jarakProyeksi, mataPilot, PESAWAT_ACUAN, permukaanBenda, type Ruang, type Titik,
-  terapkanUkuran, tinggiMaksBola, ukuranBidang,
+  kenaBidang, terapkanUkuran, tinggiMaksBola, ubahAtasBola, ukuranBidang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -60,6 +60,30 @@ const bl = bolaBidang(b0), C0 = pusat(b0);
 const diDalam: Benda = { ...pesawat, x: C0[0], z: C0[2] + 0.25, elev: C0[1] - 1.38 };
 cek('pesawat dengan mata di pusat bola tidak bertumpuk dengan layar', !cekRuangGerak([b0, diDalam], ruang).some(c => c.kode === 'tumpang') && bl.R === 2.5);
 cek('pesawat yang hidungnya menembus layar -> tumpang', cekRuangGerak([b0, { ...diDalam, z: C0[2] - 1.5 }], ruang).some(c => c.kode === 'tumpang'));
+
+console.log('\n5. Sudut atas bola (atas tertutup)');
+const tutup = bola({ jariBidang: 2, atasBola: 90, h: 3, elev: 0.38 }), blT = bolaBidang(tutup), CT = pusat(tutup), PT = permukaanBenda(tutup);
+cek('R 2 m, tinggi 3 m, atas 90° -> +90° ke atas, -30° ke bawah, pusat 1 m di atas tepi bawah', dekat((blT.fiA * 180) / Math.PI, 90) && dekat((blT.fiB * 180) / Math.PI, 30) && dekat(blT.yP, 1));
+cek('tinggi maks dengan atas 90° = R (1 + sin 75°)', dekat(tinggiMaksBola(2, 90), 3.932, 0.001) && terapkanUkuran({ ...tutup, h: 9 }).h === tinggiMaksBola(2, 90));
+const ysT = PT.sampel.map(x => x.p[1]);
+cek('sampel permukaan dari tepi bawah sampai puncak, semua berjarak R dari pusat', dekat(Math.min(...ysT), tutup.elev) && dekat(Math.max(...ysT), tutup.elev + 3) && PT.sampel.every(x => dekat(panjang(kurang(x.p, CT)), 2, 1e-6)));
+cek('sinar tegak ke atas dari mata pilot kena puncak (tanpa celah)', dekat(PT.kena(CT, [0, 1, 0]) ?? 0, 2, 1e-6));
+const maskT = kenaBidang(tutup);
+let sepakat = 0, total = 0;
+for (const O of [CT, [CT[0] + 0.4, CT[1] + 1.2, CT[2] + 1.3] as Titik, [CT[0] - 0.5, CT[1] + 0.6, CT[2] + 1.4] as Titik]) {
+  const f = maskT(O);
+  for (let i = 0; i < 400; i++) {
+    const a = (i * 2.399) % (2 * Math.PI), e = Math.asin(((i * 0.618) % 2) - 1), d: Titik = [Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a)];
+    const m = f(d[0], d[1], d[2]), p = PT.kena(O, d);
+    total++;
+    if ((m > 0 && p !== null && dekat(m, p, 1e-6)) || (m <= 0 && p === null)) sepakat++;
+  }
+}
+cek(`Mask proyektor = permukaan layar untuk bola atas tertutup (${sepakat}/${total} sinar sama)`, sepakat === total);
+const sim = bola({ elev: 0.5 }), blS = bolaBidang(sim), ubah = { ...sim, ...ubahAtasBola(sim, 90) }, blU = bolaBidang(ubah);
+cek('ubah sudut atas: sudut bawah & pusat bola (mata pilot) tetap, tinggi bertambah', dekat(blU.fiB, blS.fiB, 1e-3) && dekat(ubah.elev + blU.yP, sim.elev + blS.yP, 2e-3) && ubah.h > sim.h && dekat((blU.fiA * 180) / Math.PI, 90));
+const balik = { ...ubah, ...ubahAtasBola(ubah, null) }, blB = bolaBidang(balik);
+cek('kembali simetris: tinggi & sudut semula, pusat tetap', balik.atasBola === undefined && dekat(balik.h, sim.h, 2e-3) && dekat(blB.fiA, blS.fiA, 1e-3) && dekat(balik.elev + blB.yP, sim.elev + blS.yP, 2e-3));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

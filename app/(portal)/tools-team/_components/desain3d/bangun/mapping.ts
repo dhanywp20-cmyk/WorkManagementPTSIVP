@@ -2,18 +2,21 @@ import type * as T from 'three';
 import { type Benda, bolaBidang, ukuranBidang } from '../inti';
 import { batang, type Konteks, kotak, mat } from './dasar';
 import { bangunPesawat } from './pesawat';
+import type { PermukaanAnalitik } from '../mesin/penembak';
 
 function layarBola(THREE: typeof T, g: T.Group, b: Benda, warna: number, lis: T.Material) {
-  const { R, busur, tb, a0, zP, yP, fiM } = bolaBidang(b);
-  const segA = Math.max(32, Math.round(busur / 2)), segF = Math.max(12, Math.round((fiM * 180) / Math.PI / 2));
-  const geo = new THREE.SphereGeometry(R, segA, segF, a0 + Math.PI / 2, tb, Math.PI / 2 - fiM, 2 * fiM);
+  const { R, busur, tb, a0, zP, yP, fiA, fiB } = bolaBidang(b);
+  const segA = Math.max(32, Math.round(busur / 2)), segF = Math.max(12, Math.round(((fiA + fiB) * 180) / Math.PI / 4));
+  const geo = new THREE.SphereGeometry(R, segA, segF, a0 + Math.PI / 2, tb, Math.PI / 2 - fiA, fiA + fiB);
   geo.translate(0, yP, zP);
-  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide })));
+  const muka = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
+  muka.userData.analitik = { jenis: 'bola', R, cy: yP, cz: zP, a0, tb, fiA, fiB } satisfies PermukaanAnalitik;
+  g.add(muka);
   const titik = (a: number, fi: number) => new THREE.Vector3(R * Math.cos(fi) * Math.sin(a), yP + R * Math.sin(fi), zP + R * Math.cos(fi) * Math.cos(a));
   const garis = (p: T.Vector3[]) => g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(p), Math.max(12, p.length * 2), 0.02, 6, false), lis));
   const n = Math.max(12, Math.round(busur / 4)), m = Math.max(6, Math.round(segF / 2));
-  for (const fi of [-fiM, fiM]) garis(Array.from({ length: n + 1 }, (_, i) => titik(a0 + (tb * i) / n, fi)));
-  if (busur < 360) for (const a of [a0, a0 + tb]) garis(Array.from({ length: m + 1 }, (_, j) => titik(a, -fiM + (2 * fiM * j) / m)));
+  for (const fi of fiA < Math.PI / 2 - 0.01 ? [-fiB, fiA] : [-fiB]) garis(Array.from({ length: n + 1 }, (_, i) => titik(a0 + (tb * i) / n, fi)));
+  if (busur < 360) for (const a of [a0, a0 + tb]) garis(Array.from({ length: m + 1 }, (_, j) => titik(a, -fiB + ((fiA + fiB) * j) / m)));
   for (const f of busur < 360 ? [0.08, 0.5, 0.92] : [0, 0.25, 0.5, 0.75]) {
     const a = a0 + tb * f;
     g.add(batang(THREE, 0.05, 0.05, lis, (R + 0.06) * Math.sin(a), zP + (R + 0.06) * Math.cos(a), 'kaki', yP));
@@ -24,7 +27,7 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   const lis = mat(THREE, 0x1f2227, { metalness: 0.4, roughness: 0.5 });
   if (b.bentukBidang === 'datar') {
     const { w } = ukuranBidang(b), muka = new THREE.Mesh(new THREE.PlaneGeometry(w, b.h), new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
-    muka.position.set(0, b.h / 2, 0.02); g.add(muka);
+    muka.position.set(0, b.h / 2, 0.02); muka.userData.analitik = { jenis: 'datar', w, h: b.h } satisfies PermukaanAnalitik; g.add(muka);
     const r = 0.02;
     for (const [x, y, lw, lh] of [[0, 0, w, r], [0, b.h, w, r], [-w / 2, b.h / 2, r, b.h], [w / 2, b.h / 2, r, b.h]] as const) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(lw + r, lh + r, 0.04), lis); m.position.set(x, y, 0); g.add(m);
@@ -39,7 +42,9 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   const seg = Math.max(24, Math.round(busur / 2.5));
   const geo = new THREE.CylinderGeometry(R, R, b.h, seg, 1, true, mulai, t);
   geo.translate(0, b.h / 2, zPusat);
-  g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide })));
+  const muka = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
+  muka.userData.analitik = { jenis: 'silinder', R, cz: zPusat, h: b.h, a0: mulai, tb: t } satisfies PermukaanAnalitik;
+  g.add(muka);
   const busurTitik = (y: number) => {
     const n = Math.max(8, Math.round(busur / 4)), p: T.Vector3[] = [];
     for (let i = 0; i <= n; i++) { const a = mulai + (t * i) / n; p.push(new THREE.Vector3(R * Math.sin(a), y, zPusat + R * Math.cos(a))); }

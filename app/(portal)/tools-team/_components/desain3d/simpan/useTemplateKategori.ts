@@ -119,9 +119,9 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     } catch { return null; }
   };
 
-  const pilihKategori = async (id: KategoriRuang) => {
-    const info = daftar[id];
-    if (!info) { aksi.pasangKategori(id); return; }
+  const pilihKategori = async (id: KategoriRuang, opsi = 0) => {
+    const info = opsi ? undefined : daftar[id];
+    if (!info) { aksi.pasangKategori(id, null, opsi); return; }
     setSibuk(id);
     try {
       const isi = await ambilIsi(id, info);

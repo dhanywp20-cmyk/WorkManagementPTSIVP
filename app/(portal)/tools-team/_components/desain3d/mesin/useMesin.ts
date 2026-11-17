@@ -9,6 +9,7 @@ import type { Mesin } from './tipe';
 import { batasDunia, terbangKe } from './kamera';
 import { hindariTumpuk } from './label';
 import { pasangPatchProyektor } from './proyektorNyata';
+import { buatPenjagaBayangan } from './bayanganHemat';
 
 export function useMesin(K: KeadaanDesain) {
   const { bukaAtur, bendaRef, dariToggle, gambarLayar, klikUkurRef, sembunyiRef, snapRef, sumbuGeserRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
@@ -196,6 +197,7 @@ export function useMesin(K: KeadaanDesain) {
         let jalan = true;
         const vT = new THREE.Vector3(), vS = new THREE.Vector3(), sf = new THREE.Spherical();
         let tumpukTerakhir = 0;
+        const jagaBayangan = buatPenjagaBayangan(renderer, scene);
         const putar = () => {
           if (!jalan) return;
           if (!wadah.clientWidth) { requestAnimationFrame(putar); return; }
@@ -215,7 +217,7 @@ export function useMesin(K: KeadaanDesain) {
             vT.set(Math.min(bt.x + ls, Math.max(-ls, orbit.target.x)), Math.min(bt.t + ls, Math.max(-0.5, orbit.target.y)), Math.min(bt.z + ls, Math.max(-ls, orbit.target.z)));
             if (!vT.equals(orbit.target)) { vS.subVectors(vT, orbit.target); orbit.target.add(vS); kamera.position.add(vS); }
           }
-          orbit.update(); renderer.render(scene, kamera); labelRenderer.render(scene, kamera);
+          orbit.update(); jagaBayangan(); renderer.render(scene, kamera); labelRenderer.render(scene, kamera);
           const kini = performance.now();
           if (kini - tumpukTerakhir > 150) { tumpukTerakhir = kini; if (mesin.current) hindariTumpuk(labelRenderer.domElement, mesin.current); }
           requestAnimationFrame(putar);

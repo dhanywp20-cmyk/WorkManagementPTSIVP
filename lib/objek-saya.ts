@@ -18,7 +18,7 @@ const BIDANG: Record<string, Tipe> = {
   nama: 'teks', w: 'angka', h: 'angka', d: 'angka', elev: 'angka', diag: 'angka', rasio: 'teks', pitch: 'angka', cabW: 'angka', cabH: 'angka',
   vw: 'teks', kol: 'angka', bar: 'angka', warna: 'warna', jangkauan: 'angka', sebaran: 'angka', sebaranV: 'angka', tipeSpeaker: 'teks',
   modul: 'angka', sudutModul: 'angka', tiltLA: 'angka', gantung: 'bool', tampilJangkauan: 'bool', trMin: 'angka', trMax: 'angka',
-  baris: 'angka', kursiBaris: 'angka', tinggiAnak: 'angka', bentukBidang: 'teks', jariBidang: 'angka', busur: 'angka', offsetLensa: 'angka',
+  baris: 'angka', kursiBaris: 'angka', tinggiAnak: 'angka', bentukBidang: 'teks', jariBidang: 'angka', busur: 'angka', atasBola: 'angka', offsetLensa: 'angka',
   geserLensaH: 'angka', warnaSinar: 'warna', lumen: 'angka', pasang: 'teks', rakU: 'angka', mic: 'teks', bentukMeja: 'teks', finish: 'teks',
   tipeKursi: 'teks', tipeKamera: 'teks', naik: 'bool', pasangProyektor: 'teks', throwRatio: 'angka', tilt: 'angka', konten: 'teks',
   sembunyiUkur: 'bool', sembunyiLabel: 'bool', monitorMeja: 'angka', tipeRak: 'teks', tipeLampu: 'teks', sudutLampu: 'angka', dimmer: 'angka',

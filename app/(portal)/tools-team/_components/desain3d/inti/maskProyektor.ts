@@ -35,15 +35,16 @@ export function kenaBidang(b: Benda): (O: Titik) => KenaArah {
       };
     }
     if (bentuk === 'bola') {
-      const { R, tb, a0, zP, yP, fiM } = bolaBidang(b), batasY = R * Math.sin(fiM) + SEL;
+      const { R, tb, a0, zP, yP, fiA, fiB } = bolaBidang(b), atasY = R * Math.sin(fiA) + SEL, bawahY = -R * Math.sin(fiB) - SEL;
       const px = ox, py = oy - yP, pz = oz - zP, C = px * px + py * py + pz * pz - R * R;
+      const diPita = (y: number) => y <= atasY && y >= bawahY;
       return (dx, dy, dz) => {
         const lx = dx * c - dz * s, lz = dx * s + dz * c;
         const A = lx * lx + dy * dy + lz * lz, B = 2 * (px * lx + py * dy + pz * lz), disk = B * B - 4 * A * C;
         if (A < 1e-12 || disk < 0) return 0;
         const akar = Math.sqrt(disk), t1 = (-B - akar) / (2 * A), t2 = (-B + akar) / (2 * A);
-        if (t1 > 0 && Math.abs(py + dy * t1) <= batasY && sudutDalam(px + lx * t1, pz + lz * t1, a0, tb)) return -t1;
-        if (t2 > 0 && Math.abs(py + dy * t2) <= batasY && sudutDalam(px + lx * t2, pz + lz * t2, a0, tb)) return t2;
+        if (t1 > 0 && diPita(py + dy * t1) && sudutDalam(px + lx * t1, pz + lz * t1, a0, tb)) return -t1;
+        if (t2 > 0 && diPita(py + dy * t2) && sudutDalam(px + lx * t2, pz + lz * t2, a0, tb)) return t2;
         return 0;
       };
     }
@@ -71,7 +72,7 @@ export function ujiKenaBidang(b: Benda): UjiBidang {
 
 export function kunciBidangMask(benda: Benda[]): string {
   return JSON.stringify(benda.filter(b => JENIS_BIDANG_MASK.has(b.jenis))
-    .map(b => [b.jenis, b.bentukBidang ?? null, b.x, b.z, b.elev, b.rot, b.w, b.h, b.d, b.jariBidang ?? null, b.busur ?? null]));
+    .map(b => [b.jenis, b.bentukBidang ?? null, b.x, b.z, b.elev, b.rot, b.w, b.h, b.d, b.jariBidang ?? null, b.busur ?? null, b.atasBola ?? null]));
 }
 
 export function petaMaskBidang(L: Lensa, uji: UjiBidang[], lebar: number, tinggi: number): Uint8Array {

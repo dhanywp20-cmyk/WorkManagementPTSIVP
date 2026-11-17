@@ -57,7 +57,7 @@ export interface Benda {
    tampilJangkauan?: boolean;
    trMin?: number; trMax?: number;
    baris?: number; kursiBaris?: number; tinggiAnak?: number;
-  bentukBidang?: BentukBidang; jariBidang?: number; busur?: number;
+  bentukBidang?: BentukBidang; jariBidang?: number; busur?: number; atasBola?: number;
    offsetLensa?: number;
    geserLensaH?: number;
    warnaSinar?: string;

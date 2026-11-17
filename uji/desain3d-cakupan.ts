@@ -115,7 +115,7 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
   cek('tepi bayangan & tepi layar dicari dengan bagi dua sinar (tidak bertangga selebar sub-sel)', /if \(anggota\(h\)\) \{ lo = t; kenaLo = h; \} else hi = t;/.test(sinar));
   cek('pojok ruangan (lantai-dinding) bukan "satu permukaan": dibedakan per mesh & normal', /if \(a\.kunci === b\.kunci\) return d > 0\.7;/.test(sinar));
   cek('bidang gambar diangkat tegak lurus permukaan (tidak tenggelam di layar lengkung yang disinari miring)',
-    /hit\.point\.clone\(\)\.addScaledVector\(n, ANGKAT\)/.test(sinar) && /melengkung\(q\)/.test(sinar));
+    /hit\.titik\.clone\(\)\.addScaledVector\(n, ANGKAT\)/.test(sinar) && /melengkung\(q\)/.test(sinar));
   cek('cahaya hanya di sisi yang menghadap lensa: tidak tembus ke balik layar / melayang di dinding yang disembunyikan',
     /side: THREE\.FrontSide, blending: THREE\.AdditiveBlending/.test(sinar) && !/LineSegments/.test(sinar));
   cek('zona blending dipotong halus: bingkai lawan + sudut datang kedua lensa (COS_MIN)',

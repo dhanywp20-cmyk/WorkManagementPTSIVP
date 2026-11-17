@@ -30,6 +30,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
       }
       m.kamera.updateMatrixWorld();
       m.renderer.setPixelRatio(Math.min(3, rasioLama * skala));
+      m.renderer.shadowMap.needsUpdate = true;
       m.renderer.render(m.scene, m.kamera);
       m.labelRenderer.render(m.scene, m.kamera);
       const src = m.renderer.domElement;
