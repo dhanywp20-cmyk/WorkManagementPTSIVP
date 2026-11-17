@@ -4,13 +4,14 @@ import { gambarPanelKoneksi } from './panel';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
 
 export function PanelController({ a }: { a: AlatRuangKoneksi }) {
-  const { d, t } = a;
+  const { g: t, m } = a;
+  const d = m.per[0].d;
   const { gambar, sisa } = useMemo(() => gambarPanelKoneksi(d, t), [d, t]);
   if (!gambar.length) return null;
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-3 space-y-3">
       <div>
-        <p className="text-[12px] font-bold text-slate-800">Sending box / video controller · port yang dipakai</p>
+        <p className="text-[12px] font-bold text-slate-800">Sending box / video controller · port yang dipakai{m.multi ? ` · ${m.per.length} screen` : ''}</p>
         <p className="text-[11px] text-slate-500">Port LAN berwarna = terpakai, label P1, P2, … sama dengan diagram{t.cadangan !== 'tidak' ? '; B = kabel cadangan' : ''}. Abu-abu = kosong.</p>
       </div>
       {gambar.map(g => (
