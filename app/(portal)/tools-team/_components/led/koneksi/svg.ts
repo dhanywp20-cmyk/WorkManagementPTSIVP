@@ -1,15 +1,24 @@
 import { gambarPanelKoneksi } from './panel';
 import { esc } from '../../bersama/cetak';
 import { f } from '../../bersama/ui';
-import { type DataKoneksi, kodePort, kunci, namaCadangan, namaPort, type PengaturanKoneksi, type Susunan, susunKoneksi, warnaPort } from './data';
+import { type DataKoneksi, kodePort, kunci, namaCadangan, namaPort, type PengaturanKoneksi, type Susunan, warnaPort } from './data';
 import { teksCadangan, teksCara } from './teks';
+import { type LayarKoneksi, type SusunanMulti, susunMulti, teksRentangPort } from './multi';
 
-export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; interaktif?: boolean; portAktif?: number } = {}): string {
+export interface OpsiSvgKoneksi {
+  judul?: string; interaktif?: boolean; portAktif?: number;
+  /** Skala px layar → px gambar; diisi agar beberapa screen tergambar dengan skala yang sama. */
+  skala?: number;
+  /** Indeks screen (data-layar) untuk kanvas multi-screen. */
+  layar?: number;
+}
+
+export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): string {
   const rx = Math.max(1, t.resX), ry = Math.max(1, t.resY);
   const selW = Math.max(1, ...t.lebar), selH = Math.max(1, ...t.tinggi);
-  const skala = o.interaktif
+  const skala = o.skala ?? (o.interaktif
     ? Math.min(Math.max(Math.min(1100 / rx, 620 / ry), 88 / selW, 60 / selH), 7000 / rx, 4500 / ry)
-    : Math.min(860 / rx, 430 / ry);
+    : Math.min(860 / rx, 430 / ry));
   const W = t.resX * skala, H = t.resY * skala;
   const ox = 52, oy = o.judul ? 52 : 30;
   const xs = [ox], ys = [oy];
@@ -28,7 +37,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
     const k = kunci(c, r), s = peta.get(k);
     const isi = t.kosong.has(k) ? 'fill="url(#arsir-koneksi)"'
       : s ? `fill="${warnaPort(s.port)}" fill-opacity="${o.portAktif === s.port ? 0.32 : 0.17}"` : 'fill="#ffffff"';
-    out.push(`<rect x="${n(xs[c])}" y="${n(ys[r])}" width="${n(xs[c + 1] - xs[c])}" height="${n(ys[r + 1] - ys[r])}" ${isi}${o.interaktif ? ` class="sel" data-sel="${k}"` : ''}/>`);
+    out.push(`<rect x="${n(xs[c])}" y="${n(ys[r])}" width="${n(xs[c + 1] - xs[c])}" height="${n(ys[r + 1] - ys[r])}" ${isi}${o.interaktif ? ` class="sel" data-sel="${k}"${o.layar !== undefined ? ` data-layar="${o.layar}"` : ''}` : ''}/>`);
   }
   const atas: string[] = [];
   if (!t.custom && (t.rcKol > 1 || t.rcBaris > 1) && d.kolom <= 160 && d.baris <= 160) {
@@ -149,13 +158,52 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${tinggi}" viewBox="0 0 ${lebar} ${tinggi}" style="${o.interaktif ? 'display:block;touch-action:none' : 'max-width:100%;height:auto;touch-action:auto'}">${out.join('')}</svg>`;
 }
 
+const ukurSvg = (x: string, a: 'width' | 'height') => Number(new RegExp(`\\s${a}="([\\d.]+)"`).exec(x)?.[1] ?? 0);
+
+/**
+ * Semua screen berdampingan dalam satu gambar dengan skala yang sama (ukuran relatif benar),
+ * nomor port global (bersambung pada satu video processor). Satu screen = svgKoneksi biasa.
+ */
+export function svgKoneksiMulti(m: SusunanMulti, o: { interaktif?: boolean; aktif?: number; portAktif?: number } = {}): string {
+  if (!m.multi) return svgKoneksi(m.per[0].d, m.per[0].t, { interaktif: o.interaktif, portAktif: o.portAktif });
+  const rx = Math.max(1, m.per.reduce((a, b) => a + b.t.resX, 0)), ry = Math.max(1, ...m.per.map(b => b.t.resY));
+  const selW = Math.max(1, ...m.per.flatMap(b => b.t.lebar)), selH = Math.max(1, ...m.per.flatMap(b => b.t.tinggi));
+  const skala = o.interaktif
+    ? Math.min(Math.max(Math.min(1250 / rx, 620 / ry), 88 / selW, 60 / selH), 9000 / rx, 4500 / ry)
+    : Math.min(1000 / rx, 430 / ry);
+  const jarak = 14;
+  let x = 0, tinggi = 0;
+  const bagian = m.per.map(b => {
+    const judul = `${b.nama} · ${teksRentangPort(b)}`;
+    const svg = svgKoneksi(b.d, b.t, { judul, interaktif: o.interaktif, skala, layar: b.i, portAktif: b.i === o.aktif ? o.portAktif : undefined });
+    const w = ukurSvg(svg, 'width'), h = ukurSvg(svg, 'height');
+    const hasil = { x, w, h, svg };
+    x += w + jarak; tinggi = Math.max(tinggi, h);
+    return hasil;
+  });
+  const lebar = Math.round(x - jarak);
+  const isi = bagian.map((g, i) => {
+    const sorot = o.interaktif && i === o.aktif
+      ? `<rect x="${g.x + 2}" y="2" width="${g.w - 4}" height="${tinggi - 4}" rx="10" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5" pointer-events="none"/>` : '';
+    return sorot + g.svg.replace(/ style="[^"]*"/, '').replace('<svg ', `<svg x="${g.x}" y="0" `);
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${Math.round(tinggi)}" viewBox="0 0 ${lebar} ${Math.round(tinggi)}" style="${o.interaktif ? 'display:block;touch-action:none' : 'max-width:100%;height:auto;touch-action:auto'}">${isi}</svg>`;
+}
+
 export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: string, sub: string): string {
-  const t = susunKoneksi(d, s), k = t.hasil;
-  const diagram = svgKoneksi(d, t);
-  const dw = Number(/\swidth="([\d.]+)"/.exec(diagram)?.[1] ?? 800), dh = Number(/\sheight="([\d.]+)"/.exec(diagram)?.[1] ?? 400);
+  return svgPosterMulti(susunMulti([{ nama: 'Screen 1', d, s }], false), judul, sub);
+}
+
+export function svgPosterKoneksiMulti(layar: LayarKoneksi[], pisahKartu: boolean, judul: string, sub: string): string {
+  return svgPosterMulti(susunMulti(layar, pisahKartu), judul, sub);
+}
+
+function svgPosterMulti(m: SusunanMulti, judul: string, sub: string): string {
+  const t = m.gabung, k = t.hasil, s = m.per[0].s, d = m.per[0].d;
+  const diagram = svgKoneksiMulti(m);
+  const dw = ukurSvg(diagram, 'width') || 800, dh = ukurSvg(diagram, 'height') || 400;
   const panel = gambarPanelKoneksi(d, t);
-  const ukur = (x: string, a: 'width' | 'height') => Number(new RegExp(`\\s${a}="([\\d.]+)"`).exec(x)?.[1] ?? 0);
-  const W = Math.max(dw, 820, ...panel.gambar.map(g => ukur(g.svg, 'width'))) + 40;
+  const W = Math.max(dw, 820, ...panel.gambar.map(g => ukurSvg(g.svg, 'width'))) + 40;
   const port = k.port;
   const kolomLegenda = port.length > 24 ? 3 : port.length > 8 ? 2 : 1;
   const barisLegenda = Math.ceil(port.length / kolomLegenda);
@@ -164,7 +212,7 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
   let yIsi = yPanel + (panel.gambar.length ? 16 : 0);
   const blokPanel = panel.gambar.map(g => {
     const svgPanel = g.svg.replace('<svg ', `<svg x="20" y="${yIsi}" `);
-    yIsi += ukur(g.svg, 'height') + 8;
+    yIsi += ukurSvg(g.svg, 'height') + 8;
     return svgPanel;
   }).join('');
   const H = yIsi + (panel.sisa ? 16 : 0) + 46;
@@ -173,10 +221,14 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
   const legenda = port.map((p, i) => {
     const x = 20 + Math.floor(i / barisLegenda) * lebarKolom, y = yLegenda + 30 + (i % barisLegenda) * tinggiBaris;
     const cad = t.cadangan !== 'tidak' && p.jumlah ? ` · B${kodePort(t, p.port).slice(1)} → ${namaCadangan(t, p.port)}` : '';
-    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}${cad}`;
+    const layar = m.multi ? `${m.per[m.pemilik(p.port)].nama} · ` : '';
+    const teks = `${layar}${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}${cad}`;
     return `<rect x="${x}" y="${y - 10}" width="11" height="11" rx="2" fill="${warnaPort(p.port)}"/><text x="${x + 17}" y="${y}" font-size="11.5" fill="${p.beban > s.beban ? '#b91c1c' : '#1e293b'}" ${huruf}>${esc(teks)}</text>`;
   }).join('');
-  const ringkas = `${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)} · ${teksCara(s)}`;
+  const kontrol = `${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)}`;
+  const ringkas = m.multi
+    ? `${m.per.length} screen · 1 video processor${d.namaHw ? ` ${d.namaHw}` : ''} · ${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${kontrol} · ${m.per.map(b => `${b.nama} ${b.t.resX}×${b.t.resY}`).join(', ')}`
+    : `${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${kontrol} · ${teksCara(s)}`;
   const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung` : '', k.lewat.length ? `Port ${k.lewat.join(', ')} melebihi batas beban ${s.beban}%` : '']
     .filter(Boolean).join(' · ');
   const tanggal = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });

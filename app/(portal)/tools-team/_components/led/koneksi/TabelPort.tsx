@@ -4,13 +4,20 @@ import { namaCadangan, namaPort, warnaPort } from './data';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
 
 export function TabelPort({ a }: { a: AlatRuangKoneksi }) {
-  const { k, portAktif, s, setPortAktif, t } = a;
+  const { g: t, m, off, pilihLayar, portAktif, s, setPortAktif } = a;
+  const k = t.hasil;
+  const klik = (port: number) => {
+    const j = m.pemilik(port), b = m.per[j];
+    pilihLayar(j);
+    if (b.s.mode === 'manual') setPortAktif(port - b.off);
+  };
   return (
     <>
       <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
         <table className="w-full text-[12.5px]">
           <thead className="bg-slate-50 text-slate-600 sticky top-0">
             <tr>
+              {m.multi && <th className="text-left font-bold px-3 py-2">Screen</th>}
               <th className="text-left font-bold px-3 py-2">Port</th>
               <th className="text-right font-bold px-3 py-2">RC</th>
               <th className="text-right font-bold px-3 py-2">Pixel</th>
@@ -21,8 +28,9 @@ export function TabelPort({ a }: { a: AlatRuangKoneksi }) {
           </thead>
           <tbody>
             {k.port.map(p => (
-              <tr key={p.port} className={`border-t border-slate-100 ${s.mode === 'manual' ? 'cursor-pointer hover:bg-slate-50' : ''} ${s.mode === 'manual' && p.port === portAktif ? 'bg-blue-50/60' : ''}`}
-                onClick={() => s.mode === 'manual' && setPortAktif(p.port)}>
+              <tr key={p.port} className={`border-t border-slate-100 ${m.multi || s.mode === 'manual' ? 'cursor-pointer hover:bg-slate-50' : ''} ${s.mode === 'manual' && p.port === off + portAktif ? 'bg-blue-50/60' : ''}`}
+                onClick={() => (m.multi || s.mode === 'manual') && klik(p.port)}>
+                {m.multi && <td className="px-3 py-1.5 text-slate-700 whitespace-nowrap">{m.per[m.pemilik(p.port)].nama}</td>}
                 <td className="px-3 py-1.5 font-semibold text-slate-800 whitespace-nowrap">
                   <span className="inline-block w-2.5 h-2.5 rounded-xs mr-2 align-middle" style={{ background: warnaPort(p.port) }} />{namaPort(t, p.port)}
                 </td>

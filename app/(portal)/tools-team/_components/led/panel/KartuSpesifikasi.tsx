@@ -6,7 +6,8 @@ import { TombolRef } from './komponen';
 import type { AlatLED } from './alat';
 
 export function KartuSpesifikasi({ a }: { a: AlatLED }) {
-  const { barisIn, beratUnit, beratUnitEf, bit, brandAda, brandAktif, bulat, cabH, cabKey, cabW, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, kolomIn, lingkungan, mode, modul, modulBrand, namaUnit, opsiBulat, pilihBrand, pilihCab, pilihModul, pitch, px, pxIn, refLED, refresh, resetUnit, satuan, screen, setBarisIn, setBeratUnit, setBit, setBukaRef, setBulat, setCabH, setCabW, setDayaUnit, setFaktorDaya, setFaktorRata, setKolomIn, setLingkungan, setMode, setPitch, setPxIn, setRefresh, setSatuan, setScreen, setTargetH, setTargetW, setTegangan, targetH, targetW, tegangan, u } = a.K;
+  const { barisIn, beratUnit, beratUnitEf, bit, brandAda, brandAktif, bulat, cabH, cabKey, cabW, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, kolomIn, lingkungan, mode, modul, modulBrand, namaUnit, opsiBulat, pilihBrand, pilihCab, pilihModul, pitch, px, pxIn, refLED, refresh, resetUnit, satuan, screen, setBarisIn, setBeratUnit, setBit, setBukaRef, setBulat, setCabH, setCabW, setDayaUnit, setFaktorDaya, setFaktorRata, setKolomIn, setLingkungan, setMode, setPitch, setPxIn, setRefresh, setSatuan, setScreen, setTargetH, setTargetW, setTegangan, targetH, targetW, tegangan, u, multi, namaLayar } = a.K;
+  const awalan = multi ? `${namaLayar || 'Screen 1'} · ` : '';
   return (
     <>
       <Kartu judul="Spesifikasi" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
@@ -49,7 +50,7 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
           <Segmen label="Lingkungan" nilai={lingkungan} onUbah={v => { setLingkungan(v); setDayaUnit(null); setBeratUnit(null); }}
             opsi={[{ v: 'indoor', l: 'Indoor' }, { v: 'semi-outdoor', l: 'Semi' }, { v: 'outdoor', l: 'Outdoor' }]} />
 
-          <Segmen label="Hitung dari" nilai={mode} onUbah={setMode}
+          <Segmen label={`${awalan}Hitung dari`} nilai={mode} onUbah={setMode}
             opsi={[{ v: 'ukuran', l: 'Ukuran target' }, { v: 'jumlah', l: `Jumlah ${namaUnit}` }]} />
           {mode === 'ukuran' ? (
             <>
@@ -79,7 +80,7 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
               <Angka label="Baris" nilai={barisIn} onUbah={v => v >= 1 && setBarisIn(Math.round(v))} step={1} />
             </div>
           )}
-          <Angka label="Jumlah screen identik" nilai={screen} onUbah={v => v >= 1 && setScreen(Math.round(v))} step={1} satuan="screen" />
+          {!multi && <Angka label="Jumlah screen identik" nilai={screen} onUbah={v => v >= 1 && setScreen(Math.round(v))} step={1} satuan="screen" />}
 
           <details className="rounded-xl border border-slate-200 p-3">
             <summary className="text-[12.5px] font-semibold text-slate-700 cursor-pointer">Daya, berat & sinyal (opsional)</summary>

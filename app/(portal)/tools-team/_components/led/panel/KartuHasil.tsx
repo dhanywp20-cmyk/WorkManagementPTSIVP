@@ -3,7 +3,7 @@ import { f, Kartu, Nilai, TombolSalin } from '../../bersama/ui';
 import type { AlatLED } from './alat';
 
 export function KartuHasil({ a }: { a: AlatLED }) {
-  const { baris, customer, h, kolom, lewat4K, mode, n, namaUnit, pembuat, project, selisihH, selisihW, tanggal, tegangan } = a.K;
+  const { baris, customer, h, hTotal, kolom, layarTurunan, lewat4K, mode, multi, n, namaLayar, namaUnit, pembuat, project, selisihH, selisihW, tanggal, tegangan } = a.K;
   const { cetak, pngLED, ringkasan } = a.E;
   const skala = Math.min(320 / h.lebarM, 220 / h.tinggiM);
   const wPx = h.lebarM * skala, hPx = h.tinggiM * skala;
@@ -11,7 +11,7 @@ export function KartuHasil({ a }: { a: AlatLED }) {
 
   return (
     <>
-      <Kartu judul={n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} onCetak={cetak} onPng={pngLED} />}>
+      <Kartu judul={multi ? `Hasil ${namaLayar || 'Screen 1'}` : n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} onCetak={cetak} onPng={pngLED} />}>
         {(project || customer) && (
           <p className="text-[12.5px] text-slate-600 mb-3">
             <span className="font-semibold text-slate-800">{project || '-'}</span>{customer && ` · ${customer}`}
@@ -58,6 +58,34 @@ export function KartuHasil({ a }: { a: AlatLED }) {
           <p className="mt-3 text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             Resolusi melebihi 3840 × 2160: satu sumber/input 4K tidak cukup untuk native pixel. Pakai beberapa input, processor dengan scaling, atau splicer.
           </p>
+        )}
+        {multi && (
+          <div className="mt-4 pt-3 border-t border-slate-100">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-2">Total {hTotal.screen} screen · 1 video processor</p>
+            <div className="overflow-x-auto mb-3">
+              <table className="w-full text-[12.5px]">
+                <thead className="text-slate-600"><tr>
+                  <th className="text-left font-bold py-1 pr-2">Screen</th><th className="text-right font-bold py-1 px-2">Susunan</th>
+                  <th className="text-right font-bold py-1 px-2">Ukuran (m)</th><th className="text-right font-bold py-1 px-2">Resolusi</th><th className="text-right font-bold py-1 pl-2">Port</th>
+                </tr></thead>
+                <tbody className="tabular-nums">
+                  {[{ nama: namaLayar || 'Screen 1', kolom, baris, h }, ...layarTurunan.map(x => ({ nama: x.l.nama, kolom: x.kolom, baris: x.baris, h: x.h }))].map((x, i) => (
+                    <tr key={i} className="border-t border-slate-100">
+                      <td className="py-1 pr-2 font-semibold text-slate-800">{x.nama}</td><td className="text-right py-1 px-2">{x.kolom}×{x.baris}</td>
+                      <td className="text-right py-1 px-2">{f(x.h.lebarM)}×{f(x.h.tinggiM)}</td><td className="text-right py-1 px-2">{x.h.resX}×{x.h.resY}</td><td className="text-right py-1 pl-2">{x.h.portLAN}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="kisi-nilai">
+              <Nilai label={`Total ${namaUnit}`} nilai={hTotal.jumlahCab} />
+              <Nilai label="Total piksel" nilai={f(hTotal.totalPx / 1e6, 2)} satuan="MP" ket={`${hTotal.portLAN} port LAN`} />
+              <Nilai label="Total luas" nilai={f(hTotal.luasM2)} satuan="m²" />
+              <Nilai label="Total daya maks" nilai={f(hTotal.dayaMaksW / 1000)} satuan="kW" ket={`rata-rata ${f(hTotal.dayaRataW / 1000)} kW`} />
+              <Nilai label="Total berat" nilai={f(hTotal.beratKg, 0)} satuan="kg" />
+            </div>
+          </div>
         )}
         {n > 1 && (
           <div className="mt-4 pt-3 border-t border-slate-100">

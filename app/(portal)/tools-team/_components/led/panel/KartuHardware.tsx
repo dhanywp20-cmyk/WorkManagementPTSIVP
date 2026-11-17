@@ -6,10 +6,10 @@ import { KartuHw, TombolRef } from './komponen';
 import type { AlatLED } from './alat';
 
 export function KartuHardware({ a }: { a: AlatLED }) {
-  const { daftarKartu, daftarVP, dayaLED, h, hDaya, hw, kartuM, lingkungan, modeHw, pindah, refLED, setBukaRef, setKartuPilih, setModeHw, setVpPilih, tKon, vpAio, vpM, vpPilih, vpSaja } = a.K;
+  const { daftarKartu, daftarVP, dayaLED, hTotal: h, multi, sirkuitTotal, hw, kartuM, lingkungan, modeHw, pindah, refLED, setBukaRef, setKartuPilih, setModeHw, setVpPilih, tKon, vpAio, vpM, vpPilih, vpSaja } = a.K;
   return (
     <>
-      <Kartu judul="Hardware controller (per screen)" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
+      <Kartu judul={multi ? `Hardware controller (1 untuk ${h.screen} screen)` : 'Hardware controller (per screen)'} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
         <div className="space-y-3">
           <Segmen label="Pemilihan" nilai={modeHw} onUbah={setModeHw}
             opsi={[{ v: 'otomatis', l: 'Otomatis (terkecil yang cukup)' }, { v: 'manual', l: 'Pilih model' }]} />
@@ -36,6 +36,7 @@ export function KartuHardware({ a }: { a: AlatLED }) {
               {kartuM && <KartuHw peran="Sending card" hw={kartuM} totalPx={h.totalPx} portLAN={h.portLAN} nada="abu" />}
             </div>
           )}
+          {multi && <p className="text-[12px] text-slate-600">Dipilih dari total {h.screen} screen: {f(h.totalPx / 1e6, 2)} MP · {h.portLAN} port LAN.</p>}
           {hw.vp && hw.vp.qty > 1 && modeHw === 'otomatis' && (
             <p className="text-[12.5px] text-amber-800">Melebihi kapasitas satu unit: layar dibagi ke beberapa controller, perlu sinkronisasi/splicer.</p>
           )}
@@ -48,7 +49,7 @@ export function KartuHardware({ a }: { a: AlatLED }) {
         <button type="button" onClick={() => pindah('daya')}
           className="mt-2 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-left hover:bg-amber-100">
           <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-amber-900"><Zap size={15} /> Power Connection</span>
-          <span className="text-[12px] text-amber-900">{hDaya.sirkuit.length} sirkuit × MCB {dayaLED.mcb} A · atur fase <ArrowRight size={13} className="inline" /></span>
+          <span className="text-[12px] text-amber-900">{sirkuitTotal} sirkuit × MCB {dayaLED.mcb} A · atur fase <ArrowRight size={13} className="inline" /></span>
         </button>
         <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
       </Kartu>

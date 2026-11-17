@@ -11,6 +11,8 @@ export interface MasukanBOM {
    port: number; portCadangan: number; panjangLAN: number;
    sirkuit: number; mcb: number; panjangPower: number;
    lebarM: number; tinggiM: number; baris: number;
+  /** Beberapa screen berbeda ukuran (satu video processor): rangka dijumlah per screen, `screen` diisi 1. */
+  layar?: { lebarM: number; tinggiM: number; baris: number }[];
 }
 
 export interface BarisBOM { kunci: string; item: string; qty: number; satuan: string; ket: string }
@@ -23,10 +25,12 @@ export function bomLED(m: MasukanBOM): BarisBOM[] {
   const nmUnit = modul ? 'Modul' : 'Cabinet';
   const psu = modul ? Math.ceil(m.dayaMaksW / Math.max(1, m.psuW * 0.8)) : 0;
   const tiang = modul ? 0.6 : 1;
-  const rangkaM = ((m.baris + 1) * m.lebarM + (Math.ceil(m.lebarM / tiang) + 1) * m.tinggiM) * n * 1.1;
+  const rangkaSatu = (l: { lebarM: number; tinggiM: number; baris: number }) => ((l.baris + 1) * l.lebarM + (Math.ceil(l.lebarM / tiang) + 1) * l.tinggiM) * 1.1;
+  const rangkaM = m.layar?.length ? m.layar.reduce((a, l) => a + rangkaSatu(l), 0) : rangkaSatu(m) * n;
+  const nLayar = m.layar?.length ?? n;
   const nLAN = m.port + m.portCadangan;
   const b: BarisBOM[] = [
-    { kunci: 'unit', item: `${nmUnit} LED ${m.namaLED}`.trim(), qty: m.unit, satuan: 'pcs', ket: n > 1 ? `${n} screen` : '' },
+    { kunci: 'unit', item: `${nmUnit} LED ${m.namaLED}`.trim(), qty: m.unit, satuan: 'pcs', ket: nLayar > 1 ? `${nLayar} screen` : '' },
     { kunci: 'unit-cadangan', item: `${nmUnit} cadangan (spare)`, qty: cadangan(m.unit, m.cadanganUnit), satuan: 'pcs', ket: `${m.cadanganUnit}% dari ${m.unit}` },
     { kunci: 'rc', item: `Receiving card ${m.namaRC}`.trim(), qty: m.receivingCard, satuan: 'pcs', ket: '' },
     { kunci: 'rc-cadangan', item: 'Receiving card cadangan', qty: cadangan(m.receivingCard, m.cadanganRC), satuan: 'pcs', ket: `${m.cadanganRC}%` },

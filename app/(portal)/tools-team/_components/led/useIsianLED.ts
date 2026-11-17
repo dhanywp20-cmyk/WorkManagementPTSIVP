@@ -7,6 +7,7 @@ import { type Pembulatan } from '@/lib/av/hitung';
 import { bersihkanBOM, bersihkanHarga, BOM_AWAL, type Lingkungan, type PengaturanBOM } from './data';
 import { NAMA_VP_LAMA } from '@/lib/av/hitung';
 import { bacaRefPakai, type RefPakai } from './refPakai';
+import { bersihkanLayar, type LayarTambahan } from './layar';
 
 export function useIsianLED() {
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
@@ -45,14 +46,17 @@ export function useIsianLED() {
   const [bom, setBom] = useState<PengaturanBOM>(BOM_AWAL);
   const [harga, setHarga] = useState<Record<string, number>>({});
   const [refPakai, setRefPakai] = useState<RefPakai | null>(null);
+  const [namaLayar, setNamaLayar] = useState('Screen 1');
+  const [layarLain, setLayarLain] = useState<LayarTambahan[]>([]);
+  const [pisahKartu, setPisahKartu] = useState(true);
 
   const isian = useMemo(() => ({
     modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai,
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai, namaLayar, layarLain, pisahKartu,
   }), [modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai]);
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga, refPakai, namaLayar, layarLain, pisahKartu]);
   type Isian = typeof isian;
   const terapkan = (v: Partial<Isian>) => {
     const pasang = <K extends keyof Isian>(k: K, setel: (x: Isian[K]) => void) => { if (k in v) setel(v[k] as Isian[K]); };
@@ -67,10 +71,13 @@ export function useIsianLED() {
     setKoneksi(bersihkanKoneksi(v.koneksi));
     setDayaLED(bersihkanDaya(v.dayaLED)); setBom(bersihkanBOM(v.bom)); setHarga(bersihkanHarga(v.harga));
     setRefPakai(bacaRefPakai(v.refPakai));
+    setNamaLayar(typeof v.namaLayar === 'string' && v.namaLayar.trim() ? v.namaLayar.slice(0, 40) : 'Screen 1');
+    setLayarLain(bersihkanLayar(v.layarLain)); setPisahKartu(v.pisahKartu !== false);
   };
   return { modeHw, setModeHw, bukaRef, setBukaRef, vpPilih, setVpPilih, kartuPilih, setKartuPilih, project, setProject, customer, setCustomer,
     tanggal, setTanggal, pembuat, setPembuat, mode, setMode, satuan, setSatuan, modulKode, setModulKode, lingkungan, setLingkungan, pitch, setPitch,
     cabKey, setCabKey, cabW, setCabW, cabH, setCabH, pxIn, setPxIn, targetW, setTargetW, targetH, setTargetH, bulat, setBulat, screen, setScreen,
     kolomIn, setKolomIn, barisIn, setBarisIn, dayaUnit, setDayaUnit, beratUnit, setBeratUnit, faktorRata, setFaktorRata, refresh, setRefresh, bit,
-    setBit, tegangan, setTegangan, faktorDaya, setFaktorDaya, koneksi, setKoneksi, dayaLED, setDayaLED, bom, setBom, harga, setHarga, isian, terapkan };
+    setBit, tegangan, setTegangan, faktorDaya, setFaktorDaya, koneksi, setKoneksi, dayaLED, setDayaLED, bom, setBom, harga, setHarga,
+    namaLayar, setNamaLayar, layarLain, setLayarLain, pisahKartu, setPisahKartu, isian, terapkan };
 }
