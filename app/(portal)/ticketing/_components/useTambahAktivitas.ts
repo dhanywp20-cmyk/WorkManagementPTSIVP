@@ -5,6 +5,7 @@ import { updateSah, wajibCatatan } from '@/lib/alur-status-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { pesanGalat } from '@/lib/galat/pesan';
+import { hitungIssueTerbuka } from './issue-tambahan';
 
 export interface TambahAktivitasKonteks {
   currentUser: User | null;
@@ -48,6 +49,10 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
       if (!(SERVICES_STATUSES as readonly string[]).includes(newActivity.new_status)) { notify("error", "Status tidak valid untuk Team Services!"); return; }
     } else {
       if (!catatanSaja && !validStatusesPTS.includes(newActivity.new_status)) { notify("error", "Invalid status!"); return; }
+      if (newActivity.new_status === "Solved") {
+        const terbuka = await hitungIssueTerbuka(selectedTicket.id);
+        if (terbuka > 0) { notify("error", `Masih ada ${terbuka} issue tambahan yang belum Solved. Selesaikan dulu di section Issue / Kasus.`); return; }
+      }
     }
     try {
       setUploading(true);

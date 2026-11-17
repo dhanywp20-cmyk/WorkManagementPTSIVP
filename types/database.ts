@@ -4418,6 +4418,122 @@ export type Database = {
           },
         ]
       }
+      ticket_issue_logs: {
+        Row: {
+          action_taken: string
+          created_at: string
+          dari_status: string | null
+          handler_name: string
+          handler_username: string
+          id: string
+          issue_id: string
+          new_status: string
+          notes: string
+          photo_name: string
+          photo_url: string
+          ticket_id: string
+        }
+        Insert: {
+          action_taken?: string
+          created_at?: string
+          dari_status?: string | null
+          handler_name?: string
+          handler_username?: string
+          id?: string
+          issue_id: string
+          new_status: string
+          notes?: string
+          photo_name?: string
+          photo_url?: string
+          ticket_id: string
+        }
+        Update: {
+          action_taken?: string
+          created_at?: string
+          dari_status?: string | null
+          handler_name?: string
+          handler_username?: string
+          id?: string
+          issue_id?: string
+          new_status?: string
+          notes?: string
+          photo_name?: string
+          photo_url?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_issue_logs_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_issue_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_issues: {
+        Row: {
+          created_at: string
+          description: string
+          dibuat_oleh: string
+          dibuat_oleh_nama: string
+          id: string
+          issue_case: string
+          nomor: number
+          product: string
+          selesai_pada: string | null
+          sn_unit: string
+          status: string
+          ticket_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          dibuat_oleh?: string
+          dibuat_oleh_nama?: string
+          id?: string
+          issue_case: string
+          nomor: number
+          product?: string
+          selesai_pada?: string | null
+          sn_unit?: string
+          status?: string
+          ticket_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          dibuat_oleh?: string
+          dibuat_oleh_nama?: string
+          id?: string
+          issue_case?: string
+          nomor?: number
+          product?: string
+          selesai_pada?: string | null
+          sn_unit?: string
+          status?: string
+          ticket_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_issues_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_support_assignment: {
         Row: {
           assigned_at: string | null
