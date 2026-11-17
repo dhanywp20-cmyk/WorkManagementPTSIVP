@@ -26,9 +26,9 @@ led/
   useKeadaanLED.ts    isian, referensi produk, hasil hitung, hardware Novastar, data koneksi & daya, BOM
   useEksporLED.ts     ringkasan teks, lembar cetak / PNG (LED, BOM & penawaran, Screen & Power Connection)
   data.ts             pengaturan BOM, pitch & cabinet umum, daya / berat per m²
-  layar.ts            multi screen: Screen 2, 3, … (modul sama, ukuran sendiri) dalam isian.layarLain; Screen 1 = isian utama.
+  layar.ts            multi screen: Screen 2, 3, … (modul & ukuran sendiri) dalam isian.layarLain; Screen 1 = isian utama.
                       Semua screen digerakkan SATU video processor: hardware dipilih dari total piksel & port (hTotal),
-                      "Jumlah screen identik" disembunyikan saat multi. Kartu: panel/KartuMultiLayar.
+                      "Jumlah screen identik" disembunyikan saat multi. Tab screen + tombol tambah di judul KartuSpesifikasi (panel/KartuMultiLayar).
                       koneksi/multi.ts menyusun semua screen: nomor port bersambung (opsi pisahKartu = screen baru mulai
                       di kartu output baru seri H), ppk / cadangan / kapasitas port diambil dari Screen 1. Diuji uji/led-multi-screen.ts
   panel/              KartuProject, KartuSpesifikasi, KartuHasil, KartuHardware, KartuBom, CatatanLED,
