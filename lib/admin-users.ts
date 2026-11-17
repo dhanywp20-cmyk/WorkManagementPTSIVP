@@ -1,7 +1,7 @@
 
 type Res = { error: { message: string } | null };
 
-async function call(body: Record<string, unknown>): Promise<{ data?: { id?: string }; error: { message: string } | null }> {
+async function call(body: Record<string, unknown>): Promise<{ data?: { id?: string; terkunci?: Record<string, string> }; error: { message: string } | null }> {
   try {
     const res = await fetch('/api/admin/users', {
       method: 'POST',
@@ -27,4 +27,13 @@ export async function adminUpdateUser(userId: string, payload: Record<string, un
 
 export async function adminSetAccessLevel(userId: string, value: 'full' | 'guest'): Promise<Res> {
   return call({ action: 'setAccessLevel', userId, value });
+}
+
+export async function adminDaftarKunci(): Promise<{ terkunci: Record<string, string>; error: { message: string } | null }> {
+  const { data, error } = await call({ action: 'daftarKunci' });
+  return { terkunci: data?.terkunci ?? {}, error };
+}
+
+export async function adminBukaKunci(username: string): Promise<Res> {
+  return call({ action: 'bukaKunci', username });
 }

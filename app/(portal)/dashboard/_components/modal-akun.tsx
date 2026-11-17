@@ -16,6 +16,8 @@ import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FormEditAkunInline } from './akun/FormEditAkunInline';
 import { TabAkunTertunda } from './akun/TabAkunTertunda';
 import { TabTambahAkun } from './akun/TabTambahAkun';
+import { useKunciLogin } from './akun/useKunciLogin';
+import { LencanaKunci, TombolBukaKunci } from './akun/KunciLogin';
 import { pesanSebar, propagateUserRename, sendWelcomeWA } from './modal-bersama';
 
 export function paketMenuKelompok(labelPTS: string, daftar: { label: string; dashboard: 'team' | 'sales' }[]): string[] {
@@ -77,6 +79,7 @@ export function AccountSettingsInline() {
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
+  const { kunciSampai, bukaKunci, membuka, muatKunci } = useKunciLogin(notify);
   useEffect(() => { fetchUsers(); }, []);
 
   const fetchUsers = async () => {
@@ -228,7 +231,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     notify(sebar.taraf === 'ok' ? 'success' : 'error', pesanSebar(sebar));
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
-    setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); fetchUsers();
+    setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); fetchUsers(); void muatKunci();
   };
 
   const handleDeleteUser = (userId: string, name: string) => {
@@ -349,7 +352,7 @@ export function AccountSettingsInline() {
                       return (
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
-                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
+                          <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /><LencanaKunci sampai={kunciSampai(user.username)} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role ?? '')}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
@@ -362,6 +365,7 @@ export function AccountSettingsInline() {
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                                 setEditDivisi(d); setEditPtsType(p); setEditPtsDaerah(user.pts_daerah ?? ''); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditPimpinanAwal(user.pimpinan === true); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
+                              <TombolBukaKunci tampil={!!kunciSampai(user.username)} sibuk={membuka === user.id} onClick={() => void bukaKunci(user)} />
                               <button onClick={() => handleDeleteUser(user.id, user.full_name)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
                           </td>

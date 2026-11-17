@@ -2,6 +2,7 @@ import type { TablesInsert, TablesUpdate } from '@/types/database';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getSessionUser, isAdminRole } from '@/lib/auth/server';
+import { bukaKunciUser, daftarKunciUser } from '@/lib/auth/masuk-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,18 @@ export async function POST(request: NextRequest) {
       if (!userId) return NextResponse.json({ error: 'userId wajib.' }, { status: 400 });
       const { error } = await supabase.from('users').update({ access_level: value }).eq('id', userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'daftarKunci') {
+      return NextResponse.json({ terkunci: await daftarKunciUser(supabase) });
+    }
+
+    if (action === 'bukaKunci') {
+      const username = typeof body.username === 'string' ? body.username : '';
+      if (!username.trim()) return NextResponse.json({ error: 'Username wajib.' }, { status: 400 });
+      const err = await bukaKunciUser(supabase, username);
+      if (err) return NextResponse.json({ error: err }, { status: 400 });
       return NextResponse.json({ success: true });
     }
 
