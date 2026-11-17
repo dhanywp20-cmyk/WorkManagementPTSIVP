@@ -37,7 +37,7 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-22" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-          <input id="f-dashboard-components-modal-akun-22" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+          <input id="f-dashboard-components-modal-akun-22" value={editingUser.password ?? ''} placeholder="Kosongkan jika tidak diubah" autoComplete="new-password" onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
         </div>
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
