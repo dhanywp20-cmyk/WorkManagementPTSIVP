@@ -1,3 +1,4 @@
+import { gambarDiSasaran } from './hasilPanasonic';
 import { bendaBaru } from './katalog';
 import { arahProyektor, bagianPanel, gainLayarDari, lumenGambarDari, luminanceDari, sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sisiLuar } from './ruang';
@@ -133,7 +134,7 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   let n: Titik;
   if (sn.layar) { const rl = (sn.layar.rot * Math.PI) / 180; n = [Math.sin(rl), 0, Math.cos(rl)]; }
   else { const D = arahProyektor(p); n = [-D[0], -D[1], -D[2]]; }
-  const luas = Math.max(0.05, sn.lebar * sn.tinggi);
+  const g = gambarDiSasaran(p, semua, r), luas = Math.max(0.05, g.lebar * g.tinggi);
   const luxGambar = lumenGambarDari(p) / luas;
   const ri = ruangDari(r, P[0]), kotak = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
   const lampu = luxCahayaDi(semua, r, P, n), layar = luxPantulLayar(semua, r, ri);
