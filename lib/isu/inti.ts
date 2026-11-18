@@ -28,6 +28,7 @@ export interface IsuGrup {
   kategori: string[];
   share_aktif: boolean;
   share_token?: string | null;
+  share_latar?: string | null;
   updated_at: string;
 }
 
@@ -287,6 +288,45 @@ export function kodeIsu(i: Isu): string {
 
 export function dariTiket(i: Isu): boolean {
   return i.sumber === 'tiket';
+}
+
+export interface UpdateIsu { waktu: string; oleh: string; status: string; update: string; catatan: string; awal: boolean }
+
+export function daftarUpdate(i: Isu): UpdateIsu[] {
+  if (i.tiket) {
+    return [
+      { waktu: i.created_at, oleh: i.dibuat_oleh_nama ?? '', status: 'Dibuat', update: 'Ticket dibuat', catatan: '', awal: true },
+      ...i.tiket.activity_logs.map(a => ({
+        waktu: a.created_at, oleh: (a.handler_name ?? '').trim(), status: (a.new_status ?? '').trim(),
+        update: (a.action_taken ?? '').trim(), catatan: (a.notes ?? '').trim(), awal: false,
+      })),
+    ];
+  }
+  return (i.riwayat ?? []).map(r => ({
+    waktu: r.created_at,
+    oleh: (r.nama ?? '').trim(),
+    status: r.ke && r.ke in STATUS_ISU ? STATUS_ISU[r.ke as StatusIsu].label : r.aksi === 'dibuat' ? 'Dibuat' : '',
+    update: r.aksi === 'dibuat' ? 'Isu dicatat' : r.keterangan.trim(),
+    catatan: '',
+    awal: r.aksi === 'dibuat',
+  }));
+}
+
+export function labelWaktu(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+export function teksSemuaUpdate(i: Isu): string {
+  return daftarUpdate(i).map((u, n) => {
+    let t = `${n + 1}) ${labelWaktu(u.waktu)}`;
+    if (u.oleh) t += ` · ${u.oleh}`;
+    if (u.status) t += ` [${u.status}]`;
+    if (u.update) t += `: ${u.update}`;
+    if (u.catatan) t += ` (${u.catatan})`;
+    return t;
+  }).join('  |  ');
 }
 
 export function urlShareIsu(base: string, token: string): string {

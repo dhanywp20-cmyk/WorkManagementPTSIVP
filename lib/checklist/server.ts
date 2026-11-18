@@ -74,7 +74,7 @@ export async function cariChecklistShare(token: string): Promise<{ db: Db; id: s
   return { db, id: data.id as string };
 }
 
-const KOLOM_PROYEK = 'id,nama,client,deskripsi,sales_name,sales_division,status,start_date,target_date,origin,share_aktif,share_token,dibuat_oleh_nama,created_at,updated_at';
+const KOLOM_PROYEK = 'id,nama,client,deskripsi,sales_name,sales_division,status,start_date,target_date,origin,share_aktif,share_token,share_latar,dibuat_oleh_nama,created_at,updated_at';
 const KOLOM_DAFTAR = 'id,proyek_id,judul,keterangan,sumber,share_aktif,share_token,start_date,target_date,urutan,origin,dibuat_oleh_nama,created_at,updated_at';
 export const KOLOM_ITEM = 'id,daftar_id,bagian_id,kelompok,teks,catatan,urutan,selesai,selesai_oleh,selesai_pada,selesai_lewat,kendala,kendala_catatan,kendala_oleh,kendala_pada,foto_url,foto_thumb_url';
 

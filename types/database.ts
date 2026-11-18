@@ -430,6 +430,7 @@ export type Database = {
           sales_division: string | null
           sales_name: string | null
           share_aktif: boolean
+          share_latar: string | null
           share_token: string | null
           source_reminder_id: string | null
           start_date: string | null
@@ -450,6 +451,7 @@ export type Database = {
           sales_division?: string | null
           sales_name?: string | null
           share_aktif?: boolean
+          share_latar?: string | null
           share_token?: string | null
           source_reminder_id?: string | null
           start_date?: string | null
@@ -470,6 +472,7 @@ export type Database = {
           sales_division?: string | null
           sales_name?: string | null
           share_aktif?: boolean
+          share_latar?: string | null
           share_token?: string | null
           source_reminder_id?: string | null
           start_date?: string | null
@@ -1374,6 +1377,7 @@ export type Database = {
           nama: string
           proyek_ids: string[]
           share_aktif: boolean
+          share_latar: string | null
           share_token: string | null
           updated_at: string
         }
@@ -1387,6 +1391,7 @@ export type Database = {
           nama: string
           proyek_ids?: string[]
           share_aktif?: boolean
+          share_latar?: string | null
           share_token?: string | null
           updated_at?: string
         }
@@ -1400,6 +1405,7 @@ export type Database = {
           nama?: string
           proyek_ids?: string[]
           share_aktif?: boolean
+          share_latar?: string | null
           share_token?: string | null
           updated_at?: string
         }

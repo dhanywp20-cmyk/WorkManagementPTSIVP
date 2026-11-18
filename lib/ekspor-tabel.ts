@@ -2,7 +2,8 @@ import { loadXLSX } from './xlsx-loader';
 import { bukaCetak, type Lembar, namaBerkas, unduhLembarPNG } from './lembar-cetak';
 
 type Sel = string | number | null | undefined;
-export interface KolomEkspor<T> { judul: string; ambil: (r: T) => Sel; angka?: boolean }
+export interface KolomEkspor<T> { judul: string; ambil: (r: T) => Sel; angka?: boolean; hanyaExcel?: boolean }
+export interface LembarEkspor { nama: string; judul: string; kolom: string[]; baris: Sel[][] }
 export interface Ekspor<T> {
   judul: string;
    menu: string;
@@ -10,6 +11,7 @@ export interface Ekspor<T> {
   baris: T[];
   filter?: [string, Sel][];
    warna?: [string, string];
+  lembarLain?: LembarEkspor[];
 }
 
 const teks = (v: Sel) => (v === null || v === undefined ? '' : typeof v === 'number' ? v : String(v).replace(/\s+/g, ' ').trim());
@@ -35,6 +37,8 @@ export function lebarKolom(aoa: (string | number)[][], kepala: number, jumlah: n
 
 const kolomExcel = (n: number) => { let s = ''; for (let x = n; x >= 0; x = Math.floor(x / 26) - 1) s = String.fromCharCode(65 + (x % 26)) + s; return s; };
 
+const namaSheet = (n: string) => n.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31) || 'Data';
+
 export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new Promise((ok, gagal) => loadXLSX((XLSX) => {
@@ -47,7 +51,16 @@ export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
       ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(0, e.kolom.length - 1) } }];
       ws['!freeze'] = { xSplit: 0, ySplit: kepala + 1 };
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, e.menu.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31) || 'Data');
+      XLSX.utils.book_append_sheet(wb, ws, namaSheet(e.menu));
+      for (const l of e.lembarLain ?? []) {
+        const atas = [[l.judul], [`${e.judul} · diekspor ${tanggal} · ${l.baris.length} baris`], []];
+        const isi = [...atas, l.kolom, ...l.baris.map(b => l.kolom.map((_, i) => teks(b[i])))];
+        const wl = XLSX.utils.aoa_to_sheet(isi);
+        wl['!cols'] = lebarKolom(isi, atas.length, l.kolom.length).map(wch => ({ wch }));
+        if (l.baris.length) wl['!autofilter'] = { ref: `A${atas.length + 1}:${kolomExcel(l.kolom.length - 1)}${atas.length + 1 + l.baris.length}` };
+        wl['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(0, l.kolom.length - 1) } }];
+        XLSX.utils.book_append_sheet(wb, wl, namaSheet(l.nama));
+      }
       const hariIni = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `${namaBerkas(e.judul, e.judul.includes(hariIni) ? '' : hariIni)}.xlsx`);
       ok();
@@ -55,7 +68,8 @@ export function eksporExcel<T>(e: Ekspor<T>): Promise<void> {
   }, () => gagal(new Error('Library Excel gagal dimuat - periksa koneksi.'))));
 }
 
-export function lembarTabel<T>(e: Ekspor<T>): Lembar {
+export function lembarTabel<T>(asli: Ekspor<T>): Lembar {
+  const e = { ...asli, kolom: asli.kolom.filter(k => !k.hanyaExcel) };
   const f = filterAktif(e.filter);
   return {
     judul: e.judul, subjudul: `${e.menu} · ${e.baris.length} baris`,

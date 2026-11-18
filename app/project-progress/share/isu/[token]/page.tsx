@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Eye, Lock, RefreshCw } from 'lucide-react';
 import { FooterPlatform, Toast, type Notif } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
+import { gayaLatarShare } from '@/lib/share-latar';
 import { formatWaktu } from '@/lib/checklist/inti';
 import { HAK_BACA, type Isu, type IsuGrup, type LokasiIsu, type RiwayatIsu } from '@/lib/isu/inti';
 import { TEMA } from '@/app/(portal)/project-progress/_components/tampilan';
@@ -47,7 +48,7 @@ export default function IssueLogSharePage() {
   const dibuka = data?.isu.find(i => i.id === bukaId) ?? null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--latar-halaman)' }}>
+    <div className="min-h-screen flex flex-col" style={gayaLatarShare(data?.grup.share_latar, memuat && !data)}>
       <Toast notif={toast} />
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">

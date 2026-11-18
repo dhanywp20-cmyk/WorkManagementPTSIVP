@@ -96,6 +96,13 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
     setData(d => d && { ...d, proyek: { ...d.proyek, ...hasil } });
   };
 
+  const ubahLatar = async (latar: string | null) => {
+    const hasil = await panggil<{ share_latar: string | null }>(`/api/project-progress/${proyekId}`, {
+      method: 'PATCH', body: JSON.stringify({ aksi: 'latar', latar }),
+    });
+    setData(d => d && { ...d, proyek: { ...d.proyek, ...hasil } });
+  };
+
   const hapus = () => setKonfirmasi({
     message: `Hapus proyek "${data?.proyek.nama}"?`,
     description: `Semua checklist (${data?.checklist.length ?? 0} lokasi), item, foto, kendala, dan riwayatnya ikut terhapus permanen. Semua link share berhenti berfungsi.`,
@@ -225,6 +232,7 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
       <ModalChecklistBaru proyekId={proyekId} buka={baruBuka} calonAnggota={calonAnggota} onTutup={() => setBaruBuka(false)}
         onDibuat={id => { setBaruBuka(false); onBerubah(); beritahu('success', 'Checklist lokasi dibuat.'); onBukaChecklist(id); }} />
       <ModalShare beritahu={beritahu} onUbah={ubahShare} onTutup={() => setShareBuka(false)}
+        latar={{ nilai: proyek.share_latar, bisaUbah: admin, onUbah: ubahLatar }}
         target={shareBuka ? { jenis: 'proyek', judul: proyek.nama, share_aktif: proyek.share_aktif, share_token: proyek.share_token } : null} />
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>

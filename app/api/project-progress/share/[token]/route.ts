@@ -12,7 +12,7 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
   const db = getAdminClient();
 
   const { data: proyek, error } = await db.from('checklist_proyek')
-    .select('id,nama,client,deskripsi,sales_name,sales_division,status,start_date,target_date,share_aktif,updated_at')
+    .select('id,nama,client,deskripsi,sales_name,sales_division,status,start_date,target_date,share_aktif,share_latar,updated_at')
     .eq('share_token', token).maybeSingle();
   if (error || !proyek || !proyek.share_aktif) return galat('Link tidak ditemukan atau sudah dinonaktifkan.', 404);
 

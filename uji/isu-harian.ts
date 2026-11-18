@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
-import { geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
+import { gayaLatarShare, rapikanLatarShare } from '../lib/share-latar';
+import { daftarUpdate, teksSemuaUpdate, geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
 import { hakIsu, isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
 
 let lulus = 0, gagal = 0;
@@ -111,6 +112,46 @@ cek('buat grup dijaga hak kelola', rGrup.includes('hakIsu(s.akun).kelola)'));
 cek('daftar proyek hanya untuk hak kelola', rGrup.includes('if (hak.kelola) {'));
 cek('ubah nama & proyek grup dijaga hak kelola', rGrupId.includes('if (!hak.kelola) return galat'));
 cek('jabatan akun dibaca dari users', readFileSync('lib/checklist/server.ts', 'utf8').includes(".select('pimpinan,jabatan')"));
+
+console.log('\nSemua update untuk export');
+const akt = (id: string, jam: string, x: Record<string, string | null>) => ({
+  id, ticket_id: 't', handler_name: null, handler_username: null, action_taken: null, notes: null, file_url: null, file_name: null,
+  photo_url: null, photo_name: null, new_status: null, team_type: null, assigned_to_services: null, created_at: `2026-11-16T${jam}:00Z`, ...x,
+});
+const isuTiket = isu({
+  id: 't', sumber: 'tiket', created_at: '2026-11-16T01:00:00Z', dibuat_oleh_nama: 'Sales A', action: 'Ganti kabel',
+  tiket: {
+    id: 't', project_name: null, issue_case: null, description: null, assign_name: null, status: null, date: null, created_at: '', created_by: null,
+    sales_name: null, product: null, priority: null, photo_url: null, reminder_id: null, address: null, customer_phone: null, sn_unit: null,
+    current_team: null, services_status: null, sales_division: null, photo_name: null, rejection_reason: null, routing_status: null, brand: null,
+    activity_logs: [
+      akt('1', '02:00', { handler_name: 'Budi', action_taken: 'Cek onsite', new_status: 'In Progress' }),
+      akt('2', '05:00', { handler_name: 'Budi', action_taken: 'Ganti kabel', notes: 'kabel HDMI 10m' }),
+    ],
+  },
+});
+const upTiket = daftarUpdate(isuTiket);
+cek('tiket: semua activity log ikut, bukan hanya yang terakhir', upTiket.length === 3 && upTiket[1].update === 'Cek onsite' && upTiket[2].update === 'Ganti kabel');
+cek('tiket: status & catatan activity terbawa', upTiket[1].status === 'In Progress' && upTiket[2].catatan === 'kabel HDMI 10m');
+cek('tiket: baris pertama = ticket dibuat', upTiket[0].awal && upTiket[0].oleh === 'Sales A');
+const teksUp = teksSemuaUpdate(isuTiket);
+cek('teks semua update bernomor & memuat tiap update', teksUp.startsWith('1) ') && teksUp.includes('2) ') && teksUp.includes('3) ') && teksUp.includes('Cek onsite'));
+const isuManual = isu({ id: 'm', riwayat: [
+  { id: 'r1', isu_id: 'm', aksi: 'dibuat', dari: null, ke: 'open', keterangan: '', nama: 'Dhany', created_at: '2026-11-16T01:00:00Z' },
+  { id: 'r2', isu_id: 'm', aksi: 'action', dari: null, ke: null, keterangan: 'Remote cek', nama: 'Dhany', created_at: '2026-11-16T02:00:00Z' },
+  { id: 'r3', isu_id: 'm', aksi: 'status', dari: 'progress', ke: 'solved', keterangan: 'Ganti adaptor', nama: 'Dhany', created_at: '2026-11-16T03:00:00Z' },
+] });
+const upManual = daftarUpdate(isuManual);
+cek('manual: riwayat lengkap dengan label status', upManual.length === 3 && upManual[1].update === 'Remote cek' && upManual[2].status === 'Solved');
+cek('isu tanpa riwayat = kosong', daftarUpdate(isu({})).length === 0);
+
+console.log('\nLatar link share');
+const urlLatar = 'https://abc.supabase.co/storage/v1/object/public/merek-files/share-latar/1-a.jpg';
+cek('URL unggahan share-latar diterima', rapikanLatarShare(urlLatar) === urlLatar);
+cek('kosong = ikut latar platform', rapikanLatarShare('') === null && rapikanLatarShare(null) === null);
+cek('URL lain ditolak', rapikanLatarShare('https://evil.example/x.jpg') === undefined
+  && rapikanLatarShare('https://abc.supabase.co/storage/v1/object/public/merek-files/kuis-live/1.jpg') === undefined);
+cek('latar sendiri dipakai, menunggu = polos', String(gayaLatarShare(urlLatar).background).includes(urlLatar) && gayaLatarShare(urlLatar, true).background === 'var(--halaman)');
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

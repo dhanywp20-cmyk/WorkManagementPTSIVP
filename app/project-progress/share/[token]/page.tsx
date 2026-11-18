@@ -5,6 +5,7 @@ import { FooterPlatform } from '@/components/shared';
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist/inti';
 import { NETRAL } from '@/lib/desain';
+import { gayaLatarShare } from '@/lib/share-latar';
 import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -16,6 +17,7 @@ interface DataShare {
   proyek: {
     id: string; nama: string; client: string | null; deskripsi: string; sales_name: string | null;
     sales_division: string | null; status: StatusProyek; start_date: string | null; target_date: string | null; updated_at: string;
+    share_latar?: string | null;
   };
   daftar: {
     id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string;
@@ -73,7 +75,7 @@ export default function ProyekSharePage() {
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--latar-halaman)' }}>
+    <div className="min-h-screen flex flex-col" style={gayaLatarShare(data?.proyek.share_latar, memuat)}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">

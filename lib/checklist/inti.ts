@@ -44,6 +44,7 @@ export interface ChecklistProyek {
   origin: AsalData;
   share_aktif: boolean;
   share_token?: string | null;
+  share_latar?: string | null;
   dibuat_oleh_nama: string | null;
   created_at: string;
   updated_at: string;
