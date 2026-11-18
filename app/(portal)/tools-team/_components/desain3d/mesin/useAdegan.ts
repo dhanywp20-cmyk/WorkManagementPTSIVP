@@ -39,15 +39,14 @@ export function useAdegan(K: KeadaanDesain) {
       }
     });
     for (const [id, c] of cache) if (!ada.has(id)) { grupBenda.remove(c.obj); buang(c.obj); cache.delete(id); }
-    const layarPolos = sinar && sinarNyata;
     for (const b of benda) {
-      const tanda = `${tandaBentuk(b)}|${versiGambar}${b.jenis === 'layar' ? `|${layarPolos}` : ''}`;
+      const tanda = `${tandaBentuk(b)}|${versiGambar}`;
       let c = cache.get(b.id);
       if (!c || c.tanda !== tanda) {
         if (c) { grupBenda.remove(c.obj); buang(c.obj); }
         const obj = buatModel(b, {
           THREE,
-          layar: x => (x.konten === 'mati' || (x.jenis === 'layar' && layarPolos) ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturKonten(THREE, x)),
+          layar: x => (x.konten === 'mati' || x.jenis === 'layar' ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturKonten(THREE, x)),
           model: k => modelImpor.current.get(k) ?? null,
         });
         obj.userData.id = b.id;
@@ -70,7 +69,7 @@ export function useAdegan(K: KeadaanDesain) {
       const s = new THREE.BoxHelper(o, 0x60a5fa); s.userData.sorot = true; grupBenda.add(s);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [benda, pilih, pilihLain, siap, ruang, versiGambar, sembunyiGolongan, sinar, sinarNyata]);
+  }, [benda, pilih, pilihLain, siap, ruang, versiGambar, sembunyiGolongan]);
 
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;

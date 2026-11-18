@@ -201,7 +201,11 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 { v: 'pola', l: 'Pola uji' }, { v: 'putih', l: 'Putih penuh (cek kecerahan & keseragaman)' }, { v: 'dashboard', l: 'Dashboard / grafik' },
                 { v: 'cctv', l: 'CCTV' }, { v: 'desktop', l: 'Home screen / presentasi' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (proyektor padam)' },
               ] as { v: KontenLayar; l: string }[]} />
-            <Catatan>Tampil saat "Sinar nyata" dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut), terang dari lumen dibanding cahaya ruangan, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.</Catatan>
+            <Catatan>
+              Konten berasal dari proyektor, bukan dari layar (layar proyektor hanya permukaan putih / abu-abu).
+              Tampil saat &quot;Sinar nyata&quot; dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut),
+              terang dari lumen dibanding cahaya ruangan (lampu & jendela), gain layar, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.
+            </Catatan>
           </div>
           <div>
             <span className={label}>Warna sinar</span>

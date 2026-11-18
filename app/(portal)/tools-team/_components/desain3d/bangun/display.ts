@@ -1,5 +1,5 @@
 import type * as T from 'three';
-import { type Benda, engselProyektor, lensaDatar, pasangDari, spekVideowall, tiltDari } from '../inti';
+import { type Benda, engselProyektor, lensaDatar, pasangDari, PERMUKAAN_LAYAR, permukaanLayarDari, spekVideowall, tiltDari } from '../inti';
 import { teksturGrid } from './tekstur';
 import { batang, blok, diLantai, type Konteks, kotak, mat, papan, pelatAntara, tiangAntara } from './dasar';
 import { teksturBerlubang, teksturGril } from './permukaan';
@@ -164,10 +164,9 @@ export function bangunLed({ THREE, g, b, muka, W }: Konteks) {
   pasangDisplay(THREE, g, b, Math.max(1, Math.round(b.w)), Math.max(1, Math.round(b.h)), 0.8);
 }
 
-export function bangunLayar({ THREE, g, b, bahan, W }: Konteks) {
+export function bangunLayar({ THREE, g, b, W }: Konteks) {
   g.add(kotak(THREE, b.w + 0.12, b.h + 0.12, b.d, mat(THREE, W(0x111827)), 0, b.h / 2, 0));
-  const tex = bahan.layar(b);
-  const m = tex ? new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }) : mat(THREE, 0xf8fafc, { roughness: 0.9 });
+  const m = mat(THREE, PERMUKAAN_LAYAR[permukaanLayarDari(b)].warna, { roughness: 0.9 });
   const kain = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.h), m);
   kain.position.set(0, b.h / 2, b.d / 2 + 0.001); g.add(kain);
   g.add(kotak(THREE, b.w + 0.3, 0.12, 0.14, mat(THREE, 0xe5e7eb), 0, b.h + 0.12, 0));
