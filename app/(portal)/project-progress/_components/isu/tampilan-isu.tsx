@@ -109,31 +109,44 @@ export function TabelKota({ kota, tanggal, onBuka }: { kota: BarisKota[]; tangga
   );
 }
 
+const KOLOM_INFO = 'w-[130px] xl:w-[150px] shrink-0';
+
+function SelInfo({ isi, lebar = KOLOM_INFO }: { isi: string; lebar?: string }) {
+  return (
+    <p className={`hidden lg:block ${lebar} text-[12px] font-medium line-clamp-2 break-words`} title={isi || undefined} style={{ color: isi ? NETRAL.tinta2 : TEMA.samar }}>
+      {isi || '–'}
+    </p>
+  );
+}
+
 export function KepalaDaftarIsu() {
   const sel = 'text-[11px] font-bold uppercase tracking-wide';
   return (
     <div className="hidden md:flex gap-4 px-4 py-2" style={{ background: NETRAL.permukaanRedam, borderBottom: `1px solid ${NETRAL.garis}`, color: TEMA.samar }}>
-      <span className={`${sel} w-[120px] shrink-0`}>Tanggal</span>
-      <span className={`${sel} w-[160px] shrink-0`}>Lokasi</span>
-      <span className={`${sel} flex-1`}>Isu · Action / Solusi</span>
-      <span className={`${sel} w-[160px] shrink-0 text-right`}>Status</span>
+      <span className={`${sel} w-[116px] shrink-0`}>Tanggal</span>
+      <span className={`${sel} w-[150px] shrink-0`}>Lokasi</span>
+      <span className={`${sel} flex-1 min-w-0`}>Isu · Action / Solusi</span>
+      <span className={`${sel} hidden lg:block ${KOLOM_INFO}`}>Produk</span>
+      <span className={`${sel} hidden lg:block ${KOLOM_INFO}`}>PIC Handler</span>
+      <span className={`${sel} hidden lg:block w-[110px] shrink-0`}>Client</span>
+      <span className={`${sel} w-[140px] shrink-0 text-right`}>Status</span>
     </div>
   );
 }
 
-export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBuka: () => void }) {
+export function BarisIsu({ isu, acuan, client = '', onBuka }: { isu: Isu; acuan: string; client?: string; onBuka: () => void }) {
   const selesai = tanggalSelesai(isu);
   const umur = umurIsu(isu, acuan);
   return (
     <li>
       <button type="button" onClick={onBuka}
         className="w-full text-left flex flex-col md:flex-row md:items-start gap-1.5 md:gap-4 px-3 sm:px-4 py-3 hover:bg-slate-50/70 transition-colors">
-        <div className="md:w-[120px] shrink-0 flex md:flex-col gap-x-2 gap-y-1 items-center md:items-start flex-wrap">
+        <div className="md:w-[116px] shrink-0 flex md:flex-col gap-x-2 gap-y-1 items-center md:items-start flex-wrap">
           <p className="text-[12.5px] font-bold whitespace-nowrap" style={{ ...fontAngka, color: NETRAL.tinta }}>{labelTanggalLengkap(isu.tanggal)}</p>
           <KodeIsu isu={isu} />
         </div>
-        <div className="md:w-[160px] shrink-0">
-          <p className="text-[12.5px] font-bold truncate" style={{ color: NETRAL.tinta2 }}>{isu.lokasi}</p>
+        <div className="md:w-[150px] shrink-0">
+          <p className="text-[12.5px] font-bold md:line-clamp-2" style={{ color: NETRAL.tinta2 }}>{isu.lokasi}</p>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -142,7 +155,8 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
             <KepingPrioritas p={isu.prioritas} />
           </div>
           <p className="text-[11.5px] mt-0.5" style={{ color: TEMA.samar }}>
-            {[isu.kategori, isu.produk || null, isu.pic ? `PIC ${isu.pic}` : null, isu.pelapor ? `Lapor: ${isu.pelapor}` : null].filter(Boolean).join(' · ')}
+            {isu.kategori}
+            <span className="lg:hidden">{[isu.produk, isu.pic ? `PIC ${isu.pic}` : '', client].filter(Boolean).map(v => ` · ${v}`).join('')}</span>
           </p>
           {(isu.action || isu.solusi) && (
             <p className="text-[12px] mt-1 line-clamp-2" style={{ color: NETRAL.tinta2 }}>
@@ -150,7 +164,10 @@ export function BarisIsu({ isu, acuan, onBuka }: { isu: Isu; acuan: string; onBu
             </p>
           )}
         </div>
-        <div className="md:w-[160px] shrink-0 flex md:flex-col md:items-end gap-1.5 flex-wrap">
+        <SelInfo isi={isu.produk} />
+        <SelInfo isi={isu.pic} />
+        <SelInfo isi={client} lebar="w-[110px] shrink-0" />
+        <div className="md:w-[140px] shrink-0 flex md:flex-col md:items-end gap-1.5 flex-wrap">
           <KepingStatus status={isu.status} />
           <span className="text-[11px] font-semibold" style={{ ...fontAngka, color: umur >= 3 && !selesai ? TEMA.bahaya : TEMA.samar }}>
             {selesai ? `Solved ${labelTanggalPendek(selesai)} · ${umur} hari` : umur === 0 ? 'Dilaporkan hari ini' : `Terbuka ${umur} hari`}

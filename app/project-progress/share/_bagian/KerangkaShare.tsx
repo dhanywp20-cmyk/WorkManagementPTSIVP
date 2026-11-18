@@ -6,19 +6,20 @@ import { FooterPlatform, LogoMerek } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { TEMA } from '@/app/(portal)/project-progress/_components/tampilan';
 
-export function KerangkaShare({ latar, label, judul, sub, aksi, children }: {
+export function KerangkaShare({ latar, label, judul, sub, aksi, lebar = 'max-w-6xl', children }: {
   latar: CSSProperties;
   label: string;
   judul: string;
   sub?: string;
   aksi?: ReactNode;
+  lebar?: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col overflow-hidden" style={{ ...latar, height: '100dvh' }}>
       <header className="shrink-0 z-40"
         style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 flex items-center gap-3">
+        <div className={`${lebar} mx-auto px-3 sm:px-4 h-14 flex items-center gap-3`}>
           <LogoMerek ukuran="sm" className="flex" />
           <div className="min-w-0 flex-1">
             <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] leading-none" style={{ color: TEMA.samar }}>{label}</p>
@@ -36,7 +37,7 @@ export function KerangkaShare({ latar, label, judul, sub, aksi, children }: {
       </header>
 
       <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4">{children}</div>
+        <div className={`${lebar} mx-auto px-3 sm:px-4 py-4 sm:py-5 space-y-4`}>{children}</div>
       </main>
 
       <FooterPlatform />

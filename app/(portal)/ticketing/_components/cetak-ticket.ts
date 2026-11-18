@@ -37,7 +37,7 @@ async function htmlIssueTambahan(ticketId: string): Promise<string> {
 </div>`;
 }
 
-export async function cetakTicket(asli: Ticket): Promise<void> {
+export async function cetakTicket(asli: Ticket, opsi: { tanpaSales?: boolean } = {}): Promise<void> {
   const win = window.open("", "_blank");
   const issueTambahan = await htmlIssueTambahan(asli.id).catch(() => '');
   const ticket = escObjek(asli);
@@ -160,11 +160,11 @@ table.log { width: 100%; border-collapse: collapse; }
 
 <!-- INFORMASI SALES & STATUS -->
 <div class="section">
-  <div class="section-title">🏢 Sales & Status</div>
+  <div class="section-title">🏢 ${opsi.tanpaSales ? "Status" : "Sales & Status"}</div>
   <div class="grid2">
     <div>
-      <div class="info-box"><div class="info-label">Sales / Account</div><div class="info-value">${ticket.sales_name || "—"}</div></div>
-      <div class="info-box"><div class="info-label">Divisi Sales</div><div class="info-value">${ticket.sales_division || "—"}</div></div>
+      ${opsi.tanpaSales ? "" : `<div class="info-box"><div class="info-label">Sales / Account</div><div class="info-value">${ticket.sales_name || "—"}</div></div>
+      <div class="info-box"><div class="info-label">Divisi Sales</div><div class="info-value">${ticket.sales_division || "—"}</div></div>`}
       <div class="info-box"><div class="info-label">Customer / User</div><div class="info-value">${ticket.customer_phone || "—"}</div></div>
     </div>
     <div>

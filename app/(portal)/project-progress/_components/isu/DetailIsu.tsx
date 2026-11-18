@@ -99,7 +99,7 @@ export function ModalDetailIsu({ isu, hak: hakAsli, muatRiwayat, versi, urlTiket
         {hak.admin && onHapus && (yakinHapus
           ? <TombolModal jenis="bahaya" disabled={!!sibuk} onClick={() => void jalankan('hapus', onHapus)}>{sibuk === 'hapus' ? 'Menghapus…' : 'Ya, hapus isu'}</TombolModal>
           : <button type="button" onClick={() => setYakinHapus(true)} className="mr-auto inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: TEMA.bahaya }}><Trash2 size={13} /> Hapus</button>)}
-        <TombolModal onClick={() => void cetakTicket(isuKeTicket(isu, riwayat ?? []))} disabled={!riwayat}>📄 PDF</TombolModal>
+        <TombolModal onClick={() => void cetakTicket(isuKeTicket(isu, riwayat ?? []), { tanpaSales: true })} disabled={!riwayat}>📄 PDF</TombolModal>
         <TombolModal onClick={onTutup} disabled={!!sibuk}>Tutup</TombolModal>
       </>}>
       <div className="space-y-4">

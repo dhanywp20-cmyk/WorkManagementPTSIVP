@@ -54,7 +54,7 @@ export default function IssueLogSharePage() {
 
   return (
     <KerangkaShare latar={gayaLatarShare(data?.grup.share_latar, memuat && !data)}
-      label="Laporan Issue Log" judul={data?.grup.nama ?? 'Issue Log'}
+      label="Laporan Issue Log" lebar="max-w-[1480px]" judul={data?.grup.nama ?? 'Issue Log'}
       sub={terakhir ? `Diperbarui ${formatWaktu(terakhir)}` : 'Tampilan hanya-baca'}
       aksi={data && (
         <button type="button" onClick={() => void muat()} disabled={memuat} aria-label="Muat ulang" title="Muat ulang"
@@ -81,7 +81,7 @@ export default function IssueLogSharePage() {
               `${data.lokasi.length} lokasi${jumlahProyek > 1 ? ` · ${jumlahProyek} proyek` : ''}`,
               terakhir ? `Data per ${formatWaktu(terakhir)}` : '',
             ].filter(Boolean)} />
-          <PapanIsu namaGrup={data.grup.nama} isu={data.isu} lokasi={data.lokasi} kategori={data.grup.kategori}
+          <PapanIsu namaGrup={data.grup.nama} klienGrup={data.grup.client} isu={data.isu} lokasi={data.lokasi} kategori={data.grup.kategori}
             onBuka={i => setBukaId(i.id)} beritahu={beritahu} />
           <ModalDetailIsu isu={dibuka} hak={HAK_BACA} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at} onTutup={() => setBukaId(null)} />
         </>

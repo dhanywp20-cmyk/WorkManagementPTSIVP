@@ -36,6 +36,7 @@ export interface LokasiIsu {
   id: string;
   nama: string;
   proyek: string;
+  client?: string;
 }
 
 export interface Isu {
