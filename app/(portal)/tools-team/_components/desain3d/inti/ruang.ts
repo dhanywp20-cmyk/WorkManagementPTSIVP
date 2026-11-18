@@ -1,5 +1,5 @@
 import { idBaru } from './katalog';
-import { JARAK_LENSA_PERMUKAAN, keDunia, lensaDatar, proyektorKeLayar, sinarProyektor } from './proyektor';
+import { JARAK_LENSA_PERMUKAAN, keDunia, lensaBadan, proyektorKeLayar, sinarProyektor } from './proyektor';
 import type { Benda, Bukaan, Kotak, Ruang, RuangSambung, SisiDinding } from './tipe';
 
 export const MAKS_RUANG = 4;
@@ -131,7 +131,7 @@ function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak, ruan
     const [x, , z] = keDunia(ke, [dx * Math.cos(r0) - dz * Math.sin(r0), 0, dx * Math.sin(r0) + dz * Math.cos(r0)]);
     const tertanam = p.elev + p.h > asal.t - 0.06 + 1e-6;
     const elev = p.elev + (ke.elev - layar.elev);
-    const atas = tertanam ? tujuan.t - lensaDatar(p)[1] - JARAK_LENSA_PERMUKAAN : tujuan.t - p.h - 0.06;
+    const atas = tertanam ? tujuan.t - lensaBadan(p)[1] - JARAK_LENSA_PERMUKAAN : tujuan.t - p.h - 0.06;
     const q: Benda = {
       ...baru[i], rot: (((p.rot - layar.rot + ke.rot) % 360) + 360) % 360,
       x: bulatMm(Math.min(tujuan.x0 + tujuan.p - 0.1, Math.max(tujuan.x0 + 0.1, x))),

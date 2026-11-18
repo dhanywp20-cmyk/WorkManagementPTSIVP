@@ -89,7 +89,7 @@ export interface Benda {
    throwRatio?: number;
    rasioProyektor?: RasioProyektor;
    resolusiProyektor?: ResolusiProyektor;
-   tilt?: number;
+   tilt?: number; roll?: number;
    konten?: KontenLayar;
    sembunyiUkur?: boolean;
   kabelCustom?: KabelCustom[];

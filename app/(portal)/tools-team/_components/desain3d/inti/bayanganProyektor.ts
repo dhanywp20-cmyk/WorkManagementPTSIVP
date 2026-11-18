@@ -1,7 +1,7 @@
 import { lensaDari } from './blending';
 import { JENIS_BIDANG_MASK, kenaBidang } from './maskProyektor';
 import { PESAWAT_ACUAN } from './produk';
-import { engselProyektor, tiltDari } from './proyektor';
+import { engselProyektor, gulungBadan, rollDari, tiltDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
 export interface Penghalang { id: string; nama: string; min: Titik; max: Titik; dalam: (x: number, y: number, z: number) => boolean }
@@ -57,15 +57,17 @@ export function penghalangBenda(b: Benda): Penghalang | null {
   const kotak = (y0: number, y1: number): Pick<Penghalang, 'min' | 'max'> => ({ min: [b.x - jari, b.elev + y0, b.z - jari], max: [b.x + jari, b.elev + y1, b.z + jari] });
   if (b.jenis === 'proyektor') {
     const meja = b.pasangProyektor === 'meja', tiang = !meja && !b.tanpaTiang;
-    const [, hy, hz] = engselProyektor(b), t = (tiltDari(b) * Math.PI) / 180, ct = Math.cos(t), st = Math.sin(t);
-    const turun = Math.hypot(b.d, b.h) + 0.05;
+    const [, hy, hz] = engselProyektor(b), t = (tiltDari(b) * Math.PI) / 180, ct = Math.cos(t), st = Math.sin(t), gb = gulungBadan(b);
+    const turun = Math.hypot(b.d, rollDari(b) ? Math.max(b.h, b.w) : b.h) + 0.05;
     return {
       id: b.id, nama: b.nama, ...kotak(-turun, tiang ? 99 : b.h + 0.1),
       dalam: (x, y, z) => {
         const [lx, ly, lz] = lokal(x, y, z);
         if (tiang && ly >= b.h && lx * lx + lz * lz <= 0.0016) return true;
         const py = ly - hy, pz = lz - hz, qy = py * ct - pz * st + hy, qz = py * st + pz * ct + hz;
-        return Math.abs(lx) <= b.w / 2 && qy >= 0 && qy <= b.h && Math.abs(qz) <= b.d / 2;
+        if (!rollDari(b)) return Math.abs(lx) <= b.w / 2 && qy >= 0 && qy <= b.h && Math.abs(qz) <= b.d / 2;
+        const dy = qy - gb.y, rx = lx * gb.c + dy * gb.s, ry = -lx * gb.s + dy * gb.c + b.h / 2;
+        return Math.abs(rx) <= b.w / 2 && ry >= 0 && ry <= b.h && Math.abs(qz) <= b.d / 2;
       },
     };
   }

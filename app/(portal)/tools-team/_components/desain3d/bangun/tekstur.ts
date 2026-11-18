@@ -46,10 +46,16 @@ export function teksturPolaUji(THREE: typeof T, judul: string, rasio: number): T
     const bar = ['#ffffff', '#facc15', '#22d3ee', '#22c55e', '#d946ef', '#ef4444', '#2563eb'];
     const bw = W / bar.length;
     bar.forEach((w, i) => { g.fillStyle = w; g.fillRect(i * bw, H * 0.68, bw, H * 0.18); });
-    g.fillStyle = '#ffffff'; g.font = `bold ${Math.round(H * 0.11)}px sans-serif`; g.textAlign = 'center';
-    g.fillText(judul, W / 2, H * 0.4);
-    g.font = `${Math.round(H * 0.06)}px sans-serif`; g.globalAlpha = 0.8;
-    g.fillText('PTS IndoVisual · pratinjau', W / 2, H * 0.53);
+    const tulis = (t: string, k: number, tebal: string, y: number) => {
+      g.font = `${tebal}${Math.round(H * k)}px sans-serif`;
+      const lebar = g.measureText(t).width;
+      if (lebar > W * 0.92) g.font = `${tebal}${Math.floor((Math.round(H * k) * W * 0.92) / lebar)}px sans-serif`;
+      g.fillText(t, W / 2, y);
+    };
+    g.fillStyle = '#ffffff'; g.textAlign = 'center';
+    tulis(judul, 0.11, 'bold ', H * 0.4);
+    g.globalAlpha = 0.8;
+    tulis('PTS IndoVisual · pratinjau', 0.06, '', H * 0.53);
   });
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }

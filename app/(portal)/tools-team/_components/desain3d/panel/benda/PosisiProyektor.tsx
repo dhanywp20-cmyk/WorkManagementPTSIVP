@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Angka, Catatan, f, fTetap } from '../../../bersama/ui';
 import {
-  aturJarakProyeksi, type Benda, jarakProyeksi, jepitProyektor, keDunia, lebarGambarDi, lensaProyektor, posisiDariLensa,
+  aturJarakProyeksi, type Benda, jarakProyeksi, jepitProyektor, keDunia, lebarGambarDi, lensaProyektor, ukuranTampak, posisiDariLensa,
   rasioGambarProyektor, throwRatioDari,
 } from '../../inti';
 import type { KonteksAtur } from './konteks';
@@ -27,7 +27,7 @@ export function PosisiProyektor({ c }: { c: KonteksAtur }) {
 
   const jp = jarakProyeksi(b, semua, ruang);
   const tr = throwRatioDari(b);
-  const lebar = jp.jarak !== null ? lebarGambarDi(b, jp.jarak, tr) : 0, tinggi = lebar * rasioGambarProyektor(b);
+  const lebarAsli = jp.jarak !== null ? lebarGambarDi(b, jp.jarak, tr) : 0, { lebar, tinggi } = ukuranTampak(b, lebarAsli, lebarAsli * rasioGambarProyektor(b));
   const ubahJarak = (v: number) => {
     if (!(v >= 0.1 && v <= 60)) return;
     const pos = aturJarakProyeksi(b, semua, ruang, v);
@@ -47,7 +47,7 @@ export function PosisiProyektor({ c }: { c: KonteksAtur }) {
           <Angka label="X lensa" nilai={mm(lx)} satuan="m" step={0.01} onUbah={v => ubahLensa('x', v)} />
           <Angka label="Z lensa" nilai={mm(lz)} satuan="m" step={0.01} onUbah={v => ubahLensa('z', v)} />
           <Angka label="Tinggi lensa (Y)" nilai={mm(ly)} satuan="m" step={0.01} onUbah={v => v >= 0 && ubahLensa('y', v)} />
-          <Angka label="Putar" nilai={b.rot} satuan="°" onUbah={v => set({ rot: ((v % 360) + 360) % 360 })} />
+          <Angka label="Pan (arah)" nilai={b.rot} satuan="°" onUbah={v => set({ rot: ((v % 360) + 360) % 360 })} />
         </div>
       </div>
       <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-2.5 space-y-1.5">

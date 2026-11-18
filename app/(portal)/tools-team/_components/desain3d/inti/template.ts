@@ -36,7 +36,7 @@ function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, 
 
 function cerminProyektor(kiri: Benda, baru: Benda, cx: number): Benda {
   const l = keDunia(kiri, lensaProyektor(kiri));
-  const p: Benda = { ...baru, rot: Math.round(((360 - kiri.rot) % 360) * 10) / 10, tilt: kiri.tilt, x: 2 * cx - kiri.x, z: kiri.z, elev: kiri.elev };
+  const p: Benda = { ...baru, rot: Math.round(((360 - kiri.rot) % 360) * 10) / 10, tilt: kiri.tilt, ...(kiri.roll ? { roll: -kiri.roll } : {}), x: 2 * cx - kiri.x, z: kiri.z, elev: kiri.elev };
   const m = keDunia(p, lensaProyektor(p));
   return { ...p, x: r3(p.x + 2 * cx - l[0] - m[0]), z: r3(p.z + l[2] - m[2]), elev: r3(p.elev + l[1] - m[1]) };
 }

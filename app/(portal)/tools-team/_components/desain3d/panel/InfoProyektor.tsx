@@ -1,5 +1,5 @@
 'use client';
-import { BATAS_LUBER, luberLayar, masukkanKeLayar, teksLuber, type Benda, cakupanProyektor, gainLayarDari, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { BATAS_LUBER, luberLayar, masukkanKeLayar, teksLuber, type Benda, cakupanProyektor, gainLayarDari, hasilPanasonic, jarakUntukLebar, lebarAsliUntuk, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { SusunBlending } from './SusunBlending';
@@ -217,7 +217,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const selisih = (sn.lebar - lyr.w) / lyr.w;
     const pasLebar = Math.abs(selisih) <= 0.03;
     const [zMin, zMax] = zoomLensa(p), trPas = sn.trPas ?? 0;
-    const [jMin, jMax] = jarakUntukLebar(p, Math.max(lyr.w, lyr.h / (sn.tinggi / Math.max(0.001, sn.lebar)))), kj = koreksiJarakDari(p);
+    const [jMin, jMax] = jarakUntukLebar(p, lebarAsliUntuk(p, lyr.w, lyr.h)), kj = koreksiJarakDari(p);
     const zoomBisa = trPas >= zMin - 0.005 && trPas <= zMax + 0.005;
     const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
     const pasTinggi = Math.abs(sv) <= 0.03, pasSamping = Math.abs(sh) <= 0.05;

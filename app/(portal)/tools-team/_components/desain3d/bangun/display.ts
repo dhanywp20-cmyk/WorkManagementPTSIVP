@@ -1,5 +1,5 @@
 import type * as T from 'three';
-import { type Benda, engselProyektor, lensaDatar, pasangDari, PERMUKAAN_LAYAR, permukaanLayarDari, spekVideowall, tiltDari } from '../inti';
+import { type Benda, engselProyektor, gulungBadan, lensaDatar, pasangDari, PERMUKAAN_LAYAR, permukaanLayarDari, spekVideowall, tiltDari } from '../inti';
 import { teksturGrid } from './tekstur';
 import { batang, blok, diLantai, type Konteks, kotak, mat, papan, pelatAntara, tiangAntara } from './dasar';
 import { teksturBerlubang, teksturGril } from './permukaan';
@@ -225,7 +225,9 @@ export function bangunProyektor({ THREE, g, b, W }: Konteks) {
   }
   const [, ey, ez] = engselProyektor(b);
   const pivot = new THREE.Group(); pivot.position.set(0, ey, ez);
-  badan.position.set(0, -ey, -ez); pivot.add(badan);
+  const gb = gulungBadan(b), gulung = new THREE.Group();
+  gulung.position.set(0, gb.y - ey, -ez); gulung.rotation.z = gb.g;
+  badan.position.set(0, -b.h / 2, 0); gulung.add(badan); pivot.add(gulung);
   pivot.rotation.x = -(tiltDari(b) * Math.PI) / 180;
   utama.add(pivot);
   if (!meja && !b.tanpaTiang) {

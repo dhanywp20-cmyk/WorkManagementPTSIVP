@@ -1,5 +1,5 @@
 import { f, fTetap } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, hasilPanasonic, keGambar, kontrasProyektor, koreksiJarakDari, kunciBidangMask, lensaDari, type Lensa, lumenGambarDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, ujiKenaBidang, warnaSinarProyektor } from '../inti';
+import { arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, hasilPanasonic, keGambar, kontrasProyektor, koreksiJarakDari, kunciBidangMask, lensaDari, type Lensa, lumenGambarDari, permukaanUtama, rollDari, ronaProyektor, sisiTampil, sinarProyektor, type Titik, ujiKenaBidang, ukuranTampak, uvAsli, uvTampil, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
@@ -85,18 +85,13 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
     const kj = koreksiJarakDari(p);
-    const O = new THREE.Vector3(...lensaDari(p).O), ujung = new THREE.Vector3(...sn.asal);
+    const Lp = lensaDari(p), O = new THREE.Vector3(...Lp.O), ujung = new THREE.Vector3(...sn.asal);
     const sendiri = m.cache.get(p.id)?.obj;
     const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
     const tembakIni = buatPenembak(THREE, sasaran);
-    const r = (p.rot * Math.PI) / 180;
-    const D = new THREE.Vector3(...arahProyektor(p)).normalize();
-    const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
-    const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
-    const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p), arahV = p.pasangProyektor === 'meja' ? 1 : -1;
-    const offV = offsetLensaDari(p), gH = geserLensaDari(p);
+    const D = new THREE.Vector3(...Lp.D), kanan = new THREE.Vector3(...Lp.kanan), atas = new THREE.Vector3(...Lp.atas), { w1, h1, gH, gV } = Lp;
     const arah = new THREE.Vector3();
-    const arahUV = (u: number, v: number) => arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
+    const arahUV = (u: number, v: number) => arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + gV) * h1).normalize();
     const ingat = new Map<number, Kena | null>();
     const tembakUV = (u: number, v: number) => {
       const k = Math.round(u * 1e7) * 1e8 + Math.round(v * 1e7);
@@ -309,13 +304,14 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         quadTeks(A, B, C, Dd, (((A.distanceTo(O) + C.distanceTo(O)) / 2) * w1 / (NX - 1)) * 6 + 0.05, gu(i), gv(j), gu(i + 1), gv(j + 1));
       }
       tengah = kt[Math.floor(NY / 2) * NX + Math.floor(NX / 2)] ?? tengah;
+      if (Lp.putar) for (let i = 0; i < teksUv.length; i += 2) [teksUv[i], teksUv[i + 1]] = uvTampil(Lp.putar, teksUv[i], teksUv[i + 1]);
     }
     const jarakSumbu = sn.layar ? sn.jarak + kj : tengah ? Math.max(0, tengah.clone().sub(O).dot(D)) : sn.jarak + kj;
     const hp = hasilPanasonic(p, benda, ruang);
     const Ltulis = hp.L ?? Math.max(0, jarakSumbu - kj);
     const ukurTulis = hp.L !== null ? hp
       : { lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, diagonalInci: Math.hypot(jarakSumbu * w1, jarakSumbu * h1) / 0.0254, lux: null };
-    const E0 = lumenGambarDari(p) / (w1 * h1);
+    const E0 = lumenGambarDari(p) / (w1 * h1), ut = ukuranTampak(p, ukurTulis.lebar, ukurTulis.tinggi), roll = rollDari(p);
     const luxDi = (u: number, v: number) => {
       const r = arahUV(u, v).clone(), t = tembakRinci(O, r, tembakTeks());
       if (!t) return null;
@@ -325,9 +321,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     bidangGambar.push({ p, isi: adaIsi, L: lensaDari(p), normal: pusatGambar?.n ?? null, pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       pusat: pusatGambar?.p.clone() ?? null, teks: tulis ? {
         info: [p.nama, `L (lensa → ${hp.sasaran?.nama ?? 'bidang'}) ${fTetap(Ltulis)} m`,
-          `Gambar ${fTetap(ukurTulis.lebar)} × ${fTetap(ukurTulis.tinggi)} m (${fTetap(ukurTulis.diagonalInci, 2)}")`,
+          `Gambar ${fTetap(ut.lebar)} × ${fTetap(ut.tinggi)} m (${fTetap(ukurTulis.diagonalInci, 2)}")${roll ? ` · putar ${f(roll, 0)}°` : ''}`,
           `Pusat ${f(ukurTulis.lux ?? luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx · ${f(lumenGambarDari(p), 0)} lm`],
-        lux: [luxDi(-0.48, 0.47), luxDi(0.48, 0.47), luxDi(-0.48, -0.47), luxDi(0.48, -0.47)],
+        lux: ([[-0.48, 0.47], [0.48, 0.47], [-0.48, -0.47], [0.48, -0.47]] as const).map(([x, y]) => luxDi(...uvAsli(Lp.putar, x, y))),
         pos: teksPos, uv: teksUv,
       } : null });
     if (ukur) {
@@ -382,13 +378,13 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const hl = TINGGI_HURUF * 1.28, ws = 0.09, hs = hl + 0.012, tepi = 0.01;
       const pojok = (i: number, x: number, y: number, kanan: boolean, tampil: boolean): BlokTeks | null =>
         tampil && bg.teks!.lux[i] !== null ? { x, y, w: ws, h: hs, baris: [`${f(bg.teks!.lux[i]!, 0)} lx`], kanan } : null;
-      const kiriAtas = !kiri && !atas;
+      const sd = sisiTampil(bg.L.putar, { kiri, kanan, atas, bawah }), kiriAtas = !sd.kiri && !sd.atas;
       const blok = [
         pojok(0, tepi, tepi, false, kiriAtas),
-        pojok(1, 1 - tepi - ws, tepi, true, !kanan && !atas),
-        pojok(2, tepi, 1 - tepi - hs, false, !kiri && !bawah),
-        pojok(3, 1 - tepi - ws, 1 - tepi - hs, true, !kanan && !bawah),
-        { x: Math.min(0.5, tepi + kiri), y: Math.min(0.5, (kiriAtas ? tepi + hs : tepi) + atas), w: 0.24, h: hl * bg.teks.info.length + 0.012, baris: bg.teks.info, tebalPertama: true },
+        pojok(1, 1 - tepi - ws, tepi, true, !sd.kanan && !sd.atas),
+        pojok(2, tepi, 1 - tepi - hs, false, !sd.kiri && !sd.bawah),
+        pojok(3, 1 - tepi - ws, 1 - tepi - hs, true, !sd.kanan && !sd.bawah),
+        { x: Math.min(0.5, tepi + sd.kiri), y: Math.min(0.5, (kiriAtas ? tepi + hs : tepi) + sd.atas), w: 0.24, h: hl * bg.teks.info.length + 0.012, baris: bg.teks.info, tebalPertama: true },
       ];
       const kotak = kotakTerlihat(bg.teks.uv);
       const ARAH: [1 | -1, 1 | -1][] = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 1]];

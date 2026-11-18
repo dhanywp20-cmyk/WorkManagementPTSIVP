@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, gambarDiSasaran, modulLA, objekDisinari, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari, ukuranBidang } from '../inti';
+import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, blendingPerProyektor, kontrasProyektor, namaPendek, potretDari, rollDari, SISI_GAMBAR, ukuranTampak, lumenDari, lumenLampu, luxBidangKerja, gambarDiSasaran, modulLA, objekDisinari, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari, ukuranBidang } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth/sesi';
@@ -151,9 +151,10 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
           rataKanan: [3, 5, 6],
           isi: proyektor.map(({ p, sn }) => {
-            const g = gambarDiSasaran(p, benda, ruang);
-            return [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `${p.tanpaTiang ? 'Melayang / rangka' : 'Plafon'} (${fm(p.elev)} m dari lantai)`,
-              g.sasaran?.nama ?? 'Dinding / permukaan', `${fm(g.jarak)} m`, `${fm(g.lebar)} × ${fm(g.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—'];
+            const g = gambarDiSasaran(p, benda, ruang), u = ukuranTampak(p, g.lebar, g.tinggi), roll = rollDari(p);
+            return [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama,
+              `${p.pasangProyektor === 'meja' ? 'Portabel di meja' : `${p.tanpaTiang ? 'Melayang / rangka' : 'Plafon'} (${fm(p.elev)} m dari lantai)`}${roll ? ` · putar ${fm(roll, 0)}°${potretDari(p) ? ' (potret)' : ''}` : ''}`,
+              g.sasaran?.nama ?? 'Dinding / permukaan', `${fm(g.jarak)} m`, `${fm(u.lebar)} × ${fm(u.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—'];
           }),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
@@ -175,10 +176,10 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             `X ${fm(o.b.x)} · Z ${fm(o.b.z)} m · ${fm(o.b.elev)} m dari lantai${o.b.rot ? ` · putar ${fm(o.b.rot, 0)}°` : ''}`, o.proyektor.map(p => p.nama).join(', '), cakupanObjek(o)]),
         }] : []),
         ...(tampilBlending && infoBlending.length ? [{
-          judul: 'Area blending proyektor', jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar / tinggi area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
-          isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`,
-            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah, b.pxA)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah, b.pxB)} px`]),
+          judul: 'Area blending proyektor · per tepi gambar', jenis: 'tabel' as const,
+          kepala: ['Proyektor', 'Tepi kiri', 'Tepi kanan', 'Tepi atas', 'Tepi bawah'],
+          isi: blendingPerProyektor(benda, infoBlending).map(({ p, sisi }) => [`${p.nama}${rollDari(p) ? ` · putar ${fm(rollDari(p), 0)}°` : ''}`,
+            ...SISI_GAMBAR.map(s => sisi[s].map(t => `${fm(t.persen, 1)}% ≈ ${t.px} px · ${Math.round(t.lebarM * 100)} cm (dengan ${namaPendek(t.dengan)})`).join('; ') || '—')]),
         }] : []),
         ...(benda.some(b => b.jenis === 'lampu') ? [{
           judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,
@@ -239,8 +240,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     ...Object.entries(benda.reduce<Record<string, number>>((m, b) => { m[b.nama] = (m[b.nama] ?? 0) + 1; return m; }, {})).map(([n, j]) => `- ${n}: ${j}`),
     ...analisis.map(a => `${a.d.nama}${kotakRuang.length > 1 ? ` (ruang ${a.ri + 1})` : ''}: gambar ${f(a.gambar.w)} × ${f(a.gambar.h)} m, penonton terjauh ${f(a.terjauh, 1)} m → tinggi perlu ${f(a.tinggiPerlu)} m (${a.cukup ? 'CUKUP' : 'KURANG'}), sudut maks ${f(a.sudutMaks, 0)}°`),
     ...benda.filter(b => b.jenis === 'proyektor').map(p => {
-      const sn = sinarProyektor(p, benda, ruang), g = gambarDiSasaran(p, benda, ruang);
-      return `${p.nama}: jarak lempar ${f(g.jarak)} m → gambar ${f(g.lebar)} × ${f(g.tinggi)} m (throw ratio ${f(throwRatioDari(p))}${sn.layar && sn.trPas ? `; pas ${sn.layar.nama} perlu ${f(sn.trPas)}` : ''})`;
+      const sn = sinarProyektor(p, benda, ruang), g = gambarDiSasaran(p, benda, ruang), u = ukuranTampak(p, g.lebar, g.tinggi);
+      return `${p.nama}: jarak lempar ${f(g.jarak)} m → gambar ${f(u.lebar)} × ${f(u.tinggi)} m${potretDari(p) ? ' (potret)' : ''} (throw ratio ${f(throwRatioDari(p))}${sn.layar && sn.trPas ? `; pas ${sn.layar.nama} perlu ${f(sn.trPas)}` : ''})`;
     }),
   ].join('\n');
 

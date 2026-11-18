@@ -1,10 +1,11 @@
-import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, resolusiProyektorDari, throwRatioDari } from './proyektor';
+import { arahProyektor, geserLensaDari, gulungBadan, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, putaranGambar, rasioGambarProyektor, rasioProyektorDari, resolusiProyektorDari, throwRatioDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
 export interface Lensa {
   O: Titik; D: Titik; kanan: Titik; atas: Titik;
    w1: number; h1: number;
    gH: number; gV: number;
+  putar: number;
 }
 
 const tambah = (a: Titik, b: Titik, k = 1): Titik => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
@@ -18,12 +19,26 @@ export const jarakTitik = (a: Titik, b: Titik) => panjang(kurang(a, b));
 export function lensaDari(p: Benda): Lensa {
   const r = (p.rot * Math.PI) / 180;
   const D = satuan(arahProyektor(p));
-  const kanan: Titik = [-Math.cos(r), 0, Math.sin(r)];
-  const atas = satuan(silang(kanan, D));
+  const k0: Titik = [-Math.cos(r), 0, Math.sin(r)], a0 = satuan(silang(k0, D)), { c, s } = gulungBadan(p);
+  const kanan = tambah(tambah([0, 0, 0], k0, c), a0, -s), atas = tambah(tambah([0, 0, 0], k0, s), a0, c);
   const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p);
   const arahV = p.pasangProyektor === 'meja' ? 1 : -1;
   const O = tambah(keDunia(p, lensaProyektor(p)), D, -koreksiJarakDari(p));
-  return { O, D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
+  return { O, D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p), putar: putaranGambar(p) };
+}
+
+const PUTAR: readonly (readonly [number, number])[] = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+export function uvTampil(k: number, u: number, v: number): [number, number] {
+  const [c, s] = PUTAR[k % 4], x = u - 0.5, y = v - 0.5;
+  return [0.5 + x * c + y * s, 0.5 - x * s + y * c];
+}
+export function uvAsli(k: number, x: number, y: number): [number, number] {
+  const [c, s] = PUTAR[k % 4];
+  return [x * c - y * s, x * s + y * c];
+}
+export function sisiTampil(k: number, s: { kiri: number; kanan: number; atas: number; bawah: number }) {
+  const n = [s.kanan, s.atas, s.kiri, s.bawah], a = (i: number) => n[(i + k) % 4];
+  return { kanan: a(0), atas: a(1), kiri: a(2), bawah: a(3) };
 }
 
 export function arahSinar(L: Lensa, u: number, v: number): Titik {
@@ -140,6 +155,24 @@ export function teksBlending(b: Pick<Blending, 'lebarM' | 'persenA' | 'persenB'>
 }
 
 export const PIKSEL_ACUAN = { 'kiri-kanan': 1920, 'atas-bawah': 1080 } as const;
+
+export type SisiGambar = 'kiri' | 'kanan' | 'atas' | 'bawah';
+export const SISI_GAMBAR: SisiGambar[] = ['kiri', 'kanan', 'atas', 'bawah'];
+export interface TepiBlending { dengan: string; persen: number; px: number; lebarM: number }
+export const namaPendek = (n: string) => n.replace(/\s*\([^()]*\)\s*$/, '') || n;
+
+export function blendingPerProyektor(semua: Benda[], info: Blending[]): { p: Benda; sisi: Record<SisiGambar, TepiBlending[]> }[] {
+  return semua.filter(p => p.jenis === 'proyektor' && info.some(b => b.a === p.id || b.b === p.id)).map(p => {
+    const L = lensaDari(p), sisi: Record<SisiGambar, TepiBlending[]> = { kiri: [], kanan: [], atas: [], bawah: [] };
+    for (const b of info) {
+      const aku = b.a === p.id, g = aku || b.b === p.id ? keGambar(L, b.tengah) : null;
+      if (!g) continue;
+      const persen = aku ? b.persenA : b.persenB, px = (aku ? b.pxA : b.pxB) ?? PIKSEL_ACUAN[b.arah];
+      sisi[b.arah === 'kiri-kanan' ? (g.u < 0 ? 'kiri' : 'kanan') : g.v > 0 ? 'atas' : 'bawah'].push({ dengan: aku ? b.namaB : b.namaA, persen, px: pikselBlending(persen, b.arah, px), lebarM: b.lebarM });
+    }
+    return { p, sisi };
+  });
+}
 
 export const pikselBlending = (persen: number, arah: Blending['arah'], px: number = PIKSEL_ACUAN[arah]) => Math.round((persen / 100) * px);
 
