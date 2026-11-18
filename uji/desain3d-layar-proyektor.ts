@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buatModel } from '../app/(portal)/tools-team/_components/desain3d/bangun';
 import {
-  type Benda, bendaBaru, bomDesain, daftarRuang, gainLayarDari, kontrasProyektor, objekDisinari, pantulRuang, PERMUKAAN_LAYAR, permukaanLayarDari, proyektorKeLayar, type Ruang, silauLayar, tandaBentuk, templateRuang,
+  type Benda, bendaBaru, bomDesain, daftarRuang, gainLayarDari, hasilPanasonic, kontrasProyektor, objekDisinari, pantulRuang, PERMUKAAN_LAYAR, permukaanLayarDari, proyektorKeLayar, type Ruang, silauLayar, tandaBentuk, templateRuang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { bersihkanAturProduk } from '../lib/tools-team';
 import { bersihkanAturObjek } from '../lib/objek-saya';
@@ -103,6 +103,12 @@ cek('Cetak / Lembar lengkap bisa tanpa Jadwal kabel & Rack elevation (sakelar te
 const tLengkung = templateRuang('mapping-lengkung'), oLengkung = objekDisinari(tLengkung.benda, tLengkung.ruang);
 cek(`mapping cekung: layar mapping disinari 3 proyektor, tertutup ${((oLengkung[0]?.tertutup ?? 0) * 100).toFixed(0)}%, area blending ${((oLengkung[0]?.tumpang ?? 0) * 100).toFixed(0)}%`,
   oLengkung.length === 1 && oLengkung[0].b.jenis === 'bidang' && oLengkung[0].proyektor.length === 3 && (oLengkung[0].tertutup ?? 0) > 0.95 && (oLengkung[0].tumpang ?? 0) > 0);
+const luxSama = ['simulator', 'mapping-lengkung', 'mapping-cembung'].every(id => {
+  const t = templateRuang(id as Parameters<typeof templateRuang>[0]);
+  return t.benda.filter(x => x.jenis === 'proyektor').every(p => Math.abs(kontrasProyektor(p, t.benda, t.ruang, 15).luxGambar - (hasilPanasonic(p, t.benda, t.ruang).lux ?? -1)) < 1e-6);
+});
+cek('lux gambar di kontras, panel & ekspor = lux "Pusat" di label 3D (kubah simulator, layar cekung & cembung), bukan dinding di belakangnya', luxSama
+  && /const g = gambarDiSasaran\(p, benda, ruang\);/.test(ekspor) && /`\$\{fm\(g\.jarak\)\} m`, `\$\{fm\(g\.lebar\)\} × \$\{fm\(g\.tinggi\)\} m`/.test(ekspor));
 const tObjek = templateRuang('mapping-objek'), kObjek = daftarRuang(tObjek.ruang)[0];
 const kubus: Benda = { ...bendaBaru('objek', kObjek, { bentukObjek: 'kotak' }), nama: 'Kubus mapping', x: 6, z: 5, elev: 0.4, w: 1, h: 1, d: 1, rot: 0 };
 const oObjek = objekDisinari([...tObjek.benda, kubus, { ...kubus, id: 'pojok', nama: 'Kubus pojok', x: 0.6, z: 0.6 }], tObjek.ruang);

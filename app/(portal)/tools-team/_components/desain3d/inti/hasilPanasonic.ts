@@ -1,7 +1,7 @@
 import { jarakProyeksi } from './jarakProyeksi';
 import {
   bagianPanel, batasShift, jarakUntukLebar, koreksiJarakDari, lebarGambarDi, lumenDari, lumenGambarDari, rasioGambarProyektor,
-  rasioPanelDari, throwRatioDari,
+  rasioPanelDari, sinarProyektor, throwRatioDari,
 } from './proyektor';
 import type { Benda, RasioProyektor, Ruang } from './tipe';
 
@@ -21,6 +21,13 @@ export interface HasilPanasonic {
 export function hasilPanasonic(p: Benda, semua: Benda[], ruang: Ruang | null): HasilPanasonic {
   const jp = jarakProyeksi(p, semua, ruang);
   return { ...hasilPadaJarak(p, jp.jarak), sasaran: jp.sasaran, cara: jp.cara };
+}
+
+export function gambarDiSasaran(p: Benda, semua: Benda[], ruang: Ruang) {
+  const hp = hasilPanasonic(p, semua, ruang);
+  if (hp.L !== null && hp.lux !== null && hp.lebar > 0) return { sasaran: hp.sasaran, jarak: hp.L, lebar: hp.lebar, tinggi: hp.tinggi, lux: hp.lux };
+  const sn = sinarProyektor(p, semua, ruang);
+  return { sasaran: sn.layar, jarak: sn.jarak, lebar: sn.lebar, tinggi: sn.tinggi, lux: lumenGambarDari(p) / Math.max(0.05, sn.lebar * sn.tinggi) };
 }
 
 export function hasilPadaJarak(p: Benda, L: number | null): Omit<HasilPanasonic, 'sasaran' | 'cara'> {

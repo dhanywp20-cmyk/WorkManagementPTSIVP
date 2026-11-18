@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, objekDisinari, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari, ukuranBidang } from '../inti';
+import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, gambarDiSasaran, modulLA, objekDisinari, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari, ukuranBidang } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth/sesi';
@@ -150,8 +150,11 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
           rataKanan: [3, 5, 6],
-          isi: proyektor.map(({ p, sn }) => [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `${p.tanpaTiang ? 'Melayang / rangka' : 'Plafon'} (${fm(p.elev)} m dari lantai)`,
-            sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
+          isi: proyektor.map(({ p, sn }) => {
+            const g = gambarDiSasaran(p, benda, ruang);
+            return [p.modelProduk ? `${p.nama} (${p.modelProduk})` : p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `${p.tanpaTiang ? 'Melayang / rangka' : 'Plafon'} (${fm(p.elev)} m dari lantai)`,
+              g.sasaran?.nama ?? 'Dinding / permukaan', `${fm(g.jarak)} m`, `${fm(g.lebar)} × ${fm(g.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—'];
+          }),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Luminance', 'Cahaya ruang di gambar', 'Kontras'],
@@ -236,8 +239,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     ...Object.entries(benda.reduce<Record<string, number>>((m, b) => { m[b.nama] = (m[b.nama] ?? 0) + 1; return m; }, {})).map(([n, j]) => `- ${n}: ${j}`),
     ...analisis.map(a => `${a.d.nama}${kotakRuang.length > 1 ? ` (ruang ${a.ri + 1})` : ''}: gambar ${f(a.gambar.w)} × ${f(a.gambar.h)} m, penonton terjauh ${f(a.terjauh, 1)} m → tinggi perlu ${f(a.tinggiPerlu)} m (${a.cukup ? 'CUKUP' : 'KURANG'}), sudut maks ${f(a.sudutMaks, 0)}°`),
     ...benda.filter(b => b.jenis === 'proyektor').map(p => {
-      const sn = sinarProyektor(p, benda, ruang);
-      return `${p.nama}: jarak lempar ${f(sn.jarak)} m → gambar ${f(sn.lebar)} × ${f(sn.tinggi)} m (throw ratio ${f(throwRatioDari(p))}${sn.layar && sn.trPas ? `; pas ${sn.layar.nama} perlu ${f(sn.trPas)}` : ''})`;
+      const sn = sinarProyektor(p, benda, ruang), g = gambarDiSasaran(p, benda, ruang);
+      return `${p.nama}: jarak lempar ${f(g.jarak)} m → gambar ${f(g.lebar)} × ${f(g.tinggi)} m (throw ratio ${f(throwRatioDari(p))}${sn.layar && sn.trPas ? `; pas ${sn.layar.nama} perlu ${f(sn.trPas)}` : ''})`;
     }),
   ].join('\n');
 
