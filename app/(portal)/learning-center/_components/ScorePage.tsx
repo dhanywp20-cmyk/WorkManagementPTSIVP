@@ -55,6 +55,8 @@ export function ScorePage({ user }: { user: User }) {
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
   const papan      = peringkat?.papan ?? [];
   const pakaiDivisi = isSalesGuest({ role: user.role });
+  // Guest/Sales: papan peringkat panjang di kanan, jadi aktivitas & rekap mengisi kolom kiri
+  const sisiKiri    = pakaiDivisi && total > 0;
   const myRank     = peringkat?.globalRank ?? 0;
   const rankTotal  = peringkat?.globalTotal ?? 0;
   const rankPct    = rankTotal > 0 && myRank > 0
@@ -95,6 +97,94 @@ export function ScorePage({ user }: { user: User }) {
         ? [{ value: rankTotal - myRank + 1, color: '#6366f1' }, { value: myRank - 1, color: '#e0e7ff' }]
         : [{ value: 1, color: '#e0e7ff' }] },
   ];
+
+  const blokAktivitas = attempts.length > 0 && (
+      <section>
+        <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
+        <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
+          {attempts.slice(0, 5).map((a) => {
+            const pending = a.grading_status === 'pending_review';
+            const score   = a.score ?? 0;
+            const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
+            return (
+              <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0
+                  ${pending ? 'bg-amber-100 text-amber-700' : score >= passing ? (score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') : 'bg-rose-100 text-rose-600'}`}>
+                  {pending ? '⏳' : score.toFixed(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{a.lc_quiz_sessions?.session_name ?? '—'}</p>
+                  <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
+                </div>
+                <GradingStatusBadge attempt={a} />
+                <span className="text-xs text-slate-500 shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+
+  const blokRekap = (
+    <section>
+      <SectionHeader><IkonTeks nama="📋" />Rekap Nilai Per Quiz</SectionHeader>
+      <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm table-zebra" style={{ minWidth: '520px' }}>
+          <thead className="border-b border-slate-200 bg-slate-50">
+            <tr>
+              <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest whitespace-nowrap"
+                title="Peringkat kamu DI SESI INI SAJA. Angka ini tidak ikut berubah ketika ada sesi quiz lain berjalan.">
+                Peringkat Sesi
+              </th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
+              <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filtered.length === 0 && (
+              <tr><td colSpan={7} className="text-center py-10 text-slate-500">
+                {search ? 'Tidak ada hasil' : 'Belum ada quiz yang diselesaikan'}
+              </td></tr>
+            )}
+            {filtered.map((a) => {
+              const ps = peringkat?.peringkatSesi?.[a.id];
+              return (
+              <tr key={a.id} className="hover:bg-slate-50">
+                <td className="px-5 py-3.5 font-semibold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
+                <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                  {ps
+                    ? <span className="inline-flex items-baseline gap-1">
+                        <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-700' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
+                          {ps.rank <= 3 ? ['🥇','🥈','🥉'][ps.rank - 1] : `#${ps.rank}`}
+                        </span>
+                        <span className="text-[11px] text-slate-500">dari {ps.total}</span>
+                      </span>
+                    : <span className="text-slate-400 text-xs">—</span>}
+                </td>
+                <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
+                <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
+                <td className="px-5 py-3.5 text-center">
+                  <GradingStatusBadge attempt={a} />
+                </td>
+                <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                <td className="px-5 py-3.5 text-center">
+                  <button onClick={() => setViewingAttempt(a)}
+                    className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
+                    <IkonTeks nama="📋" />Review
+                  </button>
+                </td>
+              </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 
   return (
     <div>
@@ -144,14 +234,15 @@ export function ScorePage({ user }: { user: User }) {
                   </div>
                 ))}
               </div>
+              {sisiKiri && <div className="mt-8 space-y-8">{blokAktivitas}{blokRekap}</div>}
             </div>
 
             <div>
               <SectionHeader><IkonTeks nama="🏆" />Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
-              <p className="text-[11px] text-slate-500 mb-3 -mt-2 leading-relaxed">
-                Urutan: <b className="text-slate-500">skor rata-rata</b> tertinggi dulu → kalau seri,{' '}
-                <b className="text-slate-500">waktu pengerjaan</b> tercepat menang → kalau keduanya sama persis,
-                peringkatnya <b className="text-slate-500">kembar</b> (nomor yang sama, bukan diacak).
+              <p className="text-[11px] text-slate-600 mb-3 -mt-1 leading-relaxed bg-white/90 border border-slate-200 rounded-xl px-3 py-2 shadow-xs backdrop-blur-xs">
+                Urutan: <b className="text-slate-700">skor rata-rata</b> tertinggi dulu → kalau seri,{' '}
+                <b className="text-slate-700">waktu pengerjaan</b> tercepat menang → kalau keduanya sama persis,
+                peringkatnya <b className="text-slate-700">kembar</b> (nomor yang sama, bukan diacak).
                 Peringkat dihitung ulang tiap halaman dibuka dan hasilnya selalu sama untuk data yang sama.
               </p>
 
@@ -244,91 +335,8 @@ export function ScorePage({ user }: { user: User }) {
           </div>
         )}
 
-        {attempts.length > 0 && (
-          <section>
-            <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
-              {attempts.slice(0, 5).map((a) => {
-                const pending = a.grading_status === 'pending_review';
-                const score   = a.score ?? 0;
-                const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
-                return (
-                  <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0
-                      ${pending ? 'bg-amber-100 text-amber-700' : score >= passing ? (score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') : 'bg-rose-100 text-rose-600'}`}>
-                      {pending ? '⏳' : score.toFixed(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{a.lc_quiz_sessions?.session_name ?? '—'}</p>
-                      <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
-                    </div>
-                    <GradingStatusBadge attempt={a} />
-                    <span className="text-xs text-slate-500 shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        <section>
-          <SectionHeader><IkonTeks nama="📋" />Rekap Nilai Per Quiz</SectionHeader>
-          <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm table-zebra" style={{ minWidth: '520px' }}>
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest whitespace-nowrap"
-                    title="Peringkat kamu DI SESI INI SAJA. Angka ini tidak ikut berubah ketika ada sesi quiz lain berjalan.">
-                    Peringkat Sesi
-                  </th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
-                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10 text-slate-500">
-                    {search ? 'Tidak ada hasil' : 'Belum ada quiz yang diselesaikan'}
-                  </td></tr>
-                )}
-                {filtered.map((a) => {
-                  const ps = peringkat?.peringkatSesi?.[a.id];
-                  return (
-                  <tr key={a.id} className="hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-semibold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
-                    <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                      {ps
-                        ? <span className="inline-flex items-baseline gap-1">
-                            <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-700' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
-                              {ps.rank <= 3 ? ['🥇','🥈','🥉'][ps.rank - 1] : `#${ps.rank}`}
-                            </span>
-                            <span className="text-[11px] text-slate-500">dari {ps.total}</span>
-                          </span>
-                        : <span className="text-slate-400 text-xs">—</span>}
-                    </td>
-                    <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
-                    <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
-                    <td className="px-5 py-3.5 text-center">
-                      <GradingStatusBadge attempt={a} />
-                    </td>
-                    <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
-                    <td className="px-5 py-3.5 text-center">
-                      <button onClick={() => setViewingAttempt(a)}
-                        className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
-                        <IkonTeks nama="📋" />Review
-                      </button>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        {!sisiKiri && blokAktivitas}
+        {!sisiKiri && blokRekap}
 
       </div>
     </div>
