@@ -229,7 +229,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
 
       {memuat && !grup && <p className="px-4 py-10 text-center text-sm" style={{ color: TEMA.samar }}>Memuat…</p>}
       {grup && (
-        <PapanIsu namaGrup={grup.nama} isu={isu} lokasi={lokasi} kategori={grup.kategori}
+        <PapanIsu namaGrup={grup.nama} klienGrup={grup.client} isu={isu} lokasi={lokasi} kategori={grup.kategori}
           onBuka={i => setBukaId(i.id)} beritahu={beritahu} aksiAtas={aksiAtas} />
       )}
 

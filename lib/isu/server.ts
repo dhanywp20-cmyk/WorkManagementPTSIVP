@@ -33,15 +33,15 @@ async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike
 export async function muatLokasi(db: Db, proyekIds: string[]): Promise<LokasiIsu[]> {
   if (!proyekIds.length) return [];
   const [{ data: proyek }, { data: daftar, error }] = await Promise.all([
-    db.from('checklist_proyek').select('id,nama,created_at').in('id', proyekIds),
+    db.from('checklist_proyek').select('id,nama,client,created_at').in('id', proyekIds),
     db.from('checklist_daftar').select('id,proyek_id,judul,urutan').in('proyek_id', proyekIds).order('urutan').order('created_at'),
   ]);
   if (error) throw new Error(error.message);
-  const urutProyek = new Map(((proyek ?? []) as { id: string; nama: string; created_at: string }[])
-    .sort((a, b) => a.created_at.localeCompare(b.created_at)).map((p, i) => [p.id, { nama: p.nama, i }]));
+  const urutProyek = new Map(((proyek ?? []) as { id: string; nama: string; client: string | null; created_at: string }[])
+    .sort((a, b) => a.created_at.localeCompare(b.created_at)).map((p, i) => [p.id, { nama: p.nama, client: (p.client ?? '').trim(), i }]));
   return ((daftar ?? []) as { id: string; proyek_id: string; judul: string; urutan: number }[])
     .sort((a, b) => (urutProyek.get(a.proyek_id)?.i ?? 0) - (urutProyek.get(b.proyek_id)?.i ?? 0) || a.urutan - b.urutan)
-    .map(d => ({ id: d.id, nama: d.judul.trim(), proyek: urutProyek.get(d.proyek_id)?.nama ?? '' }));
+    .map(d => ({ id: d.id, nama: d.judul.trim(), proyek: urutProyek.get(d.proyek_id)?.nama ?? '', client: urutProyek.get(d.proyek_id)?.client ?? '' }));
 }
 
 export async function muatIsu(db: Db, grupId: string, publik: boolean): Promise<Isu[]> {
@@ -218,6 +218,7 @@ function dataTiket(t: BarisTiket, akt: BarisAktivitas[], publik: boolean): Tiket
   void _hapus; void _ubah;
   return {
     ...sisa,
+    sales_name: null, sales_division: null,
     customer_phone: publik ? null : t.customer_phone,
     created_by: publik ? null : t.created_by,
     activity_logs: akt.map(a => ({ ...a, handler_username: publik ? null : a.handler_username })),
@@ -286,7 +287,7 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Prom
       tanggal: t.date ?? tanggalWib(dibuat), kategori: tebakKategori([t.issue_case, t.product, t.description].join(' ')),
       produk: (t.product ?? '').trim(), prioritas: prioritasTiket(t.priority),
       judul: (t.issue_case ?? '').trim() || 'Ticket Troubleshooting', deskripsi: (t.description ?? '').trim(),
-      pelapor: t.sales_name ?? '', pic: t.assign_name ?? '', status,
+      pelapor: '', pic: t.assign_name ?? '', status,
       action: status === 'solved' ? '' : (terakhir?.action_taken ?? '').trim(),
       solusi: status === 'solved' ? ((selesaiAkt?.action_taken || terakhir?.action_taken) ?? '').trim() : '',
       foto_url: t.photo_url, foto_thumb_url: t.photo_url, selesai_pada,

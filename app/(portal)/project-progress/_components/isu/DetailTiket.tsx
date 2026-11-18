@@ -31,7 +31,7 @@ export function ModalDetailTiket({ tiket, urlTiket, onTutup }: { tiket: TiketIsu
           <IsiDetailTicket selectedTicket={ticket} currentUser={null} setSupAssignTicket={tanpaAksi} setSupAssignTo={tanpaAksi}
             canManageTickets={false} bukaAdminEdit={tanpaAksi} getDeadline={tanpaData} users={[]} getWarrantyInfo={tanpaData} tanpaSolusiSerupa />
           <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 shrink-0">
-            <button type="button" onClick={() => void cetakTicket(ticket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">
+            <button type="button" onClick={() => void cetakTicket(ticket, { tanpaSales: true })} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">
               <IkonTeks nama="📄" />PDF
             </button>
             {urlTiket && (

@@ -52,8 +52,9 @@ function Pilihan({ label, ikon, value, onChange, children }: {
   );
 }
 
-export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, aksiAtas }: {
+export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, beritahu, aksiAtas }: {
   namaGrup: string;
+  klienGrup?: string | null;
   isu: Isu[];
   lokasi: LokasiIsu[];
   kategori: string[];
@@ -85,6 +86,9 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     for (const i of isu) s.add(i.lokasi);
     return [...s];
   }, [lokasi, isu]);
+
+  const klienPer = useMemo(() => new Map(lokasi.map(l => [l.id, l.client ?? ''])), [lokasi]);
+  const klienDari = (i: Isu) => (i.daftar_id && klienPer.get(i.daftar_id)) || (klienGrup ?? '').trim();
 
   const daftarKategori = useMemo(() => [...new Set([...kategori, ...isu.map(i => i.kategori)])], [kategori, isu]);
 
@@ -154,8 +158,8 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
       { judul: 'Prioritas', ambil: i => PRIORITAS_ISU[i.prioritas].label },
       { judul: 'Isu', ambil: i => i.judul },
       { judul: 'Deskripsi', ambil: i => i.deskripsi },
-      { judul: 'Pelapor', ambil: i => i.pelapor },
-      { judul: 'PIC', ambil: i => i.pic },
+      { judul: 'PIC Handler', ambil: i => i.pic },
+      { judul: 'Client', ambil: i => klienDari(i) },
       { judul: 'Status', ambil: i => STATUS_ISU[i.status].label },
       { judul: 'Update terakhir', ambil: i => i.action },
       { judul: 'Solusi', ambil: i => i.solusi },
@@ -299,7 +303,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
 
           {tersaring.length === 0
             ? <p className="px-4 py-10 text-center text-[13px]" style={{ color: TEMA.samar }}>{isu.length ? 'Tidak ada isu yang cocok dengan filter.' : 'Belum ada isu tercatat.'}</p>
-            : <><KepalaDaftarIsu /><ul className="divide-y" style={{ borderColor: NETRAL.garis }}>{tersaring.map(i => <BarisIsu key={i.id} isu={i} acuan={hari} onBuka={() => onBuka(i)} />)}</ul></>}
+            : <><KepalaDaftarIsu /><ul className="divide-y" style={{ borderColor: NETRAL.garis }}>{tersaring.map(i => <BarisIsu key={i.id} isu={i} acuan={hari} client={klienDari(i)} onBuka={() => onBuka(i)} />)}</ul></>}
         </section>
       )}
     </div>
