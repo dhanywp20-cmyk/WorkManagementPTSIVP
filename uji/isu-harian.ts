@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { gayaLatarShare, rapikanLatarShare } from '../lib/share-latar';
-import { daftarUpdate, teksSemuaUpdate, geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
+import { daftarUpdate, ringkasLaporan, teksSemuaUpdate, geserTanggal, hitungPer, kodeIsu, pecahProduk,labelStatusPada, peranPada, ringkasHarian, teksRingkasan, terbukaPada, umurIsu, type Isu } from '../lib/isu/inti';
 import { hakIsu, isianIsu, kolomBerubah, normalNama, statusTiket } from '../lib/isu/server';
 
 let lulus = 0, gagal = 0;
@@ -144,6 +144,17 @@ const isuManual = isu({ id: 'm', riwayat: [
 const upManual = daftarUpdate(isuManual);
 cek('manual: riwayat lengkap dengan label status', upManual.length === 3 && upManual[1].update === 'Remote cek' && upManual[2].status === 'Solved');
 cek('isu tanpa riwayat = kosong', daftarUpdate(isu({})).length === 0);
+
+console.log('\nRingkasan laporan');
+const lap = ringkasLaporan(data, '2026-11-16', 30);
+cek('total & belum solved', lap.total === 5 && lap.terbuka === 3);
+cek('tingkat penyelesaian dibulatkan', lap.persenSolved === 40);
+cek('rata-rata penyelesaian dari isu solved (#3: 1 hari, #4: 1 hari)', lap.rataSelesai === 1);
+cek('tren 30 hari, hari terakhir = acuan', lap.tren.length === 30 && lap.tren[29].tanggal === '2026-11-16');
+cek('tren: baru & solved masuk di tanggal yang benar (WIB)', lap.tren[29].baru === 1 && lap.tren[29].solved === 1 && lap.tren[27].baru === 1);
+cek('lokasi terbuka urut terbanyak', lap.lokasiTerbuka[0].lokasi === 'BPKP Medan' && lap.lokasiTerbuka[0].terbuka === 2 && lap.lokasiTerdampak === 2);
+cek('isu terlama terbuka dihitung dari isu yang belum solved', lap.terlamaTerbuka === 2);
+cek('laporan kosong aman', ringkasLaporan([], '2026-11-16').persenSolved === 0 && ringkasLaporan([], '2026-11-16').rataSelesai === null);
 
 console.log('\nLatar link share');
 const urlLatar = 'https://abc.supabase.co/storage/v1/object/public/merek-files/share-latar/1-a.jpg';

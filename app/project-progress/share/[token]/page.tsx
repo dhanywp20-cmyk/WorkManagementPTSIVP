@@ -1,15 +1,14 @@
 'use client';
 
-import { FooterPlatform } from '@/components/shared';
-
 import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist/inti';
 import { NETRAL } from '@/lib/desain';
 import { gayaLatarShare } from '@/lib/share-latar';
-import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
+import { CalendarDays, ChevronRight, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { PanelLokasi, TimLokasi } from './_bagian/PanelLokasi';
+import { KerangkaShare } from '../_bagian/KerangkaShare';
 import { hitungRingkasan } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
 import { RingkasanProyek } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
@@ -75,23 +74,9 @@ export default function ProyekSharePage() {
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={gayaLatarShare(data?.proyek.share_latar, memuat)}>
-      <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[15.5px] font-bold leading-tight truncate" style={{ color: NETRAL.tinta }}>{data?.proyek.nama ?? 'Project Progress'}</h1>
-            <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
-              {data?.proyek.client ? `${data.proyek.client} · ` : ''}Tampilan hanya-baca{data ? ` · Diperbarui ${formatWaktu(data.proyek.updated_at)}` : ''}
-            </p>
-          </div>
-          <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5 shrink-0"
-            style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>
-            <Eye size={13} /> View Only
-          </span>
-        </div>
-      </header>
-
-      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-3">
+    <KerangkaShare latar={gayaLatarShare(data?.proyek.share_latar, memuat)} label="Laporan Project Progress"
+      judul={data?.proyek.nama ?? 'Project Progress'}
+      sub={`${data?.proyek.client ? `${data.proyek.client} · ` : ''}${data ? `Diperbarui ${formatWaktu(data.proyek.updated_at)}` : 'Tampilan hanya-baca'}`}>
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat progres proyek…</p>}
 
         {!memuat && galat && (
@@ -166,8 +151,6 @@ export default function ProyekSharePage() {
             )}
           </>
         )}
-      </main>
-      <FooterPlatform />
-    </div>
+    </KerangkaShare>
   );
 }

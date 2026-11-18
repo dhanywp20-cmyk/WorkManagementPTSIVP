@@ -329,6 +329,62 @@ export function teksSemuaUpdate(i: Isu): string {
   }).join('  |  ');
 }
 
+export interface HariTren { tanggal: string; baru: number; solved: number }
+
+export interface LaporanIsu {
+  total: number;
+  terbuka: number;
+  perStatus: Record<StatusIsu, number>;
+  persenSolved: number;
+  rataSelesai: number | null;
+  terlamaTerbuka: number;
+  baru7: number;
+  lokasiTerdampak: number;
+  tren: HariTren[];
+  lokasiTerbuka: { lokasi: string; terbuka: number; total: number }[];
+}
+
+export function ringkasLaporan(isu: Isu[], acuan: string, hariTren = 30): LaporanIsu {
+  const perStatus: Record<StatusIsu, number> = { open: 0, progress: 0, pending: 0, solved: 0 };
+  const mulaiTren = geserTanggal(acuan, 1 - hariTren);
+  const mulai7 = geserTanggal(acuan, -6);
+  const tren = new Map<string, HariTren>();
+  for (let n = 0; n < hariTren; n++) {
+    const t = geserTanggal(mulaiTren, n);
+    tren.set(t, { tanggal: t, baru: 0, solved: 0 });
+  }
+  const lokasi = new Map<string, { lokasi: string; terbuka: number; total: number }>();
+  const lamaSelesai: number[] = [];
+  let terlamaTerbuka = 0;
+  let baru7 = 0;
+  for (const i of isu) {
+    perStatus[i.status] += 1;
+    const l = lokasi.get(i.lokasi) ?? { lokasi: i.lokasi, terbuka: 0, total: 0 };
+    l.total += 1;
+    const selesai = tanggalSelesai(i);
+    if (selesai) lamaSelesai.push(umurIsu(i, acuan));
+    else { l.terbuka += 1; terlamaTerbuka = Math.max(terlamaTerbuka, umurIsu(i, acuan)); }
+    lokasi.set(i.lokasi, l);
+    if (i.tanggal >= mulai7 && i.tanggal <= acuan) baru7 += 1;
+    const hBaru = tren.get(i.tanggal);
+    if (hBaru) hBaru.baru += 1;
+    const hSelesai = selesai ? tren.get(selesai) : undefined;
+    if (hSelesai) hSelesai.solved += 1;
+  }
+  const total = isu.length;
+  const terbuka = total - perStatus.solved;
+  return {
+    total, terbuka, perStatus,
+    persenSolved: total ? Math.round((perStatus.solved / total) * 100) : 0,
+    rataSelesai: lamaSelesai.length ? Math.round((lamaSelesai.reduce((a, b) => a + b, 0) / lamaSelesai.length) * 10) / 10 : null,
+    terlamaTerbuka, baru7,
+    lokasiTerdampak: [...lokasi.values()].filter(l => l.terbuka > 0).length,
+    tren: [...tren.values()],
+    lokasiTerbuka: [...lokasi.values()].filter(l => l.terbuka > 0)
+      .sort((a, b) => b.terbuka - a.terbuka || b.total - a.total || a.lokasi.localeCompare(b.lokasi)),
+  };
+}
+
 export function urlShareIsu(base: string, token: string): string {
   return `${base}/project-progress/share/isu/${token}`;
 }

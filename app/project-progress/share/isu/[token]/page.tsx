@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Eye, Lock, RefreshCw } from 'lucide-react';
-import { FooterPlatform, Toast, type Notif } from '@/components/shared';
+import { Lock, RefreshCw } from 'lucide-react';
+import { Toast, type Notif } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { gayaLatarShare } from '@/lib/share-latar';
 import { formatWaktu } from '@/lib/checklist/inti';
@@ -11,6 +11,7 @@ import { HAK_BACA, type Isu, type IsuGrup, type LokasiIsu, type RiwayatIsu } fro
 import { TEMA } from '@/app/(portal)/project-progress/_components/tampilan';
 import { PapanIsu } from '@/app/(portal)/project-progress/_components/isu/PapanIsu';
 import { ModalDetailIsu } from '@/app/(portal)/project-progress/_components/isu/DetailIsu';
+import { KepalaLaporan, KerangkaShare } from '../../_bagian/KerangkaShare';
 
 interface DataShare { grup: IsuGrup; lokasi: LokasiIsu[]; isu: Isu[] }
 
@@ -46,60 +47,45 @@ export default function IssueLogSharePage() {
 
   const beritahu = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
   const dibuka = data?.isu.find(i => i.id === bukaId) ?? null;
+  const terakhir = useMemo(() => data
+    ? [data.grup.updated_at, ...data.isu.map(i => i.updated_at)].reduce((a, b) => (b > a ? b : a))
+    : null, [data]);
+  const jumlahProyek = new Set(data?.lokasi.map(l => l.proyek).filter(Boolean)).size;
 
   return (
-    <div className="min-h-screen flex flex-col" style={gayaLatarShare(data?.grup.share_latar, memuat && !data)}>
+    <KerangkaShare latar={gayaLatarShare(data?.grup.share_latar, memuat && !data)}
+      label="Laporan Issue Log" judul={data?.grup.nama ?? 'Issue Log'}
+      sub={terakhir ? `Diperbarui ${formatWaktu(terakhir)}` : 'Tampilan hanya-baca'}
+      aksi={data && (
+        <button type="button" onClick={() => void muat()} disabled={memuat} aria-label="Muat ulang" title="Muat ulang"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-lg disabled:opacity-50"
+          style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2, background: NETRAL.permukaan }}>
+          <RefreshCw size={14} className={memuat ? 'animate-spin' : ''} />
+        </button>
+      )}>
       <Toast notif={toast} />
-      <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[15.5px] font-bold leading-tight truncate" style={{ color: NETRAL.tinta }}>
-              {data ? `Issue Log · ${data.grup.nama}` : 'Issue Log'}
-            </h1>
-            <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
-              {data?.grup.client ? `${data.grup.client} · ` : ''}Tampilan hanya-baca{data ? ` · Diperbarui ${formatWaktu(data.grup.updated_at)}` : ''}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {data && (
-              <button type="button" onClick={() => void muat()} disabled={memuat} aria-label="Muat ulang"
-                className="w-8 h-8 inline-flex items-center justify-center rounded-full disabled:opacity-50" style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-                <RefreshCw size={14} className={memuat ? 'animate-spin' : ''} />
-              </button>
-            )}
-            <span className="px-3 py-1.5 rounded-full text-[11px] font-bold flex items-center gap-1.5"
-              style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>
-              <Eye size={13} /> View Only
-            </span>
-          </div>
+      {memuat && !data && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat Issue Log…</p>}
+
+      {!memuat && galat && (
+        <div className="rounded-xl p-10 text-center space-y-2" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
+          <Lock size={30} className="mx-auto" style={{ color: TEMA.samar }} />
+          <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>{galat}</p>
+          <p className="text-[12.5px]" style={{ color: NETRAL.tinta2 }}>Hubungi admin untuk mendapatkan link yang masih aktif.</p>
         </div>
-      </header>
+      )}
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-4">
-        {memuat && !data && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat Issue Log…</p>}
-
-        {!memuat && galat && (
-          <div className="rounded-xl p-10 text-center space-y-2" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
-            <Lock size={30} className="mx-auto" style={{ color: TEMA.samar }} />
-            <p className="text-[15px] font-bold" style={{ color: NETRAL.tinta }}>{galat}</p>
-            <p className="text-[12.5px]" style={{ color: NETRAL.tinta2 }}>Hubungi admin untuk mendapatkan link yang masih aktif.</p>
-          </div>
-        )}
-
-        {data && (
-          <>
-            {data.grup.keterangan && (
-              <p className="rounded-xl px-4 py-3 text-[13px] whitespace-pre-wrap" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
-                {data.grup.keterangan}
-              </p>
-            )}
-            <PapanIsu namaGrup={data.grup.nama} isu={data.isu} lokasi={data.lokasi} kategori={data.grup.kategori}
-              onBuka={i => setBukaId(i.id)} beritahu={beritahu} />
-            <ModalDetailIsu isu={dibuka} hak={HAK_BACA} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at} onTutup={() => setBukaId(null)} />
-          </>
-        )}
-      </main>
-      <FooterPlatform />
-    </div>
+      {data && (
+        <>
+          <KepalaLaporan eyebrow={data.grup.client ? `Klien · ${data.grup.client}` : 'Issue Log'} judul={data.grup.nama} keterangan={data.grup.keterangan}
+            meta={[
+              `${data.lokasi.length} lokasi${jumlahProyek > 1 ? ` · ${jumlahProyek} proyek` : ''}`,
+              terakhir ? `Data per ${formatWaktu(terakhir)}` : '',
+            ].filter(Boolean)} />
+          <PapanIsu namaGrup={data.grup.nama} isu={data.isu} lokasi={data.lokasi} kategori={data.grup.kategori}
+            onBuka={i => setBukaId(i.id)} beritahu={beritahu} />
+          <ModalDetailIsu isu={dibuka} hak={HAK_BACA} muatRiwayat={muatRiwayat} versi={dibuka?.updated_at} onTutup={() => setBukaId(null)} />
+        </>
+      )}
+    </KerangkaShare>
   );
 }
