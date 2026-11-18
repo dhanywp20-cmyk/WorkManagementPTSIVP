@@ -35,6 +35,10 @@ cek('kolom angka rata kanan, isi berupa teks', sama(seksi.rataKanan, [1]) && sek
 cek('filter aktif di kepala lembar', sama(l.kepala, [['Status', 'Selesai']]));
 cek('3 kolom = tegak; 7 kolom = mendatar', !l.mendatar && !!lembarTabel({ ...e, kolom: Array(7).fill(e.kolom[0]) }).mendatar);
 cek('filterAktif membuang null/kosong/spasi', filterAktif([['a', ' '], ['b', 0], ['c', 'x']]).length === 2);
+const denganExcel = { ...e, kolom: [...e.kolom, { judul: 'Semua update', ambil: (r: R) => r.p, hanyaExcel: true }] };
+cek('kolom hanyaExcel tidak ikut cetak/PNG', (lembarTabel(denganExcel).seksi[0] as { kepala: string[] }).kepala.length === 3);
+const aoaExcel = susunAoa(denganExcel, 'x');
+cek('kolom hanyaExcel tetap ikut Excel', aoaExcel.aoa[aoaExcel.kepala].length === 4);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

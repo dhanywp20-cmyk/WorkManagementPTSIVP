@@ -5,8 +5,8 @@ import {
   type HakIsu, type Isu, type IsuGrup, type LokasiIsu, type PrioritasIsu, type RiwayatIsu, type StatusIsu, type TiketIsu,
 } from './inti';
 
-export const KOLOM_GRUP = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_token,updated_at';
-const KOLOM_GRUP_PUBLIK = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,updated_at';
+export const KOLOM_GRUP = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_token,share_latar,updated_at';
+const KOLOM_GRUP_PUBLIK = 'id,nama,client,keterangan,proyek_ids,kategori,share_aktif,share_latar,updated_at';
 const KOLOM_ISU_PUBLIK = 'id,grup_id,nomor,daftar_id,lokasi,tanggal,kategori,prioritas,judul,deskripsi,produk,pelapor,pic,status,action,solusi,foto_url,foto_thumb_url,selesai_pada,dibuat_oleh_nama,diubah_oleh_nama,created_at,updated_at';
 export const KOLOM_ISU = `${KOLOM_ISU_PUBLIK},catatan_internal`;
 export const KOLOM_RIWAYAT = 'id,isu_id,aksi,dari,ke,keterangan,nama,created_at';
@@ -272,7 +272,7 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Prom
     const dibuat = utc(t.created_at);
     const selesai_pada = status === 'solved' ? (selesaiAkt?.created_at ?? (t.updated_at ? utc(t.updated_at) : dibuat)) : null;
     const riwayat: RiwayatIsu[] = [
-      { id: `${t.id}-buat`, isu_id: t.id, aksi: 'dibuat', dari: null, ke: 'open', keterangan: 'Ticket Troubleshooting dibuat', nama: t.created_by, created_at: dibuat },
+      { id: `${t.id}-buat`, isu_id: t.id, aksi: 'dibuat', dari: null, ke: 'open', keterangan: 'Ticket Troubleshooting dibuat', nama: publik ? null : t.created_by, created_at: dibuat },
       ...akt.map(a => {
         const ke = a.new_status ? statusTiket(a.new_status, true) : null;
         return {
@@ -290,7 +290,7 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Prom
       action: status === 'solved' ? '' : (terakhir?.action_taken ?? '').trim(),
       solusi: status === 'solved' ? ((selesaiAkt?.action_taken || terakhir?.action_taken) ?? '').trim() : '',
       foto_url: t.photo_url, foto_thumb_url: t.photo_url, selesai_pada,
-      dibuat_oleh_nama: t.created_by, diubah_oleh_nama: terakhir?.handler_name ?? null,
+      dibuat_oleh_nama: publik ? null : t.created_by, diubah_oleh_nama: terakhir?.handler_name ?? null,
       created_at: dibuat, updated_at: t.updated_at ? utc(t.updated_at) : dibuat,
       sumber: 'tiket' as const, tiket_id: t.id, riwayat, tiket: dataTiket(t, akt, publik),
     };
@@ -299,5 +299,17 @@ export async function muatIsuTiket(db: Db, grup: IsuGrup, publik: boolean): Prom
 
 export async function muatSemuaIsu(db: Db, grup: IsuGrup, publik: boolean): Promise<Isu[]> {
   const [manual, tiket] = await Promise.all([muatIsu(db, grup.id, publik), muatIsuTiket(db, grup, publik)]);
-  return [...manual.map(i => ({ ...i, sumber: 'manual' as const })), ...tiket];
+  const riwayat = await muatRiwayatBanyak(db, manual.map(i => i.id));
+  return [...manual.map(i => ({ ...i, sumber: 'manual' as const, riwayat: riwayat.get(i.id) ?? [] })), ...tiket];
+}
+
+async function muatRiwayatBanyak(db: Db, ids: string[]): Promise<Map<string, RiwayatIsu[]>> {
+  const hasil = new Map<string, RiwayatIsu[]>();
+  for (let i = 0; i < ids.length; i += 150) {
+    const potong = ids.slice(i, i + 150);
+    const baris = await semuaBaris<RiwayatIsu>((a, b) => db.from('isu_riwayat').select(KOLOM_RIWAYAT)
+      .in('isu_id', potong).order('created_at').order('id').range(a, b));
+    for (const r of baris) hasil.set(r.isu_id, [...(hasil.get(r.isu_id) ?? []), r]);
+  }
+  return hasil;
 }

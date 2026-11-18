@@ -1,12 +1,13 @@
 'use client';
 
 import { appBaseUrl } from '@/lib/app-url';
-import { useState } from 'react';
-import { Copy, RefreshCw, ExternalLink } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Copy, RefreshCw, ExternalLink, ImagePlus, Undo2 } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { urlShareChecklist } from '@/lib/checklist/inti';
 import { urlShareIsu } from '@/lib/isu/inti';
+import { kirimFormTahan } from '@/lib/unggah-tahan';
 import { TEMA } from './tampilan';
 
 export interface TargetShare {
@@ -16,6 +17,12 @@ export interface TargetShare {
   share_token?: string | null;
 }
 
+export interface LatarShare {
+  nilai: string | null | undefined;
+  bisaUbah: boolean;
+  onUbah: (url: string | null) => Promise<void>;
+}
+
 function urlShare(t: TargetShare): string {
   if (!t.share_token) return '';
   if (t.jenis === 'checklist') return urlShareChecklist(t.share_token);
@@ -23,14 +30,16 @@ function urlShare(t: TargetShare): string {
   return `${appBaseUrl()}/project-progress/share/${t.share_token}`;
 }
 
-export function ModalShare({ target, onTutup, onUbah, beritahu }: {
+export function ModalShare({ target, latar, onTutup, onUbah, beritahu }: {
   target: TargetShare | null;
+  latar?: LatarShare;
   onTutup: () => void;
   onUbah: (aksi: 'share' | 'tokenBaru', aktif?: boolean) => Promise<void>;
   beritahu: (type: 'success' | 'error', msg: string) => void;
 }) {
   const [sibuk, setSibuk] = useState(false);
   const [yakinGanti, setYakinGanti] = useState(false);
+  const inputLatar = useRef<HTMLInputElement>(null);
   if (!target) return null;
   const url = urlShare(target);
   const bisaCentang = target.jenis === 'checklist';
@@ -39,6 +48,39 @@ export function ModalShare({ target, onTutup, onUbah, beritahu }: {
     setSibuk(true);
     try { await onUbah(aksi, aktif); setYakinGanti(false); }
     catch (e) { beritahu('error', e instanceof Error ? e.message : 'Gagal mengubah link.'); }
+    finally { setSibuk(false); }
+  };
+
+  const ubahLatar = async (url: string | null, pesan: string) => {
+    if (!latar) return;
+    await latar.onUbah(url);
+    beritahu('success', pesan);
+  };
+
+  const unggahLatar = async (berkas: File | undefined) => {
+    if (!berkas || !latar) return;
+    setSibuk(true);
+    try {
+      let siap = berkas;
+      try { const { compressImage } = await import('@/lib/image-compress'); siap = await compressImage(berkas, { maxDim: 2400, quality: 0.82 }); } catch {  }
+      const fd = new FormData();
+      fd.append('berkas', siap);
+      const r = await kirimFormTahan('/api/project-progress/share/latar', fd, { credentials: 'include' });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || 'Unggah gagal.');
+      await ubahLatar(j.url as string, 'Latar link diganti. Penerima melihatnya saat membuka/memuat ulang link.');
+    } catch (e) {
+      beritahu('error', e instanceof Error ? e.message : 'Unggah gagal - periksa koneksi.');
+    } finally {
+      setSibuk(false);
+      if (inputLatar.current) inputLatar.current.value = '';
+    }
+  };
+
+  const pakaiLatarPlatform = async () => {
+    setSibuk(true);
+    try { await ubahLatar(null, 'Link kembali memakai latar platform.'); }
+    catch (e) { beritahu('error', e instanceof Error ? e.message : 'Gagal mengubah latar.'); }
     finally { setSibuk(false); }
   };
 
@@ -87,6 +129,47 @@ export function ModalShare({ target, onTutup, onUbah, beritahu }: {
               className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: TEMA.warna }}>
               <ExternalLink size={13} /> Buka seperti yang dilihat penerima
             </a>
+          </div>
+        )}
+
+        {latar && target.jenis !== 'checklist' && (
+          <div className="pt-3 space-y-2" style={{ borderTop: `1px solid ${NETRAL.garis}` }}>
+            <p className="text-[12px] font-bold" style={{ color: NETRAL.tinta }}>Latar halaman link</p>
+            <div className="flex items-center gap-3">
+              <div aria-hidden className="w-28 h-16 rounded-lg shrink-0"
+                style={{
+                  border: `1px solid ${NETRAL.garis}`,
+                  background: latar.nilai ? `var(--halaman) url("${latar.nilai.replace(/"/g, '%22')}") center / cover no-repeat` : 'var(--latar-halaman)',
+                }} />
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-[11.5px] font-semibold" style={{ color: NETRAL.tinta2 }}>
+                  {latar.nilai ? 'Memakai gambar sendiri' : 'Ikut latar platform'}
+                </p>
+                {latar.bisaUbah ? (
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={sibuk} onClick={() => inputLatar.current?.click()}
+                      className="px-3 py-1.5 rounded-lg text-[12px] font-bold text-white inline-flex items-center gap-1.5 disabled:opacity-60"
+                      style={{ background: TEMA.warna }}>
+                      <ImagePlus size={13} /> {sibuk ? 'Memproses…' : latar.nilai ? 'Ganti gambar' : 'Unggah gambar'}
+                    </button>
+                    {latar.nilai && (
+                      <button type="button" disabled={sibuk} onClick={pakaiLatarPlatform}
+                        className="px-3 py-1.5 rounded-lg text-[12px] font-bold inline-flex items-center gap-1.5 disabled:opacity-60"
+                        style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
+                        <Undo2 size={13} /> Pakai latar platform
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px]" style={{ color: TEMA.samar }}>Hanya admin atau Manager PTS yang bisa mengganti latar.</p>
+                )}
+              </div>
+            </div>
+            {latar.bisaUbah && (
+              <p className="text-[11px]" style={{ color: TEMA.samar }}>PNG/JPG/WebP, otomatis dikecilkan. Hanya berlaku untuk link ini, tidak mengubah latar platform.</p>
+            )}
+            <input ref={inputLatar} type="file" accept="image/png,image/jpeg,image/webp" hidden aria-label="Pilih gambar latar"
+              onChange={e => void unggahLatar(e.target.files?.[0])} />
           </div>
         )}
 

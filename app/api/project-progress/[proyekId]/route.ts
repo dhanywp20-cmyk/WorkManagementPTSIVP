@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { NO_STORE, akunAdmin, ambilAkun, galat, muatProyek, tokenBaru } from '@/lib/checklist/server';
 import { isianProyek, statusProyek } from '@/lib/checklist/isian';
+import { rapikanLatarShare } from '@/lib/share-latar';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -67,6 +68,13 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ proye
       const { error } = await db.from('checklist_proyek').update({ share_aktif: true, share_token }).eq('id', id);
       if (error) return galat(error.message, 500);
       return NextResponse.json({ share_aktif: true, share_token }, { headers: NO_STORE });
+    }
+    case 'latar': {
+      const share_latar = rapikanLatarShare(body.latar);
+      if (share_latar === undefined) return galat('Gambar latar tidak valid. Unggah ulang gambarnya.');
+      const { error } = await db.from('checklist_proyek').update({ share_latar }).eq('id', id);
+      if (error) return galat(error.message, 500);
+      return NextResponse.json({ share_latar }, { headers: NO_STORE });
     }
     default:
       return galat('Aksi tidak dikenal.');

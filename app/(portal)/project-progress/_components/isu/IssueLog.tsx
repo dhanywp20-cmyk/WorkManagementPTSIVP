@@ -82,7 +82,13 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
     void muatIsi(grupId);
   }, [grupId, muatIsi]);
 
-  const ganti = (baru: Isu) => setIsu(l => (l.some(i => i.id === baru.id) ? l.map(i => (i.id === baru.id ? baru : i)) : [baru, ...l]));
+  const ganti = (baru: Isu) => {
+    setIsu(l => (l.some(i => i.id === baru.id) ? l.map(i => (i.id === baru.id ? baru : i)) : [baru, ...l]));
+    if (baru.tiket || baru.riwayat) return;
+    muatRiwayat(baru.id)
+      .then(riwayat => setIsu(l => l.map(i => (i.id === baru.id && i.updated_at === baru.updated_at ? { ...i, riwayat } : i))))
+      .catch(() => {});
+  };
 
   const simpanIsu = async (f: IsianFormIsu, foto: File | null) => {
     const awal = form?.awal ?? null;
@@ -131,6 +137,13 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
   const ubahShare = async (aksi: 'share' | 'tokenBaru', aktif?: boolean) => {
     if (!grup) return;
     const { grup: g } = await panggil<{ grup: IsuGrup }>(`/api/project-progress/isu/${grup.id}`, { method: 'PATCH', body: JSON.stringify({ aksi, aktif }) });
+    setGrup(g);
+    setDaftarGrup(l => l.map(x => (x.id === g.id ? g : x)));
+  };
+
+  const ubahLatar = async (latar: string | null) => {
+    if (!grup) return;
+    const { grup: g } = await panggil<{ grup: IsuGrup }>(`/api/project-progress/isu/${grup.id}`, { method: 'PATCH', body: JSON.stringify({ aksi: 'latar', latar }) });
     setGrup(g);
     setDaftarGrup(l => l.map(x => (x.id === g.id ? g : x)));
   };
@@ -234,6 +247,7 @@ export function IssueLog({ beritahu, namaSaya }: { beritahu: (type: 'success' | 
       <ModalGrup buka={!!modalGrup} awal={modalGrup?.awal ?? null} proyek={proyek} onTutup={() => setModalGrup(null)} onSimpan={simpanGrup} />
       {shareBuka && grup && (
         <ModalShare beritahu={beritahu} onUbah={ubahShare} onTutup={() => setShareBuka(false)}
+          latar={{ nilai: grup.share_latar, bisaUbah: !!hak.kelola, onUbah: ubahLatar }}
           target={{ jenis: 'isu', judul: grup.nama, share_aktif: grup.share_aktif, share_token: grup.share_token }} />
       )}
     </div>
