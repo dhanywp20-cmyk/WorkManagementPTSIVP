@@ -97,7 +97,11 @@ const ruangKoridor: Ruang = { ...ruangPolos, cahaya: 'koridor' };
 cek('cahaya koridor ±150 lux, lux terukur mengalahkan perkiraan', luxRuangDari(ruangKoridor) === 150 && luxRuangDari({ ...ruangKoridor, luxManual: 220 }) === 220 && luxRuangDari({ ...ruangKoridor, luxManual: 0 }) === 0);
 cek('kontras memakai lux terukur bila belum ada lampu', luxCahayaDi([], { ...ruangKoridor, luxManual: 220 }, [4, 1.5, 0.1], [0, 0, 1]).total === 220);
 cek('tampilan makin terang mengikuti lux', faktorCahayaRuang({ cahaya: 'gelap' }) < faktorCahayaRuang({ cahaya: 'redup' }) && faktorCahayaRuang({ cahaya: 'koridor' }) < faktorCahayaRuang({ cahaya: 'terang' }) && faktorCahayaRuang({ luxManual: 1000 }) === 1);
-cek('template mapping gelap: semua proyektor memenuhi kontras 15:1', ['mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'simulator'].every(id => proyektorTemplate(id as Parameters<typeof templateRuang>[0]).every(Boolean)));
+cek('template mapping cembung & objek (dinding abu-abu, ruang gelap): semua proyektor memenuhi kontras 15:1', ['mapping-cembung', 'mapping-objek'].every(id => proyektorTemplate(id as Parameters<typeof templateRuang>[0]).every(Boolean)));
+cek('layar cekung, kubah simulator & immersive: kontras dibatasi pantulan silang gambar sendiri, bukan lampu ruang', ['mapping-lengkung', 'simulator', 'immersive'].every(id => {
+  const t = templateRuang(id as Parameters<typeof templateRuang>[0]);
+  return t.benda.filter(x => x.jenis === 'proyektor').every(p => { const c = kontrasProyektor(p, t.benda, t.ruang, 15).cahaya; return c.layar > 3 * (c.total - c.layar); });
+}));
 
 console.log('\nPanel atur benda');
 const keadaan = readFileSync('app/(portal)/tools-team/_components/desain3d/useKeadaanDesain.ts', 'utf8');

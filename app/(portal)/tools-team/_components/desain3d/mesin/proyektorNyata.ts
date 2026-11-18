@@ -107,7 +107,7 @@ export function ambienAdegan(m: Mesin, n: T.Vector3): number {
 }
 export const KESERAGAMAN = 0.85;
 export const PUTIH_LAYAR = 1, EKSPOSUR_MIN = 0.08;
-const TAMBAHAN_MAKS = 2;
+const TAMBAHAN_MAKS = 4;
 export function gulungTerang(q: number): number {
   if (q <= PUTIH_LAYAR) return Math.max(0, q);
   const r = TAMBAHAN_MAKS - PUTIH_LAYAR;
@@ -126,6 +126,8 @@ export interface MasukanLampu {
    blend: { kiri: number; kanan: number; atas: number; bawah: number };
    mask: { uji: UjiBidang[]; kunci: string } | null;
    mati?: boolean;
+   silau?: number;
+   pusat?: T.Vector3 | null; lebar?: number; tinggi?: number;
 }
 
 const PETA_BAHAN = ['map', 'alphaMap', 'aoMap', 'bumpMap', 'normalMap', 'emissiveMap', 'lightMap', 'roughnessMap', 'metalnessMap',
@@ -147,9 +149,30 @@ export function batasProyektorNyata(m: Mesin): number {
 
 interface Lampu {
   light: T.SpotLight; kanvas: HTMLCanvasElement; tex: T.CanvasTexture;
-  dasar: HTMLCanvasElement; kanvasMask: HTMLCanvasElement; kunciIsi: string; kunciBlend: string; kunciMask: string; lebarMask: number;
+  dasar: HTMLCanvasElement; kanvasMask: HTMLCanvasElement; kunciIsi: string; kunciBlend: string; kunciMask: string; lebarMask: number; halo: T.Mesh<T.PlaneGeometry, T.MeshBasicMaterial>;
 }
 const simpanan = new WeakMap<object, Map<string, Lampu>>();
+
+export const TEPI_HALO = 0.42, KUAT_HALO = 0.5, AWAL_HALO = 2, SILAU_PENUH = 30, DALAM_HALO = 0.08;
+export const kuatHalo = (silau: number) => (silau > AWAL_HALO ? Math.min(1, Math.log(silau / AWAL_HALO) / Math.log(SILAU_PENUH / AWAL_HALO)) : 0);
+let teksturHalo: T.Texture | null = null;
+function haloBaru(THREE: typeof T): T.Mesh<T.PlaneGeometry, T.MeshBasicMaterial> {
+  if (!teksturHalo) {
+    const N = 128, c = document.createElement('canvas'); c.width = N; c.height = N;
+    const g = c.getContext('2d')!, img = g.createImageData(N, N), d = img.data;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const u = Math.max(0, Math.abs((2 * x + 1) / N - 1) - TEPI_HALO), v = Math.max(0, Math.abs((2 * y + 1) / N - 1) - TEPI_HALO);
+      const t = Math.min(1, Math.hypot(u, v) / (1 - TEPI_HALO)), i = (y * N + x) * 4, nilai = Math.round(255 * (u + v > 0 ? Math.exp(-4 * t) * (1 - t) : DALAM_HALO));
+      d[i] = nilai; d[i + 1] = nilai; d[i + 2] = nilai; d[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    teksturHalo = new THREE.CanvasTexture(c);
+  }
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: teksturHalo, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  halo.renderOrder = 5; halo.visible = false; halo.raycast = () => {};
+  return halo;
+}
 
 export const NORMAL_BIAS_SPOT = 'shadowWorldPosition.xyz += shadowWorldNormal * spotLightShadows[ i ].shadowNormalBias;';
 export const NORMAL_BIAS_SPOT_KE_LAMPU = `{
@@ -231,11 +254,11 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = fal
   const ada = new Set(daftar.map(x => x.p.id));
   for (const [id, l] of peta) {
     if (ada.has(id)) continue;
-    scene.remove(l.light, l.light.target); l.light.dispose(); l.tex.dispose(); peta.delete(id);
+    scene.remove(l.light, l.light.target, l.halo); l.light.dispose(); l.tex.dispose(); l.halo.material.dispose(); l.halo.geometry.dispose(); peta.delete(id);
   }
   const sisaUnit = batasProyektorNyata(m);
   const denganBayangan = Math.max(0, Math.min(daftar.length, sisaUnit - daftar.length));
-  const ukur: { light: T.SpotLight; cd: number; A: number; lux: number; luxGambar: number }[] = [];
+  const ukur: { light: T.SpotLight; cd: number; A: number; lux: number; luxGambar: number; silau: number; halo: T.Mesh<T.PlaneGeometry, T.MeshBasicMaterial>; atas: T.Vector3; pusat: T.Vector3 | null; arah: T.Vector3; lebar: number; tinggi: number }[] = [];
 
   daftar.forEach((x, i) => {
     const { p, L } = x;
@@ -244,8 +267,9 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = fal
       const kanvas = document.createElement('canvas');
       const tex = new THREE.CanvasTexture(kanvas); tex.colorSpace = THREE.SRGBColorSpace;
       const light = new THREE.SpotLight(0xffffff, 1, 0, 0.5, 0, 2);
-      light.map = tex; scene.add(light, light.target);
-      lampu = { light, kanvas, tex, dasar: document.createElement('canvas'), kanvasMask: document.createElement('canvas'), kunciIsi: '', kunciBlend: '', kunciMask: '', lebarMask: 0 };
+      const halo = haloBaru(THREE);
+      light.map = tex; scene.add(light, light.target, halo);
+      lampu = { light, kanvas, tex, dasar: document.createElement('canvas'), kanvasMask: document.createElement('canvas'), kunciIsi: '', kunciBlend: '', kunciMask: '', lebarMask: 0, halo };
       peta!.set(p.id, lampu);
     }
     const { light } = lampu;
@@ -287,15 +311,25 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = fal
     }
     if (ubah) susunPeta(lampu, !!x.mask);
     const n = x.normal ?? new THREE.Vector3(-L.D[0], -L.D[1], -L.D[2]);
-    ukur.push({ light, cd: x.mati ? 0 : (lumenGambarDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar });
+    const pusat = x.pusat ?? null, arah = pusat && n.dot(new THREE.Vector3(...L.O).sub(pusat)) < 0 ? n.clone().negate() : n.clone();
+    ukur.push({ light, cd: x.mati ? 0 : (lumenGambarDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar, silau: x.silau ?? 1,
+      halo: lampu.halo, atas: new THREE.Vector3(...L.atas), pusat, arah, lebar: x.lebar ?? 0, tinggi: x.tinggi ?? 0 });
   });
   const skala = ukur.reduce((a, u) => a + u.A / u.lux, 0) / Math.max(1, ukur.length);
   const putih = Math.max(0, ...ukur.filter(u => u.cd > 0).map(u => (u.A + skala * u.luxGambar) / Math.PI));
-  const k = tahanEksposur && ukur.length ? adaptasiDari(m).k : eksposurLayar(putih);
+  const silau = Math.max(1, ...ukur.filter(u => u.cd > 0).map(u => u.silau));
+  const k = tahanEksposur && ukur.length ? adaptasiDari(m).k : Math.min(1, eksposurLayar(putih) * Math.cbrt(silau));
   for (const u of ukur) {
     const tambahan = (k * skala * u.luxGambar) / Math.PI;
     const faktor = tambahan > 0 ? gulungTerang(tambahan) / tambahan : 1;
     u.light.intensity = u.cd * skala * k * faktor;
+    const g = u.cd > 0 && u.pusat && u.lebar > 0 ? kuatHalo(u.silau) : 0;
+    u.halo.visible = g > 0.02;
+    if (!u.halo.visible || !u.pusat) continue;
+    u.halo.position.copy(u.pusat).addScaledVector(u.arah, 0.01);
+    u.halo.up.copy(u.atas); u.halo.lookAt(u.pusat.clone().add(u.arah));
+    u.halo.scale.set(u.lebar / TEPI_HALO, u.tinggi / TEPI_HALO, 1);
+    u.halo.material.color.setScalar(KUAT_HALO * g);
   }
   aturCahayaRuang(m, { k });
   return k;
