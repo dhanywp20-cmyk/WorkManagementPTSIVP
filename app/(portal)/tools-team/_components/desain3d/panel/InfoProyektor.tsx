@@ -127,8 +127,13 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const warna = kp.cukup ? 'text-emerald-700' : kp.kontras >= targetKontras * 0.6 ? 'text-amber-700' : 'text-rose-700';
     const ambPerlu = kp.luxGambar / Math.max(0.01, targetKontras - 1);
     const dimSekarang = ruang.dimmer ?? 100;
-    const luxLampu = kp.cahaya.total - kp.cahaya.siang;
-    const dimPerlu = kp.cahaya.dariLampu && luxLampu > 0 ? Math.floor((((ambPerlu - kp.cahaya.siang) / luxLampu) * dimSekarang) / 5) * 5 : null;
+    const luxLampu = kp.cahaya.total - kp.cahaya.siang - kp.cahaya.layar;
+    const dimPerlu = kp.cahaya.dariLampu && luxLampu > 0 ? Math.floor((((ambPerlu - kp.cahaya.siang - kp.cahaya.layar) / luxLampu) * dimSekarang) / 5) * 5 : null;
+    const pantulLayar = kp.cahaya.layar > 0.5 ? <> + pantulan gambar proyektor {f(kp.cahaya.layar, 0)} lux</> : null;
+    const sl = kp.silau, warnaSilau = sl.tingkat === 'silau' ? 'text-rose-700' : sl.tingkat === 'terang' ? 'text-amber-700' : 'text-emerald-700';
+    const tidakCukup = Number.isFinite(kp.lumenPerlu) ? `butuh proyektor ±${kp.lumenPerlu.toLocaleString('id-ID')} lm`
+      : kp.batasPantul <= targetKontras ? `pantulan gambar ke dinding & plafon membatasi kontras ±${f(kp.batasPantul, 0)} : 1, tambah lumen tidak menaikkan kontras (pakai dinding / plafon gelap atau layar ALR)`
+        : `melebihi kontras asli proyektor (${p.kontrasAsli?.toLocaleString('id-ID')} : 1), lumen berapa pun tidak cukup`;
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
         <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">Kontras vs lampu ruangan</span>
@@ -138,8 +143,9 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         </select>
         <div className="grid grid-cols-2 gap-1.5 text-center">
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Gambar (iluminansi)</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Luminance · gain {f(kp.gain, 2)}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luminance, 0)} cd/m²</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Lampu di {kePermukaan ? 'permukaan' : 'layar'}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Luminance · gain {f(kp.gain, 2)}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luminance, 0)} cd/m²</p>
+            <p className={`text-[10.5px] font-bold ${warnaSilau}`}>{sl.tingkat === 'silau' ? 'Silau' : sl.tingkat === 'terang' ? 'Terang' : 'Nyaman'} · {f(sl.rasio, 1)}× batas</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Cahaya ruang di {kePermukaan ? 'permukaan' : 'layar'}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Kontras</Catatan><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
         </div>
         {layar && (
@@ -153,14 +159,21 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         )}
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
-            ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
-            : <>Belum ada lampu di desain: memakai {typeof ruang.luxManual === 'number' ? 'lux terukur' : <>perkiraan cahaya ruangan &quot;{ruang.cahaya ?? 'terang'}&quot;</>} ±{luxRuangDari(ruang)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
+            ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}{pantulLayar}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
+            : <>Belum ada lampu di desain: memakai {typeof ruang.luxManual === 'number' ? 'lux terukur' : <>perkiraan cahaya ruangan &quot;{ruang.cahaya ?? 'terang'}&quot;</>} ±{luxRuangDari(ruang)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}{pantulLayar}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
         </p>
+        {sl.tingkat !== 'nyaman' && (
+          <p className={`text-[11.5px] font-semibold leading-relaxed ${warnaSilau}`}>
+            {sl.tingkat === 'silau'
+              ? <>Terlalu terang / silau: {f(kp.luminance, 0)} cd/m², ±{f(sl.rasio, 1)}× batas nyaman {f(sl.nyaman, 0)} cd/m² untuk ruangan ini. Turunkan lumen (mode eco / daya lampu), pakai layar abu-abu (gain lebih kecil), atau nyalakan sebagian lampu.</>
+              : <>Terang: ±{f(sl.rasio, 1)}× batas nyaman {f(sl.nyaman, 0)} cd/m². Masih wajar untuk presentasi, bisa melelahkan mata bila ditonton lama.</>}
+          </p>
+        )}
         {kp.cukup
           ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>
           : (
             <div className="space-y-1">
-              <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - {Number.isFinite(kp.lumenPerlu) ? `butuh proyektor ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : `melebihi kontras asli proyektor (${p.kontrasAsli?.toLocaleString('id-ID')} : 1), lumen berapa pun tidak cukup`}, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
+              <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - {tidakCukup}, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
               {kp.cahaya.siang > 0.5 && (ruang.tirai ?? 0) < 100 && (
                 <button type="button" onClick={() => setRuang(r => ({ ...r, tirai: 100 }))}
                   className="mr-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100">

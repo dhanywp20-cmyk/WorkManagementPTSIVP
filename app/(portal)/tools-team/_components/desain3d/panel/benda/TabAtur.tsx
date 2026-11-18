@@ -6,8 +6,8 @@ import { Aperture, Cable, Move3d, Package, Palette } from 'lucide-react';
 export type TabAtur = 'produk' | 'posisi' | 'lensa' | 'tampilan' | 'kabel';
 
 const DAFTAR: [TabAtur, string, typeof Package, string][] = [
-  ['produk', 'Produk', Package, 'Nama, isi dari Pustaka, model & spesifikasi, simpan ke Produk saya'],
-  ['posisi', 'Posisi', Move3d, 'Ukuran produk, posisi, tinggi & putar'],
+  ['produk', 'Produk', Package, 'Nama, isi dari Pustaka, model & spesifikasi, ukuran produk, simpan ke Produk saya'],
+  ['posisi', 'Posisi', Move3d, 'Posisi, tinggi & putar'],
   ['lensa', 'Lensa', Aperture, 'Zoom lensa, lens shift, resolusi & rasio, hasil proyeksi'],
   ['tampilan', 'Tampilan', Palette, 'Warna, label, konten layar'],
   ['kabel', 'Kabel', Cable, 'Kabel ke rack'],

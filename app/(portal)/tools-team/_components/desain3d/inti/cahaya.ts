@@ -1,7 +1,7 @@
 import { bendaBaru } from './katalog';
 import { arahProyektor, bagianPanel, gainLayarDari, lumenGambarDari, luminanceDari, sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sisiLuar } from './ruang';
-import type { Benda, Kotak, Ruang, TipeLampu, Titik } from './tipe';
+import { type Benda, type Kotak, type Ruang, type TipeLampu, type Titik, warnaSah } from './tipe';
 
 export const SPEK_LAMPU: Record<TipeLampu, { label: string; w: number; h: number; d: number; lumen: number; sudut: number; gantung: number }> = {
   downlight: { label: 'Downlight', w: 0.17, h: 0.06, d: 0.17, lumen: 1000, sudut: 60, gantung: 0 },
@@ -103,6 +103,30 @@ export const TARGET_KONTRAS: { v: number; l: string; ket: string }[] = [
   { v: 50, l: '50 : 1', ket: 'Analytical decision making (detail, spreadsheet)' },
   { v: 80, l: '80 : 1', ket: 'Full motion video (video, immersive)' },
 ];
+export const PANTUL_RUANG = 0.45, PANTUL_DINDING = 0.7, LUMINANCE_NYAMAN = 150;
+export const aplKonten = (k: Benda['konten']) => (k === 'mati' ? 0 : k === 'putih' ? 1 : 0.5);
+export const pantulSasaran = (layar: Benda | null) => (layar ? Math.min(0.95, 0.9 * gainLayarDari(layar)) : PANTUL_DINDING);
+const luminansiWarna = (w: string) => {
+  const n = parseInt(w.slice(1), 16), c = [16, 8, 0].map(g => { const v = ((n >> g) & 255) / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+export const WARNA_DINDING_AWAL = '#f5f5f4';
+export function pantulRuang(r: Pick<Ruang, 'warnaDinding'>): number {
+  const w = warnaSah(r.warnaDinding);
+  return w ? Math.min(0.8, Math.max(0.05, (PANTUL_RUANG * luminansiWarna(w)) / luminansiWarna(WARNA_DINDING_AWAL))) : PANTUL_RUANG;
+}
+const luasPermukaan = (k: Kotak) => 2 * (k.p * k.l + k.p * k.t + k.l * k.t);
+const luxPerLumenPantul = (p: Benda, layar: Benda | null, k: Kotak, rho: number) => (aplKonten(p.konten) * pantulSasaran(layar)) / Math.max(1, luasPermukaan(k) * (1 - rho));
+export function luxPantulLayar(semua: Benda[], r: Ruang, ri: number): number {
+  const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0], rho = pantulRuang(r);
+  return semua.reduce((a, p) => (p.jenis === 'proyektor' && ruangDari(r, p.x) === ri ? a + lumenGambarDari(p) * luxPerLumenPantul(p, sinarProyektor(p, semua, r).layar, k, rho) : a), 0);
+}
+export type TingkatSilau = 'nyaman' | 'terang' | 'silau';
+export function silauLayar(luxGambar: number, luxAmbien: number, gain: number) {
+  const L = ((luxGambar + luxAmbien) * gain) / Math.PI, nyaman = Math.max(LUMINANCE_NYAMAN, (3 * luxAmbien) / Math.PI), rasio = L / nyaman;
+  const tingkat: TingkatSilau = rasio <= 1 ? 'nyaman' : rasio <= 3 ? 'terang' : 'silau';
+  return { L, nyaman, rasio, tingkat };
+}
 export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: number) {
   const sn = sinarProyektor(p, semua, r);
   const P: Titik = [0, 1, 2].map(i => sn.sudut.reduce((a, c) => a + c[i], 0) / 4) as Titik;
@@ -111,12 +135,16 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   else { const D = arahProyektor(p); n = [-D[0], -D[1], -D[2]]; }
   const luas = Math.max(0.05, sn.lebar * sn.tinggi);
   const luxGambar = lumenGambarDari(p) / luas;
-  const cahaya = luxCahayaDi(semua, r, P, n);
+  const ri = ruangDari(r, P[0]), kotak = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
+  const lampu = luxCahayaDi(semua, r, P, n), layar = luxPantulLayar(semua, r, ri);
+  const cahaya = { ...lampu, layar, total: lampu.total + layar };
   const amb = Math.max(0.5, cahaya.total);
   const C = p.kontrasAsli && p.kontrasAsli > 1 ? p.kontrasAsli : Infinity;
   const kontras = (luxGambar + amb) / (luxGambar / C + amb);
-  const luxPerlu = target < C ? (amb * (target - 1)) / (1 - target / C) : Infinity;
+  const beta = ruangDari(r, p.x) === ri ? luxPerLumenPantul(p, sn.layar, kotak, pantulRuang(r)) : 0;
+  const kT = target < C ? (target - 1) / (1 - target / C) : Infinity, sisa = 1 / luas - kT * beta, batasPantul = layar > 0 ? 1 + luxGambar / layar : Infinity;
+  const lumenGambarPerlu = Number.isFinite(kT) && sisa > 0 && target < batasPantul ? (kT * Math.max(0, amb - beta * lumenGambarDari(p))) / sisa : Infinity;
   const gain = gainLayarDari(sn.layar);
-  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil((luxPerlu * luas) / (bagianPanel(p).lebar * bagianPanel(p).tinggi) / 100) * 100, luas,
-    gain, luminance: luminanceDari(luxGambar, gain) };
+  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil(lumenGambarPerlu / (bagianPanel(p).lebar * bagianPanel(p).tinggi) / 100) * 100, luas,
+    gain, luminance: luminanceDari(luxGambar, gain), batasPantul, silau: silauLayar(luxGambar, amb, gain) };
 }

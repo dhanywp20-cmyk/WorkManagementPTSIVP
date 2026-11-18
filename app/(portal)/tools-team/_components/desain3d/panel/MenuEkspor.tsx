@@ -12,7 +12,7 @@ type Item = [React.ElementType, string, string, () => unknown];
 
 export function MenuEkspor({ a }: { a: AlatDesain }) {
   const { namaDesain, setPesan } = a.K;
-  const { denahCetak, setDenahCetak, cetak, draftChecklist, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhBomExcel, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
+  const { denahCetak, setDenahCetak, kabelCetak, setKabelCetak, rakCetak, setRakCetak, cetak, draftChecklist, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhBomExcel, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
   const [checklistBuka, setChecklistBuka] = useState(false);
   const salin = async () => {
     try { await navigator.clipboard.writeText(ringkasan()); setPesan('Ringkasan desain tersalin - tempel di WA / penawaran.'); }
@@ -50,8 +50,10 @@ export function MenuEkspor({ a }: { a: AlatDesain }) {
           </div>
         ))}
         <GarisMenu />
-        <div className="px-2.5 py-1.5">
+        <div className="px-2.5 py-1.5 space-y-1">
           <Sakelar label="Denah 2D di Cetak" nilai={denahCetak} onUbah={setDenahCetak} judul="Sertakan denah 2D berskala di Cetak & Lembar lengkap" />
+          <Sakelar label="Jadwal kabel di Cetak" nilai={kabelCetak} onUbah={setKabelCetak} judul="Sertakan tabel jadwal kabel (dari, ke, panjang, jalur) di Cetak & Lembar lengkap" />
+          <Sakelar label="Rack elevation di Cetak" nilai={rakCetak} onUbah={setRakCetak} judul="Sertakan gambar isi rack per U di Cetak & Lembar lengkap" />
         </div>
       </Menu>
       {checklistBuka && <ModalChecklistBom judulAwal={namaDesain || 'Ruang AV'} buatDraft={draftChecklist} onTutup={() => setChecklistBuka(false)} />}

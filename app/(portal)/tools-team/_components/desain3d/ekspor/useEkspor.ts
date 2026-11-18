@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { jalurKabel, berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, objekDisinari, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari, ukuranBidang } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth/sesi';
@@ -11,6 +11,11 @@ import type { useKamera } from '../mesin/useKamera';
 import { ARAH_SUDUT, type Sudut, TAMPAK } from '../mesin/tipe';
 import { gambarLabel } from '../mesin/label';
 import { posisiPas } from '../mesin/kamera';
+
+function useSakelarTersimpan(kunci: string, awal: boolean): [boolean, (v: boolean) => void] {
+  const [nilai, setNilai] = useState(() => { try { const v = localStorage.getItem(kunci); return v === null ? awal : v === '1'; } catch { return awal; } });
+  return [nilai, (v: boolean) => { setNilai(v); try { localStorage.setItem(kunci, v ? '1' : '0'); } catch {  } }];
+}
 
 export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamera>, 'fokusKotak'>) {
   const { analisis, benda, duaRuang, faktorCustom, infoBlending, jenisPandang, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, tampilBlending, targetKontras } = K;
@@ -49,8 +54,9 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   };
   const namaGambar = (bagian: string) => namaBerkas(namaDesain || 'Desain AV', bagian);
   const [menuPng, setMenuPng] = useState(false);
-  const [denahCetak, setDenahCetakMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_denah_cetak') === '1'; } catch { return false; } });
-  const setDenahCetak = (v: boolean) => { setDenahCetakMentah(v); try { localStorage.setItem('wm_desain3d_denah_cetak', v ? '1' : '0'); } catch {  } };
+  const [denahCetak, setDenahCetak] = useSakelarTersimpan('wm_desain3d_denah_cetak', false);
+  const [kabelCetak, setKabelCetak] = useSakelarTersimpan('wm_desain3d_kabel_cetak', true);
+  const [rakCetak, setRakCetak] = useSakelarTersimpan('wm_desain3d_rak_cetak', true);
   const [sibukPng, setSibukPng] = useState(false);
   const jalankanPng = async (kerja: () => Promise<void>) => {
     setMenuPng(false); setSibukPng(true);
@@ -97,11 +103,15 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
       return (d.length ? `menjangkau ${fm(Math.min(...d), 1)}–${fm(Math.max(...d), 1)} m` : 'sumbu belum turun ke penonton') + (n ? ` · ${n} modul ke dinding/plafon` : '');
     };
     const baris = daftarBenda(benda);
-    const kabel = kabelLengkap();
+    const kabel = kabelCetak ? kabelLengkap() : [];
     const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
     const speaker = benda.filter(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon');
+    const disinari = objekDisinari(benda, ruang);
+    const bentukBidang = (b: Benda) => (b.jenis === 'bidang' && (b.bentukBidang ?? 'datar') !== 'datar' ? ` · jari-jari ${fm(ukuranBidang(b).R)} m, busur ${fm(ukuranBidang(b).busur, 0)}°` : '');
+    const cakupanObjek = (o: (typeof disinari)[number]) => (o.tertutup === null ? `Sisi ${o.sisi.join(', ')}`
+      : `${fm(o.tertutup * 100, 0)}% tertutup${(o.tumpang ?? 0) > 0.005 ? ` · tumpang (blending) ${fm((o.tumpang ?? 0) * 100, 0)}%` : ''}${o.celah.length ? ` · celah di ${o.celah.join(', ')}` : ''}`);
     const denah = denahCetak ? denahDari(ruang, benda) : null, ruangGerak = cekRuangGerak(benda, ruang);
     const NAMA_TIPE: Record<string, string> = { kotak: 'Speaker box', dinding6: 'Speaker dinding 6"', kolom: 'Portable aktif (kolom)', linearray: 'Line array' };
     return {
@@ -125,7 +135,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
         ...(kabel.length ? [{ judul: 'Jadwal kabel', jenis: 'tabel' as const, kepala: ['Dari', 'Ke', 'Kabel', 'Panjang', 'Lewat'], rataKanan: [3],
           isi: [...kabel.map(k => [k.dari, k.ke, k.kabel.nama, `±${fm(k.panjang)} m`, k.lewat]),
             ...rekapKabel(kabel).map(r => ['TOTAL', '', r.kabel.nama, `±${fm(r.meter)} m`, r.gulungan])] }] : []),
-        ...(benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
+        ...(rakCetak && benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
           html: `<div class="gambar dua">${benda.filter(b => b.jenis === 'rak').map(b => `<div>${svgElevasiRak(b)}</div>`).join('')}</div>` }] : []),
         { judul: `Daftar perangkat & furnitur (${baris.length} jenis)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah', 'Catatan'], rataKanan: [3],
           isi: baris.map(r => [r.kategori, r.item, r.ukuran, `${r.jumlah} ${r.satuan}`, r.catatan]) },
@@ -144,13 +154,22 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Luminance', 'Cahaya lampu di gambar', 'Kontras'],
+          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Luminance', 'Cahaya ruang di gambar', 'Kontras'],
           rataKanan: [1, 2, 3, 4, 5],
           isi: proyektor.map(({ p }) => {
             const kp = kontrasProyektor(p, benda, ruang, targetKontras);
-            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.luminance, 0)} cd/m² (gain ${fm(kp.gain, 2)})`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
-              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (${Number.isFinite(kp.lumenPerlu) ? `perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : 'melebihi kontras asli proyektor'})`}`];
+            const silau = { nyaman: 'nyaman', terang: 'terang', silau: 'SILAU' }[kp.silau.tingkat];
+            const perlu = Number.isFinite(kp.lumenPerlu) ? `perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : kp.batasPantul <= targetKontras ? `pantulan ruang membatasi ±${fm(kp.batasPantul, 0)} : 1` : 'melebihi kontras asli proyektor';
+            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.luminance, 0)} cd/m² (gain ${fm(kp.gain, 2)}) · ${silau}`,
+              `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}${kp.cahaya.layar > 0.5 ? `, ${fm(kp.cahaya.layar, 0)} dari pantulan gambar` : ''}`,
+              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (${perlu})`}`];
           }),
+        }] : []),
+        ...(disinari.length ? [{
+          judul: `Objek yang disinari proyektor (${disinari.length})`, jenis: 'tabel' as const,
+          kepala: ['Objek', 'Jenis / bentuk', 'Ukuran (L × T × P)', 'Posisi', 'Disinari oleh', 'Cakupan sinar'],
+          isi: disinari.map(o => [o.b.nama, `${o.jenis}${bentukBidang(o.b)}`, `${fm(o.ukuran.w)} × ${fm(o.ukuran.h)} × ${fm(o.ukuran.d)} m`,
+            `X ${fm(o.b.x)} · Z ${fm(o.b.z)} m · ${fm(o.b.elev)} m dari lantai${o.b.rot ? ` · putar ${fm(o.b.rot, 0)}°` : ''}`, o.proyektor.map(p => p.nama).join(', '), cakupanObjek(o)]),
         }] : []),
         ...(tampilBlending && infoBlending.length ? [{
           judul: 'Area blending proyektor', jenis: 'tabel' as const,
@@ -222,5 +241,5 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     }),
   ].join('\n');
 
-  return { denahCetak, setDenahCetak, cetak, draftChecklist, unduhBomExcel, unduhDxf, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
+  return { denahCetak, setDenahCetak, kabelCetak, setKabelCetak, rakCetak, setRakCetak, cetak, draftChecklist, unduhBomExcel, unduhDxf, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
 }

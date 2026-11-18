@@ -80,7 +80,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const maskDari = () => (maskBidang ??= { uji: benda.filter(b => BIDANG_PROYEKSI.has(b.jenis)).map(ujiKenaBidang), kunci: kunciBidangMask(benda) });
   const dataBlend: DataBlend[] = [];
   const sumberCahaya: SumberCahaya[] = [];
-  const bidangGambar: { p: Benda; isi: boolean; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null; normal: T.Vector3 | null }[] = [];
+  const bidangGambar: { p: Benda; isi: boolean; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null; normal: T.Vector3 | null; pusat: T.Vector3 | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -323,7 +323,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
     bidangGambar.push({ p, isi: adaIsi, L: lensaDari(p), normal: pusatGambar?.n ?? null, pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
-      teks: tulis ? {
+      pusat: pusatGambar?.p.clone() ?? null, teks: tulis ? {
         info: [p.nama, `L (lensa → ${hp.sasaran?.nama ?? 'bidang'}) ${fTetap(Ltulis)} m`,
           `Gambar ${fTetap(ukurTulis.lebar)} × ${fTetap(ukurTulis.tinggi)} m (${fTetap(ukurTulis.diagonalInci, 2)}")`,
           `Pusat ${f(ukurTulis.lux ?? luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx · ${f(lumenGambarDari(p), 0)} lm`],
@@ -361,7 +361,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     if (gambarNyata) {
       const kt = kontenProyektor(THREE, bg.p, gridSinar, bg.lebar, bg.tinggi, gambarLayar.current);
       const kp = kontrasProyektor(bg.p, benda, ruang, 15);
-      lampu.push({ p: bg.p, L: bg.L, normal: bg.normal, luxAmbien: kp.cahaya.total, luxGambar: kp.luxGambar,
+      lampu.push({ p: bg.p, L: bg.L, normal: bg.normal, pusat: bg.pusat, lebar: bg.lebar, tinggi: bg.tinggi, luxAmbien: kp.cahaya.total, luxGambar: kp.luxGambar, silau: kp.silau.rasio,
         konten: kt.sumber, kunciKonten: kt.kunci, mati: kt.mati, blend: { kiri, kanan, atas, bawah }, mask: bg.p.maskBidang ? maskDari() : null });
     }
     if (!bg.pos.length) continue;

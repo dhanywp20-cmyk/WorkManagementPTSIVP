@@ -50,7 +50,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         </div></Bagian>
       )}
 
-      <Bagian tab="posisi">
+      <Bagian tab="produk">
       {b.jenis !== 'teks' && (
       <div>
         <span className={label}>Ukuran produk</span>
@@ -76,7 +76,9 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         </Catatan>
       </div>
       )}
+      </Bagian>
 
+      <Bagian tab="posisi">
       {proyektor ? <PosisiProyektor c={c} /> : (
       <div>
         <span className={label}>Posisi</span>

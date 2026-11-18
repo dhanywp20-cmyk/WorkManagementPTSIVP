@@ -15,7 +15,7 @@ export const TOLERANSI_TEPI = 0.01;
 const dot = (a: Titik, b: Titik) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const kurang = (a: Titik, b: Titik): Titik => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 
-function kerangka(b: Pick<Benda, 'x' | 'z' | 'elev' | 'rot'>) {
+export function kerangka(b: Pick<Benda, 'x' | 'z' | 'elev' | 'rot'>) {
   const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
   return {
     keDunia: ([x, y, z]: Titik): Titik => [b.x + x * c + z * s, b.elev + y, b.z - x * s + z * c],
