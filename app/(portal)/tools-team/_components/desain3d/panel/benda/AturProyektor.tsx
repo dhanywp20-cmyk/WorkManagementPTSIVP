@@ -203,8 +203,9 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               ] as { v: KontenLayar; l: string }[]} />
             <Catatan>
               Konten berasal dari proyektor, bukan dari layar (layar proyektor hanya permukaan putih / abu-abu).
-              Tampil saat &quot;Sinar nyata&quot; dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut),
-              terang dari lumen dibanding cahaya ruangan (lampu & jendela), gain layar, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.
+              Gambar tampil selama &quot;Sinar proyektor&quot; aktif (menu Tampilan): diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut),
+              terang dari lumen dibanding cahaya ruangan (lampu & jendela), gain layar, bayangan benda & warna permukaan asli.
+              &quot;Sinar nyata&quot; hanya mengubah gaya sinar di udara (nyata / warna penanda). Centang Grid sinar = pola grid uji.
             </Catatan>
           </div>
           <div>
