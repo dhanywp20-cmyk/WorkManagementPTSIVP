@@ -55,7 +55,6 @@ export function ScorePage({ user }: { user: User }) {
   const passPct    = total > 0 ? Math.round(passed / total * 100) : 0;
   const papan      = peringkat?.papan ?? [];
   const pakaiDivisi = isSalesGuest({ role: user.role });
-  // Guest/Sales: papan peringkat panjang di kanan, jadi aktivitas & rekap mengisi kolom kiri
   const sisiKiri    = pakaiDivisi && total > 0;
   const myRank     = peringkat?.globalRank ?? 0;
   const rankTotal  = peringkat?.globalTotal ?? 0;
