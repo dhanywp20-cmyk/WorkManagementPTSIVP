@@ -1,5 +1,5 @@
 import { daftarRuang, ruangDari } from './ruang';
-import { type Benda, type Kotak, type RasioProyektor, type ResolusiProyektor, type Ruang, type Titik, warnaSah } from './tipe';
+import { type Benda, type Kotak, type PermukaanLayar, type RasioProyektor, type ResolusiProyektor, type Ruang, type Titik, warnaSah } from './tipe';
 
 export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
   const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
@@ -111,7 +111,13 @@ export function jarakUntukLebar(p: Benda, lebar: number): [number, number] {
   const [lo, hi] = zoomLensa(p);
   return [lo * lebar - koreksiJarakDari(p, lo), hi * lebar - koreksiJarakDari(p, hi)];
 }
-export const gainLayarDari = (l: Benda | null | undefined) => Math.min(5, Math.max(0.1, l?.gainLayar ?? 1));
+export const PERMUKAAN_LAYAR: Record<PermukaanLayar, { label: string; gain: number; warna: number }> = {
+  putih: { label: 'Putih doff (matte white)', gain: 1, warna: 0xf8fafc },
+  abu: { label: 'Abu-abu (grey)', gain: 0.8, warna: 0xe1e3e5 },
+};
+export const permukaanLayarDari = (l: Pick<Benda, 'permukaanLayar'> | null | undefined): PermukaanLayar => (l?.permukaanLayar === 'abu' ? 'abu' : 'putih');
+export const gainLayarDari = (l: Benda | null | undefined) =>
+  Math.min(5, Math.max(0.1, l?.gainLayar ?? PERMUKAAN_LAYAR[permukaanLayarDari(l)].gain));
 export const luminanceDari = (lux: number, gain = 1) => (lux * gain) / Math.PI;
 function diDalamPoligon(pg: number[], x: number, y: number): boolean {
   let dalam = false;

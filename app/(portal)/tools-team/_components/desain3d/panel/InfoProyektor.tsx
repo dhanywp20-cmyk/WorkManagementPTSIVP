@@ -1,5 +1,5 @@
 'use client';
-import { BATAS_LUBER, luberLayar, masukkanKeLayar, teksLuber, type Benda, cakupanProyektor, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { BATAS_LUBER, luberLayar, masukkanKeLayar, teksLuber, type Benda, cakupanProyektor, gainLayarDari, hasilPanasonic, jarakUntukLebar, keteranganPanel, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, luxRuangDari, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, fTetap, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { SusunBlending } from './SusunBlending';
@@ -145,10 +145,10 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         {layar && (
           <label className="flex items-center gap-2 text-[11.5px] text-slate-700">
             Gain layar {layar.nama}
-            <input type="number" min={0.1} max={5} step={0.05} value={layar.gainLayar ?? 1} aria-label="Gain layar"
+            <input type="number" min={0.1} max={5} step={0.05} value={gainLayarDari(layar)} aria-label="Gain layar"
               onChange={e => { const v = Number(e.target.value); if (v >= 0.1 && v <= 5) gantiBenda({ ...layar, gainLayar: Math.round(v * 100) / 100 }); }}
               className="w-20 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] tabular-nums" />
-            <span className="text-slate-500">(datasheet kain layar; putih doff 1,0)</span>
+            <span className="text-slate-500">(datasheet kain layar; putih doff 1,0 · abu-abu 0,8)</span>
           </label>
         )}
         <p className="text-[11.5px] text-slate-600 leading-relaxed">

@@ -21,6 +21,7 @@ export const LABEL_BENTUK_OBJEK: Record<BentukObjek, string> = {
 export type BentukBidang = 'datar' | 'lengkung' | 'cembung' | 'bola';
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop' | 'putih';
+export type PermukaanLayar = 'putih' | 'abu';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
 export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear' | 'gantung';
 export type Finish = 'walnut' | 'oak' | 'putih';
@@ -72,7 +73,7 @@ export interface Benda {
    isiSaran?: boolean;
   shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
    poligonShift?: number[];
-   gainLayar?: number;
+   gainLayar?: number; permukaanLayar?: PermukaanLayar;
   gridKolom?: number; warnaGrid?: string;
   maskBidang?: boolean;
   tanpaTiang?: boolean;

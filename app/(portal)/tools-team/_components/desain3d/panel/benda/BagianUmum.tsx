@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Angka, Pilih, Catatan, f } from '../../../bersama/ui';
-import { type Benda, DISPLAY, kedalamanBidang, type KontenLayar, ubahLebarBidang, warnaSah } from '../../inti';
+import { type Benda, DISPLAY, kedalamanBidang, type KontenLayar, PERMUKAAN_LAYAR, type PermukaanLayar, permukaanLayarDari, ubahLebarBidang, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
 import { Bagian } from './TabAtur';
@@ -98,11 +98,19 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
       </label>}
       {DISPLAY.includes(b.jenis) && (
         <div className="space-y-2">
-          <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
-            opsi={[
-              { v: 'pola', l: 'Pola uji (color bar)' }, { v: 'campuran', l: 'Command center: grafik + CCTV' }, { v: 'cctv', l: 'CCTV (grid kamera)' },
-              { v: 'dashboard', l: 'Dashboard / grafik' }, { v: 'desktop', l: 'Home screen (IFP / signage)' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (layar hitam)' },
-            ] as { v: KontenLayar; l: string }[]} />
+          {b.jenis === 'layar' ? (
+            <div>
+              <Pilih label="Permukaan layar proyektor" nilai={permukaanLayarDari(b)} onUbah={(v: PermukaanLayar) => set({ permukaanLayar: v === 'putih' ? undefined : v, gainLayar: undefined })}
+                opsi={(Object.keys(PERMUKAAN_LAYAR) as PermukaanLayar[]).map(v => ({ v, l: `${PERMUKAAN_LAYAR[v].label} · gain ${PERMUKAAN_LAYAR[v].gain.toLocaleString('id-ID', { minimumFractionDigits: 1 })}` }))} />
+              <Catatan>Layar proyektor tidak memancarkan gambar sendiri. Gambar datang dari proyektor: pilih kontennya di proyektor (Konten yang diproyeksikan), lalu centang "Sinar nyata" untuk melihatnya dengan terang sesuai lumen, gain layar & cahaya ruangan.</Catatan>
+            </div>
+          ) : (
+            <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji (color bar)' }, { v: 'campuran', l: 'Command center: grafik + CCTV' }, { v: 'cctv', l: 'CCTV (grid kamera)' },
+                { v: 'dashboard', l: 'Dashboard / grafik' }, { v: 'desktop', l: 'Home screen (IFP / signage)' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (layar hitam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+          )}
           <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
             <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiUkur} onChange={e => set({ sembunyiUkur: e.target.checked ? undefined : true })} />
             Tampilkan garis ukuran (mm) benda ini

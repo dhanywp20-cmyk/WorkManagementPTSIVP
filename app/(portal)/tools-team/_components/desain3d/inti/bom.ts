@@ -3,7 +3,7 @@ import { isiRakDari } from './rak';
 import { spekVideowall, susunanLED } from './produk';
 import { perluKabelSinyal, rekapKabel, type JalurKabel } from './kabel';
 import { modulLA, tipeSpeakerDari } from './audio';
-import { lumenDari, zoomLensa } from './proyektor';
+import { gainLayarDari, lumenDari, PERMUKAAN_LAYAR, permukaanLayarDari, zoomLensa } from './proyektor';
 import type { DraftBagian, DraftChecklist } from '@/lib/checklist/inti';
 
 export type KategoriBom = 'Display' | 'Kamera & konferensi' | 'Audio & kontrol' | 'Rack & jaringan' | 'Aksesori pemasangan'
@@ -53,6 +53,8 @@ export function daftarBenda(benda: Benda[]): BarisBom[] {
       catatan = `P${s.pitch} · susunan ${s.kolom} × ${s.baris} = ${fm(s.lebarM)} × ${fm(s.tinggiM)} m · ${s.resX} × ${s.resY} px`;
     } else if (b.jenis === 'speaker' && tipeSpeakerDari(b) === 'linearray') {
       jumlah = modulLA(b); satuan = 'modul'; ukuran = `${fm(b.w)} × ${fm(b.h / jumlah)} × ${fm(b.d)} m / modul`;
+    } else if (b.jenis === 'layar') {
+      catatan = `Permukaan ${PERMUKAAN_LAYAR[permukaanLayarDari(b)].label.toLowerCase()} · gain ${fm(gainLayarDari(b))}`;
     } else if (b.jenis === 'proyektor') {
       const [lo, hi] = zoomLensa(b);
       catatan = `${lumenDari(b).toLocaleString('id-ID')} lm · TR ${fm(lo)}${hi - lo > 0.005 ? `-${fm(hi)}` : ''}`;
