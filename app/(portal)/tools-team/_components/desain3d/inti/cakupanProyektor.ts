@@ -1,6 +1,6 @@
 import { keGambar, lensaDari, arahSinar, type Lensa } from './blending';
 import { bolaBidang, ukuranBidang } from './produk';
-import { gantiRasioProyektor, pasangKeLayar, RASIO_PROYEKTOR, rasioGambarProyektor } from './proyektor';
+import { gantiRasioProyektor, lebarAsliUntuk, pasangKeLayar, RASIO_PROYEKTOR } from './proyektor';
 import type { Benda, Kotak, RasioProyektor, Ruang, Titik } from './tipe';
 
 interface Sampel { p: Titik; n: Titik; s: number; t: number }
@@ -149,7 +149,7 @@ export function masukkanKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): { b
   const q: Benda = bisaRasio ? { ...p, ...gantiRasioProyektor(p, r) } : p;
   let hasil = pasangKeLayar(q, l, k, ruang).benda;
   if (luberLayar(hasil, l).maks > BATAS_LUBER) {
-    hasil = pasangKeLayar(hasil, l, k, ruang, { du: 0, dv: 0, lebar: Math.min(l.w, l.h / rasioGambarProyektor(hasil)) }).benda;
+    hasil = pasangKeLayar(hasil, l, k, ruang, { du: 0, dv: 0, lebar: lebarAsliUntuk(hasil, l.w, l.h, true) }).benda;
   }
   const sisa = luberLayar(hasil, l), dimask = sisa.maks > BATAS_LUBER;
   return { benda: dimask ? { ...hasil, maskBidang: true } : hasil, sisa, dimask };

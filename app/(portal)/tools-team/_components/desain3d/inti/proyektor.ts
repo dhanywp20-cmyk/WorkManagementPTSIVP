@@ -8,6 +8,25 @@ export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
 export const lensaDatar = (b: Benda): Titik => [b.w * 0.22, b.h * 0.5, b.d / 2 + 0.035];
 export const engselProyektor = (b: Benda): Titik => (b.pasangProyektor === 'meja' ? [0, 0, -b.d / 2 + 0.04] : [0, b.h + 0.04, 0]);
 export const tiltDari = (b: Benda) => Math.max(-90, Math.min(45, b.tilt ?? 0));
+export const rollDari = (b: Pick<Benda, 'roll'>) => { const r = (((((b.roll ?? 0) + 180) % 360) + 360) % 360) - 180; return r === -180 ? 180 : r; };
+export const putaranGambar = (b: Pick<Benda, 'roll'>) => ((Math.round(rollDari(b) / 90) % 4) + 4) % 4;
+export const potretDari = (b: Pick<Benda, 'roll'>) => putaranGambar(b) % 2 === 1;
+export function ukuranTampak(b: Pick<Benda, 'roll'>, lebar: number, tinggi: number) {
+  const g = (rollDari(b) * Math.PI) / 180, c = Math.abs(Math.cos(g)), s = Math.abs(Math.sin(g));
+  return { lebar: lebar * c + tinggi * s, tinggi: lebar * s + tinggi * c };
+}
+export function gulungBadan(b: Pick<Benda, 'roll' | 'w' | 'h' | 'pasangProyektor'>) {
+  const g = (rollDari(b) * Math.PI) / 180, c = Math.cos(g), s = Math.sin(g), separuh = (b.w * Math.abs(s) + b.h * Math.abs(c)) / 2;
+  return { g, c, s, y: b.pasangProyektor === 'meja' ? separuh : b.h - separuh };
+}
+export function lensaBadan(b: Benda): Titik {
+  const [x, y, z] = lensaDatar(b), { c, s, y: yc } = gulungBadan(b), dy = y - b.h / 2;
+  return [x * c - dy * s, x * s + dy * c + yc, z];
+}
+export function lebarAsliUntuk(p: Benda, w: number, h: number, muat = false) {
+  const r = rasioGambarProyektor(p), [a, b] = potretDari(p) ? [h, w / r] : [w, h / r];
+  return muat ? Math.min(a, b) : Math.max(a, b);
+}
 export function zoomLensa(b: Benda): [number, number] {
   const tr = throwRatioDari(b);
   const lo = Math.max(0.1, b.trMin ?? tr), hi = Math.max(lo, b.trMax ?? tr);
@@ -26,7 +45,7 @@ function miringkan(b: Benda, [x, y, z]: Titik): Titik {
   const dy = y - py, dz = z - pz;
   return [x, py + dy * Math.cos(t) + dz * Math.sin(t), pz - dy * Math.sin(t) + dz * Math.cos(t)];
 }
-export const lensaProyektor = (b: Benda): Titik => miringkan(b, lensaDatar(b));
+export const lensaProyektor = (b: Benda): Titik => miringkan(b, lensaBadan(b));
 export function arahProyektor(b: Benda): Titik {
   const r = (b.rot * Math.PI) / 180, t = (tiltDari(b) * Math.PI) / 180;
   return [Math.sin(r) * Math.cos(t), Math.sin(t), Math.cos(r) * Math.cos(t)];
@@ -220,9 +239,11 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   const naikTurun = p.pasangProyektor === 'meja' ? 1 : -1;
   const offV = offsetLensaDari(p), geserH = geserLensaDari(p);
   const kananP: Titik = [-Math.cos(r), 0, Math.sin(r)];
+  const { c: cg, s: sg } = gulungBadan(p);
+  const geser = (lebar: number, tinggi: number) => { const u = geserH * lebar, v = naikTurun * offV * tinggi; return { h: u * cg + v * sg, v: -u * sg + v * cg }; };
   const persegi = (pusat: Titik, kanan: Titik, lebar: number, tinggi: number): Sinar['sudut'] => {
-    const t = (u: number, v: number): Titik => [pusat[0] + kanan[0] * u, pusat[1] + v, pusat[2] + kanan[2] * u];
-    return [t(-lebar / 2, -tinggi / 2), t(lebar / 2, -tinggi / 2), t(lebar / 2, tinggi / 2), t(-lebar / 2, tinggi / 2)];
+    const t = (a: number, b: number): Titik => { const u = (a * lebar) / 2, v = (b * tinggi) / 2, X = u * cg + v * sg; return [pusat[0] + kanan[0] * X, pusat[1] - u * sg + v * cg, pusat[2] + kanan[2] * X]; };
+    return [t(-1, -1), t(1, -1), t(1, 1), t(-1, 1)];
   };
 
   let sasaran: { l: Benda; tegak: number; t: number; pusat: Titik } | null = null;
@@ -243,25 +264,25 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   if (sasaran) {
     const { l, t, pusat: S } = sasaran;
     const rl = (l.rot * Math.PI) / 180;
-    const lebar = lebarGambarDi(p, t, tr), tinggi = lebar * rasioG;
+    const lebar = lebarGambarDi(p, t, tr), tinggi = lebar * rasioG, gs = geser(lebar, tinggi), tampak = ukuranTampak(p, lebar, tinggi);
     const kanan: Titik = [Math.cos(rl), 0, -Math.sin(rl)];
     const pusat: Titik = [
-      asal[0] + D[0] * t + Math.sin(rl) * 0.004 + kananP[0] * lebar * geserH,
-      asal[1] + D[1] * t + naikTurun * tinggi * offV,
-      asal[2] + D[2] * t + Math.cos(rl) * 0.004 + kananP[2] * lebar * geserH,
+      asal[0] + D[0] * t + Math.sin(rl) * 0.004 + kananP[0] * gs.h,
+      asal[1] + D[1] * t + gs.v,
+      asal[2] + D[2] * t + Math.cos(rl) * 0.004 + kananP[2] * gs.h,
     ];
     const selisihH = (pusat[0] - S[0]) * kanan[0] + (pusat[2] - S[2]) * kanan[2];
     return {
-      asal, sudut: persegi(pusat, kanan, lebar, tinggi), layar: l, jarak: t, lebar, tinggi,
-      trPas: trUntukLebar(p, t, Math.max(0.01, l.w, l.h / rasioG)), selisihV: pusat[1] - S[1], selisihH,
+      asal, sudut: persegi(pusat, kanan, lebar, tinggi), layar: l, jarak: t, lebar: tampak.lebar, tinggi: tampak.tinggi,
+      trPas: trUntukLebar(p, t, Math.max(0.01, lebarAsliUntuk(p, l.w, l.h))), selisihV: pusat[1] - S[1], selisihH,
     };
   }
   const k = daftarRuang(ruang)[ri] ?? daftarRuang(ruang)[0];
   const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
   const jarak = Math.min(15, Math.max(0.3, Math.min(ke(asal[0], D[0], k.x0, k.x0 + k.p), ke(asal[2], D[2], 0, k.l), ke(asal[1], D[1], 0, k.t))));
-  const lebar = lebarGambarDi(p, jarak, tr), tinggi = lebar * rasioG, jg = jarak - 0.005;
-  const pusat: Titik = [asal[0] + D[0] * jg + kananP[0] * lebar * geserH, asal[1] + D[1] * jg + naikTurun * tinggi * offV, asal[2] + D[2] * jg + kananP[2] * lebar * geserH];
-  return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null, selisihV: null, selisihH: null };
+  const lebar = lebarGambarDi(p, jarak, tr), tinggi = lebar * rasioG, jg = jarak - 0.005, gs = geser(lebar, tinggi), tampak = ukuranTampak(p, lebar, tinggi);
+  const pusat: Titik = [asal[0] + D[0] * jg + kananP[0] * gs.h, asal[1] + D[1] * jg + gs.v, asal[2] + D[2] * jg + kananP[2] * gs.h];
+  return { asal, sudut: persegi(pusat, kananP, lebar, tinggi), layar: null, jarak, lebar: tampak.lebar, tinggi: tampak.tinggi, trPas: null, selisihV: null, selisihH: null };
 }
 export function layarTerdekat(p: Benda, semua: Benda[], ruang: Ruang): Benda | null {
   const ri = ruangDari(ruang, p.x);
@@ -287,6 +308,12 @@ export function shiftOtomatis(p: Benda, semua: Benda[], ruang: Ruang) {
   const searah = -Math.cos(((p.rot - s.layar.rot) * Math.PI) / 180);
   let v = Math.min(1.5, Math.max(-0.5, offsetLensaDari(p) - s.selisihV / (naikTurun * s.tinggi)));
   let g = Math.abs(searah) < 0.2 ? geserLensaDari(p) : Math.min(0.6, Math.max(-0.6, geserLensaDari(p) - s.selisihH / (s.lebar * searah)));
+  if (rollDari(p)) {
+    const { c, s: sr } = gulungBadan(p), W = lebarGambarDi(p, s.jarak, throwRatioDari(p)), H = W * rasioGambarProyektor(p);
+    const dX = Math.abs(searah) < 0.2 ? 0 : -s.selisihH / searah, dY = -s.selisihV;
+    v = Math.min(1.5, Math.max(-0.5, offsetLensaDari(p) + (dX * sr + dY * c) / (naikTurun * H)));
+    g = Math.min(0.6, Math.max(-0.6, geserLensaDari(p) + (dX * c - dY * sr) / W));
+  }
   const pg = p.poligonShift && p.poligonShift.length >= 6 ? p.poligonShift : null;
   if (pg) {
     const bp = bagianPanel(p), bt = batasPoligonUntuk(p, pg, bp);
@@ -323,8 +350,8 @@ export function pasangKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang, sasara
   const S: Titik = [S0[0] + Math.cos(rl) * du, S0[1] + dv, S0[2] - Math.sin(rl) * du];
   const rot = (((l.rot + 180) % 360) + 360) % 360;
   const plafon = p.pasangProyektor !== 'meja';
-  const rasioG = rasioGambarProyektor(p);
-  const lebarPerlu = sasaran ? sasaran.lebar : Math.max(l.w, l.h / rasioG);
+  const rasioG = rasioGambarProyektor(p), potret = potretDari(p);
+  const lebarPerlu = sasaran ? sasaran.lebar : lebarAsliUntuk(p, l.w, l.h);
 
   const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
   const bebas = Math.min(ke(S[0], n[0], k.x0, k.x0 + k.p), ke(S[2], n[1], 0, k.l)) - p.d - 0.2;
@@ -335,13 +362,13 @@ export function pasangKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang, sasara
   const jarak = Math.max(0.5, Math.min(jarakPerlu, bebas));
   const tinggiGambar = lebarGambarDi(p, jarak, tr) * rasioG;
 
-  const arahV = plafon ? -1 : 1, off0 = offsetLensaDari(p);
-  const yLokal = lensaDatar(p)[1];
+  const arahV = plafon ? -1 : 1, off0 = potret ? 0 : offsetLensaDari(p), efekV = potret ? 0 : arahV * tinggiGambar;
+  const yLokal = lensaBadan(p)[1];
   const elev = plafon
-    ? Math.max(0.3, Math.min(k.t - p.h - 0.06, S[1] - arahV * off0 * tinggiGambar - yLokal))
+    ? Math.max(0.3, Math.min(k.t - p.h - 0.06, S[1] - efekV * off0 - yLokal))
     : p.elev;
   const yLensa = elev + yLokal;
-  const offPerlu = (S[1] - yLensa) / (arahV * tinggiGambar);
+  const offPerlu = efekV ? (S[1] - yLensa) / efekV : 0;
   const offMaks = Math.min(OFFSET_MAKS_OTOMATIS, batasShift({ ...p, geserLensaH: 0 }).atas ?? Infinity);
   const off = Math.abs(offPerlu - off0) < 0.005 ? off0 : Math.min(offMaks, Math.max(0, offPerlu));
 

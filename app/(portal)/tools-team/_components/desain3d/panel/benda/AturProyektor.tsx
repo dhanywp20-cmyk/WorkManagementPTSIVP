@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, isiDariKatalogLain, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, shiftOtomatis, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, isiDariKatalogLain, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, rollDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, shiftOtomatis, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
 import { PilihMerekLain } from '../../../pustaka/PilihMerekLain';
 import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
@@ -48,6 +48,22 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               ))}
             </div>
             <Catatan>Tilt negatif = menunduk; −90° = tegak lurus ke lantai (proyeksi lantai / immersive). Pan memutar proyektor ke kiri/kanan.</Catatan>
+          </div>
+          <div>
+            <span className={label}>Putar badan · landscape / potret</span>
+            <Angka label="Roll (putar di sumbu lensa)" nilai={rollDari(b)} satuan="°" step={1} min={-180}
+              onUbah={v => v >= -180 && v <= 180 && set({ roll: Math.round(v * 10) / 10 || undefined })} />
+            <div className="mt-1.5 grid grid-cols-4 gap-1" role="group" aria-label="Pilih orientasi proyektor">
+              {[{ v: 0, l: 'Landscape 0°' }, { v: 90, l: 'Potret 90°' }, { v: -90, l: 'Potret −90°' }, { v: 180, l: 'Terbalik 180°' }].map(x => (
+                <button key={x.v} type="button" aria-pressed={rollDari(b) === x.v} onClick={() => set({ roll: x.v || undefined })}
+                  className={`px-1 py-1.5 rounded-lg text-[11.5px] font-bold border ${rollDari(b) === x.v ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>{x.l}</button>
+              ))}
+            </div>
+            <Catatan>
+              Roll memutar badan proyektor di sumbu lensanya. 90° = potret, diputar searah jarum jam dilihat dari belakang proyektor; −90° = potret berlawanan arah; 180° = terbalik.
+              Saat potret, lebar & tinggi gambar tertukar (16:9 jadi 9:16); isi konten di 3D tetap tegak karena sumber / media server ikut diputar.
+              Lens shift & tepi blending tetap mengikuti sisi panel proyektor. Pastikan model mendukung pemasangan potret / 360°.
+            </Catatan>
           </div>
           </Bagian>
           <Bagian tab="lensa">

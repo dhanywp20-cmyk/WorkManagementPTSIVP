@@ -108,7 +108,7 @@ const luxSama = ['simulator', 'mapping-lengkung', 'mapping-cembung'].every(id =>
   return t.benda.filter(x => x.jenis === 'proyektor').every(p => Math.abs(kontrasProyektor(p, t.benda, t.ruang, 15).luxGambar - (hasilPanasonic(p, t.benda, t.ruang).lux ?? -1)) < 1e-6);
 });
 cek('lux gambar di kontras, panel & ekspor = lux "Pusat" di label 3D (kubah simulator, layar cekung & cembung), bukan dinding di belakangnya', luxSama
-  && /const g = gambarDiSasaran\(p, benda, ruang\);/.test(ekspor) && /`\$\{fm\(g\.jarak\)\} m`, `\$\{fm\(g\.lebar\)\} × \$\{fm\(g\.tinggi\)\} m`/.test(ekspor));
+  && /const g = gambarDiSasaran\(p, benda, ruang\), u = ukuranTampak\(p, g\.lebar, g\.tinggi\)/.test(ekspor) && /`\$\{fm\(g\.jarak\)\} m`, `\$\{fm\(u\.lebar\)\} × \$\{fm\(u\.tinggi\)\} m`/.test(ekspor));
 const tObjek = templateRuang('mapping-objek'), kObjek = daftarRuang(tObjek.ruang)[0];
 const kubus: Benda = { ...bendaBaru('objek', kObjek, { bentukObjek: 'kotak' }), nama: 'Kubus mapping', x: 6, z: 5, elev: 0.4, w: 1, h: 1, d: 1, rot: 0 };
 const oObjek = objekDisinari([...tObjek.benda, kubus, { ...kubus, id: 'pojok', nama: 'Kubus pojok', x: 0.6, z: 0.6 }], tObjek.ruang);

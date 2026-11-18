@@ -1,17 +1,17 @@
 import type * as T from 'three';
 import { teksturKonten } from '../bangun/konten';
 import { teksturPolaUji } from '../bangun/tekstur';
-import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenGambarDari, petaMaskBidang, rasioGambarProyektor, type UjiBidang } from '../inti';
+import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenGambarDari, petaMaskBidang, putaranGambar, rasioGambarProyektor, type UjiBidang } from '../inti';
 import type { Mesin } from './tipe';
 
 const cacheKonten = new Map<string, CanvasImageSource>();
 
 export function kontenProyektor(THREE: typeof T, p: Benda, grid: boolean, lebarM: number, tinggiM: number,
   gambar: Map<string, T.Texture>): { sumber: CanvasImageSource | null; kunci: string; mati: boolean } {
-  const rasio = 1 / rasioGambarProyektor(p), konten = p.konten ?? 'pola';
+  const tegak = putaranGambar(p) % 2 === 1, rasio = tegak ? rasioGambarProyektor(p) : 1 / rasioGambarProyektor(p), konten = p.konten ?? 'pola';
   if (konten === 'mati') return { sumber: null, kunci: 'mati', mati: true };
   if (grid) {
-    const kg = kotakGrid(lebarM, tinggiM, p.gridKolom);
+    const kg = tegak ? kotakGrid(tinggiM, lebarM, p.gridKolom) : kotakGrid(lebarM, tinggiM, p.gridKolom);
     const kunci = `grid|${kg.kolom}|${kg.baris}|${rasio.toFixed(3)}`;
     let c = cacheKonten.get(kunci) as HTMLCanvasElement | undefined;
     if (!c) {
@@ -199,7 +199,9 @@ function gambarDasar(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
   kv.width = W; kv.height = H;
   const g = kv.getContext('2d', { willReadFrequently: true })!;
   g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
-  if (m.konten) { try { g.drawImage(m.konten, 0, 0, W, H); } catch {  } }
+  if (m.konten) {
+    try { g.save(); g.translate(W / 2, H / 2); g.rotate((-L.putar * Math.PI) / 2); const [a, b] = L.putar % 2 ? [H, W] : [W, H]; g.drawImage(m.konten, -a / 2, -b / 2, a, b); g.restore(); } catch {  }
+  }
   const data = g.getImageData(0, 0, W, H), d = data.data;
   const profil = (u: number, v: number) => {
     const tx = (u - 0.5 + L.gH) * L.w1, ty = (v - 0.5 + L.gV) * L.h1;
@@ -296,7 +298,7 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = fal
     light.castShadow = i < denganBayangan;
     light.shadow.bias = -0.0003; light.shadow.normalBias = 0.015; light.shadow.radius = 2;
 
-    const kunciIsi = JSON.stringify([x.kunciKonten, L.w1, L.h1, L.gH, L.gV]), kunciBlend = JSON.stringify(x.blend);
+    const kunciIsi = JSON.stringify([x.kunciKonten, L.w1, L.h1, L.gH, L.gV, L.putar]), kunciBlend = JSON.stringify(x.blend);
     let pengali = (light.userData.pengali as number) || 1, ubah = false;
     if (kunciIsi !== lampu.kunciIsi || (!kasar && kunciBlend !== lampu.kunciBlend)) {
       pengali = gambarDasar(lampu.dasar, L, x);
