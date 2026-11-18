@@ -8,12 +8,13 @@ import { NETRAL } from '@/lib/desain';
 import type { Ekspor } from '@/lib/ekspor-tabel';
 import {
   PRIORITAS_ISU, STATUS_ISU, URUTAN_STATUS, daftarUpdate, geserTanggal, hariIni, hitungPer, kodeIsu, kunciTeks, labelHari, labelWaktu, pecahProduk,
-  ringkasHarian, tanggalSelesai, teksRingkasan, teksSemuaUpdate, umurIsu,
+  ringkasHarian, ringkasLaporan, tanggalSelesai, teksRingkasan, teksSemuaUpdate, umurIsu,
   type Isu, type LokasiIsu, type StatusIsu,
 } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
 import { BarisIsu, KepalaDaftarIsu, NavTanggal, TabelKota } from './tampilan-isu';
 import { StatistikIsu, petaWarna } from './GrafikIsu';
+import { RingkasanLaporan } from './LaporanIsu';
 
 type Tampilan = 'harian' | 'semua';
 type SaringStatus = 'aktif' | 'semua' | StatusIsu;
@@ -110,6 +111,9 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     for (const i of saring('status')) m[i.status] += 1;
     return m;
   }, [saring]);
+  const laporan = useMemo(() => ringkasLaporan(saring('status'), hari), [saring, hari]);
+  const lokasiLaporan = useMemo(() => ringkasLaporan(saring('kota'), hari).lokasiTerbuka, [saring, hari]);
+  const adaSaringLain = !!(kota || kat || produk || pic || cari.trim() || periode);
   const semuaKat = useMemo(() => hitungPer(isu, i => [i.kategori]), [isu]);
   const semuaPic = useMemo(() => hitungPer(isu, i => [i.pic]), [isu]);
   const semuaProduk = useMemo(() => hitungPer(isu, i => pecahProduk(i.produk)), [isu]);
@@ -182,7 +186,7 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="inline-flex p-0.5 rounded-lg" style={{ background: NETRAL.garis }} role="group" aria-label="Tampilan">
-          {tab('semua', `Semua isu (${isu.length})`)}
+          {tab('semua', `Laporan (${isu.length} isu)`)}
           {tab('harian', 'Ringkasan harian')}
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">{aksiAtas}</div>
@@ -212,6 +216,11 @@ export function PapanIsu({ namaGrup, isu, lokasi, kategori, onBuka, beritahu, ak
             <TabelKota kota={r.kota} tanggal={tanggal} onBuka={onBuka} />
           </section>
         </>
+      )}
+
+      {tampilan === 'semua' && (
+        <RingkasanLaporan r={laporan} lokasi={lokasiLaporan} status={status} onStatus={setStatus} kota={kota} onKota={setKota}
+          catatan={adaSaringLain ? 'Angka di bawah mengikuti filter yang sedang aktif.' : undefined} />
       )}
 
       {tampilan === 'semua' && grafik && (
