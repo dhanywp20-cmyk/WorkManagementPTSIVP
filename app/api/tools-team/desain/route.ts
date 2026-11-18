@@ -4,7 +4,7 @@ import { pastikanMenu } from '@/lib/auth/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
-import { periksaDesain, ringkasanDesain, bersihkanGambar, MAKS_BYTE_GAMBAR_HD, SIMPAN_VERSI } from '@/lib/tools-team';
+import { periksaDesain, ringkasanDesain, ringkasPerangkat, type RingkasanDesain, bersihkanGambar, MAKS_BYTE_GAMBAR_HD, SIMPAN_VERSI } from '@/lib/tools-team';
 import { bersihkanGambarDesain, rujukGambarDesain } from '@/lib/gambar-desain-server';
 
 export const runtime = 'nodejs';
@@ -65,7 +65,18 @@ export async function GET(req: NextRequest) {
   const { data, error } = await q;
   if (error) return gagal(error.message, 500);
   const daftar = (data ?? []) as { id: string; versi: number; dibuat_oleh: string | null }[];
-  return NextResponse.json({ ok: true, daftar: daftar.map(d => ({ ...d, bolehUbah: semua || d.dibuat_oleh === jaga.user.id })) });
+  const ringkas = new Map<string, RingkasanDesain>();
+  if (daftar.length) {
+    const { data: rv } = await db.from(VERSI).select('desain_id, versi, ringkasan').in('desain_id', daftar.map(d => d.id));
+    const kini = new Map(daftar.map(d => [d.id, d.versi]));
+    for (const v of (rv ?? []) as { desain_id: string; versi: number; ringkasan: Partial<RingkasanDesain> | null }[]) {
+      if (kini.get(v.desain_id) !== v.versi || !v.ringkasan) continue;
+      const ruang = Array.isArray(v.ringkasan.ruang) ? v.ringkasan.ruang : [];
+      const perangkat = Array.isArray(v.ringkasan.perangkat) ? ringkasPerangkat(v.ringkasan.perangkat) : [];
+      ringkas.set(v.desain_id, { ruang, perangkat, jumlah: Number(v.ringkasan.jumlah) || 0 });
+    }
+  }
+  return NextResponse.json({ ok: true, daftar: daftar.map(d => ({ ...d, ringkasan: ringkas.get(d.id) ?? null, bolehUbah: semua || d.dibuat_oleh === jaga.user.id })) });
 }
 
 export async function POST(req: NextRequest) {

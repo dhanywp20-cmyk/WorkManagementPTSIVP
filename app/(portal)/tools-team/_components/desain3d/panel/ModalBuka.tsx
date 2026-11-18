@@ -1,15 +1,29 @@
 'use client';
-import { Catatan } from '../../bersama/ui';
 import { useEffect, useState } from 'react';
 import { HardDriveUpload, History } from 'lucide-react';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
-import { urlGambarDesain } from '@/lib/tools-team';
+import { type RingkasanDesain, urlGambarDesain } from '@/lib/tools-team';
 import { type Ruang, warnaSah } from '../inti';
 
 interface BarisDesain {
   id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
-  updated_at: string; ruang: Ruang | null;
+  updated_at: string; ruang: Ruang | null; ringkasan: RingkasanDesain | null;
+}
+
+const MAKS_PERANGKAT = 10;
+const angka = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
+function ukuranRuang(d: BarisDesain) {
+  const r = d.ringkasan?.ruang.filter(x => x.p > 0 && x.l > 0) ?? [];
+  if (r.length) return r.map(x => `${angka(x.p)} × ${angka(x.l)}${x.t > 0 ? ` × ${angka(x.t)}` : ''} m`).join(' + ');
+  return d.ruang ? `${angka(d.ruang.p)} × ${angka(d.ruang.l)} × ${angka(d.ruang.t)} m` : '';
+}
+
+function pembuat(d: BarisDesain) {
+  const buat = d.dibuat_oleh_nama || '', ubah = d.diubah_oleh_nama || '';
+  if (buat && ubah && buat !== ubah) return `Dibuat ${buat} · diubah ${ubah}`;
+  return buat || ubah ? `Oleh ${ubah || buat}` : '';
 }
 
 export function GambarVersi({ id, versi, className }: { id: string; versi: number; className: string }) {
@@ -77,25 +91,41 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
       {daftar === null ? <p className="text-sm text-slate-500">Memuat...</p> : daftar.length === 0 ? (
         <p className="text-sm text-slate-500">{q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan. Simpan desain lewat tombol Simpan.'}</p>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 items-start max-h-[60vh] overflow-y-auto p-0.5">
-          {daftar.map(d => (
-            <li key={d.id} className={`rounded-xl border p-2 ${aktifId === d.id ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200'}`}>
-              <div className="flex gap-2.5">
-                <GambarVersi id={d.id} versi={d.versi} className="w-24 h-14" />
+        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-2.5 items-start max-h-[62vh] overflow-y-auto p-0.5">
+          {daftar.map(d => {
+            const ukuran = ukuranRuang(d), oleh = pembuat(d), perangkat = d.ringkasan?.perangkat ?? [];
+            return (
+            <li key={d.id} className={`rounded-xl border p-2.5 ${aktifId === d.id ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200'}`}>
+              <div className="flex gap-3">
+                <GambarVersi id={d.id} versi={d.versi} className="w-32 h-20 sm:w-36 sm:h-24" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-bold text-slate-900 truncate">{d.nama}{aktifId === d.id && <span className="ml-1 text-[11px] font-bold text-emerald-700">· terbuka</span>}</p>
-                  <p className="text-[11.5px] text-slate-600 truncate">v{d.versi} · {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ` + ${1 + (d.ruang.lain ?? []).filter(x => x?.aktif).length} ruang` : ''} · ` : ''}{d.jumlah_benda} benda</p>
-                  <Catatan>{d.diubah_oleh_nama || d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}</Catatan>
+                  <p className="text-[13.5px] font-bold leading-snug text-slate-900 break-words" title={d.nama}>
+                    {d.nama}{aktifId === d.id && <span className="ml-1 text-[11px] font-bold text-emerald-700">· terbuka</span>}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-slate-700">v{d.versi}{ukuran ? ` · ${ukuran}` : ''} · {d.jumlah_benda} benda</p>
+                  <p className="text-[11.5px] text-slate-500">{oleh ? `${oleh} · ` : ''}{tgl(d.updated_at)}</p>
                 </div>
               </div>
-              <div className="mt-2 flex gap-1.5">
-                <button type="button" onClick={() => onBuka(d.id)} className="flex-1 px-2 py-1.5 rounded-lg text-[12px] font-bold text-white bg-blue-700 hover:bg-blue-800">Buka</button>
+              {perangkat.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-1" aria-label="Isi desain">
+                  {perangkat.slice(0, MAKS_PERANGKAT).map(p => (
+                    <li key={`${p.kategori}|${p.nama}`} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11.5px] leading-snug text-slate-700">
+                      {p.jumlah > 1 && <b className="font-bold text-slate-900">{p.jumlah} × </b>}{p.nama}
+                    </li>
+                  ))}
+                  {perangkat.length > MAKS_PERANGKAT && (
+                    <li className="rounded-md px-1.5 py-0.5 text-[11.5px] text-slate-500">+{perangkat.length - MAKS_PERANGKAT} lainnya</li>
+                  )}
+                </ul>
+              )}
+              <div className="mt-2 flex items-center justify-end gap-1.5">
                 {d.versi > 1 && (
                   <button type="button" onClick={() => void lihatRiwayat(d.id)} aria-expanded={riwayatId === d.id}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
                     <History size={13} /> Riwayat ({d.versi})
                   </button>
                 )}
+                <button type="button" onClick={() => onBuka(d.id)} className="px-5 py-1.5 rounded-lg text-[12px] font-bold text-white bg-blue-700 hover:bg-blue-800">Buka</button>
               </div>
               {riwayatId === d.id && (
                 <ul className="mt-2 border-t border-slate-100 pt-1.5 space-y-0.5 max-h-48 overflow-y-auto">
@@ -108,7 +138,8 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
                 </ul>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </Modal>

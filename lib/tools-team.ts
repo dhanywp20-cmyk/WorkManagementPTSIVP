@@ -163,6 +163,17 @@ export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): Rin
   return { ruang, perangkat, jumlah: data.benda.length };
 }
 
+export function ringkasPerangkat(perangkat: RingkasanDesain['perangkat']): RingkasanDesain['perangkat'] {
+  const peta = new Map<string, { kategori: string; nama: string; jumlah: number }>();
+  for (const p of perangkat) {
+    const nama = p.nama.replace(/\s+\d{1,2}(\s*\(.*\))?$/, '') || p.nama;
+    const kunci = `${p.kategori}|${nama}`;
+    const ada = peta.get(kunci);
+    if (ada) ada.jumlah += p.jumlah; else peta.set(kunci, { kategori: p.kategori, nama, jumlah: p.jumlah });
+  }
+  return [...peta.values()];
+}
+
 export function statusRuangan(req: { status: string; rooms?: { status?: string }[] | null }, roomIdx: number): string {
   if (roomIdx === 0) return req.status;
   return req.rooms?.[roomIdx - 1]?.status ?? req.status;
