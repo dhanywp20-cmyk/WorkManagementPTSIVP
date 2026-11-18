@@ -102,7 +102,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
             <div>
               <Pilih label="Permukaan layar proyektor" nilai={permukaanLayarDari(b)} onUbah={(v: PermukaanLayar) => set({ permukaanLayar: v === 'putih' ? undefined : v, gainLayar: undefined })}
                 opsi={(Object.keys(PERMUKAAN_LAYAR) as PermukaanLayar[]).map(v => ({ v, l: `${PERMUKAAN_LAYAR[v].label} · gain ${PERMUKAAN_LAYAR[v].gain.toLocaleString('id-ID', { minimumFractionDigits: 1 })}` }))} />
-              <Catatan>Layar proyektor tidak memancarkan gambar sendiri. Gambar datang dari proyektor: pilih kontennya di proyektor (Konten yang diproyeksikan), lalu centang "Sinar nyata" untuk melihatnya dengan terang sesuai lumen, gain layar & cahaya ruangan.</Catatan>
+              <Catatan>Layar proyektor tidak memancarkan gambar sendiri. Gambar datang dari proyektor: pilih kontennya di proyektor (Konten yang diproyeksikan). Gambar tampil selama "Sinar proyektor" aktif, dengan terang sesuai lumen, gain layar & cahaya ruangan.</Catatan>
             </div>
           ) : (
             <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}

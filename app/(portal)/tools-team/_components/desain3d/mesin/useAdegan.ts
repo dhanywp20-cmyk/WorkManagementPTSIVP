@@ -111,7 +111,10 @@ export function useAdegan(K: KeadaanDesain) {
     m.kasarPaksa = true;
     try { gambar(); } finally { m.kasarPaksa = false; }
     const rinci = setTimeout(gambar, 300);
-    return () => clearTimeout(rinci);
+    const lepas = (e: { value: unknown }) => { if (!e.value && sinar && benda.some(b => b.jenis === 'proyektor')) gambar(); };
+    const gz = m.gizmo as unknown as { addEventListener: (t: string, f: typeof lepas) => void; removeEventListener: (t: string, f: typeof lepas) => void };
+    gz.addEventListener('dragging-changed', lepas);
+    return () => { clearTimeout(rinci); gz.removeEventListener('dragging-changed', lepas); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan, sinarNyata, versiGambar]);
   useEffect(() => {

@@ -29,16 +29,17 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const { THREE, grupBantu } = m;
   const { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, teksSinar, setInfoBlending, setUkuranCahaya, sinarNyata, gambarLayar } = k;
   const daftarProj = benda.filter(p => p.jenis === 'proyektor');
-  const hitungBlend = (tampilBlending || (sinar && sinarNyata)) && daftarProj.length >= 2;
+  const gambarNyata = sinar && daftarProj.length > 0 && daftarProj.length <= batasProyektorNyata(m), nyata = gambarNyata && sinarNyata;
+  const hitungBlend = (tampilBlending || gambarNyata) && daftarProj.length >= 2;
   if (!hitungBlend) setInfoBlending(v => (v.length ? [] : v));
-  const nyata = sinar && sinarNyata && daftarProj.length <= batasProyektorNyata(m);
-  if (!nyata || !daftarProj.length) aturLampuProyektor(m, []);
+  if (!gambarNyata) aturLampuProyektor(m, []);
   if (!(sinar || hitungBlend) || !daftarProj.length) return;
 
   m.scene.updateMatrixWorld(true);
   const menyeret = m.gizmo.dragging, kasar = menyeret || !!m.kasarPaksa;
   const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
   const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
+  const bahanKerucut = new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide });
   const banyak = daftarProj.length > 4, redam = banyak ? 0.35 : 1;
   const jenisDari = new Map(benda.map(b => [b.id, b.jenis]));
   const sasaranTeks = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => {
@@ -79,7 +80,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const maskDari = () => (maskBidang ??= { uji: benda.filter(b => BIDANG_PROYEKSI.has(b.jenis)).map(ujiKenaBidang), kunci: kunciBidangMask(benda) });
   const dataBlend: DataBlend[] = [];
   const sumberCahaya: SumberCahaya[] = [];
-  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null; normal: T.Vector3 | null }[] = [];
+  const bidangGambar: { p: Benda; isi: boolean; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null; normal: T.Vector3 | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -129,7 +130,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     }
     if (!sinar && !hitungBlend) return;
     const warna = new THREE.Color(warnaSinarProyektor(p, idx, daftarProj.length));
-    if (sinar && !nyata) sumberCahaya.push({ O, L: lensaDari(p), sasaran, kuat: (sn.layar ? 0.8 : 1) * (banyak ? 0.6 : 1), warna: [warna.r, warna.g, warna.b] });
+    const adaIsi = gambarNyata && p.konten !== 'mati';
+    if (sinar && !nyata && !adaIsi) sumberCahaya.push({ O, L: lensaDari(p), sasaran, kuat: (sn.layar ? 0.8 : 1) * (banyak ? 0.6 : 1), warna: [warna.r, warna.g, warna.b] });
 
     const mask = !!p.maskBidang;
     const bolehId = (id: string | null) => !diBenda(id) && (!mask || diBidang(id));
@@ -289,7 +291,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const g3 = new THREE.BufferGeometry();
       g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute(nyata ? 'warnaSinar' : 'color', new THREE.Float32BufferAttribute(alfa, 4));
       if (nyata) g3.computeVertexNormals();
-      const kerucutSinar = new THREE.Mesh(g3, nyata ? bahanSinarUdara(THREE) : new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
+      const kerucutSinar = new THREE.Mesh(g3, nyata ? bahanSinarUdara(THREE) : bahanKerucut);
       kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
     }
     const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
@@ -320,7 +322,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const d = t.p.distanceTo(O), cosA = Math.max(0.2, r.dot(D)), cosT = t.n ? Math.abs(r.dot(t.n)) : 1;
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
-    bidangGambar.push({ p, L: lensaDari(p), normal: pusatGambar?.n ?? null, pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
+    bidangGambar.push({ p, isi: adaIsi, L: lensaDari(p), normal: pusatGambar?.n ?? null, pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: tulis ? {
         info: [p.nama, `L (lensa → ${hp.sasaran?.nama ?? 'bidang'}) ${fTetap(Ltulis)} m`,
           `Gambar ${fTetap(ukurTulis.lebar)} × ${fTetap(ukurTulis.tinggi)} m (${fTetap(ukurTulis.diagonalInci, 2)}")`,
@@ -335,7 +337,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
     }
   });
-  if (sinar && !nyata && bendaTersinari.size) {
+  if (sinar && !nyata && sumberCahaya.length && bendaTersinari.size) {
     const akar = [...bendaTersinari].map(id => m.cache.get(id)?.obj).filter((o): o is T.Object3D => !!o);
     gambarCahayaBenda(m, sumberCahaya, akar, kasar);
   }
@@ -356,7 +358,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       if (b.arah === 'kiri-kanan') { if (g.u < 0) kiri = Math.max(kiri, porsi); else kanan = Math.max(kanan, porsi); }
       else if (g.v > 0) atas = Math.max(atas, porsi); else bawah = Math.max(bawah, porsi);
     }
-    if (nyata) {
+    if (gambarNyata) {
       const kt = kontenProyektor(THREE, bg.p, gridSinar, bg.lebar, bg.tinggi, gambarLayar.current);
       const kp = kontrasProyektor(bg.p, benda, ruang, 15);
       lampu.push({ p: bg.p, L: bg.L, normal: bg.normal, luxAmbien: kp.cahaya.total, luxGambar: kp.luxGambar,
@@ -364,12 +366,12 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     }
     if (!bg.pos.length) continue;
     if (!nyata) {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(bg.pos, 3));
-      geo.setAttribute('uv', new THREE.Float32BufferAttribute(bg.uv, 2));
-      geo.setAttribute('color', new THREE.Float32BufferAttribute(bg.warnaTitik, 3));
-      const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, opacity: bg.opasitas * (grid ? 0.45 : 1), side: THREE.FrontSide, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-      gambar.renderOrder = 2; grupBantu.add(gambar);
+      if (!bg.isi) {
+        const geo = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(bg.pos, 3)).setAttribute('uv', new THREE.Float32BufferAttribute(bg.uv, 2));
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(bg.warnaTitik, 3));
+        const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, opacity: bg.opasitas * (grid ? 0.45 : 1), side: THREE.FrontSide, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+        gambar.renderOrder = 2; grupBantu.add(gambar);
+      }
       if (grid) {
         const kg = kotakGrid(bg.lebar, bg.tinggi, bg.p.gridKolom);
         const wg = warnaSah(bg.p.warnaGrid);
@@ -394,5 +396,5 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       gambarTeksCahaya(m, bg.teks.pos, bg.teks.uv, terlihat);
     }
   }
-  if (nyata) aturLampuProyektor(m, lampu, kasar);
+  if (gambarNyata) bahanKerucut.opacity = Math.sqrt(aturLampuProyektor(m, lampu, kasar, menyeret));
 }

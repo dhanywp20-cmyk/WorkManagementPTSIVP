@@ -106,10 +106,14 @@ export function ambienAdegan(m: Mesin, n: T.Vector3): number {
   return A;
 }
 export const KESERAGAMAN = 0.85;
-const TAMBAHAN_MAKS = 1.2;
+export const PUTIH_LAYAR = 1, EKSPOSUR_MIN = 0.08;
+const TAMBAHAN_MAKS = 2;
 export function gulungTerang(q: number): number {
-  return q <= 0 ? 0 : TAMBAHAN_MAKS * (1 - Math.exp(-q / TAMBAHAN_MAKS));
+  if (q <= PUTIH_LAYAR) return Math.max(0, q);
+  const r = TAMBAHAN_MAKS - PUTIH_LAYAR;
+  return PUTIH_LAYAR + r * (1 - Math.exp(-(q - PUTIH_LAYAR) / r));
 }
+export const eksposurLayar = (putih: number) => (putih > PUTIH_LAYAR ? Math.max(EKSPOSUR_MIN, PUTIH_LAYAR / putih) : 1);
 const LEBAR_PETA = 768, LEBAR_MASK = 384, LEBAR_MASK_KASAR = 192;
 const tinggiPeta = (L: Lensa) => Math.max(64, Math.round((LEBAR_PETA * L.h1) / L.w1));
 
@@ -220,7 +224,7 @@ function susunPeta(l: Lampu, adaMask: boolean) {
   tex.needsUpdate = true;
 }
 
-export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = false) {
+export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = false, tahanEksposur = false): number {
   const { THREE, scene } = m;
   let peta = simpanan.get(m);
   if (!peta) { peta = new Map(); simpanan.set(m, peta); }
@@ -286,10 +290,13 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[], kasar = fal
     ukur.push({ light, cd: x.mati ? 0 : (lumenGambarDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar });
   });
   const skala = ukur.reduce((a, u) => a + u.A / u.lux, 0) / Math.max(1, ukur.length);
+  const putih = Math.max(0, ...ukur.filter(u => u.cd > 0).map(u => (u.A + skala * u.luxGambar) / Math.PI));
+  const k = tahanEksposur && ukur.length ? adaptasiDari(m).k : eksposurLayar(putih);
   for (const u of ukur) {
-    const tambahan = (skala * u.luxGambar) / Math.PI;
+    const tambahan = (k * skala * u.luxGambar) / Math.PI;
     const faktor = tambahan > 0 ? gulungTerang(tambahan) / tambahan : 1;
-    u.light.intensity = u.cd * skala * faktor;
+    u.light.intensity = u.cd * skala * k * faktor;
   }
-  aturCahayaRuang(m, { k: 1 });
+  aturCahayaRuang(m, { k });
+  return k;
 }
