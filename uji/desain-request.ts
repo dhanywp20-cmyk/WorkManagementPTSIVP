@@ -1,4 +1,4 @@
-import { periksaDesain, ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
+import { periksaDesain, ringkasanDesain, ringkasPerangkat, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
 import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/(portal)/form-require-project/_components/desain-3d-request';
 
 let lulus = 0, gagal = 0;
@@ -22,6 +22,14 @@ console.log('\n1. Ringkasan desain (tanpa data 3D penuh)');
   cek('urut per kategori: Display dulu', r.perangkat[0].kategori === 'Display' && r.jumlah === 6);
   cek('proyektor masuk Display', kategoriBenda('proyektor') === 'Display');
   cek('ruang 2 nonaktif tidak ikut', ringkasanDesain({ ruang: { p: 4, l: 4, t: 3, r2: { aktif: false, p: 9, l: 9, t: 9 } }, benda: [] }).ruang.length === 1);
+  const daftar = ringkasPerangkat([
+    { kategori: 'Display', nama: 'Layar bola 225° 4 × 3 m (atas tertutup)', jumlah: 1 },
+    { kategori: 'Display', nama: 'PT-MZ882 + ET-ELW22 1 (bibir kiri → kanan bawah)', jumlah: 1 },
+    { kategori: 'Display', nama: 'PT-MZ882 + ET-ELW22 2 (bibir kanan → kiri bawah)', jumlah: 1 },
+    { kategori: 'Display', nama: 'Videowall 55" 5×3', jumlah: 1 }, { kategori: 'Furnitur', nama: 'Kursi', jumlah: 6 }, { kategori: 'Audio & kontrol', nama: 'Rack 12U', jumlah: 1 },
+  ]);
+  cek('kartu Buka desain: proyektor bernomor + letak digabung jadi "2 × PT-MZ882 + ET-ELW22"', daftar.find(x => x.nama === 'PT-MZ882 + ET-ELW22')?.jumlah === 2 && daftar.length === 5);
+  cek('nama tanpa nomor urut tetap utuh (layar, videowall 5×3, rack 12U)', ['Layar bola 225° 4 × 3 m (atas tertutup)', 'Videowall 55" 5×3', 'Rack 12U'].every(n => daftar.some(x => x.nama === n)));
 }
 
 console.log('\n2. Siapa boleh menautkan / melepas');
