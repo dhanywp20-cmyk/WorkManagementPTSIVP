@@ -35,7 +35,7 @@ export function KartuJadwalTim({ kpi, d, kol, onBuka }: { kpi: KPIData | null; d
   const tampil = jadwal?.daftar.slice(0, BARIS_MAKS) ?? [];
   const sisa = (jadwal?.total ?? 0) - tampil.length;
   return (
-    <article className={`${UBIN} bb-naik bb-sel-angka`} style={{ boxShadow: BAYANG_UBIN, ['--d' as string]: d, ...(kol ? { ['--kol' as string]: kol } : {}) } as React.CSSProperties}>
+    <article data-nada="zaitun" className={`${UBIN} bb-naik bb-sel-angka`} style={{ boxShadow: BAYANG_UBIN, ['--d' as string]: d, ...(kol ? { ['--kol' as string]: kol } : {}) } as React.CSSProperties}>
       <header className="flex items-center gap-2 min-h-[22px] mb-2">
         <h3 className={`${LABEL_UBIN} flex-1 truncate`}>{judul}</h3>
         <button type="button" onClick={onBuka} aria-label={`Buka ${judul}`} title={`Buka ${judul}`}

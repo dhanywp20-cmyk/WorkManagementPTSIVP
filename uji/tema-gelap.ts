@@ -17,8 +17,12 @@ cek('warna terang di globals.css tetap punya nilai asli (mode terang tidak berub
 cek('setiap variabel warna punya pengganti gelap', [...new Set(variabel.map(v => v[1]))].every(n => gelap.includes(`--${n}:`)));
 cek('tema dipasang sebelum halaman tergambar (tanpa kedip putih)', SKRIP_TEMA_AWAL.includes(KUNCI_TEMA) && /SKRIP_TEMA_AWAL/.test(readFileSync('app/layout.tsx', 'utf8')) && /tema-gelap\.css/.test(readFileSync('app/layout.tsx', 'utf8')));
 cek('tombol tema di samping Sign out (sidebar) dan Keluar (HP)', /tukarTema/.test(readFileSync('app/(portal)/_kerangka/SidebarPortal.tsx', 'utf8')) && /__tema/.test(readFileSync('app/(portal)/dashboard/_components/NavBawahMobile.tsx', 'utf8')));
-cek('bawaan Light Mode: gelap hanya bila dipilih sendiri', SKRIP_TEMA_AWAL.includes(`==='gelap'`) && !/prefers-color-scheme/.test(gelap + global));
-cek('masuk & keluar akun selalu kembali ke Light Mode', /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useLayarMasuk.ts', 'utf8'))) && /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'))));
+cek('rute publik: gelap hanya bila dipilih sendiri', SKRIP_TEMA_AWAL.includes(`k==='gelap')d.classList.add('gelap')`) && !/prefers-color-scheme/.test(gelap + global));
+cek('setelah login: Aurora bawaan, kecuali pengguna memilih terang', SKRIP_TEMA_AWAL.includes(`m&&k!=='terang'`) && SKRIP_TEMA_AWAL.includes(`classList.add('aurora')`));
+cek('Learning Center: isi tidak ikut remap gelap bawaan', SKRIP_TEMA_AWAL.includes('learning-center') && SKRIP_TEMA_AWAL.includes(`k==='gelap'||!l`));
+const aurora = readFileSync('app/tema-aurora.css', 'utf8');
+cek('aturan isi modul Aurora selalu mengecualikan Learning Center', aurora.split('\n').filter(b => /^html\.aurora\.gelap/.test(b)).every(b => b.includes(':not([data-lc])')));
+cek('layar masuk & keluar akun melepas Aurora (latar IVP tampil)', /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useLayarMasuk.ts', 'utf8'))) && /kembaliTerang\(\)/.test((readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8') + readFileSync('app/(portal)/_kerangka/useKerangkaPortal.ts', 'utf8'))));
 cek('baris CSS tidak melebihi 300 karakter', gelap.split('\n').every(b => b.length <= 300));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

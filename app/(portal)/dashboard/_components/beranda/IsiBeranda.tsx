@@ -39,11 +39,11 @@ function KepalaKartu({ judul, sisi, onBuka }: { judul: string; sisi?: React.Reac
   );
 }
 
-function KartuAngka({ d, kol, judul, nilai, satuan, kanan, warnaNilai, onBuka, children }: {
-  d: number; kol?: number; judul: string; nilai: number; satuan?: string; kanan?: React.ReactNode; warnaNilai?: string; onBuka: () => void; children: React.ReactNode;
+function KartuAngka({ d, kol, judul, nilai, satuan, kanan, warnaNilai, nada, onBuka, children }: {
+  d: number; kol?: number; judul: string; nilai: number; satuan?: string; kanan?: React.ReactNode; warnaNilai?: string; nada?: string; onBuka: () => void; children: React.ReactNode;
 }) {
   return (
-    <article className={`${KARTU} bb-sel-angka`} style={urutan(d, kol)}>
+    <article data-nada={nada} className={`${KARTU} bb-sel-angka`} style={urutan(d, kol)}>
       <KepalaKartu judul={judul} onBuka={onBuka} />
       <div className="flex items-baseline gap-1.5 min-w-0">
         <span className="text-[30px] font-black leading-none tabular-nums" style={{ letterSpacing: '-0.03em', color: warnaNilai ?? '#0f172a' }}><Angka nilai={nilai} /></span>
@@ -116,7 +116,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
 
       <div className="bb-utama">
         {adaKiri && <div className="bb-kiri">
-          {ada('tiket-selesai') && <KartuAngka d={0} kol={kol['tiket-selesai']} judul="Tiket selesai" nilai={tiket.selesai} satuan={`dari ${tiket.total} tiket`} kanan={`${fmtId(tiket.persen)}%`}
+          {ada('tiket-selesai') && <KartuAngka d={0} kol={kol['tiket-selesai']} judul="Tiket selesai" nada="biru" nilai={tiket.selesai} satuan={`dari ${tiket.total} tiket`} kanan={`${fmtId(tiket.persen)}%`}
             onBuka={() => openMenu('ticket-troubleshooting')}>
             <Bilah persen={tiket.persen} warna={AKSEN_UTAMA} label="Tiket selesai" />
             <p className="bb-catatan">{tiket.belum} belum selesai</p>
@@ -124,7 +124,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
 
           {ada('jadwal-tim') && <KartuJadwalTim kpi={kpi} d={1} kol={kol['jadwal-tim']} onBuka={() => openMenu('reminder-schedule')} />}
 
-          {ada('terlambat') && <KartuAngka d={2} kol={kol.terlambat} judul="Terlambat" nilai={terlambat} satuan={`dari ${aktif} aktif`} warnaNilai={terlambat > 0 ? MERAH : undefined}
+          {ada('terlambat') && <KartuAngka d={2} kol={kol.terlambat} judul="Terlambat" nada="karat" nilai={terlambat} satuan={`dari ${aktif} aktif`} warnaNilai={terlambat > 0 ? MERAH : undefined}
             kanan={aktif ? `${fmtId((terlambat / aktif) * 100)}%` : '—'} onBuka={() => openMenu('reminder-schedule')}>
             <Bilah persen={aktif ? (terlambat / aktif) * 100 : 0} warna={MERAH} tik label="Pekerjaan terlambat" />
             <p className="bb-catatan">{tiket.terlambat} tiket · {jadwal.terlambat} jadwal</p>

@@ -1,0 +1,426 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════
+   TEMA AURORA — "PTS AV Operations · Dark Intelligence Workspace"
+   Kaca gelap di atas latar ambient (tanpa gambar IVP setelah login). Aksen lime hanya untuk aksi primer,
+   status terpilih, dan sorotan positif. Biru sinyal untuk data.
+
+   Cakupan (diatur components/shared/Tema.tsx):
+     html.aurora                      -> shell: latar, sidebar, header, nav bawah, tombol tema.
+     html.aurora.gelap:not([data-lc]) -> isi modul: token, kaca, tombol, tab, dashboard.
+   Learning Center (html[data-lc]) TIDAK disentuh: isi & font modul itu tetap seperti semula.
+   Halaman login tidak punya kelas apa pun -> latar IVP tetap tampil.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Token ────────────────────────────────────────────────────────────────────────────────────── */
+html.aurora {
+  --au-dasar: #0e1416;
+  --au-kaca: rgba(24, 32, 34, .56);
+  --au-kaca-2: rgba(34, 43, 45, .62);
+  --au-kaca-pekat: rgba(18, 25, 27, .82);
+  --au-padat: #182022;
+  --au-padat-2: #1f292b;
+  --au-garis: rgba(255, 255, 255, .085);
+  --au-garis-kuat: rgba(255, 255, 255, .15);
+  --au-kilau: inset 0 1px 0 rgba(255, 255, 255, .06);
+
+  --au-tinta: #f2f5f3;
+  --au-tinta-2: #a8b3ae;
+  --au-tinta-3: #77837e;
+
+  --au-lime: #c7f36b;
+  --au-lime-2: #addc4f;
+  --au-lime-rgb: 199, 243, 107;
+  --au-lime-tinta: #141a0a;
+  --au-biru: #83b9e8;
+  --au-biru-rgb: 131, 185, 232;
+  --au-kuning: #e8c878;
+  --au-merah: #e47770;
+  --au-hijau: #9bd77c;
+
+  --au-nada-biru: linear-gradient(160deg, rgba(104, 140, 178, .42), rgba(62, 88, 118, .30));
+  --au-nada-zaitun: linear-gradient(160deg, rgba(132, 146, 62, .40), rgba(86, 98, 40, .28));
+  --au-nada-karat: linear-gradient(160deg, rgba(158, 86, 66, .42), rgba(104, 54, 44, .30));
+
+  --au-blur: blur(22px) saturate(135%);
+  --au-radius: 20px;
+  --au-radius-besar: 26px;
+
+  /* Latar ambient: cahaya ruang kontrol AV — petrol (kiri atas), karat hangat (kanan atas), zaitun (bawah). */
+  --au-latar:
+    radial-gradient(1100px 680px at 6% -12%, rgba(78, 122, 150, .55), transparent 62%),
+    radial-gradient(820px 560px at 96% 4%, rgba(132, 98, 78, .34), transparent 64%),
+    radial-gradient(1200px 720px at 28% 112%, rgba(92, 112, 52, .46), transparent 62%),
+    radial-gradient(760px 520px at 104% 96%, rgba(44, 82, 70, .50), transparent 62%),
+    linear-gradient(180deg, #1b252a 0%, #111a1d 52%, #0d1412 100%);
+
+  color-scheme: dark;
+}
+
+html.aurora:not([data-lc]) body { font-family: var(--font-aurora), ui-sans-serif, system-ui, sans-serif; }
+html.aurora body { background: var(--au-latar) var(--au-dasar); background-attachment: fixed; }
+
+/* Remap isi modul ke palet arang-petrol (menimpa palet gelap lama hanya di bawah Aurora). */
+html.aurora.gelap:not([data-lc]) {
+  --wm-hal: var(--au-dasar);
+  --wm-kartu: #172022;
+  --wm-kartu-2: #1c2628;
+  --wm-isi: #232e30;
+  --wm-garis: #29343a;
+  --wm-garis-kuat: #354143;
+  --wm-tinta: var(--au-tinta);
+  --wm-tinta-2: var(--au-tinta-2);
+  --wm-tinta-3: var(--au-tinta-3);
+  --wm-aksen: var(--au-lime);
+  --wm-aksen-2: var(--au-lime-2);
+  --wm-aksen-rgb: var(--au-lime-rgb);
+  --wm-aksen-lembut: rgba(var(--au-lime-rgb), .14);
+  --wm-latar: var(--au-latar) var(--au-dasar);
+  --merek-utama: var(--au-lime);
+  --merek-utama-2: var(--au-lime-2);
+  --merek-utama-tembus: rgba(var(--au-lime-rgb), .14);
+
+  --color-slate-50: oklch(22% 0.011 200);
+  --color-slate-100: oklch(20.5% 0.011 200);
+  --color-slate-200: oklch(28% 0.011 200);
+  --color-slate-300: oklch(35% 0.011 200);
+  --color-slate-400: oklch(57% 0.011 190);
+  --color-slate-500: oklch(65% 0.011 190);
+  --color-slate-600: oklch(74% 0.01 180);
+  --color-slate-700: oklch(84% 0.008 170);
+  --color-slate-800: oklch(91% 0.006 160);
+  --color-slate-900: oklch(95.5% 0.005 150);
+  --color-slate-950: oklch(98% 0.004 150);
+  --color-gray-50: oklch(22% 0.011 200);
+  --color-gray-100: oklch(20.5% 0.011 200);
+  --color-gray-200: oklch(28% 0.011 200);
+  --color-gray-300: oklch(35% 0.011 200);
+  --color-gray-400: oklch(57% 0.011 190);
+  --color-gray-500: oklch(65% 0.011 190);
+  --color-gray-600: oklch(74% 0.01 180);
+  --color-gray-700: oklch(84% 0.008 170);
+  --color-gray-800: oklch(91% 0.006 160);
+  --color-gray-900: oklch(95.5% 0.005 150);
+  --color-gray-950: oklch(98% 0.004 150);
+}
+
+/* ── 2. Latar shell (menggantikan gambar latar IVP setelah login) ────────────────────────────────── */
+html.aurora .kerangka-portal,
+html.aurora .panel-dasbor {
+  background: var(--au-latar) var(--au-dasar) !important;
+  background-attachment: fixed !important;
+}
+html.aurora .kerangka-portal { position: relative; isolation: isolate; }
+/* Kisi piksel halus (nuansa panel LED) + butiran agar gradasi tidak bergaris. */
+html.aurora .kerangka-portal::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E"),
+    linear-gradient(rgba(255, 255, 255, .022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .022) 1px, transparent 1px);
+  background-size: 160px 160px, 44px 44px, 44px 44px;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 85%);
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 85%);
+}
+html.aurora .panel-dasbor { background: transparent !important; }
+
+/* Halaman modul memakai var(--latar-halaman): buat tembus supaya latar ambient terlihat di balik kaca. */
+html.aurora.gelap:not([data-lc]) .isi-portal { --latar-halaman: transparent; --halaman: transparent; }
+/* Mode layar penuh modul: isi-portal jadi fixed -> beri latar ambient sendiri. */
+html.aurora.gelap:not([data-lc]) .isi-portal.fixed { background: var(--au-latar) var(--au-dasar) !important; }
+
+/* ── 3. Header portal ────────────────────────────────────────────────────────────────────────────── */
+html.aurora .kepala-3d {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.aurora .kepala-3d h1 { color: var(--au-tinta) !important; letter-spacing: -0.02em; }
+html.aurora .kepala-3d p { color: var(--au-tinta-3) !important; }
+html.aurora .kepala-3d .text-slate-400 { color: var(--au-tinta-3) !important; }
+html.aurora .kepala-3d button:not([class*="rounded-full"]) {
+  border-radius: 999px;
+}
+
+/* ── 4. Sidebar: pil kaca mengambang ─────────────────────────────────────────────────────────────── */
+html.aurora .sidebar-3d {
+  margin: 4px 0 12px 12px;
+  border-radius: var(--au-radius-besar);
+  background: var(--au-kaca) !important;
+  backdrop-filter: var(--au-blur) !important;
+  -webkit-backdrop-filter: var(--au-blur) !important;
+  border: 1px solid var(--au-garis) !important;
+  box-shadow: var(--au-kilau), 0 24px 60px -34px rgba(0, 0, 0, .85) !important;
+  overflow: hidden;
+  color: var(--au-tinta-2);
+}
+html.aurora .sidebar-3d > .absolute.top-0 { display: none; }
+html.aurora .sidebar-3d [style*="border-top"] { border-top-color: var(--au-garis) !important; }
+html.aurora .sidebar-3d .text-slate-500,
+html.aurora .sidebar-3d [style*="color: rgba(0, 0, 0, 0.56)"] { color: var(--au-tinta-3) !important; }
+html.aurora .sidebar-3d .h-px[style] { background: var(--au-garis) !important; }
+
+html.aurora .sidebar-3d .menu-3d:not([style*="tourMenuPulse"]) {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--au-tinta-2) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+html.aurora .sidebar-3d .menu-3d:not([style*="tourMenuPulse"]) > span:first-child[style],
+html.aurora .sidebar-3d .menu-3d > span:first-child {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+@media (hover: hover) {
+  html.aurora .sidebar-3d .menu-3d:not([aria-current]):not([style*="tourMenuPulse"]):hover {
+    background: rgba(255, 255, 255, .055) !important;
+    color: var(--au-tinta) !important;
+    transform: none;
+  }
+  html.aurora .sidebar-3d .menu-3d:hover > :first-child { transform: none; }
+}
+html.aurora .sidebar-3d .menu-3d[aria-current="page"]:not([style*="tourMenuPulse"]) {
+  background: rgba(255, 255, 255, .095) !important;
+  color: var(--au-tinta) !important;
+  box-shadow: var(--au-kilau), 0 0 0 1px var(--au-garis) !important;
+}
+html.aurora .sidebar-3d .menu-3d[aria-current="page"]::before { display: none; }
+html.aurora .sidebar-3d .menu-3d[aria-current="page"] .rounded-full:is(.w-1\.5, .w-2) {
+  background: var(--au-lime) !important;
+  box-shadow: 0 0 10px rgba(var(--au-lime-rgb), .75);
+}
+/* Lencana angka: pil gelap seperti referensi (merah tetap untuk yang butuh perhatian). */
+html.aurora .sidebar-3d .menu-3d .bg-red-500 { background: rgba(228, 119, 112, .9) !important; color: #1b0d0c !important; }
+
+/* Kartu profil & tombol bawah */
+html.aurora .sidebar-3d .p-3 > button,
+html.aurora .sidebar-3d .p-3 > div > button,
+html.aurora .sidebar-3d .py-2 > button {
+  color: var(--au-tinta-2) !important;
+  border-color: transparent !important;
+  border-radius: 14px !important;
+}
+html.aurora .sidebar-3d .p-3 > button:first-child {
+  background: rgba(255, 255, 255, .045) !important;
+  border: 1px solid var(--au-garis) !important;
+}
+html.aurora .sidebar-3d .p-3 > button:first-child p:first-child { color: var(--au-tinta) !important; }
+html.aurora .sidebar-3d .p-3 > button:first-child p + p { color: var(--au-tinta-3) !important; letter-spacing: .08em; }
+html.aurora .sidebar-3d .p-3 button:hover { background: rgba(255, 255, 255, .06) !important; color: var(--au-tinta) !important; }
+html.aurora .sidebar-3d .p-3 button.border-slate-200 { border-color: var(--au-garis) !important; }
+html.aurora .sidebar-3d button[aria-label*="Ciutkan"]:hover { background: rgba(255, 255, 255, .06) !important; color: var(--au-tinta) !important; }
+
+/* Avatar: lime lembut, bukan emas */
+html.aurora :is(.sidebar-3d, .kepala-3d) [style*="linear-gradient(135deg, rgb(253, 230, 138)"] {
+  background: linear-gradient(135deg, #e4fbb0, var(--au-lime)) !important;
+  color: var(--au-lime-tinta) !important;
+}
+
+/* ── 5. Nav bawah (mobile) ───────────────────────────────────────────────────────────────────────── */
+html.aurora .nav-bawah-3d {
+  background: var(--au-kaca-pekat) !important;
+  backdrop-filter: var(--au-blur);
+  -webkit-backdrop-filter: var(--au-blur);
+  border-top: 1px solid var(--au-garis) !important;
+  box-shadow: 0 -18px 40px -28px rgba(0, 0, 0, .9) !important;
+}
+html.aurora .nav-bawah-3d button { color: var(--au-tinta-3) !important; }
+html.aurora .nav-bawah-3d button[aria-current="page"] { color: var(--au-tinta) !important; }
+html.aurora .nav-bawah-3d button[aria-current="page"] > span.absolute:first-child { background: var(--au-lime) !important; }
+
+/* ── 6. Kaca untuk isi modul ─────────────────────────────────────────────────────────────────────── */
+html.aurora.gelap:not([data-lc]) :is(.isi-portal, .dasbor-3d) .rounded-2xl.bg-white,
+html.aurora.gelap:not([data-lc]) :is(.isi-portal, .dasbor-3d) [data-kartu3d] {
+  background: var(--au-kaca) !important;
+  background-image: none !important;
+  backdrop-filter: var(--au-blur);
+  -webkit-backdrop-filter: var(--au-blur);
+  border-color: var(--au-garis) !important;
+  border-radius: var(--au-radius);
+  box-shadow: var(--au-kilau), 0 22px 48px -30px rgba(0, 0, 0, .8) !important;
+}
+html.aurora.gelap:not([data-lc]) .isi-portal .rounded-xl.bg-white.border:not(button, input, select, textarea, a, label) {
+  background: var(--au-kaca-2) !important;
+  border-color: var(--au-garis) !important;
+  box-shadow: var(--au-kilau) !important;
+}
+html.aurora.gelap:not([data-lc]) :is(.isi-portal, .dasbor-3d) [data-kartu3d][aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(var(--au-lime-rgb), .10), rgba(var(--au-lime-rgb), .02)), var(--au-kaca-2) !important;
+  border-color: rgba(var(--au-lime-rgb), .45) !important;
+}
+@media (hover: hover) {
+  html.aurora.gelap:not([data-lc]) .dasbor-3d .rounded-2xl.bg-white:hover {
+    top: -2px;
+    border-color: var(--au-garis-kuat) !important;
+    box-shadow: var(--au-kilau), 0 28px 56px -30px rgba(0, 0, 0, .9) !important;
+  }
+}
+
+/* Header halaman modul (PageHeader) — strip kaca, garis aksen atas dihapus. */
+html.aurora.gelap:not([data-lc]) .kepala-halaman {
+  background: var(--au-kaca-pekat) !important;
+  backdrop-filter: var(--au-blur);
+  -webkit-backdrop-filter: var(--au-blur);
+  border-bottom: 1px solid var(--au-garis) !important;
+  box-shadow: none !important;
+}
+html.aurora.gelap:not([data-lc]) .kepala-halaman h1 { color: var(--au-tinta) !important; letter-spacing: -0.015em; }
+
+/* ── 7. Tombol, tab, input ───────────────────────────────────────────────────────────────────────── */
+html.aurora.gelap:not([data-lc]) .tombol-utama {
+  background: var(--au-lime) !important;
+  color: var(--au-lime-tinta) !important;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 10px 24px -12px rgba(var(--au-lime-rgb), .6) !important;
+}
+html.aurora.gelap:not([data-lc]) .tombol-utama:hover:not(:disabled) { background: #d3f884 !important; filter: none; }
+html.aurora.gelap:not([data-lc]) .tombol-kedua {
+  background: rgba(255, 255, 255, .06) !important;
+  color: var(--au-tinta) !important;
+  border: 1px solid var(--au-garis-kuat) !important;
+  border-radius: 999px;
+  box-shadow: none !important;
+}
+html.aurora.gelap:not([data-lc]) .tombol-kedua:hover:not(:disabled) { background: rgba(255, 255, 255, .1) !important; }
+
+/* Isian beraksen gradasi merek (dulu teks putih di atas merah) -> lime dengan tinta gelap. */
+html.aurora.gelap:not([data-lc]) [style*="var(--merek-utama-2"],
+html.aurora.gelap:not([data-lc]) [style*="var(--merek-utama-2"] * { color: var(--au-lime-tinta) !important; }
+html.aurora.gelap:not([data-lc]) [style*="background: var(--merek-utama-tembus)"] { color: var(--au-lime) !important; }
+
+/* Tab terpilih: pil terang seperti segmented control referensi */
+html.aurora.gelap:not([data-lc]) :is(.isi-portal, .dasbor-3d) [role="tab"][aria-selected="true"] {
+  background: rgba(255, 255, 255, .12) !important;
+  color: var(--au-tinta) !important;
+  box-shadow: var(--au-kilau), 0 0 0 1px var(--au-garis-kuat) !important;
+}
+
+html.aurora.gelap:not([data-lc]) :is(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select, textarea):focus-visible {
+  border-color: rgba(var(--au-lime-rgb), .6) !important;
+  box-shadow: 0 0 0 3px rgba(var(--au-lime-rgb), .16) !important;
+}
+html.aurora.gelap:not([data-lc]) ::selection { background: rgba(var(--au-lime-rgb), .32); color: #fff; }
+html.aurora.gelap:not([data-lc]) :is(input[type="checkbox"], input[type="radio"], input[type="range"]) { accent-color: var(--au-lime); }
+
+/* Tabel kartu: baris aksen lime tipis */
+html.aurora.gelap:not([data-lc]) .tabel-kartu thead th { border-bottom-color: var(--au-garis-kuat); color: var(--au-tinta-3); }
+html.aurora.gelap:not([data-lc]) .tabel-kartu tbody td { background: rgba(24, 32, 34, .5); }
+html.aurora.gelap:not([data-lc]) .tabel-kartu tbody tr:hover td { background: rgba(255, 255, 255, .055); }
+
+/* ── 8. Dashboard (beranda) ──────────────────────────────────────────────────────────────────────── */
+html.aurora.gelap:not([data-lc]) .dasbor-3d[style] { background: rgba(8, 12, 13, .35) !important; }
+
+html.aurora.gelap:not([data-lc]) .dasbor-kepala {
+  background: transparent !important;
+  border-bottom: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.aurora.gelap:not([data-lc]) .dasbor-kepala > div { padding-top: 18px; padding-bottom: 6px; }
+html.aurora.gelap:not([data-lc]) .judul-sapaan {
+  display: inline-block;
+  font-size: clamp(22px, 2.6vw, 34px) !important;
+  line-height: 1.15 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.025em;
+  color: var(--au-tinta) !important;
+  padding-bottom: 4px;
+  background: linear-gradient(var(--au-lime), var(--au-lime)) 0 100% / 100% 3px no-repeat;
+}
+html.aurora.gelap:not([data-lc]) .judul-sapaan + p { color: var(--au-tinta-2) !important; font-size: 12.5px !important; margin-top: 6px !important; }
+
+/* Tab halaman dashboard */
+html.aurora.gelap:not([data-lc]) .bb-tab {
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--au-kaca);
+  border: 1px solid var(--au-garis);
+  backdrop-filter: var(--au-blur);
+  -webkit-backdrop-filter: var(--au-blur);
+}
+html.aurora.gelap:not([data-lc]) .bb-tab button { color: var(--au-tinta-2); }
+html.aurora.gelap:not([data-lc]) .bb-tab button:hover:not([aria-current]) { background: rgba(255, 255, 255, .06); color: var(--au-tinta); }
+html.aurora.gelap:not([data-lc]) .bb-tab button[aria-current="page"] { color: var(--au-lime-tinta); font-weight: 700; }
+html.aurora.gelap:not([data-lc]) .bb-tab-geser { background: var(--au-lime); box-shadow: 0 6px 18px -8px rgba(var(--au-lime-rgb), .7); }
+html.aurora.gelap:not([data-lc]) .bb-tab-lencana { background: rgba(228, 119, 112, .95); color: #1b0d0c; }
+html.aurora.gelap:not([data-lc]) .bb-tab button[aria-current="page"] .bb-tab-lencana { background: rgba(20, 26, 10, .18); color: var(--au-lime-tinta); }
+
+/* Segmented periode */
+html.aurora.gelap:not([data-lc]) .bb-segmen {
+  background: var(--au-kaca);
+  border: 1px solid var(--au-garis);
+  border-radius: 999px;
+  backdrop-filter: var(--au-blur);
+  -webkit-backdrop-filter: var(--au-blur);
+}
+html.aurora.gelap:not([data-lc]) .bb-segmen button { border-radius: 999px; color: var(--au-tinta-2); }
+html.aurora.gelap:not([data-lc]) .bb-segmen button:is([aria-pressed="true"], [aria-selected="true"]) {
+  background: var(--au-tinta) !important;
+  color: #111618 !important;
+  box-shadow: none !important;
+}
+
+/* Kartu KPI bertint (biru-slate / zaitun / karat), data tetap dari sumber yang sama */
+html.aurora.gelap:not([data-lc]) .dasbor-3d .rounded-2xl.bg-white[data-nada] { border-color: rgba(255, 255, 255, .11) !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d .rounded-2xl.bg-white[data-nada="biru"] { background: var(--au-nada-biru), var(--au-kaca) !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d .rounded-2xl.bg-white[data-nada="zaitun"] { background: var(--au-nada-zaitun), var(--au-kaca) !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d .rounded-2xl.bg-white[data-nada="karat"] { background: var(--au-nada-karat), var(--au-kaca) !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada] h3 { color: rgba(242, 245, 243, .78) !important; letter-spacing: .02em; text-transform: none; font-size: 12.5px; font-weight: 600; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada] .bb-catatan { color: rgba(242, 245, 243, .62); }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada] .bb-bilah { background: rgba(255, 255, 255, .14); }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada="biru"] .bb-bilah > span { background: #f2f5f3 !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada="karat"] .text-\[30px\][style*="rgb(220, 38, 38)"] { color: #ffb4ab !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d [data-nada="karat"] .bb-bilah > span { background: #ffb4ab !important; }
+
+/* Label kartu & angka */
+html.aurora.gelap:not([data-lc]) .dasbor-3d h3.uppercase { color: var(--au-tinta-2) !important; }
+html.aurora.gelap:not([data-lc]) .dasbor-3d .text-\[30px\]:not([style*="rgb(220, 38, 38)"]) { color: var(--au-tinta) !important; }
+html.aurora.gelap:not([data-lc]) .bb-catatan { color: var(--au-tinta-3); }
+html.aurora.gelap:not([data-lc]) .bb-bilah { background: rgba(255, 255, 255, .08); }
+html.aurora.gelap:not([data-lc]) .bb-bilah-tik { background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .16) 0 1.5px, transparent 1.5px 5px); }
+
+/* Grafik alur kerja: lintasan kelabu transparan + batang biru sinyal, hari ini lime */
+html.aurora.gelap:not([data-lc]) .bb-grafik-garis i { background: rgba(255, 255, 255, .05); }
+html.aurora.gelap:not([data-lc]) .bb-grafik-garis i:last-child { background: rgba(255, 255, 255, .14); }
+html.aurora.gelap:not([data-lc]) .bb-kolom { background: rgba(255, 255, 255, .035); border-radius: 6px 6px 0 0; }
+html.aurora.gelap:not([data-lc]) .bb-kolom:hover,
+html.aurora.gelap:not([data-lc]) .bb-kolom-aktif { background: rgba(var(--au-biru-rgb), .1); }
+html.aurora.gelap:not([data-lc]) .bb-batang { border-radius: 6px 6px 0 0; }
+html.aurora.gelap:not([data-lc]) .bb-batang i[style] { background: var(--au-biru) !important; }
+html.aurora.gelap:not([data-lc]) .bb-kolom:nth-last-child(1 of .bb-kolom) .bb-batang i[style] { background: var(--au-lime) !important; }
+html.aurora.gelap:not([data-lc]) .bb-batang-sisa { background: rgba(255, 255, 255, .16); }
+html.aurora.gelap:not([data-lc]) .bb-sel-grafik i.rounded-sm[style] { background: var(--au-biru) !important; }
+html.aurora.gelap:not([data-lc]) .bb-sel-grafik i.rounded-sm.bg-slate-300 { background: rgba(255, 255, 255, .2) !important; }
+html.aurora.gelap:not([data-lc]) .bb-tip { background: var(--au-padat-2); border: 1px solid var(--au-garis-kuat); }
+html.aurora.gelap:not([data-lc]) .bb-grafik-sumbu-x b { color: var(--au-lime); }
+
+/* Piket & proyek */
+html.aurora.gelap:not([data-lc]) .bb-piket-baris { background: rgba(255, 255, 255, .045); border-color: var(--au-garis); border-radius: 12px; }
+html.aurora.gelap:not([data-lc]) .bb-piket-baris span { color: var(--au-biru); }
+html.aurora.gelap:not([data-lc]) .bb-proyek:hover { background: rgba(255, 255, 255, .05); }
+html.aurora.gelap:not([data-lc]) .bb-proyek-info em { color: var(--au-merah); }
+
+/* Ajakan Telegram (kuning) -> kaca hangat */
+html.aurora.gelap:not([data-lc]) .bb-wadah > .rounded-xl[style*="rgb(255, 251, 235)"] {
+  background: linear-gradient(160deg, rgba(232, 200, 120, .16), rgba(232, 200, 120, .06)), var(--au-kaca) !important;
+  border-color: rgba(232, 200, 120, .35) !important;
+  backdrop-filter: var(--au-blur);
+}
+
+/* ── 9. Gerak: hormati preferensi kurangi gerak ─────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html.aurora .sidebar-3d, html.aurora .bb-tab-geser { transition: none !important; }
+}
+
+/* ── 10. Fallback: peramban tanpa backdrop-filter -> kaca lebih pekat agar teks tetap terbaca ───── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  html.aurora { --au-kaca: rgba(24, 32, 34, .92); --au-kaca-2: rgba(34, 43, 45, .94); --au-kaca-pekat: rgba(18, 25, 27, .96); }
+}
