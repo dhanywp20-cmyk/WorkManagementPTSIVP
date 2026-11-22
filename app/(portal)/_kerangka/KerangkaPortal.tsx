@@ -12,6 +12,9 @@ import { LABEL_PENDEK } from '../dashboard/_components/nav-bawah';
 import { AsistenPlatform } from '../dashboard/_components/AsistenPlatform';
 import { LayarMasuk } from './LayarMasuk';
 import { SidebarPortal } from './SidebarPortal';
+import { SidebarKaca } from './SidebarKaca';
+import { KepalaKaca } from './KepalaKaca';
+import { useTampilan } from '@/components/shared/Tema';
 import { MENU_ICONS } from './daftar-menu';
 import { latarDasbor } from '@/lib/merek/inti';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
@@ -30,6 +33,8 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     canAccessKPI, learningMenuItems, projectMenuItems, internalMenuItems, showTour, setTourHighlightKey, setTourVisible, sidebarCollapsed,
     setSidebarCollapsed, tourHighlightKey, sedangPindah, showDashboardPanel, openMenuByKey, setIsiEl, lisensi,
   } = useKerangkaPortal();
+  const [tampilan] = useTampilan();
+  const kaca = tampilan === 'kaca';
 
   if (loading) {
     return (
@@ -146,7 +151,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const bukaDashboard = () => { setShowSidebar(true); pindahKe('/dashboard'); };
   const renderNavBawah = () => (!layarPenuh && currentUser ? (
     <NavBawahMobile
-      aksen={merek.warnaAksen}
+      aksen={kaca ? 'var(--pk-aksen)' : merek.warnaAksen}
       beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? berandaTersorot : true, onPilih: bukaDashboard }}
       menu={visibleMenuItems.filter(m => m.items.length).map(menu => {
         const it = menu.items[0];
@@ -194,6 +199,98 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
               </>
             )}
+          </div>
+        </div>
+
+        {renderNavBawah()}
+        <FooterPlatform />
+
+        <style>{`
+          @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+          @keyframes dropIn { from { opacity: 0; transform: translateY(-8px) scale(0.97); } to { opacity: 1; transform: none; } }
+        `}</style>
+      </div>
+    );
+  }
+
+  const menuCepat = visibleMenuItems
+    .filter(m => m.items.some(it => it.internal || (it.embed && !it.external)))
+    .map(m => ({ key: m.key, title: m.title, keterangan: m.description, ikon: MENU_ICONS[m.key] ?? <Ikon nama={m.icon} ukuran="1em" className="inline-block" /> }));
+
+  const renderTurDanAsisten = () => currentUser && (
+    <>
+      <OnboardingTour
+        currentUser={currentUser}
+        visibleMenuKeys={visibleMenuItems.map(m => m.key)}
+        forceShow={showTour}
+        onDone={() => setShowTour(false)}
+        onHighlightKey={setTourHighlightKey}
+        onVisibleChange={setTourVisible}
+      />
+      {!tourVisible && (
+        <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
+      )}
+    </>
+  );
+
+  if (kaca) {
+    const menuAktif = visibleMenuItems.find(m => m.items.some(it => aktifUrl(it.url)));
+    const judulAktif = showDashboardPanel ? 'Dashboard' : (menuAktif?.title ?? merek.namaPlatformSingkat);
+    const ruteLC = !showDashboardPanel && modulAktif === 'learning-center';
+    const latarKaca: React.CSSProperties = merek.latarDasbor === 'gambar' && merek.gambarLatarDasbor
+      ? { backgroundImage: `linear-gradient(180deg, rgba(12,14,13,.58), rgba(12,14,13,.78)), url("${merek.gambarLatarDasbor.replace(/"/g, '%22')}")` }
+      : {};
+    return (
+      <div className={`pk-shell ${dasborMuncul ? 'lc-dasbor-pudar' : ''}`} style={latarKaca}>
+        {renderModals()}
+        {renderTurDanAsisten()}
+
+        <div className="pk-tata">
+          <SidebarKaca
+            sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed}
+            tourVisible={tourVisible} tourHighlightKey={tourHighlightKey}
+            visibleMenuItems={visibleMenuItems} showDashboardPanel={showDashboardPanel} aktifUrl={aktifUrl}
+            currentUser={currentUser} isAdmin={isAdmin} isFullAccess={isFullAccess}
+            pendingUsers={pendingUsers} pendingRequests={pendingRequests}
+            onMenu={handleMenuClick} onBeranda={() => pindahKe('/dashboard')}
+            onProfil={() => setShowUserProfile(true)}
+            onAdminPanel={() => { setAdminPanelTab(pendingUsers > 0 ? 'userManagement' : 'settings'); setShowAdminPanel(true); }}
+            onKeluar={handleLogout}
+            namaPlatform={merek.namaPlatform} namaPerusahaan={merek.namaPerusahaan}
+          />
+
+          <div className="pk-kanan">
+            <KepalaKaca judul={judulAktif}
+              inisial={currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'} namaUser={currentUser?.full_name ?? ''}
+              onProfil={() => setShowUserProfile(true)}
+              alat={currentUser && (
+                <>
+                  <div className="pk-cari">
+                    <GlobalSearch currentUser={currentUser} onNavigate={(url) => { setShowSidebar(true); pindahKe(url); }} />
+                  </div>
+                  <div className="pk-notif">
+                    <NotificationBar currentUser={currentUser} onNavigate={handleNotifNavigate} />
+                  </div>
+                </>
+              )} />
+
+            <main className={`pk-isi ${showDashboardPanel ? 'pk-isi-dasbor' : ''} ${ruteLC ? 'pk-isi-lc' : ''} ${sedangPindah ? 'isi-sedang-pindah' : ''}`}
+              style={{ ['--warna-pindah' as string]: 'var(--pk-aksen)', ...(ruteLC ? latarDasbor(merek) : {}) }}>
+              {sedangPindah && <div aria-hidden="true" className="bilah-pindah-menu" />}
+              {showDashboardPanel && currentUser ? (
+                <div className="w-full h-full overflow-hidden relative">
+                  <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
+                    onHubungkanTelegram={() => setShowUserProfile(true)} menuCepat={menuCepat} />
+                </div>
+              ) : (
+                <div ref={setIsiEl} className={layarPenuh
+                  ? 'isi-portal fixed inset-0 z-300 bg-white overflow-auto'
+                  : 'isi-portal w-full h-full overflow-auto relative'}>
+                  <BannerLisensi s={lisensi} admin={hasFullAccess(currentUser)} />
+                  {children}
+                </div>
+              )}
+            </main>
           </div>
         </div>
 

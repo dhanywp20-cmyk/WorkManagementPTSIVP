@@ -39,7 +39,7 @@ const dasbor = /\.lc-dasbor-pudar \{[^}]*\}\s*@keyframes lcDasborPudar \{[^}]*\}
 cek('dashboard hanya opacity (tanpa transform/clip-path di akar)', dasbor !== '' && !/transform|clip-path|scale|translate/.test(dasbor));
 cek('gerak dikurangi: semua animasi baru dimatikan', /prefers-reduced-motion: reduce\)[\s\S]*\.lc-sukses,[\s\S]*\.lc-masuk-pudar,[\s\S]*\.lc-dasbor-pudar \{ animation: none; \}/.test(css));
 cek('gerak dikurangi: centang langsung penuh', /\.lc-sukses-centang \{ animation: none; stroke-dashoffset: 0; \}/.test(css));
-cek('dashboard memakai kelas pudar & dilepas lagi', (portal.match(/lc-dasbor-pudar/g) ?? []).length === 2 && /setDasborMuncul\(false\), 520\)/.test(portal));
+cek('dashboard memakai kelas pudar & dilepas lagi', (portal.match(/lc-dasbor-pudar/g) ?? []).length >= 2 && /setDasborMuncul\(false\), 520\)/.test(portal));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

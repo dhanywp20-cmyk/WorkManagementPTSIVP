@@ -1,5 +1,5 @@
 'use client';
-import { IkonTema, useTema } from '@/components/shared/Tema';
+import { IkonTema, LABEL_TAMPILAN, useTema } from '@/components/shared/Tema';
 import type { User, MenuItem } from '../dashboard/_components/shared';
 import { SidebarLengkap } from './SidebarLengkap';
 import { SidebarRingkas } from './SidebarRingkas';
@@ -29,7 +29,8 @@ export function SidebarPortal({
   showDashboardPanel, aktifUrl, currentUser, isAdmin, isFullAccess, pendingUsers, pendingRequests,
   onMenu, onBeranda, onProfil, onAdminPanel, onKeluar,
 }: SidebarPortalProps) {
-  const [gelap, tukarTema] = useTema();
+  const [, tukarTema, berikut] = useTema();
+  const labelTema = `Ganti ke tampilan ${LABEL_TAMPILAN[berikut]}`;
   return (
         <div
       className={`
@@ -111,9 +112,9 @@ export function SidebarPortal({
               </button>
             )}
 
-            <button aria-label={gelap ? 'Mode terang' : 'Mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'} onClick={tukarTema}
+            <button aria-label={labelTema} title={labelTema} onClick={tukarTema}
               className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-slate-400 hover:text-slate-700 hover:bg-slate-100">
-              <IkonTema gelap={gelap} />
+              <IkonTema tampilan={berikut} />
             </button>
 
             <button aria-label="Sign Out"
@@ -188,9 +189,9 @@ export function SidebarPortal({
               </svg>
               Sign out
             </button>
-            <button type="button" onClick={tukarTema} aria-label={gelap ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'}
+            <button type="button" onClick={tukarTema} aria-label={labelTema} title={labelTema}
               className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
-              <IkonTema gelap={gelap} />
+              <IkonTema tampilan={berikut} />
             </button>
             </div>
 

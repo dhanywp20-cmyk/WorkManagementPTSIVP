@@ -1,7 +1,7 @@
 'use client';
 import { cloneElement, isValidElement, useEffect, useRef, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 import { TOMBOL_TERLIHAT, urutNav, type MenuNav } from './nav-bawah';
-import { IkonTema, useTema } from '@/components/shared/Tema';
+import { IkonTema, LABEL_TAMPILAN, useTema } from '@/components/shared/Tema';
 
 const IKON_DASHBOARD = (
   <svg aria-hidden="true" focusable="false" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,8 +37,8 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
   aksen?: string;
 }) {
   const jalur = useRef<HTMLDivElement>(null);
-  const [gelap, tukarTema] = useTema();
-  const tema: MenuNav = { key: '__tema', label: gelap ? 'Mode terang' : 'Mode gelap', pendek: gelap ? 'Terang' : 'Gelap', ikon: IkonTema({ gelap }), onPilih: tukarTema };
+  const [, tukarTema, berikut] = useTema();
+  const tema: MenuNav = { key: '__tema', label: `Tampilan ${LABEL_TAMPILAN[berikut]}`, pendek: LABEL_TAMPILAN[berikut].replace('PTS ', ''), ikon: IkonTema({ tampilan: berikut }), onPilih: tukarTema };
   const iKeluar = akun.findIndex(a => a.key === '__keluar');
   const akunTema = iKeluar < 0 ? [...akun, tema] : [...akun.slice(0, iKeluar), tema, ...akun.slice(iKeluar)];
   const daftar: MenuNav[] = [{ ...beranda, ikon: beranda.ikon ?? IKON_DASHBOARD }, ...urutNav(menu), ...akunTema];

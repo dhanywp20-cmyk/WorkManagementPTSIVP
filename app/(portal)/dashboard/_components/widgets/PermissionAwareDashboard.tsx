@@ -12,6 +12,8 @@ import { hasFullAccess } from '@/lib/constants';
 import PanelAgenda, { type RingkasAgenda } from '../workcenter/PanelAgenda';
 import { IsiBeranda } from '../beranda/IsiBeranda';
 import { useDasborWidget } from '../beranda/useDasborWidget';
+import { useTampilan } from '@/components/shared/Tema';
+import { HeroKaca, type MenuCepat } from '../beranda/HeroKaca';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -52,12 +54,15 @@ function TabHalaman({ tab, aktif, onPilih }: {
   );
 }
 
-export default function PermissionAwareDashboard({ currentUser, openMenu, openUrl, onHubungkanTelegram }: {
+export default function PermissionAwareDashboard({ currentUser, openMenu, openUrl, onHubungkanTelegram, menuCepat = [] }: {
   currentUser: User;
   openMenu: (key: string) => void;
   openUrl: (url: string, title: string) => void;
   onHubungkanTelegram?: () => void;
+  menuCepat?: MenuCepat[];
 }) {
+  const [tampilan] = useTampilan();
+  const kaca = tampilan === 'kaca';
   const [ajakTelegram, setAjakTelegram] = useState(false);
   const [tutupAjakan, setTutupAjakan] = useState(false);
   const [tab, setTab] = useState<AnalyticsTab>('kpi');
@@ -96,28 +101,35 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
     ? <PanelAgenda user={currentUser} openMenu={openMenu} openUrl={openUrl} onRingkas={setRingkasAgenda} />
     : undefined;
 
+  const tabHalaman = (
+    <TabHalaman aktif={tab} onPilih={setTab} tab={[
+      { kunci: 'kpi', label: 'Analytics', ikon: '📊' },
+      { kunci: 'command', label: 'Command Center', ikon: '🏠', badge: hitung.totalAlerts },
+      { kunci: 'audit', label: 'Audit Log', ikon: '📋', badge: hitung.auditCount },
+      ...(hasFullAccess(currentUser) ? [{ kunci: 'pemakaian' as const, label: 'Pemakaian', ikon: '👥' }] : []),
+    ]} />
+  );
+
   return (
-    <div className="dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden"
-      style={widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
-      <header className="sticky top-0 z-40"
+    <div className={`dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden ${kaca ? 'pk-dasbor' : ''}`}
+      style={!kaca && widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
+      {!kaca && <header className="sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
             <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
-          {adaAnalytics && (
-            <TabHalaman aktif={tab} onPilih={setTab} tab={[
-              { kunci: 'kpi', label: 'Analytics', ikon: '📊' },
-              { kunci: 'command', label: 'Command Center', ikon: '🏠', badge: hitung.totalAlerts },
-              { kunci: 'audit', label: 'Audit Log', ikon: '📋', badge: hitung.auditCount },
-              ...(hasFullAccess(currentUser) ? [{ kunci: 'pemakaian' as const, label: 'Pemakaian', ikon: '👥' }] : []),
-            ]} />
-          )}
+          {adaAnalytics && tabHalaman}
         </div>
-      </header>
+      </header>}
 
       <div className="bb-wadah">
+        {kaca && (
+          <HeroKaca namaDepan={firstName} tanggal={today} ringkas={ringkasAgenda} menuCepat={menuCepat} openMenu={openMenu}
+            alert={adaAnalytics ? hitung.totalAlerts : null} />
+        )}
+        {kaca && adaAnalytics && <div className="pk-baris-tab">{tabHalaman}</div>}
         {ajakTelegram && !tutupAjakan && (
           <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3 mb-3 flex-wrap"
             style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
@@ -153,7 +165,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             }} />} />
         ) : (
           <>
-            {ringkasAgenda && (
+            {!kaca && ringkasAgenda && (
               <p className="flex items-center gap-2 mb-3 text-[13px] font-semibold text-slate-700 bb-naik">
                 <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ background: ringkasAgenda.aksi ? '#dc2626' : '#16a34a' }} />
                 {ringkasAgenda.aksi ? `${ringkasAgenda.aksi} hal perlu tindakan Anda` : 'Tidak ada yang mendesak'}

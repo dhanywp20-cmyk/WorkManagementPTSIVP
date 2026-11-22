@@ -10,7 +10,7 @@ import type { User, MenuItem } from '../dashboard/_components/shared';
 import { tujuanLanjutAman } from '@/lib/tujuan-lanjut';
 import { DAFTAR_MENU, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 import { useMerek } from '@/lib/merek/inti';
-import { kembaliTerang } from '@/components/shared/Tema';
+import { kembaliBawaan } from '@/components/shared/Tema';
 import { catatPemakaian } from '@/lib/pemakaian';
 import { pasangMiring3D } from '@/lib/miring3d';
 import { useLisensi } from '@/components/shared/Lisensi';
@@ -98,7 +98,7 @@ export function useKerangkaPortal() {
   }, [kunciMenu, lisensi]);
 
   const sesiBerakhir = useCallback(() => {
-    kembaliTerang(); autoNavigatedRef.current = false;
+    kembaliBawaan(); autoNavigatedRef.current = false;
     setIsLoggedIn(false); setCurrentUser(null);
     setDasborMuncul(false);
     sudahMasukRef.current = false;

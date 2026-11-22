@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { User } from '../dashboard/_components/shared';
 import { useDivisiSales, useMerek } from '@/lib/merek/inti';
 import { useKelompokPTS } from '@/lib/kelompok/inti';
-import { kembaliTerang } from '@/components/shared/Tema';
+import { kembaliBawaan } from '@/components/shared/Tema';
 import { type HasilMasuk } from './LangkahDuaFaktor';
 import { akunTertunda, PESAN_TERTUNDA } from '@/lib/auth/akun-tertunda';
 import { pesanGalat } from '@/lib/galat/pesan';
@@ -86,7 +86,7 @@ export function useLayarMasuk(k: LayarMasukKonteks) {
 
   const handleLogin = async () => {
     if (loginLoading) return;
-    kembaliTerang();
+    kembaliBawaan();
     setLoginLoading(true);
     setLoginErr('');
     try {
