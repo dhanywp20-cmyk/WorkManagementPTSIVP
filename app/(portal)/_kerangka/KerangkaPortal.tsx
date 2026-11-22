@@ -12,7 +12,7 @@ import { LABEL_PENDEK } from '../dashboard/_components/nav-bawah';
 import { AsistenPlatform } from '../dashboard/_components/AsistenPlatform';
 import { LayarMasuk } from './LayarMasuk';
 import { SidebarPortal } from './SidebarPortal';
-import { MENU_ICONS } from './daftar-menu';
+import { MENU_ICONS, IKON_BERANDA } from './daftar-menu';
 import { latarDasbor } from '@/lib/merek/inti';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
@@ -147,7 +147,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const renderNavBawah = () => (!layarPenuh && currentUser ? (
     <NavBawahMobile
       aksen={merek.warnaAksen}
-      beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? berandaTersorot : true, onPilih: bukaDashboard }}
+      beranda={{ key: '__dashboard', label: 'Dashboard', ikon: IKON_BERANDA, aktif: showSidebar ? berandaTersorot : true, onPilih: bukaDashboard }}
       menu={visibleMenuItems.filter(m => m.items.length).map(menu => {
         const it = menu.items[0];
         return {
@@ -175,7 +175,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-kaca flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
         {renderModals()}
         {currentUser && !tourVisible && (
           <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
@@ -209,7 +209,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-kaca flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
       {renderModals()}
 
       {currentUser && (
@@ -247,7 +247,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
             style={{ ['--warna-pindah' as string]: merek.warnaAksen }}>
             {sedangPindah && <div aria-hidden="true" className="bilah-pindah-menu" />}
             {showDashboardPanel && currentUser ? (
-              <div className="w-full h-full overflow-hidden relative"
+              <div className="panel-dasbor w-full h-full overflow-hidden relative"
                 style={latarDasbor(merek)}>
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
                   onHubungkanTelegram={() => setShowUserProfile(true)} />

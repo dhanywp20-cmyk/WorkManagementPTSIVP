@@ -1,0 +1,224 @@
+/* ── Tema Kaca Terang (PREVIEW) ──────────────────────────────────────────────────────────────────────
+   Kepala, sidebar, nav bawah HP & Dashboard bergaya kaca beku (frosted glass) di atas latar hangat.
+   - Hanya mode terang: semua aturan di bawah html:not(.gelap). Mode gelap tidak berubah.
+   - Modul lain (.isi-portal) tidak disentuh; yang berubah hanya bingkai portal + panel Dashboard.
+   - Teks sengaja tidak kontras keras: arang hangat (#2b2723) & abu hangat, bukan hitam pekat / warna menyala.
+   - Animasi ikon sidebar (.menu-3d di globals.css: naik, miring, pantul, masuk berurutan) DIPERTAHANKAN:
+     berkas ini hanya mengganti warna, permukaan & bentuk - tidak menambah/mengubah transform atau animation. */
+
+html:not(.gelap) .kerangka-kaca {
+  --kc-tinta: #2b2723;
+  --kc-tinta-2: #6b635b;
+  --kc-tinta-3: #968d84;
+  --kc-aksen: #2f9a82;
+  --kc-aksen-2: #1f7a66;
+  --kc-aksen-lembut: rgba(47, 154, 130, .14);
+  --kc-arang: #26221f;
+  --kc-kaca: rgba(255, 255, 255, .42);
+  --kc-kaca-kuat: rgba(255, 255, 255, .66);
+  --kc-kaca-tipis: rgba(255, 255, 255, .24);
+  --kc-tepi: rgba(255, 255, 255, .62);
+  --kc-garis: rgba(96, 72, 48, .1);
+  --kc-bayang: inset 0 1px 0 rgba(255, 255, 255, .7), 0 1px 2px rgba(74, 52, 30, .05), 0 14px 34px -16px rgba(74, 52, 30, .3);
+  --kc-blur: blur(26px) saturate(1.45);
+  --kc-latar:
+    radial-gradient(900px 640px at 6% 8%, rgba(255, 238, 218, .95), transparent 62%),
+    radial-gradient(760px 560px at 94% 4%, rgba(170, 212, 199, .7), transparent 62%),
+    radial-gradient(860px 640px at 82% 96%, rgba(201, 164, 132, .7), transparent 60%),
+    radial-gradient(720px 540px at 14% 98%, rgba(226, 203, 178, .9), transparent 62%),
+    linear-gradient(135deg, #ece4da 0%, #dccfc1 55%, #d3c3b3 100%);
+
+  /* Token permukaan yang dipakai globals.css (var(--gb-*, …)): kini kaca, bukan putih padat. */
+  --gb-ffffff: rgba(255, 255, 255, .6);
+  --gb-f8fafc: rgba(255, 255, 255, .5);
+  --gb-f1f5f9: rgba(255, 255, 255, .42);
+  --gb-e8edf3: rgba(96, 72, 48, .09);
+  --gg-e2e8f0: rgba(255, 255, 255, .75);
+  --gg-cbd5e1: rgba(96, 72, 48, .18);
+  --gg-f1f5f9: rgba(96, 72, 48, .08);
+  --gs-ffffff: rgba(255, 255, 255, .8);
+  --gs-e2e8f0: rgba(96, 72, 48, .08);
+  --gs-e8ecf2: rgba(96, 72, 48, .05);
+  --gs-dfe5ee: rgba(96, 72, 48, .06);
+  --gs-edf0f5: transparent;
+  --gt-0f172a: var(--kc-tinta);
+  --gt-1e293b: var(--kc-tinta);
+  --gt-334155: #4a433c;
+  --gt-475569: var(--kc-tinta-2);
+  --aksen-ubin: var(--kc-aksen);
+}
+
+/* Skala abu Tailwind di bingkai & Dashboard: abu hangat yang lembut, latar tipis tembus pandang. */
+html:not(.gelap) .kerangka-kaca :is(.kepala-3d, .sidebar-3d, .nav-bawah-3d, .panel-dasbor) {
+  --color-slate-50: rgba(255, 255, 255, .4);
+  --color-slate-100: rgba(96, 72, 48, .07);
+  --color-slate-200: rgba(96, 72, 48, .12);
+  --color-slate-300: rgba(96, 72, 48, .22);
+  --color-slate-400: #a39a91;
+  --color-slate-500: #7a726a;
+  --color-slate-600: #625b54;
+  --color-slate-700: #4a443e;
+  --color-slate-800: #37322d;
+  --color-slate-900: var(--kc-tinta);
+  --color-slate-950: #1f1c19;
+  --color-gray-50: rgba(255, 255, 255, .4);
+  --color-gray-100: rgba(96, 72, 48, .07);
+  --color-gray-200: rgba(96, 72, 48, .12);
+  --color-gray-300: rgba(96, 72, 48, .22);
+  --color-gray-400: #a39a91;
+  --color-gray-500: #7a726a;
+  --color-gray-600: #625b54;
+  --color-gray-700: #4a443e;
+  --color-gray-800: #37322d;
+  --color-gray-900: var(--kc-tinta);
+  color: var(--kc-tinta);
+}
+
+/* Latar hangat (bila merek tidak memakai gambar latar sendiri; bila memakai, kaca tampil di atas gambar). */
+html:not(.gelap) .kerangka-kaca:not([style*="url("]) { background: var(--kc-latar) !important; background-attachment: fixed !important; }
+html:not(.gelap) .kerangka-kaca > footer { background: transparent !important; border-top-color: transparent !important; backdrop-filter: none !important; }
+
+/* ── Kepala: pil kaca mengambang ── */
+html:not(.gelap) .kerangka-kaca .kepala-3d {
+  margin: 12px 12px 0; border-radius: 22px;
+  background: var(--kc-kaca) !important; border: 1px solid var(--kc-tepi) !important;
+  backdrop-filter: var(--kc-blur); -webkit-backdrop-filter: var(--kc-blur);
+  box-shadow: var(--kc-bayang) !important;
+}
+html:not(.gelap) .kerangka-kaca .kepala-3d h1 { color: var(--kc-tinta) !important; }
+@media (max-width: 767px) { html:not(.gelap) .kerangka-kaca .kepala-3d { margin: 8px 8px 0; border-radius: 18px; } }
+
+/* ── Sidebar: panel kaca mengambang, ikon dalam bulatan kaca ── */
+html:not(.gelap) .kerangka-kaca .sidebar-3d {
+  margin: 12px 0 12px 12px; border-radius: 26px; overflow: hidden;
+  background: var(--kc-kaca-tipis) !important; border: 1px solid var(--kc-tepi) !important;
+  backdrop-filter: var(--kc-blur) !important; -webkit-backdrop-filter: var(--kc-blur) !important;
+  box-shadow: var(--kc-bayang) !important;
+}
+html:not(.gelap) .kerangka-kaca .sidebar-3d > .absolute.top-0 { display: none; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .tracking-\[0\.14em\] { color: var(--kc-tinta-3) !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .flex-1.h-px { background: rgba(255, 255, 255, .7) !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d > .shrink-0:last-child { border-top-color: rgba(255, 255, 255, .55) !important; }
+
+/* Baris menu: warna saja. Transform/animasi tetap dari .menu-3d. */
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d:not([aria-current]) { color: #4a433c !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d { border-radius: 14px !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d > :first-child {
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, .55) !important; color: #5b534b !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .8), 0 2px 6px -2px rgba(74, 52, 30, .18);
+}
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9 { width: 40px; height: 40px; margin-inline: auto; border-radius: 999px !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9 > :first-child { background: transparent !important; box-shadow: none; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9:not([aria-current]) {
+  background: rgba(255, 255, 255, .4) !important; border-color: rgba(255, 255, 255, .7) !important;
+}
+@media (hover: hover) {
+  html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9:not([aria-current]):hover { background: rgba(255, 255, 255, .78) !important; }
+}
+
+/* Aktif: pil putih susu, ikon dalam bulatan teal (seperti tombol aktif di contoh). */
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d[aria-current="page"] {
+  background: var(--kc-kaca-kuat) !important; border-color: rgba(255, 255, 255, .95) !important;
+  color: var(--kc-tinta) !important;
+  box-shadow: inset 0 1px 0 #fff, 0 10px 22px -12px rgba(74, 52, 30, .38) !important;
+}
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d[aria-current="page"] > :first-child {
+  background: linear-gradient(150deg, #57b9a0, var(--kc-aksen) 55%, var(--kc-aksen-2)) !important; color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 12px -5px rgba(31, 122, 102, .55);
+}
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9[aria-current="page"] {
+  background: #fff !important; color: var(--kc-tinta) !important;
+}
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d.h-9[aria-current="page"] > :first-child { background: transparent !important; color: var(--kc-aksen-2) !important; box-shadow: none; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d:not(.h-9)[aria-current="page"]::before { background: var(--kc-aksen); }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .menu-3d:not(.h-9)[aria-current] > .rounded-full:last-child { background: var(--kc-aksen) !important; }
+
+/* Kartu profil & tombol bawah */
+html:not(.gelap) .kerangka-kaca .sidebar-3d .kc-profil { background: rgba(255, 255, 255, .45) !important; border-color: rgba(255, 255, 255, .75) !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .kc-profil:hover { background: rgba(255, 255, 255, .7) !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .kc-profil p:last-child { color: var(--kc-aksen-2) !important; }
+html:not(.gelap) .kerangka-kaca .sidebar-3d .border-slate-200 { border-color: rgba(255, 255, 255, .75) !important; background: rgba(255, 255, 255, .4); }
+
+/* ── Nav bawah HP: pil kaca mengambang ── */
+html:not(.gelap) .kerangka-kaca .nav-bawah-3d {
+  margin: 0 10px 8px; border-radius: 24px; overflow: hidden;
+  background: var(--kc-kaca) !important; border: 1px solid var(--kc-tepi) !important;
+  box-shadow: var(--kc-bayang) !important;
+}
+html:not(.gelap) .kerangka-kaca .nav-bawah-3d > [aria-hidden="true"][style*="linear-gradient"] { display: none; }
+html:not(.gelap) .kerangka-kaca .nav-bawah-3d button[aria-current="page"] > span.absolute:first-child { background: var(--kc-aksen) !important; }
+
+/* ── Panel Dashboard: wadah kaca besar ── */
+html:not(.gelap) .kerangka-kaca .panel-dasbor {
+  position: absolute !important; inset: 12px 12px 12px 12px; width: auto !important; height: auto !important;
+  border-radius: 28px; background: rgba(255, 255, 255, .16) !important; border: 1px solid rgba(255, 255, 255, .5);
+  backdrop-filter: blur(30px) saturate(1.35); -webkit-backdrop-filter: blur(30px) saturate(1.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 30px 60px -32px rgba(60, 40, 20, .4);
+}
+@media (max-width: 767px) { html:not(.gelap) .kerangka-kaca .panel-dasbor { inset: 8px; border-radius: 22px; } }
+html:not(.gelap) .kerangka-kaca .panel-dasbor .dasbor-3d { background: transparent !important; }
+
+/* Sapaan besar seperti "Good morning" di contoh, tanpa bilah putih. */
+html:not(.gelap) .kerangka-kaca .dasbor-kepala { position: relative !important; background: transparent !important; border-bottom: 0 !important; backdrop-filter: none !important; }
+html:not(.gelap) .kerangka-kaca .dasbor-kepala > div { padding-top: 22px; padding-bottom: 8px; align-items: flex-end; }
+html:not(.gelap) .kerangka-kaca .judul-sapaan {
+  font-size: clamp(22px, 2.4vw, 32px) !important; line-height: 1.15 !important; font-weight: 700 !important;
+  letter-spacing: -.025em; color: var(--kc-tinta) !important;
+}
+html:not(.gelap) .kerangka-kaca .judul-sapaan + p { margin-top: 6px; font-size: 13px; color: var(--kc-tinta-2) !important; }
+
+/* Tab halaman: pil kaca, penanda aktif putih (seperti tab bawah di contoh). */
+html:not(.gelap) .kerangka-kaca .bb-tab {
+  padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, .36); border: 1px solid var(--kc-tepi);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 8px 20px -12px rgba(74, 52, 30, .3);
+}
+html:not(.gelap) .kerangka-kaca .bb-tab button { color: var(--kc-tinta-2); }
+html:not(.gelap) .kerangka-kaca .bb-tab button:hover:not([aria-current]) { background: rgba(255, 255, 255, .4); }
+html:not(.gelap) .kerangka-kaca .bb-tab button[aria-current="page"] { color: var(--kc-tinta); }
+html:not(.gelap) .kerangka-kaca .bb-tab-geser { top: 4px; bottom: 4px; background: #fff; box-shadow: 0 4px 12px -4px rgba(74, 52, 30, .3); }
+
+/* Kartu (UBIN) & permukaan putih di dalam Dashboard: kaca beku. */
+html:not(.gelap) .kerangka-kaca .panel-dasbor .bg-white:not(.fixed .bg-white) { background-color: rgba(255, 255, 255, .5) !important; }
+html:not(.gelap) .kerangka-kaca .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white) {
+  border-radius: 22px !important; background-color: var(--kc-kaca) !important; background-image: linear-gradient(160deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .08) 60%) !important;
+  border-color: var(--kc-tepi) !important; box-shadow: var(--kc-bayang) !important;
+}
+@media (hover: hover) {
+  html:not(.gelap) .kerangka-kaca .panel-dasbor .dasbor-3d .rounded-2xl.bg-white:hover {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85), 0 2px 4px rgba(74, 52, 30, .05), 0 24px 44px -18px rgba(74, 52, 30, .38) !important;
+  }
+}
+html:not(.gelap) .kerangka-kaca .panel-dasbor .border-slate-200\/80 { border-color: var(--kc-tepi); }
+
+/* Baris temuan, segmen periode, bilah & grafik */
+html:not(.gelap) .kerangka-kaca .bb-baris-judul { background: var(--kc-kaca); border-color: var(--kc-tepi); border-radius: 18px; box-shadow: var(--kc-bayang); }
+html:not(.gelap) .kerangka-kaca .bb-segmen { background: rgba(96, 72, 48, .08); border-radius: 999px; }
+html:not(.gelap) .kerangka-kaca .bb-segmen button { border-radius: 999px; }
+html:not(.gelap) .kerangka-kaca .bb-segmen button:is([aria-pressed="true"], [aria-selected="true"]) { background: #fff; color: var(--kc-tinta); }
+html:not(.gelap) .kerangka-kaca .bb-catatan { color: var(--kc-tinta-2); }
+html:not(.gelap) .kerangka-kaca .bb-bilah-tik { background: repeating-linear-gradient(90deg, rgba(96, 72, 48, .2) 0 1.5px, transparent 1.5px 5px); }
+html:not(.gelap) .kerangka-kaca .bb-grafik-garis i { background: rgba(96, 72, 48, .08); }
+html:not(.gelap) .kerangka-kaca .bb-grafik-garis i:last-child { background: rgba(96, 72, 48, .2); }
+html:not(.gelap) .kerangka-kaca :is(.bb-grafik-sumbu-y, .bb-grafik-sumbu-x) { color: var(--kc-tinta-3); }
+html:not(.gelap) .kerangka-kaca .bb-batang-sisa { background: repeating-linear-gradient(135deg, rgba(38, 34, 31, .78) 0 2px, rgba(38, 34, 31, .55) 2px 4px); }
+html:not(.gelap) .kerangka-kaca .bb-kolom:hover, html:not(.gelap) .kerangka-kaca .bb-kolom-aktif { background: rgba(255, 255, 255, .35); }
+html:not(.gelap) .kerangka-kaca .bb-tip { background: var(--kc-arang); border-radius: 10px; }
+html:not(.gelap) .kerangka-kaca .bb-piket-baris { background: rgba(255, 255, 255, .45); border-radius: 12px; }
+html:not(.gelap) .kerangka-kaca .bb-piket-baris span { color: var(--kc-aksen-2); }
+html:not(.gelap) .kerangka-kaca .bb-fokus { background: rgba(255, 255, 255, .45); border-radius: 16px; }
+html:not(.gelap) .kerangka-kaca .bb-tombol-utama { background: var(--kc-arang) !important; border-radius: 999px; }
+html:not(.gelap) .kerangka-kaca .bb-aksi { border-radius: 999px; }
+
+/* Kartu sorotan: kartu angka pertama berwarna teal (seperti "Total Earnings" di contoh). */
+html:not(.gelap) .kerangka-kaca .panel-dasbor .bb-kiri > .bb-sel-angka:first-child {
+  background-color: var(--kc-aksen) !important;
+  background-image: radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, .28), transparent 55%), linear-gradient(150deg, #5bbda3, var(--kc-aksen) 50%, var(--kc-aksen-2)) !important;
+  border-color: rgba(255, 255, 255, .45) !important; color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 18px 36px -16px rgba(31, 122, 102, .6) !important;
+  --color-slate-500: rgba(255, 255, 255, .82); --color-slate-700: rgba(255, 255, 255, .92); --color-slate-900: #fff;
+  --color-slate-100: rgba(255, 255, 255, .18); --aksen-ubin: #fff; --gb-e8edf3: rgba(255, 255, 255, .25);
+}
+html:not(.gelap) .kerangka-kaca .panel-dasbor .bb-kiri > .bb-sel-angka:first-child :is(.text-\[30px\], .bb-catatan) { color: #fff !important; }
+
+/* Gerak dikurangi: tidak ada tambahan; aturan prefers-reduced-motion di globals.css tetap berlaku. */

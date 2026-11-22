@@ -98,20 +98,81 @@ export const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'for
 export const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
 export const LEARNING_KEYS = ['kpi-team', 'learning-center', 'tech-note'];
 
+const TIPIS = 0.18;
+const ik = (isi: React.ReactNode) => (
+  <svg aria-hidden="true" focusable="false" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">{isi}</svg>
+);
+
+export const IKON_BERANDA = ik(<>
+  <path d="M3.5 10.5 12 4l8.5 6.5V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z" fill="currentColor" fillOpacity={TIPIS} />
+  <path d="M9.5 20.5V15h5v5.5" />
+</>);
+
 export const MENU_ICONS: Record<string, React.ReactElement> = {
-  'learning-center': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /></svg>,
-'picket-showroom': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
-  'reminder-schedule': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
-  'request-design-project': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>,
-  'form-bast': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>,
-  'ticket-troubleshooting': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>,
-  'daily-report': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
-  'database-pts': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>,
-  'tools-team': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
-  'unit-movement': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
-  'incentive-pts': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  'tech-note': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-  'project-progress': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m4 10V11m4 6v-4M4 19h16a1 1 0 001-1V6a1 1 0 00-1-1H4a1 1 0 00-1 1v12a1 1 0 001 1z" /></svg>,
-  'summary-project': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>,
-  'kpi-team': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  'learning-center': ik(<>
+    <path d="M2.5 9.2 12 4.5l9.5 4.7-9.5 4.7z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M6.5 11.5v4.2c0 1.5 2.5 3.3 5.5 3.3s5.5-1.8 5.5-3.3v-4.2M21.5 9.2v5" />
+  </>),
+  'tech-note': ik(<>
+    <rect x="5.5" y="3" width="14" height="18" rx="2.5" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M9.5 8h6M9.5 12h6M9.5 16h3.5M5.5 7.5H3.5M5.5 12H3.5M5.5 16.5H3.5" />
+  </>),
+  'summary-project': ik(<>
+    <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M8 13h8M8 16.5h5" />
+  </>),
+  'tools-team': ik(<>
+    <path d="M5.5 4v5.5M5.5 14v6M12 4v2.5M12 11v9M18.5 4v9.5M18.5 18v2" />
+    <circle cx="5.5" cy="11.8" r="2.3" fill="currentColor" fillOpacity={TIPIS} />
+    <circle cx="12" cy="8.7" r="2.3" fill="currentColor" fillOpacity={TIPIS} />
+    <circle cx="18.5" cy="15.8" r="2.3" fill="currentColor" fillOpacity={TIPIS} />
+  </>),
+  'reminder-schedule': ik(<>
+    <rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M8 3v4M16 3v4M3.5 10h17M8 14h2M14 14h2M8 17h2" />
+  </>),
+  'request-design-project': ik(<>
+    <path d="M4 4v16h16z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M8.5 11.5v4h4zM4 8h2M4 12h1.5M4 16h2" />
+  </>),
+  'form-bast': ik(<>
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v9a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 0 1 4 14.5z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="m12 6.6 1.1 2.2 2.4.35-1.75 1.7.42 2.4L12 12.1l-2.17 1.15.42-2.4-1.75-1.7 2.4-.35z" />
+  </>),
+  'ticket-troubleshooting': ik(<>
+    <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M14.5 5.5v2M14.5 11v2M14.5 16.5v2" />
+  </>),
+  'picket-showroom': ik(<>
+    <path d="M3.5 9a2.8 2.8 0 0 0 5.6 0 2.9 2.9 0 0 0 5.8 0 2.8 2.8 0 0 0 5.6 0L19 4H5z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M5 12.2V20h14v-7.8M10 20v-4.5h4V20" />
+  </>),
+  'daily-report': ik(<>
+    <rect x="5" y="4" width="14" height="17" rx="2.5" fill="currentColor" fillOpacity={TIPIS} />
+    <rect x="9" y="2.5" width="6" height="3.2" rx="1.2" />
+    <path d="M9 17v-3M12 17v-6M15 17v-4.5" />
+  </>),
+  'database-pts': ik(<>
+    <ellipse cx="12" cy="6" rx="7.5" ry="3" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M4.5 6v12c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6M4.5 12c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3" />
+  </>),
+  'unit-movement': ik(<>
+    <path d="M2.5 6.5A1.5 1.5 0 0 1 4 5h9.5v11h-11z" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M13.5 9H18l3.5 3.8V16h-1.5M13.5 16H9.2M2.5 16h2.3" />
+    <circle cx="7" cy="17" r="2" /><circle cx="17.5" cy="17" r="2" />
+  </>),
+  'incentive-pts': ik(<>
+    <rect x="3.5" y="7.5" width="17" height="12" rx="2.5" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="M5.5 7.5 15 4.2a1.5 1.5 0 0 1 1.9.9l.8 2.4M20.5 11.5h-3.5a2 2 0 0 0 0 4h3.5" />
+  </>),
+  'project-progress': ik(<>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="currentColor" fillOpacity={TIPIS} />
+    <path d="m7.5 9 1.5 1.5 3-3M7.5 15.5 9 17l3-3M14.5 9.5H17M14.5 16H17" />
+  </>),
+  'kpi-team': ik(<>
+    <path d="M3.5 17.5v-2a8.5 8.5 0 0 1 17 0v2z" fill="currentColor" fillOpacity={TIPIS} stroke="none" />
+    <path d="M3.5 17.5v-2a8.5 8.5 0 0 1 17 0v2M12 15.5l3.8-4.6M12 8.5v1M7 11l.7.7M17 11l-.7.7" />
+    <circle cx="12" cy="15.5" r="1.4" fill="currentColor" />
+  </>),
 };

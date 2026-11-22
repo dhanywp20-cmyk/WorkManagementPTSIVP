@@ -2,7 +2,7 @@
 
 import type { MenuItem } from '../dashboard/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
-import { MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
+import { MENU_ICONS, IKON_BERANDA, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 
 export interface SidebarLengkapProps {
   onBeranda: () => void;
@@ -32,7 +32,8 @@ export function SidebarLengkap({
           onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
           onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
         >
-          <span className="w-5 h-5 text-sm flex items-center justify-center shrink-0"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+          <span className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
+            style={{ background: showDashboardPanel ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)', color: showDashboardPanel ? '#92600a' : '#64748b' }}>{IKON_BERANDA}</span>
           <span className="text-sm font-semibold truncate">Dashboard</span>
           {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
         </button>

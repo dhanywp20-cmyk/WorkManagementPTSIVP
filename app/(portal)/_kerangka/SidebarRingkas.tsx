@@ -2,7 +2,7 @@
 
 import type { MenuItem } from '../dashboard/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
-import { MENU_ICONS } from './daftar-menu';
+import { MENU_ICONS, IKON_BERANDA } from './daftar-menu';
 
 export interface SidebarRingkasProps {
   setSidebarCollapsed: (v: boolean) => void;
@@ -42,7 +42,7 @@ export function SidebarRingkas({
         style={showDashboardPanel
           ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
           : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
-      ><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
+      >{IKON_BERANDA}</button>
       {visibleMenuItems.map((menu) => (
         <div key={menu.key}>
           {menu.items.map((item, itemIndex) => {
