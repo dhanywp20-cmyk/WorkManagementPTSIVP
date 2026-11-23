@@ -82,6 +82,8 @@ export function useModePenyelesaian(k: ModePenyelesaianKonteks) {
       setDetailReminder(prev => prev ? { ...prev, ...isiPenyelesaian } as Reminder : null);
     } else {
       await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
+      setDetailReminder(prev => prev && prev.id === reminderId
+        ? { ...prev, ...isiPenyelesaian, status: 'done' } as Reminder : prev);
     }
 
     setPendingStatus(null);
