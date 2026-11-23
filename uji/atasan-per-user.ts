@@ -1,4 +1,4 @@
-import { atasanEfektif, pilihBawahan, terpisahDariGrup, cariTargetCC, type OrangAtasan, type PemetaanAtasan } from '../lib/atasan';
+import { atasanEfektif, pilihBawahan, cariTargetCC, type OrangAtasan, type PemetaanAtasan, type PemetaanGrup } from '../lib/atasan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -6,21 +6,26 @@ function cek(nama: string, syarat: boolean) {
 }
 
 const orang: OrangAtasan[] = [
-  { id: 'spvA', jabatan: 'Supervisor', sales_division: 'IVP' },
+  { id: 'adela', jabatan: 'Manager', sales_division: 'IVP' },
+  { id: 'hendri', jabatan: 'Supervisor', sales_division: 'IVP' },
   { id: 'spvB', jabatan: 'Supervisor', sales_division: 'IVP' },
-  { id: 'mgr', jabatan: 'Manager', sales_division: 'IVP' },
+  { id: 'mgrGrup', jabatan: 'Manager', sales_division: 'SGP' },
   { id: 's1', jabatan: 'Staff', sales_division: 'IVP' },
   { id: 's2', jabatan: 'Staff', sales_division: 'IVP' },
   { id: 's3', jabatan: 'Staff', sales_division: 'IVP' },
+  { id: 'g1', jabatan: 'Staff', sales_division: 'SGP' },
+  { id: 'g2', jabatan: 'Staff', sales_division: 'SGP' },
   { id: 'luar', jabatan: 'Staff', sales_division: 'HAVS' },
 ];
 const peta: PemetaanAtasan[] = [
-  { user_id: 's1', supervisor_id: 'spvA' },
+  { user_id: 's1', supervisor_id: 'adela' },
+  { user_id: 'luar', supervisor_id: 'adela' },
+  { user_id: 'spvB', supervisor_id: 'adela' },
   { user_id: 's2', supervisor_id: 'spvB' },
-  { user_id: 'luar', supervisor_id: 'spvA' },
+  { user_id: 'g2', supervisor_id: 'spvB' },
 ];
-const tier = (id: string) => ({ spvA: 2, spvB: 2, mgr: 3 } as Record<string, number>)[id] ?? 1;
-const bawahan = (id: string) => [...pilihBawahan({ viewer: orang.find(o => o.id === id)!, divisi: ['IVP'], orang, peta })].sort();
+const grup: PemetaanGrup[] = [{ sales_division: 'SGP', supervisor_id: 'mgrGrup' }];
+const bawahan = (id: string) => [...pilihBawahan({ viewerId: id, orang, peta, grup })].sort().join(',');
 
 (async () => {
   console.log('\nAtasan efektif');
@@ -28,18 +33,20 @@ const bawahan = (id: string) => [...pilihBawahan({ viewer: orang.find(o => o.id 
   cek('per user kosong -> ikut grup', atasanEfektif([], ['a']).sumber === 'grup');
   cek('dua-duanya kosong -> kosong', atasanEfektif([], []).sumber === 'kosong');
 
-  console.log('\nLingkup bawahan (satu grup, dua supervisor)');
-  cek('supervisor A: tim A + yang ikut grup, bukan tim B', JSON.stringify(bawahan('spvA')) === JSON.stringify(['luar', 's1', 's3']));
-  cek('supervisor B: tim B + yang ikut grup, bukan tim A', JSON.stringify(bawahan('spvB')) === JSON.stringify(['s2', 's3']));
-  cek('manager di atas keduanya tetap melihat semua staf grup', ['s1', 's2', 's3', 'spvA', 'spvB'].every(id => bawahan('mgr').includes(id)));
-  cek('user di luar grup ikut lewat mapping per user', bawahan('spvA').includes('luar') && !bawahan('mgr').includes('luar'));
-  cek('terpisah dari grup dihitung per penonton', terpisahDariGrup('spvA', 2, peta, tier).has('s2') && !terpisahDariGrup('spvA', 2, peta, tier).has('s1'));
+  console.log('\nLingkup bawahan hanya dari mapping');
+  cek('Adela: tim per user + rantai di bawah spvB, tanpa Hendri / staf IVP lain', bawahan('adela') === 'g2,luar,s1,s2,spvB');
+  cek('Hendri tanpa mapping -> tidak melihat siapa pun walau satu divisi', bawahan('hendri') === '');
+  cek('atasan grup: anggota grup yang jabatannya lebih rendah', bawahan('mgrGrup') === 'g1');
+  cek('anggota grup dengan mapping per user tidak ikut atasan grup', !bawahan('mgrGrup').includes('g2'));
+  cek('staf tidak melihat siapa pun', bawahan('s1') === '');
+  const lingkar: PemetaanAtasan[] = [{ user_id: 'b', supervisor_id: 'a' }, { user_id: 'a', supervisor_id: 'b' }];
+  cek('rantai melingkar tidak macet', [...pilihBawahan({ viewerId: 'a', orang, peta: lingkar, grup: [] })].join(',') === 'b');
 
   console.log('\nTarget CC');
   const data: Record<string, unknown[]> = {
     users: [{ id: 's1', jabatan: 'Staff', full_name: 'S1', phone_number: '1' }, { id: 'spvA', jabatan: 'Supervisor', full_name: 'A', phone_number: '10' },
       { id: 'spvB', jabatan: 'Supervisor', full_name: 'B', phone_number: '20' }, { id: 's3', jabatan: 'Staff', full_name: 'S3', phone_number: '3' }],
-    user_supervisor_mappings: peta,
+    user_supervisor_mappings: [{ user_id: 's1', supervisor_id: 'spvA' }],
     division_supervisor_mappings: [{ sales_division: 'IVP', supervisor_id: 'spvA' }, { sales_division: 'IVP', supervisor_id: 'spvB' }],
     division_ivp_mappings: [],
   };

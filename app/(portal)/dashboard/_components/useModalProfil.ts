@@ -84,12 +84,10 @@ export function useModalProfil(k: ModalProfilKonteks) {
         }
       }
 
-      if (currentUser.jabatan && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser.jabatan)) {
-        const bawahan = await ambilBawahan(supabase, currentUser);
-        if (bawahan.length) {
-          const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('id', bawahan.map(b => b.id));
-          if (subUsers?.length) setSubordinates(subUsers);
-        }
+      const bawahan = await ambilBawahan(supabase, currentUser);
+      if (bawahan.length) {
+        const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('id', bawahan.map(b => b.id));
+        if (subUsers?.length) setSubordinates(subUsers);
       }
     })();
   }, []);

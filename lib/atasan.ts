@@ -15,45 +15,47 @@ export function atasanEfektif(perUser: string[], perGrup: string[]): { ids: stri
   return { ids: [], sumber: 'kosong' };
 }
 
-export function kelompokkanPerUser(peta: PemetaanAtasan[]): Map<string, string[]> {
-  const hasil = new Map<string, string[]>();
-  for (const m of peta) hasil.set(m.user_id, [...(hasil.get(m.user_id) ?? []), m.supervisor_id]);
-  return hasil;
-}
+export interface PemetaanGrup { sales_division: string; supervisor_id: string }
+export interface OrangBawahan { id: string; username: string | null; full_name: string | null }
 
-export function terpisahDariGrup(viewerId: string, tierViewer: number, peta: PemetaanAtasan[], tierDari: (id: string) => number): Set<string> {
-  const hasil = new Set<string>();
-  for (const [userId, atasan] of kelompokkanPerUser(peta)) {
-    if (atasan.includes(viewerId)) continue;
-    if (tierViewer <= Math.max(...atasan.map(tierDari))) hasil.add(userId);
-  }
-  return hasil;
-}
-
-export function pilihBawahan(p: { viewer: OrangAtasan; divisi: string[]; orang: OrangAtasan[]; peta: PemetaanAtasan[] }): Set<string> {
-  const tierViewer = tierJabatan(p.viewer.jabatan);
-  const tierById = new Map(p.orang.map(o => [o.id, tierJabatan(o.jabatan)]));
-  const terpisah = terpisahDariGrup(p.viewer.id, tierViewer, p.peta, id => tierById.get(id) ?? 0);
-  const langsung = new Set(p.peta.filter(m => m.supervisor_id === p.viewer.id).map(m => m.user_id));
-  const hasil = new Set<string>();
+export function langkahBawahan(p: { atasanId: string; orang: OrangAtasan[]; peta: PemetaanAtasan[]; grup: PemetaanGrup[] }): Set<string> {
+  const punyaPerUser = new Set(p.peta.map(m => m.user_id));
+  const hasil = new Set(p.peta.filter(m => m.supervisor_id === p.atasanId).map(m => m.user_id));
+  const tierAtasan = tierJabatan(p.orang.find(o => o.id === p.atasanId)?.jabatan);
+  const divisi = new Set(p.grup.filter(g => g.supervisor_id === p.atasanId).map(g => g.sales_division));
   for (const o of p.orang) {
-    if (o.id === p.viewer.id) continue;
-    if (langsung.has(o.id)) { hasil.add(o.id); continue; }
-    const diGrup = !!o.sales_division && p.divisi.includes(o.sales_division);
-    if (diGrup && tierJabatan(o.jabatan) < tierViewer && !terpisah.has(o.id)) hasil.add(o.id);
+    if (o.id === p.atasanId || punyaPerUser.has(o.id) || !o.sales_division || !divisi.has(o.sales_division)) continue;
+    if (tierJabatan(o.jabatan) < tierAtasan) hasil.add(o.id);
   }
   return hasil;
 }
 
-export async function ambilBawahan(db: SupabaseClient, viewer: OrangAtasan, divisiTambahan: string[] = []): Promise<{ id: string; username: string | null; full_name: string | null }[]> {
+export function pilihBawahan(p: { viewerId: string; orang: OrangAtasan[]; peta: PemetaanAtasan[]; grup: PemetaanGrup[] }): Set<string> {
+  const hasil = new Set<string>();
+  let antrian = [p.viewerId];
+  for (let tingkat = 0; tingkat < 10 && antrian.length; tingkat++) {
+    const berikut: string[] = [];
+    for (const atasanId of antrian) {
+      for (const id of langkahBawahan({ atasanId, orang: p.orang, peta: p.peta, grup: p.grup })) {
+        if (id === p.viewerId || hasil.has(id)) continue;
+        hasil.add(id);
+        berikut.push(id);
+      }
+    }
+    antrian = berikut;
+  }
+  return hasil;
+}
+
+export async function ambilBawahan(db: SupabaseClient, viewer: { id: string }): Promise<OrangBawahan[]> {
   const [{ data: grup }, { data: peta }, { data: orang }] = await Promise.all([
-    db.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', viewer.id),
+    db.from('division_supervisor_mappings').select('sales_division, supervisor_id'),
     db.from('user_supervisor_mappings').select('user_id, supervisor_id'),
-    db.from('users').select('id, username, full_name, jabatan, sales_division').eq('role', 'guest'),
+    db.from('users').select('id, username, full_name, jabatan, sales_division, role'),
   ]);
-  const divisi = [...new Set([...((grup ?? []) as { sales_division: string }[]).map(g => g.sales_division), ...divisiTambahan])];
-  const semua = (orang ?? []) as (OrangAtasan & { username: string | null; full_name: string | null })[];
-  const ids = pilihBawahan({ viewer, divisi, orang: semua, peta: (peta ?? []) as PemetaanAtasan[] });
+  const semua = (orang ?? []) as (OrangAtasan & OrangBawahan & { role: string | null })[];
+  const anggotaGrup = semua.map(o => (o.role ?? '').toLowerCase() === 'guest' ? o : { ...o, sales_division: null });
+  const ids = pilihBawahan({ viewerId: viewer.id, orang: anggotaGrup, peta: (peta ?? []) as PemetaanAtasan[], grup: (grup ?? []) as PemetaanGrup[] });
   return semua.filter(o => ids.has(o.id)).map(o => ({ id: o.id, username: o.username, full_name: o.full_name }));
 }
 

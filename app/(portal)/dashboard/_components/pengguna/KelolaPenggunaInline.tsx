@@ -192,6 +192,11 @@ export function UserManagementInline() {
     if (atasanId && orgWouldCycle(userId, atasanId)) { notify('error', 'Ditolak — pilihan ini membuat lingkaran hierarki.'); return; }
     setSaving(true);
     const { error } = await supabase.from('users').update({ atasan_id: atasanId || null }).eq('id', userId);
+    if (!error && getUserById(userId)?.role?.toLowerCase() === 'guest') {
+      const { error: galatPeta } = await supabase.from('user_supervisor_mappings').delete().eq('user_id', userId).select('id');
+      const { error: galatTambah } = atasanId && !galatPeta ? await supabase.from('user_supervisor_mappings').insert({ user_id: userId, supervisor_id: atasanId }) : { error: galatPeta };
+      if (galatTambah) notify('error', 'Struktur tersimpan, tapi mapping atasan per user gagal: ' + galatTambah.message);
+    }
     if (error) notify('error', 'Gagal: ' + error.message + ' (pastikan migration atasan_id sudah dijalankan)');
     else { notify('success', 'Atasan diperbarui!'); await fetchAll(); }
     setSaving(false);

@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ambilBawahan } from '@/lib/atasan';
-import { User, ProjectRequest, ProjectMessage, ProjectAttachment, JABATAN_TIER } from './shared';
+import { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
 
 export interface MuatRequestKonteks {
   currentUser: User;
@@ -34,37 +34,18 @@ export function useMuatRequest(k: MuatRequestKonteks) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m) => m.sales_division as string);
       const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
-      const tierIvp = JABATAN_TIER[(currentUser.jabatan as string) || ''] ?? 0;
-      const timIvp = tierIvp > 1 ? await ambilBawahan(supabase, currentUser, currentUser.sales_division ? [currentUser.sales_division] : []) : [];
+      const timIvp = await ambilBawahan(supabase, currentUser);
       query = query.or([
         `requester_id.eq.${currentUser.id}`, `ivp_assignee.eq.${currentUser.full_name}`,
         atasNama(currentUser.full_name), divFilter,
         ...timIvp.flatMap(b => [`requester_id.eq.${b.id}`, atasNama(b.full_name), b.full_name ? `ivp_assignee.eq.${kutip(b.full_name)}` : '']),
       ].filter(Boolean).join(','));
     } else {
-      const selfJabatan = (currentUser).jabatan as string | undefined;
-      const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
-      const selfDiv = currentUser.sales_division;
-
-      if (selfTier > 1 && selfDiv) {
-        const bawahan = await ambilBawahan(supabase, currentUser, [selfDiv]);
-        const subIds = bawahan.map(b => b.id);
-
-        if (subIds.length > 0) {
-          const namaBawahan = bawahan.map(b => b.full_name).filter((n): n is string => !!n);
-          const orFilter = [
-            `requester_id.eq.${currentUser.id}`,
-            atasNama(currentUser.full_name),
-            ...subIds.map((id: string) => `requester_id.eq.${id}`),
-            ...namaBawahan.map(n => atasNama(n)),
-          ].filter(Boolean).join(',');
-          query = query.or(orFilter);
-        } else {
-          query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
-        }
-      } else {
-        query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
-      }
+      const bawahan = await ambilBawahan(supabase, currentUser);
+      query = query.or([
+        `requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name),
+        ...bawahan.flatMap(b => [`requester_id.eq.${b.id}`, atasNama(b.full_name)]),
+      ].filter(Boolean).join(','));
     }
     const { data, error } = await query;
     if (!error && data) {

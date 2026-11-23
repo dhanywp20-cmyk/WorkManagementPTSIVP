@@ -2,12 +2,23 @@ import { supabase, supabaseServices } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
 import { hasFullAccess } from "@/lib/constants";
 import { kutipNilai, cobaIdentitas } from "@/lib/identitas";
-import { ambilBawahan, pilihBawahan, type PemetaanAtasan } from "@/lib/atasan";
-import { JABATAN_TIER, KOLOM_LOG_RINGKAS, type User, type ActivityLog, type Ticket } from "./shared";
+import { ambilBawahan, type OrangBawahan } from "@/lib/atasan";
+import { KOLOM_LOG_RINGKAS, type User, type ActivityLog, type Ticket } from "./shared";
 
 const sebagaiTicket = (baris: unknown): Ticket[] => (baris ?? []) as Ticket[];
 
 export interface RentangTiket { dari: string; sebelum: string }
+
+async function ambilTiketTim(tim: OrangBawahan[], rentang: RentangTiket): Promise<Ticket[]> {
+  if (!tim.length) return [];
+  const ids = tim.map(b => b.id).join(",");
+  const klausa = [`internal_sales_id.in.(${ids})`, `internal_sales_id_2.in.(${ids})`, `sales_user_id.in.(${ids})`,
+    ...tim.map(b => (b.username ? `created_by.eq.${kutipNilai(b.username)}` : "")),
+    ...tim.map(b => (b.full_name ? `sales_name.eq.${kutipNilai(b.full_name)}` : ""))].filter(Boolean).join(",");
+  const { data } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).or(klausa)
+    .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum).order("created_at", { ascending: false });
+  return sebagaiTicket(data);
+}
 
 export async function ambilTiketUntuk(
   activeUser: User | null | undefined,
@@ -20,17 +31,10 @@ export async function ambilTiketUntuk(
       .eq("id", activeUser.id)
       .maybeSingle();
     const resolvedUser = { ...activeUser, ...(freshUser ?? {}) };
-    const selfJabatan = (resolvedUser).jabatan as string | undefined;
-    const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
     const selfUsername = resolvedUser.username;
     const selfDiv = resolvedUser.sales_division;
     const selfFullName = (freshUser?.full_name || (resolvedUser).full_name) as string | undefined;
     const selfFirstName = selfFullName?.split(' ')[0];
-    const isMyTicket = (t: Ticket) =>
-      t.created_by === selfUsername ||
-      (selfFullName && t.sales_name === selfFullName) ||
-      (selfFirstName && t.sales_name === selfFirstName) ||
-      t.sales_name === selfUsername;
 
     const klausaNama = [
       `created_by.eq.${kutipNilai(selfUsername)}`,
@@ -54,13 +58,14 @@ export async function ambilTiketUntuk(
         .order("created_at", { ascending: false })),
       isIVP
         ? supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id)
-        : supabase.from("division_supervisor_mappings").select("sales_division").eq("supervisor_id", resolvedUser.id),
+        : Promise.resolve({ data: null }),
       isIVP
         ? supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
           .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
           .order("created_at", { ascending: false })
-        : supabase.from("user_supervisor_mappings").select("user_id, supervisor_id"),
+        : Promise.resolve({ data: null }),
     ]);
+    const tim = await ambilBawahan(supabase, resolvedUser);
     sebagaiTicket(milikSaya).forEach(addOwn);
 
     if (isIVP) {
@@ -81,107 +86,14 @@ export async function ambilTiketUntuk(
       }
       const byInternalId = pemetaanB.data as Ticket[] | null;
       (byInternalId ?? []).forEach(addIVP);
-      if (selfTier > 1) {
-        const tim = await ambilBawahan(supabase, resolvedUser, selfDiv ? [selfDiv] : []);
-        const idTim = tim.map(b => b.id);
-        const namaTim = tim.map(b => b.username).filter((n): n is string => !!n);
-        if (idTim.length) {
-          const klausaTim = [`internal_sales_id.in.(${idTim.join(",")})`, `internal_sales_id_2.in.(${idTim.join(",")})`, `sales_user_id.in.(${idTim.join(",")})`,
-            ...namaTim.map(n => `created_by.eq.${kutipNilai(n)}`)].join(",");
-          const { data: tiketTim } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).or(klausaTim)
-            .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum).order("created_at", { ascending: false });
-          sebagaiTicket(tiketTim).forEach(addIVP);
-        }
-      }
+      (await ambilTiketTim(tim, rentang)).forEach(addIVP);
       ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
       return { tickets: ivpTickets, periksaPilihan: true };
     } else {
       const finalTickets: Ticket[] = [...ownBase];
       const addUnique = (t: Ticket) => { if (!finalTickets.find(x => x.id === t.id)) finalTickets.push(t); };
 
-      const supMaps = pemetaanA.data;
-      const supervisedDivisions = (supMaps ?? []).map((m) => m.sales_division as string);
-
-      if (selfDiv && selfTier > 1 && !supervisedDivisions.includes(selfDiv)) {
-        supervisedDivisions.push(selfDiv);
-      }
-
-      const semuaPetaUser = (pemetaanB.data ?? []) as PemetaanAtasan[];
-      const manualSubordinateIds = new Set(semuaPetaUser.filter((m) => m.supervisor_id === resolvedUser.id).map((m) => m.user_id));
-
-      const isSupervisor = (supervisedDivisions.length > 0 && selfTier > 0) || manualSubordinateIds.size > 0;
-
-      if (isSupervisor) {
-        const { data: allGuestUsers } = await supabase.from("users")
-          .select("id, username, full_name, jabatan, sales_division")
-          .eq("role", "guest");
-
-        const nameTierMap: Record<string, number> = {};
-        const nameToId: Record<string, string> = {};
-        (allGuestUsers ?? []).forEach((u) => {
-          const tier = u.jabatan ? (JABATAN_TIER[u.jabatan as string] ?? 0) : 0;
-          if (u.full_name) { nameTierMap[u.full_name] = tier; nameToId[u.full_name] = u.id; }
-          if (u.username) { nameTierMap[u.username] = tier; nameToId[u.username] = u.id; }
-          if (u.full_name) {
-            const firstName = u.full_name.split(' ')[0];
-            if (!nameTierMap[firstName]) { nameTierMap[firstName] = tier; nameToId[firstName] = u.id; }
-          }
-        });
-
-        const subordinateIds = pilihBawahan({ viewer: resolvedUser, divisi: supervisedDivisions, orang: allGuestUsers ?? [], peta: semuaPetaUser });
-        const subordinateUsernames = new Set(
-          (allGuestUsers ?? []).filter((u) => subordinateIds.has(u.id)).map((u) => u.username as string)
-        );
-
-        const manualUsernames = manualSubordinateIds.size > 0
-          ? (allGuestUsers ?? []).filter((u) => manualSubordinateIds.has(u.id)).map((u) => u.username).filter(Boolean)
-          : [];
-        const subordinateNames = Array.from(new Set(
-          (allGuestUsers ?? []).filter((u) => subordinateIds.has(u.id) || manualSubordinateIds.has(u.id))
-            .flatMap((u) => [u.full_name, u.username, u.full_name ? u.full_name.split(' ')[0] : null].filter(Boolean))
-        )) as string[];
-        const tiketDari = (q: (b: any) => any) => q(supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`))
-          .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-          .order("created_at", { ascending: false });
-        const kosong = Promise.resolve({ data: null as Ticket[] | null });
-        const [divRes, manualRes, noDivRes] = await Promise.all([
-          supervisedDivisions.length > 0 ? tiketDari(b => b.in("sales_division", supervisedDivisions)) : kosong,
-          manualUsernames.length > 0 ? tiketDari(b => b.in("created_by", manualUsernames)) : kosong,
-          subordinateNames.length > 0
-            ? Promise.resolve(tiketDari(b => b.in("sales_name", subordinateNames).is("sales_division", null))).catch(() => ({ data: null }))
-            : kosong,
-        ]);
-        const allDivTickets: Ticket[] = (divRes.data as Ticket[] | null) ?? [];
-        for (const t of [...((manualRes.data as Ticket[] | null) ?? []), ...((noDivRes.data as Ticket[] | null) ?? [])]) {
-          if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
-        }
-
-        allDivTickets.forEach((t: Ticket) => {
-          if (isMyTicket(t)) { addUnique(t); return; }
-
-          if (t.created_by && subordinateUsernames.has(t.created_by)) { addUnique(t); return; }
-
-          const ownerId = t.sales_name ? nameToId[t.sales_name] : null;
-          if (ownerId && manualSubordinateIds.has(ownerId)) { addUnique(t); return; }
-
-          if (t.sales_name) {
-            const salesUserId = nameToId[t.sales_name];
-            if (salesUserId && subordinateIds.has(salesUserId)) { addUnique(t); return; }
-          }
-        });
-
-      } else {
-        if (selfDiv) {
-          const { data: divTickets } = await supabase.from("tickets")
-            .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-            .eq("sales_division", selfDiv)
-            .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false });
-          sebagaiTicket(divTickets).forEach((t: Ticket) => {
-            if (isMyTicket(t)) addUnique(t);
-          });
-        }
-      }
+      (await ambilTiketTim(tim, rentang)).forEach(addUnique);
 
       finalTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
       return { tickets: finalTickets, periksaPilihan: true };

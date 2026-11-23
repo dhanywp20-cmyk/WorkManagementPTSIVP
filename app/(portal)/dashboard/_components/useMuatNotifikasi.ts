@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { ingat } from '@/lib/cache-singkat';
 import { supabase } from '@/lib/supabase';
-import { pilihBawahan, type PemetaanAtasan } from '@/lib/atasan';
+import { ambilBawahan } from '@/lib/atasan';
 import { NotificationItem, User } from './shared';
 
 export interface MuatNotifikasiKonteks {
@@ -150,10 +150,6 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         const isIVPUser2 = currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI';
         const BRAND_DIVS = ['MLDS', 'UMP', 'OSS'];
         const isBrandPICNotif = BRAND_DIVS.includes(currentUser.sales_division || '');
-        const selfJabatanN = (currentUser).jabatan as string | undefined;
-        const TIER_MAP: Record<string, number> = { 'Staff': 1, 'Supervisor': 2, 'Manager': 3, 'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6 };
-        const selfTierN = selfJabatanN ? (TIER_MAP[selfJabatanN] ?? 0) : 0;
-        const selfDivN = currentUser.sales_division;
 
         const [{ data: ownReqs }, { data: ivpAssignedReqs }, { data: atasNamaReqs }] = await Promise.all([
           excludeDone(
@@ -207,19 +203,12 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             if (isBrandPic) baseMap.set(r.id, r);
           });
 
-        } else if (selfTierN > 1 && selfDivN) {
-          const { data: supMapsN } = await ingat(`division_supervisor_mappings:${currentUser.id}`, () => supabase.from('division_supervisor_mappings')
-            .select('sales_division').eq('supervisor_id', currentUser.id));
-          const supDivsN = (supMapsN ?? []).map((m) => m.sales_division as string);
-          if (!supDivsN.includes(selfDivN)) supDivsN.push(selfDivN);
+        }
 
-          const { data: allGuestsN } = await ingat('users:guest-sales', () => supabase.from('users')
-            .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']));
-          const { data: petaUserN } = await ingat('user_supervisor_mappings:semua', () => supabase.from('user_supervisor_mappings').select('user_id, supervisor_id'));
-          const idBawahanN = pilihBawahan({ viewer: currentUser, divisi: supDivsN, orang: allGuestsN ?? [], peta: (petaUserN ?? []) as PemetaanAtasan[] });
-          const bawahanN = (allGuestsN ?? []).filter((u) => idBawahanN.has(u.id as string));
-          const subIdsN = bawahanN.map((u) => u.id as string);
-          const subNamesN = bawahanN.map((u) => u.full_name as string).filter(Boolean);
+        const bawahanN = await ambilBawahan(supabase, currentUser);
+        if (bawahanN.length > 0) {
+          const subIdsN = bawahanN.map((u) => u.id);
+          const subNamesN = bawahanN.map((u) => u.full_name).filter((n): n is string => !!n);
 
           if (subNamesN.length > 0) {
             const { data: subAtasNama } = await excludeDone(

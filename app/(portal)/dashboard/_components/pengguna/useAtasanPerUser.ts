@@ -52,6 +52,13 @@ export function useAtasanPerUser(p: { allUsers: User[]; divSupMaps: PetaGrup[]; 
         const { error } = await supabase.from('user_supervisor_mappings').insert(toInsert);
         if (error) { notify('error', 'Gagal: ' + error.message); setCcSaving(false); return; }
       }
+      const lama = userSupMaps.filter(m => m.user_id === selectedCCUserId).map(m => m.supervisor_id);
+      const atasanStruktur = allUsers.filter(u => ccChecked.has(u.id)).sort((a, b) => tierDari(a) - tierDari(b))[0]?.id ?? null;
+      const atasanSekarang = getUserById(selectedCCUserId)?.atasan_id ?? null;
+      if (atasanStruktur ? atasanStruktur !== atasanSekarang : !!atasanSekarang && lama.includes(atasanSekarang)) {
+        const { error } = await supabase.from('users').update({ atasan_id: atasanStruktur }).eq('id', selectedCCUserId);
+        if (error) notify('error', 'Mapping tersimpan, tapi Struktur Organisasi gagal diperbarui: ' + error.message);
+      }
       notify('success', toInsert.length ? 'Atasan per user disimpan — menggantikan atasan grup.' : 'Atasan per user dikosongkan — kembali ikut atasan grup.');
       await fetchAll();
     } catch (e) { notify('error', pesanGalat(e)); }
