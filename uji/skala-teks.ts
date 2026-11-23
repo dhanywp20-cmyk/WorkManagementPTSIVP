@@ -56,7 +56,8 @@ const bento = readFileSync('app/(portal)/dashboard/_components/beranda/RincianBe
 cek('Sumber tiket di tengah: Menunggu keputusan 2 | Sumber 8 | Unit di luar 2', /'menunggu-keputusan', lebar: 2 \}, \{ kunci: 'sumber-tiket', lebar: 8 \}, \{ kunci: 'unit-di-luar', lebar: 2 \}/.test(bento));
 cek('Kartu Sumber tiket dirender di antara Menunggu & Unit', /menunggu-keputusan'\] && \([\s\S]*KartuAsalTiket kpi[\s\S]*unit-di-luar'\] && s\.unit/.test(bento));
 const pie = readFileSync('app/(portal)/dashboard/_components/beranda/PieSumber.tsx', 'utf8');
-cek('Sumber tiket = 4 MiniPieChart global (Produk, Divisi, Handler, Status), bukan model pie baru', ['Produk', 'Divisi', 'Handler', 'Status'].every(k => pie.includes(`judul: '${k}'`)) && /<MiniPieChart /.test(pie) && !/<svg/.test(pie) && /\.bb-pie-kisi \{ display: grid; grid-template-columns: repeat\(4,/.test(css));
+cek('Sumber tiket = 4 MiniPieChart global (Produk, Divisi, Handler, Status), bukan model pie baru', ['Produk', 'Divisi', 'Handler', 'Status'].every(k => pie.includes(`judul: '${k}'`)) && /<MiniPieChart /.test(pie) && !/<circle/.test(pie) && /\.bb-pie-kisi \{ flex: 1; min-width: 0; display: grid; grid-template-columns: repeat\(2,/.test(css));
+cek('Sumber tiket: 2 chart per tampilan, panah kiri/kanan untuk geser', /PER_HALAMAN = 2/.test(pie) && /arah="kiri"/.test(pie) && /arah="kanan"/.test(pie) && /\.bb-pie-panah \{/.test(css));
 cek('plugin bertanda PostCSS', (skalaTeks as { postcss?: boolean }).postcss === true);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
