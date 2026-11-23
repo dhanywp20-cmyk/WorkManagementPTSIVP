@@ -1,7 +1,6 @@
 'use client';
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
-const SKALA_MIN = 0.7;
 const LEBAR_MIN = 1024;
 const TINGGI_MIN = 600;
 
@@ -10,6 +9,7 @@ export function useSkalaMuat(
   akar: RefObject<HTMLElement | null>,
   kepala: RefObject<HTMLElement | null>,
   isi: RefObject<HTMLElement | null>,
+  skalaMin = 0.7,
 ) {
   const [skala, setSkala] = useState(1);
   const skalaRef = useRef(1);
@@ -25,7 +25,7 @@ export function useSkalaMuat(
       if (window.innerWidth >= LEBAR_MIN && window.innerHeight >= TINGGI_MIN) {
         const sedia = el.clientHeight - (kepala.current?.offsetHeight ?? 0) - 2;
         const tinggi = wadah.getBoundingClientRect().height;
-        if (sedia > 0 && tinggi > 0) baru = Math.min(1, Math.max(SKALA_MIN, s * sedia / tinggi));
+        if (sedia > 0 && tinggi > 0) baru = Math.min(1, Math.max(skalaMin, s * sedia / tinggi));
       }
       baru = Math.floor(baru * 1000) / 1000;
       if (Math.abs(baru - s) < 0.004) return;
@@ -43,7 +43,7 @@ export function useSkalaMuat(
       window.removeEventListener('resize', jadwal);
       if (bingkai) cancelAnimationFrame(bingkai);
     };
-  }, [aktif, akar, kepala, isi]);
+  }, [aktif, akar, kepala, isi, skalaMin]);
 
   return aktif ? skala : 1;
 }

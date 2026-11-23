@@ -13,6 +13,7 @@ import PanelAgenda, { type RingkasAgenda } from '../workcenter/PanelAgenda';
 import { IsiBeranda } from '../beranda/IsiBeranda';
 import { useDasborWidget } from '../beranda/useDasborWidget';
 import { useSkalaMuat } from '../beranda/useSkalaMuat';
+import { PilihPratinjau, SegmenBagian, usePratinjauTampil, type BagianBeranda } from '../beranda/pratinjauTampil';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -98,7 +99,10 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const widgetUtama = visible.filter(w => w.size === 'full' && !['work-queue', 'team-monitoring', 'analytics'].includes(w.id));
   const widgetKisi = visible.filter(w => w.size !== 'full');
 
-  const skala = useSkalaMuat(!adaAnalytics, akarRef, kepalaRef, wadahRef);
+  const pratinjau = usePratinjauTampil();
+  const [bagian, setBagian] = useState<BagianBeranda>('ringkasan');
+  const skalaAnalytics = adaAnalytics && tab === 'kpi' && !!pratinjau && !(pratinjau === '3' && bagian === 'rincian');
+  const skala = useSkalaMuat(!adaAnalytics || skalaAnalytics, akarRef, kepalaRef, wadahRef, pratinjau === '2' ? 0.4 : 0.7);
 
   const panel = adaAgenda && !widgetDasbor.sembunyi.includes('agenda')
     ? <PanelAgenda user={currentUser} openMenu={openMenu} openUrl={openUrl} onRingkas={setRingkasAgenda} />
@@ -114,6 +118,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             <h1 className="judul-sapaan text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `${sapaan}, ${firstName}` : sapaan}</h1>
             <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
+          {adaAnalytics && pratinjau && <PilihPratinjau aktif={pratinjau} />}
+          {adaAnalytics && pratinjau === '3' && tab === 'kpi' && <SegmenBagian aktif={bagian} onPilih={setBagian} />}
           {adaAnalytics && (
             <TabHalaman aktif={tab} onPilih={setTab} tab={[
               { kunci: 'kpi', label: 'Analytics', ikon: '📊' },
@@ -158,6 +164,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               openMenu,
               panelSamping: panel,
               rincianAtas: monitor ? <monitor.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} /> : undefined,
+              bagian: pratinjau === '3' ? bagian : undefined,
             }} />} />
         ) : (
           <>

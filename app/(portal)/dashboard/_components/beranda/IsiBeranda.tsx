@@ -20,6 +20,7 @@ export interface OpsiBeranda {
   openMenu: (key: string) => void;
   panelSamping?: React.ReactNode;
   rincianAtas?: React.ReactNode;
+  bagian?: 'ringkasan' | 'rincian';
 }
 
 const urutan = (d: number, kol?: number) => ({ boxShadow: BAYANG_UBIN, ['--d' as string]: d, ...(kol ? { ['--kol' as string]: kol } : {}) }) as React.CSSProperties;
@@ -58,7 +59,7 @@ function KartuAngka({ d, kol, judul, nilai, satuan, kanan, warnaNilai, onBuka, c
 export function IsiBeranda({ kpi, loading, scope, opsi }: {
   kpi: KPIData | null; loading: boolean; scope: Scope; opsi: OpsiBeranda;
 }) {
-  const { user, openMenu, panelSamping, rincianAtas } = opsi;
+  const { user, openMenu, panelSamping, rincianAtas, bagian } = opsi;
   const [periode, setPeriode] = useState<KunciPeriode>('30');
   const [seri, setSeri] = useState<'tiket' | 'jadwal'>('tiket');
   const tim = useDaftarTim();
@@ -114,7 +115,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
         </div>
       </div>
 
-      <div className="bb-utama">
+      {bagian !== 'rincian' && <div className="bb-utama">
         {adaKiri && <div className="bb-kiri">
           {ada('tiket-selesai') && <KartuAngka d={0} kol={kol['tiket-selesai']} judul="Tiket selesai" nilai={tiket.selesai} satuan={`dari ${tiket.total} tiket`} kanan={`${fmtId(tiket.persen)}%`}
             onBuka={() => openMenu('ticket-troubleshooting')}>
@@ -169,9 +170,11 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
         </div>}
 
         {panelSamping && ada('agenda') && <aside className="bb-samping bb-naik" style={{ ['--d' as string]: 2 } as React.CSSProperties}>{panelSamping}</aside>}
-      </div>
+      </div>}
 
-      <RincianBento kpi={kpi} user={user} openMenu={openMenu} kartuTim={adaDailyReport ? rincianAtas : undefined} scope={scope} widget={w} />
+      {bagian !== 'ringkasan' && (
+        <RincianBento kpi={kpi} user={user} openMenu={openMenu} kartuTim={adaDailyReport ? rincianAtas : undefined} scope={scope} widget={w} />
+      )}
     </div>
   );
 }
