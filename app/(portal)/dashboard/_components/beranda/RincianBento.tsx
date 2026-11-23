@@ -69,8 +69,8 @@ function KartuAsalTiket({ kpi, kol, onBuka }: { kpi: KPIData | null; kol: number
   );
 }
 
-export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
-  kpi: KPIData | null; user: User; openMenu: (key: string) => void; kartuTim?: React.ReactNode; scope: Scope; widget: PengaturanDasbor;
+export function RincianBento({ kpi, user, openMenu, scope, widget }: {
+  kpi: KPIData | null; user: User; openMenu: (key: string) => void; scope: Scope; widget: PengaturanDasbor;
 }) {
   const s = useSorotanModul(user);
   const tua = kpi?.tiketTua ?? [];
@@ -89,7 +89,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
   const persenLulus = lc?.totalSessions ? (lc.completedSessions / lc.totalSessions) * 100 : 0;
 
   const tersedia: Record<string, boolean> = {
-    'daily-report-tim': !!kartuTim,
     'menunggu-keputusan': s.antrean.length > 0 && ada('menunggu-keputusan'),
     'unit-di-luar': !!s.unit && ada('unit-di-luar'),
     'sumber-tiket': ada('sumber-tiket'),
@@ -100,7 +99,7 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
     'pembelajaran': scope.kind === 'admin' && ada('pembelajaran'),
   };
   const kol = susunBaris(([
-    { kunci: 'daily-report-tim', lebar: 5 }, { kunci: 'menunggu-keputusan', lebar: 4 }, { kunci: 'unit-di-luar', lebar: 3 },
+    { kunci: 'menunggu-keputusan', lebar: 4 }, { kunci: 'unit-di-luar', lebar: 3 },
     { kunci: 'sumber-tiket', lebar: 5 }, { kunci: 'tren-tiket', lebar: 7 },
     { kunci: 'tiket-terlama', lebar: 3 }, { kunci: 'project-progress', lebar: 3 }, { kunci: 'nilai-sales', lebar: 3 }, { kunci: 'pembelajaran', lebar: 3 },
   ] as { kunci: KunciWidget; lebar: number }[]).filter(x => tersedia[x.kunci]), 12);
@@ -108,8 +107,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
 
   return (
     <div className="bb-bento bb-naik" style={{ ['--d' as string]: 6 } as React.CSSProperties}>
-      {tersedia['daily-report-tim'] && <div className="bb-tim bb-bv min-w-0" style={{ ['--kol' as string]: kol['daily-report-tim'] } as React.CSSProperties}>{kartuTim}</div>}
-
       {tersedia['menunggu-keputusan'] && (
         <Kartu judul="Menunggu keputusan" kol={kol['menunggu-keputusan']}
           kalimat={menunggu ? <><span className="tabular-nums"><Angka nilai={menunggu} /></span> hal menunggu keputusan.</> : <span className="text-emerald-700">✓ Semua sudah diputuskan.</span>}>

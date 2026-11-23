@@ -4,8 +4,9 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const skalaTeks = require('../lib/tipografi/postcss-skala-teks.cjs');
 type Dekl = { important?: boolean; parent?: { selector?: string } };
-const { skalaPx, ubahUkuran, isianTerkunci } = skalaTeks as {
+const { skalaPx, ubahUkuran, isianTerkunci, ubahRuang, ubahSpasiDasar } = skalaTeks as {
   skalaPx: (n: number) => number; ubahUkuran: (v: string) => string | null; isianTerkunci: (d: Dekl) => boolean;
+  ubahRuang: (v: string) => string | null; ubahSpasiDasar: (v: string) => string | null;
 };
 
 let lulus = 0, gagal = 0;
@@ -28,6 +29,17 @@ cek('plugin terpasang setelah Tailwind di postcss.config.js', /'@tailwindcss\/po
 cek('input 16px !important di HP tidak dikecilkan (iOS tidak zoom)', isianTerkunci({ important: true, parent: { selector: "input:not([type='checkbox']),\n    select,\n    textarea" } }));
 cek('kelas Tailwind bermodifier ! (mis. !text-[12px]) tetap ikut skala', !isianTerkunci({ important: true, parent: { selector: '.\\!text-\\[12px\\]' } }));
 cek('input tanpa !important tetap ikut skala', !isianTerkunci({ important: false, parent: { selector: 'input' } }));
+console.log('\nSkala ruang global (padding, gap, margin)');
+const R = 'var(--skala-ruang, 1)';
+cek('token --spacing Tailwind ikut skala ruang', ubahSpasiDasar('.25rem') === `calc(.25rem * ${R})`);
+cek('padding px di CSS ikut skala ruang', ubahRuang('14px 24px') === `calc(14px * ${R}) calc(24px * ${R})`);
+cek('margin negatif & 0 aman', ubahRuang('0 -6px') === `0 calc(-6px * ${R})`);
+cek('garis rambut <= 2px & nilai calc/var dibiarkan', ubahRuang('1px') === null && ubahRuang('calc(var(--spacing) * 4)') === null && ubahRuang('auto') === null);
+const css = readFileSync('app/globals.css', 'utf8');
+cek('skala ruang 0.8 di desktop, 0.9 di HP (tombol tetap mudah disentuh)', /--skala-ruang: 0\.8;/.test(css) && /max-width: 640px\)[\s\S]{0,80}--skala-ruang: 0\.9;/.test(css));
+const beranda = readFileSync('app/(portal)/dashboard/_components/beranda/IsiBeranda.tsx', 'utf8');
+cek('Daily Report Tim di kolom kanan setelah Agenda Saya', /bb-samping bb-naik[\s\S]*bb-samping bb-samping-tim/.test(beranda) && !/kartuTim/.test(beranda));
+cek('HP: kolom samping turun jadi satu kolom', /:has\(> \.bb-samping-tim:nth-child\(3\)\) \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css));
 cek('plugin bertanda PostCSS', (skalaTeks as { postcss?: boolean }).postcss === true);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
