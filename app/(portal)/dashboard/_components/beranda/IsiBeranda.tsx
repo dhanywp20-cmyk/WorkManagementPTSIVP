@@ -167,9 +167,10 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
         </div>}
 
         {panelSamping && ada('agenda') && <aside className="bb-samping bb-naik" style={{ ['--d' as string]: 2 } as React.CSSProperties}>{panelSamping}</aside>}
+        {adaDailyReport && <aside className="bb-samping bb-samping-tim bb-naik min-w-0" style={{ ['--d' as string]: 3 } as React.CSSProperties}>{rincianAtas}</aside>}
       </div>
 
-      <RincianBento kpi={kpi} user={user} openMenu={openMenu} kartuTim={adaDailyReport ? rincianAtas : undefined} scope={scope} widget={w} />
+      <RincianBento kpi={kpi} user={user} openMenu={openMenu} scope={scope} widget={w} />
     </div>
   );
 }

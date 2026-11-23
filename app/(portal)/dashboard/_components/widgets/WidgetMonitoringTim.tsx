@@ -29,7 +29,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
     kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
   };
   const kelompok = (() => {
-    const punyaBawahan = new Set(belumList.map(m => m.atasanId).filter(Boolean) as string[]);
+    const punyaBawahan = new Set(rows.map(m => m.atasanId).filter(Boolean) as string[]);
     const peta = new Map<string, KelompokBelum>();
 
     const ambil = (kunci: string, nama: string, jabatan: string) => {
@@ -44,7 +44,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
       } else if (punyaBawahan.has(m.id)) {
         ambil(m.id, m.name, m.jabatan).ketuaBelumLapor = true;
       } else {
-        ambil('(lainnya)', 'Lainnya', '').anggota.push(m);
+        ambil('(lainnya)', 'Tanpa atasan', '').anggota.push(m);
       }
     }
 
@@ -66,7 +66,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
           <span className="w-1.5 h-1.5 rounded-full shrink-0 self-center" style={{ background: '#f59e0b' }}
             title="Kosong: belum isi & tanpa aktivitas" />
         )}
-        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
+        <span className={`text-[11px] font-bold wrap-break-word min-w-0 ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
           <span className="text-[11px] font-semibold text-slate-500 shrink-0">{g.jabatan}</span>
         )}
@@ -81,7 +81,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
             <button key={m.id} onClick={() => openMenu('daily-report')}
               className="flex items-center gap-1.5 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
               <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
-              <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{m.name}</span>
+              <span className="text-[13px] font-semibold text-slate-700 leading-snug wrap-break-word">{m.name}</span>
               {m.active > 0 && (
                 <span className="text-[11px] font-bold px-1 py-px rounded-full shrink-0"
                   style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{m.active}</span>

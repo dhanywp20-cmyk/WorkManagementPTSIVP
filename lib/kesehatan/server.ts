@@ -3,12 +3,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { bacaPengaturan, kanalUntuk } from '@/lib/notifikasi/pengaturan';
 import { bacaRahasia } from '@/lib/auth/rahasia-server';
 import { KUNCI_CRON_TERAKHIR, type JejakCron } from '@/lib/cron-catat';
+import { KUNCI_BRIEFING, rapikanBriefing } from '@/lib/briefing-pagi';
 import { ringkasKesehatan, type DataKesehatan, type Peringatan } from '@/lib/kesehatan/inti';
 
 export async function kumpulkanKesehatan(db: SupabaseClient): Promise<DataKesehatan> {
   const sejak24 = new Date(Date.now() - 86_400_000).toISOString();
   const sejak7h = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  const [rpc, jejak, ai24, ai7, wa24, rilis, pengaturan, galat] = await Promise.all([
+  const [rpc, jejak, ai24, ai7, wa24, rilis, pengaturan, galat, briefing] = await Promise.all([
     db.rpc('kesehatan_sistem'),
     db.from('app_settings').select('value').eq('key', KUNCI_CRON_TERAKHIR).maybeSingle(),
     db.from('ai_pakai_log').select('*', { count: 'exact', head: true }).gte('created_at', sejak24),
@@ -17,6 +18,7 @@ export async function kumpulkanKesehatan(db: SupabaseClient): Promise<DataKeseha
     db.from('rilis_android').select('versi, diunggah_pada').order('diunggah_pada', { ascending: false }).limit(1),
     bacaPengaturan(true).catch(() => null),
     db.from('galat_klien').select('pesan, jalur, sumber, jumlah, terakhir, hari').gte('terakhir', sejak7h).order('terakhir', { ascending: false }).limit(20),
+    db.from('app_settings').select('value').eq('key', KUNCI_BRIEFING).maybeSingle(),
   ]);
   return {
     sistem: rpc.error ? null : (rpc.data as DataKesehatan['sistem']),
@@ -26,6 +28,7 @@ export async function kumpulkanKesehatan(db: SupabaseClient): Promise<DataKeseha
     waJam24: wa24.count ?? 0,
     apkTerakhir: rilis.data?.[0] ?? null,
     kanal: pengaturan?.aktif ?? null,
+    briefing: briefing.error ? null : rapikanBriefing(briefing.data?.value),
     env: { serviceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY, cronSecret: !!process.env.CRON_SECRET },
     galatKlien: galat.error ? null : (galat.data as DataKesehatan['galatKlien']),
   };

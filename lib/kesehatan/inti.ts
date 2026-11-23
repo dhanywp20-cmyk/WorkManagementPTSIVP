@@ -1,4 +1,5 @@
 import type { JejakCron } from '../cron-catat';
+import type { PengaturanBriefing } from '../briefing-pagi';
 
 export const BATAS_DB = 500 * 1024 * 1024;
 export const BATAS_STORAGE = 1024 * 1024 * 1024;
@@ -23,11 +24,32 @@ export interface DataKesehatan {
   waJam24: number;
   apkTerakhir: { versi: string; diunggah_pada: string } | null;
   kanal: Record<string, boolean> | null;
+  briefing?: PengaturanBriefing | null;
   env: { serviceRole: boolean; cronSecret: boolean };
   galatKlien: { pesan: string; jalur: string | null; sumber: string | null; jumlah: number; terakhir: string; hari: string }[] | null;
 }
 
 export interface Peringatan { tingkat: 'merah' | 'kuning'; teks: string }
+
+export type NadaCron = 'hijau' | 'merah' | 'abu';
+export interface StatusCron { label: string; nada: NadaCron; rincian?: string }
+
+export function statusCron(nama: string, d: Pick<DataKesehatan, 'cronVercel' | 'briefing'>): StatusCron {
+  const j = d.cronVercel[nama];
+  const b = d.briefing;
+  if (nama === 'digest' && b && !b.aktif) return { label: 'dimatikan', nada: 'abu', rincian: 'Dimatikan di Admin Panel -> Integrations' };
+  const rincian = nama === 'digest' && b && !b.pengingatDailyReport ? 'Pengingat Daily Report: nonaktif' : undefined;
+  if (!j) return { label: 'belum tercatat', nada: 'abu', rincian };
+  return j.ok ? { label: 'jalan', nada: 'hijau', rincian } : { label: 'gagal', nada: 'merah', rincian };
+}
+
+export function catatanKesehatan(d: Pick<DataKesehatan, 'briefing'>): string[] {
+  const b = d.briefing;
+  if (!b) return [];
+  if (!b.aktif) return ['Briefing pagi sedang dimatikan di Admin Panel - tidak ada briefing WA / Telegram / push yang dikirim (cron tetap jalan untuk alert kesehatan).'];
+  if (!b.pengingatDailyReport) return ['Pengingat Daily Report belum diisi sedang dimatikan di Admin Panel.'];
+  return [];
+}
 
 export function ringkasKesehatan(d: DataKesehatan, sekarang: number): Peringatan[] {
   const p: Peringatan[] = [];

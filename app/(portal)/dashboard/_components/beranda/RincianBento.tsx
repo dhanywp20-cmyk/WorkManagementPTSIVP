@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitives';
 import type { User } from '../shared';
 import type { KPIData, Scope } from '@/lib/kpi-dasbor';
-import { HBarChart, TrenBulanan } from '@/components/shared/grafik-kpi';
+import { TrenBulanan } from '@/components/shared/grafik-kpi';
+import { PieSumberTiket } from './PieSumber';
 import { susunBaris, tampil, type KunciWidget, type PengaturanDasbor } from '@/lib/dasbor-widget';
 import { Angka, Bilah, IkonPanah, fmtId } from './grafik';
 import { useSorotanModul } from './useSorotanModul';
@@ -12,11 +13,11 @@ import { useSorotanModul } from './useSorotanModul';
 const MERAH = '#dc2626';
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-function Kartu({ judul, kol, onBuka, sisi, kalimat, children }: {
-  judul: string; kol: number; onBuka?: () => void; sisi?: React.ReactNode; kalimat?: React.ReactNode; children?: React.ReactNode;
+function Kartu({ judul, kol, onBuka, sisi, kalimat, kelas = '', children }: {
+  judul: string; kol: number; kelas?: string; onBuka?: () => void; sisi?: React.ReactNode; kalimat?: React.ReactNode; children?: React.ReactNode;
 }) {
   return (
-    <article className={`${UBIN} bb-bv`} style={{ boxShadow: BAYANG_UBIN, ['--kol' as string]: kol } as React.CSSProperties}>
+    <article className={`${UBIN} bb-bv ${kelas}`} style={{ boxShadow: BAYANG_UBIN, ['--kol' as string]: kol } as React.CSSProperties}>
       <header className="flex items-center gap-2 min-h-[22px] mb-1.5">
         <h3 className={`${LABEL_UBIN} flex-1 truncate`}>{judul}</h3>
         {sisi}
@@ -37,40 +38,18 @@ function Kosong({ teks }: { teks: string }) {
   return <p className="flex-1 grid place-items-center text-[12px] text-slate-500 text-center py-5">{teks}</p>;
 }
 
-type TabAsal = 'produk' | 'divisi' | 'handler' | 'status';
-
 function KartuAsalTiket({ kpi, kol, onBuka }: { kpi: KPIData | null; kol: number; onBuka: () => void }) {
-  const [tab, setTab] = useState<TabAsal>('produk');
-  const t = kpi?.tickets;
-  const data = !t ? [] : tab === 'produk' ? t.byProduct.map(p => ({ label: p.product, value: p.count }))
-    : tab === 'divisi' ? t.byDivision.map(d => ({ label: d.div, value: d.count }))
-      : tab === 'handler' ? t.byHandler.map(h => ({ label: h.name, value: h.count }))
-        : t.byStatus.map(s => ({ label: s.status, value: s.count }));
-  const atas = data[0];
-  const kalimat = !atas ? 'Belum ada data tiket.'
-    : tab === 'produk' ? <><b className="font-extrabold">{atas.label}</b> paling sering bermasalah: {atas.value} tiket.</>
-      : tab === 'divisi' ? <>Divisi <b className="font-extrabold">{atas.label}</b> paling banyak melapor: {atas.value} tiket.</>
-        : tab === 'handler' ? <><b className="font-extrabold">{atas.label}</b> memegang tiket terbuka terbanyak: {atas.value}.</>
-          : <>Status terbanyak <b className="font-extrabold">{atas.label}</b>: {atas.value} tiket.</>;
-  const label: Record<TabAsal, string> = { produk: 'Produk', divisi: 'Divisi', handler: 'Handler', status: 'Status' };
+  const produk = kpi?.tickets.byProduct.slice().sort((x, y) => y.count - x.count)[0];
+  const kalimat = !produk ? 'Belum ada data tiket.' : <><b className="font-extrabold">{produk.product}</b> paling sering bermasalah: {produk.count} tiket.</>;
   return (
-    <Kartu judul="Sumber tiket" kol={kol} onBuka={onBuka} kalimat={kalimat}
-      sisi={
-        <div className="bb-segmen bb-segmen-kecil" role="tablist" aria-label="Kelompok tiket">
-          {(Object.keys(label) as TabAsal[]).map(k => (
-            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>{label[k]}</button>
-          ))}
-        </div>
-      }>
-      <div key={tab} className="bb-geser flex flex-col flex-1">
-        {data.length ? <HBarChart data={data} color={AKSEN_UTAMA} lebarLabel="8.5rem" maxItems={5} /> : <Kosong teks="Tidak ada data." />}
-      </div>
+    <Kartu judul="Sumber tiket" kol={kol} onBuka={onBuka} kalimat={kalimat} kelas="bb-sumber">
+      <PieSumberTiket kpi={kpi} />
     </Kartu>
   );
 }
 
-export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
-  kpi: KPIData | null; user: User; openMenu: (key: string) => void; kartuTim?: React.ReactNode; scope: Scope; widget: PengaturanDasbor;
+export function RincianBento({ kpi, user, openMenu, scope, widget }: {
+  kpi: KPIData | null; user: User; openMenu: (key: string) => void; scope: Scope; widget: PengaturanDasbor;
 }) {
   const s = useSorotanModul(user);
   const tua = kpi?.tiketTua ?? [];
@@ -89,7 +68,6 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
   const persenLulus = lc?.totalSessions ? (lc.completedSessions / lc.totalSessions) * 100 : 0;
 
   const tersedia: Record<string, boolean> = {
-    'daily-report-tim': !!kartuTim,
     'menunggu-keputusan': s.antrean.length > 0 && ada('menunggu-keputusan'),
     'unit-di-luar': !!s.unit && ada('unit-di-luar'),
     'sumber-tiket': ada('sumber-tiket'),
@@ -100,16 +78,14 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
     'pembelajaran': scope.kind === 'admin' && ada('pembelajaran'),
   };
   const kol = susunBaris(([
-    { kunci: 'daily-report-tim', lebar: 5 }, { kunci: 'menunggu-keputusan', lebar: 4 }, { kunci: 'unit-di-luar', lebar: 3 },
-    { kunci: 'sumber-tiket', lebar: 5 }, { kunci: 'tren-tiket', lebar: 7 },
+    { kunci: 'menunggu-keputusan', lebar: 2 }, { kunci: 'sumber-tiket', lebar: 8 }, { kunci: 'unit-di-luar', lebar: 2 },
+    { kunci: 'tren-tiket', lebar: 6 },
     { kunci: 'tiket-terlama', lebar: 3 }, { kunci: 'project-progress', lebar: 3 }, { kunci: 'nilai-sales', lebar: 3 }, { kunci: 'pembelajaran', lebar: 3 },
   ] as { kunci: KunciWidget; lebar: number }[]).filter(x => tersedia[x.kunci]), 12);
   if (!Object.keys(kol).length) return null;
 
   return (
     <div className="bb-bento bb-naik" style={{ ['--d' as string]: 6 } as React.CSSProperties}>
-      {tersedia['daily-report-tim'] && <div className="bb-tim bb-bv min-w-0" style={{ ['--kol' as string]: kol['daily-report-tim'] } as React.CSSProperties}>{kartuTim}</div>}
-
       {tersedia['menunggu-keputusan'] && (
         <Kartu judul="Menunggu keputusan" kol={kol['menunggu-keputusan']}
           kalimat={menunggu ? <><span className="tabular-nums"><Angka nilai={menunggu} /></span> hal menunggu keputusan.</> : <span className="text-emerald-700">✓ Semua sudah diputuskan.</span>}>
@@ -125,6 +101,8 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
           )}
         </Kartu>
       )}
+
+      {tersedia['sumber-tiket'] && <KartuAsalTiket kpi={kpi} kol={kol['sumber-tiket']} onBuka={() => openMenu('ticket-troubleshooting')} />}
 
       {tersedia['unit-di-luar'] && s.unit && (
         <Kartu judul="Unit di luar" kol={kol['unit-di-luar']} onBuka={() => openMenu('unit-movement')}
@@ -143,12 +121,10 @@ export function RincianBento({ kpi, user, openMenu, kartuTim, scope, widget }: {
         </Kartu>
       )}
 
-      {tersedia['sumber-tiket'] && <KartuAsalTiket kpi={kpi} kol={kol['sumber-tiket']} onBuka={() => openMenu('ticket-troubleshooting')} />}
-
       {tersedia['tren-tiket'] && (
         <Kartu judul={`Tren tiket ${new Date().getFullYear()}`} kol={kol['tren-tiket']}
           kalimat={<>{BULAN[bulan]} {ini} tiket{beda !== null && beda !== 0 && <>, {beda > 0 ? 'naik' : 'turun'} {Math.abs(beda)} dari {BULAN[bulan - 1]}</>}. Tersibuk: {BULAN[puncak]} ({deret[puncak] ?? 0}).</>}>
-          <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewW={640} viewH={150} warna={AKSEN_UTAMA} /></div>
+          <div className="mt-auto"><TrenBulanan data={deret.length ? deret : Array(12).fill(0)} viewH={140} warna={AKSEN_UTAMA} /></div>
         </Kartu>
       )}
 

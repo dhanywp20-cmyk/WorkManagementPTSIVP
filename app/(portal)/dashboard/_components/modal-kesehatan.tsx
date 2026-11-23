@@ -1,7 +1,9 @@
 'use client';
 import { Keterangan } from '@/components/shared/Keterangan';
 import { useCallback, useEffect, useState } from 'react';
-import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan/inti';
+import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, catatanKesehatan, statusCron, type DataKesehatan, type NadaCron, type Peringatan } from '@/lib/kesehatan/inti';
+
+const WARNA_NADA: Record<NadaCron, string> = { hijau: 'bg-emerald-50 text-emerald-700', merah: 'bg-rose-50 text-rose-700', abu: 'bg-slate-100 text-slate-600' };
 
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
 const waktu = (iso: string | null | undefined) => (iso
@@ -74,6 +76,9 @@ export function KesehatanInline() {
           </ul>
         )
       )}
+      {data && catatanKesehatan(data).map(t => (
+        <p key={t} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12.5px] text-slate-700"><b>Info:</b> {t}</p>
+      ))}
 
       {data && (
         <div className="grid gap-3 md:grid-cols-2">
@@ -81,15 +86,15 @@ export function KesehatanInline() {
             <ul className="space-y-2">
               {CRON_VERCEL.map(c => {
                 const j = data.cronVercel[c.nama];
+                const st = statusCron(c.nama, data);
                 return (
                   <li key={c.nama} className="text-[12.5px]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-semibold text-slate-800">{c.label}</span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${!j ? 'bg-slate-100 text-slate-600' : j.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                        {!j ? 'belum tercatat' : j.ok ? 'jalan' : 'gagal'}
-                      </span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${WARNA_NADA[st.nada]}`}>{st.label}</span>
                     </div>
                     <p className="text-[11.5px] text-slate-500">Jadwal {c.jadwal} · terakhir {waktu(j?.waktu)}{j?.ringkas ? ` · ${j.ringkas}` : ''}</p>
+                    {st.rincian && <p className="text-[11.5px] font-semibold text-slate-600">{st.rincian}</p>}
                   </li>
                 );
               })}

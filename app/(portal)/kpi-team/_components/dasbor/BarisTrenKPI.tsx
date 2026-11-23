@@ -22,7 +22,7 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
           {loading ? <div className="h-36 rounded-sm animate-pulse bg-slate-100"/>
             : kpi?.tickets.monthlyTickets?.some(v=>v>0)
               ? <TrenBulanan data={kpi.tickets.monthlyTickets}
-                  {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
+                  viewH={scope.kind!=='admin' ? 180 : 168}/>
               : <div className="flex flex-col items-center gap-2 py-10">
                   <span className="text-3xl opacity-20" aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-[11px] text-slate-500">Belum ada data ticket tahun ini.</p>
