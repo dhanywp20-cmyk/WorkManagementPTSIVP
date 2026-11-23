@@ -69,9 +69,6 @@ export function useBukaTicket(k: BukaTicketKonteks) {
 
   const bukaDetailTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket); setShowTicketDetailPopup(true);
-    void denganLogPenuh(ticket).then(lengkap => {
-      setSelectedTicket(prev => (prev && prev.id === lengkap.id ? lengkap : prev));
-    });
   };
   const bukaRingkasanAktivitas = (ticket: Ticket) => {
     setSummaryTicket(ticket); setShowActivitySummary(true);
