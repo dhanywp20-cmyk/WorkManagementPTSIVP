@@ -84,7 +84,7 @@ function ToolsKerjaInner() {
           <Expand size={16} aria-hidden="true" />
         </button>
       </PageHeader>
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
+      <div className="mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
           {alat.filter(a => dibuka.includes(a.k)).map(a => {
             const layar = penuh && a.k === aktif && !PUNYA_LAYAR.has(a.k);

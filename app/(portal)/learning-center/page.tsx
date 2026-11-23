@@ -183,7 +183,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
   ];
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
-      className="shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
+      className="kepala-modul shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
       <div className="relative">
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
@@ -217,7 +217,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
   ];
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
-      className="shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
+      className="kepala-modul shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
       <div className="relative">
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">

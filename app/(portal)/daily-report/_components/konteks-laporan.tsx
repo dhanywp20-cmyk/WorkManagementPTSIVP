@@ -34,20 +34,20 @@ export interface NilaiKonteksLaporan {
     stats: { total: number; pending: number; selesai: number; hariIni: number; fromTicket: number; fromReminder: number; fromManual: number; };
   };
   filter: {
-    filterCategory: string | null;
+    filterCategory: string[];
     filterDate: string;
-    filterDivision: string | null;
-    filterHandler: string | null;
-    filterProduct: string | null;
+    filterDivision: string[];
+    filterHandler: string[];
+    filterProduct: string[];
     filterSource: string;
     filterStatus: string;
     filterUser: string;
     searchProject: string;
-    setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string | null>>;
+    setFilterCategory: import("react").Dispatch<import("react").SetStateAction<string[]>>;
     setFilterDate: import("react").Dispatch<import("react").SetStateAction<string>>;
-    setFilterDivision: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-    setFilterHandler: import("react").Dispatch<import("react").SetStateAction<string | null>>;
-    setFilterProduct: import("react").Dispatch<import("react").SetStateAction<string | null>>;
+    setFilterDivision: import("react").Dispatch<import("react").SetStateAction<string[]>>;
+    setFilterHandler: import("react").Dispatch<import("react").SetStateAction<string[]>>;
+    setFilterProduct: import("react").Dispatch<import("react").SetStateAction<string[]>>;
     setFilterSource: import("react").Dispatch<import("react").SetStateAction<string>>;
     setFilterStatus: import("react").Dispatch<import("react").SetStateAction<string>>;
     setFilterUser: import("react").Dispatch<import("react").SetStateAction<string>>;

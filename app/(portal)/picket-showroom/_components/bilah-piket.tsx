@@ -35,32 +35,32 @@ export function NavigasiMinggu({ wLabel, wLabel2, isCurrWeek, setWeekStart }: {
   );
 }
 
+type Pilihan = string[];
+type Ubah = (f: (p: Pilihan) => Pilihan) => void;
+
 export function ChipFilterAktif({ filterInstansi, setFilterInstansi, filterKebutuhan, setFilterKebutuhan, filterDivision, setFilterDivision,
   filterKegiatan, setFilterKegiatan }: {
-  filterInstansi: string | null; setFilterInstansi: (v: null) => void;
-  filterKebutuhan: string | null; setFilterKebutuhan: (v: null) => void;
-  filterDivision: string | null; setFilterDivision: (v: null) => void;
-  filterKegiatan: string | null; setFilterKegiatan: (v: null) => void;
+  filterInstansi: Pilihan; setFilterInstansi: Ubah;
+  filterKebutuhan: Pilihan; setFilterKebutuhan: Ubah;
+  filterDivision: Pilihan; setFilterDivision: Ubah;
+  filterKegiatan: Pilihan; setFilterKegiatan: Ubah;
 }) {
-  if (!(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)) return null;
+  const grup = [
+    { nilai: filterInstansi, ubah: setFilterInstansi, ikon: '🏢', warna: () => '#0284c7' },
+    { nilai: filterKebutuhan, ubah: setFilterKebutuhan, ikon: '🎯', warna: () => '#7c3aed' },
+    { nilai: filterDivision, ubah: setFilterDivision, ikon: '🏷', warna: () => '#b45309' },
+    { nilai: filterKegiatan, ubah: setFilterKegiatan, ikon: '📋', warna: (v: string) => KEGIATAN_COLORS[v] || '#6366f1' },
+  ];
+  if (grup.every(g => g.nilai.length === 0)) return null;
   return (
     <div className="flex flex-wrap gap-1.5 pt-1">
-      {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}>
-        <span className="text-[11px] font-bold text-sky-700"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span>
-        <button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[11px] ml-1">✕</button>
-      </div>)}
-      {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}>
-        <span className="text-[11px] font-bold text-violet-600"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKebutuhan}</span>
-        <button aria-label="Tutup" onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[11px] ml-1">✕</button>
-      </div>)}
-      {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}>
-        <span className="text-[11px] font-bold text-amber-700"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span>
-        <button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[11px] ml-1">✕</button>
-      </div>)}
-      {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}>
-        <span className="text-[11px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKegiatan}</span>
-        <button aria-label="Tutup" onClick={()=>setFilterKegiatan(null)} className="text-[11px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button>
-      </div>)}
+      {grup.flatMap(g => g.nilai.map(v => (
+        <div key={`${g.ikon}-${v}`} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+          style={{ background: `${g.warna(v)}18`, border: `1px solid ${g.warna(v)}50` }}>
+          <span className="text-[11px] font-bold" style={{ color: g.warna(v) }}><Ikon nama={g.ikon} ukuran="1em" className="inline-block align-[-0.12em]" /> {v}</span>
+          <button aria-label={`Hapus filter ${v}`} onClick={() => g.ubah(p => p.filter(x => x !== v))} className="text-[11px] ml-1" style={{ color: g.warna(v) }}>✕</button>
+        </div>
+      )))}
     </div>
   );
 }

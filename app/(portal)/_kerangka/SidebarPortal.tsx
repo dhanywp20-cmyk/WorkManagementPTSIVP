@@ -134,7 +134,7 @@ export function SidebarPortal({
 
             <button
               onClick={() => onProfil()}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left"
+              className="kc-profil w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all text-left"
               style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.06)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.07)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,134,29,0.22)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; }}

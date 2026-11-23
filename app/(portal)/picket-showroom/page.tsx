@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { bisaLihatSemuaTamu } from '@/lib/piket/akses';
 import { KegiatanEntry, DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR, KEGIATAN_COLORS, toKey, bacaPicPiket } from './_components/shared';
 import { labelKelompokPTS } from '@/lib/kelompok/inti';
-import { MiniPieChart, PageHeader, ConfirmDialog, ErrorState, ListEmptyState, Toast } from '@/components/shared';
+import { MiniPieChart, tukarPilihan, PageHeader, ConfirmDialog, ErrorState, ListEmptyState, Toast } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -61,7 +61,7 @@ function PiketShowroomPageInner() {
           )}
         </PageHeader>
 
-        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+        <div className="flex-1 overflow-y-auto mx-auto w-full px-5 py-5 space-y-4">
           {currentUser&&!bolehIsi&&(
             <p className="text-[12px] text-slate-700 bg-white/90 border border-slate-200 rounded-xl px-3.5 py-2">
               {bisaLihatSemuaTamu(currentUser)
@@ -74,11 +74,11 @@ function PiketShowroomPageInner() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 animate-zoom-in anim-d160">
-            <MiniPieChart data={instansiPie} title="Tamu per Instansi" icon="🏢" activeFilter={filterInstansi} onSliceClick={l=>setFilterInstansi(filterInstansi===l?null:l)}/>
-            <MiniPieChart data={kgTypePie} title="Jenis Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={l=>setFilterKegiatan(filterKegiatan===l?null:l)}/>
+            <MiniPieChart data={instansiPie} title="Tamu per Instansi" icon="🏢" activeFilter={filterInstansi} onSliceClick={l=>setFilterInstansi(p=>tukarPilihan(p,l))}/>
+            <MiniPieChart data={kgTypePie} title="Jenis Kegiatan" icon="📋" activeFilter={filterKegiatan} onSliceClick={l=>setFilterKegiatan(p=>tukarPilihan(p,l))}/>
             <MiniPieChart data={produkPie} title="Penggunaan Produk" icon="📦" activeFilter={null} onSliceClick={()=>{}}/>
-            <MiniPieChart data={kPieAll} title="Kebutuhan Terbanyak" icon="🎯" activeFilter={filterKebutuhan} onSliceClick={l=>setFilterKebutuhan(filterKebutuhan===l?null:l)}/>
-            <MiniPieChart data={divPieAll} title="Division Sales" icon="🏷️" activeFilter={filterDivision} onSliceClick={l=>setFilterDivision(filterDivision===l?null:l)}/>
+            <MiniPieChart data={kPieAll} title="Kebutuhan Terbanyak" icon="🎯" activeFilter={filterKebutuhan} onSliceClick={l=>setFilterKebutuhan(p=>tukarPilihan(p,l))}/>
+            <MiniPieChart data={divPieAll} title="Division Sales" icon="🏷️" activeFilter={filterDivision} onSliceClick={l=>setFilterDivision(p=>tukarPilihan(p,l))}/>
           </div>
 
           <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)'}}>
@@ -95,8 +95,8 @@ function PiketShowroomPageInner() {
                     style={{background:'rgba(37,99,235,0.06)',borderColor:'rgba(37,99,235,0.25)',color:'#2563eb'}}>
                     <IkonTeks nama="📅" />Show Calendar
                   </button>
-                  {(search||filterDay||filterTamu||filterKebutuhan||filterInstansi||filterDivision||filterKegiatan)&&(
-                    <button onClick={()=>{setSearch('');setFilterDay('');setFilterTamu(false);setFilterKebutuhan(null);setFilterInstansi(null);setFilterDivision(null);setFilterKegiatan(null);}}
+                  {(search||filterDay||filterTamu||filterKebutuhan.length>0||filterInstansi.length>0||filterDivision.length>0||filterKegiatan.length>0)&&(
+                    <button onClick={()=>{setSearch('');setFilterDay('');setFilterTamu(false);setFilterKebutuhan([]);setFilterInstansi([]);setFilterDivision([]);setFilterKegiatan([]);}}
                       className="px-3 py-2 rounded-xl text-xs font-semibold" style={{background:'rgba(220,38,38,0.08)',border:'1px solid rgba(220,38,38,0.2)',color:'#dc2626'}}>
                       ✕ Reset Filter
                     </button>
@@ -112,8 +112,9 @@ function PiketShowroomPageInner() {
                 <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
-                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
-                  <option value="">Semua Kegiatan</option>{denganNilai(daftarKegiatan, filterKegiatan).map(j=><option key={j} value={j}>{j}</option>)}
+                <select aria-label="Semua Kegiatan" value={filterKegiatan.length>1?'__banyak':filterKegiatan[0]??''}
+                  onChange={e=>setFilterKegiatan(e.target.value&&e.target.value!=='__banyak'?[e.target.value]:[])} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                  <option value="">Semua Kegiatan</option>{filterKegiatan.length>1&&<option value="__banyak" disabled>{filterKegiatan.length} kegiatan dipilih</option>}{denganNilai(daftarKegiatan, filterKegiatan[0]??null).map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
                   style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#047857'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>
@@ -156,7 +157,7 @@ function PiketShowroomPageInner() {
                           adaFilterAktif={rows.length > 0}
                           onReset={() => {
                             setSearch(''); setFilterDay(''); setFilterTamu(false);
-                            setFilterKebutuhan(null); setFilterInstansi(null); setFilterDivision(null);
+                            setFilterKebutuhan([]); setFilterInstansi([]); setFilterDivision([]);
                           }}
                           icon="🏪"
                           judulKosong="Belum ada jadwal piket"
@@ -260,7 +261,8 @@ function PiketShowroomPageInner() {
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
-                            {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-400 text-xs">—</span>}
+                            {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(p=>tukarPilihan(p,kg.tamu_instansi!))}
+                              className="flex items-center gap-1 hover:opacity-80 text-left"><span><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-400 text-xs">—</span>}

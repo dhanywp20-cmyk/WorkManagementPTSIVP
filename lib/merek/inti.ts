@@ -214,6 +214,10 @@ export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   akar.style.setProperty('--merek-utama', m.warnaUtama);
   akar.style.setProperty('--merek-utama-2', m.warnaUtama2);
   akar.style.setProperty('--merek-aksen', m.warnaAksen);
+  const tema = /^#[0-9a-f]{6}$/i.test(m.warnaTema ?? '') ? m.warnaTema : MEREK_BAWAAN.warnaTema;
+  const n = parseInt(tema.slice(1), 16);
+  akar.style.setProperty('--merek-tema', tema);
+  akar.style.setProperty('--merek-tema-rgb', `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`);
   akar.style.setProperty('--merek-utama-tembus', warnaTembus(m.warnaUtama, 0.1));
   if (m.latarDasbor === 'gambar' && m.gambarLatarDasbor) {
     akar.style.setProperty('--latar-halaman',

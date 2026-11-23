@@ -1,0 +1,369 @@
+/* ── Tema Bingkai Hangat ─────────────────────────────────────────────────────────────────────────────
+   Header bilah penuh, sidebar & panel isi sebagai bingkai mengambang bersudut membulat, footer bilah arang.
+   - Satu desain untuk mode terang & gelap: bentuk/aturan memakai token --kc-*; hanya token yang beda per mode.
+   - Berlaku di semua menu: Dashboard (.panel-dasbor) dan modul lain (.isi-portal) memakai bingkai yang sama.
+   - Warna aksen dari Admin Panel > Dashboard Setting > Warna Tema (--merek-tema, bawaan biru).
+   - Teks tidak kontras keras: arang hangat & abu hangat, bukan hitam pekat / warna menyala.
+   - Animasi ikon sidebar (.menu-3d di globals.css) DIPERTAHANKAN: berkas ini tidak mengubah transform/animation. */
+
+/* ── Token mode terang (dipasang di <html> supaya modal/portal ikut) ── */
+html:not(.gelap):has(.kerangka-bingkai) {
+  --kc-tinta: #2b2723;
+  --kc-tinta-2: #6b635b;
+  --kc-tinta-3: #968d84;
+  --kc-menu: #4a433c;
+  --kc-ikon: #5b534b;
+  --kc-aksen: var(--merek-tema, #2563eb);
+  --kc-aksen-2: color-mix(in srgb, var(--kc-aksen) 78%, #000);
+  --kc-aksen-terang: color-mix(in srgb, var(--kc-aksen) 70%, #fff);
+  --kc-aksen-lembut: color-mix(in srgb, var(--kc-aksen) 10%, #fff);
+  --kc-aksen-tepi: color-mix(in srgb, var(--kc-aksen) 30%, #fff);
+  --kc-aksen-bayang: color-mix(in srgb, var(--kc-aksen) 45%, transparent);
+  --kc-arang: #26221f;
+  --kc-tombol: var(--kc-arang);
+  --kc-permukaan: #ffffff;
+  --kc-permukaan-2: #f8f6f2;
+  --kc-isi: #f3efea;
+  --kc-isi-2: #ece7e0;
+  --kc-garis: #e7e1d9;
+  --kc-garis-kuat: #d9d0c5;
+  --kc-panel: rgba(248, 246, 242, .68);
+  --kc-panel-tepi: rgba(255, 255, 255, .7);
+  --kc-bayang: 0 1px 2px rgba(74, 52, 30, .05), 0 10px 28px -16px rgba(74, 52, 30, .22);
+  --kc-bayang-naik: 0 2px 4px rgba(74, 52, 30, .05), 0 22px 40px -20px rgba(74, 52, 30, .32);
+  --kc-latar: linear-gradient(180deg, #efeae3 0%, #e8e1d8 100%);
+  --kc-arsir-a: #4a443e;
+  --kc-arsir-b: #6b635b;
+  --kc-kaki-teks: #5b534b;
+  --kc-kaki-bayang: 0 0 6px rgba(255, 255, 255, .85);
+
+  --gb-ffffff: #ffffff;
+  --gb-f8fafc: #faf8f5;
+  --gb-f1f5f9: var(--kc-isi);
+  --gb-e8edf3: var(--kc-isi-2);
+  --gg-e2e8f0: var(--kc-garis);
+  --gg-cbd5e1: var(--kc-garis-kuat);
+  --gg-f1f5f9: #f0ebe5;
+  --gs-ffffff: #ffffff;
+  --gs-e2e8f0: var(--kc-garis);
+  --gs-e8ecf2: #efeae4;
+  --gs-dfe5ee: #e6e0d8;
+  --gs-edf0f5: transparent;
+  --gt-0f172a: var(--kc-tinta);
+  --gt-1e293b: var(--kc-tinta);
+  --gt-334155: #4a433c;
+  --gt-475569: var(--kc-tinta-2);
+  --aksen-ubin: var(--kc-aksen);
+
+  --color-slate-50: #faf8f5;
+  --color-slate-100: #f3efea;
+  --color-slate-200: #e7e1d9;
+  --color-slate-300: #d6cdc2;
+  --color-slate-400: #a39a91;
+  --color-slate-500: #7a726a;
+  --color-slate-600: #625b54;
+  --color-slate-700: #4a443e;
+  --color-slate-800: #37322d;
+  --color-slate-900: #2b2723;
+  --color-slate-950: #1f1c19;
+  --color-gray-50: #faf8f5;
+  --color-gray-100: #f3efea;
+  --color-gray-200: #e7e1d9;
+  --color-gray-300: #d6cdc2;
+  --color-gray-400: #a39a91;
+  --color-gray-500: #7a726a;
+  --color-gray-600: #625b54;
+  --color-gray-700: #4a443e;
+  --color-gray-800: #37322d;
+  --color-gray-900: #2b2723;
+  --color-gray-950: #1f1c19;
+
+  /* Biru & indigo Tailwind di semua modul mengikuti Warna Tema. */
+  --color-blue-50: color-mix(in srgb, var(--kc-aksen) 7%, #fff);
+  --color-blue-100: color-mix(in srgb, var(--kc-aksen) 15%, #fff);
+  --color-blue-200: color-mix(in srgb, var(--kc-aksen) 28%, #fff);
+  --color-blue-300: color-mix(in srgb, var(--kc-aksen) 45%, #fff);
+  --color-blue-400: color-mix(in srgb, var(--kc-aksen) 72%, #fff);
+  --color-blue-500: color-mix(in srgb, var(--kc-aksen) 90%, #fff);
+  --color-blue-600: var(--kc-aksen);
+  --color-blue-700: color-mix(in srgb, var(--kc-aksen) 84%, #000);
+  --color-blue-800: color-mix(in srgb, var(--kc-aksen) 68%, #000);
+  --color-blue-900: color-mix(in srgb, var(--kc-aksen) 52%, #000);
+  --color-blue-950: color-mix(in srgb, var(--kc-aksen) 36%, #000);
+  --color-indigo-50: var(--color-blue-50);
+  --color-indigo-100: var(--color-blue-100);
+  --color-indigo-200: var(--color-blue-200);
+  --color-indigo-300: var(--color-blue-300);
+  --color-indigo-400: var(--color-blue-400);
+  --color-indigo-500: var(--color-blue-500);
+  --color-indigo-600: var(--color-blue-600);
+  --color-indigo-700: var(--color-blue-700);
+  --color-indigo-800: var(--color-blue-800);
+  --color-indigo-900: var(--color-blue-900);
+  --color-indigo-950: var(--color-blue-950);
+}
+
+/* ── Token mode gelap: arang hangat, aksen sama (Warna Tema) ── */
+html.gelap:has(.kerangka-bingkai) {
+  --kc-tinta: #efe9e2;
+  --kc-tinta-2: #b9afa5;
+  --kc-tinta-3: #8a8077;
+  --kc-menu: #d6cdc3;
+  --kc-ikon: #c2b8ad;
+  --kc-aksen: var(--merek-tema, #2563eb);
+  --kc-aksen-2: color-mix(in srgb, var(--kc-aksen) 72%, #fff);
+  --kc-aksen-terang: color-mix(in srgb, var(--kc-aksen) 78%, #fff);
+  --kc-aksen-lembut: color-mix(in srgb, var(--kc-aksen) 20%, #1f1c19);
+  --kc-aksen-tepi: color-mix(in srgb, var(--kc-aksen) 42%, #1f1c19);
+  --kc-aksen-bayang: color-mix(in srgb, var(--kc-aksen) 50%, transparent);
+  --kc-arang: #0f0d0c;
+  --kc-tombol: var(--kc-aksen);
+  --kc-permukaan: #1f1c19;
+  --kc-permukaan-2: #252220;
+  --kc-isi: #2c2825;
+  --kc-isi-2: #332e2a;
+  --kc-garis: #36302b;
+  --kc-garis-kuat: #463f39;
+  --kc-panel: rgba(24, 21, 19, .76);
+  --kc-panel-tepi: rgba(255, 255, 255, .06);
+  --kc-bayang: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px -16px rgba(0, 0, 0, .75);
+  --kc-bayang-naik: 0 2px 4px rgba(0, 0, 0, .35), 0 22px 40px -20px rgba(0, 0, 0, .85);
+  --kc-latar: linear-gradient(180deg, #171513 0%, #110f0e 100%);
+  --kc-arsir-a: #8a8178;
+  --kc-arsir-b: #5b534b;
+  --kc-kaki-teks: #a39a91;
+  --kc-kaki-bayang: 0 0 6px rgba(0, 0, 0, .9);
+  --aksen-ubin: var(--kc-aksen);
+
+  --wm-hal: #12100f;
+  --wm-kartu: #1f1c19;
+  --wm-kartu-2: #252220;
+  --wm-isi: #2c2825;
+  --wm-garis: #36302b;
+  --wm-garis-kuat: #463f39;
+  --wm-tinta: #efe9e2;
+  --wm-tinta-2: #b9afa5;
+  --wm-tinta-3: #8a8077;
+  --wm-aksen: var(--kc-aksen);
+  --wm-aksen-2: color-mix(in srgb, var(--kc-aksen) 80%, #000);
+  --wm-aksen-rgb: var(--merek-tema-rgb, 37, 99, 235);
+  --wm-aksen-lembut: rgba(var(--wm-aksen-rgb), .16);
+  --wm-kaca: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .01));
+  --wm-latar: var(--kc-latar);
+
+  --color-slate-50: oklch(21% 0.01 60);
+  --color-slate-100: oklch(19.5% 0.01 60);
+  --color-slate-200: oklch(27% 0.01 60);
+  --color-slate-300: oklch(34% 0.01 60);
+  --color-slate-400: oklch(56% 0.012 60);
+  --color-slate-500: oklch(64% 0.012 60);
+  --color-slate-600: oklch(73% 0.012 60);
+  --color-slate-700: oklch(83% 0.012 60);
+  --color-slate-800: oklch(90% 0.01 60);
+  --color-slate-900: oklch(95% 0.008 60);
+  --color-slate-950: oklch(98% 0.006 60);
+  --color-gray-50: oklch(21% 0.01 60);
+  --color-gray-100: oklch(19.5% 0.01 60);
+  --color-gray-200: oklch(27% 0.01 60);
+  --color-gray-300: oklch(34% 0.01 60);
+  --color-gray-400: oklch(56% 0.012 60);
+  --color-gray-500: oklch(64% 0.012 60);
+  --color-gray-600: oklch(73% 0.012 60);
+  --color-gray-700: oklch(83% 0.012 60);
+  --color-gray-800: oklch(90% 0.01 60);
+  --color-gray-900: oklch(95% 0.008 60);
+  --color-gray-950: oklch(98% 0.006 60);
+}
+
+/* Mode gelap: foto latar merek digelapkan & dihangatkan supaya bingkai gelap tidak "bolong" di atas foto terang. */
+html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !important; background-blend-mode: multiply; }
+
+/* Latar halaman (bila merek tidak memakai gambar latar sendiri). */
+:root .kerangka-bingkai:not([style*="url("]) { background: var(--kc-latar) !important; }
+
+/* ── Footer: bilah putih seperti header, menyambung ke header lewat bilah tipis di tepi kiri (bingkai "C").
+   Sidebar tetap kartu mengambang sendiri, tidak ikut bingkai. ── */
+:root .kerangka-bingkai > footer {
+  margin: 0; background: var(--kc-permukaan) !important; border: 0 !important; box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  --color-slate-500: var(--kc-kaki-teks); --color-slate-700: var(--kc-tinta);
+}
+:root .kerangka-bingkai > footer > div { padding: 6px 24px 8px !important; }
+:root .kerangka-bingkai > footer p { color: var(--kc-tinta-3) !important; text-shadow: none; }
+:root .kerangka-bingkai > footer [title^="Versi"] {
+  color: var(--kc-tinta-2) !important; background: var(--kc-permukaan-2) !important; border-color: var(--kc-garis) !important;
+}
+@media (max-width: 767px) { :root .kerangka-bingkai > footer > div { padding: 4px 12px 6px !important; } }
+
+/* ── Header: bilah penuh menyatu di atas, garis tipis di bawah, tombol tenang ── */
+:root .kerangka-bingkai .kepala-3d {
+  margin: 0; border-radius: 0;
+  background: var(--kc-permukaan) !important; border: 0 !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+:root .kerangka-bingkai .kepala-3d h1 { color: var(--kc-tinta) !important; }
+:root .kerangka-bingkai .kepala-3d h1 + span { color: var(--kc-garis-kuat) !important; }
+:root .kerangka-bingkai .kepala-3d .px-3.py-1\.5.rounded-2xl {
+  background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+:root .kerangka-bingkai .kepala-3d button[aria-label^="Pencarian"] {
+  background: var(--kc-permukaan-2) !important; border: 1px solid var(--kc-garis) !important; color: var(--kc-tinta-2) !important;
+}
+:root .kerangka-bingkai .kepala-3d button[aria-label^="Pencarian"]:hover { background: var(--kc-isi) !important; }
+
+/* Bilah kiri bingkai: menyambung header ke footer, sudut dalam membulat. Di belakang sidebar & panel. */
+@media (min-width: 768px) {
+  :root .kerangka-bingkai > .flex.flex-1.min-h-0.relative::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 8px; right: -60px; pointer-events: none;
+    border-radius: 18px 0 0 18px; box-shadow: 0 0 0 60px var(--kc-permukaan);
+  }
+}
+
+/* ── Sidebar: panel mengambang bersudut membulat, berdiri sendiri, ikon dalam bulatan ── */
+:root .kerangka-bingkai .sidebar-3d {
+  margin: 12px 0 12px 20px; border-radius: 26px; overflow: hidden;
+  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: var(--kc-bayang) !important;
+}
+:root .kerangka-bingkai .sidebar-3d > .absolute.top-0 { display: none; }
+:root .kerangka-bingkai .sidebar-3d .tracking-\[0\.14em\] { color: var(--kc-tinta-3) !important; }
+:root .kerangka-bingkai .sidebar-3d .flex-1.h-px { background: var(--kc-garis) !important; }
+:root .kerangka-bingkai .sidebar-3d > .shrink-0:last-child { border-top-color: var(--kc-garis) !important; }
+:root .kerangka-bingkai .sidebar-3d button:not(.menu-3d) { color: var(--kc-tinta-2); }
+
+/* Baris menu: warna saja. Transform/animasi tetap dari .menu-3d. */
+:root .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]) { color: var(--kc-menu) !important; }
+:root .kerangka-bingkai .sidebar-3d .menu-3d { border-radius: 14px !important; }
+@media (hover: hover) {
+  :root .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]):hover { background: var(--kc-permukaan-2) !important; border-color: var(--kc-garis) !important; }
+}
+:root .kerangka-bingkai .sidebar-3d .menu-3d > :first-child {
+  border-radius: 999px !important;
+  background: var(--kc-isi) !important; color: var(--kc-ikon) !important;
+  box-shadow: inset 0 0 0 1px var(--kc-garis);
+}
+:root .kerangka-bingkai .sidebar-3d .menu-3d.h-9 { width: 40px; height: 40px; margin-inline: auto; border-radius: 999px !important; }
+:root .kerangka-bingkai .sidebar-3d .menu-3d.h-9 > :first-child { background: transparent !important; box-shadow: none; }
+:root .kerangka-bingkai .sidebar-3d .menu-3d.h-9:not([aria-current]) { background: var(--kc-isi) !important; border-color: var(--kc-garis) !important; }
+@media (hover: hover) {
+  :root .kerangka-bingkai .sidebar-3d .menu-3d.h-9:not([aria-current]):hover { background: var(--kc-isi-2) !important; }
+}
+
+/* Aktif: pil aksen muda, ikon dalam bulatan aksen. */
+:root .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] {
+  background: var(--kc-aksen-lembut) !important; border-color: var(--kc-aksen-tepi) !important;
+  color: var(--kc-tinta) !important;
+  box-shadow: 0 8px 18px -12px var(--kc-aksen-bayang) !important;
+}
+:root .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] > :first-child {
+  background: linear-gradient(150deg, var(--kc-aksen-terang), var(--kc-aksen) 55%, color-mix(in srgb, var(--kc-aksen) 78%, #000)) !important; color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 12px -5px var(--kc-aksen-bayang);
+}
+:root .kerangka-bingkai .sidebar-3d .menu-3d.h-9[aria-current="page"] { background: var(--kc-aksen-lembut) !important; }
+:root .kerangka-bingkai .sidebar-3d .menu-3d.h-9[aria-current="page"] > :first-child { background: transparent !important; color: var(--kc-aksen-2) !important; box-shadow: none; }
+:root .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current="page"]::before { background: var(--kc-aksen); }
+:root .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current] > .rounded-full:last-child { background: var(--kc-aksen) !important; }
+
+/* Kartu profil & tombol bawah */
+:root .kerangka-bingkai .sidebar-3d .kc-profil { background: var(--kc-permukaan-2) !important; border-color: var(--kc-garis) !important; }
+:root .kerangka-bingkai .sidebar-3d .kc-profil:hover { background: var(--kc-isi) !important; }
+:root .kerangka-bingkai .sidebar-3d .kc-profil p:first-child { color: var(--kc-tinta) !important; }
+:root .kerangka-bingkai .sidebar-3d .kc-profil p:last-child { color: var(--kc-aksen-2) !important; }
+
+/* ── Nav bawah HP: bilah mengambang bersudut membulat ── */
+:root .kerangka-bingkai .nav-bawah-3d {
+  margin: 0 10px 8px; border-radius: 24px; overflow: hidden;
+  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: var(--kc-bayang) !important;
+}
+:root .kerangka-bingkai .nav-bawah-3d button[aria-current="page"] > span.absolute:first-child { background: var(--kc-aksen) !important; }
+
+/* ── Panel isi (Dashboard & semua modul): wadah besar bersudut membulat, sedikit transparan ── */
+:root .kerangka-bingkai :is(.panel-dasbor, .isi-portal:not(.fixed)) {
+  position: absolute !important; inset: 12px; width: auto !important; height: auto !important;
+  border-radius: 28px; background: var(--kc-panel) !important; border: 1px solid var(--kc-panel-tepi);
+  box-shadow: var(--kc-bayang);
+}
+@media (max-width: 767px) { :root .kerangka-bingkai :is(.panel-dasbor, .isi-portal:not(.fixed)) { inset: 8px; border-radius: 22px; } }
+:root .kerangka-bingkai .panel-dasbor .dasbor-3d { background: transparent !important; }
+
+/* Isi Dashboard melebar penuh (tanpa batas 1600px), ikut lebar panel saat sidebar diciutkan. */
+:root .kerangka-bingkai .panel-dasbor :is(.bb-wadah, .dasbor-kepala > div) { max-width: none !important; }
+
+/* Kepala Dashboard & kepala setiap menu: bilah penuh menempel di atas panel (menyatu dengan sudut bingkai),
+   tetap di atas saat digulir. */
+:root .kerangka-bingkai :is(.dasbor-kepala, .kepala-modul) {
+  position: sticky !important; top: 0; z-index: 40; padding: 0;
+  background: var(--kc-permukaan) !important; border-bottom: 1px solid var(--kc-garis) !important;
+  box-shadow: 0 6px 16px -14px rgba(0, 0, 0, .35) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+:root .kerangka-bingkai :is(.dasbor-kepala, .kepala-modul) > div { max-width: none !important; align-items: center; }
+:root .kerangka-bingkai .dasbor-kepala > div { padding: 16px 20px 16px 28px; }
+:root .kerangka-bingkai .kepala-modul > div { padding-left: 28px; padding-right: 20px; }
+:root .kerangka-bingkai .kepala-modul h1 { color: var(--kc-tinta) !important; }
+:root .kerangka-bingkai .kepala-modul h1 + p { color: var(--kc-tinta-2) !important; }
+:root .kerangka-bingkai .kepala-modul > div > div:first-child > div.rounded-xl:first-child {
+  background: var(--kc-aksen-lembut) !important; color: var(--kc-aksen-2) !important; border-color: var(--kc-aksen-tepi) !important;
+}
+@media (max-width: 767px) {
+  :root .kerangka-bingkai .dasbor-kepala > div { padding: 12px 16px; }
+  :root .kerangka-bingkai .kepala-modul > div { padding-left: 16px; padding-right: 16px; }
+}
+:root .kerangka-bingkai .judul-sapaan {
+  font-size: clamp(20px, 2.1vw, 28px) !important; line-height: 1.15 !important; font-weight: 700 !important;
+  letter-spacing: -.025em; color: var(--kc-tinta) !important;
+}
+:root .kerangka-bingkai .judul-sapaan + p { margin-top: 4px; font-size: 13px; color: var(--kc-tinta-2) !important; }
+
+/* Tab halaman: pil, penanda aktif terangkat. */
+:root .kerangka-bingkai .bb-tab { padding: 4px; border-radius: 999px; background: var(--kc-isi-2); border: 1px solid var(--kc-garis); }
+:root .kerangka-bingkai .bb-tab button { color: var(--kc-tinta-2); }
+:root .kerangka-bingkai .bb-tab button:hover:not([aria-current]) { background: var(--kc-isi); }
+:root .kerangka-bingkai .bb-tab button[aria-current="page"] { color: var(--kc-tinta); }
+:root .kerangka-bingkai .bb-tab-geser { top: 4px; bottom: 4px; background: var(--kc-permukaan) !important; box-shadow: 0 2px 8px -3px rgba(0, 0, 0, .3) !important; }
+
+/* Kartu (UBIN) di Dashboard: padat, tepi hangat, bayangan lembut. */
+:root .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white) {
+  border-radius: 22px !important; background-color: var(--kc-permukaan) !important; background-image: none !important;
+  border-color: var(--kc-garis) !important; box-shadow: var(--kc-bayang) !important;
+}
+@media (hover: hover) {
+  :root .kerangka-bingkai .panel-dasbor .dasbor-3d .rounded-2xl.bg-white:hover { box-shadow: var(--kc-bayang-naik) !important; }
+}
+
+/* Baris temuan, segmen periode, bilah & grafik */
+:root .kerangka-bingkai .bb-baris-judul { background: var(--kc-permukaan); border-color: var(--kc-garis); border-radius: 18px; box-shadow: var(--kc-bayang); }
+:root .kerangka-bingkai .bb-segmen { background: var(--kc-isi-2); border-radius: 999px; }
+:root .kerangka-bingkai .bb-segmen button { border-radius: 999px; }
+:root .kerangka-bingkai .bb-segmen button:is([aria-pressed="true"], [aria-selected="true"]) {
+  background: var(--kc-permukaan) !important; color: var(--kc-tinta) !important; box-shadow: 0 1px 4px -1px rgba(0, 0, 0, .2) !important;
+}
+:root .kerangka-bingkai .bb-catatan { color: var(--kc-tinta-2); }
+:root .kerangka-bingkai .bb-bilah-tik { background: repeating-linear-gradient(90deg, var(--kc-garis-kuat) 0 1.5px, transparent 1.5px 5px); }
+:root .kerangka-bingkai .bb-grafik-garis i { background: var(--kc-isi); }
+:root .kerangka-bingkai .bb-grafik-garis i:last-child { background: var(--kc-garis-kuat); }
+:root .kerangka-bingkai :is(.bb-grafik-sumbu-y, .bb-grafik-sumbu-x) { color: var(--kc-tinta-3); }
+:root .kerangka-bingkai .bb-batang-sisa { background: repeating-linear-gradient(135deg, var(--kc-arsir-a) 0 2px, var(--kc-arsir-b) 2px 4px); }
+:root .kerangka-bingkai :is(.bb-kolom:hover, .bb-kolom-aktif) { background: color-mix(in srgb, var(--kc-aksen) 7%, transparent); }
+:root .kerangka-bingkai .bb-tip { background: #26221f; border-radius: 10px; }
+:root .kerangka-bingkai .bb-piket-baris { background: var(--kc-permukaan-2); border-radius: 12px; }
+:root .kerangka-bingkai .bb-piket-baris span { color: var(--kc-aksen-2); }
+:root .kerangka-bingkai .bb-fokus { background: var(--kc-permukaan-2); border-radius: 16px; }
+:root .kerangka-bingkai .bb-tombol-utama { background: var(--kc-tombol) !important; color: #fff !important; border-radius: 999px; }
+:root .kerangka-bingkai .bb-aksi { border-radius: 999px; }
+
+/* Kartu sorotan: kartu angka pertama berwarna aksen padat (spesifisitas di atas aturan kartu). */
+:root .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child {
+  background-color: var(--kc-aksen) !important;
+  background-image: linear-gradient(150deg, var(--kc-aksen-terang), var(--kc-aksen) 50%, color-mix(in srgb, var(--kc-aksen) 78%, #000)) !important;
+  border-color: color-mix(in srgb, var(--kc-aksen) 78%, #000) !important; color: #fff;
+  box-shadow: 0 16px 32px -18px var(--kc-aksen-bayang) !important;
+  --color-slate-500: rgba(255, 255, 255, .85); --color-slate-700: rgba(255, 255, 255, .92); --color-slate-900: #fff;
+  --color-slate-100: rgba(255, 255, 255, .18); --aksen-ubin: #fff; --gb-e8edf3: rgba(255, 255, 255, .25);
+}
+:root .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child :is(.text-\[30px\], .bb-catatan, h3) { color: #fff !important; }

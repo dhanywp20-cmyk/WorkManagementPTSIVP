@@ -1,6 +1,6 @@
 'use client';
 
-import { MiniPieChart, StatCardGrid, TombolEkspor } from '@/components/shared';
+import { MiniPieChart, StatCardGrid, TombolEkspor, tukarPilihan } from '@/components/shared';
 import { todayISO, RENTANG_HARI } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { card, cardHdr } from './bantu-halaman';
@@ -19,7 +19,7 @@ export function IsiLaporan() {
   } = k.filter;
   return (
     <>
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
+      <div className="flex-1 overflow-y-auto mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
         <StatCardGrid cols={4} items={[
           { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, accent: '#4f46e5' },
@@ -69,22 +69,22 @@ export function IsiLaporan() {
           <MiniPieChart
             data={catPieData} title="Kegiatan / Kategori" icon="🖥️"
             activeFilter={filterCategory}
-            onSliceClick={label => setFilterCategory(filterCategory === label ? null : label)}
+            onSliceClick={label => setFilterCategory(p => tukarPilihan(p, label))}
           />
           <MiniPieChart
             data={handlerPieData} title={judulKelompokPTS} icon="👥"
             activeFilter={filterHandler}
-            onSliceClick={label => setFilterHandler(filterHandler === label ? null : label)}
+            onSliceClick={label => setFilterHandler(p => tukarPilihan(p, label))}
           />
           <MiniPieChart
             data={divisionPieData} title="Divisi Sales" icon="👔"
             activeFilter={filterDivision}
-            onSliceClick={label => setFilterDivision(filterDivision === label ? null : label)}
+            onSliceClick={label => setFilterDivision(p => tukarPilihan(p, label))}
           />
           <MiniPieChart
             data={productPieData} title="Distribusi Produk" icon="🏷️"
             activeFilter={filterProduct}
-            onSliceClick={label => setFilterProduct(filterProduct === label ? null : label)}
+            onSliceClick={label => setFilterProduct(p => tukarPilihan(p, label))}
           />
         </div>
 
@@ -106,36 +106,36 @@ export function IsiLaporan() {
             </div>
           </div>
 
-          {(filterCategory || filterHandler || filterDivision || filterProduct) && (
+          {filterCategory.length + filterHandler.length + filterDivision.length + filterProduct.length > 0 && (
             <div className="px-5 pt-3 flex flex-wrap gap-2">
-              {filterCategory && (
-                <button onClick={() => setFilterCategory(null)}
+              {filterCategory.map(v => (
+                <button key={`Category-${v}`} onClick={() => setFilterCategory(p => p.filter(y => y !== v))}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#7c3aed' }}>
-                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterCategory} ✕
+                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {v} ✕
                 </button>
-              )}
-              {filterHandler && (
-                <button onClick={() => setFilterHandler(null)}
+              ))}
+              {filterHandler.map(v => (
+                <button key={`Handler-${v}`} onClick={() => setFilterHandler(p => p.filter(y => y !== v))}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#0ea5e9' }}>
-                  <Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterHandler} ✕
+                  <Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {v} ✕
                 </button>
-              )}
-              {filterDivision && (
-                <button onClick={() => setFilterDivision(null)}
+              ))}
+              {filterDivision.map(v => (
+                <button key={`Division-${v}`} onClick={() => setFilterDivision(p => p.filter(y => y !== v))}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#10b981' }}>
-                  <Ikon nama="👔" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision} ✕
+                  <Ikon nama="👔" ukuran="1em" className="inline-block align-[-0.12em]" /> {v} ✕
                 </button>
-              )}
-              {filterProduct && (
-                <button onClick={() => setFilterProduct(null)}
+              ))}
+              {filterProduct.map(v => (
+                <button key={`Product-${v}`} onClick={() => setFilterProduct(p => p.filter(y => y !== v))}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#f59e0b' }}>
-                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterProduct} ✕
+                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {v} ✕
                 </button>
-              )}
+              ))}
             </div>
           )}
 

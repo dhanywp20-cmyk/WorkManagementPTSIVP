@@ -202,7 +202,7 @@ export default function SummaryProjectPage() {
         </PageHeader>
 
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
+          <div className="mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
 
             <StatCardGrid cols={5} items={[
               { label: 'Project', value: statistik.project, sub: filterStatus === 'semua' ? 'semua status' : STATUS_PROJECT[filterStatus], accent: THEME.color,

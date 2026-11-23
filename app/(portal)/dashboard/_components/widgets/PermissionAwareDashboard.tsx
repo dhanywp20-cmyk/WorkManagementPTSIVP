@@ -85,6 +85,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
     .sort((a, b) => a.priority - b.priority);
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const jam = new Date().getHours();
+  const sapaan = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 18 ? 'Selamat sore' : 'Selamat malam';
   const firstName = (currentUser.full_name ?? '').trim().split(' ')[0] || currentUser.username || '';
   const adaAnalytics = visible.some(w => w.id === 'analytics');
   const adaAgenda = visible.some(w => w.id === 'work-queue');
@@ -99,11 +101,11 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   return (
     <div className="dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden"
       style={widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
-      <header className="sticky top-0 z-40"
+      <header className="dasbor-kepala sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
-        <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">
+        <div className="mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
+            <h1 className="judul-sapaan text-base md:text-xl md:leading-7 font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `${sapaan}, ${firstName}` : sapaan}</h1>
             <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
           {adaAnalytics && (

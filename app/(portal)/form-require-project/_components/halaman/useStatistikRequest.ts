@@ -1,5 +1,6 @@
 'use client';
 
+import { cocokPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { daftarKebutuhan } from '../ruangan';
 import { usePaginasi } from '@/components/shared';
 import { ProjectRequest, PIE_COLORS } from '../shared';
@@ -21,12 +22,14 @@ export function useStatistikRequest(k: StatistikRequestKonteks) {
   const availableYears = [...new Set(requests.map(r => new Date(r.created_at).getFullYear().toString()))].sort((a, b) => b.localeCompare(a));
 
   const filteredRequests = requests.filter(r => {
-    const matchStatus = filterStatus === 'all' || r.status === filterStatus || (filterStatus === 'pending' && r.status === 'approved');
+    const statusDipilih = uraiPilihan(filterStatus);
+    const matchStatus = statusDipilih.length === 0 || statusDipilih.includes(r.status) || (statusDipilih.includes('pending') && r.status === 'approved');
     const matchYear = filterYear === 'all' || new Date(r.created_at).getFullYear().toString() === filterYear;
     const matchMonth = filterMonth === 'all' || (new Date(r.created_at).getMonth() + 1).toString().padStart(2, '0') === filterMonth;
-    const matchHandler = filterHandler === 'all' || (r.assign_name || '') === filterHandler;
-    const matchDivision = filterDivision === 'all' || (r.sales_division || 'Lainnya') === filterDivision;
-    const matchKebutuhan = filterKebutuhan === 'all' || daftarKebutuhan(r).includes(filterKebutuhan);
+    const matchHandler = cocokPilihan(filterHandler, r.assign_name || '');
+    const matchDivision = cocokPilihan(filterDivision, r.sales_division || 'Lainnya');
+    const kebutuhanDipilih = uraiPilihan(filterKebutuhan);
+    const matchKebutuhan = kebutuhanDipilih.length === 0 || daftarKebutuhan(r).some(x => kebutuhanDipilih.includes(x));
     const matchProject = !searchQuery || r.project_name.toLowerCase().includes(searchQuery.toLowerCase())
       || (r.project_location || '').toLowerCase().includes(searchQuery.toLowerCase())
       || (r.room_name || '').toLowerCase().includes(searchQuery.toLowerCase());

@@ -45,10 +45,10 @@ export default function DailyReportPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
   const [searchProject, setSearchProject] = useState('');
-  const [filterCategory, setFilterCategory] = useState<string | null>(null);
-  const [filterHandler, setFilterHandler]   = useState<string | null>(null);
-  const [filterDivision, setFilterDivision] = useState<string | null>(null);
-  const [filterProduct, setFilterProduct]   = useState<string | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string[]>([]);
+  const [filterHandler, setFilterHandler]   = useState<string[]>([]);
+  const [filterDivision, setFilterDivision] = useState<string[]>([]);
+  const [filterProduct, setFilterProduct]   = useState<string[]>([]);
 
   const [formOpen, setFormOpen]       = useState(false);
   const [editingId, setEditingId]     = useState<string | null>(null);

@@ -29,11 +29,11 @@ export function DaftarLaporanHarian() {
         <ListEmptyState
           adaFilterAktif={
             filterDate !== '' || filterUser !== '' || filterStatus !== '' ||
-            filterSource !== '' || searchProject.trim() !== '' || filterCategory !== null
+            filterSource !== '' || searchProject.trim() !== '' || filterCategory.length > 0
           }
           onReset={() => {
             setFilterDate(''); setFilterUser(''); setFilterStatus('');
-            setFilterSource(''); setSearchProject(''); setFilterCategory(null);
+            setFilterSource(''); setSearchProject(''); setFilterCategory([]);
           }}
           icon="📋"
           judulKosong="Belum ada aktivitas"

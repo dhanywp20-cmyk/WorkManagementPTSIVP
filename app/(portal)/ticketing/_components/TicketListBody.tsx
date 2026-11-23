@@ -9,6 +9,7 @@ import { Ico } from './Ico';
 import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { useKonteksTicket } from './konteks-ticket';
+import { tukarPilihanTeks, uraiPilihan } from '@/lib/pilihan-ganda';
 
 export function TicketListBody() {
   const k = useKonteksTicket();
@@ -220,9 +221,9 @@ export function TicketListBody() {
                   </td>
                   <td className="px-3 py-3 align-middle">
                     {ticket.product && (
-                      <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
+                      <button onClick={() => { setProductFilter(prev => tukarPilihanTeks(prev, ticket.product ?? '', '') || null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
                         className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded-sm wrap-break-word leading-tight transition-all inline-block"
-                        style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
+                        style={{ background: uraiPilihan(productFilter, '').includes(ticket.product ?? '') ? '#6366f1' : '#eef2ff', color: uraiPilihan(productFilter, '').includes(ticket.product ?? '') ? 'white' : '#4338ca' }}>
                         <Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {ticket.product}
                       </button>
                     )}

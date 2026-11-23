@@ -7,7 +7,7 @@ import { NETRAL } from '@/lib/desain';
 import { STATUS_ISU, labelTanggalLengkap, labelTanggalPendek, type HariTren, type LaporanIsu, type StatusIsu } from '@/lib/isu/inti';
 import { TEMA, fontAngka } from '../tampilan';
 
-type SaringStatus = 'aktif' | 'semua' | StatusIsu;
+type SaringStatus = string;
 
 const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` };
 const WARNA_BARU = '#2563eb';

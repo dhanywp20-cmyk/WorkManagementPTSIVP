@@ -1,5 +1,6 @@
 'use client';
 
+import { banyakPilihan, cocokPilihan, gabungPilihan, teksPilihan, tukarPilihanTeks, uraiPilihan } from '@/lib/pilihan-ganda';
 import { useMemo, useState, type ReactNode } from 'react';
 import { BarChart3, CalendarDays, ChevronDown, Copy, Layers, MapPin, Package, Search, Tag, Users, X, type LucideIcon } from 'lucide-react';
 import { StatCardGrid, TombolEkspor } from '@/components/shared';
@@ -17,7 +18,7 @@ import { StatistikIsu, petaWarna } from './GrafikIsu';
 import { RingkasanLaporan } from './LaporanIsu';
 
 type Tampilan = 'harian' | 'semua';
-type SaringStatus = 'aktif' | 'semua' | StatusIsu;
+type SaringStatus = string;
 type Dimensi = 'status' | 'kota' | 'kat' | 'produk' | 'pic';
 const PERIODE: [string, string][] = [['', 'Semua'], ['7', '7 hari terakhir'], ['30', '30 hari terakhir'], ['90', '90 hari terakhir']];
 
@@ -99,11 +100,11 @@ export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, b
       .filter(i => !mulai || i.tanggal >= mulai)
       .filter(i => !q || [i.judul, i.deskripsi, i.produk, i.action, i.solusi, i.pic, i.lokasi, kodeIsu(i)].some(v => (v ?? '').toLowerCase().includes(q)));
     return (kecuali?: Dimensi) => dasar
-      .filter(i => kecuali === 'status' || status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : i.status === status))
-      .filter(i => kecuali === 'kota' || !kota || i.lokasi === kota)
-      .filter(i => kecuali === 'kat' || !kat || i.kategori === kat)
-      .filter(i => kecuali === 'produk' || !produk || pecahProduk(i.produk).some(p => kunciTeks(p) === produk))
-      .filter(i => kecuali === 'pic' || !pic || kunciTeks(i.pic ?? '') === pic);
+      .filter(i => kecuali === 'status' || status === 'semua' || (status === 'aktif' ? i.status !== 'solved' : cocokPilihan(status, i.status, 'semua')))
+      .filter(i => kecuali === 'kota' || cocokPilihan(kota, i.lokasi, ''))
+      .filter(i => kecuali === 'kat' || cocokPilihan(kat, i.kategori, ''))
+      .filter(i => kecuali === 'produk' || !produk || pecahProduk(i.produk).some(p => cocokPilihan(produk, kunciTeks(p), '')))
+      .filter(i => kecuali === 'pic' || cocokPilihan(pic, kunciTeks(i.pic ?? ''), ''));
   }, [isu, status, kota, kat, produk, pic, cari, periode, hari]);
 
   const tersaring = useMemo(() => saring().sort((a, b) => b.tanggal.localeCompare(a.tanggal) || b.created_at.localeCompare(a.created_at)), [saring]);
@@ -124,13 +125,13 @@ export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, b
   const warna = useMemo(() => ({ kat: petaWarna(semuaKat), pic: petaWarna(semuaPic), produk: petaWarna(semuaProduk) }), [semuaKat, semuaPic, semuaProduk]);
   const daftarProduk = useMemo(() => [...semuaProduk].sort((a, b) => a.label.localeCompare(b.label)), [semuaProduk]);
   const daftarPic = useMemo(() => [...semuaPic].sort((a, b) => a.label.localeCompare(b.label)), [semuaPic]);
-  const labelProduk = daftarProduk.find(p => p.kunci === produk)?.label ?? '';
-  const labelPic = daftarPic.find(p => p.kunci === pic)?.label ?? '';
+  const labelProduk = uraiPilihan(produk, '').map(k => daftarProduk.find(p => p.kunci === k)?.label ?? k).join(', ');
+  const labelPic = uraiPilihan(pic, '').map(k => daftarPic.find(p => p.kunci === k)?.label ?? k).join(', ');
   const hapusSaring = () => { setStatus('semua'); setKota(''); setKat(''); setProduk(''); setPic(''); setCari(''); setPeriode(''); };
-  const labelStatus = status === 'semua' ? '' : status === 'aktif' ? 'Belum solved' : STATUS_ISU[status].label;
+  const labelStatus = status === 'aktif' ? 'Belum solved' : uraiPilihan(status, 'semua').map(s => STATUS_ISU[s as StatusIsu]?.label ?? s).join(', ');
   const labelPeriode = PERIODE.find(p => p[0] && p[0] === periode)?.[1] ?? '';
   const saringanAktif = ([
-    ['Status', labelStatus, () => setStatus('semua')], ['Lokasi', kota, () => setKota('')], ['Kategori', kat, () => setKat('')],
+    ['Status', labelStatus, () => setStatus('semua')], ['Lokasi', teksPilihan(kota, ''), () => setKota('')], ['Kategori', teksPilihan(kat, ''), () => setKat('')],
     ['Produk', labelProduk, () => setProduk('')], ['Handler', labelPic, () => setPic('')], ['Periode', labelPeriode, () => setPeriode('')],
     ['Cari', cari.trim(), () => setCari('')],
   ] as [string, string, () => void][]).filter(([, v]) => v);
@@ -145,7 +146,7 @@ export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, b
     menu: 'Project Progress · Issue Log',
     warna: [TEMA.warna, '#ffffff'],
     filter: [
-      ['Status', labelStatus], ['Lokasi', kota], ['Kategori', kat],
+      ['Status', labelStatus], ['Lokasi', teksPilihan(kota, '')], ['Kategori', teksPilihan(kat, '')],
       ['Produk', labelProduk], ['Team Handler', labelPic], ['Periode', labelPeriode], ['Cari', cari],
     ],
     baris: tersaring,
@@ -228,8 +229,8 @@ export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, b
       )}
 
       {tampilan === 'semua' && grafik && (
-        <StatistikIsu status={statusTersaring} statusAktif={status} onStatus={st => setStatus(st || 'semua')}
-          kategori={{ data: grafikKat, warna: warna.kat, aktif: kat ? kunciTeks(kat) : '', onPilih: k => setKat(grafikKat.find(x => x.kunci === k)?.label ?? '') }}
+        <StatistikIsu status={statusTersaring} statusAktif={status} onStatus={st => setStatus(p => st ? tukarPilihanTeks(p === 'aktif' ? 'semua' : p, st, 'semua') : 'semua')}
+          kategori={{ data: grafikKat, warna: warna.kat, aktif: gabungPilihan(uraiPilihan(kat, '').map(kunciTeks), ''), onPilih: v => setKat(gabungPilihan(uraiPilihan(v, '').map(k => semuaKat.find(x => x.kunci === k)?.label ?? k), '')) }}
           handler={{ data: grafikPic, warna: warna.pic, aktif: pic, onPilih: setPic }}
           produk={{ data: grafikProduk, warna: warna.produk, aktif: produk, onPilih: setProduk }} />
       )}
@@ -263,22 +264,27 @@ export function PapanIsu({ namaGrup, klienGrup, isu, lokasi, kategori, onBuka, b
               <Pilihan label="Status" ikon={Tag} value={status} onChange={v => setStatus(v as SaringStatus)}>
                 <option value="semua">Semua ({isu.length})</option>
                 <option value="aktif">Belum solved ({isu.length - jumlahStatus.solved})</option>
+                {banyakPilihan(status) && <option value={status} disabled>{labelStatus}</option>}
                 {URUTAN_STATUS.map(s => <option key={s} value={s}>{STATUS_ISU[s].label} ({jumlahStatus[s]})</option>)}
               </Pilihan>
               <Pilihan label="Lokasi" ikon={MapPin} value={kota} onChange={setKota}>
                 <option value="">Semua</option>
+                {banyakPilihan(kota) && <option value={kota} disabled>{uraiPilihan(kota, '').length} lokasi dipilih</option>}
                 {namaKota.map(k => <option key={k} value={k}>{k}</option>)}
               </Pilihan>
               <Pilihan label="Kategori" ikon={Layers} value={kat} onChange={setKat}>
                 <option value="">Semua</option>
+                {banyakPilihan(kat) && <option value={kat} disabled>{uraiPilihan(kat, '').length} kategori dipilih</option>}
                 {daftarKategori.map(k => <option key={k} value={k}>{k}</option>)}
               </Pilihan>
               <Pilihan label="Produk" ikon={Package} value={produk} onChange={setProduk}>
                 <option value="">Semua</option>
+                {banyakPilihan(produk) && <option value={produk} disabled>{uraiPilihan(produk, '').length} produk dipilih</option>}
                 {daftarProduk.map(p => <option key={p.kunci} value={p.kunci}>{p.label}</option>)}
               </Pilihan>
               <Pilihan label="Team Handler" ikon={Users} value={pic} onChange={setPic}>
                 <option value="">Semua</option>
+                {banyakPilihan(pic) && <option value={pic} disabled>{uraiPilihan(pic, '').length} handler dipilih</option>}
                 {daftarPic.map(p => <option key={p.kunci} value={p.kunci}>{p.label}</option>)}
               </Pilihan>
               <Pilihan label="Periode" ikon={CalendarDays} value={periode} onChange={setPeriode}>

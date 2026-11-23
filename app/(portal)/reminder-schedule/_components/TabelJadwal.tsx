@@ -1,5 +1,6 @@
 'use client';
 
+import { tukarPilihanTeks, uraiPilihan } from '@/lib/pilihan-ganda';
 import type { useRouter } from 'next/navigation';
 import type { GuestUser, Reminder } from './shared';
 import type { Dispatch, SetStateAction } from 'react';
@@ -126,9 +127,9 @@ export function TabelJadwal({
                 <td className="px-3 py-3 border-r border-gray-200 align-middle">
                   {r.product ? (
                     <button
-                      onClick={e => { e.stopPropagation(); setProductFilter(productFilter === r.product ? null : (r.product ?? null)); }}
+                      onClick={e => { e.stopPropagation(); setProductFilter(tukarPilihanTeks(productFilter, r.product ?? '', '') || null); }}
                       className="text-[11px] font-semibold px-1.5 py-0.5 rounded-sm text-left wrap-break-word leading-tight transition-all"
-                      style={{ background: productFilter === r.product ? '#6366f1' : '#eef2ff', color: productFilter === r.product ? 'white' : '#4338ca' }}>
+                      style={{ background: uraiPilihan(productFilter, '').includes(r.product ?? '') ? '#6366f1' : '#eef2ff', color: uraiPilihan(productFilter, '').includes(r.product ?? '') ? 'white' : '#4338ca' }}>
                       {r.product}
                     </button>
                   ) : <span className="text-gray-400 text-xs">—</span>}

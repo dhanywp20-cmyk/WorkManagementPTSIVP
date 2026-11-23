@@ -1,5 +1,6 @@
 'use client';
 
+import { banyakPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { Ikon } from '@/components/shared/Ikon';
 
@@ -50,6 +51,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
               <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Handlers</option>
+                {banyakPilihan(filterHandler) && <option value={filterHandler}>{uraiPilihan(filterHandler).length} handler dipilih</option>}
                 {ptsMembersList.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">▼</span>
@@ -62,6 +64,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Status</option>
+                {banyakPilihan(filterStatus) && <option value={filterStatus}>{uraiPilihan(filterStatus).length} status dipilih</option>}
                 <option value="pending">Pending (+ Approved)</option>
                 <option value="approved">Approved</option>
                 <option value="in_progress">In Progress</option>

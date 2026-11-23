@@ -95,10 +95,11 @@ export function MerekSettingInline() {
             <Isian label="Nama Perusahaan" nilai={form.namaPerusahaan} bawaan={MEREK_BAWAAN.namaPerusahaan} onChange={v => ubah('namaPerusahaan', v)} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Warna label="Warna Utama" nilai={form.warnaUtama} onChange={v => ubah('warnaUtama', v)} />
             <Warna label="Warna Utama 2" nilai={form.warnaUtama2} onChange={v => ubah('warnaUtama2', v)} />
             <Warna label="Warna Aksen (nama portal)" nilai={form.warnaAksen} onChange={v => ubah('warnaAksen', v)} />
+            <Warna label="Warna Tema (menu aktif, kartu & grafik)" nilai={form.warnaTema} onChange={v => ubah('warnaTema', v)} />
           </div>
 
           <div>
@@ -113,6 +114,20 @@ export function MerekSettingInline() {
               ))}
             </div>
             <Keterangan className="ml-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</Keterangan>
+          </div>
+
+          <div>
+            <span className="block text-[11px] font-bold text-slate-600 mb-1">Sidebar saat pertama masuk</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="Sidebar saat pertama masuk">
+              {([['ya', 'Diciutkan (ikon saja)'], ['tidak', 'Lebar (dengan nama menu)']] as const).map(([v, l]) => (
+                <button key={v} type="button" role="radio" aria-checked={(form.sidebarCiut || 'ya') === v}
+                  onClick={() => ubah('sidebarCiut', v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${(form.sidebarCiut || 'ya') === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-300'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <Keterangan className="ml-1">Berlaku untuk semua pengguna setiap kali masuk. Pengguna tetap bisa melebarkan / menciutkan sendiri.</Keterangan>
           </div>
 
           <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
