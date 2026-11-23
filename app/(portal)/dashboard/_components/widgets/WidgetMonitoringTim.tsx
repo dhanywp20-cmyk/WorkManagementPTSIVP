@@ -5,17 +5,24 @@ import { type WidgetProps, WidgetCard, EmptyState, Loading } from './primitives'
 import { useDaftarTim, type Anggota } from './daftar-tim';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { CincinProgres } from './bagian-widget';
+import { JadwalMingguTim, BarisOtomatis, WARNA_STATUS } from './ringkasan-tim';
 
 export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
-  const { loading, rows, atasan } = useDaftarTim();
+  const { loading, rows, atasan, minggu } = useDaftarTim();
 
   if (loading) return <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
   const total = rows.length;
-  const sudah = rows.filter(r => r.reported).length;
-  const belum = total - sudah;
+  const manualList = rows.filter(r => r.status === 'manual');
+  const otomatisList = rows.filter(r => r.status === 'otomatis');
+  const belumList = rows.filter(r => r.status === 'kosong');
+  const sudah = manualList.length + otomatisList.length;
   const pct = total > 0 ? Math.round((sudah / total) * 100) : 0;
-  const belumList = rows.filter(r => !r.reported);
+  const legenda = [
+    { label: 'Isi manual', nilai: manualList.length, warna: WARNA_STATUS.manual },
+    { label: 'Otomatis', nilai: otomatisList.length, warna: WARNA_STATUS.otomatis },
+    { label: 'Kosong', nilai: belumList.length, warna: WARNA_STATUS.kosong },
+  ];
 
   type KelompokBelum = {
     kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
@@ -56,7 +63,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
       <div className="flex items-baseline gap-1.5 mb-0.5 pl-0.5">
         {g.ketuaBelumLapor && (
           <span className="w-1.5 h-1.5 rounded-full shrink-0 self-center" style={{ background: '#f59e0b' }}
-            title="Belum daily report" />
+            title="Kosong: belum isi & tanpa aktivitas" />
         )}
         <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
@@ -92,29 +99,44 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 h-full">
-          <div className="flex items-center gap-3 lg:w-[210px] shrink-0 lg:self-start">
-            <CincinProgres pct={pct} sudah={sudah} total={total} />
-            <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
-              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />Belum isi</dt><dd className="font-bold text-slate-900 tabular-nums">{belum}</dd></div>
-              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100"><dt className="text-slate-600">Total tim</dt><dd className="font-bold text-slate-900 tabular-nums">{total}</dd></div>
-            </dl>
+          <div className="lg:w-[230px] shrink-0 lg:self-start">
+            <div className="flex items-center gap-3">
+              <CincinProgres pct={pct} sudah={sudah} total={total} />
+              <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
+                {legenda.map(l => (
+                  <div key={l.label} className="flex items-center justify-between gap-2">
+                    <dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full" style={{ background: l.warna }} />{l.label}</dt>
+                    <dd className="font-bold text-slate-900 tabular-nums">{l.nilai}</dd>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100"><dt className="text-slate-600">Total tim</dt><dd className="font-bold text-slate-900 tabular-nums">{total}</dd></div>
+              </dl>
+            </div>
+            <JadwalMingguTim rows={rows} mulai={minggu.mulai} akhir={minggu.akhir} onBuka={() => openMenu('reminder-schedule')} />
           </div>
           <div className="min-w-0 flex-1 min-h-0 flex flex-col">
+            {otomatisList.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Aktivitas hari ini · otomatis ({otomatisList.length})</div>
+                <div className="grid max-h-[150px] overflow-y-auto overscroll-contain pr-1">
+                  {otomatisList.map(m => <BarisOtomatis key={m.id} m={m} onBuka={() => openMenu('daily-report')} />)}
+                </div>
+              </div>
+            )}
             {belumList.length === 0 ? (
-              <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
+              <div className="text-xs font-semibold text-green-700 flex items-center min-h-[40px]"><IkonTeks nama="🎉" />Semua tim punya Daily Report atau aktivitas hari ini!</div>
             ) : (
               <>
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
+                <div className="text-[11px] font-bold uppercase tracking-wide mb-1.5" style={{ color: WARNA_STATUS.kosong }}>Kosong · belum isi & tanpa aktivitas ({belumList.length})</div>
                 <div className="grid gap-y-2.5 max-h-[190px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>
             )}
-            {sudah > 0 && (
+            {manualList.length > 0 && (
               <div className="mt-3 pt-2.5 border-t border-slate-100">
-                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Sudah isi ({sudah})</div>
-                <p className="text-[12px] font-medium text-slate-600 leading-relaxed">{rows.filter(r => r.reported).map(r => r.name).join(' · ')}</p>
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Isi manual ({manualList.length})</div>
+                <p className="text-[12px] font-medium text-slate-600 leading-relaxed">{manualList.map(r => r.name).join(' · ')}</p>
               </div>
             )}
           </div>

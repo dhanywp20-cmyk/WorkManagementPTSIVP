@@ -9,7 +9,7 @@ export const DAFTAR_WIDGET = [
   { kunci: 'alur-kerja', label: 'Grafik alur kerja', ket: 'Grafik harian tiket / jadwal selesai vs belum.', bagian: 'Atas' },
   { kunci: 'piket', label: 'Piket Showroom', ket: 'Petugas piket hari ini per tim.', bagian: 'Atas' },
   { kunci: 'agenda', label: 'Agenda Saya', ket: 'Panel kanan: tugas & agenda pengguna yang membuka dashboard.', bagian: 'Samping' },
-  { kunci: 'daily-report-tim', label: 'Daily Report tim', ket: 'Siapa yang sudah / belum mengisi Daily Report.', bagian: 'Bawah' },
+  { kunci: 'daily-report-tim', label: 'Daily Report tim', ket: 'Daily Report manual / otomatis dari tiket & jadwal, plus jadwal minggu ini.', bagian: 'Bawah' },
   { kunci: 'menunggu-keputusan', label: 'Menunggu keputusan', ket: 'Approval tiket, jadwal, desain, tech note, akun baru.', bagian: 'Bawah' },
   { kunci: 'unit-di-luar', label: 'Unit di luar', ket: 'Unit pinjaman yang belum kembali.', bagian: 'Bawah' },
   { kunci: 'sumber-tiket', label: 'Sumber tiket', ket: 'Tiket per produk, divisi, handler, status.', bagian: 'Bawah' },
