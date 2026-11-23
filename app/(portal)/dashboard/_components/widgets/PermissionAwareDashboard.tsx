@@ -99,7 +99,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
     : undefined;
 
   return (
-    <div className="dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden"
+    <div className={`dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden ${adaAnalytics ? '' : 'bb-muat'}`}
       style={widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
       <header className="dasbor-kepala sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>

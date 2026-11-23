@@ -772,6 +772,25 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 /* Muncul berurutan. fill `backwards`: tidak ada transform yang menetap pada kartu. */
 .bb-naik { animation: bbNaik .55s var(--bb-halus) backwards; animation-delay: calc(var(--d, 0) * 55ms); }
 
+/* Dashboard tanpa Analytics (mis. Guest) di desktop: muat satu layar. Baris kartu bawah mengisi sisa tinggi,
+   daftar panjang menggulir di dalam kartunya sendiri. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  .bb-muat { display: flex; flex-direction: column; }
+  .bb-muat > .dasbor-kepala { flex-shrink: 0; }
+  .bb-muat > .bb-wadah { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; padding: 12px 20px 14px; }
+  .bb-muat > .bb-wadah > :not(.bb-utama) { flex-shrink: 0; margin-bottom: 10px; }
+  .bb-muat > .bb-wadah > .rounded-xl:first-child { padding-block: 8px; }
+  .bb-muat .bb-utama { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); gap: 14px; }
+  .bb-muat .bb-utama > div:first-child { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .bb-muat .bb-utama > div:first-child > :not(.bb-kisi-lain) { flex-shrink: 0; }
+  .bb-muat .bb-kisi-lain { flex: 1; min-height: 230px; grid-auto-rows: minmax(0, 1fr); gap: 14px; }
+  .bb-muat .bb-kisi-lain > div { min-height: 0; }
+  .bb-muat .bb-samping { height: auto; min-height: 0; }
+  .bb-muat .bb-wadah .p-5 { padding: 16px; }
+  .bb-muat .bb-kepala-ubin { margin-bottom: 10px; }
+  .bb-muat .bb-isi-ubin { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
+
 @container (max-width: 1060px) {
   .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr) 280px; }
   .bb-sel-grafik { grid-column: span 6; }

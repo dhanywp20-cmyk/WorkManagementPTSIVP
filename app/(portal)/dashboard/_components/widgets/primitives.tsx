@@ -29,7 +29,7 @@ export function WidgetCard({ title, children, onSeeAll, seeAllLabel }: {
 }) {
   return (
     <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4 bb-kepala-ubin">
         <h3 className={`${LABEL_UBIN} truncate flex-1`}>{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}
@@ -39,7 +39,7 @@ export function WidgetCard({ title, children, onSeeAll, seeAllLabel }: {
           </button>
         )}
       </div>
-      <div className="flex-1 min-h-0">{children}</div>
+      <div className="flex-1 min-h-0 bb-isi-ubin">{children}</div>
     </div>
   );
 }

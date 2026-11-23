@@ -387,3 +387,9 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
   :root .kerangka-bingkai .kepala-modul > div { padding-top: 12px; padding-bottom: 12px; row-gap: 10px; }
   :root .kerangka-bingkai .kepala-modul h1 { overflow-wrap: anywhere; }
 }
+
+/* Dashboard Guest (tanpa Analytics) di desktop: kepala sapaan lebih ringkas supaya semua muat satu layar. */
+@media (min-width: 1024px) and (min-height: 600px) {
+  :root .kerangka-bingkai .bb-muat .dasbor-kepala > div { padding-top: 10px; padding-bottom: 10px; }
+  :root .kerangka-bingkai .bb-muat .judul-sapaan { font-size: 22px !important; }
+}
