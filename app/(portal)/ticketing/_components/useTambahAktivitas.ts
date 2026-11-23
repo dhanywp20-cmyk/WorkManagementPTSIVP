@@ -218,13 +218,16 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
             try {
               const newDeadline = new Date(Date.now() + extDays * 86400000).toISOString();
               const existing = getOverdueSetting(selectedTicket.id);
-              if (existing) {
-                await supabase.from("overdue_settings").update({ due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" }).eq("id", existing.id);
-              } else {
-                await supabase.from("overdue_settings").insert([{ ticket_id: selectedTicket.id, due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" }]);
-              }
+              const isian = { due_date: newDeadline, due_hours: null, set_by: currentUser?.username || "" };
+              const { data: tersimpan, error: galatOverdue } = existing
+                ? await supabase.from("overdue_settings").update(isian).eq("id", existing.id).select("id")
+                : await supabase.from("overdue_settings").insert([{ ticket_id: selectedTicket.id, ...isian }]).select("id");
+              if (galatOverdue) throw galatOverdue;
+              if (!tersimpan || tersimpan.length === 0) throw new Error("ditolak sistem");
               await fetchOverdueSettings();
-            } catch {  }
+            } catch (e) {
+              notify("error", `Status & catatan tersimpan, tapi perpanjangan overdue ${extDays} hari GAGAL disimpan (${pesanGalat(e)}). Minta admin memperpanjang.`);
+            }
           }
         }
 

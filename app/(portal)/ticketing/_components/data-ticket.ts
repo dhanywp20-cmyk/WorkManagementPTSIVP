@@ -143,6 +143,27 @@ async function gabungLogServices(tickets: Ticket[]): Promise<Ticket[]> {
   } catch { return tickets; }
 }
 
+export async function ambilLogPenuh(ticketId: string): Promise<ActivityLog[]> {
+  const ambil = async (klien: typeof supabase): Promise<ActivityLog[]> => {
+    const { data, error } = await klien.from("activity_logs").select("*").eq("ticket_id", ticketId);
+    if (error) throw error;
+    return (data ?? []) as ActivityLog[];
+  };
+  const [pts, svc] = await Promise.all([ambil(supabase), ambil(supabaseServices as typeof supabase).catch(() => [] as ActivityLog[])]);
+  const peta = new Map<string, ActivityLog>();
+  for (const log of [...pts, ...svc]) if (!peta.has(log.id)) peta.set(log.id, log);
+  return [...peta.values()].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+}
+
+export function gabungLogTerpilih(lama: ActivityLog[] | undefined, baru: ActivityLog[] | undefined, penuh: ActivityLog[] | null): ActivityLog[] {
+  const daftarLama = lama ?? [];
+  const daftarBaru = baru ?? [];
+  if (penuh && penuh.length >= daftarBaru.length) return penuh;
+  if (daftarLama.length > daftarBaru.length) return daftarLama;
+  const petaLama = new Map(daftarLama.map(l => [l.id, l] as const));
+  return daftarBaru.map(l => ({ ...petaLama.get(l.id), ...l }));
+}
+
 export async function ambilTiketTertentu(activeUser: User | null | undefined, ids: string[]): Promise<Ticket[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("id", ids);
