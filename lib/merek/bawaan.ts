@@ -10,6 +10,7 @@ export interface Merek {
   warnaUtama: string;
   warnaUtama2: string;
   warnaAksen: string;
+  warnaTema: string;
   gambarLatarDasbor: string;
   latarDasbor: string;
 
@@ -33,6 +34,7 @@ export const MEREK_BAWAAN: Merek = {
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',
   warnaAksen: '#c8861d',
+  warnaTema: '#2563eb',
   gambarLatarDasbor: '/IVP_Background.png',
   latarDasbor: 'netral',
 

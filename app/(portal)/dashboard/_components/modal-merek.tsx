@@ -95,10 +95,11 @@ export function MerekSettingInline() {
             <Isian label="Nama Perusahaan" nilai={form.namaPerusahaan} bawaan={MEREK_BAWAAN.namaPerusahaan} onChange={v => ubah('namaPerusahaan', v)} />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Warna label="Warna Utama" nilai={form.warnaUtama} onChange={v => ubah('warnaUtama', v)} />
             <Warna label="Warna Utama 2" nilai={form.warnaUtama2} onChange={v => ubah('warnaUtama2', v)} />
             <Warna label="Warna Aksen (nama portal)" nilai={form.warnaAksen} onChange={v => ubah('warnaAksen', v)} />
+            <Warna label="Warna Tema (menu aktif, kartu & grafik)" nilai={form.warnaTema} onChange={v => ubah('warnaTema', v)} />
           </div>
 
           <div>

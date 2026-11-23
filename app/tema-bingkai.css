@@ -11,10 +11,12 @@ html:not(.gelap) .kerangka-bingkai {
   --kc-tinta: #2b2723;
   --kc-tinta-2: #6b635b;
   --kc-tinta-3: #968d84;
-  --kc-aksen: #2f9a82;
-  --kc-aksen-2: #1f7a66;
-  --kc-aksen-lembut: #e8f3ef;
-  --kc-aksen-tepi: #bfdfd5;
+  --kc-aksen: var(--merek-tema, #2563eb);
+  --kc-aksen-2: color-mix(in srgb, var(--kc-aksen) 78%, #000);
+  --kc-aksen-terang: color-mix(in srgb, var(--kc-aksen) 70%, #fff);
+  --kc-aksen-lembut: color-mix(in srgb, var(--kc-aksen) 10%, #fff);
+  --kc-aksen-tepi: color-mix(in srgb, var(--kc-aksen) 30%, #fff);
+  --kc-aksen-bayang: color-mix(in srgb, var(--kc-aksen) 45%, transparent);
   --kc-arang: #26221f;
   --kc-permukaan: #ffffff;
   --kc-permukaan-2: #f8f6f2;
@@ -73,26 +75,43 @@ html:not(.gelap) .kerangka-bingkai :is(.kepala-3d, .sidebar-3d, .nav-bawah-3d, .
 
 /* Latar krem hangat (bila merek tidak memakai gambar latar sendiri). */
 html:not(.gelap) .kerangka-bingkai:not([style*="url("]) { background: var(--kc-latar) !important; }
-/* Footer: bilah mengambang padat, sewarna kepala. */
+/* Footer: baris tipis tanpa bingkai, isi berupa kapsul kecil yang serasi dengan kepala. */
 html:not(.gelap) .kerangka-bingkai > footer {
-  margin: 0 12px 10px; border-radius: 16px;
-  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: var(--kc-bayang);
+  margin: 0 12px; background: transparent !important; border: 0 !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   --color-slate-500: var(--kc-tinta-2); --color-slate-700: #4a443e;
 }
-html:not(.gelap) .kerangka-bingkai > footer > div { padding-top: 6px; padding-bottom: 6px; }
-html:not(.gelap) .kerangka-bingkai > footer [title^="Versi"] { color: var(--kc-tinta-2) !important; background: var(--kc-isi) !important; border-color: var(--kc-garis) !important; }
-@media (max-width: 767px) { html:not(.gelap) .kerangka-bingkai > footer { margin: 0 8px 8px; border-radius: 14px; } }
-
-/* ── Kepala: bilah mengambang bersudut membulat ── */
-html:not(.gelap) .kerangka-bingkai .kepala-3d {
-  margin: 12px 12px 0; border-radius: 22px;
-  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: var(--kc-bayang) !important;
+html:not(.gelap) .kerangka-bingkai > footer > div { padding: 0 0 10px !important; }
+html:not(.gelap) .kerangka-bingkai > footer > div > p,
+html:not(.gelap) .kerangka-bingkai > footer [title^="Versi"] {
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important; box-shadow: var(--kc-bayang);
+  color: var(--kc-tinta-2) !important;
 }
+html:not(.gelap) .kerangka-bingkai > footer > div > p { display: inline-block; max-width: 100%; }
+html:not(.gelap) .kerangka-bingkai > footer > div > p::before {
+  content: ""; display: inline-block; vertical-align: middle; margin: -2px 7px 0 0; width: 6px; height: 6px; border-radius: 999px; background: var(--kc-aksen); flex-shrink: 0;
+}
+@media (max-width: 767px) { html:not(.gelap) .kerangka-bingkai > footer { margin: 0 8px; } html:not(.gelap) .kerangka-bingkai > footer > div { padding-bottom: 8px !important; } }
+
+/* ── Kepala: "pulau" - merek & alat kanan jadi dua kapsul putih terpisah, latar tampak di tengah ── */
+html:not(.gelap) .kerangka-bingkai .kepala-3d {
+  margin: 12px 12px 0; background: transparent !important; border: 0 !important; box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+html:not(.gelap) .kerangka-bingkai .kepala-3d > div { padding: 0 !important; }
+html:not(.gelap) .kerangka-bingkai .kepala-3d > div > div > :is(:first-child, :last-child) {
+  background: var(--kc-permukaan); border: 1px solid var(--kc-garis); box-shadow: var(--kc-bayang);
+}
+html:not(.gelap) .kerangka-bingkai .kepala-3d > div > div > :first-child { padding: 8px 22px 8px 10px; border-radius: 999px; }
+html:not(.gelap) .kerangka-bingkai .kepala-3d > div > div > :last-child { padding: 6px; border-radius: 22px; }
 html:not(.gelap) .kerangka-bingkai .kepala-3d h1 { color: var(--kc-tinta) !important; }
-@media (max-width: 767px) { html:not(.gelap) .kerangka-bingkai .kepala-3d { margin: 8px 8px 0; border-radius: 18px; } }
+html:not(.gelap) .kerangka-bingkai .kepala-3d h1 + span { color: var(--kc-garis-kuat) !important; }
+@media (max-width: 767px) {
+  html:not(.gelap) .kerangka-bingkai .kepala-3d { margin: 8px 8px 0; }
+  html:not(.gelap) .kerangka-bingkai .kepala-3d > div > div > :first-child { padding: 6px 14px 6px 6px; }
+  html:not(.gelap) .kerangka-bingkai .kepala-3d > div > div > :last-child { padding: 4px; border-radius: 999px; }
+}
 
 /* ── Sidebar: panel mengambang bersudut membulat, ikon dalam bulatan ── */
 html:not(.gelap) .kerangka-bingkai .sidebar-3d {
@@ -124,15 +143,15 @@ html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d.h-9:not([aria-current]) 
   html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d.h-9:not([aria-current]):hover { background: var(--kc-isi-2) !important; }
 }
 
-/* Aktif: pil teal muda, ikon dalam bulatan teal. */
+/* Aktif: pil aksen muda, ikon dalam bulatan aksen (warna dari Admin Panel > Warna Tema). */
 html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] {
   background: var(--kc-aksen-lembut) !important; border-color: var(--kc-aksen-tepi) !important;
   color: var(--kc-tinta) !important;
-  box-shadow: 0 8px 18px -12px rgba(31, 122, 102, .45) !important;
+  box-shadow: 0 8px 18px -12px var(--kc-aksen-bayang) !important;
 }
 html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] > :first-child {
-  background: linear-gradient(150deg, #57b9a0, var(--kc-aksen) 55%, var(--kc-aksen-2)) !important; color: #fff !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 12px -5px rgba(31, 122, 102, .55);
+  background: linear-gradient(150deg, var(--kc-aksen-terang), var(--kc-aksen) 55%, var(--kc-aksen-2)) !important; color: #fff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 12px -5px var(--kc-aksen-bayang);
 }
 html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d.h-9[aria-current="page"] { background: var(--kc-aksen-lembut) !important; }
 html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d.h-9[aria-current="page"] > :first-child { background: transparent !important; color: var(--kc-aksen-2) !important; box-shadow: none; }
@@ -211,7 +230,7 @@ html:not(.gelap) .kerangka-bingkai .bb-grafik-garis i { background: #f0ebe5; }
 html:not(.gelap) .kerangka-bingkai .bb-grafik-garis i:last-child { background: var(--kc-garis-kuat); }
 html:not(.gelap) .kerangka-bingkai :is(.bb-grafik-sumbu-y, .bb-grafik-sumbu-x) { color: var(--kc-tinta-3); }
 html:not(.gelap) .kerangka-bingkai .bb-batang-sisa { background: repeating-linear-gradient(135deg, #4a443e 0 2px, #6b635b 2px 4px); }
-html:not(.gelap) .kerangka-bingkai .bb-kolom:hover, html:not(.gelap) .kerangka-bingkai .bb-kolom-aktif { background: rgba(47, 154, 130, .07); }
+html:not(.gelap) .kerangka-bingkai .bb-kolom:hover, html:not(.gelap) .kerangka-bingkai .bb-kolom-aktif { background: color-mix(in srgb, var(--kc-aksen) 7%, transparent); }
 html:not(.gelap) .kerangka-bingkai .bb-tip { background: var(--kc-arang); border-radius: 10px; }
 html:not(.gelap) .kerangka-bingkai .bb-piket-baris { background: var(--kc-permukaan-2); border-radius: 12px; }
 html:not(.gelap) .kerangka-bingkai .bb-piket-baris span { color: var(--kc-aksen-2); }
@@ -219,12 +238,12 @@ html:not(.gelap) .kerangka-bingkai .bb-fokus { background: var(--kc-permukaan-2)
 html:not(.gelap) .kerangka-bingkai .bb-tombol-utama { background: var(--kc-arang) !important; border-radius: 999px; }
 html:not(.gelap) .kerangka-bingkai .bb-aksi { border-radius: 999px; }
 
-/* Kartu sorotan: kartu angka pertama berwarna teal padat (spesifisitas di atas aturan kartu putih). */
+/* Kartu sorotan: kartu angka pertama berwarna aksen padat (spesifisitas di atas aturan kartu putih). */
 html:not(.gelap) .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child {
   background-color: var(--kc-aksen) !important;
-  background-image: linear-gradient(150deg, #4fb59b, var(--kc-aksen) 50%, var(--kc-aksen-2)) !important;
+  background-image: linear-gradient(150deg, var(--kc-aksen-terang), var(--kc-aksen) 50%, var(--kc-aksen-2)) !important;
   border-color: var(--kc-aksen-2) !important; color: #fff;
-  box-shadow: 0 16px 32px -18px rgba(31, 122, 102, .6) !important;
+  box-shadow: 0 16px 32px -18px var(--kc-aksen-bayang) !important;
   --color-slate-500: rgba(255, 255, 255, .85); --color-slate-700: rgba(255, 255, 255, .92); --color-slate-900: #fff;
   --color-slate-100: rgba(255, 255, 255, .18); --aksen-ubin: #fff; --gb-e8edf3: rgba(255, 255, 255, .25);
 }
