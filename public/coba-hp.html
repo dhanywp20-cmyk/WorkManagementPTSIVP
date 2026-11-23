@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Coba Tampilan HP</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap">
+<style>
+  :root { --bg: #f3efea; --kartu: #fff; --garis: #e7e1d9; --tinta: #2b2723; --tinta-2: #6b635b; --aksen: #2563eb; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #12100f; --kartu: #1f1c19; --garis: #36302b; --tinta: #efe9e2; --tinta-2: #b9afa5; color-scheme: dark; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--tinta); font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  main { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  p { margin: 0; color: var(--tinta-2); font-size: 14px; line-height: 1.5; }
+  a { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; background: var(--kartu); border: 1px solid var(--garis); border-radius: 20px; padding: 18px; }
+  a b { font-size: 17px; }
+  a span { font-size: 13px; color: var(--tinta-2); line-height: 1.45; }
+  a em { font-style: normal; font-size: 13px; font-weight: 800; color: var(--aksen); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Coba tampilan HP</h1>
+  <p>Prototipe layar penuh untuk dicoba langsung di HP. Semua angka dan nama adalah data contoh. Di dalam, pindah gaya lewat tombol di bilah gelap paling atas.</p>
+  <a href="/coba-hp-2.html"><b>Set baru: G · H · I</b><span>G Bingkai (mirip desktop), H Arang (header & menu gelap), I Papan (tiket per kolom status).</span><em>Buka →</em></a>
+  <a href="/coba-hp-1.html"><b>Set sebelumnya: D · F</b><span>D Super-App (grid ikon menu), F Minimal (daftar gaya iPhone).</span><em>Buka →</em></a>
+</main>
+</body>
+</html>
