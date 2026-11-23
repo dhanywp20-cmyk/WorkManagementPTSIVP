@@ -2,6 +2,20 @@ import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
 import { escObjek, urlAman } from '@/lib/lembar-cetak';
 import { supabase } from '@/lib/supabase';
 import type { IssueTiket, LogIssueTiket } from './issue-tambahan';
+import { htmlPenanganan } from './format-penanganan';
+
+function blokCetak(judul: string, isi: string, warna: string, latar: string, ukuran = 12): string {
+  return `<div style="margin-top:6px;border:1px solid ${latar === '#eff6ff' ? '#bfdbfe' : '#e2e8f0'};border-radius:6px;overflow:hidden;page-break-inside:avoid">
+    <div style="background:${latar};color:${warna};font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px">${judul}</div>
+    <div style="padding:4px 10px 6px;color:#1e293b;word-break:break-word">${htmlPenanganan(isi, ukuran)}</div>
+  </div>`;
+}
+
+function blokPenangananCetak(action: string | null | undefined, notes: string | null | undefined, ukuran = 12): string {
+  const a = action?.trim() ? blokCetak('🔧 Action Taken', action, '#1d4ed8', '#eff6ff', ukuran) : '';
+  const n = notes?.trim() ? blokCetak('📝 Notes', notes, '#475569', '#f8fafc', ukuran) : '';
+  return a + n;
+}
 
 async function htmlIssueTambahan(ticketId: string): Promise<string> {
   const [ri, rl] = await Promise.all([
@@ -16,8 +30,7 @@ async function htmlIssueTambahan(ticketId: string): Promise<string> {
       <div style="padding:6px 0;border-top:1px dashed #e2e8f0;font-size:11px">
         <b>${formatDateTime(l.created_at)}</b> · ${l.handler_name || '-'} ·
         <b>${l.dari_status && l.dari_status !== l.new_status ? `${l.dari_status} → ${l.new_status}` : l.new_status}</b>
-        ${l.action_taken ? `<div style="color:#1d4ed8;font-weight:700;margin-top:2px">🔧 ${l.action_taken}</div>` : ''}
-        ${l.notes ? `<div style="color:#1e293b;white-space:pre-line;margin-top:2px">${l.notes}</div>` : ''}
+        ${blokPenangananCetak(l.action_taken, l.notes, 11)}
         ${l.photo_url ? `<div style="margin-top:4px"><img src="${urlAman(l.photo_url)}" style="max-height:80px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ''}
       </div>`).join('');
     const info = [i.product && `Produk: ${i.product}`, i.sn_unit && `SN: ${i.sn_unit}`].filter(Boolean).join(' · ');
@@ -75,8 +88,7 @@ export async function cetakTicket(asli: Ticket, opsi: { tanpaSales?: boolean } =
           ${log.assigned_to_services ? `<div style="margin-top:4px;font-size:10px;font-weight:700;color:#dc2626">🔄 → Team Services</div>` : ""}
         </td>
         <td style="padding:10px 12px;border:1px solid #e2e8f0;vertical-align:top">
-          ${log.action_taken ? `<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">🔧 ${log.action_taken}</div>` : ""}
-          ${log.notes ? `<div style="font-size:12px;color:#1e293b;line-height:1.6;white-space:pre-line">${log.notes}</div>` : "<div style=\"color:#94a3b8;font-size:11px;font-style:italic\">—</div>"}
+          ${blokPenangananCetak(log.action_taken, log.notes) || "<div style=\"color:#94a3b8;font-size:11px;font-style:italic\">—</div>"}
           ${log.file_url ? `<div style="margin-top:6px"><a href="${urlAman(log.file_url)}" style="font-size:11px;color:#2563eb;font-weight:600">📎 ${log.file_name || "Download"}</a></div>` : ""}
           ${log.photo_url ? `<div style="margin-top:6px"><img src="${urlAman(log.photo_url)}" style="max-height:100px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ""}
         </td>

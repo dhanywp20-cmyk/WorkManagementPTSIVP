@@ -3,6 +3,7 @@ import { Modal, TombolModal, AuditTrailPanel, FlowSteps } from "@/components/sha
 import type { Ticket, User } from "./shared";
 import { formatDateTime, ringkasPenanganan, statusColors } from "./shared";
 import { Ikon, IkonTeks } from "@/components/shared/Ikon";
+import { BlokPenanganan } from "./KolomPenanganan";
 
 export function ActivitySummaryModal({
   summaryTicket,
@@ -202,28 +203,7 @@ export function ActivitySummaryModal({
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mb-2">{formatDateTime(log.created_at)}</p>
-                        {log.action_taken && (
-                          <div
-                            className="rounded-lg px-3 py-1.5 mb-2"
-                            style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}
-                          >
-                            <p className="text-xs font-bold text-blue-700">
-                              <IkonTeks nama="🔧" />
-                              Action:
-                            </p>
-                            <p className="text-xs text-gray-800">{log.action_taken}</p>
-                          </div>
-                        )}
-                        <div
-                          className="rounded-lg px-3 py-1.5"
-                          style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}
-                        >
-                          <p className="text-xs font-bold text-gray-600">
-                            <IkonTeks nama="📝" />
-                            Notes:
-                          </p>
-                          <p className="text-xs text-gray-800 whitespace-pre-line">{log.notes}</p>
-                        </div>
+                        <BlokPenanganan action={log.action_taken} notes={log.notes} />
                         {isServices && (
                           <div
                             className="mt-2 flex items-center gap-1 text-xs font-bold text-red-700 rounded-lg px-2 py-1"

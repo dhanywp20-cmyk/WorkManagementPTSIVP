@@ -8,6 +8,7 @@ import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPe
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
 import { SeksiIssueTiket } from './SeksiIssueTiket';
+import { BlokPenanganan } from './KolomPenanganan';
 import { jejakProgres } from '@/lib/alur-status-ticket';
 
 export interface IsiDetailTicketProps {
@@ -192,8 +193,7 @@ export function IsiDetailTicket({
                     <span className="text-[10px] text-gray-500">{formatDateTime(log.created_at)}</span>
                   </div>
                 </div>
-                {log.action_taken && <p className="text-[11px] text-blue-700 font-semibold"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.action_taken}</p>}
-                <p className="text-xs text-gray-600">{log.notes}</p>
+                <BlokPenanganan action={log.action_taken} notes={log.notes} />
                 {log.photo_url && <img src={log.photo_url} alt="log" loading="lazy" decoding="async" className="mt-1.5 max-h-24 rounded-lg border cursor-pointer" onClick={() => window.open(log.photo_url!, "_blank")} />}
                 {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[11px] font-bold text-blue-600 hover:underline"><Ikon nama="📄" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.file_name || "Download"}</a>}
               </div>
