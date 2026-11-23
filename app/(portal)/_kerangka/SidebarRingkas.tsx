@@ -2,7 +2,7 @@
 
 import type { MenuItem } from '../dashboard/_components/shared';
 import { Ikon } from '@/components/shared/Ikon';
-import { MENU_ICONS, IKON_BERANDA } from './daftar-menu';
+import { MENU_ICONS, IKON_BERANDA, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 
 export interface SidebarRingkasProps {
   setSidebarCollapsed: (v: boolean) => void;
@@ -18,6 +18,11 @@ export interface SidebarRingkasProps {
 export function SidebarRingkas({
   setSidebarCollapsed, onBeranda, showDashboardPanel, visibleMenuItems, aktifUrl, onMenu, isFullAccess, pendingRequests,
 }: SidebarRingkasProps) {
+  const grup = [
+    visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key) && m.items.length === 1),
+    visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key) && m.items.length === 1),
+    visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)),
+  ].filter(g => g.length > 0);
   return (
     <div className="space-y-1">
       <button aria-label="Main Menu"
@@ -43,8 +48,9 @@ export function SidebarRingkas({
           ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
           : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
       >{IKON_BERANDA}</button>
-      {visibleMenuItems.map((menu) => (
+      {grup.map((menuGrup, gi) => menuGrup.map((menu, mi) => (
         <div key={menu.key}>
+          {gi > 0 && mi === 0 && <span aria-hidden="true" className="block h-px mx-2 mb-1 bg-slate-200" />}
           {menu.items.map((item, itemIndex) => {
             const isActive = !showDashboardPanel && aktifUrl(item.url);
             return (
@@ -72,7 +78,7 @@ export function SidebarRingkas({
             );
           })}
         </div>
-      ))}
+      )))}
     </div>
   );
 }

@@ -175,7 +175,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-kaca flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-bingkai flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
         {renderModals()}
         {currentUser && !tourVisible && (
           <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
@@ -209,7 +209,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-kaca flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} kerangka-bingkai flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
       {renderModals()}
 
       {currentUser && (
