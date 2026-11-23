@@ -2,11 +2,12 @@ import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
 import { escObjek, urlAman } from '@/lib/lembar-cetak';
 import { supabase } from '@/lib/supabase';
 import type { IssueTiket, LogIssueTiket } from './issue-tambahan';
+import { htmlPenanganan } from './format-penanganan';
 
 function blokCetak(judul: string, isi: string, warna: string, latar: string, ukuran = 12): string {
   return `<div style="margin-top:6px;border:1px solid ${latar === '#eff6ff' ? '#bfdbfe' : '#e2e8f0'};border-radius:6px;overflow:hidden;page-break-inside:avoid">
     <div style="background:${latar};color:${warna};font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px">${judul}</div>
-    <div style="padding:6px 10px;font-size:${ukuran}px;color:#1e293b;line-height:1.6;white-space:pre-wrap;word-break:break-word">${isi}</div>
+    <div style="padding:4px 10px 6px;color:#1e293b;word-break:break-word">${htmlPenanganan(isi, ukuran)}</div>
   </div>`;
 }
 

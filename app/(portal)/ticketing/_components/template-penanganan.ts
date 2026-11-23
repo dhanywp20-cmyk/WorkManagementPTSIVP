@@ -8,6 +8,12 @@ export interface KonteksTemplate {
   bukaUlang?: boolean;
 }
 
+type Bagian = [judul: string, ...poin: string[]];
+
+function susun(bagian: Bagian[]): string {
+  return bagian.map(([judul, ...poin]) => [judul, ...poin.map(p => `- ${p}`)].join('\n')).join('\n');
+}
+
 function unit(k: KonteksTemplate): string {
   const produk = k.produk?.trim();
   const sn = k.sn?.trim();
@@ -15,48 +21,49 @@ function unit(k: KonteksTemplate): string {
   return `${nama}${sn ? ` (SN ${sn})` : ''}${k.lokasi?.trim() ? ` di ${k.lokasi.trim()}` : ''}`;
 }
 
-function kondisiAwal(k: KonteksTemplate): string {
+function kondisiAwal(k: KonteksTemplate): Bagian {
   const kasus = k.kasus?.trim();
-  return `Kondisi Awal: ${unit(k)} dilaporkan mengalami kendala ${kasus ? `"${kasus}"` : '[gejala yang dilaporkan user]'}.`;
+  return ['KONDISI AWAL', `${unit(k)} dilaporkan mengalami kendala ${kasus ? `"${kasus}"` : '[gejala yang dilaporkan user]'}`];
 }
 
 export function templateNotes(k: KonteksTemplate): string {
   if (k.bukaUlang) {
-    return [
-      `Alasan Dibuka Ulang: Kendala ${k.kasus?.trim() ? `"${k.kasus.trim()}"` : 'sebelumnya'} muncul kembali pada [tanggal / waktu kejadian].`,
-      'Gejala Terkini: [gejala yang dilaporkan user saat ini].',
-      'Rencana: Pengecekan ulang dan penanganan lanjutan oleh tim PTS.',
-    ].join('\n');
+    return susun([
+      ['ALASAN DIBUKA ULANG', `Kendala ${k.kasus?.trim() ? `"${k.kasus.trim()}"` : 'sebelumnya'} muncul kembali pada [tanggal / waktu kejadian]`],
+      ['GEJALA TERKINI', '[gejala yang dilaporkan user saat ini]'],
+      ['RENCANA', 'Pengecekan ulang dan penanganan lanjutan oleh tim PTS'],
+    ]);
   }
   if (k.catatanSaja) {
-    return [
-      'Perkembangan: [hal yang sudah dilakukan / informasi terbaru dari user atau tim].',
-      'Status Saat Ini: [kondisi unit / penanganan saat ini].',
-      'Langkah Berikutnya: [rencana tindak lanjut] dengan target [tanggal].',
-    ].join('\n');
+    return susun([
+      ['PERKEMBANGAN', '[hal yang sudah dilakukan / informasi terbaru dari user atau tim]'],
+      ['STATUS SAAT INI', '[kondisi unit / penanganan saat ini]'],
+      ['LANGKAH BERIKUTNYA', '[rencana tindak lanjut], target [tanggal]'],
+    ]);
   }
   if (k.status === 'Pending Action') {
-    return [
-      'Kendala: Penanganan tertahan karena [menunggu konfirmasi user / akses lokasi / ketersediaan sparepart].',
-      'Sudah Dicek: [pengecekan dan tindakan yang sudah dilakukan].',
-      'Dibutuhkan: [hal yang harus tersedia] dari [pihak terkait].',
-      'Tindak Lanjut: Penanganan dilanjutkan setelah kebutuhan di atas terpenuhi, estimasi [tanggal].',
-    ].join('\n');
+    return susun([
+      ['KENDALA', 'Penanganan tertahan karena [menunggu konfirmasi user / akses lokasi / ketersediaan sparepart]'],
+      ['SUDAH DICEK', '[pengecekan dan tindakan yang sudah dilakukan]'],
+      ['DIBUTUHKAN', '[hal yang harus tersedia] dari [pihak terkait]'],
+      ['TINDAK LANJUT', 'Penanganan dilanjutkan setelah kebutuhan di atas terpenuhi, estimasi [tanggal]'],
+    ]);
   }
   if (k.status === 'Solved') {
-    return [
+    return susun([
       kondisiAwal(k),
-      'Tindakan: Pengecekan fisik unit, kabel, dan sumber daya, lalu [tindakan perbaikan, mis. penggantian kabel HDMI / reset konfigurasi].',
-      'Hasil: Unit kembali berfungsi normal dan sudah diuji bersama user [nama user] tanpa kendala.',
-      'Rekomendasi: Pengecekan koneksi kabel dan perangkat secara berkala; hubungi tim PTS bila kendala muncul kembali.',
-    ].join('\n');
+      ['PENYEBAB', '[hasil pemeriksaan, mis. kabel HDMI rusak pada konektor sisi unit]'],
+      ['TINDAKAN', 'Pengecekan fisik unit, kabel, dan sumber daya', '[tindakan perbaikan, mis. penggantian kabel HDMI / reset konfigurasi]'],
+      ['HASIL', 'Unit kembali berfungsi normal dan sudah diuji bersama user [nama user]'],
+      ['REKOMENDASI', 'Pengecekan koneksi kabel dan perangkat secara berkala', 'Hubungi tim PTS bila kendala muncul kembali'],
+    ]);
   }
-  return [
+  return susun([
     kondisiAwal(k),
-    'Tindakan: Pengecekan awal unit, kabel, dan sumber daya sudah dilakukan; saat ini sedang [tindakan yang sedang dikerjakan].',
-    'Hasil: Kendala belum sepenuhnya teratasi, penanganan masih berjalan.',
-    'Rencana: [langkah berikutnya] dengan target selesai [tanggal].',
-  ].join('\n');
+    ['TINDAKAN', 'Pengecekan awal unit, kabel, dan sumber daya', '[tindakan yang sedang dikerjakan]'],
+    ['HASIL SEMENTARA', 'Kendala belum sepenuhnya teratasi, penanganan masih berjalan'],
+    ['RENCANA', '[langkah berikutnya], target selesai [tanggal]'],
+  ]);
 }
 
 export function templateAction(k: KonteksTemplate): string {
