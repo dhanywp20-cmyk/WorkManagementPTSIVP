@@ -116,6 +116,20 @@ export function MerekSettingInline() {
             <Keterangan className="ml-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</Keterangan>
           </div>
 
+          <div>
+            <span className="block text-[11px] font-bold text-slate-600 mb-1">Sidebar saat pertama masuk</span>
+            <div className="flex gap-2" role="radiogroup" aria-label="Sidebar saat pertama masuk">
+              {([['ya', 'Diciutkan (ikon saja)'], ['tidak', 'Lebar (dengan nama menu)']] as const).map(([v, l]) => (
+                <button key={v} type="button" role="radio" aria-checked={(form.sidebarCiut || 'ya') === v}
+                  onClick={() => ubah('sidebarCiut', v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${(form.sidebarCiut || 'ya') === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-300'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            <Keterangan className="ml-1">Berlaku untuk semua pengguna setiap kali masuk. Pengguna tetap bisa melebarkan / menciutkan sendiri.</Keterangan>
+          </div>
+
           <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
             keterangan="Foto latar layar dashboard setelah masuk (boleh beda dari foto Halaman Login). Maks 8MB, dikecilkan otomatis ke 2400px."
             onBerkas={f => terimaBerkas(f, 'latarDasbor')} onHapus={() => ubah('gambarLatarDasbor', MEREK_BAWAAN.gambarLatarDasbor)} />

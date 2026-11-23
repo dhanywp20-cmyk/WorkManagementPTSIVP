@@ -63,7 +63,8 @@ export function useKerangkaPortal() {
   const showDashboardPanel = pathname === '/dashboard';
 
   const [showSidebar, setShowSidebar] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [ciutManual, setSidebarCollapsed] = useState<boolean | null>(null);
+  const sidebarCollapsed = ciutManual ?? merek.sidebarCiut !== 'tidak';
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');

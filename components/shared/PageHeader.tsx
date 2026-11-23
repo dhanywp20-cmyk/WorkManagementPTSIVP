@@ -17,7 +17,7 @@ export function PageHeader({ icon, title, subtitle, children }: PageHeaderProps)
 
   return (
     <header
-      className="sticky top-0 z-50 animate-slide-down anim-d0"
+      className="kepala-modul sticky top-0 z-50 animate-slide-down anim-d0"
       style={{
         background: NETRAL.permukaan,
         borderBottom: `1px solid ${NETRAL.garis}`,
