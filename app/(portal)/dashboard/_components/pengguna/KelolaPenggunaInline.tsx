@@ -17,6 +17,7 @@ import { TabIVPInline } from './TabIVPInline';
 import { TabAtasanInline } from './TabAtasanInline';
 import { TabStrukturOrganisasi } from './TabStrukturOrganisasi';
 import { TabUserCC } from './TabUserCC';
+import { PilihModeAtasan } from './PilihModeAtasan';
 
 export function UserManagementInline() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -265,17 +266,14 @@ export function UserManagementInline() {
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏛" />Struktur Organisasi
         </button>
-        <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} grup)
+        <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' || activeTab === 'user_cc' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          👨‍💼 Atasan & CC
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🔗" />IVP & MVI Account ({Object.keys(ivpByUser).length} orang)
         </button>
         <button onClick={() => setActiveTab('product')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'product' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🎯" />Routing Tipe ({prodTeamMaps.length})
-        </button>
-        <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          <IkonTeks nama="🏷" />Atasan / CC per User ({new Set(userSupMaps.map(m => m.user_id)).size})
         </button>
         <button onClick={() => setActiveTab('divisi')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'divisi' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏷" />Divisi Sales
@@ -295,6 +293,9 @@ export function UserManagementInline() {
               orgChildren={orgChildren} orgFilter={orgFilter} orgGroupOf={orgGroupOf} orgSearch={orgSearch} orgSelectedId={orgSelectedId} orgTierOf={orgTierOf}
               orgVisible={orgVisible} saving={saving} setOrgFilter={setOrgFilter} setOrgSearch={setOrgSearch} setOrgSelectedId={setOrgSelectedId}
             />
+
+            <PilihModeAtasan activeTab={activeTab} setActiveTab={setActiveTab} jumlahGrup={new Set(divSupMaps.map(m => m.sales_division)).size}
+              jumlahUser={new Set(userSupMaps.map(m => m.user_id)).size} />
 
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
               <div className="px-5 pt-4 shrink-0">

@@ -223,7 +223,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               <h2 className="font-bold text-slate-800 text-sm sm:text-base sm:leading-6 leading-tight">{activeNav.label}</h2>
               <p className={`text-slate-500 text-[11px] sm:text-xs ${pratinjau ? 'block' : 'hidden sm:block'}`}>
                 {activeSection === 'settings' && 'Kelola akun user & hak akses menu'}
-                {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
+                {activeSection === 'userManagement' && 'Struktur Organisasi, Atasan & CC (per grup / per user), IVP & MVI Account'}
                 {activeSection === 'kodeAcara' && 'Pendaftaran acara tanpa persetujuan admin'}
                 {activeSection === 'picBrand' && 'Mapping Brand PIC per divisi & produk'}
                 {activeSection === 'kpiRoster' && 'Pilih anggota tim yang masuk dalam penilaian KPI'}
