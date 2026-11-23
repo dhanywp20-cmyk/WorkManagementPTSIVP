@@ -106,40 +106,55 @@ export function ujungPort(t: Susunan) {
 
 export const ukuranPil = (selMin: number) => Math.max(6, Math.min(9, selMin * 0.11));
 
-export function selBerPil(t: Susunan, selMin: number) {
-  const sel = new Set<string>();
-  if (selMin < 30) return sel;
-  ujungPort(t).forEach(({ awal, akhir }) => { sel.add(kunci(awal.c, awal.r)); sel.add(kunci(akhir.c, akhir.r)); });
-  return sel;
-}
-
 function pil(x: number, y: number, teks: string, warna: string, isi: boolean, fb: number) {
   const w = 8 + teks.length * fb * 0.62, h = fb + 5;
   return `<rect x="${n(x - w / 2)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(h / 2)}" fill="${isi ? warna : '#ffffff'}" stroke="${isi ? '#ffffff' : warna}" stroke-width="1.2"/>`
     + `<text x="${n(x)}" y="${n(y + h - 3.6)}" font-size="${n(fb)}" font-weight="800" letter-spacing="0.4" text-anchor="middle" fill="${isi ? '#ffffff' : warna}" ${HURUF}>${teks}</text>`;
 }
 
-export function penandaStartEnd(t: Susunan, pusat: (c: number, r: number) => number[], o: {
+export interface OpsiPenanda {
   selMin: number; geser: number; r: number; warna: (port: number) => string; kode: (port: number) => string;
-}) {
-  const out: string[] = [];
+  sel: (c: number, r: number) => number[];
+}
+
+export function rencanaPil(t: Susunan, pusat: (c: number, r: number) => number[], o: OpsiPenanda) {
   const fb = ukuranPil(o.selMin);
-  const teks = o.selMin >= 30;
+  const daftar: { kunci: string; x: number; y: number; teks: string; warna: string; isi: boolean }[] = [];
+  if (o.selMin < 30) return { fb, daftar };
+  const tambah = (c: number, r: number, teks: string, warna: string, isi: boolean) => {
+    const [w, h] = o.sel(c, r), [x, y] = pusat(c, r);
+    const lebar = 8 + teks.length * fb * 0.62;
+    if (h / 2 - o.geser - o.r - 3 < fb + 6 || w < lebar + 4) return;
+    daftar.push({ kunci: kunci(c, r), x, y: y + o.geser + o.r + 3, teks, warna, isi });
+  };
   ujungPort(t).forEach(({ awal, akhir }, port) => {
     const warna = o.warna(port), kode = o.kode(port);
-    const [ax, ay] = pusat(akhir.c, akhir.r);
-    const sama = awal.c === akhir.c && awal.r === akhir.r;
-    const yA = ay + o.geser;
-    if (!sama) {
-      const s = o.r * 1.7;
-      out.push(`<rect x="${n(ax - s / 2)}" y="${n(yA - s / 2)}" width="${n(s)}" height="${n(s)}" rx="1.5" fill="#ffffff" stroke="${warna}" stroke-width="2.2"/>`);
-      out.push(`<rect x="${n(ax - s / 4)}" y="${n(yA - s / 4)}" width="${n(s / 2)}" height="${n(s / 2)}" fill="${warna}"/>`);
-    }
-    if (!teks) return;
-    const [sx, sy] = pusat(awal.c, awal.r);
-    if (sama) { out.push(pil(sx, sy + o.geser + o.r + 3, `START · END ${kode}`, warna, true, fb)); return; }
-    out.push(pil(sx, sy + o.geser + o.r + 3, `START ${kode}`, warna, true, fb));
-    out.push(pil(ax, yA + o.r + 3, `END ${kode}`, warna, false, fb));
+    if (awal.c === akhir.c && awal.r === akhir.r) { tambah(awal.c, awal.r, `START · END ${kode}`, warna, true); return; }
+    tambah(awal.c, awal.r, `START ${kode}`, warna, true);
+    tambah(akhir.c, akhir.r, `END ${kode}`, warna, false);
   });
+  return { fb, daftar };
+}
+
+export function penandaStartEnd(t: Susunan, pusat: (c: number, r: number) => number[], o: OpsiPenanda) {
+  const out: string[] = [];
+  ujungPort(t).forEach(({ awal, akhir }, port) => {
+    if (awal.c === akhir.c && awal.r === akhir.r) return;
+    const warna = o.warna(port);
+    const [ax, ay] = pusat(akhir.c, akhir.r);
+    const [w, h] = o.sel(akhir.c, akhir.r);
+    const s = Math.min(o.r * 1.7, w * 0.4, h * 0.4), yA = ay + Math.min(o.geser, h / 2 - s / 2 - 1);
+    out.push(`<rect x="${n(ax - s / 2)}" y="${n(yA - s / 2)}" width="${n(s)}" height="${n(s)}" rx="1.5" fill="#ffffff" stroke="${warna}" stroke-width="2.2"/>`);
+    out.push(`<rect x="${n(ax - s / 4)}" y="${n(yA - s / 4)}" width="${n(s / 2)}" height="${n(s / 2)}" fill="${warna}"/>`);
+  });
+  const { fb, daftar } = rencanaPil(t, pusat, o);
+  for (const p of daftar) out.push(pil(p.x, p.y, p.teks, p.warna, p.isi, fb));
   return out.join('');
+}
+
+export function skalaKoneksi(t: Pick<Susunan, 'lebar' | 'tinggi'>, rx: number, ry: number, interaktif: boolean, lebar = 1100) {
+  const selW = Math.max(1, ...t.lebar), selH = Math.max(1, ...t.tinggi);
+  const minW = Math.max(1, Math.min(...t.lebar)), minH = Math.max(1, Math.min(...t.tinggi));
+  if (!interaktif) return Math.min((lebar - 100) / rx, Math.max(430 / ry, Math.min(760 / ry, 40 / minH)));
+  return Math.min(Math.max(Math.min(lebar / rx, 620 / ry), 88 / selW, 60 / selH, 96 / minW, 50 / minH), 7000 / rx, 4500 / ry);
 }

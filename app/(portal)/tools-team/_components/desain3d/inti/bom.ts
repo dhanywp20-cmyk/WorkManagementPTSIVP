@@ -28,7 +28,7 @@ export function kategoriBenda(j: Benda['jenis']): KategoriBom {
   return 'Lainnya';
 }
 
-const BUKAN_BARANG: Benda['jenis'][] = ['teks'];
+const BUKAN_BARANG: Benda['jenis'][] = ['teks', 'orang'];
 const DIPASANG: Benda['jenis'][] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor', 'speaker', 'speaker-plafon', 'mic', 'touchpanel',
   'kamera', 'lift', 'rak', 'lampu'];
 

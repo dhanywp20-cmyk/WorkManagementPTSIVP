@@ -10,6 +10,7 @@ import { bangunBidang, bangunModel, bangunObjek } from './mapping';
 import { bangunPanggung, bangunTribun } from './venue';
 import { bangunPerangkat } from './perangkat';
 import { bangunTeks } from './teks';
+import { bangunOrang } from './orang';
 
 export { kotak, batang } from './dasar';
 export { sandaran } from './furnitur';
@@ -40,6 +41,7 @@ const PEMBANGUN: Record<Jenis, (k: Konteks) => void> = {
   model: bangunModel,
   perangkat: bangunPerangkat,
   teks: bangunTeks,
+  orang: bangunOrang,
 };
 
 export function buatModel(b: Benda, bahan: Bahan): T.Group {

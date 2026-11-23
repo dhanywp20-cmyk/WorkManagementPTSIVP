@@ -10,7 +10,7 @@ export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
   | 'speaker' | 'speaker-plafon' | 'mic' | 'touchpanel' | 'kamera' | 'proyektor' | 'rak'
-  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek' | 'perangkat' | 'teks';
+  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek' | 'perangkat' | 'teks' | 'orang';
 export type HadapTeks = 'berdiri' | 'lantai' | 'kamera';
 export type TipePerangkat = 'pc' | 'laptop' | 'dongle' | 'hp' | 'tablet';
 export type BentukObjek = 'kotak' | 'silinder' | 'bola' | 'kubah' | 'kerucut' | 'piramida' | 'prisma' | 'pesawat' | 'gambar';
@@ -140,7 +140,7 @@ export const LABEL: Record<Jenis, string> = {
   speaker: 'Speaker', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
   kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
   tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping', lampu: 'Lampu plafon', objek: 'Objek mapping',
-  perangkat: 'Perangkat', teks: 'Teks',
+  perangkat: 'Perangkat', teks: 'Teks', orang: 'Orang (skala)',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
 export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model', 'tribun', 'panggung', 'bidang', 'objek', 'teks'];
