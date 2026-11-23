@@ -6,6 +6,7 @@ import { svgKoneksi, svgKoneksiMulti } from './svg';
 import { type LayarKoneksi, susunMulti, teksRentangPort } from './multi';
 import { ringkasPort, teksRentang } from './ringkasPort';
 import type { SudutMulai } from '@/lib/av/hitung';
+import { KET_LABEL_SEL } from './svgModul';
 
 export const teksCadangan = (t: Susunan) => (t.cadangan === 'loop' ? ` · loop cadangan +${t.portCadangan} kabel`
   : t.cadangan === 'controller' ? ` · +${t.controllerCadangan} controller cadangan` : '');
@@ -28,7 +29,7 @@ export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
 
 export function seksiCetakKoneksi(d: DataKoneksi, s: PengaturanKoneksi): Seksi[] {
   const t = susunKoneksi(d, s), k = t.hasil;
-  const ket = `${t.K} × ${t.B} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${t.resX} × ${t.resY} px · ${teksCara(s)}${teksCadangan(t)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)${t.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}`;
+  const ket = `${t.K} × ${t.B} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${t.resX} × ${t.resY} px · ${teksCara(s)}${teksCadangan(t)} · ${KET_LABEL_SEL}${t.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}`;
   const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung.` : '', k.lewat.length ? `Port melebihi batas beban: ${k.lewat.join(', ')}.` : '']
     .filter(Boolean).map(x => `<p style="margin:4px 0 0;font-size:11px;color:#b91c1c">${esc(x)}</p>`).join('');
   const { gambar, sisa } = gambarPanelKoneksi(d, t);
@@ -72,7 +73,7 @@ export function seksiCetakKoneksiMulti(layar: LayarKoneksi[], pisahKartu: boolea
     + (sisa > 0 ? `<p style="margin:0;font-size:11px;color:#475569">+${sisa} controller lagi dengan susunan port serupa.</p>` : '');
   return [
     { judul: `Screen connection · ${m.per.length} screen, 1 video processor (urutan kabel data)`, jenis: 'html',
-      html: `<div class="diagram">${svgKoneksiMulti(m)}<p style="margin:6px 0 0;font-size:11px;color:#475569">${esc(ket)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)${g.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}</p>${peringatan}</div>` },
+      html: `<div class="diagram">${svgKoneksiMulti(m)}<p style="margin:6px 0 0;font-size:11px;color:#475569">${esc(ket)} · ${KET_LABEL_SEL}${g.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}</p>${peringatan}</div>` },
     ...(gambar.length ? [{ judul: 'Sending box / video controller · port yang dipakai', jenis: 'html' as const,
       html: `<div class="diagram" style="page-break-inside:avoid">${panel}<p style="margin:6px 0 0;font-size:11px;color:#475569">Port LAN berwarna = terpakai, label P1, P2, … sama dengan diagram. Abu-abu = kosong.</p></div>` }] : []),
     { judul: 'Pembagian port LAN (ringkas)', jenis: 'tabel', kepala: ['Screen', 'Kartu / controller', 'Port', 'RC per port', 'Pixel per port', 'Beban'], rataKanan: [3, 4, 5],
