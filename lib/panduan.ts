@@ -19,7 +19,7 @@ export const PANDUAN: Panduan[] = [
       'Tombol pintas di bawah kartu Agenda membuka pekerjaan yang paling sering dipakai.',
     ],
     tips: [
-      'Supervisor dan Manager melihat kartu Daily Report Tim: siapa yang belum mengisi, dikelompokkan per atasan.',
+      'Supervisor dan Manager melihat kartu Daily Report Tim: isi manual, otomatis (ada update tiket/jadwal hari itu), dan kosong per atasan, plus jadwal minggu ini per orang.',
       'Badge merah di header berisi semua notifikasi; ketuk untuk melihat rinciannya per bagian.',
     ],
   },
@@ -106,7 +106,7 @@ export const PANDUAN: Panduan[] = [
       'Simpan sebelum jam kerja berakhir.',
     ],
     tips: [
-      'Atasan melihat siapa yang belum mengisi di kartu Daily Report Tim di Beranda.',
+      'Atasan melihat di kartu Daily Report Tim siapa yang isi manual, yang otomatis terisi dari tiket/jadwal, dan yang kosong.',
       'Aktivitas manual bisa diedit atau dihapus oleh pemiliknya dan Admin.',
     ],
   },
