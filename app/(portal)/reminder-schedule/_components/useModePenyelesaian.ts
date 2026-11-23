@@ -82,6 +82,11 @@ export function useModePenyelesaian(k: ModePenyelesaianKonteks) {
       setDetailReminder(prev => prev ? { ...prev, ...isiPenyelesaian } as Reminder : null);
     } else {
       await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
+      // handleStatusChange hanya menempel `status` ke popup — tanpa ini detail
+      // Onsite/Remote yang baru tersimpan tak terlihat dan peringatan
+      // "Detail Pelaksanaan Belum Diisi" muncul lagi (user terpaksa isi 2x).
+      setDetailReminder(prev => prev && prev.id === reminderId
+        ? { ...prev, ...isiPenyelesaian, status: 'done' } as Reminder : prev);
     }
 
     setPendingStatus(null);
