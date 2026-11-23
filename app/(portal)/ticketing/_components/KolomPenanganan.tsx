@@ -3,17 +3,10 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { IkonTeks } from '@/components/shared/Ikon';
 
-export const TEMPLATE_PENANGANAN = [
-  'Kondisi Awal : ',
-  'Tindakan     : ',
-  'Hasil        : ',
-  'Rekomendasi  : ',
-].join('\n');
-
 const TINGGI_MAKS = 288;
 
-export function sisipkanTemplate(isi: string): string {
-  return isi.trim() ? `${isi.replace(/\s+$/, '')}\n\n${TEMPLATE_PENANGANAN}` : TEMPLATE_PENANGANAN;
+export function sisipkanTemplate(isi: string, template: string): string {
+  return isi.trim() ? `${isi.replace(/\s+$/, '')}\n\n${template}` : template;
 }
 
 export interface IsianPanjangProps {
@@ -22,7 +15,7 @@ export interface IsianPanjangProps {
   onChange: (nilai: string) => void;
   placeholder?: string;
   baris?: number;
-  template?: boolean;
+  template?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -39,13 +32,17 @@ export function IsianPanjang({ id, value, onChange, placeholder, baris = 4, temp
   }, [value]);
 
   const pakaiTemplate = () => {
-    onChange(sisipkanTemplate(value));
+    if (!template) return;
+    const hasil = sisipkanTemplate(value, template);
+    onChange(hasil);
     requestAnimationFrame(() => {
       const el = ref.current;
       if (!el) return;
       el.focus();
-      const akhir = el.value.indexOf(': ', Math.max(0, el.value.length - TEMPLATE_PENANGANAN.length)) + 2;
-      el.setSelectionRange(akhir, akhir);
+      const awal = hasil.indexOf('[', hasil.length - template.length);
+      const akhir = awal >= 0 ? hasil.indexOf(']', awal) + 1 : 0;
+      if (awal >= 0 && akhir > awal) el.setSelectionRange(awal, akhir);
+      else el.setSelectionRange(hasil.length, hasil.length);
     });
   };
 
@@ -56,9 +53,9 @@ export function IsianPanjang({ id, value, onChange, placeholder, baris = 4, temp
       <div className="flex items-center justify-between gap-2 mt-1">
         {template
           ? (
-            <button type="button" onClick={pakaiTemplate}
+            <button type="button" onClick={pakaiTemplate} title="Isi contoh kalimat; ganti bagian [ ... ] sesuai kondisi di lapangan"
               className="text-[10px] font-bold text-blue-700 hover:text-blue-800 hover:underline">
-              <IkonTeks nama="📋" />Sisipkan template
+              <IkonTeks nama="📋" />Pakai template
             </button>
           )
           : <span />}

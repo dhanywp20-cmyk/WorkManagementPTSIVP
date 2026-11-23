@@ -7,6 +7,7 @@ import { wajibCatatan } from '@/lib/alur-status-ticket';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { PilihStatusPTS } from './PilihStatusPTS';
 import { IsianPanjang, BlokPenanganan } from './KolomPenanganan';
+import { templateAction, templateNotes, type KonteksTemplate } from './template-penanganan';
 import { formatDateTime, statusColors, type Ticket, type User } from './shared';
 import {
   useIssueTiket, bolehTambahIssue, bolehUpdateIssue, bolehHapusIssue,
@@ -80,6 +81,7 @@ function FormUpdateIssue({ issue, onSimpan, onBatal }: {
   const [simpan, setSimpan] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
   const notesWajib = bukaUlang || (isi.new_status !== '' && wajibCatatan(issue.status, isi.new_status));
+  const konteks: KonteksTemplate = { status: isi.new_status, produk: issue.product, sn: issue.sn_unit, kasus: issue.issue_case, bukaUlang };
   const kirim = async () => {
     if (!isi.new_status) { setGalat('Pilih status dulu.'); return; }
     if (notesWajib && !isi.notes.trim()) { setGalat('Notes wajib diisi.'); return; }
@@ -99,7 +101,7 @@ function FormUpdateIssue({ issue, onSimpan, onBatal }: {
           {!bukaUlang && (
             <div>
               <label htmlFor={`aksi-${issue.id}`} className={LABEL}><IkonTeks nama="🔧" />Action Taken</label>
-              <IsianPanjang id={`aksi-${issue.id}`} baris={3} value={isi.action_taken} onChange={v => setIsi({ ...isi, action_taken: v })}
+              <IsianPanjang id={`aksi-${issue.id}`} baris={3} value={isi.action_taken} onChange={v => setIsi({ ...isi, action_taken: v })} template={templateAction(konteks)}
                 placeholder={"Langkah yang dilakukan, satu per baris\nmis. Cek kabel, ganti baterai, reset"} className={INPUT} />
             </div>
           )}
@@ -107,7 +109,7 @@ function FormUpdateIssue({ issue, onSimpan, onBatal }: {
             <label htmlFor={`catatan-${issue.id}`} className={LABEL}>
               <IkonTeks nama="📝" />Notes {notesWajib ? '*' : <span className="text-gray-500 normal-case">(opsional)</span>}
             </label>
-            <IsianPanjang id={`catatan-${issue.id}`} baris={bukaUlang ? 3 : 5} value={isi.notes} onChange={v => setIsi({ ...isi, notes: v })} template={!bukaUlang}
+            <IsianPanjang id={`catatan-${issue.id}`} baris={bukaUlang ? 3 : 5} value={isi.notes} onChange={v => setIsi({ ...isi, notes: v })} template={templateNotes(konteks)}
               placeholder={bukaUlang ? 'Kenapa issue ini dibuka lagi?' : 'Kondisi awal, tindakan, hasil, dan rekomendasi...'} className={INPUT} />
           </div>
           <div>

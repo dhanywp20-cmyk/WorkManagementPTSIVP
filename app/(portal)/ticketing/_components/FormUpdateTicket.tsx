@@ -8,6 +8,7 @@ import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { PilihStatusPTS } from './PilihStatusPTS';
 import type { NewActivityForm } from './TicketDetailPopup';
 import { IsianPanjang } from './KolomPenanganan';
+import { templateAction, templateNotes, type KonteksTemplate } from './template-penanganan';
 
 const KELAS_ISIAN = "w-full rounded-lg px-3 py-2 text-xs outline-hidden focus:ring-2 focus:ring-red-500/40";
 const GAYA_ISIAN = { background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" };
@@ -32,6 +33,10 @@ export function FormUpdateTicket({
   showUpdateForm, bolehUpdateTicket, selectedTicket, currentUserTeamType, setShowUpdateForm, newActivity, onClose, setNewActivity,
   router, catatanSaja, notesWajib, addActivity, uploading,
 }: FormUpdateTicketProps) {
+  const konteks: KonteksTemplate = {
+    status: newActivity.new_status, produk: selectedTicket.product, sn: newActivity.sn_unit || selectedTicket.sn_unit,
+    kasus: selectedTicket.issue_case, lokasi: selectedTicket.project_name, catatanSaja,
+  };
   return (
     <>{showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
       <div className="bg-white rounded-kartu shadow-modal overflow-hidden shrink-0 w-full md:w-[340px]"
@@ -125,7 +130,7 @@ export function FormUpdateTicket({
                 <label htmlFor="f-ticketing-components-ticketdetailpopup-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="🔧" />Action Taken</label>
                 <IsianPanjang id="f-ticketing-components-ticketdetailpopup-2" value={newActivity.action_taken} onChange={v => setNewActivity({ ...newActivity, action_taken: v })}
                   placeholder={"Langkah yang dilakukan, satu per baris\nmis. Cek kabel HDMI, restart sistem display"} baris={3}
-                  className={KELAS_ISIAN} style={GAYA_ISIAN} />
+                  template={catatanSaja ? undefined : templateAction(konteks)} className={KELAS_ISIAN} style={GAYA_ISIAN} />
               </div>
               <div>
                 <label htmlFor="f-ticketing-components-ticketdetailpopup-3" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500">
@@ -133,7 +138,7 @@ export function FormUpdateTicket({
                 </label>
                 <IsianPanjang id="f-ticketing-components-ticketdetailpopup-3" value={newActivity.notes} onChange={v => setNewActivity({ ...newActivity, notes: v })}
                   placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : catatanSaja ? "Perkembangan terbaru..." : "Kondisi awal, tindakan, hasil, dan rekomendasi..."} baris={5}
-                  template={!catatanSaja && newActivity.new_status !== "Pending Action"} className={KELAS_ISIAN} style={GAYA_ISIAN} />
+                  template={templateNotes(konteks)} className={KELAS_ISIAN} style={GAYA_ISIAN} />
               </div>
               {newActivity.new_status === "Pending Action" && (
                 <div className="rounded-lg p-2.5" style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.25)' }}>
