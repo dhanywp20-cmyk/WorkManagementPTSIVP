@@ -34,9 +34,8 @@ html:not(.gelap):has(.kerangka-bingkai) {
   --kc-latar: linear-gradient(180deg, #efeae3 0%, #e8e1d8 100%);
   --kc-arsir-a: #4a443e;
   --kc-arsir-b: #6b635b;
-  --kc-kaki: var(--kc-arang);
-  --kc-kaki-teks: #a39a91;
-  --kc-kaki-kapsul: #37322d;
+  --kc-kaki-teks: #5b534b;
+  --kc-kaki-bayang: 0 0 6px rgba(255, 255, 255, .85);
 
   --gb-ffffff: #ffffff;
   --gb-f8fafc: #faf8f5;
@@ -132,9 +131,8 @@ html.gelap:has(.kerangka-bingkai) {
   --kc-latar: linear-gradient(180deg, #171513 0%, #110f0e 100%);
   --kc-arsir-a: #8a8178;
   --kc-arsir-b: #5b534b;
-  --kc-kaki: #0f0d0c;
-  --kc-kaki-teks: #9a9087;
-  --kc-kaki-kapsul: #2a2522;
+  --kc-kaki-teks: #a39a91;
+  --kc-kaki-bayang: 0 0 6px rgba(0, 0, 0, .9);
   --aksen-ubin: var(--kc-aksen);
 
   --wm-hal: #12100f;
@@ -177,18 +175,24 @@ html.gelap:has(.kerangka-bingkai) {
   --color-gray-950: oklch(98% 0.006 60);
 }
 
+/* Mode gelap: foto latar merek digelapkan & dihangatkan supaya bingkai gelap tidak "bolong" di atas foto terang. */
+html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !important; background-blend-mode: multiply; }
+
 /* Latar halaman (bila merek tidak memakai gambar latar sendiri). */
 :root .kerangka-bingkai:not([style*="url("]) { background: var(--kc-latar) !important; }
 
-/* ── Footer: bilah arang penuh, teks abu hangat, versi dalam kapsul gelap ── */
+/* ── Footer: tanpa bilah, menyatu dengan latar; teks lembut, versi dalam kapsul tembus pandang ── */
 :root .kerangka-bingkai > footer {
-  margin: 0; background: var(--kc-kaki) !important; border: 0 !important;
+  margin: 0; background: transparent !important; border: 0 !important; box-shadow: none !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  --color-slate-500: var(--kc-kaki-teks); --color-slate-700: #e7e1d9;
+  --color-slate-500: var(--kc-kaki-teks); --color-slate-700: var(--kc-tinta);
 }
-:root .kerangka-bingkai > footer > div { padding-top: 7px !important; padding-bottom: 7px !important; }
-:root .kerangka-bingkai > footer p { color: var(--kc-kaki-teks) !important; }
-:root .kerangka-bingkai > footer [title^="Versi"] { color: #e7e1d9 !important; background: var(--kc-kaki-kapsul) !important; border-color: var(--kc-kaki-kapsul) !important; }
+:root .kerangka-bingkai > footer > div { padding: 0 24px 8px !important; }
+:root .kerangka-bingkai > footer p { color: var(--kc-kaki-teks) !important; text-shadow: var(--kc-kaki-bayang); }
+:root .kerangka-bingkai > footer [title^="Versi"] {
+  color: var(--kc-kaki-teks) !important; background: var(--kc-panel) !important; border-color: var(--kc-panel-tepi) !important;
+}
+@media (max-width: 767px) { :root .kerangka-bingkai > footer > div { padding: 0 12px 6px !important; } }
 
 /* ── Header: bilah penuh menyatu di atas, garis tipis di bawah, tombol tenang ── */
 :root .kerangka-bingkai .kepala-3d {
