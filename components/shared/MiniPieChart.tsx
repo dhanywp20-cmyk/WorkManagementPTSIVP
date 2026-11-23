@@ -6,7 +6,7 @@ import { useAngkaNaik } from './AngkaNaik';
 
 const PERMUKAAN = NETRAL.permukaan;
 
-const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-300';
+const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[112px] overscroll-contain rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
@@ -121,9 +121,9 @@ export function MiniPieChart({
 
   return (
     <Kartu title={title} icon={icon}>
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
+      <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-2 sm:gap-3 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
-          className="shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
+          className="shrink-0 w-[64px] h-[64px] sm:w-[84px] sm:h-[84px] xl:w-[92px] xl:h-[92px]">
           {slices.map(s => s.penuh ? (
             <circle key={s.i} cx={cx} cy={cy} r={(r + ir) / 2} fill="none" stroke={s.color} strokeWidth={r - ir}
               opacity={redup(s.i) ? 0.3 : 1}
@@ -143,7 +143,7 @@ export function MiniPieChart({
 
         <ul ref={legendaRef} tabIndex={dapatDigulir ? 0 : -1}
           aria-label={dapatDigulir ? `${slices.length} kategori - gulir untuk melihat semua` : undefined}
-          className={`flex flex-col gap-px sm:gap-0.5 w-full min-w-0 sm:w-auto sm:flex-1 sm:basis-[150px] sm:min-w-[150px] sm:max-w-full ${KELAS_LEGENDA}`}>
+          className={`flex flex-col gap-px sm:gap-0.5 w-full min-w-0 sm:w-auto sm:flex-1 sm:basis-0 ${KELAS_LEGENDA}`}>
           {slices.map(s => {
             const aktif = activeFilter === s.label;
             return (
@@ -158,7 +158,7 @@ export function MiniPieChart({
                   <span title={`${s.label}: ${s.value}${valueSuffix ?? ''} (${persen(s.value)}%)`}
                     className={`text-[10px] sm:text-[11px] truncate ${aktif ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'}`}>{s.label}</span>
                   <span className="text-[10px] sm:text-[11px] font-semibold text-slate-800 tabular-nums text-right whitespace-nowrap">{s.value}{valueSuffix ?? ''}</span>
-                  <span className="text-[10px] sm:text-[11px] text-slate-500 tabular-nums text-right w-8 sm:w-9 whitespace-nowrap">{persen(s.value)}%</span>
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 tabular-nums text-right w-8 whitespace-nowrap">{persen(s.value)}%</span>
                 </button>
               </li>
             );
