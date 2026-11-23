@@ -4,11 +4,11 @@ import { Teks } from './komponen';
 import { AksiFile } from './AksiFile';
 import type { AlatLED } from './alat';
 
-export function KartuProject({ a }: { a: AlatLED }) {
+export function KartuProject({ a, polos }: { a: AlatLED; polos?: boolean }) {
   const { customer, pembuat, project, refHilang, setCustomer, setPembuat, setProject, setTanggal, tanggal } = a.K;
   return (
     <>
-      <Kartu judul="Informasi project" aksi=<AksiFile a={a} />>
+      <Kartu judul="Informasi project" polos={polos} aksi=<AksiFile a={a} />>
         {refHilang.length > 0 && (
           <p role="alert" className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
             <b>{refHilang.join(', ')}</b> tidak ada di referensi Anda, jadi hitungan memakai pengganti dan hasilnya bisa berbeda.

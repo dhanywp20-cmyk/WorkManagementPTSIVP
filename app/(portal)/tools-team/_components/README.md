@@ -31,7 +31,11 @@ led/
                       "Jumlah screen identik" disembunyikan saat multi. Tab screen + tombol tambah di judul KartuSpesifikasi (panel/KartuMultiLayar).
                       koneksi/multi.ts menyusun semua screen: nomor port bersambung (opsi pisahKartu = screen baru mulai
                       di kartu output baru seri H), ppk / cadangan / kapasitas port diambil dari Screen 1. Diuji uji/led-multi-screen.ts
-  panel/              KartuProject, KartuSpesifikasi, KartuHasil, KartuHardware, KartuBom, CatatanLED,
+  ruang.ts            ukuran dinding & tinggi layar dari lantai (isian.ruang) - hanya untuk gambar panggung
+  panggung/           Calculator LED gaya configurator: PanggungLED (toolbar Reset / Penggaris / Satuan m-ft / Konten / Orang,
+                      stepper kolom & baris di garis ukur), GambarPanggung (SVG dinding + layar + siluet 170 cm), geometri.ts (murni)
+  panel/              PanelLangkah (panel kanan: Langkah 1 Project & ruangan, 2 Spesifikasi, 3 Koneksi & ekspor),
+                      KartuProject, KartuSpesifikasi, KartuHasil, KartuHardware, KartuBom, CatatanLED,
                       BarSub, AksiFile, ModalBersama, KartuLayar, TampilanDaya, TampilanKoneksi
   koneksi/            Screen Connection: data.ts (murni), svg.ts, teks.ts, useRuangKoneksi.ts,
                       RuangKoneksi.tsx + PanelCara, PanelUkuranRC, PanelPort, KanvasKoneksi, TabelPort

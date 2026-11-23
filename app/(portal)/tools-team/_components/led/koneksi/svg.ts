@@ -42,13 +42,22 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
     const tipis: string[] = [];
     for (let i = 1; i < d.kolom; i++) if (i % t.rcKol) { const x = n(ox + i * d.pxX * skala); tipis.push(`<line x1="${x}" y1="${oy}" x2="${x}" y2="${n(oy + H)}"/>`); }
     for (let i = 1; i < d.baris; i++) if (i % t.rcBaris) { const y = n(oy + i * d.pxY * skala); tipis.push(`<line x1="${ox}" y1="${y}" x2="${n(ox + W)}" y2="${y}"/>`); }
-    if (tipis.length) atas.push(`<g stroke="#94a3b8" stroke-width="0.6" stroke-dasharray="3 2">${tipis.join('')}</g>`);
+    const tModul = n(Math.max(0.5, Math.min(1.1, Math.min(d.pxX, d.pxY) * skala * 0.03)));
+    if (tipis.length) atas.push(`<g stroke="#7c8ba1" stroke-width="${tModul}" stroke-opacity="0.9">${tipis.join('')}</g>`);
   }
   const batas: string[] = [];
   for (let i = 1; i < t.K; i++) batas.push(`<line x1="${n(xs[i])}" y1="${oy}" x2="${n(xs[i])}" y2="${n(oy + H)}"/>`);
   for (let i = 1; i < t.B; i++) batas.push(`<line x1="${ox}" y1="${n(ys[i])}" x2="${n(ox + W)}" y2="${n(ys[i])}"/>`);
-  atas.push(`<g stroke="#64748b" stroke-width="${banyak ? 0.3 : 0.8}">${batas.join('')}</g>`);
-  atas.push(`<rect x="${ox}" y="${oy}" width="${n(W)}" height="${n(H)}" fill="none" stroke="#0f172a" stroke-width="1.5"/>`);
+  if (!banyak && selMin >= 14) {
+    const sisip: string[] = [];
+    for (let r = 0; r < t.B; r++) for (let c = 0; c < t.K; c++) {
+      if (t.kosong.has(kunci(c, r))) continue;
+      sisip.push(`<rect x="${n(xs[c] + 2)}" y="${n(ys[r] + 2)}" width="${n(xs[c + 1] - xs[c] - 4)}" height="${n(ys[r + 1] - ys[r] - 4)}" rx="1.5"/>`);
+    }
+    atas.push(`<g fill="none" stroke="#ffffff" stroke-opacity="0.75" stroke-width="1">${sisip.join('')}</g>`);
+  }
+  atas.push(`<g stroke="#334155" stroke-width="${banyak ? 0.6 : n(Math.max(1.2, Math.min(2, selMin * 0.05)))}">${batas.join('')}</g>`);
+  atas.push(`<rect x="${ox}" y="${oy}" width="${n(W)}" height="${n(H)}" fill="none" stroke="#0f172a" stroke-width="2.4"/>`);
   for (const { c, r } of t.hasil.tanpaPort) {
     atas.push(`<rect x="${n(xs[c] + 2)}" y="${n(ys[r] + 2)}" width="${n(xs[c + 1] - xs[c] - 4)}" height="${n(ys[r + 1] - ys[r] - 4)}" fill="none" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3"/>`);
   }

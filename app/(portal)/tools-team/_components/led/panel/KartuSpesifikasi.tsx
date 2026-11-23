@@ -7,14 +7,14 @@ import { CABINET, PITCH } from '../data';
 import { TombolRef } from './komponen';
 import type { AlatLED } from './alat';
 
-export function KartuSpesifikasi({ a }: { a: AlatLED }) {
+export function KartuSpesifikasi({ a, polos }: { a: AlatLED; polos?: boolean }) {
   const { barisIn, beratUnit, beratUnitEf, bit, brandAda, brandAktif, bulat, cabH, cabKey, cabW, dayaUnit, dayaUnitEf, faktorDaya, faktorRata, kolomIn, lingkungan, mode, modul, modulBrand, namaUnit, opsiBulat, pilihBrand, pilihCab, pilihModul, pitch, px, pxIn, refLED, refresh, resetUnit, satuan, screen, setBarisIn, setBeratUnit, setBit, setBukaRef, setBulat, setCabH, setCabW, setDayaUnit, setFaktorDaya, setFaktorRata, setKolomIn, setLingkungan, setMode, setPitch, setPxIn, setRefresh, setSatuan, setScreen, setTargetH, setTargetW, setTegangan, targetH, targetW, tegangan, u, multi } = a.K;
 
   const [pilih, setPilih] = useState(0);
   const aktif = Math.min(pilih, a.K.layarLain.length);
   return (
     <>
-      <Kartu judul="Spesifikasi" samping={<TabLayar a={a} aktif={aktif} onPilih={setPilih} />} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
+      <Kartu judul="Spesifikasi" polos={polos} samping={<TabLayar a={a} aktif={aktif} onPilih={setPilih} />} aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
         <div className="space-y-3">
           {multi && <RingkasanMulti a={a} aktif={aktif} onPilih={setPilih} />}
           {multi && <KepalaLayar a={a} i={aktif} onPilih={setPilih} />}

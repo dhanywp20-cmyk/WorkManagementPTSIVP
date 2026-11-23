@@ -73,9 +73,11 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
   );
 }
 
-export function Kartu({ judul, children, aksi, samping }: { judul: string; children: React.ReactNode; aksi?: React.ReactNode; samping?: React.ReactNode }) {
+export function Kartu({ judul, children, aksi, samping, polos }: {
+  judul: string; children: React.ReactNode; aksi?: React.ReactNode; samping?: React.ReactNode; polos?: boolean;
+}) {
   return (
-    <section className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
+    <section className={polos ? '' : 'rounded-2xl bg-white border border-slate-200 p-4 sm:p-5'}>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         {samping ? (
           <div className="flex flex-wrap items-center gap-2 min-w-0">

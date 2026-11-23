@@ -5,8 +5,8 @@ import { TampilanDaya } from './led/panel/TampilanDaya';
 import { TampilanKoneksi } from './led/panel/TampilanKoneksi';
 import { TampilanBanding } from './led/banding/TampilanBanding';
 import { TampilanKonten } from './led/konten/TampilanKonten';
-import { KartuProject } from './led/panel/KartuProject';
-import { KartuSpesifikasi } from './led/panel/KartuSpesifikasi';
+import { PanelLangkah } from './led/panel/PanelLangkah';
+import { PanggungLED } from './led/panggung/PanggungLED';
 import { KartuHasil } from './led/panel/KartuHasil';
 import { KartuHardware } from './led/panel/KartuHardware';
 import { KartuBom } from './led/panel/KartuBom';
@@ -33,12 +33,12 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   return (
     <div className="space-y-4">
       <BarSub a={a} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
-        <div className="space-y-4 min-w-0">
-          <KartuProject a={a} />
-          <KartuSpesifikasi a={a} />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_400px] items-start">
+        <div className="min-w-0 xl:col-start-1 xl:row-start-1"><PanggungLED a={a} /></div>
+        <div className="min-w-0 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-stretch">
+          <div className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto rounded-2xl"><PanelLangkah a={a} /></div>
         </div>
-        <div className="space-y-4 min-w-0">
+        <div className="space-y-4 min-w-0 xl:col-start-1 xl:row-start-2">
           <KartuHasil a={a} />
           <KartuHardware a={a} />
           <KartuBom a={a} />
