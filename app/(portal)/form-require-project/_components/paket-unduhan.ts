@@ -4,6 +4,7 @@ import { htmlSeksiDesain3D, byteGambarHD, type TautanDesain3D } from './desain-3
 import { berkasPaketSld, htmlSeksiSld, isiSeksiSld, type TautanSld } from './sld-request';
 import { berkasPaketScreen, htmlSeksiScreen, isiSeksiScreen } from './screen-connection-paket';
 import type { TautanScreen } from './screen-connection-request';
+import { pdfDariGambar } from '@/lib/pdf-gambar';
 
 export interface ArgPaket {
   selectedRequest: ProjectRequest;
@@ -246,12 +247,17 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
       const t = desain3d[i];
       const data = await byteGambarHD(t);
       if (!data) continue;
-      const nama = (t.snapshot?.nama ?? 'Design3D').replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 40);
-      zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.jpg`, data });
+      const judul = t.snapshot?.nama ?? 'Design3D';
+      const nama = judul.replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 40);
+      try {
+        zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.pdf`, data: await pdfDariGambar([data], `Design 3D - ${judul} v${t.versi}`) });
+      } catch {
+        zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.jpg`, data });
+      }
     }
 
     for (const b of await berkasPaketSld(selectedRequest.id, sld)) zipFiles.push({ name: `${folderName}/${b.name}`, data: b.data });
-    for (const b of berkasPaketScreen(isiScreen)) zipFiles.push({ name: `${folderName}/${b.name}`, data: b.data });
+    for (const b of await berkasPaketScreen(isiScreen)) zipFiles.push({ name: `${folderName}/${b.name}`, data: b.data });
 
     const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);
     for (let i = 0; i < generalFiles.length; i++) {
