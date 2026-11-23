@@ -66,11 +66,11 @@ alter policy tk_select on public.tickets using (
   boleh_lihat_baris(sales_user_id, sales_name, sales_division, created_by)
   or (assign_user_id = jwt_user_id())
   or (assign_name = jwt_full_name())
-  or (sales_user_id = any ((select bawahan_saya())))
-  or (internal_sales_id = any ((select bawahan_saya())))
-  or (internal_sales_id_2 = any ((select bawahan_saya())))
-  or (created_by = any ((select bawahan_username_saya())))
-  or (sales_name = any ((select bawahan_nama_saya())))
+  or (sales_user_id = any ((select bawahan_saya())::uuid[]))
+  or (internal_sales_id = any ((select bawahan_saya())::uuid[]))
+  or (internal_sales_id_2 = any ((select bawahan_saya())::uuid[]))
+  or (created_by = any ((select bawahan_username_saya())::text[]))
+  or (sales_name = any ((select bawahan_nama_saya())::text[]))
 );
 
 alter policy rm_select on public.reminders using (
@@ -81,11 +81,11 @@ alter policy rm_select on public.reminders using (
   or (internal_sales_id_2 = (select jwt_user_id()))
   or (((select akses_insentif()) = any (array['input'::text, 'penuh'::text])) and (category = any (((select kategori_insentif_db()))::text[])))
   or pernah_dapat_bagian_insentif(id)
-  or (sales_user_id = any ((select bawahan_saya())))
-  or (internal_sales_id = any ((select bawahan_saya())))
-  or (internal_sales_id_2 = any ((select bawahan_saya())))
-  or (created_by = any ((select bawahan_username_saya())))
-  or (sales_name = any ((select bawahan_nama_saya())))
+  or (sales_user_id = any ((select bawahan_saya())::uuid[]))
+  or (internal_sales_id = any ((select bawahan_saya())::uuid[]))
+  or (internal_sales_id_2 = any ((select bawahan_saya())::uuid[]))
+  or (created_by = any ((select bawahan_username_saya())::text[]))
+  or (sales_name = any ((select bawahan_nama_saya())::text[]))
 );
 
 alter policy pr_select on public.project_requests using (
@@ -95,10 +95,10 @@ alter policy pr_select on public.project_requests using (
   or (assign_name = jwt_full_name())
   or (internal_sales_id = jwt_user_id())
   or (assigned_supervisor_id = jwt_user_id())
-  or (sales_user_id = any ((select bawahan_saya())))
+  or (sales_user_id = any ((select bawahan_saya())::uuid[]))
   or (requester_id = any ((select bawahan_saya())::text[]))
-  or (internal_sales_id = any ((select bawahan_saya())))
-  or (sales_name = any ((select bawahan_nama_saya())))
+  or (internal_sales_id = any ((select bawahan_saya())::uuid[]))
+  or (sales_name = any ((select bawahan_nama_saya())::text[]))
 );
 
 update public.users u
