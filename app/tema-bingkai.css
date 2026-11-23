@@ -175,16 +175,19 @@ html:not(.gelap) .kerangka-bingkai .nav-bawah-3d button[aria-current="page"] > s
 /* ── Panel Dashboard: wadah besar bersudut membulat ── */
 html:not(.gelap) .kerangka-bingkai .panel-dasbor {
   position: absolute !important; inset: 12px; width: auto !important; height: auto !important;
-  border-radius: 28px; background: var(--kc-permukaan-2) !important; border: 1px solid var(--kc-garis);
+  border-radius: 28px; background: rgba(248, 246, 242, .68) !important; border: 1px solid rgba(255, 255, 255, .7);
   box-shadow: var(--kc-bayang);
 }
 @media (max-width: 767px) { html:not(.gelap) .kerangka-bingkai .panel-dasbor { inset: 8px; border-radius: 22px; } }
-html:not(.gelap) .kerangka-bingkai .panel-dasbor .dasbor-3d { background: transparent !important; }
+html:not(.gelap) .kerangka-bingkai .panel-dasbor .dasbor-3d {
+  background: transparent !important;
+  -webkit-mask-image: linear-gradient(transparent 0 12px, #000 12px); mask-image: linear-gradient(transparent 0 12px, #000 12px);
+}
 
 /* Sapaan besar tanpa bilah putih. */
 html:not(.gelap) .kerangka-bingkai .dasbor-kepala {
-  position: sticky !important; top: 0; z-index: 40; padding: 14px 24px 6px;
-  background: var(--kc-permukaan-2) !important; border-bottom: 0 !important;
+  position: sticky !important; top: 0; z-index: 40; padding: 12px 24px 10px;
+  background: transparent !important; border-bottom: 0 !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
 }
 html:not(.gelap) .kerangka-bingkai .dasbor-kepala > div {
@@ -192,7 +195,7 @@ html:not(.gelap) .kerangka-bingkai .dasbor-kepala > div {
   background: var(--kc-permukaan); border: 1px solid var(--kc-garis); border-radius: 22px; box-shadow: var(--kc-bayang);
 }
 @media (max-width: 767px) {
-  html:not(.gelap) .kerangka-bingkai .dasbor-kepala { padding: 10px 10px 4px; }
+  html:not(.gelap) .kerangka-bingkai .dasbor-kepala { padding: 12px 10px 6px; }
   html:not(.gelap) .kerangka-bingkai .dasbor-kepala > div { padding: 12px 14px; border-radius: 18px; }
 }
 html:not(.gelap) .kerangka-bingkai .judul-sapaan {
