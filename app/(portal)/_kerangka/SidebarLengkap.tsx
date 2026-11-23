@@ -27,13 +27,13 @@ export function SidebarLengkap({
           aria-current={showDashboardPanel ? 'page' : undefined}
           className="menu-3d w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
           style={showDashboardPanel
-            ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.30)', color: '#92600a' }
+            ? { background: 'var(--kc-aksen-lembut, rgba(200,134,29,0.12))', border: '1px solid var(--kc-aksen-tepi, rgba(200,134,29,0.30))', color: 'var(--kc-aksen-2, #92600a)' }
             : { background: 'transparent', border: '1px solid transparent', color: '#475569' }}
           onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
           onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
         >
           <span className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
-            style={{ background: showDashboardPanel ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)', color: showDashboardPanel ? '#92600a' : '#64748b' }}>{IKON_BERANDA}</span>
+            style={{ background: showDashboardPanel ? 'var(--kc-aksen-lembut, rgba(200,134,29,0.18))' : 'rgba(0,0,0,0.06)', color: showDashboardPanel ? 'var(--kc-aksen-2, #92600a)' : '#64748b' }}>{IKON_BERANDA}</span>
           <span className="text-sm font-semibold truncate">Dashboard</span>
           {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
         </button>
@@ -113,7 +113,7 @@ export function SidebarLengkap({
                       isTourHL
                         ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
                         : isActive
-                          ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                          ? { background: 'var(--kc-aksen-lembut, rgba(200,134,29,0.11))', border: '1px solid var(--kc-aksen-tepi, rgba(200,134,29,0.28))', color: 'var(--kc-aksen-2, #92600a)' }
                           : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
                     }
                     onMouseEnter={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
@@ -122,8 +122,8 @@ export function SidebarLengkap({
                     <span
                       className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
                       style={{
-                        background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
-                        color: isActive ? '#92600a' : '#64748b',
+                        background: isActive ? 'var(--kc-aksen-lembut, rgba(200,134,29,0.18))' : 'rgba(0,0,0,0.06)',
+                        color: isActive ? 'var(--kc-aksen-2, #92600a)' : '#64748b',
                       }}
                     >
                       {MENU_ICONS[menu.key] ?? <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
@@ -163,7 +163,7 @@ export function SidebarLengkap({
                       isTourHL
                         ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
                         : isActive
-                          ? { background: 'rgba(200,134,29,0.11)', border: '1px solid rgba(200,134,29,0.28)', color: '#92600a' }
+                          ? { background: 'var(--kc-aksen-lembut, rgba(200,134,29,0.11))', border: '1px solid var(--kc-aksen-tepi, rgba(200,134,29,0.28))', color: 'var(--kc-aksen-2, #92600a)' }
                           : { background: 'transparent', border: '1px solid transparent', color: '#334155' }
                     }
                     onMouseEnter={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; } }}
@@ -172,8 +172,8 @@ export function SidebarLengkap({
                     <span
                       className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
                       style={{
-                        background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
-                        color: isActive ? '#92600a' : '#64748b',
+                        background: isActive ? 'var(--kc-aksen-lembut, rgba(200,134,29,0.18))' : 'rgba(0,0,0,0.06)',
+                        color: isActive ? 'var(--kc-aksen-2, #92600a)' : '#64748b',
                       }}
                     >
                       {MENU_ICONS[menu.key] ?? <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth={2} /></svg>}
