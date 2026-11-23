@@ -71,9 +71,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
   const tiket = useMemo(() => hitungTiket(kpi?.deret, mulai, akhir), [kpi, mulai, akhir]);
   const jadwal = useMemo(() => hitungJadwal(kpi?.deret, mulai, akhir, hariIni), [kpi, mulai, akhir, hariIni]);
 
-  const totalTim = tim.rows.length;
-  const sudahLapor = tim.rows.filter(r => r.reported).length;
-  const belumLapor = totalTim - sudahLapor;
+  const belumLapor = tim.rows.filter(r => r.status === 'kosong').length;
   const terlambat = tiket.terlambat + jadwal.terlambat;
   const aktif = tiket.belum + jadwal.berjalan + jadwal.terlambat;
   const fmtRentang = (s: string, tahun = false) => new Date(`${s}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', ...(tahun ? { year: 'numeric' } : {}) });
@@ -81,7 +79,7 @@ export function IsiBeranda({ kpi, loading, scope, opsi }: {
 
   const temuan = !kpi ? null : [
     !ada('terlambat') && terlambat > 0 ? `${terlambat} pekerjaan terlambat` : '',
-    !adaDailyReport && !tim.loading && belumLapor > 0 ? `${belumLapor} anggota belum isi Daily Report` : '',
+    !adaDailyReport && !tim.loading && belumLapor > 0 ? `${belumLapor} anggota tanpa Daily Report & aktivitas` : '',
     kpi.reminders.dueSoon > 0 ? `${kpi.reminders.dueSoon} jadwal jatuh tempo 7 hari ke depan` : '',
   ].filter(Boolean).join(' · ') || 'Tidak ada hal mendesak di luar kartu di bawah';
 
