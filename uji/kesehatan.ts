@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { ringkasKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan/inti';
+import { ringkasKesehatan, statusCron, catatanKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan/inti';
 import { KATALOG_EVENT, eventTersambung } from '../lib/notifikasi/katalog';
 import { kanalUntuk, BAWAAN } from '../lib/notifikasi/pengaturan';
 
@@ -46,6 +46,21 @@ const tgNyala = { ...BAWAAN, aktif: { ...BAWAAN.aktif, telegram: true } };
 cek('bawaan: alert lewat Telegram', kanalUntuk('system.health_alert', tgNyala).includes('telegram'));
 cek('dimatikan di Admin Panel -> tidak lewat Telegram', !kanalUntuk('system.health_alert', { ...tgNyala, perEvent: { 'system.health_alert': [] } }).includes('telegram'));
 cek('kirimAlertKesehatan memeriksa saklar per-kejadian', /kanalUntuk\('system\.health_alert', pengaturan\)\.includes\('telegram'\)/.test(readFileSync('lib/kesehatan/server.ts', 'utf8')));
+
+console.log('\nLencana cron mengikuti saklar Briefing Pagi');
+const nyala = { aktif: true, pengingatDailyReport: true };
+cek('briefing menyala & jalan -> hijau "jalan"', statusCron('digest', { ...sehat, briefing: nyala }).label === 'jalan' && statusCron('digest', { ...sehat, briefing: nyala }).nada === 'hijau');
+const mati = { ...sehat, briefing: { aktif: false, pengingatDailyReport: true }, cronVercel: { ...sehat.cronVercel, digest: { waktu: jamLalu(2), ok: true, ringkas: 'dimatikan di Admin Panel' } } };
+cek('briefing dimatikan -> abu-abu "dimatikan", bukan "jalan"', statusCron('digest', mati).label === 'dimatikan' && statusCron('digest', mati).nada === 'abu');
+cek('briefing dimatikan tidak memengaruhi cron eskalasi', statusCron('escalate', mati).label === 'jalan');
+cek('briefing dimatikan -> ringkasan memberi info, bukan peringatan', ringkasKesehatan(mati, sekarang).length === 0 && catatanKesehatan(mati).some(t => t.includes('dimatikan')));
+const drMati = { ...sehat, briefing: { aktif: true, pengingatDailyReport: false } };
+cek('pengingat Daily Report dimatikan -> lencana tetap "jalan" + rincian nonaktif', statusCron('digest', drMati).label === 'jalan' && /Daily Report: nonaktif/.test(statusCron('digest', drMati).rincian ?? ''));
+cek('pengingat Daily Report dimatikan -> info di ringkasan', catatanKesehatan(drMati).length === 1 && catatanKesehatan(drMati)[0].includes('Daily Report'));
+cek('saklar belum terbaca -> perilaku lama', statusCron('digest', sehat).label === 'jalan' && catatanKesehatan(sehat).length === 0);
+const digestGagal = { ...sehat, briefing: nyala, cronVercel: { digest: { waktu: jamLalu(1), ok: false, ringkas: 'x' } } };
+cek('cron gagal tetap merah walau briefing menyala', statusCron('digest', digestGagal).nada === 'merah');
+cek('kumpulkanKesehatan membaca saklar briefing_pagi', /KUNCI_BRIEFING/.test(readFileSync('lib/kesehatan/server.ts', 'utf8')));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);
