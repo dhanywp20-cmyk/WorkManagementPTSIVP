@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { ingat } from '@/lib/cache-singkat';
 import { supabase } from '@/lib/supabase';
+import { pilihBawahan, type PemetaanAtasan } from '@/lib/atasan';
 import { NotificationItem, User } from './shared';
 
 export interface MuatNotifikasiKonteks {
@@ -214,8 +215,9 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
 
           const { data: allGuestsN } = await ingat('users:guest-sales', () => supabase.from('users')
             .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']));
-          const bawahanN = (allGuestsN ?? [])
-            .filter((u) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division ?? ''));
+          const { data: petaUserN } = await ingat('user_supervisor_mappings:semua', () => supabase.from('user_supervisor_mappings').select('user_id, supervisor_id'));
+          const idBawahanN = pilihBawahan({ viewer: currentUser, divisi: supDivsN, orang: allGuestsN ?? [], peta: (petaUserN ?? []) as PemetaanAtasan[] });
+          const bawahanN = (allGuestsN ?? []).filter((u) => idBawahanN.has(u.id as string));
           const subIdsN = bawahanN.map((u) => u.id as string);
           const subNamesN = bawahanN.map((u) => u.full_name as string).filter(Boolean);
 

@@ -171,6 +171,8 @@ ALTER TABLE public.user_sessions ADD CONSTRAINT user_sessions_user_id_fkey FOREI
 ALTER TABLE public.user_supervisor_mappings ADD CONSTRAINT user_supervisor_mappings_pkey PRIMARY KEY (id);
 ALTER TABLE public.user_supervisor_mappings ADD CONSTRAINT user_supervisor_mappings_supervisor_id_fkey FOREIGN KEY (supervisor_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.user_supervisor_mappings ADD CONSTRAINT user_supervisor_mappings_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.user_supervisor_mappings ADD CONSTRAINT user_supervisor_mappings_user_supervisor_unik UNIQUE (user_id, supervisor_id);
+ALTER TABLE public.user_supervisor_mappings ADD CONSTRAINT user_supervisor_mappings_bukan_diri_sendiri CHECK (user_id <> supervisor_id);
 ALTER TABLE public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
 ALTER TABLE public.users ADD CONSTRAINT users_username_key UNIQUE (username);
 ALTER TABLE public.users ADD CONSTRAINT users_atasan_id_fkey FOREIGN KEY (atasan_id) REFERENCES users(id) ON DELETE SET NULL;

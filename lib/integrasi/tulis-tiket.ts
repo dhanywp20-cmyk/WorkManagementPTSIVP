@@ -76,7 +76,7 @@ export const tiketBuat: Aksi = async (a, k) => {
     for (const x of approvers) if (x.id) await k.efek.inApp({ user_id: x.id, type: 'ticket', title: '🔔 Ticket baru menunggu approval',
       body: `${project} — ${issue}`, action_url: '/ticketing', ref_id: id, created_by: u.full_name || '' });
     const ccDiv = salesDiv ?? u.sales_division ?? '';
-    if (ccDiv && ccDiv !== 'IVP') {
+    if (ccDiv) {
       const cc = await targetCC(k, u.id, ccDiv);
       if (cc.length) {
         const ccMsg = [`🔔 *[CC] Ticket Baru — Divisi ${ccDiv}*`, GARIS, `📌 *Project  :* ${project}`, `⚠️ *Issue    :* ${issue}`,
@@ -204,7 +204,7 @@ export const tiketSetujui: Aksi = async (a, k) => {
     'Mohon segera ditangani. Semangat! 💪', `🔗 ${appLink()}`].join('\n'), 'ticket.assigned');
   const ccDiv = t.sales_division ?? cr?.sales_division ?? '';
   let cc = 0;
-  if (ccDiv && ccDiv !== 'IVP' && cr?.id) {
+  if (ccDiv && cr?.id) {
     const tg = await targetCC(k, cr.id, ccDiv);
     if (tg.length) {
       const msg = [`✅ *[CC] Ticket Diapprove — Divisi ${ccDiv}*`, GARIS, `📌 *Project  :* ${t.project_name}`, `⚠️ *Issue    :* ${t.issue_case}`,

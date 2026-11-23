@@ -1,4 +1,4 @@
-import { JABATAN_CC_RULES } from '@/lib/jabatan';
+import { cariTargetCC } from '@/lib/atasan';
 import { adalahAdminMurni, bolehDitugaskanOleh, isAssignablePTSTeam } from '@/lib/teams';
 import type { AuditAction } from '@/lib/audit';
 import { gagal, samaNama, type HasilAksi, type KonteksAksi } from '@/lib/integrasi/bantu';
@@ -44,40 +44,5 @@ export async function audit(k: KonteksAksi, p: { action: AuditAction; module: st
 }
 
 export async function targetCC(k: KonteksAksi, userId: string, salesDiv: string): Promise<{ phone: string; name: string; relation: string }[]> {
-  const targets: { phone: string; name: string; relation: string }[] = [];
-  const db = k.db;
-  try {
-    const { data: userData } = await db.from('users').select('jabatan').eq('id', userId).maybeSingle();
-    const jabatan = (userData as { jabatan?: string } | null)?.jabatan;
-    const aturan = jabatan ? (JABATAN_CC_RULES as Record<string, string[]>)[jabatan] : undefined;
-    if (aturan && aturan.length > 0) {
-      const { data: supMaps } = await db.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', salesDiv);
-      if (supMaps?.length) {
-        const { data: sups } = await db.from('users').select('full_name, phone_number, jabatan')
-          .in('id', (supMaps as { supervisor_id: string }[]).map(m => m.supervisor_id)).not('phone_number', 'is', null).neq('phone_number', '');
-        for (const s of (sups ?? []) as { full_name: string; phone_number: string; jabatan: string | null }[]) {
-          if (s.jabatan && aturan.includes(s.jabatan)) targets.push({ phone: s.phone_number, name: s.full_name, relation: 'supervisor' });
-        }
-      }
-      const { data: userSupMaps } = await db.from('user_supervisor_mappings').select('supervisor_id').eq('user_id', userId);
-      if (userSupMaps?.length) {
-        const { data: manual } = await db.from('users').select('full_name, phone_number, jabatan')
-          .in('id', (userSupMaps as { supervisor_id: string }[]).map(m => m.supervisor_id)).not('phone_number', 'is', null).neq('phone_number', '');
-        for (const s of (manual ?? []) as { full_name: string; phone_number: string }[]) {
-          if (!targets.find(t => t.phone === s.phone_number)) targets.push({ phone: s.phone_number, name: s.full_name, relation: 'supervisor' });
-        }
-      }
-    }
-    if (salesDiv && salesDiv !== 'IVP') {
-      const { data: ivpRes } = await db.from('division_ivp_mappings').select('ivp_id').eq('sales_division', salesDiv);
-      if (ivpRes?.length) {
-        const { data: ivps } = await db.from('users').select('full_name, phone_number')
-          .in('id', (ivpRes as { ivp_id: string }[]).map(s => s.ivp_id)).not('phone_number', 'is', null).neq('phone_number', '');
-        for (const s of (ivps ?? []) as { full_name: string; phone_number: string }[]) {
-          if (!targets.find(t => t.phone === s.phone_number)) targets.push({ phone: s.phone_number, name: s.full_name, relation: 'ivp_handler' });
-        }
-      }
-    }
-  } catch (e) { console.warn('[integrasi/targetCC]', e); }
-  return targets;
+  return cariTargetCC(k.db, userId, salesDiv);
 }

@@ -6,6 +6,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTS } from '@/lib/kelompok/inti';
 import { User } from './shared';
 import { hitungLingkupProject, type LingkupProject } from '@/lib/project-scope';
+import { terpisahDariGrup, tierJabatan, type PemetaanAtasan } from '@/lib/atasan';
 import { hasFullAccess } from '@/lib/constants';
 import { ALL_TYPES, type ResultType, type SearchResult } from './cari-global-tipe';
 import { cariPengguna } from './cari/cariPengguna';
@@ -106,21 +107,24 @@ export function useGlobalSearch(k: GlobalSearchKonteks) {
 
     const [divMapsRes, userSupMapsRes] = await Promise.all([
       supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id),
-      supabase.from('user_supervisor_mappings').select('user_id').eq('supervisor_id', currentUser.id),
+      supabase.from('user_supervisor_mappings').select('user_id, supervisor_id'),
     ]);
     const divisions = (divMapsRes.data ?? []).map((m) => m.sales_division as string);
     if (currentUser.sales_division && !divisions.includes(currentUser.sales_division)) {
       divisions.push(currentUser.sales_division);
     }
 
-    const directUserIds = (userSupMapsRes.data ?? []).map((m) => m.user_id as string);
+    const petaUser = (userSupMapsRes.data ?? []) as PemetaanAtasan[];
+    const directUserIds = petaUser.filter((m) => m.supervisor_id === currentUser.id).map((m) => m.user_id);
     const subFromDivRes = await supabase.from('users')
       .select('id, full_name, sales_division, jabatan')
       .in('sales_division', divisions.length ? divisions : ['__none__'])
       .in('role', ['guest','sales']);
+    const tierPengguna = new Map((subFromDivRes.data ?? []).map((u) => [u.id as string, tierJabatan(u.jabatan as string | null)]));
+    const terpisah = terpisahDariGrup(currentUser.id, selfTier, petaUser, id => tierPengguna.get(id) ?? 0);
     const divUsers = (subFromDivRes.data ?? []).filter((u) => {
       const tier = u.jabatan === 'Supervisor' ? 2 : u.jabatan === 'Manager' ? 3 : u.jabatan === 'Deputy General Manager' ? 4 : u.jabatan === 'General Manager' ? 5 : u.jabatan === 'Direktur' ? 6 : 1;
-      return tier <= selfTier && u.id !== currentUser.id;
+      return tier <= selfTier && u.id !== currentUser.id && !terpisah.has(u.id as string);
     });
 
     const allSubIds = [...new Set([...divUsers.map((u) => u.id as string), ...directUserIds])];

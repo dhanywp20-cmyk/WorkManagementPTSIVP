@@ -2,6 +2,7 @@ import { supabase, supabaseServices } from "@/lib/supabase";
 import { isPimpinan } from "@/lib/pimpinan";
 import { hasFullAccess } from "@/lib/constants";
 import { kutipNilai, cobaIdentitas } from "@/lib/identitas";
+import { ambilBawahan, pilihBawahan, type PemetaanAtasan } from "@/lib/atasan";
 import { JABATAN_TIER, KOLOM_LOG_RINGKAS, type User, type ActivityLog, type Ticket } from "./shared";
 
 const sebagaiTicket = (baris: unknown): Ticket[] => (baris ?? []) as Ticket[];
@@ -58,7 +59,7 @@ export async function ambilTiketUntuk(
         ? supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
           .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
           .order("created_at", { ascending: false })
-        : supabase.from("user_supervisor_mappings").select("user_id").eq("supervisor_id", resolvedUser.id),
+        : supabase.from("user_supervisor_mappings").select("user_id, supervisor_id"),
     ]);
     sebagaiTicket(milikSaya).forEach(addOwn);
 
@@ -80,6 +81,18 @@ export async function ambilTiketUntuk(
       }
       const byInternalId = pemetaanB.data as Ticket[] | null;
       (byInternalId ?? []).forEach(addIVP);
+      if (selfTier > 1) {
+        const tim = await ambilBawahan(supabase, resolvedUser, selfDiv ? [selfDiv] : []);
+        const idTim = tim.map(b => b.id);
+        const namaTim = tim.map(b => b.username).filter((n): n is string => !!n);
+        if (idTim.length) {
+          const klausaTim = [`internal_sales_id.in.(${idTim.join(",")})`, `internal_sales_id_2.in.(${idTim.join(",")})`, `sales_user_id.in.(${idTim.join(",")})`,
+            ...namaTim.map(n => `created_by.eq.${kutipNilai(n)}`)].join(",");
+          const { data: tiketTim } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).or(klausaTim)
+            .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum).order("created_at", { ascending: false });
+          sebagaiTicket(tiketTim).forEach(addIVP);
+        }
+      }
       ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
       return { tickets: ivpTickets, periksaPilihan: true };
     } else {
@@ -93,8 +106,8 @@ export async function ambilTiketUntuk(
         supervisedDivisions.push(selfDiv);
       }
 
-      const userSupMapsData = pemetaanB.data as { user_id: string }[] | null;
-      const manualSubordinateIds = new Set((userSupMapsData ?? []).map((m) => m.user_id as string));
+      const semuaPetaUser = (pemetaanB.data ?? []) as PemetaanAtasan[];
+      const manualSubordinateIds = new Set(semuaPetaUser.filter((m) => m.supervisor_id === resolvedUser.id).map((m) => m.user_id));
 
       const isSupervisor = (supervisedDivisions.length > 0 && selfTier > 0) || manualSubordinateIds.size > 0;
 
@@ -103,12 +116,10 @@ export async function ambilTiketUntuk(
           .select("id, username, full_name, jabatan, sales_division")
           .eq("role", "guest");
 
-        const idToTier: Record<string, number> = {};
         const nameTierMap: Record<string, number> = {};
         const nameToId: Record<string, string> = {};
         (allGuestUsers ?? []).forEach((u) => {
           const tier = u.jabatan ? (JABATAN_TIER[u.jabatan as string] ?? 0) : 0;
-          idToTier[u.id] = tier;
           if (u.full_name) { nameTierMap[u.full_name] = tier; nameToId[u.full_name] = u.id; }
           if (u.username) { nameTierMap[u.username] = tier; nameToId[u.username] = u.id; }
           if (u.full_name) {
@@ -117,14 +128,7 @@ export async function ambilTiketUntuk(
           }
         });
 
-        const subordinateIds = new Set(
-          (allGuestUsers ?? []).filter((u) => {
-            if (idToTier[u.id] >= selfTier) return false;
-            const inSupervisedDiv = supervisedDivisions.length > 0 && u.sales_division && supervisedDivisions.includes(u.sales_division);
-            const inManualMap = manualSubordinateIds.has(u.id);
-            return inSupervisedDiv || inManualMap;
-          }).map((u) => u.id as string)
-        );
+        const subordinateIds = pilihBawahan({ viewer: resolvedUser, divisi: supervisedDivisions, orang: allGuestUsers ?? [], peta: semuaPetaUser });
         const subordinateUsernames = new Set(
           (allGuestUsers ?? []).filter((u) => subordinateIds.has(u.id)).map((u) => u.username as string)
         );

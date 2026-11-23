@@ -165,7 +165,7 @@ export function useBuatTicket(k: BuatTicketKonteks) {
         } catch { }
         try {
           const ccDiv = (ticketData.sales_division as string | null) ?? currentUser?.sales_division ?? "";
-          if (ccDiv && ccDiv !== "IVP" && currentUser?.id) {
+          if (ccDiv && currentUser?.id) {
             const ccTargets = await fetchWACCTargets(currentUser.id, ccDiv);
             if (ccTargets.length > 0) {
               const ccMsg = [
