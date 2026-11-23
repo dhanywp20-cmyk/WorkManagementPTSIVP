@@ -181,7 +181,8 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
 /* Latar halaman (bila merek tidak memakai gambar latar sendiri). */
 :root .kerangka-bingkai:not([style*="url("]) { background: var(--kc-latar) !important; }
 
-/* ── Footer: bilah putih seperti header, menyambung ke header lewat kolom sidebar (bingkai berbentuk "C") ── */
+/* ── Footer: bilah putih seperti header, menyambung ke header lewat bilah tipis di tepi kiri (bingkai "C").
+   Sidebar tetap kartu mengambang sendiri, tidak ikut bingkai. ── */
 :root .kerangka-bingkai > footer {
   margin: 0; background: var(--kc-permukaan) !important; border: 0 !important; box-shadow: none !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
@@ -212,12 +213,20 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
 }
 :root .kerangka-bingkai .kepala-3d button[aria-label^="Pencarian"]:hover { background: var(--kc-isi) !important; }
 
-/* ── Sidebar: kolom putih menempel, menyambung header (atas) & footer (bawah) tanpa garis, ikon dalam bulatan ── */
+/* Bilah kiri bingkai: menyambung header ke footer, sudut dalam membulat. Di belakang sidebar & panel. */
+@media (min-width: 768px) {
+  :root .kerangka-bingkai > .flex.flex-1.min-h-0.relative::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 8px; right: -60px; pointer-events: none;
+    border-radius: 18px 0 0 18px; box-shadow: 0 0 0 60px var(--kc-permukaan);
+  }
+}
+
+/* ── Sidebar: panel mengambang bersudut membulat, berdiri sendiri, ikon dalam bulatan ── */
 :root .kerangka-bingkai .sidebar-3d {
-  margin: 0; border-radius: 0; overflow: hidden;
-  background: var(--kc-permukaan) !important; border: 0 !important;
+  margin: 12px 0 12px 20px; border-radius: 26px; overflow: hidden;
+  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: none !important;
+  box-shadow: var(--kc-bayang) !important;
 }
 :root .kerangka-bingkai .sidebar-3d > .absolute.top-0 { display: none; }
 :root .kerangka-bingkai .sidebar-3d .tracking-\[0\.14em\] { color: var(--kc-tinta-3) !important; }
