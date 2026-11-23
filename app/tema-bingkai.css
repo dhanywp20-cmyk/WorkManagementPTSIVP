@@ -294,7 +294,7 @@ html.gelap:has(.kerangka-bingkai) {
 :root .kerangka-bingkai .kepala-modul > div { padding-left: 28px; padding-right: 20px; }
 :root .kerangka-bingkai .kepala-modul h1 { color: var(--kc-tinta) !important; }
 :root .kerangka-bingkai .kepala-modul h1 + p { color: var(--kc-tinta-2) !important; }
-:root .kerangka-bingkai .kepala-modul > div > div:first-child > div:first-child {
+:root .kerangka-bingkai .kepala-modul > div > div:first-child > div.rounded-xl:first-child {
   background: var(--kc-aksen-lembut) !important; color: var(--kc-aksen-2) !important; border-color: var(--kc-aksen-tepi) !important;
 }
 @media (max-width: 767px) {
