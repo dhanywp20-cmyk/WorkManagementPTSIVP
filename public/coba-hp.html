@@ -5,28 +5,702 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Coba Tampilan HP</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
-  :root { --bg: #f3efea; --kartu: #fff; --garis: #e7e1d9; --tinta: #2b2723; --tinta-2: #6b635b; --aksen: #2563eb; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #12100f; --kartu: #1f1c19; --garis: #36302b; --tinta: #efe9e2; --tinta-2: #b9afa5; color-scheme: dark; } }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--tinta); font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-    padding: calc(24px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
-  main { max-width: 440px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-  h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
-  p { margin: 0; color: var(--tinta-2); font-size: 14px; line-height: 1.5; }
-  a { display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; background: var(--kartu); border: 1px solid var(--garis); border-radius: 20px; padding: 18px; }
-  a b { font-size: 17px; }
-  a span { font-size: 13px; color: var(--tinta-2); line-height: 1.45; }
-  a em { font-style: normal; font-size: 13px; font-weight: 800; color: var(--aksen); }
+/* Prototipe tampilan HP: 5 gaya (D, F, G, H, I) memakai data & menu yang sama; terang bawaan, gelap lewat tombol. */
+:root {
+  --bg: #f3efea; --bg-2: #f2f0ed; --surface: #ffffff; --surface-2: #f8f6f2; --line: #e7e1d9; --line-2: #efebe6;
+  --ink: #2b2723; --ink-2: #6b635b; --ink-3: #968d84;
+  --accent: #2563eb; --accent-2: #1d4ed8; --accent-soft: #eaf1fe; --accent-edge: #bcd0fb;
+  --chrome: #211e1b; --chrome-2: #2e2a26; --chrome-ink: #efe9e2; --chrome-ink-2: #a39a91;
+  --btn: #26221f; --seg: #e6e2dd; --overlay: rgba(38, 34, 31, .45);
+  --amber: #d97706; --blue: #2563eb; --red: #dc2626; --green: #059669; --violet: #7c3aed; --teal: #0d9488; --pink: #db2777; --sky: #0284c7; --gray: #7a726a;
+  --foto-a: #d8cfc6; --foto-b: #c9a59b; --foto-c: #eee8e1;
+  --shadow: 0 1px 2px rgba(74, 52, 30, .05), 0 10px 26px -16px rgba(74, 52, 30, .3);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #12100f; --bg-2: #12100f; --surface: #1f1c19; --surface-2: #252220; --line: #36302b; --line-2: #2c2825;
+  --ink: #efe9e2; --ink-2: #b9afa5; --ink-3: #8a8077; --accent-soft: #1f2a44; --accent-edge: #2d4fa0;
+  --chrome: #0f0d0c; --chrome-2: #1f1c19; --btn: #2563eb; --seg: #2c2825; --overlay: rgba(0, 0, 0, .6);
+  --foto-a: #2a2420; --foto-b: #3a2a26; --foto-c: #1c1917;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 28px -16px rgba(0, 0, 0, .8); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input { font: inherit; color: inherit; }
+svg.i { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.g { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+.w-amber { --c: var(--amber); } .w-blue { --c: var(--blue); } .w-red { --c: var(--red); } .w-green { --c: var(--green); } .w-violet { --c: var(--violet); }
+.w-teal { --c: var(--teal); } .w-pink { --c: var(--pink); } .w-sky { --c: var(--sky); } .w-gray { --c: var(--gray); }
+
+/* Bilah pilih gaya */
+.pilih { flex-shrink: 0; background: var(--btn); color: #fff; display: flex; align-items: center; gap: 8px; padding-block: 7px; }
+.gulir-gaya { flex: 1; min-width: 0; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+.gulir-gaya::-webkit-scrollbar { display: none; }
+.pilih button { flex-shrink: 0; padding: 6px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,.12); white-space: nowrap; }
+.pilih button[aria-pressed="true"] { background: #fff; color: #26221f; }
+.pilih .tema { width: 34px; height: 30px; border-radius: 10px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; }
+
+.app { flex: 1; min-height: 0; width: 100%; max-width: 440px; margin: 0 auto; position: relative; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+@media (min-width: 480px) { .app { border-left: 1px solid var(--line); border-right: 1px solid var(--line); } }
+#kepala, #nav { flex-shrink: 0; position: relative; z-index: 2; }
+#scr { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; position: relative; z-index: 1; }
+.isi { padding-bottom: 24px; }
+
+/* Komponen bersama */
+.kartu { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 14px 16px; }
+.kecil { font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.sub { font-size: 12.5px; color: var(--ink-2); }
+.angka { font-size: 28px; font-weight: 800; letter-spacing: -.03em; line-height: 1; }
+.lencana { position: absolute; top: -6px; right: -9px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 99px; background: var(--red); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--surface); }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; background: linear-gradient(135deg, #fde68a, #f59e0b); color: #78350f; flex-shrink: 0; }
+.logo { width: 34px; height: 34px; border-radius: 11px; background: linear-gradient(140deg, #22d3ee, var(--accent)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo svg { width: 14px; height: 14px; fill: #fff; stroke: none; }
+.ikonbtn { position: relative; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); flex-shrink: 0; }
+.pil { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: color-mix(in srgb, var(--c) 15%, var(--surface)); color: var(--c); }
+.tile { width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--c); }
+.bilah { height: 6px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
+.bilah i { display: block; height: 100%; border-radius: 99px; background: var(--c, var(--accent)); }
+.progres { display: flex; align-items: center; gap: 10px; width: 100%; }
+.progres .bilah { flex: 1; display: block; }
+.progres b { font-size: 12px; font-weight: 800; color: var(--ink-2); min-width: 34px; text-align: right; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--ink-3); }
+.meta > span { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.meta .i { width: 13px; height: 13px; stroke-width: 2; opacity: .85; }
+.kosong { text-align: center; padding: 34px 10px; color: var(--ink-3); font-size: 13px; }
+.catatan { font-size: 11.5px; color: var(--ink-3); text-align: center; margin: 16px 0 0; }
+.cari { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; color: var(--ink-3); }
+.cari input { flex: 1; min-width: 0; border: 0; background: none; padding: 11px 0; font-size: 14px; outline: none; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-block: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button { flex-shrink: 0; min-height: 38px; font-size: 13px; font-weight: 700; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+.chips button em { font-style: normal; font-size: 11px; opacity: .75; }
+.chips button[aria-pressed="true"] { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); color: #fff; }
+.tumpuk { display: flex; flex-direction: column; gap: 12px; }
+.seksi-judul { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-weight: 800; margin: 4px 2px -2px; }
+.seksi-judul button { font-size: 12.5px; font-weight: 700; color: var(--accent); }
+
+/* Lembar bawah (menu & detail) */
+.tirai { position: absolute; inset: 0; background: var(--overlay); z-index: 20; opacity: 0; transition: opacity .2s; }
+.lembar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; background: var(--surface); color: var(--ink); border-radius: 26px 26px 0 0; padding-top: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); max-height: 86%; overflow-y: auto; }
+.lembar.buka { transform: none; } .tirai.buka { opacity: 1; }
+.pegangan { width: 40px; height: 5px; border-radius: 9px; background: var(--line); margin: 0 auto 12px; }
+.lembar h3 { margin: 0; font-size: 17px; font-weight: 800; }
+.grupnama { font-size: 10.5px; font-weight: 800; letter-spacing: .12em; color: var(--ink-3); margin: 16px 0 10px; }
+.grid-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 6px; }
+.grid-menu > button { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--ink-2); text-align: center; line-height: 1.2; }
+.grid-menu .tile { width: 50px; height: 50px; border-radius: 16px; }
+.grid-menu .tile .i { width: 22px; height: 22px; }
+.detail-baris { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line-2); font-size: 13.5px; }
+.detail-baris span:first-child { color: var(--ink-3); }
+.detail-baris span:last-child { font-weight: 700; text-align: right; }
+.tombol { display: block; width: 100%; text-align: center; border-radius: 999px; padding: 12px; font-size: 14px; font-weight: 700; background: var(--btn); color: #fff; }
+
+/* Nav bawah bersama */
+.nav { display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 7px max(4px, env(safe-area-inset-right, 0px)) calc(9px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-left, 0px)); }
+.nav > button { flex: 1; min-height: 46px; justify-content: center; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--ink-3); position: relative; }
+.nav > button[aria-current="page"] { color: var(--accent); font-weight: 800; }
+.nav .ik { position: relative; display: flex; }
+
+/* ═════ D: SUPER-APP ═════ */
+.d-biru { background: linear-gradient(160deg, var(--accent) 0%, var(--accent-2) 100%); color: #fff; }
+.d-home-atas { padding-block: 12px 50px; }
+.d-baris { display: flex; align-items: center; gap: 12px; }
+.d-baris h1 { margin: 0; flex: 1; font-size: 17px; font-weight: 800; line-height: 1.2; min-width: 0; }
+.d-baris h1 small { display: block; font-size: 12px; font-weight: 600; opacity: .82; }
+.d-ikon { position: relative; width: 40px; height: 40px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.22); color: #fff; flex-shrink: 0; }
+.d-ikon .lencana { border-color: var(--accent); }
+.d-cari-btn { margin-top: 14px; width: 100%; background: var(--surface); border-radius: 14px; padding: 11px 14px; display: flex; gap: 10px; align-items: center; color: var(--ink-3); font-size: 13px; font-weight: 600; }
+.d-grid { margin-top: -36px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); padding: 16px 8px 12px; position: relative; }
+.d-mod-atas { padding-block: 10px 14px; }
+.d-mod-atas .cari { margin-top: 12px; border: 0; }
+.d-item { display: flex; gap: 12px; align-items: flex-start; width: 100%; }
+.d-item .badan { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.d-item .atas { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.d-item b { font-size: 14px; line-height: 1.3; }
+
+/* ═════ F: MINIMAL DAFTAR ═════ */
+.app[data-gaya="f"] { background: var(--bg-2); }
+.f-atas { display: flex; align-items: center; gap: 10px; padding-block: 8px; background: var(--bg-2); border-bottom: 1px solid transparent; }
+.f-atas .tengah { flex: 1; text-align: center; font-size: 15px; font-weight: 800; opacity: 0; transition: opacity .2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-atas.ciut { border-bottom-color: var(--line); } .f-atas.ciut .tengah { opacity: 1; }
+.f-kembali { display: flex; align-items: center; gap: 0; font-size: 15px; font-weight: 600; color: var(--accent); min-width: 38px; }
+.f-btn { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); flex-shrink: 0; }
+.f-besar h1 { margin: 0; font-size: 31px; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+.f-besar p { margin: 4px 0 14px; font-size: 13px; color: var(--ink-2); }
+.f-cari { display: flex; align-items: center; gap: 8px; background: var(--seg); border-radius: 11px; padding: 0 12px; color: var(--ink-3); margin-bottom: 12px; }
+.f-cari input { flex: 1; min-width: 0; border: 0; background: none; padding: 9px 0; font-size: 15px; outline: none; }
+.f-grupjudul { font-size: 12px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .05em; padding: 0 14px 7px; }
+.f-grup { background: var(--surface); border-radius: 14px; overflow: hidden; margin-bottom: 22px; }
+.f-baris { display: flex; align-items: center; gap: 12px; width: 100%; padding-left: 14px; min-height: 52px; }
+.f-baris .badan { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 11px 14px 11px 0; border-top: 1px solid var(--line-2); align-self: stretch; }
+.f-grup > .f-baris:first-child .badan { border-top: 0; }
+.f-baris .teks { flex: 1; min-width: 0; font-size: 15px; font-weight: 600; }
+.f-baris .teks small { display: block; font-size: 12px; color: var(--ink-3); font-weight: 500; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.f-ik { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; background: var(--c); }
+.f-ik .i { width: 17px; height: 17px; }
+.f-nilai { font-weight: 800; font-size: 15px; }
+.panah { width: 16px !important; height: 16px !important; color: var(--ink-3); opacity: .6; }
+.app[data-gaya="f"] .nav { background: color-mix(in srgb, var(--surface-2) 92%, transparent); }
+
+/* ═════ G: BINGKAI FOTO ═════ */
+.app[data-gaya="g"] { background: var(--foto-c); }
+.app[data-gaya="g"]::before { content: ""; position: absolute; inset: 0; z-index: 0; opacity: .9; background:
+  linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--foto-c) 70%, transparent) 100%),
+  repeating-linear-gradient(90deg, var(--foto-a) 0 34px, var(--foto-b) 34px 46px, var(--foto-a) 46px 80px); }
+.g-atas { background: var(--surface); display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.g-atas b { flex: 1; font-size: 15px; font-weight: 800; min-width: 0; }
+.g-atas b small { display: block; font-size: 10.5px; font-weight: 700; color: var(--amber); }
+.g-panel { margin: 10px 10px 0; background: color-mix(in srgb, var(--surface-2) 76%, transparent); border: 1px solid color-mix(in srgb, var(--surface) 70%, transparent); border-radius: 24px; overflow: hidden; }
+.g-kepala { background: var(--surface); border-bottom: 1px solid var(--line); padding: 13px 14px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 3; }
+.g-kepala h1 { margin: 0; font-size: 16.5px; font-weight: 800; flex: 1; min-width: 0; }
+.g-kepala h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-top: 2px; }
+.g-ikonmod { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent-2); border: 1px solid var(--accent-edge); flex-shrink: 0; }
+.g-isi { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.geser { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -12px; padding: 2px 12px 6px; }
+.geser::-webkit-scrollbar { display: none; }
+.g-stat { flex: 0 0 128px; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c, var(--accent)); border-radius: 18px; padding: 11px 13px; box-shadow: var(--shadow); }
+.g-stat[aria-pressed="true"] { background: color-mix(in srgb, var(--c) 10%, var(--surface)); border-color: var(--c); }
+.g-stat b { display: block; font-size: 23px; font-weight: 800; letter-spacing: -.03em; }
+.g-stat span { display: block; font-size: 12.5px; font-weight: 700; margin-top: 3px; }
+.g-cepat { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.g-cepat button { display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; color: var(--ink-2); text-align: center; }
+.g-cepat .bulat, .g-nav .bulat { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line); position: relative; color: var(--ink-2); }
+.donat-baris { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+.legenda { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.legenda button { display: flex; align-items: center; gap: 7px; }
+.legenda i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.legenda span { flex: 1; color: var(--ink-2); }
+.g-nav { margin: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); display: flex; justify-content: space-around; padding: 8px 6px; }
+.g-nav > button { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: var(--ink-2); }
+.g-nav > button[aria-current="page"] { color: var(--accent-2); }
+.g-nav > button[aria-current="page"] .bulat { background: linear-gradient(150deg, #60a5fa, var(--accent) 55%, var(--accent-2)); color: #fff; box-shadow: 0 6px 12px -5px rgba(37,99,235,.7); }
+
+/* ═════ H: ARANG PRO ═════ */
+.h-atas { background: var(--chrome); color: var(--chrome-ink); padding-block: 12px 0; }
+.h-atas .baris { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; }
+.h-atas h1 { margin: 0; flex: 1; font-size: 18px; font-weight: 800; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-atas h1 small { display: block; font-size: 11.5px; font-weight: 600; color: var(--chrome-ink-2); }
+.h-ikon { position: relative; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--chrome-2); color: var(--chrome-ink); flex-shrink: 0; }
+.h-ikon .lencana { border-color: var(--chrome); }
+.h-tab { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; }
+.h-tab::-webkit-scrollbar { display: none; }
+.h-tab button { flex-shrink: 0; padding: 4px 0 10px; font-size: 13px; font-weight: 700; color: var(--chrome-ink-2); border-bottom: 2.5px solid transparent; display: flex; gap: 6px; align-items: center; }
+.h-tab button em { font-style: normal; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--chrome-2); }
+.h-tab button[aria-pressed="true"] { color: #fff; border-bottom-color: var(--accent); }
+.h-tab button[aria-pressed="true"] em { background: var(--accent); color: #fff; }
+.h-cari { display: flex; align-items: center; gap: 8px; background: var(--chrome-2); border-radius: 12px; padding: 0 12px; color: var(--chrome-ink-2); margin-bottom: 12px; }
+.h-cari input { flex: 1; min-width: 0; border: 0; background: none; padding: 9px 0; font-size: 14px; outline: none; color: var(--chrome-ink); }
+.h-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.h-kpi > button { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.h-kpi .lbl { font-size: 12px; font-weight: 700; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.h-kpi .lbl i { width: 8px; height: 8px; border-radius: 3px; background: var(--c); }
+.h-kpi b { font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
+.h-daftar { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.h-baris { display: flex; gap: 12px; padding: 12px 14px 12px 0; width: 100%; }
+.h-baris + .h-baris { border-top: 1px solid var(--line-2); }
+.h-baris .strip { width: 4px; border-radius: 0 4px 4px 0; background: var(--c); flex-shrink: 0; }
+.h-baris .badan { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.h-baris .judul { display: flex; justify-content: space-between; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.h-baris .judul span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-baris .judul time { font-size: 11px; color: var(--ink-3); font-weight: 600; flex-shrink: 0; }
+.h-baris .ket { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-baris .kaki { display: flex; gap: 8px; align-items: center; margin-top: 3px; font-size: 11px; color: var(--ink-3); }
+.app[data-gaya="h"] .nav { background: var(--chrome); border-top: 0; }
+.app[data-gaya="h"] .nav > button { color: var(--chrome-ink-2); }
+.app[data-gaya="h"] .nav > button[aria-current="page"] { color: #fff; }
+.app[data-gaya="h"] .nav > button[aria-current="page"] .ik::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--accent); }
+.app[data-gaya="h"] .nav .lencana { border-color: var(--chrome); }
+
+/* ═════ I: PAPAN STATUS ═════ */
+.i-atas { background: var(--surface); border-bottom: 1px solid var(--line); padding-block: 10px; display: flex; align-items: center; gap: 10px; }
+.i-atas h1 { margin: 0; flex: 1; font-size: 17px; font-weight: 800; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.i-ringkas { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 8px; }
+.i-ringkas > button { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--c); border-radius: 16px; padding: 10px 4px; text-align: center; }
+.i-ringkas b { display: block; font-size: 20px; font-weight: 800; }
+.i-ringkas span { font-size: 10.5px; font-weight: 700; color: var(--ink-2); }
+.i-papan { display: flex; align-items: flex-start; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding: 4px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); scroll-padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+.i-papan::-webkit-scrollbar { display: none; }
+.i-kolom { flex: 0 0 84%; scroll-snap-align: start; background: color-mix(in srgb, var(--c) 7%, var(--bg)); border: 1px solid color-mix(in srgb, var(--c) 22%, var(--line)); border-radius: 22px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.i-kolom h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; }
+.i-kolom h2 i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.i-kolom h2 em { font-style: normal; margin-left: auto; font-size: 12px; font-weight: 800; color: var(--c); background: var(--surface); border-radius: 99px; padding: 2px 9px; }
+.i-kartu { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.i-kartu b { font-size: 13.5px; line-height: 1.3; }
+.i-titik { display: flex; justify-content: center; gap: 6px; padding-top: 6px; }
+.i-titik i { width: 6px; height: 6px; border-radius: 99px; background: var(--line); transition: width .2s, background .2s; }
+.i-titik i.on { width: 18px; background: var(--accent); }
+.i-waktu { display: flex; gap: 12px; }
+.i-waktu .jam { width: 44px; font-size: 12px; font-weight: 800; color: var(--ink-3); padding-top: 14px; flex-shrink: 0; }
+.i-waktu .garis { width: 2px; background: var(--line); position: relative; flex-shrink: 0; }
+.i-waktu .garis::before { content: ""; position: absolute; top: 17px; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px var(--bg); }
+.i-waktu .kartu { flex: 1; margin: 6px 0; padding: 10px 12px; border-radius: 16px; }
+.app[data-gaya="i"] .nav { align-items: flex-end; }
+.fab { width: 52px; height: 52px; border-radius: 18px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; margin-top: -26px; box-shadow: 0 10px 20px -8px rgba(37,99,235,.8); border: 4px solid var(--bg); }
 </style>
 </head>
 <body>
-<main>
-  <h1>Coba tampilan HP</h1>
-  <p>Prototipe layar penuh untuk dicoba langsung di HP. Semua angka dan nama adalah data contoh. Di dalam, pindah gaya lewat tombol di bilah gelap paling atas.</p>
-  <a href="/coba-hp-2.html"><b>Set baru: G · H · I</b><span>G Bingkai (mirip desktop), H Arang (header & menu gelap), I Papan (tiket per kolom status).</span><em>Buka →</em></a>
-  <a href="/coba-hp-1.html"><b>Set sebelumnya: D · F</b><span>D Super-App (grid ikon menu), F Minimal (daftar gaya iPhone).</span><em>Buka →</em></a>
-</main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></symbol>
+  <symbol id="i-tiket" viewBox="0 0 24 24"><path d="M4 7h16v4a2 2 0 000 4v4H4v-4a2 2 0 000-4z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol>
+  <symbol id="i-tas" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5h8v2M3 12h18"/></symbol>
+  <symbol id="i-kal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></symbol>
+  <symbol id="i-bintang" viewBox="0 0 24 24"><path d="M12 4l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/></symbol>
+  <symbol id="i-dok" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/></symbol>
+  <symbol id="i-grafik" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></symbol>
+  <symbol id="i-toko" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6v10H3z"/><path d="M9 20v-6h6v6"/></symbol>
+  <symbol id="i-titik" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
+  <symbol id="i-lonceng" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 20a2 2 0 004 0"/></symbol>
+  <symbol id="i-cari" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-tambah" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-kembali" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-panah" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-truk" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></symbol>
+  <symbol id="i-topi" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></symbol>
+  <symbol id="i-alat" viewBox="0 0 24 24"><path d="M5 4v7M5 15v5M12 4v3M12 11v9M19 4v9M19 17v3M3 11h4M10 7h4M17 13h4"/></symbol>
+  <symbol id="i-cek" viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></symbol>
+  <symbol id="i-bulan" viewBox="0 0 24 24"><path d="M20 14A8 8 0 1110 4a6.5 6.5 0 0010 10z"/></symbol>
+  <symbol id="i-matahari" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-11a6 6 0 0112 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
+  <symbol id="i-orang" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/></symbol>
+  <symbol id="i-kotak" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></symbol>
+  <symbol id="i-jam" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol>
+  <symbol id="i-label" viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.3"/></symbol>
+  <symbol id="i-telp" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a1 1 0 01-1 1A16 16 0 014 5a1 1 0 011-1z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></symbol>
+</svg>
+
+<div class="pilih g" role="group" aria-label="Pilih gaya">
+  <div class="gulir-gaya">
+  <button type="button" data-gaya="g">G · Bingkai</button>
+  <button type="button" data-gaya="h">H · Arang</button>
+  <button type="button" data-gaya="i">I · Papan</button>
+  <button type="button" data-gaya="d">D · Super-App</button>
+  <button type="button" data-gaya="f">F · Minimal</button>
+  </div>
+  <button type="button" class="tema" id="tema" aria-label="Ganti mode terang/gelap"></button>
+</div>
+
+<div class="app" id="app">
+  <div id="kepala"></div>
+  <div id="scr"></div>
+  <nav id="nav" aria-label="Menu utama"></nav>
+  <div class="tirai" id="tirai" hidden></div>
+  <div class="lembar g" id="lembar" role="dialog" aria-modal="true" hidden></div>
+</div>
+
+<script>
+(function () {
+  const MOD = {
+    project: { nama: 'Summary Project', pendek: 'Project', ikon: 'i-folder', w: 'blue',
+      st: { jalan: ['Berjalan', 'blue'], telat: ['Terlambat', 'red'], tunda: ['Tertunda', 'amber'], selesai: ['Selesai', 'green'] },
+      data: [
+        ['Bank Mandiri Thamrin · Video Wall Lobby', 'PT Bank Mandiri (Persero)', 'jalan', ['📍 Jakarta Pusat', '👷 Yoga KS'], 'Rp 1,2 M', 65],
+        ['Universitas Pradita · Smart Class 12 Ruang', 'Universitas Pradita', 'jalan', ['📍 Gading Serpong', '👷 Ade Rachmatullah'], 'Rp 2,1 M', 80],
+        ['OCS Indonesia · LED Indoor', 'PT OCS Global Services', 'jalan', ['📍 Cibis Park', '👷 Taufik wahyudi'], 'Rp 610 Jt', 55],
+        ['Hotel Santika BSD · Ballroom AV', 'Santika Hotels', 'telat', ['📍 Tangerang', '👷 Ferdinan Agustinus'], 'Rp 840 Jt', 40],
+        ['Kantor Pajak Pratama · Ruang Konferensi', 'Direktorat Jenderal Pajak', 'telat', ['📍 Bekasi', '👷 Ade Rachmatullah'], 'Rp 275 Jt', 30],
+        ['Astra Honda Motor · Command Center', 'PT Astra Honda Motor', 'tunda', ['📍 Sunter', '👷 Yoga KS'], 'Rp 3,4 M', 20],
+        ['RS Pondok Indah · Ruang Rapat Direksi', 'RS Pondok Indah', 'selesai', ['📍 Jakarta Selatan', '👷 Deni Ahmad N.'], 'Rp 390 Jt', 100],
+        ['Sinar Mas Land · Experience Center', 'Sinar Mas Land', 'selesai', ['📍 BSD City', '👷 Ferdinan Agustinus'], 'Rp 1,8 M', 100],
+      ] },
+    progress: { nama: 'Project Progress', pendek: 'Progress', ikon: 'i-grafik', w: 'pink',
+      st: { aman: ['On track', 'green'], risiko: ['Berisiko', 'amber'], hambat: ['Terhambat', 'red'], selesai: ['Selesai', 'blue'] },
+      data: [
+        ['Smart Class Pradita · Tahap 2', '18 dari 24 checklist · 2 isu terbuka', 'aman', ['📍 Gading Serpong', '🗓 Target 12 Des'], '75%', 75],
+        ['Video Wall Mandiri', '9 dari 16 checklist · 1 isu terbuka', 'aman', ['📍 Jakarta Pusat', '🗓 Target 5 Des'], '56%', 56],
+        ['Ballroom Santika', '6 dari 20 checklist · 4 isu terbuka', 'hambat', ['📍 Tangerang', '🗓 Lewat 3 hari'], '30%', 30],
+        ['LED OCS Cibis', '11 dari 18 checklist · 3 isu terbuka', 'risiko', ['📍 Cibis Park', '🗓 Target 28 Nov'], '61%', 61],
+        ['Experience Center SML', '22 dari 22 checklist', 'selesai', ['📍 BSD City', '🗓 Selesai 10 Nov'], '100%', 100],
+      ] },
+    tiket: { nama: 'Ticket Troubleshooting', pendek: 'Ticket', ikon: 'i-tiket', w: 'red', badge: 9,
+      st: { pending: ['Pending', 'amber'], proses: ['In Progress', 'blue'], overdue: ['Overdue', 'red'], solved: ['Solved', 'green'] },
+      data: [
+        ['OCS Indonesia (PT OCS Global Services)', 'LED Block mati satu baris', 'pending', ['📍 Cibis Park', '📦 Skyworth GOB-1.5', '👷 Taufik wahyudi'], '12:32'],
+        ['PT Astra Honda Motor', 'Audio dengung di ruang rapat', 'pending', ['📍 Sunter', '📦 Tricolor Pontus 3U', '👷 Deni Ahmad N.'], 'Kemarin'],
+        ['Bank Mandiri Thamrin', 'Video wall tidak sinkron', 'proses', ['📍 Jakarta Pusat', '📦 Philips 55BDL2105X', '👷 Yoga KS'], '21 Nov'],
+        ['Hotel Santika BSD', 'Panel sentuh tidak merespon', 'overdue', ['📍 Tangerang', '📦 Cue System', '👷 Ferdinan Agustinus'], '12 Nov'],
+        ['RS Pondok Indah', 'HDMI extender putus-putus', 'overdue', ['📍 Jakarta Selatan', '📦 Wyrestorm', '👷 Ade Rachmatullah'], '9 Nov'],
+        ['Universitas Pradita', 'Proyektor mati sendiri', 'solved', ['📍 Gading Serpong', '📦 Microvision MV-U55', '👷 Ade Rachmatullah'], '20 Nov'],
+        ['Kantor Pajak Pratama', 'Mic delegasi tidak terdengar', 'solved', ['📍 Bekasi', '📦 Cue System', '👷 Yoga KS'], '18 Nov'],
+        ['Gedung Sinar Mas Land', 'Layar berkedip saat dingin', 'solved', ['📍 BSD City', '📦 Philips 55BDL2105X', '👷 Ferdinan Agustinus'], '15 Nov'],
+      ] },
+    require: { nama: 'Request Design Project', pendek: 'Require', ikon: 'i-tas', w: 'violet', badge: 3,
+      st: { pending: ['Pending', 'amber'], approved: ['Approved', 'blue'], selesai: ['Selesai', 'green'], tolak: ['Ditolak', 'red'] },
+      data: [
+        ['Layout ruang rapat 20 pax', 'Bank Mandiri · Sales: Gilang', 'pending', ['🧩 Gambar 2D + BOQ', '👷 Handler: Yoga KS'], '22 Nov'],
+        ['Desain video wall 3x3', 'Hotel Santika · Sales: Rina', 'pending', ['🧩 Render 3D', '👷 Handler: Ade R.'], '21 Nov'],
+        ['Smart class 4 ruang tambahan', 'Univ. Pradita · Sales: Gilang', 'approved', ['🧩 Gambar 2D', '👷 Handler: Taufik W.'], '19 Nov'],
+        ['Command center 12 layar', 'Astra Honda Motor · Sales: Budi', 'selesai', ['🧩 BOQ + Skema', '👷 Handler: Yoga KS'], '14 Nov'],
+        ['Sound system aula', 'Kantor Pajak · Sales: Rina', 'tolak', ['🧩 Skema audio', '👷 Handler: Deni A.'], '10 Nov'],
+      ] },
+    jadwal: { nama: 'Request Schedule', pendek: 'Jadwal', ikon: 'i-kal', w: 'teal',
+      st: { hari: ['Hari ini', 'blue'], minggu: ['Minggu ini', 'teal'], selesai: ['Selesai', 'green'] },
+      data: [
+        ['OCS Indonesia · Instalasi', 'Senin 23 Nov · 12:40', 'hari', ['📍 Cibis Park', '👷 Taufik wahyudi'], '12:40'],
+        ['Bank Mandiri · Survey', 'Rabu 25 Nov · 09:00', 'minggu', ['📍 Jakarta Pusat', '👷 Yoga KS'], 'Rab'],
+        ['Demo ruang rapat · Showroom', 'Rabu 25 Nov · 14:00', 'minggu', ['📍 Showroom PTS', '👷 Ade R.'], 'Rab'],
+        ['Hotel Santika · Perbaikan', 'Jumat 27 Nov · 10:00', 'minggu', ['📍 Tangerang', '👷 Ferdinan A.'], 'Jum'],
+        ['RS Pondok Indah · Training user', 'Kamis 19 Nov · 13:00', 'selesai', ['📍 Jakarta Selatan', '👷 Deni A.'], '19 Nov'],
+      ] },
+    review: { nama: 'Form Review Demo & BAST', pendek: 'Review', ikon: 'i-bintang', w: 'amber', badge: 34,
+      st: { tunggu: ['Menunggu', 'amber'], setuju: ['Disetujui', 'green'], tolak: ['Ditolak', 'red'] },
+      data: [
+        ['BAST · Experience Center SML', 'Sinar Mas Land', 'tunggu', ['🏷 BAST', '👷 Ferdinan A.'], '22 Nov'],
+        ['Demo · Video conference', 'PT Indofood CBP', 'tunggu', ['🏷 Demo', '👷 Taufik W.'], '21 Nov'],
+        ['BAST · Ruang Rapat Direksi', 'RS Pondok Indah', 'setuju', ['🏷 BAST', '👷 Deni A.'], '18 Nov'],
+        ['Demo · Interactive display', 'Universitas Pradita', 'setuju', ['🏷 Demo', '👷 Ade R.'], '15 Nov'],
+        ['Demo · LED indoor', 'Hotel Santika', 'tolak', ['🏷 Demo', '👷 Yoga KS'], '12 Nov'],
+      ] },
+    piket: { nama: 'Piket Showroom', pendek: 'Piket', ikon: 'i-toko', w: 'sky',
+      st: { isi: ['Terisi', 'green'], belum: ['Belum diisi', 'amber'] },
+      data: [
+        ['UMP · Senin 23 Nov', 'Abraham Tumpal Hamonangan', 'isi', ['🕘 09:00 – 17:00', '👥 0 tamu'], 'Hari ini'],
+        ['IVP · Senin 23 Nov', 'Belum ada petugas', 'belum', ['🕘 09:00 – 17:00'], 'Hari ini'],
+        ['MVI · Senin 23 Nov', 'Belum ada petugas', 'belum', ['🕘 09:00 – 17:00'], 'Hari ini'],
+        ['UMP · Jumat 20 Nov', 'Deni Ahmad Nasehudin', 'isi', ['🕘 09:00 – 17:00', '👥 3 tamu'], '20 Nov'],
+      ] },
+    laporan: { nama: 'Daily Report', pendek: 'Laporan', ikon: 'i-dok', w: 'blue',
+      st: { sudah: ['Sudah isi', 'green'], belum: ['Belum isi', 'amber'] },
+      data: [
+        ['Dhany Wahyu', 'Manager · Team PTS', 'belum', ['🗓 Senin 23 Nov'], '—'],
+        ['Taufik wahyudi', 'Supervisor · Team PTS MVI', 'belum', ['🗓 Senin 23 Nov'], '—'],
+        ['Yoga KS', 'Engineer · Team PTS', 'belum', ['🗓 Senin 23 Nov'], '—'],
+        ['Ade Rachmatullah', 'Engineer · Team PTS', 'sudah', ['🗓 Jumat 20 Nov', '📝 4 kegiatan'], '17:05'],
+        ['Ferdinan Agustinus', 'Engineer · Team Services', 'sudah', ['🗓 Jumat 20 Nov', '📝 3 kegiatan'], '16:40'],
+      ] },
+    unit: { nama: 'Unit Movement Log', pendek: 'Unit', ikon: 'i-truk', w: 'green',
+      st: { keluar: ['Keluar', 'amber'], telat: ['Lewat tanggal', 'red'], masuk: ['Kembali', 'green'] },
+      data: [
+        ['HDMI 4 pcs, USB-C to A 1 pcs', 'Maxhub UC BM45 · demo klien', 'telat', ['👷 Dhany Wahyu', '⏱ lewat 122 hari'], 'Jul'],
+        ['Kamera PTZ Lumens VC-A71', 'Demo Universitas Pradita', 'telat', ['👷 Ade R.', '⏱ lewat 6 hari'], '17 Nov'],
+        ['Interactive display 86"', 'Pameran Indocomtech', 'keluar', ['👷 Yoga KS', '↩ kembali 30 Nov'], '20 Nov'],
+        ['Mic wireless Shure 4 set', 'Event Bank Mandiri', 'masuk', ['👷 Deni A.', '✓ kembali 18 Nov'], '14 Nov'],
+      ] },
+    belajar: { nama: 'Learning Center', pendek: 'Learning', ikon: 'i-topi', w: 'teal',
+      st: { baru: ['Baru', 'blue'], jalan: ['Sedang belajar', 'amber'], selesai: ['Selesai', 'green'] },
+      data: [
+        ['Dasar Dante & AV over IP', 'Modul 6 materi · 45 menit', 'baru', ['🎓 Audio', '⭐ Wajib'], 'Baru'],
+        ['Kalibrasi video wall', 'Modul 4 materi · 30 menit', 'jalan', ['🎓 Video', '▶ 2 dari 4'], '50%', 50],
+        ['Troubleshooting LED', 'Modul 5 materi · 40 menit', 'jalan', ['🎓 Video', '▶ 1 dari 5'], '20%', 20],
+        ['K3 di lokasi proyek', 'Modul 3 materi · 20 menit', 'selesai', ['🎓 Umum', '✓ Kuis 90'], '100%', 100],
+      ] },
+    tools: { nama: 'AV Solution Tools', pendek: 'AV Tools', ikon: 'i-alat', w: 'violet',
+      st: { audio: ['Audio', 'violet'], video: ['Video', 'blue'], jaringan: ['Jaringan', 'teal'] },
+      data: [
+        ['Kalkulator SPL & speaker', 'Hitung jumlah speaker per ruangan', 'audio', ['🧮 Kalkulator'], 'Buka'],
+        ['Jarak pandang layar', 'Ukuran layar ideal dari jarak duduk', 'video', ['🧮 Kalkulator'], 'Buka'],
+        ['Pixel pitch LED', 'Resolusi & jarak pandang minimum', 'video', ['🧮 Kalkulator'], 'Buka'],
+        ['Bandwidth AV over IP', 'Kebutuhan jaringan per stream', 'jaringan', ['🧮 Kalkulator'], 'Buka'],
+      ] },
+    db: { nama: 'Access Database', pendek: 'Database', ikon: 'i-db', w: 'gray',
+      st: { produk: ['Produk', 'blue'], klien: ['Klien', 'green'], vendor: ['Vendor', 'amber'] },
+      data: [
+        ['Philips 55BDL2105X', 'Video wall display 55"', 'produk', ['📦 Philips', '🏷 Display'], ''],
+        ['Cue System Touch Panel', 'Kontrol ruang rapat', 'produk', ['📦 Cue', '🏷 Control'], ''],
+        ['PT Bank Mandiri (Persero)', '12 project · 31 tiket', 'klien', ['📍 Jakarta'], ''],
+        ['PT Sinar Mas Distribusi', 'Distributor resmi', 'vendor', ['📞 021-5xxx'], ''],
+      ] },
+  };
+  const GRUP = [['PROJECT', ['project', 'progress', 'tools', 'jadwal', 'require', 'review', 'tiket']], ['HARIAN', ['piket', 'laporan', 'db', 'unit', 'belajar']]];
+  const NAV = [['home', 'Beranda', 'i-home'], ['tiket', 'Ticket', 'i-tiket', 9], ['project', 'Project', 'i-folder'], ['jadwal', 'Jadwal', 'i-kal'], ['__menu', 'Menu', 'i-menu']];
+
+  const S = { gaya: 'g', layar: 'home', pil: new Set(), cari: '' };
+  const $ = id => document.getElementById(id);
+  const ik = (n, gaya = '') => `<svg class="i" ${gaya ? `style="${gaya}"` : ''}><use href="#${n}"/></svg>`;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const item = (m, r, i) => ({ i, t: r[0], d: r[1], s: r[2], meta: r[3] || [], w: r[4] || '', p: r[5] });
+  const semua = k => MOD[k].data.map((r, i) => item(MOD[k], r, i));
+  const hitung = (k, s) => MOD[k].data.filter(r => r[2] === s).length;
+  const stW = (k, s) => MOD[k].st[s][1];
+  const stL = (k, s) => MOD[k].st[s][0];
+  const pil = (k, s) => `<span class="pil w-${stW(k, s)}">${stL(k, s)}</span>`;
+  const progres = (p, w) => p == null ? '' : `<span class="progres"><span class="bilah w-${w}"><i style="width:${p}%"></i></span><b class="num">${p}%</b></span>`;
+  const bilah = (p, w) => p == null ? '' : `<div class="bilah w-${w}"><i style="width:${p}%"></i></div>`;
+  function tersaring(k) {
+    const q = S.cari.trim().toLowerCase();
+    return semua(k).filter(x => (S.pil.size === 0 || S.pil.has(x.s)) && (!q || [x.t, x.d, ...x.meta].join(' ').toLowerCase().includes(q)));
+  }
+  const META = { '📍': ['i-pin', 'Lokasi'], '👷': ['i-orang', 'PIC'], '📦': ['i-kotak', 'Unit'], '🗓': ['i-kal', 'Tanggal'], '🕘': ['i-jam', 'Jam'], '👥': ['i-orang', 'Tamu'],
+    '🧩': ['i-dok', 'Kebutuhan'], '🏷': ['i-label', 'Jenis'], '📝': ['i-dok', 'Kegiatan'], '⏱': ['i-jam', 'Durasi'], '↩': ['i-kal', 'Rencana kembali'], '✓': ['i-cek', 'Hasil'],
+    '🎓': ['i-topi', 'Kategori'], '⭐': ['i-bintang', 'Prioritas'], '▶': ['i-play', 'Kemajuan'], '🧮': ['i-alat', 'Jenis'], '📞': ['i-telp', 'Kontak'] };
+  const pecahM = t => { const n = t.indexOf(' '); const e = t.slice(0, n), m = META[e] || ['i-label', 'Info']; return { ik: m[0], lbl: m[1], v: t.slice(n + 1) }; };
+  const metaS = t => { const m = pecahM(t); return `<span>${ik(m.ik)}${m.v}</span>`; };
+  const avatar = '<span class="avatar">D</span>';
+  const notifBtn = (kelas = 'ikonbtn') => `<button type="button" class="${kelas}" data-buka="__notif" aria-label="Notifikasi">${ik('i-lonceng')}<span class="lencana">50</span></button>`;
+  const kosong = '<div class="kosong">Tidak ada data untuk filter ini.</div>';
+  const catatan = '<p class="catatan">Data contoh · ketuk menu & daftar untuk mencoba.</p>';
+
+  /* ───── Gaya ───── */
+  const GAYA = {
+    d: {
+      kepala(k) {
+        if (!k) return `<div class="d-biru g d-home-atas"><div class="d-baris">${avatar}<h1>Halo, Dhany<small>Senin, 23 November 2026</small></h1>${notifBtn('d-ikon')}</div>
+          <button type="button" class="d-cari-btn" data-buka="project">${ik('i-cari', 'width:17px;height:17px')}Cari project, tiket, jadwal…</button></div>`;
+        const m = MOD[k];
+        return `<div class="d-biru g d-mod-atas"><div class="d-baris"><button type="button" class="d-ikon" data-buka="home" aria-label="Kembali">${ik('i-kembali')}</button><h1>${m.nama}<small>${m.data.length} data</small></h1>${notifBtn('d-ikon')}</div>
+          <label class="cari">${ik('i-cari', 'width:17px;height:17px')}<input id="cari" type="search" placeholder="Cari di ${m.pendek}…" value="${esc(S.cari)}"></label></div>`;
+      },
+      home() {
+        const tiles = ['tiket', 'project', 'require', 'jadwal', 'review', 'laporan', 'progress'].map(k => tileBtn(k)).join('') +
+          `<button type="button" data-buka="__menu"><span class="tile w-gray">${ik('i-titik')}</span>Lainnya</button>`;
+        return `<div class="isi"><div class="g"><div class="d-grid grid-menu">${tiles}</div></div>
+          <div class="g tumpuk" style="margin-top:14px">
+            <div class="kartu" style="background:linear-gradient(150deg,#3b82f6,var(--accent) 55%,var(--accent-2));border:0;color:#fff">
+              <div class="kecil" style="color:rgba(255,255,255,.85)">Tiket selesai · 30 hari</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><span class="angka num">18</span><span style="font-size:13px;opacity:.85">dari 26 tiket</span><b class="num" style="margin-left:auto">69%</b></div>
+              <div class="bilah" style="background:rgba(255,255,255,.28);margin-top:10px"><i style="width:69%;background:#fff"></i></div></div>
+            <div class="seksi-judul">Project berjalan<button type="button" data-buka="project" data-s="jalan">Lihat semua</button></div>
+            ${semua('project').filter(x => x.s !== 'selesai').slice(0, 3).map(x => GAYA.d.baris('project', x)).join('')}
+            ${catatan}</div></div>`;
+      },
+      saring(k) { return `<div class="chips g" style="padding-top:12px;padding-bottom:10px">${chipSemua()}${Object.keys(MOD[k].st).map(s => chip(k, s)).join('')}</div>`; },
+      baris(k, x) {
+        return `<button type="button" class="kartu d-item" data-item="${k}:${x.i}"><span class="tile w-${stW(k, x.s)}">${ik(MOD[k].ikon)}</span>
+          <span class="badan"><span class="atas"><b>${x.t}</b>${pil(k, x.s)}</span><span class="sub">${x.d}</span><span class="meta">${x.meta.map(metaS).join('')}</span>${progres(x.p, stW(k, x.s))}</span></button>`;
+      },
+      daftar(k) { const d = tersaring(k); return `<div class="g tumpuk">${d.length ? d.map(x => GAYA.d.baris(k, x)).join('') : kosong}</div>`; },
+      nav: navBiasa,
+    },
+    f: {
+      kepala(k) {
+        return `<div class="f-atas g" id="f-atas">${k ? `<button type="button" class="f-kembali" data-buka="home">${ik('i-kembali')}Beranda</button>` : '<span style="min-width:38px"></span>'}
+          <span class="tengah">${k ? MOD[k].pendek : 'Ringkasan'}</span><button type="button" class="f-btn" data-buka="project" aria-label="Cari">${ik('i-cari', 'width:17px;height:17px')}</button>${avatar}</div>`;
+      },
+      home() {
+        const rows = (k, ss) => ss.map(s => `<button type="button" class="f-baris" data-buka="${k}" data-s="${s}"><span class="f-ik w-${stW(k, s)}">${ik(MOD[k].ikon)}</span><span class="badan"><span class="teks">${stL(k, s)}</span><span class="f-nilai num" style="color:var(--${stW(k, s) === 'red' ? 'red' : 'ink'})">${hitung(k, s)}</span>${ik('i-panah', '') .replace('class="i"', 'class="i panah"')}</span></button>`).join('');
+        const modRow = (k, ket) => `<button type="button" class="f-baris" data-buka="${k}"><span class="f-ik w-${MOD[k].w}">${ik(MOD[k].ikon)}</span><span class="badan"><span class="teks">${MOD[k].pendek}<small>${ket}</small></span>${ik('i-panah').replace('class="i"', 'class="i panah"')}</span></button>`;
+        return `<div class="isi g"><div class="f-besar"><h1>Ringkasan</h1><p>Senin, 23 November · Dhany Wahyu</p></div>
+          <div class="f-grupjudul">Tiket</div><div class="f-grup">${rows('tiket', ['pending', 'proses', 'overdue', 'solved'])}</div>
+          <div class="f-grupjudul">Project</div><div class="f-grup">${rows('project', ['jalan', 'telat', 'tunda', 'selesai'])}</div>
+          <div class="f-grupjudul">Hari ini</div><div class="f-grup">${modRow('jadwal', '12:40 · OCS Indonesia · Cibis Park')}${modRow('laporan', 'Belum diisi · sebelum jam kerja berakhir')}${modRow('piket', 'UMP · Abraham Tumpal H.')}</div>
+          ${catatan}</div>`;
+      },
+      saring(k) {
+        return `<div class="g"><div class="f-besar"><h1>${MOD[k].nama}</h1><p>${MOD[k].data.length} data</p></div>
+          <label class="f-cari">${ik('i-cari', 'width:16px;height:16px')}<input id="cari" type="search" placeholder="Cari" value="${esc(S.cari)}"></label>
+          <div class="chips" style="margin-bottom:16px">${chipSemua()}${Object.keys(MOD[k].st).map(s => chip(k, s)).join('')}</div></div>`;
+      },
+      daftar(k) {
+        const d = tersaring(k);
+        return `<div class="g">${d.length ? `<div class="f-grup">${d.map(x => `<button type="button" class="f-baris" data-item="${k}:${x.i}"><span class="f-ik w-${stW(k, x.s)}">${ik(MOD[k].ikon)}</span>
+          <span class="badan"><span class="teks">${x.t}<small>${x.d}</small></span>${x.p != null && k === 'project' ? `<span class="f-nilai num" style="font-size:13px">${x.p}%</span>` : pil(k, x.s)}${ik('i-panah').replace('class="i"', 'class="i panah"')}</span></button>`).join('')}</div>` : kosong}</div>`;
+      },
+      nav: navBiasa,
+    },
+    g: {
+      kepala() { return `<div class="g-atas g"><div class="logo">${ik('i-play')}</div><b>WM Portal<small>PTS Portal</small></b><button type="button" class="ikonbtn" data-buka="project" aria-label="Cari">${ik('i-cari')}</button>${notifBtn()}${avatar}</div>`; },
+      home() {
+        const st = Object.keys(MOD.tiket.st).map(s => `<button type="button" class="g-stat w-${stW('tiket', s)}" data-buka="tiket" data-s="${s}"><b class="num">${hitung('tiket', s)}</b><span>${stL('tiket', s)}</span></button>`).join('');
+        const cepat = ['tiket', 'project', 'jadwal', 'laporan'].map(k => `<button type="button" data-buka="${k}"><span class="bulat">${ik(MOD[k].ikon)}${MOD[k].badge ? `<span class="lencana">${MOD[k].badge}</span>` : ''}</span>${MOD[k].pendek}</button>`).join('') +
+          `<button type="button" data-buka="__menu"><span class="bulat">${ik('i-titik')}</span>Semua</button>`;
+        return `<div class="isi"><div class="g-panel"><div class="g-kepala"><h1>Selamat siang, Dhany<small>Senin, 23 November 2026</small></h1></div>
+          <div class="g-isi"><div class="g-cepat">${cepat}</div><div class="geser">${st}</div>
+          <div class="kartu"><div class="kecil">Status project</div><div class="donat-baris">${donat('project')}<div class="legenda">${Object.keys(MOD.project.st).map(s => `<button type="button" class="w-${stW('project', s)}" data-buka="project" data-s="${s}"><i></i><span>${stL('project', s)}</span><b class="num">${hitung('project', s)}</b></button>`).join('')}</div></div></div>
+          <div class="seksi-judul">Project berjalan<button type="button" data-buka="project" data-s="jalan">Lihat semua</button></div>
+          ${semua('project').filter(x => x.s === 'jalan').slice(0, 2).map(x => GAYA.g.baris('project', x)).join('')}
+          </div></div>${catatan}</div>`;
+      },
+      saring(k) {
+        const m = MOD[k];
+        const st = Object.keys(m.st).map(s => `<button type="button" class="g-stat w-${stW(k, s)}" data-f="${s}" aria-pressed="${S.pil.has(s)}"><b class="num">${hitung(k, s)}</b><span>${stL(k, s)}</span></button>`).join('');
+        return `<div class="g-panel" style="border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:0"><div class="g-kepala"><button type="button" class="ikonbtn" data-buka="home" aria-label="Kembali">${ik('i-kembali')}</button><span class="g-ikonmod">${ik(m.ikon, 'width:18px;height:18px')}</span><h1>${m.nama}<small>Ketuk kartu untuk menyaring, bisa lebih dari satu</small></h1></div>
+          <div class="g-isi" style="padding-bottom:0"><div class="geser"><button type="button" class="g-stat" data-f="__semua" aria-pressed="${S.pil.size === 0}"><b class="num">${m.data.length}</b><span>Semua</span></button>${st}</div>
+          <label class="cari">${ik('i-cari', 'width:17px;height:17px')}<input id="cari" type="search" placeholder="Cari di ${m.pendek}…" value="${esc(S.cari)}"></label></div></div>`;
+      },
+      baris(k, x) {
+        return `<button type="button" class="kartu" data-item="${k}:${x.i}" style="display:flex;flex-direction:column;gap:6px;width:100%"><span style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><b style="font-size:14px;line-height:1.3">${x.t}</b>${pil(k, x.s)}</span>
+          <span class="sub">${x.d}</span><span class="meta">${x.meta.map(metaS).join('')}${x.w ? `<span style="margin-left:auto;font-weight:700;color:var(--ink-2)">${x.w}</span>` : ''}</span>${progres(x.p, stW(k, x.s))}</button>`;
+      },
+      daftar(k) {
+        const d = tersaring(k);
+        return `<div class="g-panel" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;border-top:0"><div class="g-isi">${d.length ? d.map(x => GAYA.g.baris(k, x)).join('') : kosong}</div></div>`;
+      },
+      nav() {
+        return `<div class="g-nav">${NAV.map(([k, l, i, b]) => `<button type="button" data-buka="${k}" ${aktif(k)}><span class="bulat">${ik(i)}${b ? `<span class="lencana">${b}</span>` : ''}</span>${l}</button>`).join('')}</div>`;
+      },
+    },
+    h: {
+      kepala(k) {
+        const m = k && MOD[k];
+        const tab = m ? `<label class="h-cari">${ik('i-cari', 'width:16px;height:16px')}<input id="cari" type="search" placeholder="Cari di ${m.pendek}…" value="${esc(S.cari)}"></label>
+          <div class="h-tab" id="saring-h">${tabH(k)}</div>` : '';
+        return `<div class="h-atas g"><div class="baris">${m ? `<button type="button" class="h-ikon" data-buka="home" aria-label="Kembali">${ik('i-kembali')}</button>` : ''}
+          <h1>${m ? m.nama : 'Beranda'}<small>${m ? m.data.length + ' data' : 'Senin, 23 November · Dhany'}</small></h1>
+          <button type="button" class="h-ikon" data-buka="project" aria-label="Cari">${ik('i-cari')}</button>${notifBtn('h-ikon')}</div>${tab}</div>`;
+      },
+      home() {
+        const garis = ['M0 16 L12 12 L24 14 L36 8 L48 10 L60 4', 'M0 8 L12 10 L24 6 L36 12 L48 9 L60 14', 'M0 14 L12 15 L24 10 L36 11 L48 6 L60 5', 'M0 18 L12 14 L24 12 L36 9 L48 6 L60 3'];
+        const kpi = Object.keys(MOD.tiket.st).map((s, n) => `<button type="button" class="w-${stW('tiket', s)}" data-buka="tiket" data-s="${s}"><span class="lbl"><i></i>Tiket ${stL('tiket', s)}</span><b class="num">${hitung('tiket', s)}</b>
+          <svg viewBox="0 0 60 20" preserveAspectRatio="none" style="width:100%;height:22px"><path d="${garis[n]}" fill="none" stroke="var(--c)" stroke-width="1.8" vector-effect="non-scaling-stroke"/></svg></button>`).join('');
+        return `<div class="isi g tumpuk" style="padding-top:14px"><div class="h-kpi">${kpi}</div>
+          <div class="seksi-judul">Project berjalan<button type="button" data-buka="project" data-s="jalan">Lihat semua</button></div>
+          <div class="h-daftar">${semua('project').filter(x => x.s !== 'selesai').slice(0, 3).map(x => GAYA.h.baris('project', x)).join('')}</div>
+          <div class="seksi-judul">Tiket terbaru<button type="button" data-buka="tiket">Lihat semua</button></div>
+          <div class="h-daftar">${semua('tiket').slice(0, 3).map(x => GAYA.h.baris('tiket', x)).join('')}</div>${catatan}</div>`;
+      },
+      saring() { return ''; },
+      baris(k, x) {
+        return `<button type="button" class="h-baris w-${stW(k, x.s)}" data-item="${k}:${x.i}"><span class="strip"></span><span class="badan">
+          <span class="judul"><span>${x.t}</span><time>${x.w}</time></span><span class="ket">${x.d}</span>${progres(x.p, stW(k, x.s))}
+          <span class="kaki">${pil(k, x.s)}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.meta.slice(0, 2).map(t => pecahM(t).v).join(' · ')}</span></span></span></button>`;
+      },
+      daftar(k) { const d = tersaring(k); return `<div class="g" style="padding-top:12px"><div class="h-daftar">${d.length ? d.map(x => GAYA.h.baris(k, x)).join('') : kosong}</div></div>`; },
+      nav: navBiasa,
+    },
+    i: {
+      kepala(k) {
+        return `<div class="i-atas g">${k ? `<button type="button" class="ikonbtn" data-buka="home" aria-label="Kembali">${ik('i-kembali')}</button>` : avatar}
+          <h1>${k ? 'Papan ' + MOD[k].pendek : 'Halo, Dhany'}</h1><button type="button" class="ikonbtn" data-buka="project" aria-label="Cari">${ik('i-cari')}</button>${notifBtn()}</div>`;
+      },
+      home() {
+        const ringkas = (k) => `<div class="i-ringkas" style="--n:${Object.keys(MOD[k].st).length}">${Object.keys(MOD[k].st).map(s => `<button type="button" class="w-${stW(k, s)}" data-buka="${k}" data-kol="${s}"><b class="num">${hitung(k, s)}</b><span>${stL(k, s)}</span></button>`).join('')}</div>`;
+        const waktu = (j, w, t, d) => `<div class="i-waktu w-${w}"><span class="jam num">${j}</span><span class="garis"></span><div class="kartu"><b style="font-size:13.5px">${t}</b><div class="sub">${d}</div></div></div>`;
+        return `<div class="isi g tumpuk" style="padding-top:14px"><div class="kecil">Tiket · ketuk untuk buka papan</div>${ringkas('tiket')}
+          <div class="kecil" style="margin-top:4px">Project</div>${ringkas('project')}
+          <div class="kecil" style="margin-top:4px">Hari ini</div><div>${waktu('09:00', 'blue', 'Piket Showroom · UMP', 'Abraham Tumpal H.')}${waktu('12:40', 'amber', 'OCS Indonesia · Instalasi', 'Cibis Park · Taufik wahyudi')}${waktu('17:00', 'red', 'Daily Report belum diisi', 'Batas akhir hari ini')}</div>${catatan}</div>`;
+      },
+      saring(k) { return `<div class="g" style="padding-top:12px;padding-bottom:10px"><label class="cari">${ik('i-cari', 'width:17px;height:17px')}<input id="cari" type="search" placeholder="Cari di ${MOD[k].pendek}…" value="${esc(S.cari)}"></label></div>`; },
+      daftar(k) {
+        const d = tersaring(k), ss = Object.keys(MOD[k].st);
+        return `<div class="i-papan" id="papan">${ss.map(s => { const isi = d.filter(x => x.s === s);
+          return `<div class="i-kolom w-${stW(k, s)}" data-kolom="${s}"><h2><i></i>${stL(k, s)}<em class="num">${isi.length}</em></h2>
+            ${isi.length ? isi.map(x => `<button type="button" class="i-kartu" data-item="${k}:${x.i}"><b>${x.t}</b><span class="sub">${x.d}</span>${progres(x.p, stW(k, x.s))}<span class="meta">${x.meta.length ? metaS(x.meta[x.meta.length - 1]) : '<span></span>'}<span style="margin-left:auto">${x.w}</span></span></button>`).join('') : '<div class="sub" style="text-align:center;padding:12px">Kosong</div>'}</div>`; }).join('')}</div>
+          <div class="i-titik" id="titik">${ss.map((s, n) => `<i class="${n ? '' : 'on'}"></i>`).join('')}</div>`;
+      },
+      nav() {
+        const n = NAV.slice();
+        n.splice(2, 0, ['__tambah', '', 'i-tambah']);
+        return `<div class="nav">${n.map(([k, l, i, b]) => k === '__tambah' ? `<button type="button" data-buka="tiket" aria-label="Buat tiket"><span class="fab">${ik(i, 'width:24px;height:24px')}</span></button>`
+          : `<button type="button" data-buka="${k}" ${aktif(k)}><span class="ik">${ik(i)}${b ? `<span class="lencana">${b}</span>` : ''}</span>${l}</button>`).join('')}</div>`;
+      },
+    },
+  };
+
+  function aktif(k) { return S.layar === k || (k === 'home' && S.layar === 'home') ? 'aria-current="page"' : ''; }
+  function navBiasa() { return `<div class="nav">${NAV.map(([k, l, i, b]) => `<button type="button" data-buka="${k}" ${aktif(k)}><span class="ik">${ik(i)}${b ? `<span class="lencana">${b}</span>` : ''}</span>${l}</button>`).join('')}</div>`; }
+  function tileBtn(k) { const m = MOD[k]; return `<button type="button" data-buka="${k}"><span class="tile w-${m.w}">${ik(m.ikon)}${m.badge ? `<span class="lencana num">${m.badge}</span>` : ''}</span>${m.pendek}</button>`; }
+  function chipSemua() { return `<button type="button" data-f="__semua" aria-pressed="${S.pil.size === 0}">Semua</button>`; }
+  function chip(k, s) { return `<button type="button" class="w-${stW(k, s)}" data-f="${s}" aria-pressed="${S.pil.has(s)}">${stL(k, s)}<em class="num">${hitung(k, s)}</em></button>`; }
+  function tabH(k) {
+    return `<button type="button" data-f="__semua" aria-pressed="${S.pil.size === 0}">Semua<em class="num">${MOD[k].data.length}</em></button>` +
+      Object.keys(MOD[k].st).map(s => `<button type="button" data-f="${s}" data-tunggal="1" aria-pressed="${S.pil.has(s)}">${stL(k, s)}<em class="num">${hitung(k, s)}</em></button>`).join('');
+  }
+  function donat(k) {
+    const ss = Object.keys(MOD[k].st), jml = MOD[k].data.length;
+    let off = 25, isi = '<circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--line-2)" stroke-width="6"/>';
+    ss.forEach(s => { const p = hitung(k, s) / jml * 100; if (p) isi += `<circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--${stW(k, s)})" stroke-width="6" stroke-dasharray="${p} ${100 - p}" stroke-dashoffset="${off}"/>`; off -= p; });
+    return `<svg viewBox="0 0 42 42" width="92" height="92" aria-label="Diagram status ${MOD[k].pendek}">${isi}<text x="21" y="23" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink)" font-family="Plus Jakarta Sans, sans-serif">${jml}</text></svg>`;
+  }
+
+  /* ───── Gambar ───── */
+  function gambar() {
+    const G = GAYA[S.gaya], k = S.layar === 'home' ? null : S.layar;
+    $('app').dataset.gaya = S.gaya;
+    document.querySelectorAll('.pilih [data-gaya]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.gaya === S.gaya)));
+    $('kepala').innerHTML = G.kepala(k);
+    $('scr').innerHTML = k ? `<div class="isi"><div id="saring">${G.saring(k)}</div><div id="daftar">${G.daftar(k)}</div>${catatan}</div>` : G.home();
+    $('nav').innerHTML = G.nav();
+    $('scr').scrollTop = 0;
+    pasangPapan();
+  }
+  function gambarDaftar(ulangSaring) {
+    const G = GAYA[S.gaya], k = S.layar;
+    if (ulangSaring) {
+      if (S.gaya === 'h') $('saring-h').innerHTML = tabH(k);
+      else { const f = document.activeElement && document.activeElement.id === 'cari'; $('saring').innerHTML = G.saring(k); if (f) { const c = $('cari'); c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
+    }
+    $('daftar').innerHTML = G.daftar(k);
+    pasangPapan();
+  }
+  function pasangPapan() {
+    const p = $('papan'); if (!p) return;
+    p.addEventListener('scroll', () => {
+      const lebar = p.firstElementChild ? p.firstElementChild.offsetWidth + 12 : 1, n = Math.round(p.scrollLeft / lebar);
+      [...$('titik').children].forEach((d, i) => d.classList.toggle('on', i === n));
+    }, { passive: true });
+  }
+  function buka(k, s, kol) {
+    if (k === '__menu') return lembarMenu();
+    if (k === '__notif') return lembarNotif();
+    tutup();
+    S.layar = k; S.cari = ''; S.pil = new Set(s && S.gaya !== 'i' ? [s] : []);
+    gambar();
+    if (kol) requestAnimationFrame(() => { const p = $('papan'), c = p && p.querySelector(`[data-kolom="${kol}"]`); if (c) p.scrollLeft = c.offsetLeft - p.firstElementChild.offsetLeft; });
+  }
+
+  /* ───── Lembar ───── */
+  const lembar = $('lembar'), tirai = $('tirai');
+  let jedaTutup = 0;
+  function bukaLembar(html) {
+    lembar.innerHTML = '<div class="pegangan"></div>' + html; lembar.scrollTop = 0;
+    clearTimeout(jedaTutup);
+    lembar.hidden = false; tirai.hidden = false;
+    void lembar.offsetHeight;
+    lembar.classList.add('buka'); tirai.classList.add('buka');
+  }
+  function tutup() {
+    lembar.classList.remove('buka'); tirai.classList.remove('buka');
+    clearTimeout(jedaTutup);
+    jedaTutup = setTimeout(() => { lembar.hidden = true; tirai.hidden = true; }, 250);
+  }
+  function lembarMenu() {
+    bukaLembar(`<h3>Semua menu</h3>${GRUP.map(([g, ks]) => `<div class="grupnama">${g}</div><div class="grid-menu">${ks.map(tileBtn).join('')}</div>`).join('')}`);
+  }
+  function lembarNotif() {
+    const n = [['tiket', 'pending', 'Tiket baru ditugaskan ke kamu', 'OCS Indonesia · 5 menit lalu'], ['review', 'tunggu', 'Form Review menunggu persetujuan', 'BAST Sinar Mas Land · 1 jam lalu'],
+      ['jadwal', 'minggu', 'Jadwal Rabu: Survey Bank Mandiri', 'Pengingat · 2 jam lalu'], ['unit', 'telat', 'Unit belum kembali 122 hari', 'HDMI 4 pcs · kemarin']];
+    bukaLembar(`<h3>Notifikasi</h3><div class="tumpuk" style="margin-top:12px">${n.map(([k, s, t, d]) => `<button type="button" class="kartu" data-buka="${k}" style="display:flex;gap:12px;align-items:center;width:100%"><span class="tile w-${stW(k, s)}">${ik(MOD[k].ikon)}</span><span style="min-width:0"><b style="font-size:13.5px;display:block">${t}</b><span class="sub">${d}</span></span></button>`).join('')}</div>`);
+  }
+  function lembarDetail(k, i) {
+    const x = semua(k)[i];
+    bukaLembar(`<div style="display:flex;gap:12px;align-items:flex-start"><span class="tile w-${stW(k, x.s)}">${ik(MOD[k].ikon)}</span><div style="flex:1;min-width:0"><h3>${x.t}</h3><div class="sub" style="margin-top:3px">${x.d}</div></div></div>
+      <div style="margin:14px 0 6px">${pil(k, x.s)}</div>${x.p != null ? `<div style="display:flex;align-items:center;gap:10px;margin:10px 0">${bilah(x.p, stW(k, x.s)).replace('class="bilah', 'style="flex:1" class="bilah')}<b class="num">${x.p}%</b></div>` : ''}
+      <div style="margin-top:8px">${x.meta.map(t => { const m = pecahM(t); return `<div class="detail-baris"><span>${m.lbl}</span><span>${m.v}</span></div>`; }).join('')}${x.w ? `<div class="detail-baris"><span>${k === 'project' ? 'Nilai project' : k === 'progress' ? 'Progres' : 'Waktu'}</span><span>${x.w}</span></div>` : ''}<div class="detail-baris"><span>Menu</span><span>${MOD[k].nama}</span></div></div>
+      <button type="button" class="tombol" data-tutup="1" style="margin-top:16px">Tutup</button>`);
+  }
+
+  /* ───── Event ───── */
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('button, .tirai');
+    if (!t) return;
+    if (t.id === 'tirai' || t.dataset.tutup) return tutup();
+    if (t.id === 'tema') return tukarTema();
+    if (t.dataset.gaya) { S.gaya = t.dataset.gaya; S.pil.clear(); S.cari = ''; simpan('coba-hp-gaya', S.gaya); tutup(); return gambar(); }
+    if (t.dataset.item) { const [k, i] = t.dataset.item.split(':'); return lembarDetail(k, +i); }
+    if (t.dataset.buka) return buka(t.dataset.buka, t.dataset.s, t.dataset.kol);
+    if (t.dataset.f) {
+      const s = t.dataset.f;
+      if (s === '__semua') S.pil.clear();
+      else if (t.dataset.tunggal) S.pil = new Set(S.pil.has(s) && S.pil.size === 1 ? [] : [s]);
+      else if (S.pil.has(s)) S.pil.delete(s); else S.pil.add(s);
+      return gambarDaftar(true);
+    }
+  });
+  document.addEventListener('input', (e) => { if (e.target.id === 'cari') { S.cari = e.target.value; gambarDaftar(false); } });
+  $('scr').addEventListener('scroll', () => { const a = $('f-atas'); if (a) a.classList.toggle('ciut', $('scr').scrollTop > 40); }, { passive: true });
+
+  function simpan(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function baca(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function pasangTema(gelap) {
+    if (gelap) document.documentElement.dataset.theme = 'dark'; else document.documentElement.removeAttribute('data-theme');
+    $('tema').innerHTML = ik(gelap ? 'i-matahari' : 'i-bulan', 'width:17px;height:17px');
+  }
+  function tukarTema() { const g = document.documentElement.dataset.theme !== 'dark'; pasangTema(g); simpan('coba-hp-tema', g ? 'gelap' : 'terang'); }
+
+  pasangTema(baca('coba-hp-tema') === 'gelap');
+  const g0 = baca('coba-hp-gaya'); if (g0 && GAYA[g0]) S.gaya = g0;
+  gambar();
+})();
+</script>
 </body>
 </html>
