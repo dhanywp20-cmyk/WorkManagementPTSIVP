@@ -1,4 +1,5 @@
 'use client';
+import { tukarPilihanTeks, uraiPilihan } from '@/lib/pilihan-ganda';
 import { StatCard, MiniPieChart } from '@/components/shared';
 import type { Status } from './shared';
 
@@ -56,23 +57,23 @@ export function StatsSection({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
         <MiniPieChart
           data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
-          activeFilter={filterCategory !== 'all' ? filterCategory : null}
-          onSliceClick={label => setFilterCategory(filterCategory === label ? 'all' : label)}
+          activeFilter={uraiPilihan(filterCategory)}
+          onSliceClick={label => setFilterCategory(tukarPilihanTeks(filterCategory, label))}
         />
         <MiniPieChart
           data={salesPieData} title="Divisi Sales" icon="👤"
-          activeFilter={searchDivisionSales || null}
-          onSliceClick={label => setSearchDivisionSales(searchDivisionSales === label ? '' : label)}
+          activeFilter={uraiPilihan(searchDivisionSales, '')}
+          onSliceClick={label => setSearchDivisionSales(tukarPilihanTeks(searchDivisionSales, label, ''))}
         />
         <MiniPieChart
           data={teamPtsPieData} title="Team Handler" icon="👥"
-          activeFilter={searchTeamHandler || null}
-          onSliceClick={label => setSearchTeamHandler(searchTeamHandler === label ? '' : label)}
+          activeFilter={uraiPilihan(searchTeamHandler, '')}
+          onSliceClick={label => setSearchTeamHandler(tukarPilihanTeks(searchTeamHandler, label, ''))}
         />
         <MiniPieChart
           data={productPieData} title="Product / Unit" icon="📦"
-          activeFilter={productFilter}
-          onSliceClick={label => setProductFilter(productFilter === label ? null : label)}
+          activeFilter={uraiPilihan(productFilter, '')}
+          onSliceClick={label => setProductFilter(tukarPilihanTeks(productFilter, label, '') || null)}
         />
       </div>
     </>

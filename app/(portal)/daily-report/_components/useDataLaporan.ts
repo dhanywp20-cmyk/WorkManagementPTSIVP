@@ -8,11 +8,11 @@ import { todayISO, type ReminderActivity, type TicketActivity, type DailyReport 
 import { CATEGORY_CONFIG, type TeamUser } from '@/lib/jadwal/tampilan';
 
 export interface DataLaporanKonteks {
-  filterCategory: string | null;
+  filterCategory: string[];
   filterDate: string;
-  filterDivision: string | null;
-  filterHandler: string | null;
-  filterProduct: string | null;
+  filterDivision: string[];
+  filterHandler: string[];
+  filterProduct: string[];
   filterSource: string;
   filterStatus: string;
   filterUser: string;
@@ -129,10 +129,10 @@ export function useDataLaporan(k: DataLaporanKonteks) {
       }
       if (filterStatus && row.status.toLowerCase() !== filterStatus.toLowerCase()) return false;
       if (filterSource && row.source !== filterSource) return false;
-      if (filterCategory && row.category !== filterCategory) return false;
-      if (filterHandler && (row.handler_name || row.handler_username) !== filterHandler) return false;
-      if (filterDivision && row.sales_division !== filterDivision) return false;
-      if (filterProduct && row.product !== filterProduct) return false;
+      if (filterCategory.length && !filterCategory.includes(row.category)) return false;
+      if (filterHandler.length && !filterHandler.includes(row.handler_name || row.handler_username)) return false;
+      if (filterDivision.length && !filterDivision.includes(row.sales_division)) return false;
+      if (filterProduct.length && !filterProduct.includes(row.product)) return false;
       return true;
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
@@ -141,7 +141,7 @@ export function useDataLaporan(k: DataLaporanKonteks) {
     judul: `Daily Report${filterDate ? ` ${filterDate}` : ''}`, menu: 'Daily Report', warna: ['#059669', '#047857'],
     baris: filteredRows,
     filter: [['Tanggal', filterDate], ['Anggota', filterUser ? (teamUsers.find(u => u.id === filterUser)?.full_name ?? filterUser) : ''], ['Cari', searchProject],
-      ['Status', filterStatus], ['Sumber', filterSource], ['Kategori', filterCategory], ['Teknisi', filterHandler], ['Divisi', filterDivision], ['Produk', filterProduct]],
+      ['Status', filterStatus], ['Sumber', filterSource], ['Kategori', filterCategory.join(', ')], ['Teknisi', filterHandler.join(', ')], ['Divisi', filterDivision.join(', ')], ['Produk', filterProduct.join(', ')]],
     kolom: [
       { judul: 'Tanggal', ambil: r => r.report_date }, { judul: 'Jam', ambil: r => r.jam },
       { judul: 'Kegiatan', ambil: r => r.kegiatan_label }, { judul: 'Kategori', ambil: r => r.category },

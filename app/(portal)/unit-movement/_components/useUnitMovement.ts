@@ -4,6 +4,7 @@ import { useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { cocokPilihan } from '@/lib/pilihan-ganda';
 import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTSDitugaskan } from '@/lib/kelompok/inti';
 import { usePaginasi } from '@/components/shared';
@@ -25,7 +26,7 @@ export function useUnitMovement() {
   const [fetchError,  setFetchError]  = useState<string|null>(null);
   const [teamMembers, setTeamMembers] = useState<string[]>([]);
 
-  const [filterStatus, setFilterStatus] = useState<'All'|'Masuk'|'Keluar'>('All');
+  const [filterStatus, setFilterStatus] = useState('All');
   const [filterEvent,  setFilterEvent]  = useState('All');
   const [filterPTS,    setFilterPTS]    = useState('All');
   const [filterYear,   setFilterYear]   = useState('All');
@@ -123,9 +124,9 @@ kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id';
   },[logs]);
 
   const filteredLogs = useMemo(()=>logs.filter(l=>{
-    if (filterStatus!=='All'&&l.status_barang!==filterStatus) return false;
-    if (filterEvent !=='All'&&l.event!==filterEvent)           return false;
-    if (filterPTS   !=='All'&&l.nama_pts!==filterPTS)          return false;
+    if (!cocokPilihan(filterStatus, l.status_barang, 'All')) return false;
+    if (!cocokPilihan(filterEvent, l.event, 'All'))          return false;
+    if (!cocokPilihan(filterPTS, l.nama_pts, 'All'))         return false;
     if (filterYear  !=='All'&&!l.tanggal?.startsWith(filterYear)) return false;
     if (searchQuery) {
       const q=searchQuery.toLowerCase();

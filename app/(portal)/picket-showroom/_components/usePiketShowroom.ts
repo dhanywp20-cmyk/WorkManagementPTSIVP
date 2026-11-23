@@ -40,10 +40,10 @@ export function usePiketShowroom() {
     if (q) setSearch(q);
   }, [searchParams]);
   const [filterTamu,setFilterTamu]=useState(false);
-  const [filterKebutuhan,setFilterKebutuhan]=useState<string|null>(null);
-  const [filterInstansi,setFilterInstansi]=useState<string|null>(null);
-  const [filterDivision,setFilterDivision]=useState<string|null>(null);
-  const [filterKegiatan,setFilterKegiatan]=useState<string|null>(null);
+  const [filterKebutuhan,setFilterKebutuhan]=useState<string[]>([]);
+  const [filterInstansi,setFilterInstansi]=useState<string[]>([]);
+  const [filterDivision,setFilterDivision]=useState<string[]>([]);
+  const [filterKegiatan,setFilterKegiatan]=useState<string[]>([]);
   const [summaryYear,setSummaryYear]=useState<number>(new Date().getFullYear());
   const [summaryMonth,setSummaryMonth]=useState<number|null>(null);
   const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
@@ -222,10 +222,10 @@ export function usePiketShowroom() {
     if(filterDay&&row.day_of_week!==filterDay)return false;
     const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
     if(filterTamu&&!rowKg.some(k=>k.tamu_instansi))return false;
-    if(filterKebutuhan&&!rowKg.some(k=>k.kebutuhan?.includes(filterKebutuhan)))return false;
-    if(filterInstansi&&!rowKg.some(k=>k.tamu_instansi===filterInstansi))return false;
-    if(filterDivision&&!rowKg.some(k=>k.sales_division===filterDivision))return false;
-    if(filterKegiatan&&!rowKg.some(k=>k.jenis_kegiatan===filterKegiatan))return false;
+    if(filterKebutuhan.length&&!rowKg.some(k=>k.kebutuhan?.some(x=>filterKebutuhan.includes(x))))return false;
+    if(filterInstansi.length&&!rowKg.some(k=>filterInstansi.includes(k.tamu_instansi??'')))return false;
+    if(filterDivision.length&&!rowKg.some(k=>filterDivision.includes(k.sales_division??'')))return false;
+    if(filterKegiatan.length&&!rowKg.some(k=>filterKegiatan.includes(k.jenis_kegiatan??'')))return false;
     if(search){
       const q=search.toLowerCase();
       const mp=!!(row.pic_ivp_name?.toLowerCase().includes(q)||row.pic_ump_name?.toLowerCase().includes(q)||row.pic_mvi_name?.toLowerCase().includes(q)||row.day_of_week.toLowerCase().includes(q));

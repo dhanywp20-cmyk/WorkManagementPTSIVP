@@ -1,4 +1,5 @@
 'use client';
+import { tukarPilihanTeks, teksPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { LoadingScreen, MiniPieChart, ConfirmDialog, StatCard } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
@@ -86,14 +87,14 @@ export function FormReviewPageInner() {
               activeFilter={filterReviewCat !== 'all' ? filterReviewCat : null}
               onSliceClick={label => setFilterReviewCat(prev => (prev === label ? 'all' : label as any))} />
             <MiniPieChart data={salesDivisionPieData} title="Divisi Sales" icon="👤"
-              activeFilter={salesDivisionFilter}
-              onSliceClick={label => setSalesDivisionFilter(prev => prev === label ? null : label)} />
+              activeFilter={uraiPilihan(salesDivisionFilter, '')}
+              onSliceClick={label => setSalesDivisionFilter(prev => tukarPilihanTeks(prev, label, '') || null)} />
             <MiniPieChart data={handlerPieData} title="Handler Team PTS IVP" icon="👥"
-              activeFilter={handlerFilter}
-              onSliceClick={label => setHandlerFilter(prev => prev === label ? null : label)} />
+              activeFilter={uraiPilihan(handlerFilter, '')}
+              onSliceClick={label => setHandlerFilter(prev => tukarPilihanTeks(prev, label, '') || null)} />
             <MiniPieChart data={productPieData} title="Product" icon="📦"
-              activeFilter={productFilterChart}
-              onSliceClick={label => setProductFilterChart(prev => prev === label ? null : label)} />
+              activeFilter={uraiPilihan(productFilterChart, '')}
+              onSliceClick={label => setProductFilterChart(prev => tukarPilihanTeks(prev, label, '') || null)} />
           </div>
 
           <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
@@ -190,13 +191,13 @@ export function FormReviewPageInner() {
                   <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterReviewCat} ✕</button>
                 )}
                 {salesDivisionFilter && (
-                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {salesDivisionFilter} ✕</button>
+                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(salesDivisionFilter, '')} ✕</button>
                 )}
                 {handlerFilter && (
-                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {handlerFilter} ✕</button>
+                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(handlerFilter, '')} ✕</button>
                 )}
                 {productFilterChart && (
-                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilterChart} ✕</button>
+                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(productFilterChart, '')} ✕</button>
                 )}
                 {searchProject && (
                   <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>

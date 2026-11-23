@@ -1,5 +1,5 @@
 
-export { MiniPieChart } from './MiniPieChart';
+export { MiniPieChart, tukarPilihan } from './MiniPieChart';
 export { MiniSpark, MonthBarChart, DonutChart, TrendBadge, hitungDelta } from './Charts';
 export {
   ViewIconBtn, EditIconBtn, DeleteIconBtn, RescheduleIconBtn,

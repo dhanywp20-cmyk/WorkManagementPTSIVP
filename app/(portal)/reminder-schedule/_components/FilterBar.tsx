@@ -1,4 +1,5 @@
 'use client';
+import { banyakPilihan, teksPilihan } from '@/lib/pilihan-ganda';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Reminder, Status } from './shared';
 import { STATUS_CONFIG, formatDate } from './shared';
@@ -113,7 +114,7 @@ export function FilterBar({
             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <input aria-label="Search handler..." value={searchTeamHandler} onChange={e => setSearchTeamHandler(e.target.value)}
+              <input aria-label="Search handler..." value={banyakPilihan(searchTeamHandler) ? teksPilihan(searchTeamHandler, '') : searchTeamHandler} onChange={e => setSearchTeamHandler(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-300 transition-all"
                 placeholder="Cari handler..." />
             </div>
@@ -161,13 +162,17 @@ export function FilterBar({
       {(filterCategory !== 'all' || filterStatus !== 'all' || searchSales || searchDivisionSales || searchTeamHandler || searchProject || selectedCalDay || productFilter || searchProduct) && (
         <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
-          {filterCategory !== 'all' && <button onClick={() => setFilterCategory('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterCategory} ✕</button>}
+          {filterCategory !== 'all' && <button onClick={() => setFilterCategory('all')}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(filterCategory)} ✕</button>}
           {filterStatus !== 'all' && <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {STATUS_CONFIG[filterStatus as Status]?.label} ✕</button>}
           {searchSales && <button onClick={() => setSearchSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSales} ✕</button>}
-          {searchDivisionSales && <button onClick={() => setSearchDivisionSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {searchDivisionSales} ✕</button>}
-          {searchTeamHandler && <button onClick={() => setSearchTeamHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchTeamHandler} ✕</button>}
+          {searchDivisionSales && <button onClick={() => setSearchDivisionSales('')}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {teksPilihan(searchDivisionSales, '')} ✕</button>}
+          {searchTeamHandler && <button onClick={() => setSearchTeamHandler('')}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(searchTeamHandler, '')} ✕</button>}
           {searchProject && <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>}
-          {productFilter && <button onClick={() => { setProductFilter(null); setSearchProduct(''); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilter} ✕</button>}
+          {productFilter && <button onClick={() => { setProductFilter(null); setSearchProduct(''); }}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(productFilter, '')} ✕</button>}
           {selectedCalDay && <button onClick={() => setSelectedCalDay(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0891b2' }}><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDate(selectedCalDay)} ✕</button>}
           <button onClick={() => { setFilterCategory('all'); setFilterStatus('all'); setSearchSales(''); setSearchDivisionSales(''); setSearchTeamHandler(''); setSearchProject(''); setSelectedCalDay(null); setProductFilter(null); setSearchProduct(''); }}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>

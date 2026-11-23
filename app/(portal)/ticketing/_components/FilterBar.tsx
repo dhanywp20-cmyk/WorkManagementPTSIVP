@@ -4,6 +4,7 @@ import { TAHUN_TERBARU, RENTANG_BULAN_TIKET } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { useKonteksTicket } from './konteks-ticket';
+import { banyakPilihan, teksPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 
 export function FilterBar() {
   const k = useKonteksTicket();
@@ -99,6 +100,7 @@ export function FilterBar() {
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="">All Handlers</option>
+                {banyakPilihan(handlerFilter) && <option value={handlerFilter ?? ""} disabled>{uraiPilihan(handlerFilter, '').length} handler dipilih</option>}
                 {teamMembers.filter(m => m.team_type?.startsWith(`Team ${selectedHandlerTeam}`)).map((m) => (
                   <option key={m.id} value={m.name}>{m.name}</option>
                 ))}
@@ -116,6 +118,7 @@ export function FilterBar() {
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="All">All Status</option>
+                {banyakPilihan(filterStatus) && <option value={filterStatus} disabled>{uraiPilihan(filterStatus, "All").length} status dipilih</option>}
                 <option value="Waiting Approval">Waiting Approval</option>
                 <option value="Pending">Pending</option>
                 <option value="Call">Call</option>
@@ -168,16 +171,16 @@ export function FilterBar() {
         <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
           <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
           {filterStatus !== "All" && (
-            <button onClick={() => setFilterStatus("All")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#d97706" }}>Status: {filterStatus} ✕</button>
+            <button onClick={() => setFilterStatus("All")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#d97706" }}>Status: {teksPilihan(filterStatus, "All")} ✕</button>
           )}
           {handlerFilter && (
-            <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#7c3aed" }}>Handler: {handlerFilter} ✕</button>
+            <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#7c3aed" }}>Handler: {teksPilihan(handlerFilter, '')} ✕</button>
           )}
           {salesDivisionFilter && (
-            <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#ec4899" }}>Division: {salesDivisionFilter} ✕</button>
+            <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#ec4899" }}>Division: {teksPilihan(salesDivisionFilter, '')} ✕</button>
           )}
           {productFilter && (
-            <button onClick={() => { setProductFilter(null); setSearchProduct(""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#6366f1" }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilter} ✕</button>
+            <button onClick={() => { setProductFilter(null); setSearchProduct(""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#6366f1" }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {teksPilihan(productFilter, '')} ✕</button>
           )}
           {searchProject && (
             <button onClick={() => setSearchProject("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>

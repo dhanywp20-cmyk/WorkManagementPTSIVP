@@ -1,5 +1,6 @@
 'use client';
 
+import { cocokPilihan } from '@/lib/pilihan-ganda';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -339,11 +340,11 @@ updated_at';
 
   const filteredReviews = reviews.filter(r => {
     if (filterReviewCat !== 'all' && r.review_category !== filterReviewCat) return false;
-    if (handlerFilter && r.assign_name !== handlerFilter) return false;
-    if (salesDivisionFilter && r.sales_division !== salesDivisionFilter) return false;
+    if (!cocokPilihan(handlerFilter, r.assign_name, '')) return false;
+    if (!cocokPilihan(salesDivisionFilter, r.sales_division, '')) return false;
     if (productFilterChart) {
       const prod = r.review_category === 'Demo Product' ? r.product_demo : r.product_bast;
-      if (prod !== productFilterChart) return false;
+      if (!cocokPilihan(productFilterChart, prod, '')) return false;
     }
     if (searchProject && !r.project_name?.toLowerCase().includes(searchProject.toLowerCase()) &&
         !r.address?.toLowerCase().includes(searchProject.toLowerCase())) return false;

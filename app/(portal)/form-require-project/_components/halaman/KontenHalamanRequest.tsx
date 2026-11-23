@@ -1,5 +1,6 @@
 'use client';
 
+import { tukarPilihanTeks, teksPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { MiniPieChart, StatCard } from '@/components/shared';
 import { FilterRequest } from '../FilterRequest';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -38,33 +39,33 @@ export function KontenHalamanRequest() {
           {isPTS ? (
             <>
               <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"
-                activeFilter={filterStatus !== 'all' ? (() => { const rev: Record<string,string> = { pending:'Pending', approved:'Approved', in_progress:'In Progress', completed:'Completed', rejected:'Rejected' }; return rev[filterStatus]; })() : undefined}
+                activeFilter={(() => { const rev: Record<string,string> = { pending:'Pending', approved:'Approved', in_progress:'In Progress', completed:'Completed', rejected:'Rejected' }; return uraiPilihan(filterStatus).map(v => rev[v] ?? v); })()}
                 onSliceClick={label => {
                   const map: Record<string, string> = { Pending: 'pending', Approved: 'approved', 'In Progress': 'in_progress', Completed: 'completed', Rejected: 'rejected' };
-                  setFilterStatus(prev => prev === (map[label] || label) ? 'all' : (map[label] || label));
+                  setFilterStatus(prev => tukarPilihanTeks(prev, map[label] || label));
                 }} />
               <MiniPieChart data={divisionPieData} title="Divisi Sales" icon="🥧"
-                activeFilter={filterDivision !== 'all' ? filterDivision : undefined}
-                onSliceClick={label => { setFilterDivision(prev => prev === label ? 'all' : label); }} />
+                activeFilter={uraiPilihan(filterDivision)}
+                onSliceClick={label => { setFilterDivision(prev => tukarPilihanTeks(prev, label)); }} />
               <MiniPieChart data={assignedPieData} title="Team PTS Handler" icon="👥"
-                activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
-                onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
+                activeFilter={uraiPilihan(filterHandler)}
+                onSliceClick={label => setFilterHandler(prev => tukarPilihanTeks(prev, label))} />
               <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
                 centerValue={requests.length} centerLabel="REQUEST"
-                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
-                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
+                activeFilter={uraiPilihan(filterKebutuhan)}
+                onSliceClick={label => setFilterKebutuhan(prev => tukarPilihanTeks(prev, label))} />
             </>
           ) : (
             <>
               <MiniPieChart data={statusPieData} title="Status Request Saya" icon="🥧" />
               <MiniPieChart data={assignedPieData} title="Team PTS Handler" icon="👥"
-                activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
-                onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
+                activeFilter={uraiPilihan(filterHandler)}
+                onSliceClick={label => setFilterHandler(prev => tukarPilihanTeks(prev, label))} />
               <MiniPieChart data={productPieData} title="Product" icon="📦" />
               <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
                 centerValue={requests.length} centerLabel="REQUEST"
-                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
-                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
+                activeFilter={uraiPilihan(filterKebutuhan)}
+                onSliceClick={label => setFilterKebutuhan(prev => tukarPilihanTeks(prev, label))} />
             </>
           )}
         </div>
@@ -112,7 +113,7 @@ export function KontenHalamanRequest() {
             <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
               {filterStatus !== 'all' && (
-                <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {filterStatus} ✕</button>
+                <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {teksPilihan(filterStatus)} ✕</button>
               )}
               {filterYear !== 'all' && (
                 <button onClick={() => setFilterYear('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0891b2' }}>Year: {filterYear} ✕</button>
@@ -121,13 +122,13 @@ export function KontenHalamanRequest() {
                 <button onClick={() => setFilterMonth('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0e7490' }}>Bulan: {filterMonth} ✕</button>
               )}
               {filterHandler !== 'all' && (
-                <button onClick={() => setFilterHandler('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>Handler: {filterHandler} ✕</button>
+                <button onClick={() => setFilterHandler('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>Handler: {teksPilihan(filterHandler)} ✕</button>
               )}
               {filterDivision !== 'all' && (
-                <button onClick={() => setFilterDivision('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {filterDivision} ✕</button>
+                <button onClick={() => setFilterDivision('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {teksPilihan(filterDivision)} ✕</button>
               )}
               {filterKebutuhan !== 'all' && (
-                <button onClick={() => setFilterKebutuhan('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0d9488' }}>Kebutuhan: {filterKebutuhan} ✕</button>
+                <button onClick={() => setFilterKebutuhan('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0d9488' }}>Kebutuhan: {teksPilihan(filterKebutuhan)} ✕</button>
               )}
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>Search: {searchQuery} ✕</button>

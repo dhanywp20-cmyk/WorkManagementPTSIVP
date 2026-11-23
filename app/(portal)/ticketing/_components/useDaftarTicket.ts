@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { User, TeamMember, Ticket, OverdueSetting, masukRingkasanPending, TAHUN_TERBARU } from './shared';
 import { supabase } from '@/lib/supabase';
+import { cocokPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from '@/lib/teams';
 
 export interface DaftarTicketKonteks {
@@ -36,16 +37,18 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
       const salesNameMatch = salesName.toLowerCase().includes(searchSalesName.toLowerCase());
       const ticketYear = t.created_at ? new Date(t.created_at).getFullYear().toString() : "";
       const yearMatch = filterYear === TAHUN_TERBARU || ticketYear === filterYear;
-      let statusMatch = false;
-      if (filterStatus === "All") statusMatch = true;
-      else if (filterStatus === "Overdue") statusMatch = isTicketOverdue(t) && t.status !== "Solved";
-      else if (filterStatus === "Solved Overdue") statusMatch = isTicketOverdue(t) && t.status === "Solved";
-      else if (currentUserTeamType === "Team Services") statusMatch = t.services_status === filterStatus || t.status === filterStatus;
-      else if (filterStatus === "Pending") statusMatch = masukRingkasanPending(t.status);
-      else statusMatch = t.status === filterStatus;
-      const handlerMatch = handlerFilter === null || t.assign_name === handlerFilter;
-      const divisionMatch = salesDivisionFilter === null || t.sales_division === salesDivisionFilter;
-      const productMatch = productFilter === null || (t.product || "") === productFilter;
+      const cocokStatus = (fs: string) => {
+        if (fs === "Overdue") return isTicketOverdue(t) && t.status !== "Solved";
+        if (fs === "Solved Overdue") return isTicketOverdue(t) && t.status === "Solved";
+        if (currentUserTeamType === "Team Services") return t.services_status === fs || t.status === fs;
+        if (fs === "Pending") return masukRingkasanPending(t.status);
+        return t.status === fs;
+      };
+      const daftarStatus = uraiPilihan(filterStatus, "All");
+      const statusMatch = daftarStatus.length === 0 || daftarStatus.some(cocokStatus);
+      const handlerMatch = cocokPilihan(handlerFilter, t.assign_name, '');
+      const divisionMatch = cocokPilihan(salesDivisionFilter, t.sales_division, '');
+      const productMatch = cocokPilihan(productFilter, t.product || "", '');
       const productSearchMatch = !searchProduct || (t.product || "").toLowerCase().includes(searchProduct.toLowerCase());
       let teamVisibility = true;
       if (currentUserTeamType === "Team Services") teamVisibility = t.current_team === "Team Services" || !!t.services_status;

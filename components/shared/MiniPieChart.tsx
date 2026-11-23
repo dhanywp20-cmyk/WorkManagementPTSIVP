@@ -23,13 +23,16 @@ function Kartu({ title, icon, children }: { title: string; icon: string; childre
   );
 }
 
+export const tukarPilihan = (daftar: readonly string[], nilai: string): string[] =>
+  daftar.includes(nilai) ? daftar.filter(x => x !== nilai) : [...daftar, nilai];
+
 export function MiniPieChart({
   data, title, icon, activeFilter, onSliceClick,
   centerValue, centerLabel, valueSuffix,
 }: {
   data: { label?: string; name?: string; value: number; color: string }[];
   title: string; icon: string;
-  activeFilter?: string | null;
+  activeFilter?: string | readonly string[] | null;
   onSliceClick?: (label: string) => void;
   centerValue?: string | number;
   centerLabel?: string;
@@ -108,11 +111,15 @@ export function MiniPieChart({
   });
 
   const persen = (v: number) => Math.round((v / total) * 100);
-  const aktifIdx = activeFilter ? slices.findIndex(s => s.label === activeFilter) : -1;
+  const dipilih = new Set(activeFilter == null ? [] : typeof activeFilter === 'string' ? [activeFilter] : activeFilter);
+  const aktifIdx = dipilih.size === 1 ? slices.findIndex(s => dipilih.has(s.label)) : -1;
   const sorot = hov ?? (aktifIdx >= 0 ? aktifIdx : null);
-  const redup = (i: number) => sorot !== null && sorot !== i;
+  const redup = (i: number) => hov !== null ? hov !== i : dipilih.size > 0 && !dipilih.has(slices[i].label);
+  const pilihan = slices.filter(s => dipilih.has(s.label));
+  const jumlahPilihan = pilihan.reduce((n, s) => n + s.value, 0);
   const tengah = sorot !== null
     ? { angka: `${slices[sorot].value}`, ket: `${persen(slices[sorot].value)}% · ${slices[sorot].label}` }
+    : pilihan.length > 1 ? { angka: `${jumlahPilihan}`, ket: `${pilihan.length} dipilih · ${persen(jumlahPilihan)}%` }
     : { angka: tengahAngka ? `${angkaNaik}` : `${centerValue}`, ket: (centerLabel ?? 'Total').toLowerCase() };
 
   const klik = (s: { label: string; lipat?: boolean }) => { if (bisaKlik && !s.lipat) onSliceClick!(s.label); };
@@ -145,7 +152,7 @@ export function MiniPieChart({
           aria-label={dapatDigulir ? `${slices.length} kategori - gulir untuk melihat semua` : undefined}
           className={`flex flex-col gap-px sm:gap-0.5 w-full min-w-0 sm:w-auto sm:flex-1 sm:basis-0 ${KELAS_LEGENDA}`}>
           {slices.map(s => {
-            const aktif = activeFilter === s.label;
+            const aktif = dipilih.has(s.label);
             return (
               <li key={s.i}>
                 <button type="button" disabled={!bisaKlik || s.lipat} aria-pressed={bisaKlik ? aktif : undefined}

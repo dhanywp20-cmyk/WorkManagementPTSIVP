@@ -4,12 +4,14 @@ import { MiniPieChart } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
 import { useAngkaNaik } from '@/components/shared/AngkaNaik';
+import { uraiPilihan } from '@/lib/pilihan-ganda';
 
 export { InfoLine } from '@/components/shared';
 
 export function StatusDonutCard({
-  data, onSliceClick, title, icon,
+  data, onSliceClick, title, icon, activeStatus,
 }: {
+  activeStatus?: string[];
   data: { name: string; value: number; color: string }[];
   total: number;
   onSliceClick: (name: string) => void;
@@ -21,6 +23,7 @@ export function StatusDonutCard({
       data={data}
       title={title}
       icon={icon}
+      activeFilter={activeStatus}
       onSliceClick={onSliceClick}
     />
   );
@@ -39,7 +42,7 @@ export function SalesDivisionDonutCard({
       data={data}
       title="Sales Division"
       icon="📊"
-      activeFilter={activeDivision}
+      activeFilter={uraiPilihan(activeDivision, '')}
       onSliceClick={onSliceClick}
     />
   );
@@ -58,7 +61,7 @@ export function ProductDonutCard({
       data={data}
       title="Product"
       icon="📦"
-      activeFilter={activeProduct}
+      activeFilter={uraiPilihan(activeProduct, '')}
       onSliceClick={onSliceClick}
     />
   );
@@ -84,6 +87,7 @@ export function HandlerDonutCard({
   icon: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
+  const pilihHandler = uraiPilihan(activeHandler, '');
   const totalNaik = useAngkaNaik(total);
   let cumAngle = -Math.PI / 2;
   const cx = 60, cy = 60, r = 50, ir = 28;
@@ -125,7 +129,7 @@ export function HandlerDonutCard({
               ) : (
                 <path key={s.i} d={s.path} fill={s.color}
                   opacity={hov === null || hov === s.i ? 1 : 0.45}
-                  style={{ cursor: "pointer", transition: "opacity 0.15s", filter: hov === s.i || activeHandler === s.name ? `drop-shadow(0 0 4px ${s.color})` : "none" }}
+                  style={{ cursor: "pointer", transition: "opacity 0.15s", filter: hov === s.i || pilihHandler.includes(s.name) ? `drop-shadow(0 0 4px ${s.color})` : "none" }}
                   onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)} />
               )
             )}
@@ -135,12 +139,12 @@ export function HandlerDonutCard({
           <div className="flex flex-col gap-0.5 sm:gap-1.5 flex-1 basis-[95px] min-w-[95px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[68px] sm:max-h-[120px] overflow-y-auto">
             {slices.map((s) => (
               <div key={s.i} className="flex items-center gap-1.5 cursor-pointer rounded-lg px-1.5 py-0.5 transition-all"
-                style={{ background: hov === s.i || activeHandler === s.name ? `${s.color}20` : "transparent", outline: activeHandler === s.name ? `1px solid ${s.color}` : "none" }}
+                style={{ background: hov === s.i || pilihHandler.includes(s.name) ? `${s.color}20` : "transparent", outline: pilihHandler.includes(s.name) ? `1px solid ${s.color}` : "none" }}
                 onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)}>
                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" style={{ background: s.color }} />
                 <span className="text-[10px] sm:text-[11px] font-semibold text-gray-600 truncate flex-1">{s.name}</span>
                 <span className="text-[10px] sm:text-[11px] font-bold shrink-0" style={{ color: s.color }}>{s.value}</span>
-                {activeHandler === s.name && <span className="text-[10px] font-bold text-purple-600 shrink-0">✓</span>}
+                {pilihHandler.includes(s.name) && <span className="text-[10px] font-bold text-purple-600 shrink-0">✓</span>}
               </div>
             ))}
           </div>

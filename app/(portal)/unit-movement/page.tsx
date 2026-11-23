@@ -1,5 +1,6 @@
 'use client';
 import { denganNilai } from '@/lib/daftar-pilihan';
+import { banyakPilihan, tukarPilihanTeks, uraiPilihan } from '@/lib/pilihan-ganda';
 
 import { Suspense, type CSSProperties } from 'react';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -173,14 +174,14 @@ function UnitMovementPageInner() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           <MiniPieChart data={statusPieData} title="Status Barang" icon="📦"
-            activeFilter={filterStatus!=='All'?filterStatus:null}
-            onSliceClick={l=>setFilterStatus(p=>p===l?'All':l as any)}/>
+            activeFilter={uraiPilihan(filterStatus, 'All')}
+            onSliceClick={l=>setFilterStatus(p=>tukarPilihanTeks(p, l, 'All'))}/>
           <MiniPieChart data={ptsPieData} title="Anggota PTS" icon="👤"
-            activeFilter={filterPTS!=='All'?filterPTS:null}
-            onSliceClick={l=>setFilterPTS(p=>p===l?'All':l)}/>
+            activeFilter={uraiPilihan(filterPTS, 'All')}
+            onSliceClick={l=>setFilterPTS(p=>tukarPilihanTeks(p, l, 'All'))}/>
           <MiniPieChart data={eventPieData} title="Event" icon="🎯"
-            activeFilter={filterEvent!=='All'?filterEvent:null}
-            onSliceClick={l=>setFilterEvent(p=>p===l?'All':l)}/>
+            activeFilter={uraiPilihan(filterEvent, 'All')}
+            onSliceClick={l=>setFilterEvent(p=>tukarPilihanTeks(p, l, 'All'))}/>
         </div>
 
         <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)',backdropFilter:'blur(12px)'}}>
@@ -193,17 +194,19 @@ function UnitMovementPageInner() {
               <input aria-label="Cari project, type, SN, pihak luar" className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 focus:bg-white transition-all w-52"
                 placeholder="Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
               <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
-                value={filterStatus} onChange={e=>setFilterStatus(e.target.value as any)}>
-                <option value="All">Semua Status</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option>
+                value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}>
+                <option value="All">Semua Status</option>{banyakPilihan(filterStatus) && <option value={filterStatus} disabled>{uraiPilihan(filterStatus, 'All').length} status dipilih</option>}<option value="Masuk">Masuk</option><option value="Keluar">Keluar</option>
               </select>
               <select aria-label="Semua Event" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
                 value={filterEvent} onChange={e=>setFilterEvent(e.target.value)}>
                 <option value="All">Semua Event</option>
-                {denganNilai(daftarEvent, filterEvent === 'All' ? null : filterEvent).map(ev=><option key={ev} value={ev}>{ev}</option>)}
+                {banyakPilihan(filterEvent) && <option value={filterEvent} disabled>{uraiPilihan(filterEvent, 'All').length} event dipilih</option>}
+                {denganNilai(daftarEvent, filterEvent === 'All' || banyakPilihan(filterEvent) ? null : filterEvent).map(ev=><option key={ev} value={ev}>{ev}</option>)}
               </select>
               <select aria-label="Semua Anggota" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
                 value={filterPTS} onChange={e=>setFilterPTS(e.target.value)}>
                 <option value="All">Semua Anggota</option>
+                {banyakPilihan(filterPTS) && <option value={filterPTS} disabled>{uraiPilihan(filterPTS, 'All').length} anggota dipilih</option>}
                 {teamMembers.map(m=><option key={m} value={m}>{m}</option>)}
               </select>
               <select aria-label="Semua Tahun" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"

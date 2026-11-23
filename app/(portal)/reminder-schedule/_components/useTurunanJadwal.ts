@@ -1,5 +1,6 @@
 'use client';
 
+import { cocokPilihan, uraiPilihan } from '@/lib/pilihan-ganda';
 import { kelompokkanReminder, pieKategori, pieDivisiSales, pieTeamPts, pieProduk } from './olah-data';
 import { Status, Reminder, TeamUser, isDueToday } from './shared';
 import { bolehDitugaskanOleh } from '@/lib/teams';
@@ -31,15 +32,16 @@ export function useTurunanJadwal(k: TurunanJadwalKonteks) {
   const filteredReminders = reminders.filter(r => {
     if (filterStatus !== 'all' && r.status !== filterStatus) return false;
     if (filterYear !== 'all' && !r.due_date.startsWith(filterYear)) return false;
-    if (filterCategory !== 'all' && r.category !== filterCategory) return false;
+    if (!cocokPilihan(filterCategory, r.category)) return false;
     const rName = ((r.project_name || '').trim() || ((r).title || '').trim()).toLowerCase();
     if (searchProject && !rName.includes(searchProject.toLowerCase()) &&
         !r.address?.toLowerCase().includes(searchProject.toLowerCase())) return false;
     if (searchSales && !r.sales_name?.toLowerCase().includes(searchSales.toLowerCase())) return false;
-    if (searchDivisionSales && !r.sales_division?.toLowerCase().includes(searchDivisionSales.toLowerCase())) return false;
-    if (searchTeamHandler && !r.assign_name?.toLowerCase().includes(searchTeamHandler.toLowerCase()) &&
-        !r.assigned_to?.toLowerCase().includes(searchTeamHandler.toLowerCase())) return false;
-    if (productFilter && r.product !== productFilter) return false;
+    const divisi = uraiPilihan(searchDivisionSales, '').map(q => q.toLowerCase());
+    if (divisi.length && !divisi.some(q => r.sales_division?.toLowerCase().includes(q))) return false;
+    const handler = uraiPilihan(searchTeamHandler, '').map(q => q.toLowerCase());
+    if (handler.length && !handler.some(q => r.assign_name?.toLowerCase().includes(q) || r.assigned_to?.toLowerCase().includes(q))) return false;
+    if (!cocokPilihan(productFilter, r.product, '')) return false;
     if (searchProduct && !r.product?.toLowerCase().includes(searchProduct.toLowerCase())) return false;
     if (selectedCalDay && r.due_date !== selectedCalDay) return false;
     return true;
