@@ -86,6 +86,7 @@ export function useTicketing() {
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const selectedIdRef = useRef<string | null>(null); selectedIdRef.current = selectedTicket?.id ?? null;
   const [showTicketDetailPopup, setShowTicketDetailPopup] = useState(false);
   const [loading, setLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
@@ -348,7 +349,7 @@ export function useTicketing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterYear]);
 
-  useEfekLiveTicketing({ currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef });
+  useEfekLiveTicketing({ currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef, selectedIdRef });
 
   const canCreateTicket = !isPimpinan(currentUser);
   const bolehUpdateTicket = (t: Ticket): boolean => bolehUpdateTicketShared(t, currentUser);

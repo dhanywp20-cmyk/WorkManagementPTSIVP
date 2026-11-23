@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { User, Ticket, OverdueSetting, perluDieskalasi, JEDA_POLLING_MS, JEDA_GABUNG_REALTIME_MS, MAKS_SEGAR_SEBAGIAN } from './shared';
-import { ambilTiketTertentu } from './data-ticket';
+import { ambilTiketTertentu, ambilLogPenuh, gabungLogTerpilih } from './data-ticket';
 import { supabase, supabaseServices } from '@/lib/supabase';
 
 export interface EfekLiveTicketingKonteks {
@@ -13,10 +13,11 @@ export interface EfekLiveTicketingKonteks {
   setTickets: import("react").Dispatch<import("react").SetStateAction<Ticket[]>>;
   tickets: Ticket[];
   ticketsRef: import("react").RefObject<Ticket[]>;
+  selectedIdRef: import("react").RefObject<string | null>;
 }
 
 export function useEfekLiveTicketing(k: EfekLiveTicketingKonteks) {
-  const { currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef } = k;
+  const { currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef, selectedIdRef } = k;
   useEffect(() => {
     if (!currentUser) return;
     const antre = { ids: new Set<string>(), penuh: false, timer: null as ReturnType<typeof setTimeout> | null };
@@ -26,12 +27,18 @@ export function useEfekLiveTicketing(k: EfekLiveTicketingKonteks) {
       antre.ids.clear(); antre.penuh = false; antre.timer = null;
       if (penuh) { fetchData(currentUser, true); return; }
       try {
-        const segar = new Map((await ambilTiketTertentu(currentUser, ids)).map(t => [t.id, t] as const));
+        const idTerpilih = selectedIdRef.current;
+        const [daftar, logPenuh] = await Promise.all([
+          ambilTiketTertentu(currentUser, ids),
+          idTerpilih && ids.includes(idTerpilih) ? ambilLogPenuh(idTerpilih).catch(() => null) : Promise.resolve(null),
+        ]);
+        const segar = new Map(daftar.map(t => [t.id, t] as const));
         setTickets(prev => prev.flatMap(t => (!ids.includes(t.id) ? [t] : segar.has(t.id) ? [segar.get(t.id)!] : [])));
         setSelectedTicket(prev => {
           if (!prev || !ids.includes(prev.id)) return prev;
           const baru = segar.get(prev.id);
-          return baru ? { ...baru, activity_logs: (prev.activity_logs?.length ?? 0) > (baru.activity_logs?.length ?? 0) ? prev.activity_logs : baru.activity_logs } : prev;
+          const penuh = prev.id === idTerpilih ? logPenuh : null;
+          return baru ? { ...baru, activity_logs: gabungLogTerpilih(prev.activity_logs, baru.activity_logs, penuh) } : prev;
         });
       } catch { fetchData(currentUser, true); }
     };
