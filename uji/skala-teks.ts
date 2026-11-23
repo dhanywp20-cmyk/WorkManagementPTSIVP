@@ -39,6 +39,7 @@ const css = readFileSync('app/globals.css', 'utf8');
 cek('skala ruang 0.8 di desktop, 0.9 di HP (tombol tetap mudah disentuh)', /--skala-ruang: 0\.8;/.test(css) && /max-width: 640px\)[\s\S]{0,80}--skala-ruang: 0\.9;/.test(css));
 const beranda = readFileSync('app/(portal)/dashboard/_components/beranda/IsiBeranda.tsx', 'utf8');
 cek('Daily Report Tim di kolom kanan setelah Agenda Saya', /bb-samping bb-naik[\s\S]*bb-samping bb-samping-tim/.test(beranda) && !/kartuTim/.test(beranda));
+cek('Agenda & Daily Report Tim setinggi kolom kiri (tanpa celah kosong)', /\.bb-utama:has\(> \.bb-kiri\) > \.bb-samping \{ min-height: 100%; \}/.test(css) && /\.bb-samping-tim \.bb-isi-ubin \{ overflow-y: auto;/.test(css));
 cek('HP: kolom samping turun jadi satu kolom', /:has\(> \.bb-samping-tim:nth-child\(3\)\) \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css));
 cek('plugin bertanda PostCSS', (skalaTeks as { postcss?: boolean }).postcss === true);
 

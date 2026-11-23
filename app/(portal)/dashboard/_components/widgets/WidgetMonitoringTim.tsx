@@ -29,7 +29,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
     kunci: string; nama: string; jabatan: string; anggota: Anggota[]; ketuaBelumLapor: boolean;
   };
   const kelompok = (() => {
-    const punyaBawahan = new Set(belumList.map(m => m.atasanId).filter(Boolean) as string[]);
+    const punyaBawahan = new Set(rows.map(m => m.atasanId).filter(Boolean) as string[]);
     const peta = new Map<string, KelompokBelum>();
 
     const ambil = (kunci: string, nama: string, jabatan: string) => {
@@ -44,7 +44,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
       } else if (punyaBawahan.has(m.id)) {
         ambil(m.id, m.name, m.jabatan).ketuaBelumLapor = true;
       } else {
-        ambil('(lainnya)', 'Lainnya', '').anggota.push(m);
+        ambil('(lainnya)', 'Tanpa atasan', '').anggota.push(m);
       }
     }
 

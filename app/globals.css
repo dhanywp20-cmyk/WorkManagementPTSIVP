@@ -689,6 +689,8 @@
 .bb-b3 { grid-column: span 3; } .bb-b4 { grid-column: span 4; } .bb-b5 { grid-column: span 5; } .bb-b6 { grid-column: span 6; } .bb-b7 { grid-column: span 7; } .bb-b8 { grid-column: span 8; } .bb-b12 { grid-column: span 12; }
 .bb-bv { grid-column: span var(--kol, 12); }
 .bb-samping-tim > .rounded-2xl { height: 100%; }
+.bb-utama:has(> .bb-kiri) > .bb-samping { min-height: 100%; }
+.bb-samping-tim .bb-isi-ubin { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .bb-bento .flex-col.gap-\[7px\] { justify-content: space-between; }
 .bb-kisi-lain { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
 .bb-catatan { margin: 8px 0 0; font-size: 11.5px; font-weight: 500; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -793,12 +795,12 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 
 @container (min-width: 1061px) {
   .bb-samping-tim .lg\:flex-row { flex-direction: column; gap: 12px; }
-  .bb-samping-tim .lg\:w-\[210px\] { width: auto; }
+  .bb-samping-tim [class*="lg:w-["] { width: auto; }
 }
 @container (max-width: 1060px) {
   .bb-utama:has(> .bb-samping) { grid-template-columns: minmax(0, 1fr) 260px; }
   .bb-utama:has(> .bb-samping-tim:nth-child(3)) { grid-template-columns: minmax(0, 1fr) 260px; }
-  .bb-utama > .bb-samping-tim { grid-column: 1 / -1; height: auto; min-height: 0; }
+  .bb-utama > .bb-samping-tim, .bb-utama:has(> .bb-kiri) > .bb-samping-tim { grid-column: 1 / -1; height: auto; min-height: 0; }
   .bb-sel-grafik { grid-column: span 6; }
   .bb-sel-piket { grid-column: span 6; }
   .bb-b5, .bb-b7 { grid-column: span 6; }
@@ -809,6 +811,7 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
   .bb-utama:has(> .bb-samping), .bb-utama:has(> .bb-samping-tim:nth-child(3)) { grid-template-columns: minmax(0, 1fr); }
   .bb-samping { order: -1; height: auto; min-height: 0; }
   .bb-utama > .bb-samping-tim { order: 0; }
+  .bb-utama:has(> .bb-kiri) > .bb-samping { min-height: 0; }
 }
 @container (max-width: 560px) {
   .bb-baris-judul { padding: 10px; }
