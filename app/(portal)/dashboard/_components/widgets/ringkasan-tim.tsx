@@ -46,12 +46,12 @@ export function BarisOtomatis({ m, onBuka }: { m: Anggota; onBuka: () => void })
   ].filter(Boolean).join('\n');
   return (
     <button onClick={onBuka} title={rincian}
-      className="w-full flex items-center justify-between gap-2 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
-      <span className="flex items-center gap-1.5 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: WARNA_STATUS.otomatis }} />
-        <span className="text-[13px] font-semibold text-slate-700 truncate">{m.name}</span>
+      className="w-full flex items-start justify-between gap-2 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
+      <span className="flex items-start gap-1.5 min-w-0">
+        <span className="w-1.5 h-1.5 rounded-full shrink-0 mt-[0.45em]" style={{ background: WARNA_STATUS.otomatis }} />
+        <span className="text-[13px] font-semibold text-slate-700 leading-snug wrap-break-word">{m.name}</span>
       </span>
-      <span className="text-[11px] font-semibold text-slate-500 shrink-0 tabular-nums">{m.tiket.length} tiket · {m.jadwal.length} jadwal</span>
+      <span className="text-[11px] font-semibold text-slate-500 shrink-0 tabular-nums leading-snug pt-px">{m.tiket.length} tiket · {m.jadwal.length} jadwal</span>
     </button>
   );
 }

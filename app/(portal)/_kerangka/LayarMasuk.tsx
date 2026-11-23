@@ -23,7 +23,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
 
     return (
       <>
-      <div className={`${masukBerhasil ? 'lc-masuk-pudar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
+      <div className={`${masukBerhasil ? 'lc-masuk-pudar' : ''} layar-masuk skala-asli flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
         <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden`}
           style={{ background: gradasiPanelLogin(merek) }}>
           <div className="flex items-center gap-2.5">

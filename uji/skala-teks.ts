@@ -4,9 +4,9 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const skalaTeks = require('../lib/tipografi/postcss-skala-teks.cjs');
 type Dekl = { important?: boolean; parent?: { selector?: string } };
-const { skalaPx, ubahUkuran, isianTerkunci, ubahRuang, ubahSpasiDasar } = skalaTeks as {
+const { skalaPx, ubahUkuran, isianTerkunci, ubahRuang, ubahSpasiDasar, diLuarSkala } = skalaTeks as {
   skalaPx: (n: number) => number; ubahUkuran: (v: string) => string | null; isianTerkunci: (d: Dekl) => boolean;
-  ubahRuang: (v: string) => string | null; ubahSpasiDasar: (v: string) => string | null;
+  ubahRuang: (v: string) => string | null; ubahSpasiDasar: (v: string) => string | null; diLuarSkala: (d: Dekl) => boolean;
 };
 
 let lulus = 0, gagal = 0;
@@ -41,6 +41,22 @@ const beranda = readFileSync('app/(portal)/dashboard/_components/beranda/IsiBera
 cek('Daily Report Tim di kolom kanan setelah Agenda Saya', /bb-samping bb-naik[\s\S]*bb-samping bb-samping-tim/.test(beranda) && !/kartuTim/.test(beranda));
 cek('Agenda & Daily Report Tim setinggi kolom kiri (tanpa celah kosong)', /\.bb-utama:has\(> \.bb-kiri\) > \.bb-samping \{ min-height: 100%; \}/.test(css) && /\.bb-samping-tim \.bb-isi-ubin \{ overflow-y: auto;/.test(css));
 cek('HP: kolom samping turun jadi satu kolom', /:has\(> \.bb-samping-tim:nth-child\(3\)\) \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css));
+console.log('\nLogin: teks besar & jelas');
+cek('aturan .skala-asli tidak ikut dikecilkan plugin', diLuarSkala({ parent: { selector: '.layar-masuk.skala-asli' } }) && !diLuarSkala({ parent: { selector: '.skala-asli-lain' } }));
+const masuk = readFileSync('app/(portal)/_kerangka/LayarMasuk.tsx', 'utf8');
+cek('Layar login memakai skala-asli', /layar-masuk skala-asli/.test(masuk));
+cek('judul login text-4xl = 36 px + 10 px (2.875rem)', /\.layar-masuk\.skala-asli \{[\s\S]*--text-4xl: 2\.875rem;/.test(css));
+cek('teks login lain proporsional (sm 14 -> ~18 px)', /--text-sm: 1\.12rem;/.test(css));
+cek('scrollbar kolom samping hanya muncul saat hover', /\.bb-samping :is\(\.bb-isi-ubin, \[role="tabpanel"\]\) \{ scrollbar-color: transparent transparent; \}/.test(css) && /\.bb-samping:hover :is/.test(css));
+console.log('\nGrafik dasbor');
+const grafik = readFileSync('components/shared/grafik-kpi.tsx', 'utf8');
+cek('Tren tiket: teks grafik ukuran piksel tetap (viewBox = lebar asli, bukan diperbesar)', /ResizeObserver/.test(grafik) && /width=\{W\} height=\{H\}/.test(grafik) && !/w-full h-auto/.test(grafik));
+cek('Tren tiket: label nilai teratas tidak terpotong', /Math\.max\(11, Y\(/.test(grafik) && /pt = 24/.test(grafik));
+const bento = readFileSync('app/(portal)/dashboard/_components/beranda/RincianBento.tsx', 'utf8');
+cek('Sumber tiket di tengah: Menunggu keputusan 2 | Sumber 8 | Unit di luar 2', /'menunggu-keputusan', lebar: 2 \}, \{ kunci: 'sumber-tiket', lebar: 8 \}, \{ kunci: 'unit-di-luar', lebar: 2 \}/.test(bento));
+cek('Kartu Sumber tiket dirender di antara Menunggu & Unit', /menunggu-keputusan'\] && \([\s\S]*KartuAsalTiket kpi[\s\S]*unit-di-luar'\] && s\.unit/.test(bento));
+const pie = readFileSync('app/(portal)/dashboard/_components/beranda/PieSumber.tsx', 'utf8');
+cek('Sumber tiket = 4 MiniPieChart global (Produk, Divisi, Handler, Status), bukan model pie baru', ['Produk', 'Divisi', 'Handler', 'Status'].every(k => pie.includes(`judul: '${k}'`)) && /<MiniPieChart /.test(pie) && !/<svg/.test(pie) && /\.bb-pie-kisi \{ display: grid; grid-template-columns: repeat\(4,/.test(css));
 cek('plugin bertanda PostCSS', (skalaTeks as { postcss?: boolean }).postcss === true);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
