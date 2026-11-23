@@ -181,25 +181,25 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
 /* Latar halaman (bila merek tidak memakai gambar latar sendiri). */
 :root .kerangka-bingkai:not([style*="url("]) { background: var(--kc-latar) !important; }
 
-/* ── Footer: tanpa bilah, menyatu dengan latar; teks lembut, versi dalam kapsul tembus pandang ── */
+/* ── Footer: bilah putih seperti header, menyambung ke header lewat kolom sidebar (bingkai berbentuk "C") ── */
 :root .kerangka-bingkai > footer {
-  margin: 0; background: transparent !important; border: 0 !important; box-shadow: none !important;
+  margin: 0; background: var(--kc-permukaan) !important; border: 0 !important; box-shadow: none !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
   --color-slate-500: var(--kc-kaki-teks); --color-slate-700: var(--kc-tinta);
 }
-:root .kerangka-bingkai > footer > div { padding: 0 24px 8px !important; }
-:root .kerangka-bingkai > footer p { color: var(--kc-kaki-teks) !important; text-shadow: var(--kc-kaki-bayang); }
+:root .kerangka-bingkai > footer > div { padding: 6px 24px 8px !important; }
+:root .kerangka-bingkai > footer p { color: var(--kc-tinta-3) !important; text-shadow: none; }
 :root .kerangka-bingkai > footer [title^="Versi"] {
-  color: var(--kc-kaki-teks) !important; background: var(--kc-panel) !important; border-color: var(--kc-panel-tepi) !important;
+  color: var(--kc-tinta-2) !important; background: var(--kc-permukaan-2) !important; border-color: var(--kc-garis) !important;
 }
-@media (max-width: 767px) { :root .kerangka-bingkai > footer > div { padding: 0 12px 6px !important; } }
+@media (max-width: 767px) { :root .kerangka-bingkai > footer > div { padding: 4px 12px 6px !important; } }
 
 /* ── Header: bilah penuh menyatu di atas, garis tipis di bawah, tombol tenang ── */
 :root .kerangka-bingkai .kepala-3d {
   margin: 0; border-radius: 0;
-  background: var(--kc-permukaan) !important; border: 0 !important; border-bottom: 1px solid var(--kc-garis) !important;
+  background: var(--kc-permukaan) !important; border: 0 !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: 0 1px 2px rgba(74, 52, 30, .04) !important;
+  box-shadow: none !important;
 }
 :root .kerangka-bingkai .kepala-3d h1 { color: var(--kc-tinta) !important; }
 :root .kerangka-bingkai .kepala-3d h1 + span { color: var(--kc-garis-kuat) !important; }
@@ -212,12 +212,12 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
 }
 :root .kerangka-bingkai .kepala-3d button[aria-label^="Pencarian"]:hover { background: var(--kc-isi) !important; }
 
-/* ── Sidebar: panel mengambang bersudut membulat, ikon dalam bulatan ── */
+/* ── Sidebar: kolom putih menempel, menyambung header (atas) & footer (bawah) tanpa garis, ikon dalam bulatan ── */
 :root .kerangka-bingkai .sidebar-3d {
-  margin: 12px 0 12px 12px; border-radius: 26px; overflow: hidden;
-  background: var(--kc-permukaan) !important; border: 1px solid var(--kc-garis) !important;
+  margin: 0; border-radius: 0; overflow: hidden;
+  background: var(--kc-permukaan) !important; border: 0 !important;
   backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: var(--kc-bayang) !important;
+  box-shadow: none !important;
 }
 :root .kerangka-bingkai .sidebar-3d > .absolute.top-0 { display: none; }
 :root .kerangka-bingkai .sidebar-3d .tracking-\[0\.14em\] { color: var(--kc-tinta-3) !important; }
