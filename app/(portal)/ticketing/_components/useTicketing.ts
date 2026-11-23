@@ -32,6 +32,7 @@ import { useDaftarTicket } from './useDaftarTicket';
 import { useAksiMassalTicket } from './useAksiMassalTicket';
 import { useBukaTicket } from './useBukaTicket';
 import { useEfekLiveTicketing } from './useEfekLiveTicketing';
+import { useLogPenuhTerpilih } from './useLogPenuhTerpilih';
 import { pesanGalat } from '@/lib/galat/pesan';
 
 export function useTicketing() {
@@ -350,6 +351,7 @@ export function useTicketing() {
   }, [filterYear]);
 
   useEfekLiveTicketing({ currentUser, fetchData, overdueSettings, setSelectedTicket, setTickets, tickets, ticketsRef, selectedIdRef });
+  useLogPenuhTerpilih(selectedTicket?.id ?? null, setSelectedTicket);
 
   const canCreateTicket = !isPimpinan(currentUser);
   const bolehUpdateTicket = (t: Ticket): boolean => bolehUpdateTicketShared(t, currentUser);
