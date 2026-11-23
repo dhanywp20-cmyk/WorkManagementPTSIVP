@@ -89,7 +89,7 @@ export default function KPITeamPage() {
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto">
-      <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
+      <div className="mx-auto px-4 py-4 space-y-4">
 
         <BagianPenilaianKPI
           calcKPI={calcKPI} currentUser={currentUser} fetchKPIMembers={fetchKPIMembers} filterTeam={filterTeam} kpiFiltered={kpiFiltered} kpiLoading={kpiLoading} kpiPeriodLabel={kpiPeriodLabel} kpiPeriodLen={kpiPeriodLen} kpiScoreColor={kpiScoreColor} kpiScoreLabel={kpiScoreLabel} kpiSettings={kpiSettings} kpiStartMonth={kpiStartMonth} kpiYear={kpiYear} setKpiPeriodLen={setKpiPeriodLen} setKpiStartMonth={setKpiStartMonth} setKpiYear={setKpiYear} setSelectedKPIMember={setSelectedKPIMember}

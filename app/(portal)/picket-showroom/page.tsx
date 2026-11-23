@@ -61,7 +61,7 @@ function PiketShowroomPageInner() {
           )}
         </PageHeader>
 
-        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+        <div className="flex-1 overflow-y-auto mx-auto w-full px-5 py-5 space-y-4">
           {currentUser&&!bolehIsi&&(
             <p className="text-[12px] text-slate-700 bg-white/90 border border-slate-200 rounded-xl px-3.5 py-2">
               {bisaLihatSemuaTamu(currentUser)

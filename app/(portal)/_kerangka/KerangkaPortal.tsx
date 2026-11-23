@@ -183,7 +183,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
         {renderHeader()}
 
         <div className="flex-1 overflow-y-auto py-6 px-4 md:px-8">
-          <div className="max-w-[1600px] mx-auto space-y-8">
+          <div className="mx-auto space-y-8">
             {(
               <>
                 {canAccessKPI && currentUser && (

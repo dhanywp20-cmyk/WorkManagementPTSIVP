@@ -82,7 +82,7 @@ function UnitMovementPageInner() {
         )}
       </PageHeader>
 
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-6 py-6 space-y-6 w-full">
+      <div className="flex-1 overflow-y-auto mx-auto px-6 py-6 space-y-6 w-full">
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 animate-slide-up anim-d80">
           {[

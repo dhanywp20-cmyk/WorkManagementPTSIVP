@@ -164,7 +164,7 @@ export default function ProjectProgressPage() {
         )}
       </PageHeader>
 
-      <main className="max-w-[1500px] mx-auto px-3 sm:px-6 py-5 space-y-4">
+      <main className="mx-auto px-3 sm:px-6 py-5 space-y-4">
         {bolehIsu && !proyekId && !checklistId && (
           <div className="inline-flex p-0.5 rounded-lg" style={{ background: NETRAL.garis }} role="tablist" aria-label="Bagian">
             {([['proyek', 'Proyek'], ['isu', 'Issue Log harian']] as [Halaman, string][]).map(([k, label]) => (

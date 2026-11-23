@@ -10,7 +10,7 @@ export function IsiTicketing() {
   const { ticketListRef } = k.data;
   return (
     <>
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+      <div className="flex-1 overflow-y-auto mx-auto w-full px-5 py-5 space-y-4">
 
         <StatsSection />
 

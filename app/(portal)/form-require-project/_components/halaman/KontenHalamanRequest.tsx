@@ -20,7 +20,7 @@ export function KontenHalamanRequest() {
   const { bulkDeleting, selectMode, selectedIds, setBulkConfirm, setSelectMode, setSelectedIds } = k.pilih;
   return (
     <>
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+      <div className="flex-1 overflow-y-auto mx-auto w-full px-5 py-5 space-y-4">
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 animate-slide-up anim-d80">
           {[

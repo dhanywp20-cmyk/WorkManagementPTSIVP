@@ -19,7 +19,7 @@ export function IsiLaporan() {
   } = k.filter;
   return (
     <>
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-5 py-5 space-y-5 pb-12 w-full">
+      <div className="flex-1 overflow-y-auto mx-auto px-5 py-5 space-y-5 pb-12 w-full">
 
         <StatCardGrid cols={4} items={[
           { label: 'Total Aktivitas', sub: 'Semua platform', value: stats.total, accent: '#4f46e5' },
