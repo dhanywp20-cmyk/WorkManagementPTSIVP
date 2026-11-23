@@ -1,3 +1,4 @@
+import { pdfDariSvg } from '@/lib/pdf-gambar';
 import { esc } from './desain-3d-request';
 import { svgTautanScreen, urlGambarSvg, type TautanScreen } from './screen-connection-request';
 
@@ -19,11 +20,15 @@ export function htmlSeksiScreen(isi: IsiScreen[], namaRuang: (idx: number) => st
   return `<div class="section"><div class="section-title" style="background:#eff6ff;color:#1e40af;border-color:#bfdbfe">🖥️ Screen Connection (AV Solution Tools)</div>${kartu}</div>`;
 }
 
-export function berkasPaketScreen(isi: IsiScreen[]): { name: string; data: Uint8Array }[] {
-  const enc = new TextEncoder();
-  return isi.flatMap(({ tautan: t, svg }, i) => {
-    if (!svg) return [];
-    const nama = (t.nama || t.sumber?.nama || 'Screen').replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 40);
-    return [{ name: `04_Screen_Connection_Tools_${i + 1}_${nama}.svg`, data: enc.encode(svg) }];
-  });
+export async function berkasPaketScreen(
+  isi: IsiScreen[], jadiPdf: (svg: string, judul: string) => Promise<Uint8Array> = pdfDariSvg,
+): Promise<{ name: string; data: Uint8Array }[]> {
+  const hasil: { name: string; data: Uint8Array }[] = [];
+  for (const [i, { tautan: t, svg }] of isi.entries()) {
+    if (!svg) continue;
+    const judul = t.nama || t.sumber?.nama || 'Screen';
+    const nama = judul.replace(/[^a-zA-Z0-9]+/g, '_').slice(0, 40);
+    try { hasil.push({ name: `04_Screen_Connection_Tools_${i + 1}_${nama}.pdf`, data: await jadiPdf(svg, `Screen Connection - ${judul}`) }); } catch {  }
+  }
+  return hasil;
 }

@@ -140,16 +140,14 @@ export async function bytesExcel(d: DokSLD, o: OpsiEkspor = {}): Promise<Uint8Ar
 }
 
 export async function berkasPaket(d: DokSLD, awalan: string): Promise<{ name: string; data: Uint8Array }[]> {
-  const hasil: { name: string; data: Uint8Array }[] = [];
-  const ruang = semuaRuang(d);
-  for (const [r, dr] of ruang.entries()) {
-    const lembar = await lembarSvg(dr);
-    for (let i = 0; i < lembar.length; i++) {
-      const nama = `${awalan}${ruang.length > 1 ? `_R${r + 1}` : ''}_Sheet${Math.min(i + 1, 2)}${i > 1 ? `-${i}` : ''}.png`;
-      hasil.push({ name: nama, data: new Uint8Array(await (await pngDariSvg(lembar[i], 3000)).arrayBuffer()) });
-    }
+  const { pdfDariGambar } = await import('../pdf-gambar');
+  const halaman: Uint8Array[] = [];
+  for (const dr of semuaRuang(d)) {
+    for (const l of await lembarSvg(dr)) halaman.push(new Uint8Array(await (await pngDariSvg(l, 3000)).arrayBuffer()));
   }
-  hasil.push({ name: `${awalan}.vsdx`, data: await bytesVsdx(d) });
-  hasil.push({ name: `${awalan}_Sheet1-3_BOQ.xlsx`, data: await bytesExcel(d) });
-  return hasil;
+  return [
+    { name: `${awalan}.pdf`, data: await pdfDariGambar(halaman, namaSLD(d)) },
+    { name: `${awalan}.vsdx`, data: await bytesVsdx(d) },
+    { name: `${awalan}_Sheet1-3_BOQ.xlsx`, data: await bytesExcel(d) },
+  ];
 }

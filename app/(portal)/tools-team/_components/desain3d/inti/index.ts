@@ -32,3 +32,4 @@ export * from './maskProyektor';
 export * from './bayanganProyektor';
 export * from './bom';
 export * from './objekDisinari';
+export * from './orang';

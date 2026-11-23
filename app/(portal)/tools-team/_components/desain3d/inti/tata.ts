@@ -103,7 +103,7 @@ const GOLONGAN_JENIS: Record<Jenis, Golongan> = {
   speaker: 'audio', 'speaker-plafon': 'audio', mic: 'audio',
   kamera: 'konferensi', touchpanel: 'konferensi', lift: 'konferensi', perangkat: 'konferensi',
   meja: 'furnitur', kursi: 'furnitur', tribun: 'furnitur', panggung: 'furnitur',
-  lampu: 'lampu', rak: 'rak', model: 'objek', objek: 'objek', teks: 'objek',
+  lampu: 'lampu', rak: 'rak', model: 'objek', objek: 'objek', teks: 'objek', orang: 'furnitur',
 };
 export const golonganDari = (j: Jenis): Golongan => GOLONGAN_JENIS[j];
 export const kunciSembunyi = (id: string) => `#${id}`;

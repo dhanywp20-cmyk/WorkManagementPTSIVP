@@ -4,6 +4,7 @@ import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
 import { isiRakTemplate } from './rak';
 import { daftarRuang } from './ruang';
 import { TINGGI_HURUF_AWAL } from './teks';
+import { TINGGI_ORANG_AWAL, ukuranOrang } from './orang';
 import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Ruang } from './tipe';
 
 export interface ItemKatalog {
@@ -89,6 +90,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'podium', label: 'Podium', ket: 'Smart lectern MAXHUB SL22MC: layar sentuh 21,5" + 2 mic gooseneck', jenis: 'meja', atur: { bentukMeja: 'podium' } },
       { kunci: 'kredensa', label: 'Kredensa', ket: 'Lemari rendah di bawah display', jenis: 'meja', atur: { bentukMeja: 'kredensa' } },
       { kunci: 'meja-operator', label: 'Meja operator', ket: 'Control room, multi monitor', jenis: 'meja', atur: { bentukMeja: 'operator' } },
+      { kunci: 'orang', label: 'Orang (skala)', ket: 'Manusia berdiri, tinggi bisa diatur (bawaan 170 cm)', jenis: 'orang' },
     ],
   },
   {
@@ -204,6 +206,10 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       : { ...dasar, nama: 'Proyektor plafon', z: Math.min(4, k.l * 0.65), w: 0.44, h: 0.14, d: 0.36, elev: Math.max(0.5, k.t - 0.5), rot: 180, pasangProyektor: 'plafon', throwRatio: 1.6, trMin: 1.39, trMax: 2.09, ...atur };
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, tipeRak: 'kaca', ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
+    case 'orang': {
+      const u = ukuranOrang(atur.h ?? TINGGI_ORANG_AWAL);
+      return { ...dasar, nama: u.nama, z: k.l * 0.6, w: u.w, h: u.h, d: u.d, elev: 0, rot: 180, ...atur, ...(atur.h !== undefined ? { w: u.w, d: u.d } : {}) };
+    }
     case 'teks': {
       const hadap = atur.hadapTeks ?? 'berdiri';
       const elev = hadap === 'lantai' ? 0.002 : hadap === 'kamera' ? 2.2 : 1.6;

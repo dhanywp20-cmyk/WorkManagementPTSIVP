@@ -10,7 +10,7 @@ export const MAKS_BYTE_ATUR = 60_000;
 export const MAKS_IMPOR_SEKALI = 50;
 
 export const JENIS_OBJEK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic', 'touchpanel',
-  'kamera', 'proyektor', 'rak', 'lift', 'model', 'tribun', 'panggung', 'bidang', 'lampu', 'objek', 'perangkat', 'teks'] as const;
+  'kamera', 'proyektor', 'rak', 'lift', 'model', 'tribun', 'panggung', 'bidang', 'lampu', 'objek', 'perangkat', 'teks', 'orang'] as const;
 export type JenisObjek = (typeof JENIS_OBJEK)[number];
 
 type Tipe = 'angka' | 'bool' | 'teks' | 'warna' | 'angka3';
