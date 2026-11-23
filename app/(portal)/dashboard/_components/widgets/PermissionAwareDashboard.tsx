@@ -12,6 +12,7 @@ import { hasFullAccess } from '@/lib/constants';
 import PanelAgenda, { type RingkasAgenda } from '../workcenter/PanelAgenda';
 import { IsiBeranda } from '../beranda/IsiBeranda';
 import { useDasborWidget } from '../beranda/useDasborWidget';
+import { useSkalaMuat } from '../beranda/useSkalaMuat';
 
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
@@ -79,6 +80,9 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   }, [currentUser.id]);
   useKelompok();
   const widgetDasbor = useDasborWidget();
+  const akarRef = useRef<HTMLDivElement>(null);
+  const kepalaRef = useRef<HTMLElement>(null);
+  const wadahRef = useRef<HTMLDivElement>(null);
 
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
@@ -94,14 +98,16 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const widgetUtama = visible.filter(w => w.size === 'full' && !['work-queue', 'team-monitoring', 'analytics'].includes(w.id));
   const widgetKisi = visible.filter(w => w.size !== 'full');
 
+  const skala = useSkalaMuat(!adaAnalytics, akarRef, kepalaRef, wadahRef);
+
   const panel = adaAgenda && !widgetDasbor.sembunyi.includes('agenda')
     ? <PanelAgenda user={currentUser} openMenu={openMenu} openUrl={openUrl} onRingkas={setRingkasAgenda} />
     : undefined;
 
   return (
-    <div className={`dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden ${adaAnalytics ? '' : 'bb-muat'}`}
+    <div ref={akarRef} className={`dasbor-3d tema-beranda w-full h-full overflow-y-auto overflow-x-hidden ${adaAnalytics ? '' : 'bb-muat'}`}
       style={widgetDasbor.latarRedup ? { background: 'rgba(241,245,249,0.9)' } : undefined}>
-      <header className="dasbor-kepala sticky top-0 z-40"
+      <header ref={kepalaRef} className="dasbor-kepala sticky top-0 z-40"
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="mx-auto px-4 md:px-6 py-2.5 md:py-3 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
@@ -119,7 +125,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         </div>
       </header>
 
-      <div className="bb-wadah">
+      <div ref={wadahRef} className="bb-wadah" style={skala < 1 ? { zoom: skala } : undefined}>
         {ajakTelegram && !tutupAjakan && (
           <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3 mb-3 flex-wrap"
             style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
