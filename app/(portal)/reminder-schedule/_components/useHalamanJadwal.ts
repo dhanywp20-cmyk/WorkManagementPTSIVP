@@ -53,8 +53,6 @@ export function useHalamanJadwal() {
   const [detailReminder, setDetailReminder] = useState<Reminder | null>(null);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
-  // Popup detail memegang salinan baris; selaraskan dengan data terbaru setiap
-  // kali daftar dimuat ulang (realtime / refetch) supaya tidak basi.
   useEffect(() => {
     setDetailReminder(prev => {
       if (!prev) return prev;
