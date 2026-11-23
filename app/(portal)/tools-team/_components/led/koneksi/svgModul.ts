@@ -4,7 +4,7 @@ const n = (v: number) => Math.round(v * 10) / 10;
 const HURUF = 'font-family="Segoe UI,Arial"';
 const MAKS_UBIN = 9000;
 
-export const KET_LABEL_SEL = 'label sel = port-urutan, START = RC pertama, END (kotak) = RC terakhir tiap port, angka kecil = ukuran receiving card (px)';
+export const KET_LABEL_SEL = 'label sel = port-urutan, S = start (RC pertama), E = end (RC terakhir) tiap port, angka kecil = ukuran receiving card (px)';
 
 export const namaUnitKoneksi = (d: DataKoneksi) => (d.satuan === 'cabinet' ? 'cabinet' : 'modul');
 
@@ -104,51 +104,62 @@ export function ujungPort(t: Susunan) {
   return ujung;
 }
 
-export const ukuranPil = (selMin: number) => Math.max(6, Math.min(9, selMin * 0.11));
+export function titikSiku(titik: number[][]) {
+  const hasil: number[][] = titik.length ? [titik[0]] : [];
+  for (let i = 1; i < titik.length; i++) {
+    const [x0, y0] = titik[i - 1], [x1, y1] = titik[i];
+    if (Math.abs(x1 - x0) > 0.5 && Math.abs(y1 - y0) > 0.5) {
+      if (Math.abs(y1 - y0) <= Math.abs(x1 - x0)) { const ym = (y0 + y1) / 2; hasil.push([x0, ym], [x1, ym]); }
+      else { const xm = (x0 + x1) / 2; hasil.push([xm, y0], [xm, y1]); }
+    }
+    hasil.push([x1, y1]);
+  }
+  return hasil.filter((p, i, a) => {
+    if (i === 0 || i === a.length - 1) return true;
+    const [ax, ay] = a[i - 1], [bx, by] = a[i + 1];
+    return !((Math.abs(ax - p[0]) < 0.5 && Math.abs(bx - p[0]) < 0.5) || (Math.abs(ay - p[1]) < 0.5 && Math.abs(by - p[1]) < 0.5));
+  });
+}
 
-function pil(x: number, y: number, teks: string, warna: string, isi: boolean, fb: number) {
-  const w = 8 + teks.length * fb * 0.62, h = fb + 5;
-  return `<rect x="${n(x - w / 2)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(h / 2)}" fill="${isi ? warna : '#ffffff'}" stroke="${isi ? '#ffffff' : warna}" stroke-width="1.2"/>`
-    + `<text x="${n(x)}" y="${n(y + h - 3.6)}" font-size="${n(fb)}" font-weight="800" letter-spacing="0.4" text-anchor="middle" fill="${isi ? '#ffffff' : warna}" ${HURUF}>${teks}</text>`;
+export function pathSiku(t: number[][], rr: number) {
+  if (t.length < 2) return '';
+  const out = [`M${n(t[0][0])},${n(t[0][1])}`];
+  for (let i = 1; i < t.length - 1; i++) {
+    const [ax, ay] = t[i - 1], [px, py] = t[i], [bx, by] = t[i + 1];
+    const la = Math.hypot(px - ax, py - ay), lb = Math.hypot(bx - px, by - py);
+    const r = Math.min(rr, la / 2, lb / 2);
+    out.push(`L${n(px + ((ax - px) / la) * r)},${n(py + ((ay - py) / la) * r)}`, `Q${n(px)},${n(py)} ${n(px + ((bx - px) / lb) * r)},${n(py + ((by - py) / lb) * r)}`);
+  }
+  const z = t[t.length - 1];
+  out.push(`L${n(z[0])},${n(z[1])}`);
+  return out.join(' ');
 }
 
 export interface OpsiPenanda {
-  selMin: number; geser: number; r: number; warna: (port: number) => string; kode: (port: number) => string;
+  r: number; warna: (port: number) => string;
   sel: (c: number, r: number) => number[];
 }
 
-export function rencanaPil(t: Susunan, pusat: (c: number, r: number) => number[], o: OpsiPenanda) {
-  const fb = ukuranPil(o.selMin);
-  const daftar: { kunci: string; x: number; y: number; teks: string; warna: string; isi: boolean }[] = [];
-  if (o.selMin < 30) return { fb, daftar };
-  const tambah = (c: number, r: number, teks: string, warna: string, isi: boolean) => {
-    const [w, h] = o.sel(c, r), [x, y] = pusat(c, r);
-    const lebar = 8 + teks.length * fb * 0.62;
-    if (h / 2 - o.geser - o.r - 3 < fb + 6 || w < lebar + 4) return;
-    daftar.push({ kunci: kunci(c, r), x, y: y + o.geser + o.r + 3, teks, warna, isi });
-  };
-  ujungPort(t).forEach(({ awal, akhir }, port) => {
-    const warna = o.warna(port), kode = o.kode(port);
-    if (awal.c === akhir.c && awal.r === akhir.r) { tambah(awal.c, awal.r, `START · END ${kode}`, warna, true); return; }
-    tambah(awal.c, awal.r, `START ${kode}`, warna, true);
-    tambah(akhir.c, akhir.r, `END ${kode}`, warna, false);
-  });
-  return { fb, daftar };
+export const jariLencana = (o: OpsiPenanda, c: number, r: number) => Math.max(4.5, Math.min(o.r, Math.min(...o.sel(c, r)) * 0.3));
+
+function lencana(x: number, y: number, r: number, huruf: 'S' | 'E', warna: string) {
+  const isi = huruf === 'S';
+  return `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="${isi ? warna : '#ffffff'}" stroke="${isi ? '#ffffff' : warna}" stroke-width="${isi ? 1.6 : 2.2}"/>`
+    + `<text x="${n(x)}" y="${n(y + r * 0.42)}" font-size="${n(r * 1.2)}" font-weight="800" text-anchor="middle" fill="${isi ? '#ffffff' : warna}" ${HURUF}>${huruf}</text>`;
 }
 
-export function penandaStartEnd(t: Susunan, pusat: (c: number, r: number) => number[], o: OpsiPenanda) {
+export function penandaSE(t: Susunan, pusat: (c: number, r: number) => number[], o: OpsiPenanda) {
   const out: string[] = [];
   ujungPort(t).forEach(({ awal, akhir }, port) => {
-    if (awal.c === akhir.c && awal.r === akhir.r) return;
     const warna = o.warna(port);
-    const [ax, ay] = pusat(akhir.c, akhir.r);
-    const [w, h] = o.sel(akhir.c, akhir.r);
-    const s = Math.min(o.r * 1.7, w * 0.4, h * 0.4), yA = ay + Math.min(o.geser, h / 2 - s / 2 - 1);
-    out.push(`<rect x="${n(ax - s / 2)}" y="${n(yA - s / 2)}" width="${n(s)}" height="${n(s)}" rx="1.5" fill="#ffffff" stroke="${warna}" stroke-width="2.2"/>`);
-    out.push(`<rect x="${n(ax - s / 4)}" y="${n(yA - s / 4)}" width="${n(s / 2)}" height="${n(s / 2)}" fill="${warna}"/>`);
+    const [sx, sy] = pusat(awal.c, awal.r), rs = jariLencana(o, awal.c, awal.r);
+    if (awal.c === akhir.c && awal.r === akhir.r) {
+      out.push(lencana(sx - rs * 1.15, sy, rs, 'S', warna), lencana(sx + rs * 1.15, sy, rs, 'E', warna));
+      return;
+    }
+    const [ex, ey] = pusat(akhir.c, akhir.r);
+    out.push(lencana(sx, sy, rs, 'S', warna), lencana(ex, ey, jariLencana(o, akhir.c, akhir.r), 'E', warna));
   });
-  const { fb, daftar } = rencanaPil(t, pusat, o);
-  for (const p of daftar) out.push(pil(p.x, p.y, p.teks, p.warna, p.isi, fb));
   return out.join('');
 }
 
