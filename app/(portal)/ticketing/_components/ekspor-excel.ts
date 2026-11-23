@@ -130,10 +130,11 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
         [...ticket.activity_logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).forEach((log) => {
           const rs = rowIdx % 2 === 0 ? cellStyle : altStyle;
           const ctr = { ...rs, alignment: { horizontal: "center", vertical: "center" } };
+          const paragraf = { ...rs, alignment: { horizontal: "left", vertical: "top", wrapText: true } };
           data.push([
             c(rowIdx + 1, ctr), c(ticket.project_name || "-", rs), c(ticket.issue_case || "-", rs), c(ticket.status || "-", statusStyles[ticket.status] || rs),
-            c(log.handler_name || "-", rs), c(log.team_type || "-", rs), c(log.action_taken || "-", rs),
-            c(log.notes || "-", { ...rs, alignment: { horizontal: "left", vertical: "center", wrapText: true } }),
+            c(log.handler_name || "-", rs), c(log.team_type || "-", rs), c(log.action_taken || "-", paragraf),
+            c(log.notes || "-", paragraf),
             c(log.new_status || "-", statusStyles[log.new_status] || rs),
             c(log.assigned_to_services ? "✅ Ya" : "Tidak", { ...ctr, font: { name: "Arial", sz: 10, bold: !!log.assigned_to_services, color: { rgb: log.assigned_to_services ? "166534" : "374151" } } }),
             c(log.file_name || "-", rs), c(log.created_at ? formatDateTime(log.created_at) : "-", ctr),
@@ -143,7 +144,7 @@ export function eksporExcel({ filteredTickets, currentUserTeamType, stats, isTic
       });
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: COLS - 1 } }];
-      ws["!cols"] = [{ wch: 5 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 28 }, { wch: 40 }, { wch: 16 }, { wch: 12 }, { wch: 24 }, { wch: 22 }];
+      ws["!cols"] = [{ wch: 5 }, { wch: 26 }, { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 16 }, { wch: 40 }, { wch: 60 }, { wch: 16 }, { wch: 12 }, { wch: 24 }, { wch: 22 }];
       ws["!rows"] = [{ hpt: 28 }, { hpt: 6 }, { hpt: 32 }];
       XLSX.utils.book_append_sheet(wb, ws, "📝 Activity Logs");
     }

@@ -6,6 +6,7 @@ import { pesanGalat } from '@/lib/galat/pesan';
 import { wajibCatatan } from '@/lib/alur-status-ticket';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { PilihStatusPTS } from './PilihStatusPTS';
+import { IsianPanjang, BlokPenanganan } from './KolomPenanganan';
 import { formatDateTime, statusColors, type Ticket, type User } from './shared';
 import {
   useIssueTiket, bolehTambahIssue, bolehUpdateIssue, bolehHapusIssue,
@@ -98,16 +99,16 @@ function FormUpdateIssue({ issue, onSimpan, onBatal }: {
           {!bukaUlang && (
             <div>
               <label htmlFor={`aksi-${issue.id}`} className={LABEL}><IkonTeks nama="🔧" />Action Taken</label>
-              <textarea id={`aksi-${issue.id}`} rows={2} value={isi.action_taken} onChange={e => setIsi({ ...isi, action_taken: e.target.value })}
-                placeholder="Cek kabel, ganti baterai, reset..." className={`${INPUT} resize-none`} />
+              <IsianPanjang id={`aksi-${issue.id}`} baris={3} value={isi.action_taken} onChange={v => setIsi({ ...isi, action_taken: v })}
+                placeholder={"Langkah yang dilakukan, satu per baris\nmis. Cek kabel, ganti baterai, reset"} className={INPUT} />
             </div>
           )}
           <div>
             <label htmlFor={`catatan-${issue.id}`} className={LABEL}>
               <IkonTeks nama="📝" />Notes {notesWajib ? '*' : <span className="text-gray-500 normal-case">(opsional)</span>}
             </label>
-            <textarea id={`catatan-${issue.id}`} rows={2} value={isi.notes} onChange={e => setIsi({ ...isi, notes: e.target.value })}
-              placeholder={bukaUlang ? 'Kenapa issue ini dibuka lagi?' : 'Detail penanganan...'} className={`${INPUT} resize-none`} />
+            <IsianPanjang id={`catatan-${issue.id}`} baris={bukaUlang ? 3 : 5} value={isi.notes} onChange={v => setIsi({ ...isi, notes: v })} template={!bukaUlang}
+              placeholder={bukaUlang ? 'Kenapa issue ini dibuka lagi?' : 'Kondisi awal, tindakan, hasil, dan rekomendasi...'} className={INPUT} />
           </div>
           <div>
             <label htmlFor={`foto-${issue.id}`} className={LABEL}><IkonTeks nama="📷" />Foto Bukti</label>
@@ -144,8 +145,7 @@ function RiwayatIssue({ logs }: { logs: LogIssueTiket[] }) {
               <span className="text-[10px] text-gray-500">{formatDateTime(l.created_at)}</span>
             </span>
           </div>
-          {l.action_taken && <p className="text-[11px] text-blue-700 font-semibold"><IkonTeks nama="🔧" />{l.action_taken}</p>}
-          {l.notes && <p className="text-[11px] text-gray-600 whitespace-pre-line">{l.notes}</p>}
+          <BlokPenanganan action={l.action_taken} notes={l.notes} kecil />
           {l.photo_url && (
             <img src={l.photo_url} alt={l.photo_name || 'foto bukti'} loading="lazy" decoding="async"
               className="mt-1 max-h-20 rounded-lg border cursor-pointer" onClick={() => window.open(l.photo_url, '_blank')} />
