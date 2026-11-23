@@ -777,18 +777,10 @@ button:hover > .bb-panah { transform: translate(1px, -1px); }
 .bb-antre-ada, .bb-antre-dua b { color: var(--gt-0f172a, #0f172a); }
 .bb-antre-dua b.text-red-600 { color: #dc2626; }
 .bb-pie-wadah { container-type: inline-size; }
-.bb-pie-baris { display: flex; align-items: center; gap: 6px; }
-.bb-pie-kisi { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.bb-pie-kisi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .bb-pie-sel { min-width: 0; container-type: inline-size; }
 .bb-pie-sel > div { height: 100%; }
-@container (max-width: 300px) { .bb-pie-sel .sm\:flex-row { flex-direction: column; } .bb-pie-sel .sm\:flex-row > ul { width: 100%; flex: none; } }
-.bb-pie-panah { flex-shrink: 0; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; border: 1px solid var(--gg-e2e8f0, #e2e8f0); background: var(--gb-ffffff, #fff); color: var(--gt-475569, #475569); box-shadow: 0 1px 2px rgba(15, 23, 42, .06); transition: background-color .15s ease, color .15s ease; }
-.bb-pie-panah:hover { background: var(--gb-f1f5f9, #f1f5f9); color: var(--gt-0f172a, #0f172a); }
-.bb-pie-panah:focus-visible { outline: 2px solid #94a3b8; outline-offset: 2px; }
-.bb-pie-panah svg { width: 15px; height: 15px; }
-.bb-pie-titik { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
-.bb-pie-titik button { padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; color: #64748b; background: var(--gb-f1f5f9, #f1f5f9); transition: background-color .15s ease, color .15s ease; }
-.bb-pie-titik button[aria-current="true"] { background: var(--aksen-ubin, #1d4ed8); color: #fff; }
+@container (max-width: 240px) { .bb-pie-sel .sm\:flex-row { flex-direction: column; } .bb-pie-sel .sm\:flex-row > ul { width: 100%; flex: none; } }
 @container (max-width: 400px) { .bb-pie-kisi { grid-template-columns: minmax(0, 1fr); } }
 .bb-unit { padding: 5px 0; border-bottom: 1px solid var(--gg-f1f5f9, #f1f5f9); }
 .bb-unit:last-child { border-bottom: 0; }

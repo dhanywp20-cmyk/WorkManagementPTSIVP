@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AKSEN_UTAMA, BAYANG_UBIN, LABEL_UBIN, UBIN } from '../widgets/primitives';
 import type { User } from '../shared';
 import type { KPIData, Scope } from '@/lib/kpi-dasbor';
 import { TrenBulanan } from '@/components/shared/grafik-kpi';
-import { PieSumberTiket } from './PieSumber';
+import { PiePembelajaran, PieSumberTiket, SwitchSumber } from './PieSumber';
 import { susunBaris, tampil, type KunciWidget, type PengaturanDasbor } from '@/lib/dasbor-widget';
 import { Angka, Bilah, IkonPanah, fmtId } from './grafik';
 import { useSorotanModul } from './useSorotanModul';
@@ -41,9 +41,10 @@ function Kosong({ teks }: { teks: string }) {
 function KartuAsalTiket({ kpi, kol, onBuka }: { kpi: KPIData | null; kol: number; onBuka: () => void }) {
   const produk = kpi?.tickets.byProduct.slice().sort((x, y) => y.count - x.count)[0];
   const kalimat = !produk ? 'Belum ada data tiket.' : <><b className="font-extrabold">{produk.product}</b> paling sering bermasalah: {produk.count} tiket.</>;
+  const [halaman, setHalaman] = useState(0);
   return (
-    <Kartu judul="Sumber tiket" kol={kol} onBuka={onBuka} kalimat={kalimat} kelas="bb-sumber">
-      <PieSumberTiket kpi={kpi} />
+    <Kartu judul="Sumber tiket" kol={kol} onBuka={onBuka} kalimat={kalimat} kelas="bb-sumber" sisi={<SwitchSumber halaman={halaman} onPilih={setHalaman} />}>
+      <PieSumberTiket kpi={kpi} halaman={halaman} />
     </Kartu>
   );
 }
@@ -180,14 +181,9 @@ export function RincianBento({ kpi, user, openMenu, scope, widget }: {
       )}
 
       {tersedia.pembelajaran && (
-        <Kartu judul="Pembelajaran tim" kol={kol.pembelajaran} onBuka={() => openMenu('learning-center')}>
-          <div className="flex items-baseline gap-1.5 mb-2">
-            <span className="text-[30px] font-black leading-none tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{fmtId(persenLulus, 0)}%</span>
-            <span className="text-[12px] font-semibold text-slate-500">lulus quiz</span>
-          </div>
-          <Bilah persen={persenLulus} warna={AKSEN_UTAMA} label="Tingkat lulus quiz" />
-          <p className="bb-catatan">{lc?.totalParticipants ?? 0} peserta · skor rata-rata {lc?.avgScore ?? 0}</p>
-          {s.techNote && <p className="bb-catatan mt-auto">Tech Note {new Date().getFullYear()}: {s.techNote.disetujui} disetujui · {s.techNote.menunggu} menunggu</p>}
+        <Kartu judul="Pembelajaran tim" kol={kol.pembelajaran} onBuka={() => openMenu('learning-center')}
+          kalimat={<>{fmtId(persenLulus, 0)}% lulus quiz · {lc?.totalParticipants ?? 0} peserta · skor rata-rata {lc?.avgScore ?? 0}</>}>
+          <PiePembelajaran kpi={kpi} techNote={s.techNote} />
         </Kartu>
       )}
     </div>
