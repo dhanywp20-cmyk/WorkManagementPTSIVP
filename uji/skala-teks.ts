@@ -3,7 +3,10 @@ import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
 const skalaTeks = require('../lib/tipografi/postcss-skala-teks.cjs');
-const { skalaPx, ubahUkuran } = skalaTeks as { skalaPx: (n: number) => number; ubahUkuran: (v: string) => string | null };
+type Dekl = { important?: boolean; parent?: { selector?: string } };
+const { skalaPx, ubahUkuran, isianTerkunci } = skalaTeks as {
+  skalaPx: (n: number) => number; ubahUkuran: (v: string) => string | null; isianTerkunci: (d: Dekl) => boolean;
+};
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -22,6 +25,9 @@ cek('token rem Tailwind diubah + dijaga minimal 10 px', ubahUkuran('0.875rem') =
 cek('nilai px diubah', ubahUkuran('12.5px') === '11.25px');
 cek('nilai relatif / var / calc dibiarkan', ubahUkuran('1.2em') === null && ubahUkuran('var(--text-sm)') === null && ubahUkuran('calc(1rem + 2px)') === null);
 cek('plugin terpasang setelah Tailwind di postcss.config.js', /'@tailwindcss\/postcss'[\s\S]*postcss-skala-teks/.test(readFileSync('postcss.config.js', 'utf8')));
+cek('input 16px !important di HP tidak dikecilkan (iOS tidak zoom)', isianTerkunci({ important: true, parent: { selector: "input:not([type='checkbox']),\n    select,\n    textarea" } }));
+cek('kelas Tailwind bermodifier ! (mis. !text-[12px]) tetap ikut skala', !isianTerkunci({ important: true, parent: { selector: '.\\!text-\\[12px\\]' } }));
+cek('input tanpa !important tetap ikut skala', !isianTerkunci({ important: false, parent: { selector: 'input' } }));
 cek('plugin bertanda PostCSS', (skalaTeks as { postcss?: boolean }).postcss === true);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
