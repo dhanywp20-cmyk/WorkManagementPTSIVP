@@ -1,4 +1,4 @@
-import { type DataKoneksi, kunci, type Susunan, warnaPort } from './data';
+import { type DataKoneksi, kunci, type Susunan } from './data';
 
 const n = (v: number) => Math.round(v * 10) / 10;
 const HURUF = 'font-family="Segoe UI,Arial"';
@@ -20,22 +20,20 @@ export function bisaUbin(d: DataKoneksi, t: Susunan, xs: number[], ys: number[])
   return total <= MAKS_UBIN && terkecil >= 5;
 }
 
-export function ubinModul(d: DataKoneksi, t: Susunan, xs: number[], ys: number[], portSel: (c: number, r: number) => number | null) {
+export function ubinModul(d: DataKoneksi, t: Susunan, xs: number[], ys: number[]) {
   const per: string[] = [];
   for (let r = 0; r < t.B; r++) for (let c = 0; c < t.K; c++) {
     if (t.kosong.has(kunci(c, r))) continue;
     const m = modulPerSel(d, t, c, r);
     const w = (xs[c + 1] - xs[c]) / m.k, h = (ys[r + 1] - ys[r]) / m.b;
     const g = Math.max(0.8, Math.min(3, Math.min(w, h) * 0.06));
-    const port = portSel(c, r);
     const ubin: string[] = [];
     for (let j = 0; j < m.b; j++) for (let i = 0; i < m.k; i++) {
       ubin.push(`<rect x="${n(xs[c] + i * w + g)}" y="${n(ys[r] + j * h + g)}" width="${n(w - 2 * g)}" height="${n(h - 2 * g)}" rx="${n(Math.min(2, g))}"/>`);
     }
-    const garis = port ? warnaPort(port) : '#94a3b8';
-    per.push(`<g stroke="${garis}">${ubin.join('')}</g>`);
+    per.push(ubin.join(''));
   }
-  return `<g fill="#ffffff" fill-opacity="0.62" stroke-opacity="0.5" stroke-width="0.7">${per.join('')}</g>`;
+  return `<g fill="#ffffff" fill-opacity="0.55" stroke="#94a3b8" stroke-opacity="0.55" stroke-width="0.7">${per.join('')}</g>`;
 }
 
 export function teksSpekRC(d: DataKoneksi, t: Susunan) {

@@ -31,7 +31,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
   const n = (v: number) => Math.round(v * 10) / 10;
   const peta = new Map(t.hasil.sel.map(s => [kunci(s.c, s.r), s]));
   const ubin = !banyak && bisaUbin(d, t, xs, ys);
-  const opa = ubin ? [0.3, 0.48] : [0.17, 0.32];
+  const opa = ubin ? [0.2, 0.38] : [0.17, 0.32];
   const out: string[] = [];
   out.push('<defs><pattern id="arsir-koneksi" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#e2e8f0"/><line x1="0" y1="0" x2="0" y2="6" stroke="#94a3b8" stroke-width="1.6"/></pattern></defs>');
   if (o.interaktif) out.push('<style>.sel{cursor:pointer}.sel:hover{stroke:#1d4ed8;stroke-width:2.5}</style>');
@@ -42,7 +42,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
     out.push(`<rect x="${n(xs[c])}" y="${n(ys[r])}" width="${n(xs[c + 1] - xs[c])}" height="${n(ys[r + 1] - ys[r])}" ${isi}${o.interaktif ? ` class="sel" data-sel="${k}"${o.layar !== undefined ? ` data-layar="${o.layar}"` : ''}` : ''}/>`);
   }
   const atas: string[] = [];
-  if (ubin) atas.push(ubinModul(d, t, xs, ys, (c, r) => peta.get(kunci(c, r))?.port ?? null));
+  if (ubin) atas.push(ubinModul(d, t, xs, ys));
   else if (!t.custom && (t.rcKol > 1 || t.rcBaris > 1) && d.kolom <= 160 && d.baris <= 160) {
     const tipis: string[] = [];
     for (let i = 1; i < d.kolom; i++) if (i % t.rcKol) { const x = n(ox + i * d.pxX * skala); tipis.push(`<line x1="${x}" y1="${oy}" x2="${x}" y2="${n(oy + H)}"/>`); }
@@ -61,14 +61,16 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
   if (o.portAktif) for (const s of t.hasil.sel) if (s.port === o.portAktif) {
     atas.push(`<rect x="${n(xs[s.c] + 1)}" y="${n(ys[s.r] + 1)}" width="${n(xs[s.c + 1] - xs[s.c] - 2)}" height="${n(ys[s.r + 1] - ys[s.r] - 2)}" fill="none" stroke="${warnaPort(s.port)}" stroke-width="2"/>`);
   }
-  const tebal = Math.max(1, Math.min(2.5, selMin * 0.06));
-  const panah = Math.max(2.5, Math.min(6, selMin * 0.13));
+  const tebal = Math.max(1.4, Math.min(ubin ? 3.4 : 2.5, selMin * 0.06));
+  const panah = Math.max(3, Math.min(ubin ? 7 : 6, selMin * 0.14));
   const perPort = new Map<number, number[][]>();
   for (const s of t.hasil.sel) { const a = perPort.get(s.port) ?? []; a.push(pusat(s.c, s.r)); perPort.set(s.port, a); }
   if (!banyak) {
     perPort.forEach((titik, port) => {
       const warna = warnaPort(port);
-      if (titik.length > 1) atas.push(`<polyline points="${titik.map(([x, y]) => `${n(x)},${n(y)}`).join(' ')}" fill="none" stroke="${warna}" stroke-width="${n(tebal)}" stroke-linejoin="round" stroke-opacity="0.85"/>`);
+      const jalur = titik.map(([x, y]) => `${n(x)},${n(y)}`).join(' ');
+      if (titik.length > 1) atas.push(`<polyline points="${jalur}" fill="none" stroke="#ffffff" stroke-width="${n(tebal + 3)}" stroke-linejoin="round" stroke-linecap="round"/>`
+        + `<polyline points="${jalur}" fill="none" stroke="${warna}" stroke-width="${n(tebal)}" stroke-linejoin="round" stroke-linecap="round"/>`);
       if (selMin >= 12) {
         const seg: string[] = [];
         for (let i = 1; i < titik.length; i++) {
@@ -78,7 +80,7 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: OpsiSvgKoneksi = {}): 
           const bx = mx - panah * ux, by = my - panah * uy;
           seg.push(`${n(mx + panah * ux)},${n(my + panah * uy)} ${n(bx - 0.8 * panah * uy)},${n(by + 0.8 * panah * ux)} ${n(bx + 0.8 * panah * uy)},${n(by - 0.8 * panah * ux)}`);
         }
-        if (seg.length) atas.push(`<g fill="${warna}">${seg.map(p => `<polygon points="${p}"/>`).join('')}</g>`);
+        if (seg.length) atas.push(`<g fill="${warna}" stroke="#ffffff" stroke-width="1" stroke-linejoin="round" paint-order="stroke">${seg.map(p => `<polygon points="${p}"/>`).join('')}</g>`);
       }
     });
   }
