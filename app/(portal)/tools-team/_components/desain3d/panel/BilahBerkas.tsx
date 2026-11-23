@@ -27,7 +27,8 @@ export function IdentitasBerkas({ a }: { a: AlatDesain }) {
   return (
     <div className="flex items-center gap-1 min-w-0 ml-0.5" role="group" aria-label="Berkas yang sedang dibuka">
       <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Nama desain" aria-label="Nama desain" title="Nama desain - klik untuk mengganti"
-        className="h-8 w-28 sm:w-44 xl:w-52 rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden truncate" />
+        className={'h-8 w-28 max-sm:w-auto max-sm:min-w-28 max-sm:max-w-[60vw] max-sm:[field-sizing:content] sm:w-44 xl:w-52 '
+          + 'rounded-lg border border-transparent bg-slate-50 px-2.5 text-[13px] font-semibold text-slate-800 placeholder:font-normal hover:border-slate-200 focus:border-blue-400 focus:bg-white focus:outline-hidden truncate'} />
       <TipTombol teks={rinci.judul} label={`Status berkas: ${rinci.judul}`} className={`inline-flex items-center h-6 px-2 rounded-full border text-[11.5px] font-semibold cursor-help ${kelas}`}>{rinci.isi}</TipTombol>
     </div>
   );

@@ -367,3 +367,23 @@ html.gelap .kerangka-bingkai[style*="url("] { background-color: #2a2420 !importa
   --color-slate-100: rgba(255, 255, 255, .18); --aksen-ubin: #fff; --gb-e8edf3: rgba(255, 255, 255, .25);
 }
 :root .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child :is(.text-\[30px\], .bb-catatan, h3) { color: #fff !important; }
+
+/* ── HP (< 768px): isi tidak terpotong, tombol seragam & nyaman disentuh ──
+   - Kepala modul ikut tergulir (tidak menempel) supaya tab yang membungkus tidak memakan layar.
+   - Ikon header 38px seragam: pencarian, notifikasi, suara, profil. */
+@media (max-width: 767px) {
+  :root .kerangka-bingkai .kepala-3d > div { padding: 8px 12px !important; }
+  :root .kerangka-bingkai .kepala-3d .px-3.py-1\.5.rounded-2xl { padding: 0 !important; gap: 6px !important; }
+  :root .kerangka-bingkai .kepala-3d :is(button[aria-label^="Pencarian"], button[aria-label^="Notifikasi"], button[aria-label$="notifikasi"]) {
+    height: 38px !important; min-width: 38px !important; min-height: 38px !important; border-radius: 12px !important; justify-content: center;
+  }
+  :root .kerangka-bingkai .kepala-3d button[aria-label^="Notifikasi"] { padding: 0 10px !important; margin: 0 !important; }
+  :root .kerangka-bingkai .kepala-3d button[aria-label^="Profil"] { width: 38px; height: 38px; }
+
+  :root .kerangka-bingkai :is(.panel-dasbor, .isi-portal:not(.fixed)) { inset: 6px; border-radius: 20px; }
+  :root .kerangka-bingkai .nav-bawah-3d { margin: 0 6px 6px; border-radius: 20px; }
+
+  :root .kerangka-bingkai .kepala-modul { position: relative !important; }
+  :root .kerangka-bingkai .kepala-modul > div { padding-top: 12px; padding-bottom: 12px; row-gap: 10px; }
+  :root .kerangka-bingkai .kepala-modul h1 { overflow-wrap: anywhere; }
+}
