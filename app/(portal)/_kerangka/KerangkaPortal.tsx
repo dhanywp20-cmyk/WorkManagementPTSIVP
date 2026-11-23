@@ -74,6 +74,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:inline text-slate-400 font-light">|</span>
                 <span className="hidden sm:inline text-xs md:text-sm font-bold tracking-wide" style={{ color: merek.warnaAksen }}>{merek.namaPortal}</span>
               </div>
+              <p className="sm:hidden text-[10.5px] font-bold tracking-wide leading-tight mt-0.5" style={{ color: merek.warnaAksen }}>{merek.namaPortal}</p>
               <p className="text-slate-500 text-[11px] md:text-xs font-medium mt-0.5 hidden sm:block">{merek.namaPerusahaan}</p>
             </div>
           </div>

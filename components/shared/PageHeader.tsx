@@ -34,20 +34,19 @@ export function PageHeader({ icon, title, subtitle, children }: PageHeaderProps)
           </div>
           <div>
             <h1
-              className="text-[15px] sm:text-base sm:leading-6 font-bold tracking-tight leading-tight truncate"
+              className="text-[15px] sm:text-base sm:leading-6 font-bold tracking-tight leading-tight sm:truncate"
               style={{ color: NETRAL.tinta }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="hidden sm:block text-[11px] font-medium" style={{ color: NETRAL.tinta2 }}>{subtitle}</p>
+              <p className="text-[11.5px] sm:text-[11px] leading-snug font-medium mt-0.5 sm:mt-0" style={{ color: NETRAL.tinta2 }}>{subtitle}</p>
             )}
           </div>
         </div>
 
         {children && (
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 *:shrink-0"
-            style={{ scrollbarWidth: 'none' }}>
+          <div className="kepala-modul-aksi flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto *:shrink-0">
             {children}
           </div>
         )}
