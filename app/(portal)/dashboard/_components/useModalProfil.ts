@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ambilBawahan, atasanEfektif } from '@/lib/atasan';
 import { setSession } from '@/lib/auth/sesi';
 import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE } from './shared';
 import { ambilProfil } from './modal-bersama';
@@ -60,19 +61,21 @@ export function useModalProfil(k: ModalProfilKonteks) {
       const userDiv = currentUser.sales_division;
       const selfTier = currentUser.jabatan ? (JABATAN_CONFIG[currentUser.jabatan as JabatanType]?.tier ?? 0) : 0;
 
+      const [{ data: perUser }, { data: supMaps }] = await Promise.all([
+        supabase.from('user_supervisor_mappings').select('supervisor_id').eq('user_id', currentUser.id),
+        userDiv ? supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv) : Promise.resolve({ data: [] as { supervisor_id: string }[] }),
+      ]);
+      const pilihan = atasanEfektif((perUser ?? []).map((s) => s.supervisor_id), (supMaps ?? []).map((s) => s.supervisor_id).filter((id: string) => id !== currentUser.id));
+      if (pilihan.ids.length > 0) {
+        const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', pilihan.ids);
+        const filtered = (sups ?? []).filter((s) => {
+          const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
+          return pilihan.sumber === 'user' || tier > selfTier;
+        });
+        if (filtered.length) setSupervisors(filtered);
+      }
+
       if (userDiv) {
-        const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('supervisor_id').eq('sales_division', userDiv);
-        if (supMaps && supMaps.length > 0) {
-          const ids = supMaps.map((s) => s.supervisor_id).filter((id: string) => id !== currentUser.id);
-          if (ids.length > 0) {
-            const { data: sups } = await supabase.from('users').select('full_name, phone_number, sales_division, jabatan').in('id', ids);
-            const filtered = (sups ?? []).filter((s) => {
-              const tier = s.jabatan ? (JABATAN_CONFIG[s.jabatan as JabatanType]?.tier ?? 0) : 0;
-              return tier > selfTier;
-            });
-            if (filtered.length) setSupervisors(filtered);
-          }
-        }
         const { data: ivpMaps } = await supabase.from('division_ivp_mappings').select('ivp_id').eq('sales_division', userDiv);
         if (ivpMaps && ivpMaps.length > 0) {
           const ivpIds = ivpMaps.map((s) => s.ivp_id);
@@ -81,18 +84,10 @@ export function useModalProfil(k: ModalProfilKonteks) {
         }
       }
 
-      if (currentUser.jabatan && ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'].includes(currentUser.jabatan)) {
-        const { data: divMaps } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
-        if (divMaps && divMaps.length > 0) {
-          const divs = divMaps.map((m) => m.sales_division);
-          const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('sales_division', divs).eq('role', 'guest').neq('sales_division', 'IVP').neq('id', currentUser.id);
-          const filtered = (subUsers ?? []).filter((u) => {
-            if (u.username === currentUser.username) return false;
-            const tier = u.jabatan ? (JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0) : 0;
-            return tier < selfTier;
-          });
-          if (filtered.length) setSubordinates(filtered);
-        }
+      const bawahan = await ambilBawahan(supabase, currentUser);
+      if (bawahan.length) {
+        const { data: subUsers } = await supabase.from('users').select('full_name, username, sales_division, jabatan').in('id', bawahan.map(b => b.id));
+        if (subUsers?.length) setSubordinates(subUsers);
       }
     })();
   }, []);

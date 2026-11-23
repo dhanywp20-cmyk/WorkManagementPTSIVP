@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { cariTargetCC } from '@/lib/atasan';
 import { namaSemuaKelompokTim } from '@/lib/kelompok/inti';
 import { hasFullAccess } from '@/lib/constants';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
@@ -11,72 +12,8 @@ import type { PenggunaDasar } from '@/lib/tipe-pengguna';
 const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
 export { JABATAN_TIER, JABATAN_CC_RULES };
 
-export async function fetchWACCTargets(
-  userId: string,
-  salesDiv: string
-): Promise<{ phone: string; name: string; relation: string }[]> {
-  const targets: { phone: string; name: string; relation: string }[] = [];
-  try {
-    const { data: userData } = await supabase.from("users").select("jabatan").eq("id", userId).maybeSingle();
-    const jabatan = userData?.jabatan as string | undefined;
-
-    if (jabatan && JABATAN_CC_RULES[jabatan]) {
-      const ccJabatanList = JABATAN_CC_RULES[jabatan];
-      if (ccJabatanList.length > 0) {
-        const { data: supMaps } = await supabase
-          .from("division_supervisor_mappings")
-          .select("supervisor_id")
-          .eq("sales_division", salesDiv);
-        if (supMaps?.length) {
-          const supIds = supMaps.map((m) => m.supervisor_id);
-          const { data: sups } = await supabase.from("users")
-            .select("full_name, phone_number, jabatan")
-            .in("id", supIds)
-            .not("phone_number", "is", null)
-            .neq("phone_number", "");
-          sups?.forEach((s) => {
-            if (s.jabatan && ccJabatanList.includes(s.jabatan)) {
-              targets.push({ phone: s.phone_number, name: s.full_name, relation: "supervisor" });
-            }
-          });
-        }
-
-        const { data: userSupMaps } = await supabase
-          .from("user_supervisor_mappings")
-          .select("supervisor_id")
-          .eq("user_id", userId);
-        if (userSupMaps?.length) {
-          const manualSupIds = userSupMaps.map((m) => m.supervisor_id);
-          const { data: manualSups } = await supabase.from("users")
-            .select("full_name, phone_number, jabatan")
-            .in("id", manualSupIds)
-            .not("phone_number", "is", null)
-            .neq("phone_number", "");
-          manualSups?.forEach((s) => {
-            if (!targets.find(t => t.phone === s.phone_number)) {
-              targets.push({ phone: s.phone_number, name: s.full_name, relation: "supervisor" });
-            }
-          });
-        }
-      }
-    }
-
-    if (salesDiv && salesDiv !== "IVP") {
-      const { data: ivpRes } = await supabase
-        .from("division_ivp_mappings").select("ivp_id").eq("sales_division", salesDiv);
-      if (ivpRes?.length) {
-        const { data: ivps } = await supabase.from("users").select("full_name, phone_number")
-          .in("id", ivpRes.map((s) => s.ivp_id))
-          .not("phone_number", "is", null).neq("phone_number", "");
-        ivps?.forEach((s) => {
-          if (!targets.find(t => t.phone === s.phone_number)) {
-            targets.push({ phone: s.phone_number, name: s.full_name, relation: "ivp_handler" });
-          }
-        });
-      }
-    }
-  } catch (e) { console.warn("[fetchWACCTargets]", e); }
-  return targets;
+export async function fetchWACCTargets(userId: string, salesDiv: string): Promise<{ phone: string; name: string; relation: string }[]> {
+  return cariTargetCC(supabase, userId, salesDiv);
 }
 
 export const SERVICES_STATUSES = [

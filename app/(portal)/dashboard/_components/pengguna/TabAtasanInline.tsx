@@ -19,9 +19,15 @@ export interface TabAtasanInlineProps {
   setAtasanDiv: React.Dispatch<React.SetStateAction<string>>;
   setAtasanSupId: React.Dispatch<React.SetStateAction<string>>;
   supervisorCandidates: User[];
+  allUsers: User[];
+  atasanPerUserUntuk: (userId: string) => User[];
+  aturPerUser: (userId: string) => void;
 }
 
-export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanSupId, filteredAtasanByDiv, getUserById, handleAddAtasan, handleDeleteAtasan, jabatanBadge, nonIvpDivisions, saving, setAtasanDiv, setAtasanSupId, supervisorCandidates }: TabAtasanInlineProps) {
+export function TabAtasanInline(props: TabAtasanInlineProps) {
+  const { INTERNAL_GROUPS, activeTab, atasanDiv, atasanSupId, filteredAtasanByDiv, getUserById, handleAddAtasan, handleDeleteAtasan, jabatanBadge } = props;
+  const { nonIvpDivisions, saving, setAtasanDiv, setAtasanSupId, supervisorCandidates, allUsers, atasanPerUserUntuk, aturPerUser } = props;
+  const anggotaGrup = (div: string) => allUsers.filter(u => u.sales_division === div && ['guest', 'team'].includes(u.role?.toLowerCase() ?? ''));
   return (
     <>
       {activeTab === 'atasan' && (
@@ -33,8 +39,8 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
                 <label htmlFor="f-dashboard-components-modal-user-3" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
                 <select id="f-dashboard-components-modal-user-3" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-amber-200 bg-white">
                   <option value="">-- Pilih Divisi / Grup --</option>
-                  <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
-                  <optgroup label="Tim Internal / IVP">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>{d === 'IVP' ? '🔗' : '🔧'} {d}</option>)}</optgroup>
+                  <optgroup label="Divisi Sales">{nonIvpDivisions.filter(d => !INTERNAL_GROUPS.includes(d)).map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
+                  <optgroup label="Tim Internal / IVP">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>{d === 'PTS' ? '🔧' : '🔗'} {d}</option>)}</optgroup>
                 </select>
               </div>
               <div>
@@ -50,6 +56,7 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
               </div>
             </div>
           </div>
+          <p className="text-[11px] text-slate-500 -mt-2">Atasan grup berlaku untuk semua anggota. Anggota yang punya <strong>atasan per user</strong> memakai atasan itu saja (mengalahkan atasan grup) — cocok untuk grup dengan beberapa supervisor yang timnya terpisah.</p>
           <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
             {filteredAtasanByDiv.map(([div, maps]) => (
               <div key={div} className="rounded-xl border border-amber-200 overflow-hidden">
@@ -58,6 +65,7 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
                   <span className="text-[11px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{maps.length}</span>
                 </div>
                 <div className="divide-y divide-amber-50">
+                  {maps.length === 0 && <p className="px-3 py-2 text-[11px] text-slate-500 bg-white">Belum ada atasan grup.</p>}
                   {maps.map(m => {
                     const u = getUserById(m.supervisor_id);
                     return (
@@ -73,6 +81,29 @@ export function TabAtasanInline({ INTERNAL_GROUPS, activeTab, atasanDiv, atasanS
                     );
                   })}
                 </div>
+                {anggotaGrup(div).length > 0 && (
+                  <details className="border-t border-amber-100 bg-white">
+                    <summary className="px-3 py-1.5 text-[11px] font-bold text-slate-600 cursor-pointer select-none">
+                      Anggota ({anggotaGrup(div).length}) · {anggotaGrup(div).filter(u => atasanPerUserUntuk(u.id).length).length} pakai atasan per user
+                    </summary>
+                    <div className="divide-y divide-slate-50">
+                      {anggotaGrup(div).map(u => {
+                        const khusus = atasanPerUserUntuk(u.id);
+                        return (
+                          <button key={u.id} type="button" onClick={() => aturPerUser(u.id)} title="Atur atasan per user"
+                            className="w-full px-3 py-1.5 flex items-center gap-2 text-left hover:bg-amber-50/60 transition-colors">
+                            <span className="flex-1 min-w-0 text-xs text-slate-700 truncate">{u.full_name}{u.jabatan ? <span className="text-slate-400"> · {u.jabatan}</span> : null}</span>
+                            {khusus.length
+                              ? <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 truncate max-w-[55%]">
+                                  per user: {khusus.map(x => x.full_name).join(', ')}
+                                </span>
+                              : <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-500 border border-slate-200">ikut grup</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </details>
+                )}
               </div>
             ))}
           </div>

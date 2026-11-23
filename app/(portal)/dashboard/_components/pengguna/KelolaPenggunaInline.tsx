@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { supabase } from '@/lib/supabase';
 import { adminUpdateUser } from '@/lib/admin-users';
-import { User, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES } from '../shared';
+import { User, JabatanType, JABATAN_CONFIG } from '../shared';
+import { GRUP_INTERNAL } from '@/lib/atasan';
+import { useAtasanPerUser } from './useAtasanPerUser';
 import { useDivisiSales } from '@/lib/merek/inti';
 import { DivisiSalesInline } from '../divisi-sales';
 import { LingkupManagerInline } from '../lingkup-manager';
@@ -15,7 +17,7 @@ import { TabIVPInline } from './TabIVPInline';
 import { TabAtasanInline } from './TabAtasanInline';
 import { TabStrukturOrganisasi } from './TabStrukturOrganisasi';
 import { TabUserCC } from './TabUserCC';
-import { pesanGalat } from '@/lib/galat/pesan';
+import { PilihModeAtasan } from './PilihModeAtasan';
 
 export function UserManagementInline() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -42,9 +44,6 @@ export function UserManagementInline() {
   const [ivpDiv, setIvpDiv] = useState('');
   const [ivpUserId, setIvpUserId] = useState('');
   const [ivpBrand, setIvpBrand] = useState<'MVI' | 'IVP'>('MVI');
-  const [selectedCCUserId, setSelectedCCUserId] = useState('');
-  const [ccChecked, setCcChecked] = useState<Set<string>>(new Set());
-  const [ccSaving, setCcSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const notify = (type: 'success' | 'error' | 'info', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3500); };
@@ -81,40 +80,7 @@ export function UserManagementInline() {
   const ivpUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && ['IVP', 'MVI', 'MLDS'].includes(u.sales_division ?? ''));
   const mviUsers = allUsers.filter(u => u.role?.toLowerCase() === 'guest' && u.sales_division === 'MVI');
   const nonIvpDivisions = useDivisiSales().filter(d => d !== 'IVP' && d !== 'MVI');
-  const INTERNAL_GROUPS = ['PTS', 'IVP'];
-  const ccEligibleUsers = allUsers
-    .filter(u => u.role?.toLowerCase() === 'guest' && u.jabatan && u.sales_division && u.sales_division !== 'IVP' && u.sales_division !== 'MVI')
-    .sort((a, b) => (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0));
-
-  useEffect(() => {
-    if (!selectedCCUserId) { setCcChecked(new Set()); return; }
-    const existing = userSupMaps.filter(m => m.user_id === selectedCCUserId).map(m => m.supervisor_id);
-    setCcChecked(new Set(existing));
-  }, [selectedCCUserId, userSupMaps]);
-
-  const getAutoSuggestedCC = (userId: string): string[] => {
-    const user = getUserById(userId);
-    if (!user?.jabatan || !user.sales_division) return [];
-    const ccJabatan = JABATAN_CC_RULES[user.jabatan as JabatanType] ?? [];
-    const supIds = divSupMaps.filter(m => m.sales_division === user.sales_division).map(m => m.supervisor_id);
-    return allUsers.filter(u => supIds.includes(u.id) && u.jabatan && ccJabatan.includes(u.jabatan as JabatanType)).map(u => u.id);
-  };
-
-  const handleSaveUserCC = async () => {
-    if (!selectedCCUserId) return;
-    setCcSaving(true);
-    try {
-      const { error: galatHapus } = await supabase.from('user_supervisor_mappings').delete().eq('user_id', selectedCCUserId).select('id');
-      if (galatHapus) { notify('error', 'Gagal menghapus mapping lama: ' + galatHapus.message); setCcSaving(false); return; }
-      const toInsert = Array.from(ccChecked).map(supId => ({ user_id: selectedCCUserId, supervisor_id: supId }));
-      if (toInsert.length > 0) {
-        const { error } = await supabase.from('user_supervisor_mappings').insert(toInsert);
-        if (error) { notify('error', 'Gagal: ' + error.message); setCcSaving(false); return; }
-      }
-      notify('success', 'CC mapping disimpan!'); await fetchAll();
-    } catch (e) { notify('error', pesanGalat(e)); }
-    setCcSaving(false);
-  };
+  const perUser = useAtasanPerUser({ allUsers, divSupMaps, userSupMaps, notify, fetchAll });
 
   const handleAddAtasan = async () => {
     if (!atasanDiv || !atasanSupId) { notify('error', 'Pilih divisi dan atasan.'); return; }
@@ -227,6 +193,11 @@ export function UserManagementInline() {
     if (atasanId && orgWouldCycle(userId, atasanId)) { notify('error', 'Ditolak — pilihan ini membuat lingkaran hierarki.'); return; }
     setSaving(true);
     const { error } = await supabase.from('users').update({ atasan_id: atasanId || null }).eq('id', userId);
+    if (!error && getUserById(userId)?.role?.toLowerCase() === 'guest') {
+      const { error: galatPeta } = await supabase.from('user_supervisor_mappings').delete().eq('user_id', userId).select('id');
+      const { error: galatTambah } = atasanId && !galatPeta ? await supabase.from('user_supervisor_mappings').insert({ user_id: userId, supervisor_id: atasanId }) : { error: galatPeta };
+      if (galatTambah) notify('error', 'Struktur tersimpan, tapi mapping atasan per user gagal: ' + galatTambah.message);
+    }
     if (error) notify('error', 'Gagal: ' + error.message + ' (pastikan migration atasan_id sudah dijalankan)');
     else { notify('success', 'Atasan diperbarui!'); await fetchAll(); }
     setSaving(false);
@@ -259,7 +230,7 @@ export function UserManagementInline() {
     });
   }
 
-  const atasanByDiv: Record<string, typeof divSupMaps> = {};
+  const atasanByDiv: Record<string, typeof divSupMaps> = Object.fromEntries(GRUP_INTERNAL.filter(g => g !== 'PTS').map(g => [g, []]));
   divSupMaps.forEach(m => { if (!atasanByDiv[m.sales_division]) atasanByDiv[m.sales_division] = []; atasanByDiv[m.sales_division].push(m); });
   const ivpByDiv: Record<string, typeof divIvpMaps> = {};
   divIvpMaps.forEach(m => { if (!ivpByDiv[m.sales_division]) ivpByDiv[m.sales_division] = []; ivpByDiv[m.sales_division].push(m); });
@@ -273,17 +244,6 @@ export function UserManagementInline() {
     }
     ivpByUser[m.ivp_id].maps.push(m);
   });
-
-  const selectedUserObj = selectedCCUserId ? getUserById(selectedCCUserId) : null;
-  const selectedJabatan = selectedUserObj?.jabatan as JabatanType | undefined;
-  const autoSuggested = selectedCCUserId ? getAutoSuggestedCC(selectedCCUserId) : [];
-  const potentialCCTargets = selectedUserObj ? allUsers.filter(u => {
-    if (u.id === selectedCCUserId) return false;
-    if (!u.jabatan) return false;
-    const targetTier = JABATAN_CONFIG[u.jabatan as JabatanType]?.tier ?? 0;
-    const selfTier = JABATAN_CONFIG[selectedJabatan as JabatanType]?.tier ?? 0;
-    return targetTier > selfTier;
-  }).sort((a, b) => (JABATAN_CONFIG[b.jabatan as JabatanType]?.tier ?? 0) - (JABATAN_CONFIG[a.jabatan as JabatanType]?.tier ?? 0)) : [];
 
   const filteredAtasanByDiv = Object.entries(atasanByDiv).filter(([div]) => !searchQuery || div.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredIvpByUser = Object.entries(ivpByUser).filter(([, { user }]) => !searchQuery || user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -306,17 +266,14 @@ export function UserManagementInline() {
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏛" />Struktur Organisasi
         </button>
-        <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
+        <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' || activeTab === 'user_cc' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+          👨‍💼 Atasan & CC
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🔗" />IVP & MVI Account ({Object.keys(ivpByUser).length} orang)
         </button>
         <button onClick={() => setActiveTab('product')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'product' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🎯" />Routing Tipe ({prodTeamMaps.length})
-        </button>
-        <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          <IkonTeks nama="🏷" />CC per User ({userSupMaps.length})
         </button>
         <button onClick={() => setActiveTab('divisi')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'divisi' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏷" />Divisi Sales
@@ -337,22 +294,26 @@ export function UserManagementInline() {
               orgVisible={orgVisible} saving={saving} setOrgFilter={setOrgFilter} setOrgSearch={setOrgSearch} setOrgSelectedId={setOrgSelectedId}
             />
 
+            <PilihModeAtasan activeTab={activeTab} setActiveTab={setActiveTab} jumlahGrup={new Set(divSupMaps.map(m => m.sales_division)).size}
+              jumlahUser={new Set(userSupMaps.map(m => m.user_id)).size} />
+
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
               <div className="px-5 pt-4 shrink-0">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi...'}
+                    placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi / grup...'}
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
               </div>
             )}
 
             <TabAtasanInline
-              INTERNAL_GROUPS={INTERNAL_GROUPS} activeTab={activeTab} atasanDiv={atasanDiv} atasanSupId={atasanSupId} filteredAtasanByDiv={filteredAtasanByDiv}
+              INTERNAL_GROUPS={GRUP_INTERNAL} activeTab={activeTab} atasanDiv={atasanDiv} atasanSupId={atasanSupId} filteredAtasanByDiv={filteredAtasanByDiv}
               getUserById={getUserById} handleAddAtasan={handleAddAtasan} handleDeleteAtasan={handleDeleteAtasan} jabatanBadge={jabatanBadge}
               nonIvpDivisions={nonIvpDivisions} saving={saving} setAtasanDiv={setAtasanDiv} setAtasanSupId={setAtasanSupId}
-              supervisorCandidates={supervisorCandidates}
+              supervisorCandidates={supervisorCandidates} allUsers={allUsers} atasanPerUserUntuk={perUser.atasanPerUserUntuk}
+              aturPerUser={(id: string) => { perUser.setSelectedCCUserId(id); setSearchQuery(''); setActiveTab('user_cc'); }}
             />
 
             <TabIVPInline
@@ -369,11 +330,7 @@ export function UserManagementInline() {
               setProdType={setProdType} toggleProdTeamType={toggleProdTeamType}
             />
 
-            <TabUserCC
-              activeTab={activeTab} autoSuggested={autoSuggested} ccChecked={ccChecked} ccEligibleUsers={ccEligibleUsers} ccSaving={ccSaving}
-              handleSaveUserCC={handleSaveUserCC} potentialCCTargets={potentialCCTargets} searchQuery={searchQuery} selectedCCUserId={selectedCCUserId}
-              selectedUserObj={selectedUserObj} setCcChecked={setCcChecked} setSearchQuery={setSearchQuery} setSelectedCCUserId={setSelectedCCUserId}
-            />
+            <TabUserCC activeTab={activeTab} perUser={perUser} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
             {activeTab === 'divisi' && (
               <div className="p-5">

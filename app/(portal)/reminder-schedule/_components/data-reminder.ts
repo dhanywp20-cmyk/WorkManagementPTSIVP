@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { hasFullAccess } from '@/lib/constants';
 import { kutipNilai, cobaIdentitas } from '@/lib/identitas';
+import { ambilBawahan } from '@/lib/atasan';
 import type { Reminder, TeamUser } from './shared';
 
 export async function ambilReminderUntuk(
@@ -28,7 +29,12 @@ export async function ambilReminderUntuk(
       (!!r.assigned_supervisor_id && r.assigned_supervisor_id === activeUser.id)
     );
   }
-  const [bySales, byCreator, awaitingMyReview, awaitingMyReview2, approvedByMe] = await Promise.all([
+  const tim = await ambilBawahan(supabase, activeUser);
+  const idTim = tim.map(b => b.id).join(',');
+  const klausaTim = tim.length ? [`sales_user_id.in.(${idTim})`, `internal_sales_id.in.(${idTim})`, `internal_sales_id_2.in.(${idTim})`,
+    ...tim.map(b => (b.username ? `created_by.eq.${kutipNilai(b.username)}` : '')),
+    ...tim.map(b => (b.full_name ? `sales_name.eq.${kutipNilai(b.full_name)}` : ''))].filter(Boolean).join(',') : '';
+  const [bySales, byCreator, awaitingMyReview, awaitingMyReview2, approvedByMe, byTim] = await Promise.all([
     cobaIdentitas(async pakaiUuid => await supabase.from('reminders').select('*')
       .or(pakaiUuid
         ? `sales_user_id.eq.${activeUser.id},sales_name.eq.${kutipNilai(activeUser.full_name)}`
@@ -38,8 +44,10 @@ export async function ambilReminderUntuk(
     supabase.from('reminders').select('*').eq('internal_sales_id', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
     supabase.from('reminders').select('*').eq('internal_sales_id_2', activeUser.id).eq('routing_status', 'internal_review').order('created_at', { ascending: false }),
     supabase.from('reminders').select('*').eq('internal_approved_by', activeUser.id).order('created_at', { ascending: false }),
+    klausaTim ? supabase.from('reminders').select('*').or(klausaTim).order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
   ]);
-  const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(awaitingMyReview2.data ?? []), ...(approvedByMe.data ?? [])];
+  const combined = [...(bySales.data ?? []), ...(byCreator.data ?? []), ...(awaitingMyReview.data ?? []), ...(awaitingMyReview2.data ?? []),
+    ...(approvedByMe.data ?? []), ...(byTim.data ?? [])];
   const seen = new Set<string>();
   return (combined as Reminder[])
     .filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true; })

@@ -232,7 +232,7 @@ export function useKirimRequest(k: KirimRequestKonteks) {
         if (adminUsersWA && adminUsersWA.length > 0) {
           try {
             const ccDiv = currentUser?.sales_division ?? '';
-            if (ccDiv && ccDiv !== 'IVP' && currentUser?.id) {
+            if (ccDiv && currentUser?.id) {
               const ccTargets = await fetchWACCTargets(currentUser.id, ccDiv);
               if (ccTargets.length > 0) {
                 const ccMsg = [

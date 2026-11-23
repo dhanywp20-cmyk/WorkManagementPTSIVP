@@ -2,7 +2,8 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, ProjectRequest, ProjectMessage, ProjectAttachment, JABATAN_TIER } from './shared';
+import { ambilBawahan } from '@/lib/atasan';
+import { User, ProjectRequest, ProjectMessage, ProjectAttachment } from './shared';
 
 export interface MuatRequestKonteks {
   currentUser: User;
@@ -33,45 +34,18 @@ export function useMuatRequest(k: MuatRequestKonteks) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m) => m.sales_division as string);
       const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
+      const timIvp = await ambilBawahan(supabase, currentUser);
       query = query.or([
         `requester_id.eq.${currentUser.id}`, `ivp_assignee.eq.${currentUser.full_name}`,
         atasNama(currentUser.full_name), divFilter,
+        ...timIvp.flatMap(b => [`requester_id.eq.${b.id}`, atasNama(b.full_name), b.full_name ? `ivp_assignee.eq.${kutip(b.full_name)}` : '']),
       ].filter(Boolean).join(','));
     } else {
-      const selfJabatan = (currentUser).jabatan as string | undefined;
-      const selfTier = selfJabatan ? (JABATAN_TIER[selfJabatan] ?? 0) : 0;
-      const selfDiv = currentUser.sales_division;
-
-      if (selfTier > 1 && selfDiv) {
-        const { data: supMaps } = await supabase.from('division_supervisor_mappings').select('sales_division').eq('supervisor_id', currentUser.id);
-        const supDivisions = (supMaps ?? []).map((m) => m.sales_division as string);
-        if (!supDivisions.includes(selfDiv)) supDivisions.push(selfDiv);
-
-        const { data: allGuests } = await supabase.from('users').select('id, full_name, jabatan, sales_division').eq('role', 'guest');
-        const subIds = (allGuests ?? [])
-          .filter((u) => (JABATAN_TIER[(u.jabatan as string) || ''] ?? 0) < selfTier && supDivisions.includes(u.sales_division ?? ''))
-          .map((u) => u.id as string);
-
-        const { data: manualSubs } = await supabase.from('user_supervisor_mappings').select('user_id').eq('supervisor_id', currentUser.id);
-        (manualSubs ?? []).forEach((m) => { if (!subIds.includes(m.user_id)) subIds.push(m.user_id); });
-
-        if (subIds.length > 0) {
-          const namaBawahan: string[] = subIds
-            .map((id: string) => (allGuests ?? []).find((u) => u.id === id)?.full_name as string | undefined)
-            .filter((n?: string): n is string => !!n);
-          const orFilter = [
-            `requester_id.eq.${currentUser.id}`,
-            atasNama(currentUser.full_name),
-            ...subIds.map((id: string) => `requester_id.eq.${id}`),
-            ...namaBawahan.map(n => atasNama(n)),
-          ].filter(Boolean).join(',');
-          query = query.or(orFilter);
-        } else {
-          query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
-        }
-      } else {
-        query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
-      }
+      const bawahan = await ambilBawahan(supabase, currentUser);
+      query = query.or([
+        `requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name),
+        ...bawahan.flatMap(b => [`requester_id.eq.${b.id}`, atasNama(b.full_name)]),
+      ].filter(Boolean).join(','));
     }
     const { data, error } = await query;
     if (!error && data) {
