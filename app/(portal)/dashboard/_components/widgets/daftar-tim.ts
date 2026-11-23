@@ -18,15 +18,18 @@ export interface DaftarTim {
   rows: Anggota[];
   atasan: Record<string, { nama: string; jabatan: string }>;
   minggu: { mulai: string; akhir: string };
+  tanggal: string;
 }
 
 const UMUR_HARIAN = 60_000;
 const URUTAN: Record<StatusLapor, number> = { kosong: 0, otomatis: 1, manual: 2 };
 
-const tanggalWIB = (geser = 0) => new Date(Date.now() + 7 * 3600_000 + geser * 86_400_000).toISOString().slice(0, 10);
+const JAM_GANTI_HARI = 6;
+const GESER_KERJA = (7 - JAM_GANTI_HARI) * 3600_000;
+const tanggalWIB = (geser = 0) => new Date(Date.now() + GESER_KERJA + geser * 86_400_000).toISOString().slice(0, 10);
 
 export function rentangMinggu(): { mulai: string; akhir: string } {
-  const keSenin = (new Date(Date.now() + 7 * 3600_000).getUTCDay() + 6) % 7;
+  const keSenin = (new Date(Date.now() + GESER_KERJA).getUTCDay() + 6) % 7;
   return { mulai: tanggalWIB(-keSenin), akhir: tanggalWIB(6 - keSenin) };
 }
 
@@ -39,7 +42,7 @@ const masuk = (peta: Map<string, Set<string>>, kunci: string | null | undefined,
 type Log = { ticket_id: string | null; handler_username: string | null };
 
 export function useDaftarTim(): DaftarTim {
-  const [hasil, setHasil] = useState<DaftarTim>({ loading: true, rows: [], atasan: {}, minggu: rentangMinggu() });
+  const [hasil, setHasil] = useState<DaftarTim>({ loading: true, rows: [], atasan: {}, minggu: rentangMinggu(), tanggal: tanggalWIB() });
 
   useEffect(() => {
     let alive = true;
@@ -103,7 +106,7 @@ export function useDaftarTim(): DaftarTim {
           const { data: bos } = await ingat(`users:atasan:${[...idAtasan].sort().join(',')}`, () => supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan));
           (bos ?? []).forEach((b) => { atasan[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
-        if (alive) setHasil({ loading: false, rows, atasan, minggu });
+        if (alive) setHasil({ loading: false, rows, atasan, minggu, tanggal: today });
       } catch {
         if (alive) setHasil(h => ({ ...h, loading: false }));
       }

@@ -8,9 +8,10 @@ import { CincinProgres } from './bagian-widget';
 import { JadwalMingguTim, BarisOtomatis, WARNA_STATUS } from './ringkasan-tim';
 
 export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
-  const { loading, rows, atasan, minggu } = useDaftarTim();
+  const { loading, rows, atasan, minggu, tanggal } = useDaftarTim();
+  const judul = `Daily Report Tim · ${new Date(`${tanggal}T00:00:00`).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })}`;
 
-  if (loading) return <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
+  if (loading) return <WidgetCard title={judul} icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
   const total = rows.length;
   const manualList = rows.filter(r => r.status === 'manual');
@@ -93,7 +94,7 @@ export const TeamMonitoringWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   );
 
   return (
-    <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"
+    <WidgetCard title={judul} icon="🧭" accent="#0891b2"
       onSeeAll={() => openMenu('daily-report')} seeAllLabel="Buka">
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
