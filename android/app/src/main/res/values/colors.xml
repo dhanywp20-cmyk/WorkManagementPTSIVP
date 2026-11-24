@@ -2,4 +2,6 @@
 <resources>
     <color name="utama">#E11D48</color>
     <color name="putih">#FFFFFF</color>
+    <!-- Bilah status menyatu dengan bingkai navy tampilan Matte (HP selalu Matte). -->
+    <color name="bilah_status">#0F2559</color>
 </resources>

@@ -25,7 +25,8 @@ cek('/api/health melaporkan komit & tetap tanpa basis data', /komit:/.test(keseh
 const aktivitas = readFileSync('android/app/src/main/java/id/ptsivp/workmanagement/MainActivity.java', 'utf8');
 cek('APK mengabari halaman (wm-kembali) saat dibuka kembali dari latar belakang', /dispatchEvent\(new Event\('wm-kembali'\)\)/.test(aktivitas) && /keLatarSejak = System\.currentTimeMillis\(\)/.test(aktivitas));
 const versi = readFileSync('android/version.properties', 'utf8');
-cek('versi APK dinaikkan (versionCode 4, 1.0.3)', /versionCode=4/.test(versi) && /versionName=1\.0\.3/.test(versi));
+const kodeVersi = Number(/versionCode=(\d+)/.exec(versi)?.[1] ?? 0);
+cek('versi APK minimal 1.0.3 (versionCode >= 4) & namanya berformat x.y.z', kodeVersi >= 4 && /versionName=\d+\.\d+\.\d+/.test(versi));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);
