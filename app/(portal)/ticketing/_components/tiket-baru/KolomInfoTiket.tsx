@@ -27,7 +27,7 @@ export interface KolomInfoTiketProps {
 export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalGuest, pencarianDibatasi, projectType, reminderQuery, reminderResults, reminderSearching, selectReminder, selectedReminder, set, setSelectedReminder, switchProjectType, modeEdit = false }: KolomInfoTiketProps) {
   return (
     <>
-      <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
+      <div className={`satulayar:pr-2 satulayar:min-h-0 ${modeEdit ? "flex flex-col gap-4" : "space-y-4"}`}>
       <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
         <span className="text-lg"><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-bold tracking-wide text-slate-700">Informasi Ticket</span>
@@ -168,7 +168,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         <h3 className="text-sm font-bold tracking-wide text-slate-700">Detail Project</h3>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
+      <div className={modeEdit ? "contents" : "grid grid-cols-1 gap-4"}>
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
             Project Name *
@@ -190,13 +190,13 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
               }} />
           </div>
         </div>
-        <div>
+        <div className={modeEdit ? "flex-1 flex flex-col order-last" : ""}>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📍" />Address Detail</label>
-          <div className="relative">
+          <div className={modeEdit ? "relative flex-1 flex" : "relative"}>
             <span className="absolute left-3 top-3"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <textarea value={form.address} onChange={e => set({ address: e.target.value })}
               rows={2} placeholder="Example: Jl. Jend. Sudirman No. 1..."
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+              className={`${modeEdit ? "flex-1 min-h-[140px]" : ""} w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none`}
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
         </div>

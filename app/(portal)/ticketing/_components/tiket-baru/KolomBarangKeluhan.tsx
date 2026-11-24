@@ -13,7 +13,7 @@ export interface KolomBarangKeluhanProps {
 export function KolomBarangKeluhan({ form, set, modeEdit = false }: KolomBarangKeluhanProps) {
   return (
     <>
-      <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
+      <div className={`satulayar:pr-2 satulayar:min-h-0 ${modeEdit ? "flex flex-col gap-4" : "space-y-4"}`}>
       <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
         <span className="text-sm"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <h3 className="text-sm font-bold tracking-wide text-slate-700">Product &amp; Issue</h3>
@@ -92,11 +92,11 @@ export function KolomBarangKeluhan({ form, set, modeEdit = false }: KolomBarangK
         </div>
       </div>
 
-      <div>
+      <div className={modeEdit ? "flex-1 flex flex-col" : ""}>
         <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📝" />Detailed Description</label>
         <textarea id="f-ticketing-components-newticketmodal-1" value={form.description} onChange={e => set({ description: e.target.value })}
           rows={3} placeholder="Explain the problem details..."
-          className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+          className={`${modeEdit ? "flex-1 min-h-[140px]" : ""} w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none`}
           style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
       </div>
 
