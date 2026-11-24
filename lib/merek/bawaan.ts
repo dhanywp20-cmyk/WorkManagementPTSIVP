@@ -55,7 +55,7 @@ export const MEREK_BAWAAN: Merek = {
   warnaMatte: '#2563eb',
   warnaBingkaiMatte: '#0b1f4a',
   latarMatte: 'gradasi',
-  gambarLatarMatte: '/IVP_Background.png',
+  gambarLatarMatte: '',
 
   gambarLatar: '/IVP_Background.png',
   warnaLogin: '#be123c',

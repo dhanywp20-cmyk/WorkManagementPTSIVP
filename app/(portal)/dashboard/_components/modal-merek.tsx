@@ -39,6 +39,7 @@ export function MerekSettingInline() {
     if (error || !url) { beritahu('gagal', error ?? 'Unggahan gagal.'); return; }
     const kunci = ({ logo: 'logoUrl', latar: 'gambarLatar', latarDasbor: 'gambarLatarDasbor', latarMatte: 'gambarLatarMatte' } as const)[jenis];
     ubah(kunci, url);
+    if (jenis === 'latarMatte') ubah('latarMatte', 'gambar');
     beritahu('ok', 'Berhasil diunggah. Lihat pratinjaunya, lalu tekan Simpan.');
   };
 
@@ -145,11 +146,11 @@ export function MerekSettingInline() {
               <Pilihan label="Latar Matte" nilai={form.latarMatte === 'gambar' ? 'gambar' : 'gradasi'} onChange={v => ubah('latarMatte', v)}
                 opsi={[['gradasi', 'Gradasi warna bingkai (disarankan)'], ['gambar', 'Gambar di bawah']]}
                 keterangan="Terpisah dari latar Glass. Bila memakai gambar, foto ditutup lapisan warna bingkai supaya menu & teks putih tetap terbaca." />
-              {form.latarMatte === 'gambar' && (
-                <Unggah label="Gambar latar Matte" jenis="latarMatte" nilai={form.gambarLatarMatte} sedang={mengunggah === 'latarMatte'}
-                  keterangan="Foto latar bingkai gaya Matte. Maks 8MB, dikecilkan otomatis ke 2400px."
-                  onBerkas={f => terimaBerkas(f, 'latarMatte')} onHapus={() => ubah('gambarLatarMatte', MEREK_BAWAAN.gambarLatarMatte)} />
-              )}
+              <Unggah label="Gambar latar Matte" jenis="latarMatte" nilai={form.gambarLatarMatte} sedang={mengunggah === 'latarMatte'}
+                labelHapus="Hapus gambar"
+                keterangan="Foto latar bingkai gaya Matte, terpisah dari gambar latar Glass. Setelah diunggah, Latar Matte otomatis pindah ke 'Gambar di bawah'. Maks 8MB, dikecilkan otomatis ke 2400px."
+                onBerkas={f => terimaBerkas(f, 'latarMatte')}
+                onHapus={() => { ubah('gambarLatarMatte', MEREK_BAWAAN.gambarLatarMatte); ubah('latarMatte', 'gradasi'); }} />
             </div>
           </div>
         </div>
@@ -254,9 +255,9 @@ function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: s
   );
 }
 
-function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: {
+function Unggah({ label, jenis, nilai, sedang, keterangan, labelHapus = 'Kembalikan ke bawaan', onBerkas, onHapus }: {
   label: string; jenis: JenisBerkasMerek; nilai: string; sedang: boolean;
-  keterangan: string; onBerkas: (f: File) => void; onHapus: () => void;
+  keterangan: string; labelHapus?: string; onBerkas: (f: File) => void; onHapus: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const bawaan = (jenis === 'latar' && nilai === MEREK_BAWAAN.gambarLatar)
@@ -282,7 +283,7 @@ function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: 
           {nilai && !bawaan && (
             <button type="button" onClick={onHapus} disabled={sedang}
               className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 transition-all disabled:opacity-50">
-              Kembalikan ke bawaan
+              {labelHapus}
             </button>
           )}
         </div>
