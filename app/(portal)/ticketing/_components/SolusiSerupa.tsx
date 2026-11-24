@@ -7,11 +7,13 @@ type Note = { id: string; title: string; product: string | null; cocok: string[]
 
 export function SolusiSerupa({ ticketId, teks }: { ticketId: string; teks: string }) {
   const [data, setData] = useState<{ tiket: Tiket[]; techNote: Note[] } | null>(null);
-  const [buka, setBuka] = useState(true);
+  // Tertutup saat detail baru dibuka supaya tidak memenuhi layar.
+  const [buka, setBuka] = useState(false);
 
   useEffect(() => {
     let hidup = true;
     setData(null);
+    setBuka(false);
     fetch('/api/tiket/serupa', {
       method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ teks, kecualiId: ticketId }),

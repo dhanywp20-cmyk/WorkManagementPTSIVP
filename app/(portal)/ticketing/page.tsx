@@ -99,7 +99,7 @@ function TicketingSystemInner() {
         )}
 
         <PopupNotifikasiBaru
-          currentUserTeamType={currentUserTeamType} isTicketOverdue={isTicketOverdue} notifications={notifications} setSelectedTicket={setSelectedTicket} setShowNotificationPopup={setShowNotificationPopup} setShowTicketDetailPopup={setShowTicketDetailPopup} showNotificationPopup={showNotificationPopup}
+          currentUserTeamType={currentUserTeamType} isTicketOverdue={isTicketOverdue} notifications={notifications} setSelectedTicket={setSelectedTicket} setShowNotificationPopup={setShowNotificationPopup} setShowTicketDetailPopup={setShowTicketDetailPopup} showNotificationPopup={showNotificationPopup && !showTicketDetailPopup}
         />
 
         <PopupDaftarNotifikasi

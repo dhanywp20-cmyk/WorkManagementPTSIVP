@@ -328,9 +328,12 @@ export function useTicketing() {
     if (currentUser && tickets.length > 0 && currentUser?.role !== "guest") {
       const notifs = getNotifications();
       setNotifications(notifs);
+      // Selama detail ticket terbuka (mis. sedang mengetik update status), popup
+      // notifikasi ditahan; begitu detail ditutup, efek ini jalan lagi & auto-show normal.
+      if (showTicketDetailPopup) { setShowNotificationPopup(false); return; }
       if (notifs.length > 0 && !showNotificationPopup) setShowNotificationPopup(true);
     }
-  }, [tickets, currentUser]);
+  }, [tickets, currentUser, showTicketDetailPopup]);
 
   useEffect(() => {
     const interval = setInterval(() => checkSessionTimeout(), 60000);
