@@ -295,6 +295,23 @@ export function bolehUpdateTicket(t: Ticket, currentUser: User | null): boolean 
   );
 }
 
+/**
+ * Boleh menambah update status/catatan pada ticket — termasuk handler lain
+ * (role team) yang membantu ticket milik orang lain. Log tercatat atas nama
+ * yang mengisi, tapi handler ticket (assign_name) & tanda tangan report tetap
+ * handler yang di-assign. Re-open & konfirmasi Services tetap lewat
+ * `bolehUpdateTicket` (khusus handler yang di-assign).
+ */
+export function bolehBantuUpdateTicket(t: Ticket, currentUser: User | null): boolean {
+  if (bolehUpdateTicket(t, currentUser)) return true;
+  return !!currentUser && currentUser.role === 'team'
+    && (currentUser as { pimpinan?: unknown }).pimpinan !== true;
+}
+
+export function sedangMembantuTicket(t: Ticket, currentUser: User | null): boolean {
+  return !bolehUpdateTicket(t, currentUser) && bolehBantuUpdateTicket(t, currentUser);
+}
+
 export const TICKET_ADMIN_FIELDS: AdminField[] = [
   { key: 'project_name',   label: 'Nama Project',    span: 2 },
   { key: 'date',           label: 'Tanggal',         type: 'date' },

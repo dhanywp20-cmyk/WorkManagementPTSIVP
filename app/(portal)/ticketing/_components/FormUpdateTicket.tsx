@@ -27,11 +27,13 @@ export interface FormUpdateTicketProps {
   notesWajib: boolean;
   addActivity: () => void;
   uploading: boolean;
+  /** Pengisi bukan handler yang di-assign — hanya membantu update. */
+  membantu?: boolean;
 }
 
 export function FormUpdateTicket({
   showUpdateForm, bolehUpdateTicket, selectedTicket, currentUserTeamType, setShowUpdateForm, newActivity, onClose, setNewActivity,
-  router, catatanSaja, notesWajib, addActivity, uploading,
+  router, catatanSaja, notesWajib, addActivity, uploading, membantu,
 }: FormUpdateTicketProps) {
   const konteks: KonteksTemplate = {
     status: newActivity.new_status, produk: selectedTicket.product, sn: newActivity.sn_unit || selectedTicket.sn_unit,
@@ -51,7 +53,14 @@ export function FormUpdateTicket({
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-slate-800 text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
               <p className="md:hidden text-slate-600 text-[11px] font-semibold truncate">{selectedTicket.project_name}</p>
-              <p className="text-slate-500 text-[11px]">Handler: {newActivity.handler_name}</p>
+              {membantu ? (
+                <p className="text-slate-500 text-[11px]">
+                  Diupdate oleh: <b>{newActivity.handler_name}</b> (membantu)<br />
+                  Handler ticket tetap: <b>{selectedTicket.assign_name || '-'}</b>
+                </p>
+              ) : (
+                <p className="text-slate-500 text-[11px]">Handler: {newActivity.handler_name}</p>
+              )}
             </div>
             <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:flex w-8 h-8 rounded-kecil items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-xs">✕</button>
             <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}

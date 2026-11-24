@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ModalPortal } from '@/components/shared';
 import { cetakTicket } from './cetak-ticket';
 import type { Ticket, User } from './shared';
-import { ringkasPenanganan } from './shared';
+import { ringkasPenanganan, bolehBantuUpdateTicket, sedangMembantuTicket } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { wajibCatatan } from '@/lib/alur-status-ticket';
 import { FormUpdateTicket } from './FormUpdateTicket';
@@ -78,6 +78,8 @@ export function TicketDetailPopup({
   uploading: boolean;
 }) {
   const router = useRouter();
+  const bolehBantu = (t: Ticket) => bolehBantuUpdateTicket(t, currentUser);
+  const membantu = sedangMembantuTicket(selectedTicket, currentUser);
   const catatanSaja = currentUserTeamType !== "Team Services" && newActivity.new_status !== "" && newActivity.new_status === selectedTicket.status;
   const notesWajib = currentUserTeamType === "Team Services"
     ? !["Pending","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status)
@@ -117,10 +119,10 @@ export function TicketDetailPopup({
                   (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
                   <button onClick={() => setReopenServicesTarget(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open Services</button>
                 )}
-                {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
+                {bolehBantu(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                   <button onClick={bukaTutupUpdate}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold transition-all ${showUpdateForm ? 'tombol-kedua' : 'tombol-utama'}`}>
-                    {showUpdateForm ? '✕ Tutup' : '➕ Update Status'}
+                    {showUpdateForm ? '✕ Tutup' : membantu ? '🤝 Bantu Update' : '➕ Update Status'}
                   </button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
@@ -131,7 +133,7 @@ export function TicketDetailPopup({
           </div>
 
           <FormUpdateTicket
-            showUpdateForm={showUpdateForm} bolehUpdateTicket={bolehUpdateTicket} selectedTicket={selectedTicket} currentUserTeamType={currentUserTeamType} setShowUpdateForm={setShowUpdateForm} newActivity={newActivity}
+            showUpdateForm={showUpdateForm} bolehUpdateTicket={bolehBantu} membantu={membantu} selectedTicket={selectedTicket} currentUserTeamType={currentUserTeamType} setShowUpdateForm={setShowUpdateForm} newActivity={newActivity}
             onClose={onClose} setNewActivity={setNewActivity} router={router} catatanSaja={catatanSaja} notesWajib={notesWajib} addActivity={addActivity}
             uploading={uploading}
           />

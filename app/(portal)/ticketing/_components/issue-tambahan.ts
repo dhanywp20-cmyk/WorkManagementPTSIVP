@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
-import { bolehUpdateTicket, type Ticket, type User } from './shared';
+import { bolehBantuUpdateTicket, type Ticket, type User } from './shared';
 
 export interface IssueTiket {
   id: string;
@@ -47,11 +47,11 @@ export const ticketMasihJalan = (t: Ticket) => !STATUS_TUTUP_TICKET.includes(t.s
 
 export function bolehTambahIssue(t: Ticket, u: User | null): boolean {
   if (!u || isPimpinan(u) || !ticketMasihJalan(t)) return false;
-  return bolehUpdateTicket(t, u) || (!!t.created_by && t.created_by === u.username);
+  return bolehBantuUpdateTicket(t, u) || (!!t.created_by && t.created_by === u.username);
 }
 
 export function bolehUpdateIssue(t: Ticket, u: User | null): boolean {
-  return !!u && !isPimpinan(u) && ticketMasihJalan(t) && bolehUpdateTicket(t, u);
+  return !!u && !isPimpinan(u) && ticketMasihJalan(t) && bolehBantuUpdateTicket(t, u);
 }
 
 export const bolehHapusIssue = (u: User | null) =>
