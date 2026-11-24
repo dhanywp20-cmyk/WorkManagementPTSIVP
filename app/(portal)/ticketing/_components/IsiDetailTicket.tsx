@@ -116,15 +116,18 @@ export function IsiDetailTicket({
             {selectedTicket.customer_phone && <InfoLine label="Customer" value={selectedTicket.customer_phone} />}
           </div>
           <div>
-            {selectedTicket.sales_name && <InfoLine label="Sales" value={`${selectedTicket.sales_name}${selectedTicket.sales_division ? ` (${selectedTicket.sales_division})` : ''}`} />}
             <InfoLine label="Dibuat" value={selectedTicket.created_at ? formatDateTime(selectedTicket.created_at) : '-'} />
             {selectedTicket.created_by && (() => {
               const pembuat = users.find(u => u.username === selectedTicket.created_by);
               const namaPembuat = pembuat?.full_name || selectedTicket.created_by;
               const atasNama = selectedTicket.sales_name || "";
               const beda = atasNama && atasNama !== namaPembuat;
-              return <InfoLine label={beda ? "Diinput oleh" : "Oleh"}
-                value={beda ? `${namaPembuat} (${selectedTicket.created_by}) — atas nama Sales ${atasNama}` : `${namaPembuat} (${selectedTicket.created_by})`} />;
+              return <InfoLine label={beda ? "Diinput oleh" : "Oleh"} value={`${namaPembuat} (${selectedTicket.created_by})`} />;
+            })()}
+            {selectedTicket.sales_name && (() => {
+              const divisi = selectedTicket.sales_division
+                || users.find(u => u.full_name === selectedTicket.sales_name)?.sales_division || '';
+              return <InfoLine label="Sales" value={`${selectedTicket.sales_name}${divisi ? ` (${divisi})` : ''}`} />;
             })()}
             {selectedTicket.description && <InfoLine label="Deskripsi" value={selectedTicket.description} />}
           </div>
