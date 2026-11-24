@@ -6,9 +6,11 @@ import { type NewTicketForm } from '../NewTicketModal';
 export interface KolomBarangKeluhanProps {
   form: NewTicketForm;
   set: (patch: Partial<NewTicketForm>) => void;
+  /** Edit ticket: tanggal ticket bisa diubah & issue lama >4 kata tetap bisa diperpendek. */
+  modeEdit?: boolean;
 }
 
-export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
+export function KolomBarangKeluhan({ form, set, modeEdit = false }: KolomBarangKeluhanProps) {
   return (
     <>
       <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
@@ -45,8 +47,14 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
       <div>
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-            <IkonTeks nama="📅" />Date <span className="text-gray-500 normal-case font-normal text-[11px]">(hari ini)</span>
+            <IkonTeks nama="📅" />Date {!modeEdit && <span className="text-gray-500 normal-case font-normal text-[11px]">(hari ini)</span>}
           </label>
+          {modeEdit ? (
+            <input type="date" value={form.date} onChange={e => set({ date: e.target.value })}
+              aria-label="Tanggal ticket"
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40"
+              style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
+          ) : (
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <input type="text"
@@ -56,6 +64,7 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
               className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
               style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)" }} />
           </div>
+          )}
         </div>
       </div>
 
@@ -67,7 +76,8 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
             onChange={e => {
               const val = e.target.value;
               const words = val.trim().split(/\s+/).filter(Boolean);
-              if (words.length < 4 || (words.length === 4 && !val.endsWith(" ")))
+              if (words.length < 4 || (words.length === 4 && !val.endsWith(" "))
+                || (modeEdit && val.length < form.issue_case.length))
                 set({ issue_case: val });
             }}
             placeholder="Maks. 4 kata, contoh: Videowall Not Working"

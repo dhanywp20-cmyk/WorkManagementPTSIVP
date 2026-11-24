@@ -16,9 +16,17 @@ export interface KolomPenugasanTiketProps {
   supervisorMembers: TeamMember[];
   teamPTSMembers: TeamMember[];
   users: User[];
+  /** Mode Edit & Re-route: "Tugaskan ke" kosong = biarkan handler sekarang. */
+  edit?: {
+    bolehReroute: boolean;
+    handlerSekarang: string;
+    statusTicket: string;
+    fotoSekarang?: string | null;
+    tambahan?: import("react").ReactNode;
+  };
 }
 
-export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSalesUsers, form, isInternalSalesGuest, set, supervisorMembers, teamPTSMembers, users }: KolomPenugasanTiketProps) {
+export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSalesUsers, form, isInternalSalesGuest, set, supervisorMembers, teamPTSMembers, users, edit }: KolomPenugasanTiketProps) {
   return (
     <>
       <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
@@ -67,7 +75,19 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         </div>
       )}
 
-      {canAssignDirect && (
+      {edit && !edit.bolehReroute && (
+        <div>
+          <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
+            <span className="text-lg"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            <span className="text-sm font-bold tracking-wide text-slate-700">Penanganan</span>
+          </div>
+          <p className="text-xs text-amber-800 rounded-xl p-3" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            Ditangani: <strong>{edit.handlerSekarang || '—'}</strong>. Pengalihan tidak tersedia karena status ticket sudah <strong>{edit.statusTicket}</strong> (pengerjaan sudah berjalan).
+          </p>
+        </div>
+      )}
+
+      {canAssignDirect && (!edit || edit.bolehReroute) && (
         <div>
           <div className="flex items-center gap-2 pb-2 border-b pt-2 mb-3" style={{ borderColor: "rgba(0,0,0,0.1)" }}>
             <span className="text-lg"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -79,7 +99,7 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
             <select aria-label="— Pilih penanganan —" value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}
               className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
               style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
-              <option value="">— Pilih penanganan —</option>
+              <option value="">{edit ? "— Biarkan seperti sekarang —" : "— Pilih penanganan —"}</option>
               <option value="SELF">Saya kerjakan sendiri</option>
               <optgroup label="👷 Assign langsung ke Team PTS">
                 {teamPTSMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
@@ -92,10 +112,17 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
             </select>
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs">▾</span>
           </div>
+          {edit && (
+            <p className="text-[11px] text-slate-500 mt-1.5">
+              Sekarang ditangani: <strong className="text-slate-700">{edit.handlerSekarang || '—'}</strong>. Yang dipilih akan langsung dikabari lewat WA.
+            </p>
+          )}
         </div>
       )}
 
-      {!canAssignDirect && (
+      {edit?.tambahan}
+
+      {!canAssignDirect && !edit && (
         <div className="rounded-xl p-4 flex items-start gap-3"
           style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.3)" }}>
           <span className="text-2xl"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -117,7 +144,11 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
         <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
           Upload Foto <span className="text-gray-500 font-normal">(Optional)</span>
         </label>
-        <p className="text-xs text-gray-500 mb-3">Foto pendukung kondisi awal / bukti masalah</p>
+        <p className="text-xs text-gray-500 mb-3">{edit ? "Pilih foto baru untuk mengganti foto awal" : "Foto pendukung kondisi awal / bukti masalah"}</p>
+        {edit?.fotoSekarang && !form.photo && (
+          <img src={edit.fotoSekarang} alt="Foto ticket sekarang"
+            className="w-full max-h-40 object-cover rounded-lg border mb-3" style={{ borderColor: "rgba(0,0,0,0.12)" }} />
+        )}
         <input type="file" accept="image/*" aria-label="Foto pendukung ticket" onChange={async e => set({ photo: await salinBerkas(e.target.files?.[0]) })}
           className="w-full border rounded-xl px-4 py-2.5 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100 transition-all text-sm"
           style={{ borderColor: "rgba(0,0,0,0.12)" }} />

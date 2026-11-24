@@ -8,6 +8,7 @@ import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
 import { pesanGalat } from '@/lib/galat/pesan';
+import { compressImage } from '@/lib/image-compress';
 
 export interface EditAdminTicketKonteks {
   adminEditForm: Record<string, unknown>;
@@ -28,6 +29,9 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
   const bukaAdminEdit = (t: Ticket) => {
     const isi: Record<string, unknown> = {};
     for (const f of TICKET_ADMIN_FIELDS) isi[f.key] = (t as unknown as Record<string, unknown>)[f.key] ?? '';
+    if (typeof isi.date === 'string') isi.date = isi.date.slice(0, 10);
+    isi.sales_user_id = (t as unknown as { sales_user_id?: string | null }).sales_user_id ?? null;
+    isi.photo = null;
     setAdminEditForm(isi);
     setAdminRerouteTo('');
     setAdminEditTicket(t);
@@ -39,13 +43,25 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
     const lama = t as unknown as Record<string, unknown>;
     const perubahan = bandingkan(TICKET_ADMIN_FIELDS, lama, adminEditForm);
     const adaReroute = adminRerouteTo !== '';
+    const fotoBaru = adminEditForm.photo instanceof File ? adminEditForm.photo : null;
 
-    if (perubahan.length === 0 && !adaReroute) { notify('error', 'Tidak ada yang diubah.'); return; }
+    if (perubahan.length === 0 && !adaReroute && !fotoBaru) { notify('error', 'Tidak ada yang diubah.'); return; }
 
     setAdminEditSaving(true);
     try {
       const payload: Record<string, unknown> = {};
       for (const x of perubahan) payload[x.key] = adminEditForm[x.key] === '' ? null : adminEditForm[x.key];
+      if (perubahan.some(x => x.key === 'sales_name')) payload.sales_user_id = (adminEditForm.sales_user_id as string | null) || null;
+      if (fotoBaru) {
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(fotoBaru.type)) throw new Error('Foto hanya boleh format JPG, PNG, atau WebP.');
+        if (fotoBaru.size > 5 * 1024 * 1024) throw new Error('Ukuran foto maksimal 5MB.');
+        const kecil = await compressImage(fotoBaru);
+        const jalur = `photos/${Date.now()}.${kecil.name.split('.').pop()?.toLowerCase() ?? 'jpg'}`;
+        const { error: galatUnggah } = await supabase.storage.from('ticket-photos').upload(jalur, kecil, { cacheControl: '31536000' });
+        if (galatUnggah) throw new Error(`Gagal unggah foto: ${galatUnggah.message}`);
+        payload.photo_url = supabase.storage.from('ticket-photos').getPublicUrl(jalur).data.publicUrl;
+        payload.photo_name = fotoBaru.name;
+      }
 
       let penerimaBaru = '';
       let labelTujuanLama = t.assign_name || '';
@@ -77,6 +93,7 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
       const catatan = [
         adaReroute ? `Re-route: ${labelTujuanLama || '(belum ada)'} → ${penerimaBaru}` : '',
         perubahan.length ? ringkasPerubahan(perubahan) : '',
+        fotoBaru ? 'Foto ticket diganti' : '',
       ].filter(Boolean).join(' | ');
       void logAudit({
         user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
@@ -124,7 +141,7 @@ export function useEditAdminTicket(k: EditAdminTicketKonteks) {
 
       setAdminEditTicket(null);
       await fetchData();
-      notify('success', adaReroute ? `Dialihkan ke ${penerimaBaru}` : `${perubahan.length} perubahan tersimpan`);
+      notify('success', adaReroute ? `Dialihkan ke ${penerimaBaru}` : `${perubahan.length + (fotoBaru ? 1 : 0)} perubahan tersimpan`);
     } catch (err) {
       notify('error', 'Gagal menyimpan: ' + pesanGalat(err));
     } finally { setAdminEditSaving(false); }

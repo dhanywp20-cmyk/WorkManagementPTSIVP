@@ -175,6 +175,8 @@ function TicketingSystemInner() {
             setAdminEditForm={setAdminEditForm}
             simpanAdminEdit={simpanAdminEdit}
             onClose={() => setAdminEditTicket(null)}
+            users={users}
+            currentUser={currentUser}
           />
         )}
 

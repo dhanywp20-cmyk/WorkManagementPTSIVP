@@ -20,9 +20,11 @@ export interface KolomInfoTiketProps {
   set: (patch: Partial<NewTicketForm>) => void;
   setSelectedReminder: import("react").Dispatch<import("react").SetStateAction<ReminderRef | null>>;
   switchProjectType: (type: "new" | "existing") => void;
+  /** Edit ticket yang sudah ada: tanpa pilihan Tipe Project & pencarian project. */
+  modeEdit?: boolean;
 }
 
-export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalGuest, pencarianDibatasi, projectType, reminderQuery, reminderResults, reminderSearching, selectReminder, selectedReminder, set, setSelectedReminder, switchProjectType }: KolomInfoTiketProps) {
+export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalGuest, pencarianDibatasi, projectType, reminderQuery, reminderResults, reminderSearching, selectReminder, selectedReminder, set, setSelectedReminder, switchProjectType, modeEdit = false }: KolomInfoTiketProps) {
   return (
     <>
       <div className="space-y-4 satulayar:pr-2 satulayar:min-h-0">
@@ -53,7 +55,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
         </div>
       )}
 
-      <div>
+      {!modeEdit && <div>
         <label className="block text-[11px] font-bold mb-2 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tipe Project</label>
         <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(0,0,0,0.12)" }}>
           <button type="button"
@@ -73,9 +75,9 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             <IkonTeks nama="🔍" />Project Existing
           </button>
         </div>
-      </div>
+      </div>}
 
-      {projectType === 'existing' && (
+      {!modeEdit && projectType === 'existing' && (
         <div>
           <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
             Cari Project (Request Schedule &amp; Ticket)
