@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { KUNCI_GAYA, KUNCI_TEMA, SKRIP_TEMA_AWAL } from '../components/shared/Tema';
+import { KUNCI_GAYA, KUNCI_GAYA_BAWAAN, KUNCI_TEMA, SKRIP_TEMA_AWAL } from '../components/shared/Tema';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -17,8 +17,12 @@ cek('warna terang di globals.css tetap punya nilai asli (mode terang tidak berub
 cek('setiap variabel warna punya pengganti gelap', [...new Set(variabel.map(v => v[1]))].every(n => gelap.includes(`--${n}:`)));
 cek('tema dipasang sebelum halaman tergambar (tanpa kedip putih)', SKRIP_TEMA_AWAL.includes(KUNCI_TEMA) && /SKRIP_TEMA_AWAL/.test(readFileSync('app/layout.tsx', 'utf8')) && /tema-gelap\.css/.test(readFileSync('app/layout.tsx', 'utf8')));
 cek('tombol mode gelap di Keluar (HP); sidebar desktop memakai tombol Glass/Matte', /__tema/.test(readFileSync('app/(portal)/dashboard/_components/NavBawahMobile.tsx', 'utf8')) && /tukarGaya/.test(readFileSync('app/(portal)/_kerangka/SidebarPortal.tsx', 'utf8')) && !/tukarTema/.test(readFileSync('app/(portal)/_kerangka/SidebarPortal.tsx', 'utf8')));
-cek('mode gelap hanya di layar HP; desktop tidak pernah gelap', /h&&localStorage\.getItem\('wm-tema'\)==='gelap'/.test(SKRIP_TEMA_AWAL));
-cek('Matte selalu di HP, desktop bawaan Glass (Matte hanya bila dipilih)', SKRIP_TEMA_AWAL.includes(`h||localStorage.getItem('${KUNCI_GAYA}')==='matte'`) && SKRIP_TEMA_AWAL.includes('gaya-matte'));
+cek('mode gelap hanya di layar HP; desktop tidak pernah gelap', /h&&l\.getItem\('wm-tema'\)==='gelap'/.test(SKRIP_TEMA_AWAL));
+cek('Matte selalu di HP; desktop: pilihan pengguna, lalu bawaan Admin Panel', SKRIP_TEMA_AWAL.includes(`h||(l.getItem('${KUNCI_GAYA}')||l.getItem('${KUNCI_GAYA_BAWAAN}'))==='matte'`) && SKRIP_TEMA_AWAL.includes('gaya-matte'));
+cek('gaya bawaan desktop dari Admin Panel ditulis ke kunci yang sama, bawaan Glass',
+  readFileSync('lib/merek/inti.ts', 'utf8').includes(`'${KUNCI_GAYA_BAWAAN}'`) && /gayaBawaan: 'glass'/.test(readFileSync('lib/merek/bawaan.ts', 'utf8')));
+cek('Matte memakai latar sendiri, bukan foto latar Glass',
+  /\.kerangka-bingkai:has\(\.sidebar-3d\) \{\s*background: var\(--kc-latar\) !important/.test(readFileSync('app/tema-aksen-biru.css', 'utf8')));
 const biru = readFileSync('app/tema-aksen-biru.css', 'utf8');
 cek('tema aksen biru hanya aktif di html.gaya-matte', /tema-aksen-biru\.css/.test(readFileSync('app/layout.tsx', 'utf8')) && !/html(:not\(\.gelap\)|\.gelap)[ :]/.test(biru) && biru.includes('html.gaya-matte'));
 cek('bawaan Light Mode: gelap hanya bila dipilih sendiri', SKRIP_TEMA_AWAL.includes(`==='gelap'`) && !/prefers-color-scheme/.test(gelap + global));

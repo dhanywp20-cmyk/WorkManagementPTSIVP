@@ -4,7 +4,7 @@
    dan garis tepi merah tipis. Matte (tema-aksen-biru.css) memakai pola yang sama dengan biru. */
 
 html:not(.gaya-matte):not(.gelap):has(.kerangka-bingkai) {
-  --kg-merah: #dc2626;
+  --kg-merah: var(--merek-kartu-glass, #dc2626);
   --kg-kartu-tint: color-mix(in srgb, var(--kg-merah) 6%, #fff);
   --kg-kartu-tepi: color-mix(in srgb, var(--kg-merah) 18%, #ece4dc);
   --kg-kartu-latar: linear-gradient(180deg, var(--kg-kartu-tint) 0%, #fff 58%);

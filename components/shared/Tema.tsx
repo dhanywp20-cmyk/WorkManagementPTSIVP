@@ -5,14 +5,17 @@ import { useEffect, useSyncExternalStore } from 'react';
    - Mode gelap (kelas html.gelap): hanya di HP (< 768px), lewat tombol di nav bawah.
    - Gaya Glass / Matte (kelas html.gaya-matte): Glass = tampilan bingkai hangat (bawaan desktop),
      Matte = bingkai navy + kartu beraksen biru (tema-aksen-biru.css). HP selalu Matte;
-     desktop memilih lewat tombol di sidebar (menggantikan tombol mode gelap). */
+     desktop memilih lewat tombol di sidebar (menggantikan tombol mode gelap). Bila pengguna belum
+     memilih, desktop mengikuti "Tampilan bawaan desktop" di Admin Panel > Dashboard Setting. */
 export const KUNCI_TEMA = 'wm-tema';
 export const KUNCI_GAYA = 'wm-gaya';
+/** Gaya bawaan desktop dari Admin Panel > Dashboard Setting (ditulis lib/merek/inti.ts). */
+export const KUNCI_GAYA_BAWAAN = 'wm-gaya-bawaan';
 const KELAS = 'gelap';
 const KELAS_MATTE = 'gaya-matte';
 const LEBAR_HP = '(max-width: 767px)';
 
-export const SKRIP_TEMA_AWAL = `try{var d=document.documentElement,h=matchMedia('${LEBAR_HP}').matches;if(h&&localStorage.getItem('${KUNCI_TEMA}')==='gelap')d.classList.add('${KELAS}');if(h||localStorage.getItem('${KUNCI_GAYA}')==='matte')d.classList.add('${KELAS_MATTE}')}catch(e){}`;
+export const SKRIP_TEMA_AWAL = `try{var d=document.documentElement,h=matchMedia('${LEBAR_HP}').matches,l=localStorage;if(h&&l.getItem('${KUNCI_TEMA}')==='gelap')d.classList.add('${KELAS}');if(h||(l.getItem('${KUNCI_GAYA}')||l.getItem('${KUNCI_GAYA_BAWAAN}'))==='matte')d.classList.add('${KELAS_MATTE}')}catch(e){}`;
 
 const sedangGelap = () => typeof document !== 'undefined' && document.documentElement.classList.contains(KELAS);
 const sedangMatte = () => typeof document !== 'undefined' && document.documentElement.classList.contains(KELAS_MATTE);
@@ -36,7 +39,7 @@ function selaraskan() {
   const gelap = hp && baca(KUNCI_TEMA) === 'gelap';
   if (gelap !== sedangGelap()) terapkan(gelap);
   else if (gelap) document.documentElement.style.colorScheme = 'dark';
-  const matte = hp || baca(KUNCI_GAYA) === 'matte';
+  const matte = hp || (baca(KUNCI_GAYA) ?? baca(KUNCI_GAYA_BAWAAN)) === 'matte';
   if (matte !== sedangMatte()) terapkanGaya(matte);
 }
 
@@ -48,11 +51,16 @@ export function kembaliTerang() {
 export function PenyelarasTema() {
   useEffect(() => {
     selaraskan();
-    const dariTabLain = (e: StorageEvent) => { if (e.key === KUNCI_TEMA || e.key === KUNCI_GAYA) selaraskan(); };
+    const dariTabLain = (e: StorageEvent) => { if (e.key === KUNCI_TEMA || e.key === KUNCI_GAYA || e.key === KUNCI_GAYA_BAWAAN) selaraskan(); };
     const mq = window.matchMedia(LEBAR_HP);
     window.addEventListener('storage', dariTabLain);
+    window.addEventListener(KUNCI_GAYA_BAWAAN, selaraskan);
     mq.addEventListener('change', selaraskan);
-    return () => { window.removeEventListener('storage', dariTabLain); mq.removeEventListener('change', selaraskan); };
+    return () => {
+      window.removeEventListener('storage', dariTabLain);
+      window.removeEventListener(KUNCI_GAYA_BAWAAN, selaraskan);
+      mq.removeEventListener('change', selaraskan);
+    };
   }, []);
   return null;
 }

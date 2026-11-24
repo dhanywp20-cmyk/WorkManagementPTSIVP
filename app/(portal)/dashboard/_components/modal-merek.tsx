@@ -3,13 +3,13 @@ import { Keterangan } from '@/components/shared/Keterangan';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Merek, MEREK_BAWAAN, merek as merekSekarang, muatMerek, simpanMerek,
-  unggahBerkasMerek, angkaTembus, gradasiPanelLogin,
+  unggahBerkasMerek, angkaTembus, gradasiPanelLogin, type JenisBerkasMerek,
 } from '@/lib/merek/inti';
 
 export function MerekSettingInline() {
   const [form, setForm] = useState<Merek>(MEREK_BAWAAN);
   const [menyimpan, setMenyimpan] = useState(false);
-  const [mengunggah, setMengunggah] = useState<'logo' | 'latar' | 'latarDasbor' | null>(null);
+  const [mengunggah, setMengunggah] = useState<JenisBerkasMerek | null>(null);
   const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
   const [siap, setSiap] = useState(false);
 
@@ -32,12 +32,12 @@ export function MerekSettingInline() {
     else beritahu('ok', 'Tersimpan. Header, background dashboard & halaman login langsung ikut berubah.');
   };
 
-  const terimaBerkas = async (berkas: File, jenis: 'logo' | 'latar' | 'latarDasbor') => {
+  const terimaBerkas = async (berkas: File, jenis: JenisBerkasMerek) => {
     setMengunggah(jenis);
     const { url, error } = await unggahBerkasMerek(berkas, jenis);
     setMengunggah(null);
     if (error || !url) { beritahu('gagal', error ?? 'Unggahan gagal.'); return; }
-    const kunci = jenis === 'logo' ? 'logoUrl' : jenis === 'latar' ? 'gambarLatar' : 'gambarLatarDasbor';
+    const kunci = ({ logo: 'logoUrl', latar: 'gambarLatar', latarDasbor: 'gambarLatarDasbor', latarMatte: 'gambarLatarMatte' } as const)[jenis];
     ubah(kunci, url);
     beritahu('ok', 'Berhasil diunggah. Lihat pratinjaunya, lalu tekan Simpan.');
   };
@@ -102,37 +102,56 @@ export function MerekSettingInline() {
             <Warna label="Warna Tema (menu aktif, kartu & grafik)" nilai={form.warnaTema} onChange={v => ubah('warnaTema', v)} />
           </div>
 
-          <div>
-            <span className="block text-[11px] font-bold text-slate-600 mb-1">Latar Dashboard</span>
-            <div className="flex gap-2" role="radiogroup" aria-label="Latar dashboard">
-              {([['netral', 'Netral (disarankan)'], ['gambar', 'Gambar di bawah']] as const).map(([v, l]) => (
-                <button key={v} type="button" role="radio" aria-checked={(form.latarDasbor || 'netral') === v}
-                  onClick={() => ubah('latarDasbor', v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${(form.latarDasbor || 'netral') === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-300'}`}>
-                  {l}
-                </button>
-              ))}
-            </div>
-            <Keterangan className="ml-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</Keterangan>
-          </div>
+          <Pilihan label="Sidebar saat pertama masuk" nilai={form.sidebarCiut || 'ya'} onChange={v => ubah('sidebarCiut', v)}
+            opsi={[['ya', 'Diciutkan (ikon saja)'], ['tidak', 'Lebar (dengan nama menu)']]}
+            keterangan="Berlaku untuk semua pengguna setiap kali masuk. Pengguna tetap bisa melebarkan / menciutkan sendiri." />
+        </div>
+      </section>
 
-          <div>
-            <span className="block text-[11px] font-bold text-slate-600 mb-1">Sidebar saat pertama masuk</span>
-            <div className="flex gap-2" role="radiogroup" aria-label="Sidebar saat pertama masuk">
-              {([['ya', 'Diciutkan (ikon saja)'], ['tidak', 'Lebar (dengan nama menu)']] as const).map(([v, l]) => (
-                <button key={v} type="button" role="radio" aria-checked={(form.sidebarCiut || 'ya') === v}
-                  onClick={() => ubah('sidebarCiut', v)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${(form.sidebarCiut || 'ya') === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-300'}`}>
-                  {l}
-                </button>
-              ))}
-            </div>
-            <Keterangan className="ml-1">Berlaku untuk semua pengguna setiap kali masuk. Pengguna tetap bisa melebarkan / menciutkan sendiri.</Keterangan>
-          </div>
+      <section className="rounded-2xl border border-slate-200 overflow-hidden">
+        <Kepala judul="Tampilan Glass & Matte" catatan="Dua gaya dashboard dengan pengaturan masing-masing. HP selalu Matte; di desktop pengguna bisa pindah lewat tombol Glass / Matte di sidebar." />
 
-          <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
-            keterangan="Foto latar layar dashboard setelah masuk (boleh beda dari foto Halaman Login). Maks 8MB, dikecilkan otomatis ke 2400px."
-            onBerkas={f => terimaBerkas(f, 'latarDasbor')} onHapus={() => ubah('gambarLatarDasbor', MEREK_BAWAAN.gambarLatarDasbor)} />
+        <div className="p-4 space-y-4">
+          <Pilihan label="Tampilan bawaan desktop" nilai={form.gayaBawaan === 'matte' ? 'matte' : 'glass'} onChange={v => ubah('gayaBawaan', v)}
+            opsi={[['glass', 'Glass'], ['matte', 'Matte']]}
+            keterangan="Dipakai pengguna desktop yang belum pernah memilih sendiri. Pilihan pengguna di sidebar tetap diutamakan." />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-slate-200 p-3.5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-800">Glass</h4>
+                <span className="text-[11px] font-semibold text-slate-500">bingkai terang · panel transparan</span>
+              </div>
+              <PratinjauGlass form={form} />
+              <Warna label="Warna aksen kartu (garis & tint tipis)" nilai={form.warnaKartuGlass} onChange={v => ubah('warnaKartuGlass', v)} />
+              <Pilihan label="Latar Glass" nilai={form.latarDasbor || 'netral'} onChange={v => ubah('latarDasbor', v)}
+                opsi={[['netral', 'Netral (disarankan)'], ['gambar', 'Gambar di bawah']]}
+                keterangan="Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri." />
+              <Unggah label="Gambar latar Glass" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
+                keterangan="Foto latar dashboard gaya Glass (boleh beda dari foto Halaman Login). Maks 8MB, dikecilkan otomatis ke 2400px."
+                onBerkas={f => terimaBerkas(f, 'latarDasbor')} onHapus={() => ubah('gambarLatarDasbor', MEREK_BAWAAN.gambarLatarDasbor)} />
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-3.5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-bold text-slate-800">Matte</h4>
+                <span className="text-[11px] font-semibold text-slate-500">bingkai gelap · panel putih</span>
+              </div>
+              <PratinjauMatte form={form} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Warna label="Warna aksen Matte" nilai={form.warnaMatte} onChange={v => ubah('warnaMatte', v)} />
+                <Warna label="Warna bingkai gelap" nilai={form.warnaBingkaiMatte} onChange={v => ubah('warnaBingkaiMatte', v)} />
+              </div>
+              <Pilihan label="Latar Matte" nilai={form.latarMatte === 'gambar' ? 'gambar' : 'gradasi'} onChange={v => ubah('latarMatte', v)}
+                opsi={[['gradasi', 'Gradasi warna bingkai (disarankan)'], ['gambar', 'Gambar di bawah']]}
+                keterangan="Terpisah dari latar Glass. Bila memakai gambar, foto ditutup lapisan warna bingkai supaya menu & teks putih tetap terbaca." />
+              {form.latarMatte === 'gambar' && (
+                <Unggah label="Gambar latar Matte" jenis="latarMatte" nilai={form.gambarLatarMatte} sedang={mengunggah === 'latarMatte'}
+                  keterangan="Foto latar bingkai gaya Matte. Maks 8MB, dikecilkan otomatis ke 2400px."
+                  onBerkas={f => terimaBerkas(f, 'latarMatte')} onHapus={() => ubah('gambarLatarMatte', MEREK_BAWAAN.gambarLatarMatte)} />
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -236,12 +255,13 @@ function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: s
 }
 
 function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: {
-  label: string; jenis: 'logo' | 'latar' | 'latarDasbor'; nilai: string; sedang: boolean;
+  label: string; jenis: JenisBerkasMerek; nilai: string; sedang: boolean;
   keterangan: string; onBerkas: (f: File) => void; onHapus: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const bawaan = (jenis === 'latar' && nilai === MEREK_BAWAAN.gambarLatar)
-    || (jenis === 'latarDasbor' && nilai === MEREK_BAWAAN.gambarLatarDasbor);
+    || (jenis === 'latarDasbor' && nilai === MEREK_BAWAAN.gambarLatarDasbor)
+    || (jenis === 'latarMatte' && nilai === MEREK_BAWAAN.gambarLatarMatte);
   return (
     <div>
       <Label>{label}</Label>
@@ -310,6 +330,89 @@ function Geser({ label, nilai, bawaan, catatan, onChange }: {
         onChange={e => onChange(e.target.value)}
         className="mt-2.5 w-full accent-slate-700 cursor-pointer" />
       <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{catatan}</p>
+    </div>
+  );
+}
+
+function Pilihan({ label, nilai, opsi, keterangan, onChange }: {
+  label: string; nilai: string; opsi: readonly (readonly [string, string])[]; keterangan?: string; onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <span className="block text-[11px] font-bold text-slate-600 mb-1">{label}</span>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+        {opsi.map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={nilai === v} onClick={() => onChange(v)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${nilai === v ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-300'}`}>
+            {l}
+          </button>
+        ))}
+      </div>
+      {keterangan && <Keterangan className="ml-1">{keterangan}</Keterangan>}
+    </div>
+  );
+}
+
+const hexAman = (nilai: string, bawaan: string) => (/^#[0-9a-f]{6}$/i.test(nilai ?? '') ? nilai : bawaan);
+
+/** Kartu mini dengan tint & garis aksen tipis, sama dengan pola kartu di dashboard. */
+function KartuMini({ aksen, lebar }: { aksen: string; lebar: string }) {
+  return (
+    <div className="rounded-lg p-1.5 space-y-1" style={{ width: lebar,
+      background: `linear-gradient(180deg, color-mix(in srgb, ${aksen} 8%, #fff), #fff 60%)`,
+      boxShadow: `0 0 0 1px color-mix(in srgb, ${aksen} 22%, #e5e7eb)` }}>
+      <div className="h-1 w-6 rounded-full" style={{ background: `color-mix(in srgb, ${aksen} 55%, #94a3b8)` }} />
+      <div className="h-2 w-4 rounded-sm bg-slate-700" />
+      <div className="h-1 rounded-full" style={{ background: `color-mix(in srgb, ${aksen} 16%, #fff)` }}>
+        <div className="h-1 w-3/5 rounded-full" style={{ background: aksen }} />
+      </div>
+    </div>
+  );
+}
+
+function PratinjauGlass({ form }: { form: Merek }) {
+  const aksen = hexAman(form.warnaKartuGlass, MEREK_BAWAAN.warnaKartuGlass);
+  const tema = hexAman(form.warnaTema, MEREK_BAWAAN.warnaTema);
+  const bergambar = form.latarDasbor === 'gambar' && form.gambarLatarDasbor;
+  return (
+    <div aria-hidden="true" className="rounded-xl overflow-hidden border border-slate-200 h-32 p-2 flex flex-col gap-1.5 bg-cover bg-center"
+      style={bergambar ? { backgroundImage: `url(${form.gambarLatarDasbor})` } : { background: 'linear-gradient(180deg, #efeae3, #e8e1d8)' }}>
+      <div className="h-3 rounded-md bg-white/95" />
+      <div className="flex-1 flex gap-1.5 min-h-0">
+        <div className="w-10 rounded-lg bg-white/95 p-1 space-y-1">
+          <div className="h-1.5 rounded-full" style={{ background: tema }} />
+          <div className="h-1.5 rounded-full bg-slate-200" />
+          <div className="h-1.5 rounded-full bg-slate-200" />
+        </div>
+        <div className="flex-1 rounded-lg p-1.5 flex gap-1.5 flex-wrap content-start" style={{ background: 'rgba(248,246,242,.72)' }}>
+          <KartuMini aksen={aksen} lebar="31%" /><KartuMini aksen={aksen} lebar="31%" /><KartuMini aksen={aksen} lebar="31%" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PratinjauMatte({ form }: { form: Merek }) {
+  const aksen = hexAman(form.warnaMatte, MEREK_BAWAAN.warnaMatte);
+  const dasar = hexAman(form.warnaBingkaiMatte, MEREK_BAWAAN.warnaBingkaiMatte);
+  const atas = `color-mix(in srgb, ${aksen} 22%, ${dasar})`;
+  const bawah = `color-mix(in srgb, ${dasar} 62%, #000)`;
+  const bergambar = form.latarMatte === 'gambar' && form.gambarLatarMatte;
+  const lapisan = `linear-gradient(165deg, color-mix(in srgb, ${atas} 84%, transparent), color-mix(in srgb, ${bawah} 92%, transparent))`;
+  return (
+    <div aria-hidden="true" className="rounded-xl overflow-hidden border border-slate-200 h-32 p-2 flex flex-col gap-1.5"
+      style={{ background: bergambar ? `${lapisan}, url(${form.gambarLatarMatte}) center / cover no-repeat` : `linear-gradient(165deg, ${atas}, ${bawah})`, backgroundColor: bawah }}>
+      <div className="h-3 flex items-center gap-1"><div className="h-2 w-12 rounded-full bg-white/80" /><div className="ml-auto h-2.5 w-10 rounded-full bg-white/95" /></div>
+      <div className="flex-1 flex gap-1.5 min-h-0">
+        <div className="w-10 p-0.5 space-y-1">
+          <div className="h-1.5 rounded-full bg-white/40" />
+          <div className="h-1.5 rounded-full bg-white/15" />
+          <div className="h-1.5 rounded-full bg-white/15" />
+        </div>
+        <div className="flex-1 rounded-lg p-1.5 flex gap-1.5 flex-wrap content-start" style={{ background: '#f7f9fd' }}>
+          <KartuMini aksen={aksen} lebar="31%" /><KartuMini aksen={aksen} lebar="31%" /><KartuMini aksen={aksen} lebar="31%" />
+        </div>
+      </div>
     </div>
   );
 }

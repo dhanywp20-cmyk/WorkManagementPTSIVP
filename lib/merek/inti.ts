@@ -165,6 +165,8 @@ export async function divisiTerpakai(): Promise<Record<string, number>> {
   return hitung;
 }
 
+export type JenisBerkasMerek = 'logo' | 'latar' | 'latarDasbor' | 'latarMatte';
+
 const BUCKET_MEREK = 'merek-files';
 const BUCKET_CADANGAN = 'project-files';
 
@@ -173,7 +175,7 @@ const BATAS_LATAR = 8 * 1024 * 1024;
 
 export async function unggahBerkasMerek(
   berkas: File,
-  jenis: 'logo' | 'latar' | 'latarDasbor',
+  jenis: JenisBerkasMerek,
 ): Promise<{ url: string | null; error: string | null }> {
   if (!berkas.type.startsWith('image/')) {
     return { url: null, error: 'Berkasnya harus gambar (PNG, JPG, SVG, atau WebP).' };
@@ -184,7 +186,7 @@ export async function unggahBerkasMerek(
   }
 
   let siap = berkas;
-  if (jenis === 'latar' || jenis === 'latarDasbor') {
+  if (jenis !== 'logo') {
     try {
       const { compressImage } = await import('../image-compress');
       siap = await compressImage(berkas, { maxDim: 2400, quality: 0.82 });
@@ -225,6 +227,32 @@ export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   } else {
     akar.style.removeProperty('--latar-halaman');
   }
+  tulisGayaKeCSS(m);
+}
+
+/** Sama dengan KUNCI_GAYA_BAWAAN di components/shared/Tema.tsx (dibaca skrip tema awal sebelum merek termuat). */
+const KUNCI_GAYA_BAWAAN = 'wm-gaya-bawaan';
+
+const hexAtau = (nilai: string, bawaan: string) => (/^#[0-9a-f]{6}$/i.test(nilai ?? '') ? nilai : bawaan);
+
+/** Token Glass & Matte (tema-glass-merah.css / tema-aksen-biru.css) + gaya bawaan desktop untuk components/shared/Tema. */
+function tulisGayaKeCSS(m: Merek): void {
+  const akar = document.documentElement;
+  akar.style.setProperty('--merek-kartu-glass', hexAtau(m.warnaKartuGlass, MEREK_BAWAAN.warnaKartuGlass));
+  akar.style.setProperty('--merek-matte', hexAtau(m.warnaMatte, MEREK_BAWAAN.warnaMatte));
+  akar.style.setProperty('--merek-bingkai-matte', hexAtau(m.warnaBingkaiMatte, MEREK_BAWAAN.warnaBingkaiMatte));
+  const bergambar = m.latarMatte === 'gambar' && !!m.gambarLatarMatte;
+  if (bergambar) akar.style.setProperty('--latar-matte-gambar', `url("${m.gambarLatarMatte.replace(/"/g, '%22')}")`);
+  else akar.style.removeProperty('--latar-matte-gambar');
+  akar.classList.toggle('matte-bergambar', bergambar);
+
+  const gaya = m.gayaBawaan === 'matte' ? 'matte' : 'glass';
+  let berubah = false;
+  try {
+    berubah = localStorage.getItem(KUNCI_GAYA_BAWAAN) !== gaya;
+    localStorage.setItem(KUNCI_GAYA_BAWAAN, gaya);
+  } catch {  }
+  if (berubah) window.dispatchEvent(new Event(KUNCI_GAYA_BAWAAN));
 }
 
 const pendengar = new Set<() => void>();

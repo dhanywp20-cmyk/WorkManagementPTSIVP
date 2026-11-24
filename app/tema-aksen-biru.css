@@ -9,7 +9,12 @@
 */
 
 /* ── Token mode terang: netral dingin (slate), aksen biru ── */
+html.gaya-matte:has(.kerangka-bingkai) {
+  /* Warna Matte sendiri dari Admin Panel > Dashboard Setting > Tampilan Matte (terpisah dari Glass). */
+  --kc-aksen: var(--merek-matte, var(--merek-tema, #2563eb));
+}
 html.gaya-matte:not(.gelap):has(.kerangka-bingkai) {
+  --kc-aksen: var(--merek-matte, var(--merek-tema, #2563eb));
   --kc-tinta: #0f1b33;
   --kc-tinta-2: #51607a;
   --kc-tinta-3: #8693a9;
@@ -33,9 +38,10 @@ html.gaya-matte:not(.gelap):has(.kerangka-bingkai) {
   --kc-arsir-b: #5d6c88;
   --kc-kaki-teks: rgba(255, 255, 255, .62);
 
-  /* Bingkai gelap: navy dari aksen, dengan cahaya lembut di kiri atas (seperti sidebar acuan). */
-  --kb-bingkai-1: color-mix(in srgb, var(--kc-aksen) 34%, #061232);
-  --kb-bingkai-2: color-mix(in srgb, var(--kc-aksen) 16%, #050b20);
+  /* Bingkai gelap: Warna Bingkai Matte (bawaan navy) disapu aksen, cahaya lembut di kiri atas. */
+  --kb-dasar: var(--merek-bingkai-matte, #0b1f4a);
+  --kb-bingkai-1: color-mix(in srgb, var(--kc-aksen) 22%, var(--kb-dasar));
+  --kb-bingkai-2: color-mix(in srgb, var(--kb-dasar) 62%, #000);
   --kb-cahaya: color-mix(in srgb, var(--kc-aksen) 55%, transparent);
   --kc-latar:
     radial-gradient(900px 520px at 0% 0%, var(--kb-cahaya), transparent 62%),
@@ -89,6 +95,19 @@ html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
   --kb-kaca-2: rgba(255, 255, 255, .12);
   --kb-kaca-tepi: rgba(255, 255, 255, .12);
   --kb-aksen-terang: color-mix(in srgb, var(--kc-aksen) 45%, #fff);
+}
+
+/* Latar bingkai Matte: SELALU latar Matte sendiri, tidak pernah memakai foto latar Glass
+   (atribut style inline berisi gambar Latar Dashboard Glass ditimpa). */
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
+  background: var(--kc-latar) !important; background-color: var(--kb-bingkai-2) !important;
+}
+/* Matte bergambar: foto Matte sendiri di bawah lapisan gelap supaya teks putih tetap terbaca. */
+html.gaya-matte.matte-bergambar:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
+  background:
+    linear-gradient(165deg, color-mix(in srgb, var(--kb-bingkai-1) 84%, transparent) 0%, color-mix(in srgb, var(--kb-bingkai-2) 92%, transparent) 100%),
+    var(--latar-matte-gambar) center / cover no-repeat !important;
+  background-color: var(--kb-bingkai-2) !important;
 }
 
 /* Bilah kiri penyambung header-footer (putih) tidak dipakai di bingkai gelap. */

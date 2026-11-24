@@ -15,6 +15,16 @@ export interface Merek {
   gambarLatarDasbor: string;
   latarDasbor: string;
 
+  /** Tampilan desktop bila pengguna belum memilih sendiri: 'glass' | 'matte'. HP selalu Matte. */
+  gayaBawaan: string;
+  /** Glass: warna garis & tint tipis di setiap kartu. Latar Glass = latarDasbor + gambarLatarDasbor. */
+  warnaKartuGlass: string;
+  /** Matte: warna aksen (menu aktif, kartu, grafik), warna dasar bingkai gelap, dan latarnya sendiri. */
+  warnaMatte: string;
+  warnaBingkaiMatte: string;
+  latarMatte: string;
+  gambarLatarMatte: string;
+
   gambarLatar: string;
   warnaLogin: string;
   warnaLogin2: string;
@@ -39,6 +49,13 @@ export const MEREK_BAWAAN: Merek = {
   sidebarCiut: 'ya',
   gambarLatarDasbor: '/IVP_Background.png',
   latarDasbor: 'netral',
+
+  gayaBawaan: 'glass',
+  warnaKartuGlass: '#dc2626',
+  warnaMatte: '#2563eb',
+  warnaBingkaiMatte: '#0b1f4a',
+  latarMatte: 'gradasi',
+  gambarLatarMatte: '/IVP_Background.png',
 
   gambarLatar: '/IVP_Background.png',
   warnaLogin: '#be123c',
