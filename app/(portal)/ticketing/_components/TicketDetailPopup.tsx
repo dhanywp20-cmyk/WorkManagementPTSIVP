@@ -93,7 +93,7 @@ export function TicketDetailPopup({
     <ModalPortal>
       <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1000 p-3" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
         onClick={e => { if (e.target === e.currentTarget) { onClose(); setShowUpdateForm(false); } }}>
-        <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
+        <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1260px' : '720px', transition: 'max-width 0.2s' }}>
 
           <div className={`bg-white rounded-kartu shadow-modal overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
             style={{ maxHeight: "94vh" }}>

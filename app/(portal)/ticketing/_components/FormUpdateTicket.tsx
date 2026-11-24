@@ -41,7 +41,7 @@ export function FormUpdateTicket({
   };
   return (
     <>{showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-      <div className="bg-white rounded-kartu shadow-modal overflow-hidden shrink-0 w-full md:w-[340px]"
+      <div className="bg-white rounded-kartu shadow-modal overflow-hidden shrink-0 w-full md:w-[380px] lg:w-[480px]"
         style={{ maxHeight: "94vh" }}>
         <div className="px-4 py-3 border-b border-slate-100">
           <div className="flex items-center justify-between gap-2">
