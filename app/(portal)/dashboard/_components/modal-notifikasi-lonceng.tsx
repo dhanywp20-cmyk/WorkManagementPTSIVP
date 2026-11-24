@@ -18,7 +18,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     document.addEventListener('keydown', saatEscape);
     return () => {
       document.removeEventListener('mousedown', handler);
-      window.removeEventListener('blur-sm', tutup);
+      window.removeEventListener('blur', tutup);
       document.removeEventListener('keydown', saatEscape);
     };
   }, []);

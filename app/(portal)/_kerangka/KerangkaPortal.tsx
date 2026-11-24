@@ -65,7 +65,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             <LogoMerek ukuran="sm" className="flex md:hidden" />
             <LogoMerek ukuran="md" className="hidden md:flex" />
-            <div>
+            <div className="kepala-merek">
               <div className="flex items-center gap-1.5 md:gap-2.5">
                 <h1 className="text-sm md:text-xl md:leading-7 font-bold text-slate-800 tracking-tight leading-tight">
                   <span className="hidden sm:inline">{merek.namaPlatform}</span>

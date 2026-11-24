@@ -124,11 +124,14 @@ html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > .flex.flex-1.mi
 html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d {
   background: transparent !important; border-bottom: 0 !important; box-shadow: none !important;
 }
-html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 { color: #fff !important; }
-html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 + span { color: var(--kb-di-gelap-3) !important; }
-html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 ~ span[style],
-html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p[style] { color: var(--kb-aksen-terang) !important; }
-html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p.text-slate-500 { color: var(--kb-di-gelap-2) !important; }
+/* Teks putih HANYA untuk blok nama platform (.kepala-merek) yang duduk langsung di atas bingkai gelap.
+   Dulu memakai `.kepala-3d p.text-slate-500` / `p[style]`, sehingga teks di dropdown lonceng notifikasi
+   (berlatar putih, juga di dalam header) ikut jadi putih dan tidak terbaca. */
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .kepala-merek h1 { color: #fff !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .kepala-merek h1 + span { color: var(--kb-di-gelap-3) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .kepala-merek h1 ~ span[style],
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .kepala-merek p[style] { color: var(--kb-aksen-terang) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .kepala-merek p.text-slate-500 { color: var(--kb-di-gelap-2) !important; }
 html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .px-3.py-1\.5.rounded-2xl {
   background: rgba(255, 255, 255, .96) !important; border-radius: 999px !important;
   box-shadow: 0 6px 18px -10px rgba(0, 0, 0, .5) !important;

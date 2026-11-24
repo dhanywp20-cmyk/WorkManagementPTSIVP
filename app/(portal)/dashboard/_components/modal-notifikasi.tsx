@@ -51,21 +51,36 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
     if (pushStatus === 'unsupported' || pushStatus === 'denied') return;
     setPushGalat(null);
     setPushProses(true);
+    // Batas waktu: requestPermission() / serviceWorker.ready bisa menggantung selamanya (prompt izin
+    // diabaikan, service worker gagal terpasang) dan membuat tombol ini terkunci sampai halaman dimuat ulang.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const habisWaktu = new Promise<'habis'>(res => { timer = setTimeout(() => res('habis'), 15_000); });
     try {
       if (akanAktif) {
         if (pushStatus !== 'on') {
-          const hasil = await aktifkanPushNotif();
-          if (hasil.ok) setPushStatus('on');
+          const hasil = await Promise.race([aktifkanPushNotif(), habisWaktu]);
+          if (hasil === 'habis') setPushGalat('Notifikasi HP belum aktif (izin peramban belum dijawab). Alarm suara tetap aktif - coba lagi nanti.');
+          else if (hasil.ok) setPushStatus('on');
           else setPushGalat(hasil.alasan ?? 'Notifikasi HP gagal diaktifkan - alarm suara tetap aktif.');
         }
       } else if (pushStatus === 'on') {
-        await matikanPushNotif();
+        await Promise.race([matikanPushNotif(), habisWaktu]);
         setPushStatus('off');
       }
+    } catch {
+      setPushGalat('Notifikasi HP gagal diproses - alarm suara tetap berjalan sesuai pilihan.');
     } finally {
+      clearTimeout(timer);
       setPushProses(false);
     }
   };
+
+  // Pesan galat push hilang sendiri, supaya tidak menutupi isi halaman terus-menerus.
+  useEffect(() => {
+    if (!pushGalat) return;
+    const t = setTimeout(() => setPushGalat(null), 6000);
+    return () => clearTimeout(t);
+  }, [pushGalat]);
 
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
