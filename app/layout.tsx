@@ -3,6 +3,7 @@ import './tema-gelap.css';
 import './tema-gelap-kaca.css';
 import './tema-gelap-kontras.css';
 import './tema-bingkai.css';
+import './tema-aksen-biru.css';
 import type { Metadata, Viewport } from 'next';
 import { PwaBootstrap, PembaruanAndroid, PantauVersiWeb, PenjagaGalatTulis, PenjagaDialog, PelaporGalat } from '@/components/shared';
 import { PenyelarasTema, SKRIP_TEMA_AWAL } from '@/components/shared/Tema';
