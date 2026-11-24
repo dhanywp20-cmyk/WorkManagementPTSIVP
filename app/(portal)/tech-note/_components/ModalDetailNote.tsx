@@ -19,6 +19,10 @@ export interface ModalDetailNoteProps {
 }
 
 export function ModalDetailNote({ bolehEditNote, bukaEditNote, canManage, detailHistory, detailNote, hapusNote, setApprovalForm, setApproveModal, setDetailNote }: ModalDetailNoteProps) {
+  // Penulis (handler) yang catatannya diminta revisi / ditolak: tampilkan
+  // ajakan jelas untuk memperbarui link/file lalu mengajukan ulang.
+  const perluPerbaikan = !!detailNote && !canManage && bolehEditNote(detailNote)
+    && (detailNote.status === 'revision' || detailNote.status === 'rejected');
   return (
     <>
       {detailNote && (
@@ -59,11 +63,24 @@ export function ModalDetailNote({ bolehEditNote, bukaEditNote, canManage, detail
             </div>
           )}
 
+          {perluPerbaikan && (
+            <div className="rounded-xl px-4 py-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3 bg-amber-50 border border-amber-200">
+              <p className="flex-1 text-[12px] text-amber-800 leading-relaxed">
+                <b>{detailNote.status === 'rejected' ? 'Tech note ini ditolak.' : 'Reviewer meminta revisi.'}</b>{' '}
+                Perbarui file / link OneDrive dan detailnya, lalu ajukan ulang untuk direview.
+              </p>
+              <button onClick={()=>bukaEditNote(detailNote)}
+                className="tombol-utama shrink-0 px-4 py-2 rounded-kontrol text-sm font-bold transition-colors">
+                <IkonTeks nama="✏" />Perbaiki &amp; Ajukan Ulang
+              </button>
+            </div>
+          )}
+
           <HistoryTimeline history={detailHistory} />
 
-          {(bolehEditNote(detailNote) || canManage) && (
+          {((bolehEditNote(detailNote) && !perluPerbaikan) || canManage) && (
             <div className="flex gap-2 mt-4 pt-4 justify-end border-t border-gray-100">
-              {bolehEditNote(detailNote) && (
+              {bolehEditNote(detailNote) && !perluPerbaikan && (
                 <button onClick={()=>bukaEditNote(detailNote)}
                   className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
                   <IkonTeks nama="✏" />Edit Detail

@@ -372,7 +372,7 @@ export function TechNotePageInner() {
       <Toast notif={toast} />
 
       <ModalUnggahNote
-        closeUploadModal={closeUploadModal} editingNote={editingNote} folders={folders} saving={saving} setUploadForm={setUploadForm} showUploadModal={showUploadModal} submitTechNote={submitTechNote} uploadForm={uploadForm}
+        canManage={canManage} closeUploadModal={closeUploadModal} editingNote={editingNote} folders={folders} saving={saving} setUploadForm={setUploadForm} showUploadModal={showUploadModal} submitTechNote={submitTechNote} uploadForm={uploadForm}
       />
 
       <ModalDetailNote

@@ -113,13 +113,18 @@ export function useAksiTechNote(k: AksiTechNoteKonteks) {
         product: uploadForm.product.trim(), tags,
       };
       if (resubmit) { payload.status = 'pending'; payload.submitted_at = now; }
-      const { error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id);
+      const { data: terubah, error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id).select('id');
       setSaving(false);
       if (error) { beritahu('error', 'Gagal menyimpan: ' + error.message); return; }
+      if (!terubah || terubah.length === 0) {
+        beritahu('error', 'Gagal menyimpan: akun ini tidak punya akses mengubah tech note tersebut.');
+        return;
+      }
       await supabase.from('tech_note_history').insert({
         tech_note_id: editingNote.id, action: resubmit ? 'resubmitted' : 'edited',
         performed_by: currentUser.id, performed_by_name: currentUser.full_name,
-        note: resubmit ? 'Diajukan ulang setelah diperbaiki' : 'Detail disunting oleh pengelola',
+        note: (resubmit ? 'Diajukan ulang setelah diperbaiki' : `Detail disunting oleh ${canManage ? 'pengelola' : 'penulis'}`)
+          + (uploadForm.one_drive_link.trim() !== (editingNote.one_drive_link ?? '').trim() ? ' · link file diperbarui' : ''),
         created_at: now,
       });
       void logAudit({

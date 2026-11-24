@@ -6,6 +6,7 @@ import { TechNoteFolder, TechNote } from './shared';
 import { Field, Modal, inputCls, linkOneDriveSah } from './bagian-tech-note';
 
 export interface ModalUnggahNoteProps {
+  canManage: boolean;
   closeUploadModal: () => void;
   editingNote: TechNote | null;
   folders: TechNoteFolder[];
@@ -16,12 +17,27 @@ export interface ModalUnggahNoteProps {
   uploadForm: { title: string; description: string; product: string; one_drive_link: string; folder_id: string; tags: string; };
 }
 
-export function ModalUnggahNote({ closeUploadModal, editingNote, folders, saving, setUploadForm, showUploadModal, submitTechNote, uploadForm }: ModalUnggahNoteProps) {
+export function ModalUnggahNote({ canManage, closeUploadModal, editingNote, folders, saving, setUploadForm, showUploadModal, submitTechNote, uploadForm }: ModalUnggahNoteProps) {
+  // Sama dengan aturan `resubmit` di submitTechNote(): penulis (bukan pengelola)
+  // yang memperbaiki catatan berstatus revisi/ditolak -> diajukan ulang.
+  const ajukanUlang = !!editingNote && !canManage
+    && (editingNote.status === 'revision' || editingNote.status === 'rejected');
+  const linkBerubah = !!editingNote
+    && uploadForm.one_drive_link.trim() !== (editingNote.one_drive_link ?? '').trim();
+  const judul = !editingNote ? '📤 Upload Tech Note' : ajukanUlang ? '🔄 Perbaiki Tech Note' : '✏️ Edit Tech Note';
+  const labelTombol = !editingNote || ajukanUlang
+    ? (ajukanUlang ? '📤 Ajukan Ulang untuk Review' : '📤 Submit untuk Review')
+    : '💾 Simpan Perubahan';
   return (
     <>
       <Modal open={showUploadModal}
         onClose={closeUploadModal}
-        title={editingNote ? '✏️ Edit Tech Note' : '📤 Upload Tech Note'} width={600}>
+        title={judul} width={600}>
+        {ajukanUlang && editingNote?.review_note && (
+          <div className="rounded-xl px-4 py-3 mb-4 text-[12px] bg-amber-50 border border-amber-200 text-amber-800">
+            <b>Catatan Reviewer:</b> {editingNote.review_note}
+          </div>
+        )}
         <Field label="Judul Tech Note *">
           <input className={inputCls} value={uploadForm.title}
             onChange={e=>setUploadForm(p=>({...p,title:e.target.value}))} placeholder="cth: Prosedur Setup Display Newline" />
@@ -49,19 +65,28 @@ export function ModalUnggahNote({ closeUploadModal, editingNote, folders, saving
           {uploadForm.one_drive_link.trim() && !linkOneDriveSah(uploadForm.one_drive_link) && (
             <p className="text-[11.5px] text-rose-600 mt-1">Link OneDrive / SharePoint (https)</p>
           )}
+          {editingNote && (
+            <p className="text-[11.5px] text-slate-500 mt-1">
+              {linkBerubah
+                ? 'Link baru akan menggantikan link lama.'
+                : 'Upload file revisi ke OneDrive lalu tempel link barunya di sini. Kalau file lama ditimpa di link yang sama, link ini boleh dibiarkan.'}
+            </p>
+          )}
         </Field>
         <Field label="Tags (pisahkan koma)">
           <input className={inputCls} value={uploadForm.tags}
             onChange={e=>setUploadForm(p=>({...p,tags:e.target.value}))} placeholder="cth: setup, display, newline" />
         </Field>
-        <div className="rounded-xl px-4 py-3 text-[12px] font-medium mb-4 bg-amber-50 border border-amber-200 text-amber-700">
-          <IkonTeks nama="⚠" />Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
-        </div>
+        {(!editingNote || ajukanUlang) && (
+          <div className="rounded-xl px-4 py-3 text-[12px] font-medium mb-4 bg-amber-50 border border-amber-200 text-amber-700">
+            <IkonTeks nama="⚠" />Tech Note akan masuk ke <b>Approval Queue</b>{ajukanUlang ? ' lagi' : ''}. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
+          </div>
+        )}
         <div className="flex gap-3 justify-end">
           <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
           <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!linkOneDriveSah(uploadForm.one_drive_link)}
             className="tombol-utama px-4 py-2 rounded-kontrol text-sm font-bold disabled:opacity-40 transition-colors">
-            {saving ? '⏳ Mengirim...' : '📤 Submit untuk Review'}
+            {saving ? '⏳ Menyimpan...' : labelTombol}
           </button>
         </div>
       </Modal>
