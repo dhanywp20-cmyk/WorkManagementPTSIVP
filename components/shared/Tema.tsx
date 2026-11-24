@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useSyncExternalStore } from 'react';
 
-/* Dua pilihan tampilan:
-   - Mode gelap (kelas html.gelap): hanya di HP (< 768px), lewat tombol di nav bawah.
-   - Gaya Glass / Matte (kelas html.gaya-matte): Glass = tampilan bingkai hangat (bawaan desktop),
-     Matte = bingkai navy + kartu beraksen biru (tema-aksen-biru.css). HP selalu Matte;
-     desktop memilih lewat tombol di sidebar (menggantikan tombol mode gelap). Bila pengguna belum
-     memilih, desktop mengikuti "Tampilan bawaan desktop" di Admin Panel > Dashboard Setting. */
+/* Pilihan tampilan: Glass / Matte (kelas html.gaya-matte). Mode gelap sudah tidak dipakai.
+   - Glass = tampilan bingkai hangat beraksen merah; Matte = bingkai navy + kartu beraksen biru
+     (tema-aksen-biru.css).
+   - Desktop memilih lewat tombol di sidebar; HP lewat tombol di nav bawah. Pilihan disimpan di
+     localStorage (per perangkat).
+   - Belum memilih: HP = Matte; desktop mengikuti "Tampilan bawaan desktop" di Admin Panel.
+   - Bilah status (meta theme-color, dan bilah status APK lewat AndroidApp.warnaBilah) ikut warna
+     tampilan supaya menyatu dengan header. */
 export const KUNCI_TEMA = 'wm-tema';
 export const KUNCI_GAYA = 'wm-gaya';
 /** Gaya bawaan desktop dari Admin Panel > Dashboard Setting (ditulis lib/merek/inti.ts). */
@@ -15,7 +17,10 @@ const KELAS = 'gelap';
 const KELAS_MATTE = 'gaya-matte';
 const LEBAR_HP = '(max-width: 767px)';
 
-export const SKRIP_TEMA_AWAL = `try{var d=document.documentElement,h=matchMedia('${LEBAR_HP}').matches,l=localStorage;if(h&&l.getItem('${KUNCI_TEMA}')==='gelap')d.classList.add('${KELAS}');if(h||(l.getItem('${KUNCI_GAYA}')||l.getItem('${KUNCI_GAYA_BAWAAN}'))==='matte')d.classList.add('${KELAS_MATTE}')}catch(e){}`;
+/** Warna bilah status per tampilan: navy bingkai Matte, merah header Glass. */
+export const WARNA_BILAH = { matte: '#0f2559', glass: '#e11d48' } as const;
+
+export const SKRIP_TEMA_AWAL = `try{var d=document.documentElement,h=matchMedia('${LEBAR_HP}').matches,l=localStorage,g=l.getItem('${KUNCI_GAYA}');if(h?g!=='glass':(g||l.getItem('${KUNCI_GAYA_BAWAAN}'))==='matte')d.classList.add('${KELAS_MATTE}')}catch(e){}`;
 
 const sedangGelap = () => typeof document !== 'undefined' && document.documentElement.classList.contains(KELAS);
 const sedangMatte = () => typeof document !== 'undefined' && document.documentElement.classList.contains(KELAS_MATTE);
@@ -28,19 +33,28 @@ function terapkan(gelap: boolean) {
   window.dispatchEvent(new CustomEvent('wm-tema', { detail: gelap }));
 }
 
+type JendelaApk = Window & { AndroidApp?: { warnaBilah?: (hex: string) => void } };
+
+/** Bilah status mengikuti tampilan: meta theme-color (browser HP) & bilah status APK 1.0.5+. */
+function setelBilah(matte: boolean) {
+  const warna = matte ? WARNA_BILAH.matte : WARNA_BILAH.glass;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', warna));
+  try { (window as JendelaApk).AndroidApp?.warnaBilah?.(warna); } catch {}
+}
+
 function terapkanGaya(matte: boolean) {
   document.documentElement.classList.toggle(KELAS_MATTE, matte);
+  setelBilah(matte);
   window.dispatchEvent(new CustomEvent('wm-gaya', { detail: matte }));
 }
 
 /** Samakan kelas html dengan pilihan tersimpan & lebar layar (dipanggil saat awal, ganti lebar, atau tab lain mengubah). */
 function selaraskan() {
-  const hp = layarHp();
-  const gelap = hp && baca(KUNCI_TEMA) === 'gelap';
-  if (gelap !== sedangGelap()) terapkan(gelap);
-  else if (gelap) document.documentElement.style.colorScheme = 'dark';
-  const matte = hp || (baca(KUNCI_GAYA) ?? baca(KUNCI_GAYA_BAWAAN)) === 'matte';
+  if (sedangGelap()) terapkan(false);
+  const pilihan = baca(KUNCI_GAYA);
+  const matte = layarHp() ? pilihan !== 'glass' : (pilihan ?? baca(KUNCI_GAYA_BAWAAN)) === 'matte';
   if (matte !== sedangMatte()) terapkanGaya(matte);
+  else setelBilah(matte);
 }
 
 export function kembaliTerang() {
@@ -65,49 +79,20 @@ export function PenyelarasTema() {
   return null;
 }
 
-const langganan = (ubah: () => void) => {
-  window.addEventListener('wm-tema', ubah);
-  return () => window.removeEventListener('wm-tema', ubah);
-};
-
-/** Mode gelap (dipakai di HP). */
-export function useTema(): [boolean, () => void] {
-  const gelap = useSyncExternalStore(langganan, sedangGelap, () => false);
-  const tukar = () => {
-    const baru = !sedangGelap();
-    terapkan(baru);
-    try { localStorage.setItem(KUNCI_TEMA, baru ? 'gelap' : 'terang'); } catch {}
-  };
-  return [gelap, tukar];
-}
-
 const langgananGaya = (ubah: () => void) => {
   window.addEventListener('wm-gaya', ubah);
   return () => window.removeEventListener('wm-gaya', ubah);
 };
 
-/** Gaya Glass / Matte (dipakai di sidebar desktop). Mengembalikan [matte, tukar]. */
+/** Gaya Glass / Matte (tombol di sidebar desktop & nav bawah HP). Mengembalikan [matte, tukar]. */
 export function useGaya(): [boolean, () => void] {
   const matte = useSyncExternalStore(langgananGaya, sedangMatte, () => false);
   const tukar = () => {
     const baru = !sedangMatte();
     try { localStorage.setItem(KUNCI_GAYA, baru ? 'matte' : 'glass'); } catch {}
-    terapkanGaya(baru || layarHp());
+    terapkanGaya(baru);
   };
   return [matte, tukar];
-}
-
-export function IkonTema({ gelap, className = 'w-4 h-4' }: { gelap: boolean; className?: string }) {
-  return gelap ? (
-    <svg aria-hidden="true" focusable="false" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="4" strokeWidth={2} />
-      <path strokeLinecap="round" strokeWidth={2} d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-    </svg>
-  ) : (
-    <svg aria-hidden="true" focusable="false" className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-    </svg>
-  );
 }
 
 /** Ikon gaya: Matte = lingkaran setengah padat, Glass = panel kaca berkilau. */

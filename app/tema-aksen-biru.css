@@ -1,9 +1,9 @@
 /* ── Tema Aksen Biru (lapisan di atas tema-bingkai.css) ──────────────────────────────────────────────
    Acuan: dasbor CRM bergaya "kanopi" — bingkai aplikasi gelap bergradasi, sidebar menyatu dengan bingkai,
    panel isi putih bersudut besar, dan SETIAP kartu bertint gradasi + garis aksen tipis (bukan putih polos).
-   - Aktif hanya bila <html> berkelas .gaya-matte ("Matte mode"): HP selalu, desktop bila dipilih di sidebar
-     (bawaan desktop = Glass, yaitu tema-bingkai.css apa adanya). Lihat components/shared/Tema.tsx.
-   - Mode terang diubah penuh; mode gelap (hanya HP) cukup mendapat garis aksen tipis di kartu.
+   - Aktif hanya bila <html> berkelas .gaya-matte ("Matte mode"): dipilih lewat tombol Glass/Matte (sidebar
+     desktop, nav bawah HP); bawaan HP = Matte, bawaan desktop dari Admin Panel. Lihat components/shared/Tema.tsx.
+   - Mode gelap sudah tidak dipakai; aturan .gelap di bawah hanya sisa yang aman.
    - Warna aksen tetap dari Warna Tema (--merek-tema, bawaan biru #2563eb).
    - Bentuk/animasi (.menu-3d, transform) tidak diubah: berkas ini hanya mengganti warna, latar & bayangan.
 */
@@ -15,6 +15,8 @@ html.gaya-matte:has(.kerangka-bingkai) {
 }
 html.gaya-matte:not(.gelap):has(.kerangka-bingkai) {
   --kc-aksen: var(--merek-matte, var(--merek-tema, #2563eb));
+  /* Latar <html> navy: Safari iPhone mewarnai bilah status dari latar halaman (tadinya putih). */
+  background-color: color-mix(in srgb, var(--kc-aksen) 22%, var(--merek-bingkai-matte, #0b1f4a));
   --kc-tinta: #0f1b33;
   --kc-tinta-2: #51607a;
   --kc-tinta-3: #8693a9;

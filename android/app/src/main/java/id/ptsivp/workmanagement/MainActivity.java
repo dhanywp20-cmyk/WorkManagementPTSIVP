@@ -9,6 +9,7 @@ import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.print.PrintAttributes;
 import android.print.PrintManager;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
@@ -384,6 +386,21 @@ public class MainActivity extends Activity {
                     }
                 });
                 webCetak.loadDataWithBaseURL(BASE + "/", html, "text/html", "UTF-8", null);
+            });
+        }
+
+        /** Warna bilah status mengikuti tampilan web (Matte navy, Glass merah) - components/shared/Tema.tsx. */
+        @JavascriptInterface
+        public void warnaBilah(String hex) {
+            final int warna;
+            try { warna = Color.parseColor(hex); } catch (IllegalArgumentException e) { return; }
+            runOnUiThread(() -> {
+                getWindow().setStatusBarColor(warna);
+                // Latar terang -> ikon jam/sinyal gelap; latar gelap -> ikon putih.
+                boolean terang = (0.299 * Color.red(warna) + 0.587 * Color.green(warna) + 0.114 * Color.blue(warna)) > 186;
+                View dekor = getWindow().getDecorView();
+                int f = dekor.getSystemUiVisibility();
+                dekor.setSystemUiVisibility(terang ? (f | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR) : (f & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR));
             });
         }
 
