@@ -6,7 +6,7 @@ function cek(nama: string, syarat: boolean) {
   if (syarat) { lulus++; console.log(`  ok   ${nama}`); } else { gagal++; console.log(`  GAGAL ${nama}`); }
 }
 
-const kosong = (): SumberKPI => ({ tickets: [], actLogs: [], reminders: [], lcAttempts: [], piketRows: [], formReviews: [], techNotes: [] });
+const kosong = (): SumberKPI => ({ tickets: [], actLogs: [], reminders: [], piketRows: [], formReviews: [], techNotes: [] });
 const s = kosong();
 s.tickets = ([
   { id: 'awal-tepat', created_at: '2026-10-01T00:00:00+00:00' },
@@ -17,7 +17,6 @@ s.tickets = ([
   { id: 'zona-wib', created_at: '2026-11-01T06:00:00+07:00' },
   { id: 'kosong', created_at: null },
 ] as SumberKPI['tickets']);
-s.lcAttempts = [{ id: 'lc-dalam', started_at: '2026-10-15T08:00:00+00:00', created_at: '2025-01-01T00:00:00+00:00' }] as unknown as SumberKPI['lcAttempts'];
 s.piketRows = [{ day_date: '2026-10-31' }, { day_date: '2026-11-01' }, { day_date: '2026-09-30' }] as SumberKPI['piketRows'];
 s.techNotes = [{ id: 'tn', reviewed_at: '2026-10-02T00:00:00+00:00', created_at: '2026-08-01T00:00:00+00:00' }] as unknown as SumberKPI['techNotes'];
 s.reminders = [{ id: 'jadwal-okt', created_at: '2026-10-10T00:00:00+00:00' }] as SumberKPI['reminders'];
@@ -27,7 +26,6 @@ const okt = saringSumberKPI(s, '2026-10-01', '2026-10-31');
 const id = okt.tickets.map(t => t.id).sort().join(',');
 cek('batas awal & akhir ikut, sebelum/sesudahnya tidak (seperti gte/lte server)', id === 'akhir-tepat,awal-tepat,zona-wib');
 cek('stempel berzona dibaca sebagai waktu mutlak (06:00 WIB = 23:00 UTC hari sebelumnya)', okt.tickets.some(t => t.id === 'zona-wib'));
-cek('LC disaring menurut started_at, bukan created_at', okt.lcAttempts.length === 1);
 cek('tech note disaring menurut reviewed_at', okt.techNotes.length === 1);
 cek('piket memakai tanggal polos: akhir bulan ikut, hari sesudah/sebelum tidak', okt.piketRows.map(p => p.day_date).join() === '2026-10-31');
 cek('jadwal disaring menurut created_at (kolom ini wajib ikut di-select)', okt.reminders.length === 1 && /from\('reminders'\)\.select\('[^']*created_at/.test(readFileSync('app/(portal)/kpi-team/_components/useSumberKpi.ts', 'utf8')));

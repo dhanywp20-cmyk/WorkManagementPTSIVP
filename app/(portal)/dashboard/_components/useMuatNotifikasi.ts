@@ -97,7 +97,7 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
           const { data: assignedT } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').in('assign_name', namesToCheck).neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
           let supRoutedT: { id: string; project_name: string | null; issue_case: string | null; status: string | null; created_at: string | null }[] = [];
           try {
-            const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').neq('status', 'Solved').order('created_at', { ascending: false }).limit(30);
+            const { data } = await supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at, routing_status, assigned_supervisor_id').eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign').not('status', 'in', '("Solved","Cancelled","Rejected")').order('created_at', { ascending: false }).limit(30);
             supRoutedT = data ?? [];
           } catch { supRoutedT = []; }
           const supTIds = new Set((supRoutedT ?? []).map((t) => t.id));
@@ -132,9 +132,10 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
         ).order('created_at', { ascending: false }).limit(30);
         let supRouted: BarisReq[] = [];
         try {
-          const { data } = await supabase.from('project_requests')
+          // routing_status bisa tertinggal "supervisor_assign" setelah request selesai.
+          const { data } = await excludeDone(supabase.from('project_requests')
             .select('id, project_name, status, sales_name, assign_name, created_at, routing_status, assigned_supervisor_id')
-            .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
+            .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign'))
             .order('created_at', { ascending: false }).limit(30);
           supRouted = data ?? [];
         } catch { supRouted = []; }
@@ -263,14 +264,17 @@ export function useMuatNotifikasi(k: MuatNotifikasiKonteks) {
             .neq('status', 'done').neq('status', 'cancelled')
             .eq('assigned_to', currentUser.username)
             .order('due_date', { ascending: true }).limit(20),
+          // routing_status bisa tertinggal "supervisor_assign" setelah jadwal selesai.
           supabase.from('reminders')
             .select('id, project_name, category, due_date, status, assigned_to, created_at')
             .eq('assigned_supervisor_id', currentUser.id).eq('routing_status', 'supervisor_assign')
+            .neq('status', 'done').neq('status', 'cancelled')
             .order('created_at', { ascending: false }).limit(20),
           isManagerTeam
             ? supabase.from('reminders')
                 .select('id, project_name, category, due_date, status, assigned_to, created_at')
                 .eq('routing_status', 'admin_review')
+                .neq('status', 'done').neq('status', 'cancelled')
                 .order('created_at', { ascending: false }).limit(20)
             : Promise.resolve({ data: [] }),
         ]);

@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { User, TeamMember, Ticket } from './shared';
 
+const TIKET_SELESAI = ["Solved", "Cancelled", "Rejected"];
+
 export function tiketNotifikasiSaya(currentUser: User | null, teamMembers: TeamMember[], tickets: Ticket[], isTicketOverdue: (t: Ticket) => boolean): Ticket[] {
     if (!currentUser) return [];
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser.username || "").toLowerCase());
@@ -10,7 +12,9 @@ export function tiketNotifikasiSaya(currentUser: User | null, teamMembers: TeamM
     const namesToCheck = [...new Set([assignedName, currentUser.full_name].filter(Boolean))]
       .map(n => n.toLowerCase().trim());
     return tickets.filter((t) => {
-      const routedToMe = t.routing_status === "supervisor_assign" && t.assigned_supervisor_id === currentUser.id;
+      // routing_status bisa tertinggal "supervisor_assign" setelah ticket selesai; ticket selesai tidak perlu di-assign lagi.
+      const routedToMe = t.routing_status === "supervisor_assign" && t.assigned_supervisor_id === currentUser.id
+        && !TIKET_SELESAI.includes(t.status ?? "");
       if (routedToMe) return true;
       if (!namesToCheck.includes((t.assign_name ?? "").toLowerCase().trim())) return false;
       const overdue = isTicketOverdue(t) && t.status !== "Solved";

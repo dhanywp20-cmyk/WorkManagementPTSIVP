@@ -5869,6 +5869,16 @@ export type Database = {
         }[]
       }
       kesehatan_sistem: { Args: never; Returns: Json }
+      kpi_lc_periode: {
+        Args: { p_akhir: string; p_mulai: string; p_user_ids: string[] }
+        Returns: {
+          attempts: number
+          lulus: number
+          nilai: number[]
+          rata_rata: number
+          user_id: string
+        }[]
+      }
       kunci_app_settings: { Args: never; Returns: string }
       kunci_rahasia: { Args: { k: string }; Returns: boolean }
       lc_eks_catat_pelanggaran: {

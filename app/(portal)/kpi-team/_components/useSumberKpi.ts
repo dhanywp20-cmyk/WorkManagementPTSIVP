@@ -10,6 +10,7 @@ import { bacaPicPiket } from '@/lib/piket/inti';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kuis/kpi-lc-tahunan';
 import { ingat } from '@/lib/cache-singkat';
 import { saringSumberKPI, type SumberKPI } from '@/lib/kpi-sumber';
+import { ambilLCPeriode, LC_PERIODE_KOSONG } from '@/lib/kuis/kpi-lc-periode';
 
 export interface SumberKpiKonteks {
   scopeReady: boolean;
@@ -32,7 +33,7 @@ export function useSumberKpi(k: SumberKpiKonteks) {
     const endFull   = end + 'T23:59:59';
     const mNames    = membersData.map((m) => m.full_name as string);
     const mIds      = membersData.map((m) => m.id as string);
-    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR] = await Promise.all([
+    const [ticketsR, actR, remR, piketR, formRevR, techNotesR] = await Promise.all([
       supabase.from('tickets').select('id,assign_name,status,date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
       supabase.from('activity_logs').select('id,ticket_id,handler_name,created_at')
@@ -40,9 +41,6 @@ export function useSumberKpi(k: SumberKpiKonteks) {
         .order('created_at', { ascending: true }),
       supabase.from('reminders').select('id,assign_name,status,due_date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
-      supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,started_at,grading_status')
-        .in('user_id', mIds).eq('is_submitted', true)
-        .gte('started_at', start).lte('started_at', endFull),
       supabase.from('piket_schedules').select('pic,pic_ivp_name,pic_ump_name,pic_mvi_name,pic_ivp_id,pic_ump_id,pic_mvi_id,day_date')
         .gte('day_date', start).lte('day_date', end),
       supabase.from('form_reviews')
@@ -57,7 +55,6 @@ export function useSumberKpi(k: SumberKpiKonteks) {
       tickets: (ticketsR.data ?? []),
       actLogs: (actR.data ?? []),
       reminders: (remR.data ?? []),
-      lcAttempts: (lcR.data ?? []),
       piketRows: (piketR.data ?? []),
       formReviews: (formRevR.data ?? []),
       techNotes: (techNotesR.data ?? []),
@@ -69,11 +66,12 @@ export function useSumberKpi(k: SumberKpiKonteks) {
     const mIds      = membersData.map((m) => m.id as string);
     const tahun     = new Date(end).getFullYear();
 
-    const [sumber, rekapLC] = await Promise.all([
+    const [sumber, rekapLC, lcPeriode] = await Promise.all([
       sumberGabung ? saringSumberKPI(sumberGabung, start, end) : ambilSumber(membersData, start, end),
       ingat(`rekap-lc:${tahun}:${[...mIds].sort().join(',')}`, () => ambilRekapLCTahunan(mIds, tahun), 60_000),
+      ambilLCPeriode(mIds, start, end),
     ]);
-    const { tickets, actLogs, reminders, lcAttempts, piketRows, formReviews, techNotes } = sumber;
+    const { tickets, actLogs, reminders, piketRows, formReviews, techNotes } = sumber;
 
     return membersData.map((m: any): KPIMember => {
       const name = m.full_name as string;
@@ -91,10 +89,9 @@ export function useSumberKpi(k: SumberKpiKonteks) {
       const myRem  = reminders.filter((r) => r.assign_name === name);
       const remDone = myRem.filter((r) => r.status === 'done').length;
 
-      const myLC     = lcAttempts.filter((a) => a.user_id === uid && a.grading_status !== 'pending_review');
-      const lcScoreArr = myLC.filter((a) => a.score != null).map((a) => a.score as number);
-      const lcScores = lcScoreArr;
-      const lcAvg    = lcScoreArr.length ? Math.round(lcScoreArr.reduce((a: number, b: number) => a + b, 0) / lcScoreArr.length) : 0;
+      const myLC     = lcPeriode[uid] ?? LC_PERIODE_KOSONG;
+      const lcScores = myLC.nilai;
+      const lcAvg    = myLC.rataRata;
 
       const myReviews = formReviews.filter((r) => r.assign_name === name);
       const formReviewTotal = myReviews.length;
@@ -127,8 +124,8 @@ export function useSumberKpi(k: SumberKpiKonteks) {
         ticketsOverdue: tOver.length,
         avgResolutionDays: tSol.length ? Math.round(tDays / tSol.length) : 0,
         remindersAssigned: myRem.length, remindersDone: remDone,
-        lcAttempts: myLC.length, lcAvgScore: lcAvg,
-        lcPassed: myLC.filter((a) => a.passed === true).length,
+        lcAttempts: myLC.attempts, lcAvgScore: lcAvg,
+        lcPassed: myLC.lulus,
         lcScores,
         piketFilled, ticketAvgResponseHours: avgRT,
         formReviewTotal, formReviewLowRating,
