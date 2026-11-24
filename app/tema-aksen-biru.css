@@ -102,6 +102,11 @@ html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
 html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
   background: var(--kc-latar) !important; background-color: var(--kb-bingkai-2) !important;
 }
+/* Halaman setiap menu (Project Progress, Ticketing, dst.) melukis latarnya dari --latar-halaman, yang di
+   <html> berisi foto Latar Glass. Di Matte, isi panel memakai warna panel Matte, bukan foto Glass. */
+html.gaya-matte:not(.gelap) .kerangka-bingkai { --latar-halaman: var(--kc-panel); }
+html.gaya-matte.gelap .kerangka-bingkai { --latar-halaman: var(--kc-latar); }
+
 /* Matte bergambar: foto Matte sendiri di bawah lapisan gelap supaya teks putih tetap terbaca. */
 html.gaya-matte.matte-bergambar:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
   background:
