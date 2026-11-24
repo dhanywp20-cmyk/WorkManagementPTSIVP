@@ -1,5 +1,5 @@
 'use client';
-import { IkonTema, useTema } from '@/components/shared/Tema';
+import { IkonGaya, useGaya } from '@/components/shared/Tema';
 import type { User, MenuItem } from '../dashboard/_components/shared';
 import { SidebarLengkap } from './SidebarLengkap';
 import { SidebarRingkas } from './SidebarRingkas';
@@ -29,7 +29,8 @@ export function SidebarPortal({
   showDashboardPanel, aktifUrl, currentUser, isAdmin, isFullAccess, pendingUsers, pendingRequests,
   onMenu, onBeranda, onProfil, onAdminPanel, onKeluar,
 }: SidebarPortalProps) {
-  const [gelap, tukarTema] = useTema();
+  const [matte, tukarGaya] = useGaya();
+  const labelGaya = matte ? 'Ganti ke Glass mode' : 'Ganti ke Matte mode';
   return (
         <div
       className={`
@@ -111,9 +112,9 @@ export function SidebarPortal({
               </button>
             )}
 
-            <button aria-label={gelap ? 'Mode terang' : 'Mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'} onClick={tukarTema}
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-slate-400 hover:text-slate-700 hover:bg-slate-100">
-              <IkonTema gelap={gelap} />
+            <button type="button" aria-label={labelGaya} title={`${matte ? 'Matte' : 'Glass'} mode — klik untuk ${matte ? 'Glass' : 'Matte'}`} onClick={tukarGaya}
+              className="kc-gaya w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+              <IkonGaya matte={matte} />
             </button>
 
             <button aria-label="Sign Out"
@@ -188,9 +189,10 @@ export function SidebarPortal({
               </svg>
               Sign out
             </button>
-            <button type="button" onClick={tukarTema} aria-label={gelap ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'} title={gelap ? 'Mode terang' : 'Mode gelap'}
-              className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
-              <IkonTema gelap={gelap} />
+            <button type="button" onClick={tukarGaya} aria-label={labelGaya} title={`${matte ? 'Matte' : 'Glass'} mode — klik untuk ${matte ? 'Glass' : 'Matte'}`}
+              className="kc-gaya shrink-0 h-9 px-2.5 rounded-xl flex items-center gap-1.5 border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors">
+              <IkonGaya matte={matte} />
+              <span className="text-xs font-semibold">{matte ? 'Matte' : 'Glass'}</span>
             </button>
             </div>
 

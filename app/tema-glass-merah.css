@@ -1,0 +1,67 @@
+/* ── Glass mode: aksen merah tipis di setiap kartu ───────────────────────────────────────────────────
+   Glass = tampilan bingkai hangat (tema-bingkai.css), dipakai desktop selama Matte tidak dipilih
+   (<html> tanpa .gaya-matte). Kartu tidak putih polos: tint merah sangat tipis di atas → putih,
+   dan garis tepi merah tipis. Matte (tema-aksen-biru.css) memakai pola yang sama dengan biru. */
+
+html:not(.gaya-matte):not(.gelap):has(.kerangka-bingkai) {
+  --kg-merah: #dc2626;
+  --kg-kartu-tint: color-mix(in srgb, var(--kg-merah) 6%, #fff);
+  --kg-kartu-tepi: color-mix(in srgb, var(--kg-merah) 18%, #ece4dc);
+  --kg-kartu-latar: linear-gradient(180deg, var(--kg-kartu-tint) 0%, #fff 58%);
+  --kg-kartu-bayang: 0 0 0 1px var(--kg-kartu-tepi), 0 1px 2px rgba(74, 30, 30, .05), 0 12px 28px -20px color-mix(in srgb, var(--kg-merah) 35%, rgba(74, 52, 30, .3));
+  --kg-kartu-bayang-naik: 0 0 0 1px color-mix(in srgb, var(--kg-merah) 30%, #ece4dc), 0 2px 4px rgba(74, 30, 30, .06), 0 22px 40px -22px color-mix(in srgb, var(--kg-merah) 45%, rgba(74, 52, 30, .4));
+}
+
+html:not(.gaya-matte):not(.gelap) .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white),
+html:not(.gaya-matte):not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label),
+html:not(.gaya-matte):not(.gelap) .kerangka-bingkai .isi-portal .rounded-xl.bg-white.border:not(.fixed .bg-white, button, input, select, textarea, a, label) {
+  background-color: #fff !important;
+  background-image: var(--kg-kartu-latar) !important;
+  border-color: var(--kg-kartu-tepi) !important;
+  box-shadow: var(--kg-kartu-bayang) !important;
+}
+html:not(.gaya-matte):not(.gelap) .kerangka-bingkai :is(.panel-dasbor, .isi-portal) .kartu-miring.bg-white:not(.fixed .bg-white) {
+  background-image:
+    radial-gradient(420px circle at var(--sorot-x, 50%) var(--sorot-y, 0%), color-mix(in srgb, var(--kg-merah) 7%, transparent), transparent 62%),
+    var(--kg-kartu-latar) !important;
+}
+@media (hover: hover) {
+  html:not(.gaya-matte):not(.gelap) .kerangka-bingkai .panel-dasbor .dasbor-3d .rounded-2xl.bg-white:hover,
+  html:not(.gaya-matte):not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label):hover {
+    box-shadow: var(--kg-kartu-bayang-naik) !important;
+  }
+}
+
+/* Baris & blok bantu Dashboard ikut garis merah tipis. */
+html:not(.gaya-matte):not(.gelap) .kerangka-bingkai :is(.bb-baris-judul, .bb-fokus) {
+  background: var(--kg-kartu-latar); border: 1px solid var(--kg-kartu-tepi);
+}
+
+/* ══ Kartu sorotan (angka pertama Dashboard, mis. "Tiket Selesai"): diredam di semua mode ═══════════════
+   Bukan lagi blok aksen padat: tint aksen lembut + garis aksen, teks kembali gelap.
+   --ks-aksen: merah di Glass, Warna Tema (biru) di Matte. */
+html:not(.gaya-matte) .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka { --ks-aksen: var(--kg-merah, #dc2626); }
+html.gaya-matte .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka { --ks-aksen: var(--kc-aksen); }
+
+html .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) {
+  background-color: #fff !important;
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--ks-aksen) 11%, #fff) 0%, color-mix(in srgb, var(--ks-aksen) 3%, #fff) 70%) !important;
+  border-color: color-mix(in srgb, var(--ks-aksen) 30%, #fff) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ks-aksen) 26%, transparent), 0 12px 26px -20px color-mix(in srgb, var(--ks-aksen) 60%, transparent) !important;
+  color: var(--kc-tinta);
+  --color-slate-100: inherit; --color-slate-500: inherit; --color-slate-700: inherit; --color-slate-900: inherit;
+  --gb-e8edf3: color-mix(in srgb, var(--ks-aksen) 14%, #fff);
+  --aksen-ubin: var(--ks-aksen);
+}
+html .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) h3:not(.x) { color: color-mix(in srgb, var(--ks-aksen) 70%, #1f1c19) !important; }
+html .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) .text-\[30px\] { color: var(--kc-tinta) !important; }
+html .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) .bb-catatan { color: var(--kc-tinta-2) !important; }
+
+/* Mode gelap (HP): tint aksen di atas permukaan gelap. */
+html.gelap .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) {
+  background-color: var(--kc-permukaan) !important;
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--ks-aksen) 22%, transparent) 0%, color-mix(in srgb, var(--ks-aksen) 6%, transparent) 70%) !important;
+  border-color: color-mix(in srgb, var(--ks-aksen) 40%, var(--kc-garis)) !important;
+  --gb-e8edf3: color-mix(in srgb, var(--ks-aksen) 25%, var(--kc-permukaan));
+}
+html.gelap .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child:not(.x) h3:not(.x) { color: color-mix(in srgb, var(--ks-aksen) 55%, #fff) !important; }

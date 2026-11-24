@@ -1,13 +1,15 @@
 /* ── Tema Aksen Biru (lapisan di atas tema-bingkai.css) ──────────────────────────────────────────────
    Acuan: dasbor CRM bergaya "kanopi" — bingkai aplikasi gelap bergradasi, sidebar menyatu dengan bingkai,
    panel isi putih bersudut besar, dan SETIAP kartu bertint gradasi + garis aksen tipis (bukan putih polos).
-   - Hanya mode terang yang diubah penuh; mode gelap cukup mendapat garis aksen tipis di kartu.
+   - Aktif hanya bila <html> berkelas .gaya-matte ("Matte mode"): HP selalu, desktop bila dipilih di sidebar
+     (bawaan desktop = Glass, yaitu tema-bingkai.css apa adanya). Lihat components/shared/Tema.tsx.
+   - Mode terang diubah penuh; mode gelap (hanya HP) cukup mendapat garis aksen tipis di kartu.
    - Warna aksen tetap dari Warna Tema (--merek-tema, bawaan biru #2563eb).
    - Bentuk/animasi (.menu-3d, transform) tidak diubah: berkas ini hanya mengganti warna, latar & bayangan.
-   Untuk kembali ke tema Bingkai Hangat: hapus import berkas ini di app/layout.tsx. */
+*/
 
 /* ── Token mode terang: netral dingin (slate), aksen biru ── */
-html:not(.gelap):has(.kerangka-bingkai) {
+html.gaya-matte:not(.gelap):has(.kerangka-bingkai) {
   --kc-tinta: #0f1b33;
   --kc-tinta-2: #51607a;
   --kc-tinta-3: #8693a9;
@@ -78,7 +80,7 @@ html:not(.gelap):has(.kerangka-bingkai) {
 }
 
 /* ══ Bingkai gelap (hanya tampilan bersidebar, mode terang) ═════════════════════════════════════════ */
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
   /* token khusus elemen di atas bingkai gelap */
   --kb-di-gelap: rgba(255, 255, 255, .92);
   --kb-di-gelap-2: rgba(255, 255, 255, .66);
@@ -90,39 +92,39 @@ html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) {
 }
 
 /* Bilah kiri penyambung header-footer (putih) tidak dipakai di bingkai gelap. */
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > .flex.flex-1.min-h-0.relative::before { content: none; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > .flex.flex-1.min-h-0.relative::before { content: none; }
 
 /* ── Header: menyatu dengan bingkai gelap, kontrol kanan berupa pil terang ── */
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d {
   background: transparent !important; border-bottom: 0 !important; box-shadow: none !important;
 }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 { color: #fff !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 + span { color: var(--kb-di-gelap-3) !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 ~ span[style],
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p[style] { color: var(--kb-aksen-terang) !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p.text-slate-500 { color: var(--kb-di-gelap-2) !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .px-3.py-1\.5.rounded-2xl {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 { color: #fff !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 + span { color: var(--kb-di-gelap-3) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d h1 ~ span[style],
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p[style] { color: var(--kb-aksen-terang) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d p.text-slate-500 { color: var(--kb-di-gelap-2) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d .px-3.py-1\.5.rounded-2xl {
   background: rgba(255, 255, 255, .96) !important; border-radius: 999px !important;
   box-shadow: 0 6px 18px -10px rgba(0, 0, 0, .5) !important;
 }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d button[aria-label^="Pencarian"] {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d button[aria-label^="Pencarian"] {
   background: rgba(255, 255, 255, .96) !important; border: 0 !important; border-radius: 999px !important;
   color: var(--kc-tinta-2) !important; box-shadow: 0 6px 18px -10px rgba(0, 0, 0, .5);
 }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d button[aria-label^="Pencarian"]:hover { background: #fff !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) .kepala-3d button[aria-label^="Pencarian"]:hover { background: #fff !important; }
 
 /* ── Footer: bilah gelap tipis ── */
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer { background: transparent !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer p,
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer span { color: var(--kb-di-gelap-3) !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer a { color: var(--kb-aksen-terang) !important; }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer [title^="Versi"] {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer { background: transparent !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer p,
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer span { color: var(--kb-di-gelap-3) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer a { color: var(--kb-aksen-terang) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer [title^="Versi"] {
   color: var(--kb-di-gelap-2) !important; background: var(--kb-kaca) !important; border-color: var(--kb-kaca-tepi) !important;
 }
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer [title^="Versi"] * { color: inherit !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) > footer [title^="Versi"] * { color: inherit !important; }
 
 /* ── Sidebar: tanpa kartu, langsung di atas bingkai gelap. Warna lewat token supaya aturan tema-bingkai ikut. ── */
-html:not(.gelap) .kerangka-bingkai .sidebar-3d {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d {
   margin: 4px 0 12px 12px; background: transparent !important; border: 0 !important; box-shadow: none !important;
   --kc-tinta: #fff;
   --kc-tinta-2: var(--kb-di-gelap-2);
@@ -144,109 +146,102 @@ html:not(.gelap) .kerangka-bingkai .sidebar-3d {
   --color-slate-800: #fff;
   --color-slate-100: var(--kb-kaca-2);
 }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]) { box-shadow: none !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]) { box-shadow: none !important; }
 @media (hover: hover) {
-  html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]):hover {
+  html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not([aria-current]):hover {
     background: var(--kb-kaca) !important; border-color: var(--kb-kaca-tepi) !important; color: #fff !important; box-shadow: none !important;
   }
 }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] {
   background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .08)) !important;
   border-color: rgba(255, 255, 255, .2) !important; color: #fff !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 10px 22px -14px rgba(0, 0, 0, .7) !important;
 }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current="page"]::before { background: var(--kb-aksen-terang); }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current] > .rounded-full:last-child { background: var(--kb-aksen-terang) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d > :first-child { box-shadow: inset 0 0 0 1px var(--kb-kaca-tepi) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] > :first-child {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current="page"]::before { background: var(--kb-aksen-terang); }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d:not(.h-9)[aria-current] > .rounded-full:last-child { background: var(--kb-aksen-terang) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d > :first-child { box-shadow: inset 0 0 0 1px var(--kb-kaca-tepi) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .menu-3d[aria-current="page"] > :first-child {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 6px 14px -5px color-mix(in srgb, var(--kc-aksen) 70%, transparent) !important;
 }
 
 /* Tombol bawah (Admin, Sign out, mode gelap) & kartu profil */
-html:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button:not(.kc-profil) { color: var(--kb-di-gelap-2) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button:not(.kc-profil):hover { color: #fff !important; background: var(--kb-kaca) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button[aria-label="Sign Out"]:hover,
-html:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child .flex-1.min-w-0:hover { color: #fecaca !important; background: rgba(239, 68, 68, .14) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil { background: var(--kb-kaca) !important; border-color: var(--kb-kaca-tepi) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil:hover { background: var(--kb-kaca-2) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil p:first-child { color: #fff !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil p:last-child { color: var(--kb-aksen-terang) !important; }
-html:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil > div:last-child { color: var(--kb-di-gelap-3) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button:not(.kc-profil) { color: var(--kb-di-gelap-2) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button:not(.kc-profil):hover { color: #fff !important; background: var(--kb-kaca) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child button[aria-label="Sign Out"]:hover,
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d > .shrink-0:last-child .flex-1.min-w-0:hover { color: #fecaca !important; background: rgba(239, 68, 68, .14) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil { background: var(--kb-kaca) !important; border-color: var(--kb-kaca-tepi) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil:hover { background: var(--kb-kaca-2) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil p:first-child { color: #fff !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil p:last-child { color: var(--kb-aksen-terang) !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .sidebar-3d .kc-profil > div:last-child { color: var(--kb-di-gelap-3) !important; }
 
 /* ── Panel isi: putih kebiruan, sudut besar, mengambang di atas bingkai gelap ── */
-html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) :is(.panel-dasbor, .isi-portal:not(.fixed)) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) :is(.panel-dasbor, .isi-portal:not(.fixed)) {
   inset: 4px 12px 8px 12px; border-radius: 26px; background: var(--kc-panel) !important;
   border: 1px solid rgba(255, 255, 255, .5);
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .06) !important;
 }
 @media (max-width: 767px) {
-  html:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) :is(.panel-dasbor, .isi-portal:not(.fixed)) { inset: 0 6px 6px; border-radius: 20px; }
+  html.gaya-matte:not(.gelap) .kerangka-bingkai:has(.sidebar-3d) :is(.panel-dasbor, .isi-portal:not(.fixed)) { inset: 0 6px 6px; border-radius: 20px; }
 }
 
 /* Kepala Dashboard & kepala menu di dalam panel: putih dengan tint aksen sangat tipis di bawah. */
-html:not(.gelap) .kerangka-bingkai :is(.dasbor-kepala, .kepala-modul) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai :is(.dasbor-kepala, .kepala-modul) {
   background: linear-gradient(180deg, #fff 0%, color-mix(in srgb, var(--kc-aksen) 3%, #fff) 100%) !important;
   border-bottom-color: var(--kb-kartu-tepi) !important;
   box-shadow: 0 8px 18px -16px color-mix(in srgb, var(--kc-aksen) 60%, rgba(15, 35, 80, .5)) !important;
 }
 
 /* ══ Kartu: tint biru tipis + garis aksen tipis di SETIAP kartu (Dashboard & semua menu) ══════════════ */
-html:not(.gelap) .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white),
-html:not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label),
-html:not(.gelap) .kerangka-bingkai .isi-portal .rounded-xl.bg-white.border:not(.fixed .bg-white, button, input, select, textarea, a, label) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white),
+html.gaya-matte:not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label),
+html.gaya-matte:not(.gelap) .kerangka-bingkai .isi-portal .rounded-xl.bg-white.border:not(.fixed .bg-white, button, input, select, textarea, a, label) {
   background-color: #fff !important;
   background-image: var(--kb-kartu-latar) !important;
   border-color: var(--kb-kartu-tepi) !important;
   box-shadow: var(--kb-kartu-bayang) !important;
 }
-html:not(.gelap) .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white) { border-radius: 20px !important; }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white) { border-radius: 20px !important; }
 /* Kartu miring: pertahankan sorotan kursor di atas tint. */
-html:not(.gelap) .kerangka-bingkai :is(.panel-dasbor, .isi-portal) .kartu-miring.bg-white:not(.fixed .bg-white) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai :is(.panel-dasbor, .isi-portal) .kartu-miring.bg-white:not(.fixed .bg-white) {
   background-image:
     radial-gradient(420px circle at var(--sorot-x, 50%) var(--sorot-y, 0%), color-mix(in srgb, var(--kc-aksen) 10%, transparent), transparent 62%),
     var(--kb-kartu-latar) !important;
 }
 @media (hover: hover) {
-  html:not(.gelap) .kerangka-bingkai .panel-dasbor .dasbor-3d .rounded-2xl.bg-white:hover,
-  html:not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label):hover {
+  html.gaya-matte:not(.gelap) .kerangka-bingkai .panel-dasbor .dasbor-3d .rounded-2xl.bg-white:hover,
+  html.gaya-matte:not(.gelap) .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label):hover {
     box-shadow: var(--kb-kartu-bayang-naik) !important;
   }
 }
 
-/* Kartu sorotan (angka pertama Dashboard): gradasi navy→aksen seperti tombol utama acuan. */
-html:not(.gelap) .kerangka-bingkai .panel-dasbor .bb-kiri > .bb-sel-angka.rounded-2xl.bg-white:first-child {
-  background-color: var(--kc-aksen) !important;
-  background-image:
-    radial-gradient(260px 160px at 100% 0%, rgba(255, 255, 255, .22), transparent 70%),
-    linear-gradient(150deg, var(--kc-aksen-terang), var(--kc-aksen) 45%, var(--kc-tombol)) !important;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--kc-aksen) 70%, #000), 0 18px 34px -18px var(--kc-aksen-bayang) !important;
-}
+/* Kartu sorotan (angka pertama Dashboard) diredam di tema-glass-merah.css (berlaku Glass & Matte). */
 
 /* Baris & blok bantu di Dashboard ikut garis aksen tipis. */
-html:not(.gelap) .kerangka-bingkai :is(.bb-baris-judul, .bb-fokus) {
+html.gaya-matte:not(.gelap) .kerangka-bingkai :is(.bb-baris-judul, .bb-fokus) {
   background: var(--kb-kartu-latar); border: 1px solid var(--kb-kartu-tepi);
 }
-html:not(.gelap) .kerangka-bingkai .bb-piket-baris { background: var(--kc-aksen-lembut); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kc-aksen) 12%, transparent); }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .bb-piket-baris { background: var(--kc-aksen-lembut); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kc-aksen) 12%, transparent); }
 
 /* Tombol utama: pil navy-aksen (seperti "New deal" di acuan). */
-html:not(.gelap) .kerangka-bingkai .bb-tombol-utama {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .bb-tombol-utama {
   background: linear-gradient(180deg, color-mix(in srgb, var(--kc-aksen) 80%, #0a1633), var(--kc-tombol)) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 8px 16px -10px var(--kc-aksen-bayang);
 }
 
 /* Tab pil & segmen: latar kebiruan lembut. */
-html:not(.gelap) .kerangka-bingkai .bb-tab { background: var(--kc-isi); border-color: var(--kb-kartu-tepi); }
-html:not(.gelap) .kerangka-bingkai .bb-segmen { background: var(--kc-isi); }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .bb-tab { background: var(--kc-isi); border-color: var(--kb-kartu-tepi); }
+html.gaya-matte:not(.gelap) .kerangka-bingkai .bb-segmen { background: var(--kc-isi); }
 
 /* ── Nav bawah HP: pil putih dengan garis aksen tipis di atas bingkai gelap ── */
-html:not(.gelap) .kerangka-bingkai .nav-bawah-3d {
+html.gaya-matte:not(.gelap) .kerangka-bingkai .nav-bawah-3d {
   border-color: var(--kb-kartu-tepi) !important;
   box-shadow: 0 14px 30px -16px rgba(0, 0, 0, .6) !important;
 }
 
 /* ══ Mode gelap: garis aksen tipis & tint lembut di kartu ══════════════════════════════════════════ */
-html.gelap .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white),
-html.gelap .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label) {
+html.gaya-matte.gelap .kerangka-bingkai .panel-dasbor :is(.rounded-2xl.bg-white, .kartu-miring.bg-white):not(.fixed .bg-white),
+html.gaya-matte.gelap .kerangka-bingkai .isi-portal .rounded-2xl.bg-white:not(.fixed .bg-white, button, input, select, textarea, a, label) {
   background-image: linear-gradient(180deg, color-mix(in srgb, var(--kc-aksen) 10%, transparent) 0%, transparent 60%) !important;
   border-color: color-mix(in srgb, var(--kc-aksen) 30%, var(--kc-garis)) !important;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--kc-aksen) 24%, transparent), var(--kc-bayang) !important;
